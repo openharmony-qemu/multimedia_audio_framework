@@ -16,12 +16,15 @@
 #ifndef AUDIO_SAFE_VOLUME_EVENT_SUBSCRIBER_H
 #define AUDIO_SAFE_VOLUME_EVENT_SUBSCRIBER_H
 
+#include "singleton.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
 class SafeVolumeEventSubscriber {
+    DECLARE_SINGLETON(SafeVolumeEventSubscriber)
 public:
-    static void SubscribeSafeVolumeEvent();
+    void SubscribeSafeVolumeEvent();
 };
 
 } // namespace AudioStandard

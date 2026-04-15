@@ -17,7 +17,6 @@
 #define ST_APP_SELECT_ROUTER_H
 
 #include "router_base.h"
-#include "audio_affinity_manager.h"
 #include "audio_state_manager.h"
 
 namespace OHOS {

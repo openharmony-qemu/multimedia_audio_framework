@@ -32,6 +32,7 @@
 #include "microphone_descriptor.h"
 #include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
+#include "audio_debug_info.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
 
@@ -431,6 +432,8 @@ public:
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
+    int32_t GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
+
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 
     bool IsAbsVolumeScene();
@@ -668,17 +671,20 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
+    std::vector<AudioDevicePair> GetLoopbackSupportedDevicePairs();
+    AudioDevicePair GetLoopbackPreferredDevicePair();
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetLoopbackVolume(float volume);
+    float GetLoopbackVolume();
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
     int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 
     int32_t SetAudioSceneChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
-    int32_t UnsetAudioSceneChangeCallback(
-        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+    int32_t UnsetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
     int32_t SetSplitModeReady();
 

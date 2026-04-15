@@ -1170,6 +1170,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamD
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> result;
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         for (auto &desc : pipeInfo->streamDescriptors_) {
@@ -1254,6 +1255,34 @@ bool AudioPipeManager::IsVoipOrCellularStreamActive()
         }
     }
     return false;
+}
+
+StreamUsage AudioPipeManager::GetLastestRunningCallStreamUsage()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &entry : modemCommunicationIdMap_) {
+        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "streamDesc is nullptr");
+        if (entry.second->streamStatus_ == STREAM_STATUS_STARTED) {
+            AUDIO_INFO_LOG("GetLastestRunningCallStreamUsage from modem: %{public}d",
+                entry.second->rendererInfo_.streamUsage);
+            return entry.second->rendererInfo_.streamUsage;
+        }
+    }
+
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->streamStatus_ == STREAM_STATUS_STARTED &&
+                (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)) {
+                AUDIO_INFO_LOG("GetLastestRunningCallStreamUsage: %{public}d",
+                    desc->rendererInfo_.streamUsage);
+                return desc->rendererInfo_.streamUsage;
+            }
+        }
+    }
+    return STREAM_USAGE_UNKNOWN;
 }
 } // namespace AudioStandard
 } // namespace OHOS

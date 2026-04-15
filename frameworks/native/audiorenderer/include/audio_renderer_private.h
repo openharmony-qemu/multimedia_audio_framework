@@ -145,6 +145,7 @@ public:
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
+    int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
     bool IsFastRenderer() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;

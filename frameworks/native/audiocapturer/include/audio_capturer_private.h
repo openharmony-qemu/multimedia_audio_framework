@@ -104,6 +104,7 @@ public:
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
     FastStatus GetFastStatus() override;
+    int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const override;
 
     uint32_t GetOverflowCount() const override;
     int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;

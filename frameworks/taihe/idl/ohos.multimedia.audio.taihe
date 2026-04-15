@@ -346,6 +346,7 @@ interface AudioManager {
   GetSpatializationManager(): AudioSpatializationManager;
   GetEffectManager(): AudioEffectManager;
   GetCollaborativeManager(): AudioCollaborativeManager;
+  GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -714,6 +715,11 @@ struct AudioDeviceDescriptor {
   @readonly capabilities: Optional<Array<AudioStreamInfo>>;
 }
 
+struct AudioDevicePair {
+  inputDevice: AudioDeviceDescriptor;
+  outputDevice: AudioDeviceDescriptor;
+}
+
 struct VolumeEvent {
   volumeType: AudioVolumeType;
   volume: i32;
@@ -1079,6 +1085,7 @@ struct AudioTimestampInfo {
 interface AudioRenderer {
   @get GetState(): AudioState;
 
+  GetImplPtr(): i64;
   @gen_async("getRendererInfo")
   @gen_promise("getRendererInfo")
   GetRendererInfoSync(): AudioRendererInfo;
@@ -1411,12 +1418,23 @@ enum AudioLoopbackEqualizerPreset: i32 {
   BRIGHT = 3,
 }
 
+union AudioDevicePairOrNull {
+  type_audioDevicePair: AudioDevicePair;
+  type_null: @null unit;
+}
+
 interface AudioLoopback {
   @gen_promise("getStatus")
   GetStatusSync(): AudioLoopbackStatus;
 
   @gen_promise("setVolume")
   SetVolumeSync(volume: f64): void;
+
+  GetVolume(): f64;
+
+  GetSupportedDevicePairs(): Array<AudioDevicePair>;
+
+  GetPreferredDevicePair(): AudioDevicePairOrNull;
 
   @gen_promise("enable")
   EnableSync(enable: bool): bool;
@@ -1450,4 +1468,21 @@ interface AudioCollaborativeManager {
 
   @gen_promise("setCollaborativePlaybackEnabledForDevice")
   SetCollaborativePlaybackEnabledForDeviceSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
+}
+
+interface AudioDeviceEnhanceManager {
+  @gen_promise("IsEnhancedRoutingSupported")
+  IsEnhancedRoutingSupported(): bool;
+
+  @gen_promise("selectOutputDevice")
+  SelectOutputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectOutputDeviceForAudioRenderer")
+  SelectOutputDeviceForAudioRendererSync(renderer: AudioRenderer, deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectInputDevice")
+  SelectInputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectInputDeviceForAudioCapturer")
+  SelectInputDeviceForAudioCapturerSync(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
 }

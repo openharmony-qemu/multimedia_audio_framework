@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_server_proxy.h"
+#include "audio_select_interface_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -187,6 +188,13 @@ int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t s
     return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
 }
 
+int32_t AudioCoreService::EventEntry::GetAudioDebugInfoBySessionId(uint32_t sessionId,
+    AudioDebugInfo &audioDebugInfo)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetAudioDebugInfoBySessionId(sessionId, audioDebugInfo);
+}
+
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
 {
     return coreService_->GenerateSessionId();
@@ -198,7 +206,8 @@ int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType de
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock device %{public}d, sessionId %{public}u, streamUsage %{public}d, running %{public}d",
         deviceType, sessionID, streamUsage, isRunning);
-    int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning, skipForce);
+    auto &selector = AudioSelectInterfaceService::GetInstance();
+    int32_t ret = selector.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning, skipForce);
     return ret;
 }
 
@@ -628,10 +637,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
 }
 
 int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
-    const int32_t callerPid, const DeviceType &deviceType)
+    const int32_t callerPid, const DeviceType &deviceType, int32_t callerUid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType, callerUid);
 }
 
 int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)

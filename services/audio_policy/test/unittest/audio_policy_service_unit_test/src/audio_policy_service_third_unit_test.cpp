@@ -1490,22 +1490,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, UpdateStreamState_001, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test RemoveDeviceForUid.
- * @tc.number: RemoveDeviceForUid_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, RemoveDeviceForUid_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    int32_t uid = 1;
-    server->audioAffinityManager_.DelSelectCapturerDevice(uid);
-    server->audioAffinityManager_.DelSelectRendererDevice(uid);
-    EXPECT_NE(server, nullptr);
-}
-
-/**
  * @tc.name  : Test InitSharedVolume.
  * @tc.number: InitSharedVolume_001
  * @tc.desc  : Test AudioPolicyService interfaces.

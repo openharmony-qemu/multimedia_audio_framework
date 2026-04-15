@@ -1295,7 +1295,7 @@ void AudioServerSetIORoutesFuzzTest()
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetIORoutes(activeDevices, a2dpOffloadFlag, pipeId);
     std::vector<DeviceType> deviceTypes = {deviceType};
-    audioServerPtr->SetIORoutes(deviceFlag, deviceTypes);
+    audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
 }
 
 void AudioServerUpdateActiveDevicesRouteFuzzTest()
@@ -1941,7 +1941,7 @@ void UpdateArmInstance()
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag deviceFlag = g_testDeviceFlags[provider.ConsumeIntegral<uint32_t>() % g_testDeviceFlags.size()];
     std::vector<DeviceType> deviceTypes = {deviceType};
-    (void)audioServerPtr->SetIORoutes(deviceFlag, deviceTypes);
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
 }
 
 void UpdateDeviceForAllSource()
@@ -1954,9 +1954,9 @@ void UpdateDeviceForAllSource()
     DeviceType deviceType = g_testDeviceTypes[provider.ConsumeIntegral<uint32_t>() % g_testDeviceTypes.size()];
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
     std::vector<DeviceType> deviceTypes = {deviceType};
-    (void)audioServerPtr->SetIORoutes(deviceFlag, deviceTypes);
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
     deviceFlag = DeviceFlag::ALL_DEVICES_FLAG;
-    (void)audioServerPtr->SetIORoutes(deviceFlag, deviceTypes);
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
 }
 
 void OnRemoteDied()

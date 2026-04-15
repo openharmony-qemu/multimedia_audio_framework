@@ -893,16 +893,24 @@ void AudioServer::HapReportWakeupEvent(const std::string &key,
         CHECK_AND_BREAK_LOG(nlohmann::json::accept(kvPair.second) == true,
             "Failed to parse dfx: invalid JSON format");
         json = nlohmann::json::parse(kvPair.second);
-        CHECK_AND_BREAK_LOG((json.contains("stage") && json.contains("result") && json.contains("errCode")),
-            "Failed to parse update_wakeup_trace_result: contains check error");
+        CHECK_AND_BREAK_LOG((json.contains("stage") && json.contains("result") && json.contains("errCode") &&
+            json["stage"].is_string() && json["result"].is_string() && json["errCode"].is_string()),
+            "Failed to parse update_wakeup_trace_result: contains or type check error");
         std::string stageStr = json["stage"].get<std::string>();
         std::string resultStr = json["result"].get<std::string>();
         std::string errCodeStr = json["errCode"].get<std::string>();
 
+        int32_t stage = 0;
+        int32_t result = 0;
+        int32_t errCode = 0;
+        CHECK_AND_BREAK_LOG(sscanf_s(stageStr.c_str(), "%i", &stage) == 1, "parse stage failed");
+        CHECK_AND_BREAK_LOG(sscanf_s(resultStr.c_str(), "%i", &result) == 1, "parse result failed");
+        CHECK_AND_BREAK_LOG(sscanf_s(errCodeStr.c_str(), "%i", &errCode) == 1, "parse errCode failed");
+
         AudioWakeupTrackInfo audioWakeupTrackInfo;
-        audioWakeupTrackInfo.stage = static_cast<AudioWakeupStageCode>(std::stoi(stageStr, nullptr, 0));
-        audioWakeupTrackInfo.result = static_cast<AudioWakeupResult>(std::stoi(resultStr, nullptr, 0));
-        audioWakeupTrackInfo.errCode = static_cast<AudioWakeupErrorCode>(std::stoi(errCodeStr, nullptr, 0));
+        audioWakeupTrackInfo.stage = static_cast<AudioWakeupStageCode>(stage);
+        audioWakeupTrackInfo.result = static_cast<AudioWakeupResult>(result);
+        audioWakeupTrackInfo.errCode = static_cast<AudioWakeupErrorCode>(errCode);
         AUDIO_INFO_LOG("stage=%{public}d, result=%{public}d, errCode=%{public}d",
             audioWakeupTrackInfo.stage, audioWakeupTrackInfo.result, audioWakeupTrackInfo.errCode);
         ReportWakeupEvent(audioWakeupTrackInfo);
@@ -1580,35 +1588,37 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
 
+    DeviceType type = activeDevices.front().first;
+    DeviceFlag flag = activeDevices.front().second;
+
     std::vector<DeviceType> deviceTypes;
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
-    DeviceFlag flag = activeDevices.front().second;
-    HILOG_COMM_INFO("[SetIORoutes] 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
+    HILOG_COMM_INFO("[SetIORoutes] 1st deviceType: %{public}d, deviceSize: %{public}zu, flag: %{public}d",
         activeDevices.front().first, deviceTypes.size(), flag);
 
-    if (deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
+    if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
         deviceTypes[0] = DEVICE_TYPE_NONE;
     }
 
     {
         std::lock_guard<std::mutex> lock(audioSceneMutex_);
-        isEarpiece_ = (deviceTypes[0] == DEVICE_TYPE_EARPIECE);
+        isEarpiece_ = (type == DEVICE_TYPE_EARPIECE);
         SetAudioBalanceStatus();
     }
 
     if (IS_DEVICE_ENHANCED_SUPPORTED) {
-        return SetIORoutesForSpecificPipe(flag, deviceTypes, pipeId, networkId);
+        return SetIORoutesForSpecificPipe(type, flag, deviceTypes, pipeId, networkId);
     } else {
-        int32_t ret = networkId == LOCAL_NETWORK_ID ? SetIORoutes(flag, deviceTypes) :
+        int32_t ret = networkId == LOCAL_NETWORK_ID ? SetIORoutes(type, flag, deviceTypes) :
             SetIORoutesForRemote(flag, deviceTypes, networkId);
         return ret;
     }
 }
 
-int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
-    const uint32_t pipeId, const std::string &networkId)
+int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceType type, const DeviceFlag flag,
+    std::vector<DeviceType> &deviceTypes, const uint32_t pipeId, const std::string &networkId)
 {
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
@@ -1623,16 +1633,16 @@ int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceFlag flag, std::vect
 
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
-        source->UpdateActiveDevice(deviceTypes[0]);
+        source->UpdateActiveDevice(type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
-        PolicyHandler::GetInstance().SetActiveOutputDevice(deviceTypes[0]);
+        PolicyHandler::GetInstance().SetActiveOutputDevice(type);
         sink->UpdateActiveDevice(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
         CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
-        source->UpdateActiveDevice(deviceTypes[0]);
-        PolicyHandler::GetInstance().SetActiveOutputDevice(deviceTypes[0]);
+        source->UpdateActiveDevice(type);
+        PolicyHandler::GetInstance().SetActiveOutputDevice(type);
         sink->UpdateActiveDevice(deviceTypes);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
@@ -1641,10 +1651,8 @@ int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceFlag flag, std::vect
     return SUCCESS;
 }
 
-int32_t AudioServer::SetIORoutes(const DeviceFlag flag, std::vector<DeviceType> deviceTypes)
+int32_t AudioServer::SetIORoutes(const DeviceType type, const DeviceFlag flag, std::vector<DeviceType> deviceTypes)
 {
-    DeviceType type = deviceTypes[0];
-
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
 

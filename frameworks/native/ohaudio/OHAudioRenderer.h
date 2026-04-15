@@ -272,6 +272,7 @@ public:
 
     StreamUsage GetOriginalStreamUsage();
     int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
+    const AudioRenderer *GetAudioRenderer() const;
 private:
     void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
         AudioEncodingType encodingType);

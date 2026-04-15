@@ -523,7 +523,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
     deviceTypes.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag);
 
-    ret = audioServer->SetIORoutes(DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag);
@@ -531,16 +531,16 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
     activeOutputDevices.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
     deviceTypes.clear();
     deviceTypes.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
-    ret = audioServer->SetIORoutes(DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
     deviceTypes.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
-    ret = audioServer->SetIORoutes(DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
     deviceTypes.clear();
     deviceTypes.push_back(DEVICE_TYPE_WIRED_HEADPHONES);
-    ret = audioServer->SetIORoutes(DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1623,8 +1623,9 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_001, TestSize.Level1)
     ret = audioServer->SetIORoutes(activeDevices, a2dpOffloadFlag, pipeId);
     EXPECT_EQ(ret, SUCCESS);
 
+    DeviceType type = DEVICE_TYPE_ACCESSORY;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1641,9 +1642,10 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_002, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_ACCESSORY;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1660,9 +1662,10 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_003, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_FILE_SOURCE;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1679,9 +1682,10 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_004, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_BLUETOOTH_A2DP;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1698,10 +1702,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_005, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_DEFAULT;
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1718,10 +1723,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_006, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_RINGING;
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1738,10 +1744,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_007, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = INPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_DEFAULT;
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1758,10 +1765,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_008, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = INPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_RINGING;
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1778,10 +1786,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_009, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_DEFAULT;
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1798,10 +1807,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_010, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_RINGING;
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1818,9 +1828,10 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_011, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
+    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DISTRIBUTED_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(flag, deviceTypes);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 

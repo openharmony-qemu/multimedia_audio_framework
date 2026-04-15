@@ -246,7 +246,7 @@ void AudioPolicyServiceThirdTest()
     };
     uint32_t deviceTypeInt = GetData<uint32_t>() % DeviceTypeVec.size();
     DeviceType deviceType = DeviceTypeVec[deviceTypeInt];
-    GetServerPtr()->audioPolicyService_.audioVolumeManager_.IsBlueTooth(deviceType);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsBlueTooth(deviceType);
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.activeSafeTimeBt_ = ACTIVEBTTIME;
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckBlueToothActiveMusicTime(1);
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckWiredActiveMusicTime(1);
@@ -367,7 +367,7 @@ void AudioPolicyServiceTestIII(FuzzedDataProvider& fdp)
 
     std::string dumpString = "";
     GetServerPtr()->audioPolicyDump_.AudioStreamDump(dumpString);
-    GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = true;
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetRingerModeMute(true);
     GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
 
     AudioStreamInfo audioStreamInfo = {};

@@ -29,6 +29,7 @@
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
+#include "napi_audio_debugging_manager.h"
 #include "napi_dfx_utils.h"
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
@@ -142,6 +143,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
         DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserChoice),
         DECLARE_NAPI_FUNCTION("getDeviceEnhanceManager", GetDeviceEnhanceManager),
+        DECLARE_NAPI_FUNCTION("getDebugManager", GetDebugManager),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_MNGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -1685,5 +1687,29 @@ napi_value NapiAudioManager::GetDeviceEnhanceManager(napi_env env, napi_callback
     return nullptr;
 #endif
 }
+
+napi_value NapiAudioManager::GetDebugManager(napi_env env, napi_callback_info info)
+{
+#ifndef CROSS_PLATFORM
+    size_t argc = 0;
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, nullptr, &jsThis, nullptr);
+    if (status != napi_ok || argc != 0) {
+        NapiAudioError::ThrowError(env, "GetDebugManager invalid arguments", NAPI_ERR_INVALID_PARAM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    napi_value debugManagerObj = NapiAudioDebuggingManager::CreateDebuggingManagerWrapper(env);
+    if (debugManagerObj == nullptr) {
+        NapiAudioError::ThrowError(env, "CreateDebugManager failed", NAPI_ERR_SYSTEM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    return debugManagerObj;
+#else
+    return nullptr;
+#endif
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

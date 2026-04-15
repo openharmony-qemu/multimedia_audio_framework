@@ -18,12 +18,14 @@ config("audio_loopback_config") {
   include_dirs = [
     "./include",
     "../audiostream/include",
+    "../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../frameworks/native/audiostream/include",
     "../../../services/audio_service/client/include",
+    "../audiodefinitions/include",
   ]
   cflags = [
     "-Wall",
@@ -66,6 +68,7 @@ ohos_shared_library("audio_loopback") {
     "../audiorenderer:audio_renderer",
     "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
+    "../audio_debug_manager:audio_debug_manager",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -90,10 +93,9 @@ ohos_shared_library("audio_loopback") {
 }
 
 config("audio_external_library_config") {
-  include_dirs =
-      [
-        "../../../interfaces/inner_api/native/audiocapturer/include",
-        "../../../interfaces/inner_api/native/audiorenderer/include",
-        "../../../interfaces/inner_api/native/audioloopback/include",
-    ]
+  include_dirs = [
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/audioloopback/include",
+  ]
 }

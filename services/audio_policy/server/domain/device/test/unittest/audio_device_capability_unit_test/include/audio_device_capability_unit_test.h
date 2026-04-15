@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,18 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_AFFINITY_MANAGER_UNIT_TEST_H
-#define AUDIO_AFFINITY_MANAGER_UNIT_TEST_H
+#ifndef AUDIO_DEVICE_CAPABILITY_UNIT_TEST_H
+#define AUDIO_DEVICE_CAPABILITY_UNIT_TEST_H
+
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
-#include "audio_affinity_manager.h"
-#include "audio_system_manager.h"
-#include "audio_device_descriptor.h"
+#include "audio_device_capability.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioAffinityManagerUnitTest : public testing::Test {
+class AudioDeviceCapabilityUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -37,4 +35,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif //AUDIO_AFFINITY_MANAGER_UNIT_TEST_H
+#endif // AUDIO_DEVICE_CAPABILITY_UNIT_TEST_H

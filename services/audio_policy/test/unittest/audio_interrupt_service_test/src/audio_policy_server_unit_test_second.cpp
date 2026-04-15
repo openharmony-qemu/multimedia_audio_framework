@@ -221,7 +221,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_208, TestSize.Level1)
     bool mute = true;
     bool isUpdateUi = true;
     VolumeUtils::SetPCVolumeEnable(true);
-    audioPolicyServer->UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL), AudioStreamType::STREAM_MUSIC);
     EXPECT_EQ(VolumeUtils::IsPCVolumeEnable(), true);
 }
@@ -241,7 +241,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_209, TestSize.Level1)
     bool mute = false;
     bool isUpdateUi = true;
     VolumeUtils::SetPCVolumeEnable(true);
-    audioPolicyServer->UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL), AudioStreamType::STREAM_MUSIC);
     EXPECT_EQ(VolumeUtils::IsPCVolumeEnable(), true);
 }
@@ -261,7 +261,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_210, TestSize.Level1)
     bool mute = false;
     bool isUpdateUi = true;
     VolumeUtils::SetPCVolumeEnable(true);
-    audioPolicyServer->UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(STREAM_ALL), AudioStreamType::STREAM_ALL);
     EXPECT_EQ(VolumeUtils::IsPCVolumeEnable(), true);
 }
@@ -281,7 +281,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_211, TestSize.Level1)
     bool mute = false;
     bool isUpdateUi = true;
     VolumeUtils::SetPCVolumeEnable(false);
-    audioPolicyServer->UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(STREAM_MUSIC), AudioStreamType::STREAM_MUSIC);
     EXPECT_EQ(VolumeUtils::IsPCVolumeEnable(), false);
     EXPECT_EQ(audioPolicyServer->audioVolumeManager_.GetStreamMuteInterface(STREAM_SYSTEM), false);

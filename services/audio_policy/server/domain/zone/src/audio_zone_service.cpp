@@ -781,7 +781,7 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::FetchOutputDevices(int32_t zoneId,
-    StreamUsage streamUsage, int32_t clientUid, const RouterType &bypassType)
+    StreamUsage streamUsage, int32_t clientUid, RouterType bypassType)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     std::lock_guard<std::mutex> lock(zoneMutex_);
