@@ -27,6 +27,14 @@ void AudioPipeManagerUnitTest::TearDownTestCase(void) {}
 void AudioPipeManagerUnitTest::SetUp(void) {}
 void AudioPipeManagerUnitTest::TearDown(void) {}
 
+static std::shared_ptr<AudioStreamDescriptor> MakeCallStreamDesc(StreamUsage usage, AudioStreamStatus status)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = usage;
+    streamDesc->streamStatus_ = status;
+    return streamDesc;
+}
+
 /**
  * @tc.name: Init_001
  * @tc.desc: Test Init when adapter info has been loaded.
@@ -1234,6 +1242,99 @@ HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_002, Test
     audioPipeManager->modemCommunicationIdMap_.clear();
     auto streamDescRet = audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
     EXPECT_EQ(streamDescRet == nullptr, true);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_001
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns running modem stream usage first.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    audioPipeManager->modemCommunicationIdMap_[100000] =
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_STATUS_STARTED);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_002
+ * @tc.desc: Test GetLastestRunningCallStreamUsage skips invalid modem and pipe entries, then returns voice usage.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    audioPipeManager->modemCommunicationIdMap_[100000] = nullptr;
+    audioPipeManager->modemCommunicationIdMap_[100001] =
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_STATUS_STOPPED);
+
+    audioPipeManager->curPipeList_.push_back(nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(nullptr);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_COMMUNICATION, STREAM_STATUS_STARTED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_VOICE_COMMUNICATION);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_003
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns running video communication usage from pipe list.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_VIDEO_COMMUNICATION, STREAM_STATUS_STARTED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_VIDEO_COMMUNICATION);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_004
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns unknown when no running call stream exists.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_004, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_COMMUNICATION, STREAM_STATUS_STOPPED));
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_MUSIC, STREAM_STATUS_STARTED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_UNKNOWN);
 }
 
 /**
