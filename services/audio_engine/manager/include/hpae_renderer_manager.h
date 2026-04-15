@@ -132,7 +132,7 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
-    int32_t InitManager(bool isReload = false);
+    int32_t InitManager(bool isReload = false, bool isNeedCallBack);
     void InitDefaultNodeInfo();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
@@ -163,7 +163,7 @@ private:
     void DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType);
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
-    void ReloadRenderManagerInner(const HpaeSinkInfo sinkInfo, bool isReload);
+    void ReloadRenderManagerInner(const HpaeSinkInfo sinkInfo, bool isReload, bool isNeedCallBack);
 
 private:
 

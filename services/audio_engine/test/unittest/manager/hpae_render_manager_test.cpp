@@ -1802,11 +1802,11 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_001, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = true;
-    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload, true), ERROR);
 
-    hpaeRendererManager->InitManager(isReload);
+    hpaeRendererManager->InitManager(isReload, false);
     isReload = false;
-    hpaeRendererManager->InitManager(isReload);
+    hpaeRendererManager->InitManager(isReload, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
@@ -1831,7 +1831,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_002, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = true;
-    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload, true), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
