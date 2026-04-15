@@ -421,11 +421,11 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_020, TestSize.Level4)
 HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_IsDeviceSupportLoopback_003, TestSize.Level1)
 {
     auto device = std::make_shared<AudioDeviceDescriptor>();
-    device->SetDeviceType(DEVICE_TYPE_USB_ARM_HEADSET);
+    device->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     bool result = audioPolicyServer_->IsDeviceSupportLoopback(device);
-    device->SetDeviceType(DEVICE_TYPE_USB_HEADSET);
+    device->deviceType_ = DEVICE_TYPE_USB_HEADSET;
     result = audioPolicyServer_->IsDeviceSupportLoopback(device);
-    device->SetDeviceType(DEVICE_TYPE_SPEAKER);
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
     result = audioPolicyServer_->IsDeviceSupportLoopback(device);
     EXPECT_FALSE(result);
 }
