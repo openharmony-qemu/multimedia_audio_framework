@@ -65,6 +65,11 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_DP_FAST "dp_fast"
 #define HDI_ID_INFO_RAW_AI "raw_ai"
 
+#define HDI_ID_INFO_PRIMARY_EXTRA_TYPEC "Typec_Speaker"
+#define HDI_ID_INFO_PRIMARY_EXTRA_3RD "3rd_Speaker"
+#define HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS "Wireless_Speaker"
+#define HDI_ID_INFO_PRIMARY_EXTRA_HDMI "Hdmi_Speaker"
+
 // device manager
 enum HdiDeviceManagerType : uint32_t {
     HDI_DEVICE_MANAGER_TYPE_LOCAL,

@@ -38,6 +38,18 @@ namespace AudioStandard {
 namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
+
+const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
+    {HDI_ID_INFO_USB, HDI_RENDER_OFFSET_USB},
+    {HDI_ID_INFO_DP, HDI_RENDER_OFFSET_DP},
+    {HDI_ID_INFO_VOIP, HDI_RENDER_OFFSET_VOIP},
+    {HDI_ID_INFO_DIRECT, HDI_RENDER_OFFSET_DIRECT},
+    {HDI_ID_INFO_PRIMARY_EXTRA_TYPEC, HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC},
+    {HDI_ID_INFO_PRIMARY_EXTRA_3RD, HDI_RENDER_OFFSET_PRIMARY_EXTRA_3RD},
+    {HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS},
+    {HDI_ID_INFO_PRIMARY_EXTRA_HDMI, HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI},
+};
+
 }
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
     : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP)
@@ -825,14 +837,9 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
 
 uint32_t AudioRenderSink::GetUniqueId(void) const
 {
-    if (halName_ == HDI_ID_INFO_USB) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_USB);
-    } else if (halName_ == HDI_ID_INFO_DP) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DP);
-    } else if (halName_ == HDI_ID_INFO_VOIP) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
-    } else if (halName_ == HDI_ID_INFO_DIRECT) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
+    auto it = HALNAME_TO_HDI_OFFSET.find(halName_);
+    if (it != HALNAME_TO_HDI_OFFSET.end()) {
+        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, it->second);
     }
     return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
 }
@@ -842,7 +849,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.sampleRate = AUDIO_SAMPLE_RATE_48K;
     param.interleaved = true;
-    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+    param.streamId = static_cast<int32_t>(GetUniqueId());
     param.type = AUDIO_IN_MEDIA;
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;

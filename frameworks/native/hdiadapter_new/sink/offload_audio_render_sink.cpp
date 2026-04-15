@@ -835,7 +835,13 @@ int32_t OffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outp
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
     currentActiveDevice_ = outputDevices[0];
-    return SUCCESS;
+    ChangePipeDevice(outputDevices);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD));
+    return ret;
 }
 
 bool OffloadAudioRenderSink::IsInA2dpOffload()

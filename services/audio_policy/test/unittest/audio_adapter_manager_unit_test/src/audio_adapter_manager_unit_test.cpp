@@ -1126,5 +1126,53 @@ HWTEST_F(AudioAdapterManagerUnitTest, RedirectVolumeType, TestSize.Level1)
     audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
     EXPECT_EQ(volumeType, STREAM_VOICE_ASSISTANT);
 }
+
+/**
+ * @tc.name: GetHdiudiSinkIdInfo_001
+ * @tc.desc: Test GetHdiSinkIdInfo with primary_extra className
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetHdiSinkIdInfo_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    AudioModuleInfo moduleInfo;
+    moduleInfo.className = "primary_extra";
+    moduleInfo.name = "Typec_Speaker";
+    std::string idInfo = audioAdapterManager->GetHdiSinkIdInfo(moduleInfo);
+    EXPECT_EQ(idInfo, "Typec_Speaker");
+    
+    moduleInfo.name = "BT_Speaker";
+    idInfo = audioAdapterManager->GetHdiSinkIdInfo(moduleInfo);
+    EXPECT_EQ(idInfo, "BT_Speaker");
+}
+
+/**
+ * @tc.name: GetSinkIdInfoAndIdType_001
+ * @tc.desc: Test GetSinkIdInfoAndIdType with primary_extra adapter
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary_extra";
+    pipeInfo->moduleInfo_.name = "Typec_Speaker";
+    
+    std::string idInfo;
+    HdiIdType idType;
+    audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
+    
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, "Typec_Speaker");
+    
+    pipeInfo->moduleInfo_.name = "BT_Speaker";
+    audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
+    
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, "BT_Speaker");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

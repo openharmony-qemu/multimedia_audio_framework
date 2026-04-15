@@ -1706,6 +1706,9 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
                 idInfo = HDI_ID_INFO_VOIP;
             }
         }
+    } else if (pipeInfo->adapterName_ == "primary_extra") {
+        idType = HDI_ID_TYPE_PRIMARY;
+        idInfo = pipeInfo->moduleInfo_.name;
     } else if (pipeInfo->adapterName_ == "a2dp") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_BLUETOOTH;
@@ -2161,6 +2164,9 @@ std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioMo
     }
     if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload") {
         return audioModuleInfo.networkId;
+    }
+    if (audioModuleInfo.className == "primary_extra") {
+        return audioModuleInfo.name;
     }
     return HDI_ID_INFO_DEFAULT;
 }
