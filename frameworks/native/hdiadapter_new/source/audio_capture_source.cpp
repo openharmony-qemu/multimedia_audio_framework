@@ -45,9 +45,9 @@ namespace AudioStandard {
 static constexpr uint32_t DECIMAL_BASE = 10;
 static constexpr uint32_t RAW_CHANNEL_COUNT = 1;
 static constexpr uint32_t MICIN_CHANNEL_COUNT = 4;
-+static constexpr uint32_t AUDIO_D2D = 12;
-+static constexpr uint32_t AUDIO_INPUT_INTERPHON_TYPE = 1 << 16;
-+AudioInputType hdiAudioInterphoneInputType = static_cast(AUDIO_INPUT_INTERPHON_TYPE);
+static constexpr uint32_t AUDIO_D2D = 12;
+static constexpr uint32_t AUDIO_INPUT_INTERPHON_TYPE = 1 << 16;
+AudioInputType hdiAudioInterphoneInputType = static_cast<AudioInputType>(AUDIO_INPUT_INTERPHON_TYPE);
 static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
@@ -1016,7 +1016,7 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
 
 uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const
 {
-    if (hdiSource == static_cast(AUDIO_INPUT_INTERPHON_TYPE)) {
+    if (hdiSource == static_cast<AudioInputType>(AUDIO_INPUT_INTERPHON_TYPE)) {
         return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_INTERPHONE);
     }
     switch (hdiSource) {
