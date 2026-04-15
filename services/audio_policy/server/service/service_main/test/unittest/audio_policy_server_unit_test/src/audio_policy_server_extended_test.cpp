@@ -385,7 +385,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_017, TestSize.Level4)
 HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_018, TestSize.Level4)
 {
     VolumeUtils::SetLegacyVolumeNotificationLevel(-1);
-    EXPECT_FALSE(audioPolicyServer_->ShouldNotifyForLegacyVolume(15));
+    EXPECT_FALSE(audioPolicyServer_->audioVolumeManager_.ShouldNotifyForLegacyVolume(15));
 }
 
 /**
@@ -397,7 +397,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_019, TestSize.Level4)
 {
     VolumeUtils::SetLegacyVolumeNotificationLevel(5);
     audioPolicyServer_->audioVolumeManager_.audioPolicyManager_.SetLegacyHighVolumeCheckTime(0);
-    EXPECT_TRUE(audioPolicyServer_->ShouldNotifyForLegacyVolume(10));
+    EXPECT_TRUE(audioPolicyServer_->audioVolumeManager_.ShouldNotifyForLegacyVolume(10));
 }
 
 /**
@@ -410,7 +410,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_020, TestSize.Level4)
     VolumeUtils::SetLegacyVolumeNotificationLevel(5);
     int64_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     audioPolicyServer_->audioVolumeManager_.audioPolicyManager_.SetLegacyHighVolumeCheckTime(currentTime);
-    EXPECT_TRUE(audioPolicyServer_->ShouldNotifyForLegacyVolume(10));
+    EXPECT_TRUE(audioPolicyServer_->audioVolumeManager_.ShouldNotifyForLegacyVolume(10));
 }
 
 /**
