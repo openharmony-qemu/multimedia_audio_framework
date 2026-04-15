@@ -1042,6 +1042,8 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo sinkInfo, 
     }
     AUDIO_INFO_LOG("delete device:%{public}s all input processor end", GetEncryptStr(sinkInfo.deviceName).c_str());
     sinkInfo_ = sinkInfo;
+    AUDIO_INFO_LOG("init devicename:%{public}s,channel:%{public}u,rate:%{public}u",
+        GetEncryptStr(sinkInfo_.deviceName).c_str(), sinkInfo_.channels, sinkInfo_.samplingRate);
     InitManager(isReload, isNeedCallBack);
     AUDIO_INFO_LOG("init device:%{public}s manager end", GetEncryptStr(sinkInfo.deviceName).c_str());
     for (const auto &it : sinkInputNodeMap_) {
@@ -1055,8 +1057,6 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo sinkInfo, 
 
 int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
 {
-    AUDIO_INFO_LOG("init devicename:%{public}s,channel:%{public}u,rate:%{public}u",
-        GetEncryptStr(sinkInfo_.deviceName).c_str(), sinkInfo_.channels, sinkInfo_.samplingRate);
     HpaeNodeInfo nodeInfo;
     int32_t checkRet = CheckFramelen(sinkInfo_);
     if (checkRet != SUCCESS && isNeedCallBack == true) {
@@ -1142,6 +1142,8 @@ int32_t HpaeRendererManager::Init(bool isReload)
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, isReload] {
         Trace trace("HpaeRendererManager::Init");
+        AUDIO_INFO_LOG("init devicename:%{public}s,channel:%{public}u,rate:%{public}u",
+            GetEncryptStr(sinkInfo_.deviceName).c_str(), sinkInfo_.channels, sinkInfo_.samplingRate);
         InitManager(isReload, true);
     };
     SendRequest(request, __func__, true);
