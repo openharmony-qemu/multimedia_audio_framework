@@ -61,6 +61,8 @@ public:
 
     virtual int32_t SetVolume(float volume) = 0;
 
+    virtual float GetVolume() = 0;
+
     virtual int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) = 0;
 
     virtual int32_t RemoveAudioLoopbackCallback() = 0;
@@ -78,6 +80,11 @@ public:
         (void)debugInfo;
         return 0;
     }
+
+    virtual std::vector<AudioDevicePair> GetSupportedDevicePairs() = 0;
+
+    virtual AudioDevicePair GetPreferredDevicePair() = 0;
+
     virtual ~AudioLoopback();
 };
 } // namespace AudioStandard

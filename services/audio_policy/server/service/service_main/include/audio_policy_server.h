@@ -16,6 +16,7 @@
 #ifndef ST_AUDIO_POLICY_SERVER_H
 #define ST_AUDIO_POLICY_SERVER_H
 
+#include <atomic>
 #include <mutex>
 #include <pthread.h>
 
@@ -376,8 +377,14 @@ public:
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;
+    int32_t GetLoopbackSupportedDevicePairs(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices, int32_t &ret) override;
+    int32_t GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
+        std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
     int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
+    int32_t SetLoopbackVolume(float volume, bool &ret) override;
+    int32_t GetLoopbackVolume(float &volume, bool &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -894,6 +901,8 @@ private:
     void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
     void InfoDumpHelp(std::string &dumpString);
 
+    bool IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescriptor> device);
+
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
     void AddSystemAbilityListenerAfterAudioServerStart();
@@ -979,6 +988,7 @@ private:
     int32_t loudVolumeSupportMode_ = 0;
 #endif
     bool isHighResolutionExist_ = false;
+    std::atomic<float> loopbackVolume_ = 0.0f;
     std::mutex descLock_;
 
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
