@@ -103,13 +103,13 @@ void VADeviceManager::OnDevicesConnected(
 
 void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaDevice)
 {
-    std::lock_guard<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_LOG(vaDevice != nullptr, "invalid parameter: null pointer detected");
     AUDIO_INFO_LOG("disconnecting va device: {\"name\":\"%{public}s\", \"type\":\"%{public}d\"}",
         vaDevice->configuration_.name_.c_str(),
         vaDevice->configuration_.type_);
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
-    AudioCoreService::GetCoreService()->OnDeviceStatusUpdated(*descriptor, false);
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, false);
+    std::lock_guard<std::mutex> lock(statusMutex_);
     connectedVADeviceMap_.erase(vaDevice->configuration_.address_);
     if (connectedVADeviceMap_.size() <= 0) {
         config_.UnregisterAdapter(AudioAdapterType::TYPE_VA);
