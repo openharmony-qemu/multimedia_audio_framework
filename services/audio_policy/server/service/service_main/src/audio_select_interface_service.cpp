@@ -360,8 +360,9 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
     AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] pid[%{public}d]",
         audioCapturerFilter->uid, selectedDesc[0]->deviceType_, AudioPolicyUtils::GetInstance().GetEncryptAddr(
             selectedDesc[0]->macAddress_).c_str(), IPCSkeleton::GetCallingPid());
-    CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0]->deviceRole_ == INPUT_DEVICE,
-        ERR_INVALID_OPERATION, "Device err");
+    CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 &&
+        AudioDeviceManager::GetAudioDeviceManager().IsDeviceConnected(selectedDesc[0]) &&
+        IsInputDevice(selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_), ERR_INVALID_OPERATION, "err");
 
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
