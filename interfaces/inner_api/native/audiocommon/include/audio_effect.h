@@ -702,7 +702,7 @@ enum AudioEffectChainSetParamIndex {
     FRONTEND_APP_TYPE = 18,
     STEREO_ENHANCEMENT_INDEX = 19,
     MAX_PARAM_INDEX,
-    MAX_PARAM_CAPACITY = 30,
+    MAX_PARAM_CAPACITY = 99,
 };
 
 enum AudioEffectCommandCode {
