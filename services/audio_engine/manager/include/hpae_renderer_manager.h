@@ -163,6 +163,7 @@ private:
     void DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType);
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
+    void ReloadRenderManagerInner(const HpaeSinkInfo sinkInfo, bool isReload);
 
 private:
 
@@ -188,6 +189,7 @@ private:
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
+    bool isReloadManagerFromCollStateChange_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

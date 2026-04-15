@@ -1022,29 +1022,35 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
     auto request = [this, sinkInfo, isReload]() {
-        AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", GetEncryptStr(sinkInfo.deviceName).c_str());
-        StopOuputNode();
-        for (const auto &it : sinkInputNodeMap_) {
-            TriggerStreamState(it.first, it.second);
-            DeleteProcessCluster(it.first, false);
-        }
-        AUDIO_INFO_LOG("delete device:%{public}s all input processor end", GetEncryptStr(sinkInfo.deviceName).c_str());
-        sinkInfo_ = sinkInfo;
-        InitManager(isReload);
-        AUDIO_INFO_LOG("init device:%{public}s manager end", GetEncryptStr(sinkInfo.deviceName).c_str());
-        for (const auto &it : sinkInputNodeMap_) {
-            HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
-            CreateProcessClusterAndConnect(nodeInfo);
-            NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, it.first,
-                ConvertHpaeToRendererState(it.second->GetState()));
-        }
-        AUDIO_INFO_LOG("connect device:%{public}s all processor end", GetEncryptStr(sinkInfo.deviceName).c_str());
+
+        ReloadRenderManagerInner(sinkInfo, isReload);
     };
     SendRequest(request, __func__, true);
     if (!IsInit()) {
         hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     }
     return SUCCESS;
+}
+
+void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo sinkInfo, bool isReload)
+{
+    AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", GetEncryptStr(sinkInfo.deviceName).c_str());
+        StopOuputNode();
+    for (const auto &it : sinkInputNodeMap_) {
+        TriggerStreamState(it.first, it.second);
+        DeleteProcessCluster(it.first, false);
+    }
+    AUDIO_INFO_LOG("delete device:%{public}s all input processor end", GetEncryptStr(sinkInfo.deviceName).c_str());
+    sinkInfo_ = sinkInfo;
+    InitManager(isReload);
+    AUDIO_INFO_LOG("init device:%{public}s manager end", GetEncryptStr(sinkInfo.deviceName).c_str());
+    for (const auto &it : sinkInputNodeMap_) {
+        HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
+        CreateProcessClusterAndConnect(nodeInfo);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, it.first,
+            ConvertHpaeToRendererState(it.second->GetState()));
+    }
+    AUDIO_INFO_LOG("connect device:%{public}s all processor end", GetEncryptStr(sinkInfo.deviceName).c_str());
 }
 
 int32_t HpaeRendererManager::InitManager(bool isReload)
@@ -1089,7 +1095,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
     attr.auxSinkEnable = sinkInfo_.auxSinkEnable;
-    if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE)) {
+    if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE) || isReload == true) {
         InitDefaultNodeInfo();
     }
     ret = outputCluster_->Init(attr);
@@ -1651,6 +1657,8 @@ void HpaeRendererManager::EnableCollaboration()
         hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
     }
 
+    int32_t runningCollStreamCount = 0;
+    isReloadManagerFromCollStateChange_ = false;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
         if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
@@ -1663,16 +1671,28 @@ void HpaeRendererManager::EnableCollaboration()
                     sceneClusterMap_[sceneType]->GetGainNodeById(key) != nullptr, "NULL");
                 sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(key);
                 sessionGainNode->SetCollFadeState(OPERATION_PAUSED);
+                runningCollStreamCount++;
             } else {
                 ReConnectNodeForCollaboration(key);
             }
         }
+    }
+
+    if (runningCollStreamCount == 0) {
+        ReloadRenderManagerInner(sinkInfo_, true);
+        isReloadManagerFromCollStateChange_ = true;
+        AUDIO_INFO_LOG("runningCollStreamCount: 0, ReloadRenderManager from coll open");
     }
 }
 
 void HpaeRendererManager::OnCollborationFadeDone(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
+        if (isReloadManagerFromCollStateChange_ == false) {
+            ReloadRenderManagerInner(sinkInfo_, true);
+            isReloadManagerFromCollStateChange_ = true;
+            AUDIO_INFO_LOG("ReloadRenderManager finish, sessionId %{public}u", sessionId);
+        }
         ReConnectNodeForCollaboration(sessionId);
         CHECK_AND_RETURN_LOG(sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end() &&
             sinkInputNodeMap_[sessionId] != nullptr, "nullptr");
