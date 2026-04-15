@@ -2661,12 +2661,8 @@ int32_t AudioCoreService::ReloadCapturerSessionForInputPipe(uint32_t sessionId, 
     if (operation != SESSION_OPERATION_RELEASE) {
         pipeInfo = pipeManager_->FindPipeBySessionId(pipeList, sessionId);
     } else {
-        std::string adapterName = "primary";
-        if (sessionWithInputPipeAdapterName_.count(sessionId) != 0) {
-            adapterName = sessionWithInputPipeAdapterName_[sessionId];
-        }
-        pipeInfo = AudioPipeManager::GetPipeManager()->GetPipeinfoByNameAndFlag(adapterName,
-            sessionWithInputPipeRouteFlag_[sessionId]);
+        pipeInfo = AudioPipeManager::GetPipeManager()->GetPipeinfoByNameAndFlag(
+            "primary", sessionWithInputPipeRouteFlag_[sessionId]);
     }
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "pipe is null");
 
@@ -2939,13 +2935,13 @@ int32_t AudioCoreService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
         return SUCCESS;
     }
+    sessionSourceTypeMap_[sessionID] = sessionInfo.sourceType;
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = pipeManager_->GetPipeList();
     std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->FindPipeBySessionId(pipeList, sessionID);
     if (pipeInfo != nullptr && IsPipeInSourceStrategyMap(pipeInfo, sessionID)) {
         AUDIO_WARNING_LOG("pipe:%{public}s routeFlag:%{public}u need not add",
             pipeInfo->name_.c_str(), pipeInfo->routeFlag_);
             sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;
-            sessionWithInputPipeAdapterName_[sessionID] = pipeInfo->adapterName_;
             return SUCCESS;
     }
 
@@ -2997,7 +2993,7 @@ int32_t AudioCoreService::ReloadCaptureSessionSoftLink()
     return SUCCESS;
 }
 
-bool AudioCoreService::HasNormalTypeSession(
+bool AudioCoreService::HasNormalTypeCapturerSession(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList)
 {
     for (const auto &pipe : pipeList) {
@@ -3006,9 +3002,10 @@ bool AudioCoreService::HasNormalTypeSession(
         }
 
         for (const auto &stream : pipe->streamDescriptors_) {
-            if (stream != nullptr &&  specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) == 0) {
-                return true;
-            }
+            CHECK_AND_RETURN_RET_LOG(stream == nullptr || !stream->IsRecording() ||
+                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0, true,
+                "stream not valid for normal capture");
+            return true;
         }
     }
     return false;
@@ -3018,31 +3015,25 @@ void AudioCoreService::OnCapturerSessionRemoved(uint64_t sessionID)
 {
     AUDIO_INFO_LOG("sessionid:%{public}" PRIu64, sessionID);
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = pipeManager_->GetPipeList();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionID);
-    if (streamDesc != nullptr) {
-        if (specialSourceTypeSet_.count(streamDesc->capturerInfo_.sourceType) > 0) {
-            if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-                HandleRemoteCastDevice(false);
-            }
+    auto it = sessionSourceTypeMap_.find(sessionID);
+    if (it != sessionSourceTypeMap_.end()) {
+        SourceType sourceType = it->second;
+        sessionSourceTypeMap_.erase(it);
+        if (specialSourceTypeSet_.count(sourceType) > 0) {
+            CHECK_AND_RETURN_LOG(sourceType != SOURCE_TYPE_REMOTE_CAST, "Special source type");
+            HandleRemoteCastDevice(false);
             return;
         } else {
-            if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+            if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
                 ResetAudioEcInfo();
             }
-            if (HasNormalTypeSession(pipeList)) {
-                return;
-            }
-            // close source when all capturer sessions removed
+            CHECK_AND_RETURN_LOG(!HasNormalTypeCapturerSession(pipeList), "Has normal type capturer session");
             CloseNormalSource();
             return;
         }
     }
     if (sessionWithInputPipeRouteFlag_.count(sessionID) > 0) {
         sessionWithInputPipeRouteFlag_.erase(sessionID);
-        return;
-    }
-    if (sessionWithInputPipeAdapterName_.count(sessionID) > 0) {
-        sessionWithInputPipeAdapterName_.erase(sessionID);
         return;
     }
     AUDIO_INFO_LOG("Sessionid:%{public}" PRIu64 " not added, directly placed into capturerSessionIdisRemovedSet_",
