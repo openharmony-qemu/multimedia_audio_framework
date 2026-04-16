@@ -1032,10 +1032,10 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
     return SUCCESS;
 }
 
-void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo sinkInfo, bool isReload, bool isNeedCallBack)
+void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack)
 {
     AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", GetEncryptStr(sinkInfo.deviceName).c_str());
-        StopOuputNode();
+    StopOuputNode();
     for (const auto &it : sinkInputNodeMap_) {
         TriggerStreamState(it.first, it.second);
         DeleteProcessCluster(it.first, false);
@@ -1059,9 +1059,11 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
 {
     HpaeNodeInfo nodeInfo;
     int32_t checkRet = CheckFramelen(sinkInfo_);
-    if (checkRet != SUCCESS && isNeedCallBack == true) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
-                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
+    if (checkRet != SUCCESS) {
+        if (isNeedCallBack == true) {
+            TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        }
         return checkRet;
     }
     nodeInfo.channels = sinkInfo_.channels;
