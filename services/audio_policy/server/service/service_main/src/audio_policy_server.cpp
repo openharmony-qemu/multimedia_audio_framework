@@ -2454,17 +2454,7 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(uint32_t sessionID, const s
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     AUDIO_INFO_LOG("The sessionId %{public}u, callingUid %{public}u, clientUid %{public}u",
         sessionID, callingUid, clientUid);
-    if (CALLBACK_TRUST_LIST.count(callingUid) == 0) {
-        // Verify whether the clientUid is valid.
-        if (callingUid != clientUid) {
-            AUDIO_ERR_LOG("The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
-            return ERR_UNKNOWN;
-        }
-        if (!coreService_->IsStreamBelongToUid(callingUid, sessionID)) {
-            AUDIO_ERR_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
-            return ERR_UNKNOWN;
-        }
-    }
+    CHECK_AND_RETURN_RET(VerifySessionId(sessionID, clientUid), ERR_UNKNOWN);
 
     return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
 }
@@ -2482,7 +2472,7 @@ bool AudioPolicyServer::VerifySessionId(uint32_t sessionId, uint32_t clientUid)
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     AUDIO_INFO_LOG("The sessionId %{public}u, callingUid %{public}u, clientUid %{public}u",
         sessionId, callingUid, clientUid);
-    CHECK_AND_RETURN_RET(CALLBACK_TRUST_LIST.count(callingUid) == 0, true);
+    RETURN_RET_IF(PermissionUtil::VerifySystemPermission(), true);
 
     CHECK_AND_RETURN_RET_LOG(callingUid == clientUid, false,
         "The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");

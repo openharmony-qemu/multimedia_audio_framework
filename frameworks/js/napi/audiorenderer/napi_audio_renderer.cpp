@@ -247,7 +247,7 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
     rendererNapi->rendererOptions_ = rendererOptions;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-    rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
+    rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions, rendererOptions.appInfo);
 #else
     std::string cacheDir = "";
     rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
