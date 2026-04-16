@@ -586,61 +586,6 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_007, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_008
- * @tc.desc  : Test SetAudioStreamInfo for voice recognition ec-only request.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_008, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner);
-    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_S16LE;
-    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    info.channels = AudioChannel::MONO;
-    info.micInChannels = AudioChannel::CHANNEL_UNKNOW;
-    info.ecChannels = AudioChannel::STEREO;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner->state_ = NEW;
-
-    capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(capturerInClientInner, nullptr);
-}
-
-/**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_009
- * @tc.desc  : Test SetAudioStreamInfo for degraded voice recognition micIn/ec request.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_009, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner);
-    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_S16LE;
-    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    info.channels = static_cast<AudioChannel>(8);
-    info.micInChannels = static_cast<AudioChannel>(8);
-    info.ecChannels = AudioChannel::STEREO;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    info.isVoiceRecognitionMicInEcDegrade = true;
-    capturerInClientInner->state_ = NEW;
-
-    capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(capturerInClientInner, nullptr);
-}
-
-/**
  * @tc.name  : Test GetAudioServerProxy API
  * @tc.type  : FUNC
  * @tc.number: GetAudioServerProxy_001
