@@ -822,7 +822,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredInputDeviceDescriptors_001
     std::string networkId = "1";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
 
-    ret = server->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId);
+    ret = server->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, -1);
     EXPECT_NE(ret.size(), 0);
 }
 
@@ -840,7 +840,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredOutputDeviceDescInner_001,
     std::string networkId = "1";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
 
-    ret = server->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
+    ret = server->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, -1);
     EXPECT_NE(ret.size(), 0);
 }
 
@@ -858,7 +858,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredInputDeviceDescInner_001, 
     std::string networkId = "1";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
 
-    ret = server->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    ret = server->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId, -1);
     EXPECT_NE(ret.size(), 0);
 }
 

@@ -187,6 +187,7 @@ ohos_unittest("hdiadapter_unit_test") {
 
   include_dirs = [
     "include",
+    "include/util",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../audioutils/include",
     "../../../frameworks/native/hdiadapter_new/include/sink",

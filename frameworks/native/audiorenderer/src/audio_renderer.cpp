@@ -75,6 +75,7 @@ static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
+    {STREAM_VOICE_CALL, STREAM_USAGE_INTERPHONE},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_USAGE_VOICE_CALL_ASSISTANT},
     {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_USAGE_ALARM},
@@ -931,6 +932,9 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
     } else if (flag & AUDIO_OUTPUT_FLAG_HWDECODING) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_HWDECODING;
+    } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_INTERPHONE_VOIP;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_INTERPHONE;
     } else {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;

@@ -604,7 +604,9 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
     } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
     } else if (flag & AUDIO_INPUT_FLAG_RAW_AI) {
-            return PIPE_TYPE_IN_NORMAL_RAW_AI;
+        return PIPE_TYPE_IN_NORMAL_RAW_AI;
+    } else if (flag & AUDIO_INPUT_FLAG_INTERPHONE) {
+        return PIPE_TYPE_IN_INTERPHONE;
     } else {
         return PIPE_TYPE_IN_NORMAL;
     }
@@ -631,6 +633,8 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             return PIPE_TYPE_OUT_OFFLOAD;
         } else if (flag & AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION) {
             return PIPE_TYPE_OUT_CELLULAR_CALL;
+        } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
+            return PIPE_TYPE_OUT_INTERPHONE;
         } else {
             return PIPE_TYPE_OUT_NORMAL;
         }

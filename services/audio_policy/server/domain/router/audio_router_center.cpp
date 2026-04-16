@@ -40,7 +40,8 @@ const string RING_RENDER_ROUTERS = "RingRenderRouters";
 const string TONE_RENDER_ROUTERS = "ToneRenderRouters";
 
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
-    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const std::set<RouterType> &bypassTypeSet)
+    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const std::set<RouterType> &bypassTypeSet,
+    const uint32_t streamId)
 {
     for (auto &router : mediaRenderRouters_) {
         RouterType usedType = router->GetRouterType();
@@ -48,7 +49,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
             AUDIO_INFO_LOG("Fetch media render device bypass %{public}d", usedType);
             continue;
         }
-        shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
+        shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID, streamId);
         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = usedType;
             return desc;
@@ -58,12 +59,12 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
-    FetchDeviceInfo &info, RouterType &routerType, const RouterType &bypassType)
+    FetchDeviceInfo &info, RouterType &routerType, const RouterType &bypassType, const uint32_t streamId)
 {
     if (vehiclePriority_.load()) {
         // fetch by higher priority router
         shared_ptr<AudioDeviceDescriptor> desc = FetchMediaRenderDevice(info.streamUsage, info.clientUID, routerType,
-            {bypassType, ROUTER_TYPE_PRIVACY_PRIORITY});
+            {bypassType, ROUTER_TYPE_PRIVACY_PRIORITY}, streamId);
         static std::set<RouterType> higherRouterSet = {
             ROUTER_TYPE_APP_SELECT, ROUTER_TYPE_USER_SELECT, ROUTER_TYPE_PAIR_DEVICE};
         CHECK_AND_RETURN_RET(higherRouterSet.count(routerType) == 0, desc);
@@ -71,7 +72,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
 
         // no privacy device or not wireless privacy device
         shared_ptr<AudioDeviceDescriptor> privacyDesc = FetchMediaRenderDevice(info.streamUsage, info.clientUID,
-            mediaRenderRouters_, ROUTER_TYPE_PRIVACY_PRIORITY);
+            mediaRenderRouters_, ROUTER_TYPE_PRIVACY_PRIORITY, streamId);
         CHECK_AND_RETURN_RET(privacyDesc!=nullptr && privacyDesc->deviceType_!=DEVICE_TYPE_NONE, desc);
         routerType = ROUTER_TYPE_PRIVACY_PRIORITY;
         CHECK_AND_RETURN_RET(IsWirelessPrivacyDevice(privacyDesc), privacyDesc);
@@ -93,18 +94,18 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
 
         return privacyDesc;
     } else {
-        return FetchMediaRenderDevice(info.streamUsage, info.clientUID, routerType, {bypassType});
+        return FetchMediaRenderDevice(info.streamUsage, info.clientUID, routerType, {bypassType}, streamId);
     }
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
-    std::vector<std::unique_ptr<RouterBase>> &routers, const RouterType routerType)
+    std::vector<std::unique_ptr<RouterBase>> &routers, const RouterType routerType, const uint32_t streamId)
 {
     auto it = std::find_if(routers.begin(), routers.end(), [routerType](const auto &router) {
         return router->GetRouterType() == routerType;
     });
     CHECK_AND_RETURN_RET_LOG(it != routers.end(), std::make_shared<AudioDeviceDescriptor>(), "miss target router");
-    return (*it)->GetMediaRenderDevice(streamUsage, clientUID);
+    return (*it)->GetMediaRenderDevice(streamUsage, clientUID, streamId);
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
@@ -223,7 +224,7 @@ void AudioRouterCenter::PostProcessOutPutDeviceLog(std::vector<std::shared_ptr<A
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::MediaFollowRingStrategy(FetchDeviceInfo &info,
-    StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType)
+    StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType, const uint32_t streamId)
 {
     FetchDeviceInfo ringInfo = {
         ringStreamUsage, ringStreamUsage, info.clientUID, routerType, info.audioPipeType, info.privacyType
@@ -237,7 +238,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::MediaFollowRingStrateg
         return ringDevices[0];
     }
     AUDIO_INFO_LOG("Media follow ring strategy fallback");
-    return FetchMediaRenderDevice(info, routerType, bypassType);
+    return FetchMediaRenderDevice(info, routerType, bypassType, streamId);
 }
 
 bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
@@ -286,9 +287,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         } else if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
             StreamUsage ringStreamUsage = (audioScene == AUDIO_SCENE_RINGING) ?
                 STREAM_USAGE_RINGTONE : STREAM_USAGE_VOICE_RINGTONE;
-            desc = MediaFollowRingStrategy(bak, ringStreamUsage, routerType, bak.bypassType);
+            desc = MediaFollowRingStrategy(bak, ringStreamUsage, routerType, bak.bypassType, info.streamId);
         } else {
-            desc = FetchMediaRenderDevice(bak, routerType, bak.bypassType);
+            desc = FetchMediaRenderDevice(bak, routerType, bak.bypassType, info.streamId);
         }
         descs.push_back(move(desc));
     } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {

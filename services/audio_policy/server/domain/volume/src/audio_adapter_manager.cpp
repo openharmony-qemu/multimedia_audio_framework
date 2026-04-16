@@ -1612,6 +1612,8 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
         std::string idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
         IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
+        attr.routeFlag = pipeInfo->routeFlag_;
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         result = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
@@ -1705,6 +1707,9 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
                 idInfo = HDI_ID_INFO_VOIP;
             }
+        } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_INTERPHONE) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_INTERPHONE;
         }
     } else if (pipeInfo->adapterName_ == "primary_extra") {
         idType = HDI_ID_TYPE_PRIMARY;
@@ -1755,6 +1760,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_RAW_AI) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_RAW_AI;
+        }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_INTERPHONE) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_INTERPHONE;
         }
     } else if (pipeInfo->adapterName_ == "usb") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {

@@ -350,10 +350,59 @@ napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendere
         GetStreamInfo(env, &(opts->streamInfo), res);
     }
 
+    status = napi_get_named_property(env, in, "appInfo", &res);
+    if (status == napi_ok) {
+        GetAppInfo(env, &(opts->appInfo), res);
+    }
+
     int32_t intValue = {};
     status = GetValueInt32(env, "privacyType", intValue, in);
     if (status == napi_ok) {
         opts->privacyType = static_cast<AudioPrivacyType>(intValue);
+    }
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAppInfo(const napi_env &env, AppInfo *appInfo, napi_value in)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, napi_invalid_arg,
+        "GetAppInfo failed, valueType is not object");
+
+    int32_t intValue = {0};
+    napi_status status = GetValueInt32(env, "appUid", intValue, in);
+    if (status == napi_ok) {
+        appInfo->appUid = intValue;
+    }
+
+    status = GetValueInt32(env, "appPid", intValue, in);
+    if (status == napi_ok) {
+        appInfo->appPid = intValue;
+    }
+
+    napi_value res = nullptr;
+    status = napi_get_named_property(env, in, "appTokenId", &res);
+    if (status == napi_ok) {
+        uint32_t uintValue = {0};
+        status = GetValueUInt32(env, uintValue, res);
+        if (status == napi_ok) {
+            appInfo->appTokenId = uintValue;
+        }
+    }
+
+    int64_t int64Value = {0};
+    status = GetValueInt64(env, "appFullTokenId", int64Value, in);
+    if (status == napi_ok) {
+        CHECK_AND_RETURN_RET_LOG(int64Value >= 0, napi_invalid_arg, "appFullTokenId is invalid negative value");
+        appInfo->appFullTokenId = static_cast<uint64_t>(int64Value);
+    }
+
+    std::string strValue = "";
+    strValue = GetPropertyString(env, in, "deviceId");
+    if (!strValue.empty()) {
+        appInfo->deviceId = strValue;
     }
 
     return napi_ok;

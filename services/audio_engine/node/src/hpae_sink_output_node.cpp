@@ -24,6 +24,7 @@
 #include "audio_utils.h"
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -102,6 +103,9 @@ void HpaeSinkOutputNode::DoProcess()
     Trace trace("HpaeSinkOutputNode::DoProcess " + GetTraceInfo());
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        return;
+    }
+    if (GetNodeInfo().routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
         return;
     }
 
@@ -221,9 +225,11 @@ void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     if (deviceNetId.empty()) {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true);
+        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true,
+            true, GetNodeInfo().routeFlag);
     } else {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, true);
+        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, true, true,
+            GetNodeInfo().routeFlag);
     }
 
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);

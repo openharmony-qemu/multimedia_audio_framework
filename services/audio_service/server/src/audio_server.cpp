@@ -47,6 +47,7 @@
 #include "audio_utils.h"
 #include "async_action_handler.h"
 #include "audio_asr.h"
+#include "audio_stream_enum.h"
 
 #include "audio_service.h"
 #include "core_service_handler.h"
@@ -176,6 +177,7 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_UNPROCESSED,
     SOURCE_TYPE_LIVE,
     SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
+    SOURCE_TYPE_INTERPHONE,
 };
 
 const std::set<std::string> ASR_FORBIDDEN_KEYS = {
@@ -228,6 +230,7 @@ static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_UNPROCESSED,
     SOURCE_TYPE_LIVE,
     SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
+    SOURCE_TYPE_INTERPHONE,
 };
 
 static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
@@ -281,6 +284,7 @@ static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag
         {HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION},
         {HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT}
     };
@@ -344,6 +348,11 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
         GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
         ultrasonicSource->UpdateActiveDevice(type);
+    }
+    std::shared_ptr<IAudioCaptureSource> interphoneSource =
+        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
+    if (interphoneSource != nullptr && interphoneSource->IsInited()) {
+        interphoneSource->UpdateActiveDevice(type);
     }
     std::shared_ptr<IAudioCaptureSource> voiceRecognitionSource =
         GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION);
@@ -1512,6 +1521,16 @@ int32_t AudioServer::SetVoiceVolume(float volume)
         callingUid);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+
+    std::string info = HDI_ID_INFO_INTERPHONE;
+    std::string deviceClass = "primary";
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass.c_str(), info, true, false,
+        AUDIO_OUTPUT_FLAG_INTERPHONE);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id, false);
+    if (sink != nullptr) {
+        sink->SetVolume(volume, volume);
+        audioD2DValue_ = volume;
+    }
 
     if (deviceManager == nullptr) {
         AUDIO_WARNING_LOG("device manager is null.");
@@ -2806,7 +2825,8 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         if (type == HDI_ID_TYPE_PRIMARY) {
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
             info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
-            info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI;
+            info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI ||
+            info == HDI_ID_INFO_INTERPHONE;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {
@@ -3220,7 +3240,8 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
 
-    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
+    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true, true,
+        attr.routeFlag);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
     CHECK_AND_RETURN_RET(deviceClass != "Virtual_Injector", SUCCESS);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
@@ -3233,6 +3254,14 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         // preSet a2dpParam needs to guarantee that init() and SetA2dpAudioParameter() not called in concurrency.
         std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
         sink->Init(attr);
+        if (attr.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+            DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+            Volume vol = {false, 0.0f, 0};
+            PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);
+            float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
+            sink->SetVolume(systemVol, systemVol);
+            AUDIO_INFO_LOG("interphone CreateHdiSinkPort sink->SetVolume volume=%{public}f", systemVol);
+        }
     }
 
     (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?

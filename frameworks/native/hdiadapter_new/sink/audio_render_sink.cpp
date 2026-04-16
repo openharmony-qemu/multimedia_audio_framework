@@ -38,19 +38,21 @@ namespace AudioStandard {
 namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
+static constexpr uint32_t AUDIO_D2D = 12;
 
 const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
     {HDI_ID_INFO_USB, HDI_RENDER_OFFSET_USB},
     {HDI_ID_INFO_DP, HDI_RENDER_OFFSET_DP},
     {HDI_ID_INFO_VOIP, HDI_RENDER_OFFSET_VOIP},
     {HDI_ID_INFO_DIRECT, HDI_RENDER_OFFSET_DIRECT},
+    {HDI_ID_INFO_INTERPHONE, HDI_RENDER_OFFSET_INTERPHONE},
     {HDI_ID_INFO_PRIMARY_EXTRA_TYPEC, HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC},
     {HDI_ID_INFO_PRIMARY_EXTRA_3RD, HDI_RENDER_OFFSET_PRIMARY_EXTRA_3RD},
     {HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS},
     {HDI_ID_INFO_PRIMARY_EXTRA_HDMI, HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI},
 };
-
 }
+
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
     : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP)
 {
@@ -124,6 +126,8 @@ int32_t AudioRenderSink::Start(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Start");
+    struct AudioSampleAttributes attrInfo = {};
+    audioRender_->GetSampleAttributes(audioRender_, &attrInfo);
 #ifdef FEATURE_POWER_MANAGER
     AudioXCollie audioXCollie("AudioRenderSink::CreateRunningLock", TIMEOUT_SECONDS_10,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -851,6 +855,9 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GetUniqueId());
     param.type = AUDIO_IN_MEDIA;
+    if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+        param.type = static_cast<AudioCategory>(AUDIO_D2D);
+    }
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;

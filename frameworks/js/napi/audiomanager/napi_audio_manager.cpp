@@ -1671,9 +1671,6 @@ napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_
 
 napi_value NapiAudioManager::GetDeviceEnhanceManager(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     napi_status status;
     size_t argCount = 0;
     status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
