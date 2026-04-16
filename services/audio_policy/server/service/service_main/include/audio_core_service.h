@@ -319,6 +319,7 @@ public:
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);
+    void ForceStopInterphoneRenderer();
 
     // ICoreServiceProvider from EventEntry
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
@@ -614,6 +615,7 @@ private:
     bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportOutputInterPhone(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsDeviceSwitching(const AudioStreamDeviceChangeReasonExt reason);
 
     void AddSessionId(const uint32_t sessionId);
@@ -722,6 +724,9 @@ private:
     void GetFlagForUltraFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
 
     void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
+    void ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
+    int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, uint32_t& audioFlag);
+    int32_t CheckCapturerStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
     void UnloadInnerCapturerSink(std::string moduleName);
     void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});

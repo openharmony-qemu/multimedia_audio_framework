@@ -71,6 +71,7 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_UNPROCESS_MIC, TYPE_PRIMARY},
     {PRIMARY_VOICE_RECOGNITION_MIC, TYPE_PRIMARY},
     {PRIMARY_RAW_AI_MIC, TYPE_PRIMARY},
+    {PRIMARY_INTERPHON_MIC, TYPE_PRIMARY},
 };
 
 std::set<DeviceType> AudioPolicyUtils::needDeclaredDevices = {
@@ -315,6 +316,7 @@ bool AudioPolicyUtils::IsVoiceStreamType(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+        case StreamUsage::STREAM_USAGE_INTERPHONE:
             result = true;
             break;
         default:
@@ -331,6 +333,7 @@ bool AudioPolicyUtils::IsVoiceSourceType(SourceType sourceType)
     switch (sourceType) {
         case SourceType::SOURCE_TYPE_VOICE_CALL:
         case SourceType::SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SourceType::SOURCE_TYPE_INTERPHONE:
             result = true;
             break;
         default:
@@ -806,7 +809,8 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
     } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC
         || deviceName == PRIMARY_ULTRASONIC_MIC ||
-        deviceName == PRIMARY_VOICE_RECOGNITION_MIC || deviceName == PRIMARY_RAW_AI_MIC) {
+        deviceName == PRIMARY_VOICE_RECOGNITION_MIC || deviceName == PRIMARY_RAW_AI_MIC ||
+        deviceName == PRIMARY_INTERPHON_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
@@ -863,6 +867,7 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_INTERPHONE:
             return AUDIO_CALL_RENDER;
         default:
             return AUDIO_MEDIA_RENDER;

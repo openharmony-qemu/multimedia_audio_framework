@@ -1061,6 +1061,9 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
     }
+    if (rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        return true;
+    }
 
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
         HILOG_COMM_ERROR("[DrainAudioStreamInner]ipcStream is not inited!"));

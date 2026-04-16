@@ -93,6 +93,7 @@ private:
         {"STREAM_USAGE_ANNOUNCEMENT", STREAM_USAGE_ANNOUNCEMENT},
         {"STREAM_USAGE_EMERGENCY", STREAM_USAGE_EMERGENCY},
 #endif
+        {"STREAM_USAGE_INTERPHONE", STREAM_USAGE_INTERPHONE},
     };
 
     const unordered_map<string, SourceType> sourceTypeMap = {
@@ -110,6 +111,7 @@ private:
         {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
         {"SOURCE_TYPE_LIVE", SOURCE_TYPE_LIVE},
         {"SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT", SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT},
+        {"SOURCE_TYPE_INTERPHONE", SOURCE_TYPE_INTERPHONE},
     };
 
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;

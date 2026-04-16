@@ -51,7 +51,7 @@ public:
     uint32_t GetId(HdiIdBase base, HdiIdType type, const std::string &info = HDI_ID_INFO_DEFAULT,
         bool isResident = false, bool tryCreate = true);
     uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT,
-        bool isResident = false, bool tryCreate = true);
+        bool isResident = false, bool tryCreate = true, uint32_t routeFlag = 0);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false,
         uint32_t routeFlag = 0, bool tryCreate = true);

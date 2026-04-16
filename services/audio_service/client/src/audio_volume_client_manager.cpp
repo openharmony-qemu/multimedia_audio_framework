@@ -567,6 +567,7 @@ int32_t AudioVolumeClientManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
         case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_INTERPHONE:
         case STREAM_USAGE_VOICE_ASSISTANT:
         case STREAM_USAGE_ALARM:
         case STREAM_USAGE_VOICE_MESSAGE:
@@ -606,6 +607,7 @@ int32_t AudioVolumeClientManager::GetMinVolumeByUsage(StreamUsage streamUsage)
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
         case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_INTERPHONE:
         case STREAM_USAGE_VOICE_ASSISTANT:
         case STREAM_USAGE_ALARM:
         case STREAM_USAGE_VOICE_MESSAGE:
@@ -645,6 +647,7 @@ int32_t AudioVolumeClientManager::GetVolumeByUsage(StreamUsage streamUsage)
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
         case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_INTERPHONE:
         case STREAM_USAGE_VOICE_ASSISTANT:
         case STREAM_USAGE_ALARM:
         case STREAM_USAGE_VOICE_MESSAGE:
@@ -725,6 +728,7 @@ float AudioVolumeClientManager::GetVolumeInDbByStream(StreamUsage streamUsage,
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
         case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_INTERPHONE:
         case STREAM_USAGE_VOICE_ASSISTANT:
         case STREAM_USAGE_ALARM:
         case STREAM_USAGE_VOICE_MESSAGE:

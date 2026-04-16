@@ -106,7 +106,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_UNPROCESS_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
-    std::string(PRIMARY_RAW_AI_MIC)
+    std::string(PRIMARY_RAW_AI_MIC),
+    std::string(PRIMARY_INTERPHON_MIC)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -1983,7 +1984,8 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
             ((pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI) && (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_UNPROCESS) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_ULTRASONIC) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI))) {
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI) &&
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_INTERPHONE))) {
             audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)),
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }

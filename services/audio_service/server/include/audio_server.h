@@ -524,6 +524,8 @@ private:
     bool isEarpiece_ = false;
     float audioBalanceValue_ = 0.0f;
 
+    float audioD2DValue_ = 0.0f;
+
     // Capturer status flags: each capturer is represented by a single bit.
     // 0 indicates the capturer has stopped; 1 indicates the capturer has started.
     std::atomic<uint64_t> capturerStateFlag_ = 0;
