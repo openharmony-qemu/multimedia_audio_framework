@@ -223,12 +223,12 @@ void AudioRouterCenter::PostProcessOutPutDeviceLog(std::vector<std::shared_ptr<A
     FetchDeviceInfo &bak, RouterType &routerType, const FetchDeviceInfo &info)
 {
     if (descs.size() > 0 && descs[0] != nullptr) {
-        int32_t audioId_ = descs[0]->deviceId_;
+        int32_t audioId = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
         descs[0]->routerType_ = routerType;
         HILOG_COMM_INFO("[FetchOutputDevicesInner][%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], "
             "1st type:[%{public}d], id:[%{public}d], router:%{public}d ", info.caller.c_str(), bak.streamUsage,
-            info.clientUID, descs.size(), type, audioId_, routerType);
+            info.clientUID, descs.size(), type, audioId, routerType);
     }
 }
 
