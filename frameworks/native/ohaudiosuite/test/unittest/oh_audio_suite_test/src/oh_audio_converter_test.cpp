@@ -245,8 +245,6 @@ static int32_t RequestDataCallback_030(void* userData, const void** outInputData
     return DEFAULT_BUFFER_SIZE;
 }
 
-
-
 void OHAudioConverterTest::SetUpTestCase(void) { }
 
 void OHAudioConverterTest::TearDownTestCase(void) { }

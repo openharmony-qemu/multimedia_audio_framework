@@ -38,33 +38,6 @@ struct FormatConverterConfig {
     PcmBufferFormat outputFormat;
 };
 
-// The set of sampling rates supported by format validation
-static const std::unordered_set<AudioSamplingRate> SUPPORTED_SAMPLE_RATES = {
-    AudioSamplingRate::SAMPLE_RATE_8000,
-    AudioSamplingRate::SAMPLE_RATE_11025,
-    AudioSamplingRate::SAMPLE_RATE_12000,
-    AudioSamplingRate::SAMPLE_RATE_16000,
-    AudioSamplingRate::SAMPLE_RATE_22050,
-    AudioSamplingRate::SAMPLE_RATE_24000,
-    AudioSamplingRate::SAMPLE_RATE_32000,
-    AudioSamplingRate::SAMPLE_RATE_44100,
-    AudioSamplingRate::SAMPLE_RATE_48000,
-    AudioSamplingRate::SAMPLE_RATE_64000,
-    AudioSamplingRate::SAMPLE_RATE_88200,
-    AudioSamplingRate::SAMPLE_RATE_96000,
-    AudioSamplingRate::SAMPLE_RATE_176400,
-    AudioSamplingRate::SAMPLE_RATE_192000
-};
-
-// The set of sampling formats supported by format validation
-static const std::unordered_set<AudioSampleFormat> SUPPORTED_SAMPLE_FORMATS = {
-    AudioSampleFormat::SAMPLE_U8,
-    AudioSampleFormat::SAMPLE_S16LE,
-    AudioSampleFormat::SAMPLE_S24LE,
-    AudioSampleFormat::SAMPLE_S32LE,
-    AudioSampleFormat::SAMPLE_F32LE
-};
-
 // Handleable byte calculation parameters
 struct ProcessableBytesCalculationParams {
     uint32_t inputBytesPerFrame;
@@ -94,7 +67,7 @@ struct ProcessingContext {
 class AudioFormatConverterImpl : public IAudioFormatConverter {
 public:
     AudioFormatConverterImpl();
-    ~AudioFormatConverterImpl();
+    ~AudioFormatConverterImpl() override;
 
     // Interface 1: Create - Initialize the converter (with format parameters and format validation)
     int32_t Create(const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat) override;

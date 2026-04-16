@@ -15,7 +15,6 @@
 
 #include "audio_stream_info.h"
 #include "audio_suite_converter_test.h"
-// #include "OHAudioSuiteFormatConverter.h"
 #include "audio_format_converter_impl.h"
 #include "audio_suite_log.h"
 #include <fstream>
@@ -60,6 +59,7 @@ constexpr uint32_t MD5_INIT_STATE_3 = 0x10325476;
 constexpr uint32_t MD5_R1_K8 = 0x698098D8U;
 constexpr uint32_t MD5_R2_K10 = 0xF4D50D87U;
 constexpr int BYTE_WIDTH = 2;
+constexpr int DEFAULT_CHANNEL_COUNT = 2;
 
 static int32_t g_callbackCallCount = 0;
 static int32_t g_callbackDataSize = DEFAULT_BUFFER_SIZE;
@@ -71,7 +71,8 @@ class ReadFileCallback : public AudioSuite::FormatConverterDataCallback {
 public:
     explicit ReadFileCallback(FILE* file) : inputFile_(file) {}
 
-    int32_t OnRequestData(const void** data, AudioSuite::InputDataStatus* status) override {
+    int32_t OnRequestData(const void** data, AudioSuite::InputDataStatus* status) override
+    {
         thread_local uint8_t fileBuffer[FILE_BUFFER_SIZE];
         
         size_t bytesRead = fread(fileBuffer, 1, sizeof(fileBuffer), inputFile_);
@@ -547,7 +548,8 @@ static AudioSuite::PcmBufferFormat SetupInputFormat(const OHConverterTestInfo& i
     format.sampleFormat = info.inputSampleFormat;
     // Obtain the number of channels based on the channel layout.
     auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.inputChannelLayout);
-    format.channelCount = (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : 2;
+    format.channelCount =
+        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
     return format;
 }
 
@@ -559,7 +561,8 @@ static AudioSuite::PcmBufferFormat SetupOutputFormat(const OHConverterTestInfo& 
     format.sampleFormat = info.outputSampleFormat;
     // Obtain the number of channels based on the channel layout.
     auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.outputChannelLayout);
-    format.channelCount = (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : 2;
+    format.channelCount =
+        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
     return format;
 }
 

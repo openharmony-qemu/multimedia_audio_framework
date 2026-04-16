@@ -68,7 +68,7 @@ typedef enum {
 } AudioStreamEncodingType;
 
 // Channel layout to channel number mapping table
-inline static std::unordered_map<AudioChannelLayout, AudioChannel> LAYOUT_TO_CHANNEL = {
+inline static const std::unordered_map<AudioChannelLayout, AudioChannel> LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
     {AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX, AudioChannel::STEREO},

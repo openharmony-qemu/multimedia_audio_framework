@@ -26,9 +26,34 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-namespace {
-    constexpr int32_t MAX_CALLBACK_DATA_SIZE = 400 * 1024; // 400KB
-}
+// The set of sampling rates supported by format validation
+static const std::unordered_set<AudioSamplingRate> SUPPORTED_SAMPLE_RATES = {
+    AudioSamplingRate::SAMPLE_RATE_8000,
+    AudioSamplingRate::SAMPLE_RATE_11025,
+    AudioSamplingRate::SAMPLE_RATE_12000,
+    AudioSamplingRate::SAMPLE_RATE_16000,
+    AudioSamplingRate::SAMPLE_RATE_22050,
+    AudioSamplingRate::SAMPLE_RATE_24000,
+    AudioSamplingRate::SAMPLE_RATE_32000,
+    AudioSamplingRate::SAMPLE_RATE_44100,
+    AudioSamplingRate::SAMPLE_RATE_48000,
+    AudioSamplingRate::SAMPLE_RATE_64000,
+    AudioSamplingRate::SAMPLE_RATE_88200,
+    AudioSamplingRate::SAMPLE_RATE_96000,
+    AudioSamplingRate::SAMPLE_RATE_176400,
+    AudioSamplingRate::SAMPLE_RATE_192000
+};
+
+// The set of sampling formats supported by format validation
+static const std::unordered_set<AudioSampleFormat> SUPPORTED_SAMPLE_FORMATS = {
+    AudioSampleFormat::SAMPLE_U8,
+    AudioSampleFormat::SAMPLE_S16LE,
+    AudioSampleFormat::SAMPLE_S24LE,
+    AudioSampleFormat::SAMPLE_S32LE,
+    AudioSampleFormat::SAMPLE_F32LE
+};
+
+constexpr int32_t MAX_CALLBACK_DATA_SIZE = 400 * 1024; // 400KB
 
 AudioFormatConverterImpl::AudioFormatConverterImpl()
     : inputFinished_(false)
@@ -69,8 +94,8 @@ int32_t AudioFormatConverterImpl::Create(const PcmBufferFormat& inputFormat, con
     outputFormat_ = outputFormat;
 
     AUDIO_DEBUG_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
-        inputFormat.sampleRate, LAYOUT_TO_CHANNEL[inputFormat.channelLayout],
-        outputFormat.sampleRate, LAYOUT_TO_CHANNEL[outputFormat.channelLayout]);
+        inputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(inputFormat.channelLayout),
+        outputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(outputFormat.channelLayout));
 
     // Create a format conversion instance
     formatConversion_ = std::make_unique<AudioSuiteFormatConversion>();
@@ -92,11 +117,14 @@ uint32_t AudioFormatConverterImpl::CalculateMinBytesForIntMs(uint32_t inputBytes
 {
     uint64_t inputBytesPerSec = static_cast<uint64_t>(inputFormat_.sampleRate) * inputBytesPerFrame;
 
-    uint64_t gcd = std::gcd(static_cast<uint64_t>(inputFormat_.sampleRate),
-                           static_cast<uint64_t>(outputFormat_.sampleRate));
+    uint64_t gcd =
+        std::gcd(static_cast<uint64_t>(inputFormat_.sampleRate), static_cast<uint64_t>(outputFormat_.sampleRate));
     uint64_t gcdSecond = std::gcd(gcd, SECONDS_TO_MS);
+    CHECK_AND_RETURN_RET_LOG(
+        gcdSecond != 0, ERR_OPERATION_FAILED, "The minimum processing time cannot be divided by zero.");
     uint32_t minTimeMs = static_cast<uint32_t>(SECONDS_TO_MS / gcdSecond);
-
+    CHECK_AND_RETURN_RET_LOG(
+        SECONDS_TO_MS != 0, ERR_OPERATION_FAILED, "The minimum number of bytes to process cannot be divided by zero.");
     return static_cast<uint32_t>(inputBytesPerSec * minTimeMs / SECONDS_TO_MS);
 }
 
@@ -375,9 +403,9 @@ int32_t AudioFormatConverterImpl::ProcessCachedOutputData(void* audioData, uint3
     }
 
     AUDIO_DEBUG_LOG(
-    "ProcessCachedOutputData: returned %{public}u bytes from cached output data, remaining cached: %{public}zu",
-    bytesToCopy,
-    cachedOutputData_.size());
+        "ProcessCachedOutputData: returned %{public}u bytes from cached output data, remaining cached: %{public}zu",
+        bytesToCopy,
+        cachedOutputData_.size());
     return SUCCESS;
 }
 

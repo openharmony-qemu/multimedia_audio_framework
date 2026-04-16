@@ -48,10 +48,12 @@ static std::atomic<int32_t> g_globalDestroyCount(0);
 // CAPI callback implementation class (adapter pattern)
 class ConverterDataCallbackImpl : public AudioSuite::FormatConverterDataCallback {
 public:
-    ConverterDataCallbackImpl(OH_AudioConverter_RequestDataCallback callback, void* userData)
-        : callback_(callback), userData_(userData) {}
+    ConverterDataCallbackImpl(OH_AudioConverter_RequestDataCallback callback, void *userData)
+        : callback_(callback), userData_(userData)
+    {}
 
-    int32_t OnRequestData(const void** data, AudioSuite::InputDataStatus* status) override {
+    int32_t OnRequestData(const void** data, AudioSuite::InputDataStatus* status) override
+    {
         CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, -1, "The callback function pointer is nullptr.");
 
         OH_AudioConverter_InputStatus cStatus;
@@ -65,7 +67,7 @@ public:
 
 private:
     OH_AudioConverter_RequestDataCallback callback_;
-    void* userData_;
+    void *userData_;
 };
 
 static std::unordered_map<OH_AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
@@ -279,7 +281,6 @@ OH_AudioConverter_Result OHAudioConverter::Create(
     CHECK_AND_RETURN_RET_LOG(
         impl_ != nullptr, AUDIOCONVERTER_ERROR_MEMORY_ALLOC_FAILED, "Create failed: memory alloc failed");
 
-    // Call the Create method of InnerAPI, passing in the input and output format parameters (format validation is performed in InnerAPI).
     int32_t ret = impl_->Create(inputFormat_, outputFormat_);
     return ConvertConverterError(ret);
 }
