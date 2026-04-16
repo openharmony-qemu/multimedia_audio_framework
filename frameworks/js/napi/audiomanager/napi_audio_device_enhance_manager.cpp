@@ -124,9 +124,6 @@ napi_value NapiAudioDeviceEnhanceManager::CreateDeviceEnhanceManagerWrapper(napi
 
 napi_value NapiAudioDeviceEnhanceManager::IsEnhancedRoutingSupported(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("IsEnhancedRoutingSupported failed : no memory");
@@ -155,9 +152,6 @@ napi_value NapiAudioDeviceEnhanceManager::IsEnhancedRoutingSupported(napi_env en
 
 napi_value NapiAudioDeviceEnhanceManager::SelectOutputDevice(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectOutputDevice failed : no memory");
@@ -198,9 +192,6 @@ napi_value NapiAudioDeviceEnhanceManager::SelectOutputDevice(napi_env env, napi_
 
 napi_value NapiAudioDeviceEnhanceManager::SelectInputDevice(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectInputDevice failed : no memory");
@@ -241,9 +232,6 @@ napi_value NapiAudioDeviceEnhanceManager::SelectInputDevice(napi_env env, napi_c
 
 napi_value NapiAudioDeviceEnhanceManager::SelectOutputDeviceForAudioRenderer(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectOutputDeviceForAudioRenderer failed : no memory");
@@ -287,9 +275,6 @@ napi_value NapiAudioDeviceEnhanceManager::SelectOutputDeviceForAudioRenderer(nap
 
 napi_value NapiAudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectInputDeviceForAudioCapturer failed : no memory");

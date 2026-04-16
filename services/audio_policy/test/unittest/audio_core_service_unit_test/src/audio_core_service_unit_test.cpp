@@ -1401,10 +1401,10 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredOutputDeviceDescriptors_001, Test
         AudioRendererInfo rendererInfo;
         rendererInfo.streamUsage = STREAM_USAGE_INVALID;
         string networkId = REMOTE_NETWORK_ID;
-        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, -1, networkId);
 
         rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, -1, networkId);
     );
 }
 

@@ -38,10 +38,6 @@ AudioDeviceEnhanceManagerImpl::~AudioDeviceEnhanceManagerImpl() = default;
 
 AudioDeviceEnhanceManager AudioDeviceEnhanceManagerImpl::CreateDeviceEnhanceManagerWrapper()
 {
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return make_holder<AudioDeviceEnhanceManagerImpl, AudioDeviceEnhanceManager>(nullptr);
-    }
     auto audioDeviceEnhanceManagerImpl = std::make_shared<AudioDeviceEnhanceManagerImpl>();
     if (audioDeviceEnhanceManagerImpl != nullptr) {
         audioDeviceEnhanceManagerImpl->audioDeviceEnhanceMngr_ =
@@ -55,10 +51,6 @@ AudioDeviceEnhanceManager AudioDeviceEnhanceManagerImpl::CreateDeviceEnhanceMana
 bool AudioDeviceEnhanceManagerImpl::IsEnhancedRoutingSupported()
 {
     bool supported = false;
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return supported;
-    }
     if (audioDeviceEnhanceMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDeviceEnhanceMngr_ is nullptr");
         return supported;
@@ -73,10 +65,6 @@ bool AudioDeviceEnhanceManagerImpl::IsEnhancedRoutingSupported()
 
 void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceSync(AudioDeviceDescriptor deviceDescriptor)
 {
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return;
-    }
     std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> selectedAudioDevice =
         std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
     bool argTransFlag = true;
@@ -95,11 +83,6 @@ void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceSync(AudioDeviceDescriptor
 void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceForAudioRendererSync(
     weak::AudioRenderer renderer, AudioDeviceDescriptor deviceDescriptor)
 {
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return;
-    }
-
     AudioRendererImpl *taiheRenderer = reinterpret_cast<AudioRendererImpl *>(renderer->GetImplPtr());
     if (taiheRenderer == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "renderer impl is nullptr");
@@ -128,10 +111,6 @@ void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceForAudioRendererSync(
 
 void AudioDeviceEnhanceManagerImpl::SelectInputDeviceSync(AudioDeviceDescriptor deviceDescriptor)
 {
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return;
-    }
     std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> selectedAudioDevice =
         std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
     bool argTransFlag = true;
@@ -150,11 +129,6 @@ void AudioDeviceEnhanceManagerImpl::SelectInputDeviceSync(AudioDeviceDescriptor 
 void AudioDeviceEnhanceManagerImpl::SelectInputDeviceForAudioCapturerSync(
     weak::AudioCapturer capturer, AudioDeviceDescriptor deviceDescriptor)
 {
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return;
-    }
-
     AudioCapturerImpl *taiheCapturer = reinterpret_cast<AudioCapturerImpl *>(capturer->GetImplPtr());
     if (taiheCapturer == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "capturer impl is nullptr");

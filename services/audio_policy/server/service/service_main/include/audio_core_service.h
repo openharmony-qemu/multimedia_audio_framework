@@ -196,7 +196,7 @@ public:
         // Functions related to get operations - device related
         bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-            AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
+            AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId = LOCAL_NETWORK_ID);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
             AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId = LOCAL_NETWORK_ID);
         std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
@@ -397,7 +397,7 @@ public:
     // Functions related to get operations - device related
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId);
+        AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();

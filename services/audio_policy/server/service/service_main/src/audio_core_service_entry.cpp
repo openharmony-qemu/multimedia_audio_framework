@@ -371,10 +371,10 @@ int32_t AudioCoreService::EventEntry::SetInputDevice(const DeviceType deviceType
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, std::string networkId)
+    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
+    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, uid, networkId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(

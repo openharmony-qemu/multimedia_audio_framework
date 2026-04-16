@@ -1939,6 +1939,11 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
 }
 
+static inline bool ValidStreamId(uint32_t streamId)
+{
+    return streamId != 0 && streamId != INVALID_STREAM_ID;
+}
+
 enum RouterType {
     /**
      * None router.
@@ -2213,6 +2218,7 @@ struct FetchDeviceInfo : public Parcelable {
     std::string caller = "";
     std::string bundleName = "";
     RouterType bypassType = ROUTER_TYPE_NONE;
+    int32_t streamId = INVALID_STREAM_ID;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)

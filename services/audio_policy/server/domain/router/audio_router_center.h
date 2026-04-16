@@ -111,11 +111,14 @@ private:
     ~AudioRouterCenter() {}
 
     shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
-        RouterType &routerType, const std::set<RouterType> &bypassTypeSet);
+        RouterType &routerType, const std::set<RouterType> &bypassTypeSet,
+        const uint32_t streamId = INVALID_STREAM_ID);
     shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(FetchDeviceInfo &info,
-        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
+        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
+        const uint32_t streamId = INVALID_STREAM_ID);
     shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
-        std::vector<std::unique_ptr<RouterBase>> &routers, const RouterType routerType);
+        std::vector<std::unique_ptr<RouterBase>> &routers, const RouterType routerType,
+        const uint32_t streamId = INVALID_STREAM_ID);
     shared_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
         const RouterType &bypassWithSco = RouterType::ROUTER_TYPE_NONE);
@@ -156,7 +159,8 @@ private:
     void PostProcessOutPutDeviceLog(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         FetchDeviceInfo &bak, RouterType &routerType, const FetchDeviceInfo &info);
     std::shared_ptr<AudioDeviceDescriptor> MediaFollowRingStrategy(FetchDeviceInfo &info,
-        StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType);
+        StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType,
+        const uint32_t streamId = INVALID_STREAM_ID);
     bool IsWirelessPrivacyDevice(shared_ptr<AudioDeviceDescriptor> desc);
     bool IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc);
 };
