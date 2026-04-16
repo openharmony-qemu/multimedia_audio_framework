@@ -31,6 +31,7 @@ if (audio_framework_feature_audiosuite_support) {
     include_dirs = [
       "./tool",
       "../../client/manager/include",
+      "../../client/converter/include",
       "../../client/node/include",
       "../../client/utils/include",
       "../../../audio_engine/buffer",
@@ -40,6 +41,7 @@ if (audio_framework_feature_audiosuite_support) {
       "../../../../interfaces/inner_api/native/audiocommon/include",
       "../../../../interfaces/inner_api/native/audiosuite/include",
       "../../../audio_engine/node/include",
+      "./converter/include",
     ]
   }
 
@@ -66,6 +68,37 @@ if (audio_framework_feature_audiosuite_support) {
       "../../:audio_suite_static",
     ]
 
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "googletest:gmock",
+      "hilog:libhilog",
+    ]
+  }
+
+  ohos_unittest("audio_suite_converter_test") {
+    module_out_path = module_output_path
+    sources = [
+      "tool/audio_suite_unittest_tools.cpp",
+      "converter/src/audio_suite_converter_test.cpp",
+    ]
+ 
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+ 
+    configs = [ ":audio_suite_unit_config" ]
+ 
+    deps = [
+      "../../:audio_suite_static",
+    ]
+ 
     external_deps = [
       "c_utils:utils",
       "googletest:gtest",
