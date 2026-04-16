@@ -1034,8 +1034,7 @@ void AudioSpatializationService::UpdateSpatialStateToNewDevice(const AudioSpatia
     CHECK_AND_RETURN(!addressToSpatialEnabledMap_.count(encryptedAddress));
     addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled =
         audioSpatialDeviceState.isSpatializationSupported;
-    addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled =
-        audioSpatialDeviceState.isSpatializationSupported;
+    addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled = false;
 }
 } // namespace AudioStandard
 } // namespace OHOS
