@@ -73,7 +73,7 @@ HWTEST_F(AudioInterphoneBranchUnitTest, TestPipeTypeInInterphoneBranch, TestSize
     MockNative::Mock();
 
     uint32_t flag = AUDIO_INPUT_FLAG_INTERPHONE;
-    AudioPipeType pipeType = AudioPipeSelector::GetPipeSelector()->GetInputPipeType(flag);
+    AudioPipeType pipeType = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, AUDIO_MODE_RECORD);
     EXPECT_EQ(PIPE_TYPE_IN_INTERPHONE, pipeType);
 
     MockNative::Resume();
