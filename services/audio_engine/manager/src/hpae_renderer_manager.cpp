@@ -1058,8 +1058,7 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo,
 int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
 {
     HpaeNodeInfo nodeInfo;
-    int32_t checkRet = CheckFramelen(sinkInfo_);
-    if (checkRet != SUCCESS) {
+    if (auto checkRet = CheckFramelen(sinkInfo_); checkRet != SUCCESS) {
         if (isNeedCallBack == true) {
             TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                 sinkInfo_.deviceName, ERR_INVALID_PARAM);
