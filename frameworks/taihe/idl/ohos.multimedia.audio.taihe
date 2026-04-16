@@ -246,10 +246,18 @@ struct AudioCapturerFilter {
   capturerInfo: Optional<AudioCapturerInfo>;
 }
 
+struct AppIdInfo {
+  appUid: i32;
+  appPid: i32;
+  appTokenId: i32;
+  appFullTokenId: i64;
+}
+
 struct AudioRendererOptions {
   streamInfo: AudioStreamInfo;
   rendererInfo: AudioRendererInfo;
   privacyType: Optional<AudioPrivacyType>;
+  originalAppIdInfo: Optional<AppIdInfo>;
 }
 
 enum AudioPrivacyType: i32 {
