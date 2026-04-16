@@ -1498,7 +1498,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
 
     if (networkId == LOCAL_NETWORK_ID) {
         RouterType routerType = ROUTER_TYPE_NONE;
-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, uid, routerType);
+        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(
+            captureInfo.sourceType, uid, routerType);
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr");
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
@@ -3524,7 +3525,8 @@ int32_t AudioCoreService::FetchTargetInfoForSessionAdd(const SessionInfo session
 
     if (isEcFeatureEnable_) {
         RouterType routerType = ROUTER_TYPE_NONE;
-        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1, routerType);
+        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(
+            targetSourceType, -1, routerType);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channels_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
