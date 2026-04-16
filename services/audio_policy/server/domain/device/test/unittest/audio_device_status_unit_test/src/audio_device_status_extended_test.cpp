@@ -486,19 +486,16 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_028, TestSize.Level4)
     audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 
-    reason = AudioStreamDeviceChangeReason::UNKNOWN;
     desc.deviceCategory_ = BT_HEADPHONE;
     desc.deviceType_ = DEVICE_TYPE_DP;
     audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 
-    reason = AudioStreamDeviceChangeReason::UNKNOWN;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     desc.deviceType_ = DEVICE_TYPE_NEARLINK;
     audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 
-    reason = AudioStreamDeviceChangeReason::UNKNOWN;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     desc.deviceType_ = DEVICE_TYPE_DP;
     audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
