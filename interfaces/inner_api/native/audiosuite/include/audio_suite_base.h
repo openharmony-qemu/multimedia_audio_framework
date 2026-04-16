@@ -67,7 +67,7 @@ typedef enum {
     ENCODING_TYPE_E_AC3 = 2,
 } AudioStreamEncodingType;
 
-// 声道布局到声道数的映射表
+// Channel layout to channel number mapping table
 inline static std::unordered_map<AudioChannelLayout, AudioChannel> LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},

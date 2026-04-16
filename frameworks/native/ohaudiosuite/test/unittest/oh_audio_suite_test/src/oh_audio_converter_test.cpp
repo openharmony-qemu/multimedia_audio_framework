@@ -1603,12 +1603,11 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_036, TestSize.Level0)
 }
 
 
-// 多线程测试相关
+// Multithreaded testing related
 static std::atomic<int32_t> g_mtCallbackCallCount(0);
 static std::atomic<int32_t> g_mtSuccessCount(0);
 static std::atomic<int32_t> g_mtFailCount(0);
 
-// 多线程测试回调函数
 static int32_t RequestDataCallbackMultithread(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
 {
@@ -1624,7 +1623,6 @@ static int32_t RequestDataCallbackMultithread(void* userData, const void** outIn
     return DEFAULT_BUFFER_SIZE;
 }
 
-// 单个线程的创建/销毁测试任务（用于 Multithread_002）
 static void ThreadCreateDestroyTask(int iterations)
 {
     for (int j = 0; j < iterations; j++) {
@@ -1651,7 +1649,7 @@ static void ThreadCreateDestroyTask(int iterations)
     }
 }
 
-// 单个线程的测试任务
+// Single-threaded test task
 static void ThreadTestTask(int threadId, int iterations)
 {
     for (int i = 0; i < iterations; i++) {
@@ -1768,18 +1766,17 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_001, TestSize.Le
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // 使用小数据量的回调，确保缓存能被完全消耗
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallbackCustomSize, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    g_callbackDataSize = 100;  // 设置较小的数据量
+    g_callbackDataSize = 100;  // Set smaller data size
 
     uint8_t outputData[LARGE_BUFFER_SIZE] = {0};
     int32_t outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // 继续调用直到没有更多数据
+    // Continue calling until there is no more data.
     int32_t totalOutput = outputSize;
     int32_t maxIterations = 10;
     int32_t iterations = 0;
@@ -1823,13 +1820,13 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_002, TestSize.Le
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallbackHaveData, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // 使用非帧对齐的输出容量 (STEREO + S16LE = 4 bytes per frame, 1022 is not divisible by 4)
+    // Using non-frame aligned output capacity (STEREO + S16LE = 4 bytes per frame, 1022 is not divisible by 4)
     uint8_t outputData[CUSTOM_BUFFER_SIZE_1022] = {0};
     int32_t outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // 输出大小应该是帧对齐的 (4的倍数)
+    // The output size should be frame-aligned (a multiple of 4).
     EXPECT_EQ(outputSize % 4, 0);
 
     OH_AudioConverter_Destroy(converter);
@@ -1858,7 +1855,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_003, TestSize.Le
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // 第一次调用产生缓存数据
+    // The first call generates cached data.
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_016, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
@@ -1867,7 +1864,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_003, TestSize.Le
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // 第二次调用，可能使用剩余的缓存数据（部分复制分支）
+    // The second call may use the remaining cached data (partially copied branch).
     outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);

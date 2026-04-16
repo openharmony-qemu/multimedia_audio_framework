@@ -45,7 +45,7 @@ using namespace OHOS::AudioStandard;
 static std::atomic<int32_t> g_globalCreateCount(0);
 static std::atomic<int32_t> g_globalDestroyCount(0);
 
-// CAPI 回调实现类（适配器模式）
+// CAPI callback implementation class (adapter pattern)
 class ConverterDataCallbackImpl : public AudioSuite::FormatConverterDataCallback {
 public:
     ConverterDataCallbackImpl(OH_AudioConverter_RequestDataCallback callback, void* userData)
@@ -57,7 +57,7 @@ public:
         OH_AudioConverter_InputStatus cStatus;
         int32_t size = callback_(userData_, data, &cStatus);
 
-        // 枚举类型转换：OH_AudioConverter_InputStatus -> InputDataStatus
+        // Enumeration type conversion: OH_AudioConverter_InputStatus -> InputDataStatus
         *status = static_cast<AudioSuite::InputDataStatus>(cStatus);
 
         return size;
@@ -103,7 +103,7 @@ static std::unordered_map<OH_AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHA
     {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
 };
 
-// 统一的 InnerAPI 错误码到 CAPI 错误码映射函数
+// Unified InnerAPI error code to CAPI error code mapping function
 static OH_AudioConverter_Result ConvertConverterError(int32_t err)
 {
     switch (err) {
@@ -129,8 +129,6 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
             return AUDIOCONVERTER_ERROR_SYSTEM;
     }
 }
-
-// SUPPORTED_SAMPLE_RATES 和 SUPPORTED_SAMPLE_FORMATS 已移至 InnerAPI 中进行校验
 
 static OHAudioConverter *ConvertAudioSuiteConverter(OH_AudioConverter *audioSuiteConverter)
 {
@@ -267,7 +265,7 @@ OH_AudioConverter_Result OHAudioConverter::Create(
         AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT,
         "Create failed: unsupported audio encoding");
 
-    // 格式转换：OH_AudioConverter_Format -> PcmBufferFormat
+    // Format conversion: OH_AudioConverter_Format -> PcmBufferFormat
     ConvertToPcmFormat(inputFormat, outputFormat);
 
     AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
@@ -276,12 +274,12 @@ OH_AudioConverter_Result OHAudioConverter::Create(
         outputFormat->samplingRate,
         MAP_LAYOUT_TO_CHANNEL[outputFormat->channelLayout]);
 
-    // 创建 InnerAPI 实例（无参构造）
+    // Create an InnerAPI instance (no-argument constructor)
     impl_ = std::make_unique<AudioSuite::AudioFormatConverterImpl>();
     CHECK_AND_RETURN_RET_LOG(
         impl_ != nullptr, AUDIOCONVERTER_ERROR_MEMORY_ALLOC_FAILED, "Create failed: memory alloc failed");
 
-    // 调用 InnerAPI 的 Create 方法，传递输入输出格式参数（格式校验在 InnerAPI 中进行）
+    // Call the Create method of InnerAPI, passing in the input and output format parameters (format validation is performed in InnerAPI).
     int32_t ret = impl_->Create(inputFormat_, outputFormat_);
     return ConvertConverterError(ret);
 }
@@ -292,7 +290,6 @@ void OHAudioConverter::Destroy()
 
     if (impl_ != nullptr) {
         impl_->Destroy();
-        impl_.reset();
     }
 
     AUDIO_DEBUG_LOG("Destroy: success");
@@ -309,7 +306,7 @@ OH_AudioConverter_Result OHAudioConverter::SetRequestDataCallback(
 
     std::lock_guard<std::mutex> lock(mutex_);
     int32_t ret = 0;
-    // 创建回调实现类对象并通过 shared_ptr 传递
+    // Create a callback implementation class object and pass it via shared_ptr.
     if (impl_ != nullptr) {
         auto callbackImpl = std::make_shared<ConverterDataCallbackImpl>(callback, userData);
         ret = impl_->SetInputCallback(callbackImpl);

@@ -32,13 +32,13 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-// 格式转换器配置
+// Format converter configuration
 struct FormatConverterConfig {
     PcmBufferFormat inputFormat;
     PcmBufferFormat outputFormat;
 };
 
-// 格式校验支持的采样率集合
+// The set of sampling rates supported by format validation
 static const std::unordered_set<AudioSamplingRate> SUPPORTED_SAMPLE_RATES = {
     AudioSamplingRate::SAMPLE_RATE_8000,
     AudioSamplingRate::SAMPLE_RATE_11025,
@@ -56,7 +56,7 @@ static const std::unordered_set<AudioSamplingRate> SUPPORTED_SAMPLE_RATES = {
     AudioSamplingRate::SAMPLE_RATE_192000
 };
 
-// 格式校验支持的采样格式集合
+// The set of sampling formats supported by format validation
 static const std::unordered_set<AudioSampleFormat> SUPPORTED_SAMPLE_FORMATS = {
     AudioSampleFormat::SAMPLE_U8,
     AudioSampleFormat::SAMPLE_S16LE,
@@ -65,11 +65,7 @@ static const std::unordered_set<AudioSampleFormat> SUPPORTED_SAMPLE_FORMATS = {
     AudioSampleFormat::SAMPLE_F32LE
 };
 
-// LAYOUT_TO_CHANNEL 已移至 audio_suite_base.h
-
-// InputDataStatus 和 FormatConverterDataCallback 已移至 audio_format_converter.h
-
-// 可处理字节计算参数
+// Handleable byte calculation parameters
 struct ProcessableBytesCalculationParams {
     uint32_t inputBytesPerFrame;
     uint32_t maxOutputFrames;
@@ -78,7 +74,7 @@ struct ProcessableBytesCalculationParams {
     uint32_t alignedCachedSize;
 };
 
-// 输入处理参数
+// Enter processing parameters
 struct InputProcessParams {
     uint32_t inputBytesPerFrame;
     uint32_t maxOutputFrames;
@@ -86,7 +82,7 @@ struct InputProcessParams {
     uint32_t outputCapacity;
 };
 
-// 处理上下文
+// Processing context
 struct ProcessingContext {
     uint32_t totalOutputSize;
     uint8_t* outputBufferPtr;
@@ -94,43 +90,43 @@ struct ProcessingContext {
     std::vector<uint8_t> backupInputData;
 };
 
-// 格式转换器 InnerAPI 类（实现接口）
+// Format Converter InnerAPI Class (Implements the interface)
 class AudioFormatConverterImpl : public IAudioFormatConverter {
 public:
     AudioFormatConverterImpl();
     ~AudioFormatConverterImpl();
 
-    // 接口1：Create - 初始化转换器（带格式参数和格式校验）
+    // Interface 1: Create - Initialize the converter (with format parameters and format validation)
     int32_t Create(const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat) override;
 
-    // 接口2：SetInputCallback - 设置数据请求回调
+    // Interface 2: SetInputCallback - Sets the data request callback
     int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) override;
 
-    // 接口3：Process - 处理音频数据
+    // Interface 3: Process - Processes audio data
     int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) override;
 
-    // 接口4：Destroy - 销毁转换器
+    // Interface 4: Destroy - Destruction Converter
     void Destroy() override;
 
 private:
-    // 内部实现方法
+    // Internal implementation method
     int32_t WrapInputData(const void* inputData, uint32_t inputSize, bool finished,
                           AudioSuitePcmBuffer& buffer);
     AudioSuitePcmBuffer* DoConvert(AudioSuitePcmBuffer* inputBuffer);
-    void CopyOutputData(AudioSuitePcmBuffer* buffer, void* outputBuffer,
+    int32_t CopyOutputData(AudioSuitePcmBuffer* buffer, void* outputBuffer,
                         uint32_t maxFrameSize, uint32_t* actualFrameSize);
     
-    // 计算相关方法
+    // Calculation related methods
     uint32_t CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame) const;
     int32_t CalculateMinBytesForIntMsInternal(uint32_t inputBytesPerFrame,
         uint32_t& minBytesForIntMs, uint32_t& alignedCachedSize, bool& shouldStopProcessing, uint32_t outputCapacity);
     int32_t CalculateProcessableBytesInternal(const ProcessableBytesCalculationParams& params,
         uint32_t& alignedProcessableBytes, bool& shouldStopProcessing);
     
-    // 数据读取和缓存
+    // Data reading and caching
     int32_t ReadAndCacheInputData(bool* shouldStopProcessing);
     
-    // 处理流程方法
+    // Processing method
     int32_t WrapAndConvertInputData(uint32_t processableSize, AudioSuitePcmBuffer* outConvertedBuffer);
     int32_t CheckAndProcessInputData(const InputProcessParams& params, uint32_t& minBytesForIntMs,
         uint32_t& alignedCachedSize, uint32_t& alignedProcessableBytes, bool& shouldStopProcessing);
@@ -150,7 +146,7 @@ private:
     int32_t ProcessConversion(void* audioData, uint32_t outputCapacity,
         uint32_t* outputSize, uint32_t outputBytesPerFrame, uint32_t maxOutputFrames);
     
-    // 成员变量
+    // member variables
     PcmBufferFormat inputFormat_;
     PcmBufferFormat outputFormat_;
     std::unique_ptr<AudioSuiteFormatConversion> formatConversion_;
@@ -159,6 +155,7 @@ private:
     std::vector<uint8_t> cachedInputData_;
     std::vector<uint8_t> cachedOutputData_;
     bool inputFinished_ = false;
+    bool destroyed_ = false;
     std::mutex mutex_;
 };
 

@@ -545,7 +545,7 @@ static AudioSuite::PcmBufferFormat SetupInputFormat(const OHConverterTestInfo& i
     format.sampleRate = info.inputSampleRate;
     format.channelLayout = info.inputChannelLayout;
     format.sampleFormat = info.inputSampleFormat;
-    // 根据声道布局获取声道数
+    // Obtain the number of channels based on the channel layout.
     auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.inputChannelLayout);
     format.channelCount = (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : 2;
     return format;
@@ -557,7 +557,7 @@ static AudioSuite::PcmBufferFormat SetupOutputFormat(const OHConverterTestInfo& 
     format.sampleRate = info.outputSampleRate;
     format.channelLayout = info.outputChannelLayout;
     format.sampleFormat = info.outputSampleFormat;
-    // 根据声道布局获取声道数
+    // Obtain the number of channels based on the channel layout.
     auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.outputChannelLayout);
     format.channelCount = (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : 2;
     return format;
@@ -631,15 +631,17 @@ static bool RunOHConverterTest(const OHConverterTestInfo& info)
         return false;
     }
     
-    // 使用局部变量替代全局 g_inputFile，解决多线程竞争问题
+    // Use a local variable instead of the global `g_inputFile` to
+    // resolve multi-threading contention issues.
     FILE* inputFile = OpenInputFile(info);
     if (inputFile == nullptr) {
         converter->Destroy();
         return false;
     }
     
-    // 创建 InnerAPI 回调对象，将文件指针传递给它
-    // 多线程环境下每个线程有独立的 inputFile 和 callback，避免竞争
+    // Create an InnerAPI callback object and pass the file pointer to it.
+    // In a multi-threaded environment, each thread has its own independent inputFile and
+    // callback, avoiding contention.
     auto fileCallback = std::make_shared<ReadFileCallback>(inputFile);
     converter->SetInputCallback(fileCallback);
     
@@ -714,7 +716,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Level0
     uint8_t outputBuffer[DEFAULT_BUFFER_SIZE] = {0};
     uint32_t outputSize = 0;
     
-    // 未调用 Create 直接调用 Process，应返回未初始化错误
+    // Calling Process directly without first calling Create should return an uninitialized error.
     int32_t ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
@@ -739,7 +741,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_DonConvert_002, TestSize.Level0
     int32_t ret = converter->Create(inputFormat, outputFormat);
     EXPECT_EQ(ret, SUCCESS);
     
-    // 未设置回调直接调用 Process，应返回回调未设置错误
+    // Calling Process directly without setting a callback should return a "callback not set" error.
     uint8_t outputBuffer[DEFAULT_BUFFER_SIZE] = {0};
     uint32_t outputSize = 0;
     ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
@@ -748,7 +750,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_DonConvert_002, TestSize.Level0
     converter->Destroy();
 }
 
-// 多线程测试相关
+// Multithreaded testing related
 static std::atomic<int32_t> g_mtSuccessCount(0);
 static std::atomic<int32_t> g_mtFailCount(0);
 
@@ -766,7 +768,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Multithread_003, TestSize.Level
 
     std::vector<std::thread> threads;
 
-    // 每个线程处理不同的测试用例
+    // Each thread handles different test cases.
     for (int i = 0; i < numThreads; i++) {
         threads.emplace_back([i]() {
             size_t testCaseIdx = i % (sizeof(g_converterTestCases) / sizeof(g_converterTestCases[0]));

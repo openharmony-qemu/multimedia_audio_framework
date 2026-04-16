@@ -37,33 +37,34 @@ AudioFormatConverterImpl::AudioFormatConverterImpl()
 
 AudioFormatConverterImpl::~AudioFormatConverterImpl()
 {
-    Destroy();
 }
 
 int32_t AudioFormatConverterImpl::Create(const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat)
 {
-    // 格式校验：采样率
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(!destroyed_, ERR_ILLEGAL_STATE, "Create: converter already destroyed");
+    // Format validation: Sampling rate
     if (SUPPORTED_SAMPLE_RATES.find(inputFormat.sampleRate) == SUPPORTED_SAMPLE_RATES.end() ||
         SUPPORTED_SAMPLE_RATES.find(outputFormat.sampleRate) == SUPPORTED_SAMPLE_RATES.end()) {
         AUDIO_ERR_LOG("Create: unsupported sampling rate");
         return ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT;
     }
 
-    // 格式校验：声道布局
+    // Format verification: Audio channel layout
     if (LAYOUT_TO_CHANNEL.find(inputFormat.channelLayout) == LAYOUT_TO_CHANNEL.end() ||
         LAYOUT_TO_CHANNEL.find(outputFormat.channelLayout) == LAYOUT_TO_CHANNEL.end()) {
         AUDIO_ERR_LOG("Create: unsupported channel layout");
         return ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT;
     }
 
-    // 格式校验：采样格式
+    // Format validation: Sampling format
     if (SUPPORTED_SAMPLE_FORMATS.find(inputFormat.sampleFormat) == SUPPORTED_SAMPLE_FORMATS.end() ||
         SUPPORTED_SAMPLE_FORMATS.find(outputFormat.sampleFormat) == SUPPORTED_SAMPLE_FORMATS.end()) {
         AUDIO_ERR_LOG("Create: unsupported sample format");
         return ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT;
     }
 
-    // 保存输入输出格式
+    // Save input/output format
     inputFormat_ = inputFormat;
     outputFormat_ = outputFormat;
 
@@ -71,7 +72,7 @@ int32_t AudioFormatConverterImpl::Create(const PcmBufferFormat& inputFormat, con
         inputFormat.sampleRate, LAYOUT_TO_CHANNEL[inputFormat.channelLayout],
         outputFormat.sampleRate, LAYOUT_TO_CHANNEL[outputFormat.channelLayout]);
 
-    // 创建格式转换实例
+    // Create a format conversion instance
     formatConversion_ = std::make_unique<AudioSuiteFormatConversion>();
     CHECK_AND_RETURN_RET_LOG(
         formatConversion_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "Create: Failed to create format conversion instance");
@@ -81,6 +82,7 @@ int32_t AudioFormatConverterImpl::Create(const PcmBufferFormat& inputFormat, con
 int32_t AudioFormatConverterImpl::SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(!destroyed_, ERR_ILLEGAL_STATE, "SetInputCallback: converter already destroyed");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_CALLBACK_NOT_SET, "Callback not set");
     dataCallback_ = std::move(callback);
     return SUCCESS;
@@ -333,7 +335,8 @@ int32_t AudioFormatConverterImpl::ProcessSingleBlock(
     ret = ValidateOutputCapacity(convertedBuffer, context.remainingCapacity, &framesToWrite);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Output capacity validity verification failed.");
 
-    CopyOutputData(&convertedBuffer, context.outputBufferPtr, framesToWrite, &framesToWrite);
+    ret = CopyOutputData(&convertedBuffer, context.outputBufferPtr, framesToWrite, &framesToWrite);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Data copy to output buffer failed.");
 
     UpdateProcessingState(convertedBuffer, processableSize, context, framesToWrite);
     return SUCCESS;
@@ -443,6 +446,7 @@ int32_t AudioFormatConverterImpl::Process(
         outputData != nullptr && outputSize != nullptr, ERR_INVALID_PARAM, "Process: Invalid parameters.");
 
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(!destroyed_, ERR_ILLEGAL_STATE, "Process: converter already destroyed");
     *outputSize = 0;
 
     CHECK_AND_RETURN_RET_LOG(formatConversion_ != nullptr, ERR_ILLEGAL_STATE, "Process: Converter not initialized");
@@ -504,7 +508,7 @@ AudioSuitePcmBuffer* AudioFormatConverterImpl::DoConvert(AudioSuitePcmBuffer* in
     return outputBuffer;
 }
 
-void AudioFormatConverterImpl::CopyOutputData(
+int32_t AudioFormatConverterImpl::CopyOutputData(
     AudioSuitePcmBuffer* buffer, void* outputBuffer, uint32_t maxFrameSize, uint32_t* actualFrameSize)
 {
     uint32_t availableFrames = buffer->GetFrameLen();
@@ -516,10 +520,7 @@ void AudioFormatConverterImpl::CopyOutputData(
 
     if (outputBuffer != nullptr && buffer->GetPcmData() != nullptr) {
         int32_t ret = memcpy_s(outputBuffer, outputBytes, buffer->GetPcmData(), outputBytes);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("memcpy_s failed: memcpy_s for cached data failed");
-            return;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "memcpy_s failed: memcpy_s for cached data failed");
     }
     if (*actualFrameSize < availableFrames) {
         uint32_t totalBytes = availableFrames * outputFormat_.channelCount * outputSampleSize;
@@ -530,12 +531,12 @@ void AudioFormatConverterImpl::CopyOutputData(
         cachedOutputData_.resize(existingSize + remainingBytes);
         errno_t ret = memcpy_s(cachedOutputData_.data() + existingSize, remainingBytes,
             static_cast<const uint8_t*>(buffer->GetPcmData()) + copiedBytes, remainingBytes);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("CopyOutputData failed: memcpy_s for cached data failed");
-        }
+        CHECK_AND_RETURN_RET_LOG(
+            ret == 0, ERR_OPERATION_FAILED, "memcpy_s failed: memcpy_s for cachedOutputData failed");
 
         AUDIO_ERR_LOG("CopyOutputData: cached %{public}u bytes of uncopied output data", remainingBytes);
     }
+    return SUCCESS;
 }
 
 void AudioFormatConverterImpl::Destroy()
@@ -545,11 +546,13 @@ void AudioFormatConverterImpl::Destroy()
     if (formatConversion_ != nullptr) {
         formatConversion_->Reset();
     }
+    CHECK_AND_RETURN_LOG(!destroyed_, "Destroy: already destroyed, skipping");
 
     inputFinished_ = false;
     cachedInputData_.clear();
     cachedOutputData_.clear();
     dataCallback_ = nullptr;
+    destroyed_ = true;
 
     AUDIO_INFO_LOG("Destroy: success");
 }
