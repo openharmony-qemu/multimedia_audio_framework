@@ -1126,5 +1126,29 @@ HWTEST_F(AudioAdapterManagerUnitTest, RedirectVolumeType, TestSize.Level1)
     audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
     EXPECT_EQ(volumeType, STREAM_VOICE_ASSISTANT);
 }
+
+/**
+ * @tc.name: Test UpdateVolumeForLowLatency
+ * @tc.number: UpdateVolumeForLowLatency
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateVolumeForLowLatency, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ == DEVICE_TYPE_NEARLINK;
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, volumeType);
+
+    desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    volumeType = STREAM_MUSIC;
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, volumeType);
+
+    desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    volumeType = STREAM_RING;
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, volumeType);
+}
 } // namespace AudioStandard
 } // namespace OHOS
