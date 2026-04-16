@@ -517,13 +517,11 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunning
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     for (auto &it : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        if (it->pipeRole_ == PIPE_ROLE_OUTPUT) {
-            for (auto &desc : it->streamDescriptors_) {
-                CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-                if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
-                    streamDescs.push_back(desc);
-                }
-            }
+        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
+            streamDescs.push_back(desc);
         }
     }
     return streamDescs;
@@ -535,13 +533,11 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunning
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     for (auto &it : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        if (it->pipeRole_ == PIPE_ROLE_INPUT) {
-            for (auto &desc : it->streamDescriptors_) {
-                CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-                if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
-                    streamDescs.push_back(desc);
-                }
-            }
+        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_INPUT, "not input pipe");
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
+            streamDescs.push_back(desc);
         }
     }
     return streamDescs;

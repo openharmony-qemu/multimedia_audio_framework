@@ -21,6 +21,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int PRIORITY_CALL_OUTPUT = 5;
+constexpr int PRIORITY_FORCED_INPUT = 4;
+constexpr int PRIORITY_NORMAL_INPUT = 3;
+constexpr int PRIORITY_FORCED_OUTPUT = 2;
+constexpr int PRIORITY_NORMAL_OUTPUT = 1;
+constexpr int PRIORITY_NONE = 0;
+
 class WirelessConflictHandler : public ConflictHandler {
 public:
     ~WirelessConflictHandler() override = default;
@@ -33,7 +41,8 @@ public:
 private:
     bool IsCallStreamUsage(StreamUsage streamUsage);
     bool IsForcedRouterType(RouterType routerType);
-    int GetPriority(StreamUsage streamUsage, SourceType sourceType, RouterType routerType, bool isOutput);
+    int GetPriority(StreamUsage streamUsage, SourceType sourceType,
+        RouterType routerType, bool isOutput);
     
     std::vector<StreamDeviceInfo> outputStreamDevices_;
     std::vector<StreamDeviceInfo> inputStreamDevices_;

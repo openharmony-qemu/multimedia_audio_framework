@@ -40,7 +40,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_001, Te
     captureInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     std::string networkId = LOCAL_NETWORK_ID;
     RouterType routerType = ROUTER_TYPE_NONE;
-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
+    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(
+        captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
@@ -78,7 +79,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_003, Te
     captureInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
     std::string networkId = LOCAL_NETWORK_ID;
     RouterType routerType = ROUTER_TYPE_NONE;
-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
+    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(
+        captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);

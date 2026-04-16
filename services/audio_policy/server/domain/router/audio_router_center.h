@@ -171,7 +171,8 @@ private:
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
 
     template<typename Func>
-    void ForEachRouter(Func func) {
+    void ForEachRouter(Func func)
+    {
         for (auto &router : mediaRenderRouters_) {
             if (router != nullptr) func(router);
         }

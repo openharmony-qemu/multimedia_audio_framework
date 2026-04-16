@@ -37,24 +37,25 @@ bool WirelessConflictHandler::IsForcedRouterType(RouterType routerType)
            routerType == ROUTER_TYPE_APP_SELECT;
 }
 
-int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sourceType, RouterType routerType, bool isOutput)
+int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sourceType,
+    RouterType routerType, bool isOutput)
 {
     if (isOutput && IsCallStreamUsage(streamUsage)) {
-        return 5;
+        return PRIORITY_CALL_OUTPUT;
     }
     if (!isOutput && IsForcedRouterType(routerType)) {
-        return 4;
+        return PRIORITY_FORCED_INPUT;
     }
     if (!isOutput) {
-        return 3;
+        return PRIORITY_NORMAL_INPUT;
     }
     if (isOutput && IsForcedRouterType(routerType)) {
-        return 2;
+        return PRIORITY_FORCED_OUTPUT;
     }
     if (isOutput) {
-        return 1;
+        return PRIORITY_NORMAL_OUTPUT;
     }
-    return 0;
+    return PRIORITY_NONE;
 }
 
 bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,

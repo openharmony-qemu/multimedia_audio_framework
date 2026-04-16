@@ -72,23 +72,31 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
 {
     WirelessConflictHandler handler;
     
-    // Call output stream: priority 5
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_COMMUNICATION, SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), 5);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_RINGTONE, SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), 5);
+    // Call output stream: priority PRIORITY_CALL_OUTPUT
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_COMMUNICATION,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_RINGTONE,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
     
-    // Forced input: priority 4
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN, SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, false), 4);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN, SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, false), 4);
+    // Forced input: priority PRIORITY_FORCED_INPUT
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, false), PRIORITY_FORCED_INPUT);
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, false), PRIORITY_FORCED_INPUT);
     
-    // Normal input: priority 3
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN, SOURCE_TYPE_MIC, ROUTER_TYPE_NONE, false), 3);
+    // Normal input: priority PRIORITY_NORMAL_INPUT
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
+        SOURCE_TYPE_MIC, ROUTER_TYPE_NONE, false), PRIORITY_NORMAL_INPUT);
     
-    // Forced output: priority 2
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, true), 2);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, true), 2);
+    // Forced output: priority PRIORITY_FORCED_OUTPUT
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, true), PRIORITY_FORCED_OUTPUT);
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, true), PRIORITY_FORCED_OUTPUT);
     
-    // Normal output: priority 1
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), 1);
+    // Normal output: priority PRIORITY_NORMAL_OUTPUT
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_NORMAL_OUTPUT);
 }
 
 /**
@@ -179,7 +187,8 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_007, TestSize.Level1)
     // Same mac address, no conflict
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
+        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
 }
 
 /**
@@ -194,7 +203,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_008, TestSize.Level1)
     
     std::vector<StreamDeviceInfo> outputDevices;
     StreamDeviceInfo info;
-    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION; // priority 5
+    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION; // priority PRIORITY_CALL_OUTPUT
     info.routerType = ROUTER_TYPE_DEFAULT;
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device->macAddress_ = "00:11:22:33:44:55";
@@ -203,10 +212,12 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_008, TestSize.Level1)
     
     handler.SetSelectedDevices(outputDevices, {});
     
-    // Different mac address, current is music (priority 1), call is priority 5
+    // Different mac address, current is music (priority PRIORITY_NORMAL_OUTPUT),
+    // call is priority PRIORITY_CALL_OUTPUT
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:66";
-    EXPECT_TRUE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_TRUE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
+        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
 }
 
 /**
@@ -230,10 +241,12 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_009, TestSize.Level1)
     
     handler.SetSelectedDevices(outputDevices, {});
     
-    // Current is call (priority 5), existing is music (priority 1), no conflict
+    // Current is call (priority PRIORITY_CALL_OUTPUT),
+    // existing is music (priority PRIORITY_NORMAL_OUTPUT), no conflict
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:66";
-    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_VOICE_COMMUNICATION, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
+        STREAM_USAGE_VOICE_COMMUNICATION, SOURCE_TYPE_INVALID, true));
 }
 
 /**
@@ -247,8 +260,8 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_010, TestSize.Level1)
     
     std::vector<StreamDeviceInfo> inputDevices;
     StreamDeviceInfo info;
-    info.sourceType = SOURCE_TYPE_MIC; // priority 3 for input
-    info.routerType = ROUTER_TYPE_USER_SELECT; // priority 4 for forced input
+    info.sourceType = SOURCE_TYPE_MIC; // priority PRIORITY_NORMAL_INPUT for input
+    info.routerType = ROUTER_TYPE_USER_SELECT; // priority PRIORITY_FORCED_INPUT for forced input
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device->macAddress_ = "00:11:22:33:44:55";
     info.device = device;
@@ -256,10 +269,12 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_010, TestSize.Level1)
     
     handler.SetSelectedDevices({}, inputDevices);
     
-    // Different mac, current is normal input (priority 3), existing is forced input (priority 4)
+    // Different mac, current is normal input (priority PRIORITY_NORMAL_INPUT),
+    // existing is forced input (priority PRIORITY_FORCED_INPUT)
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:66";
-    EXPECT_TRUE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_UNKNOWN, SOURCE_TYPE_MIC, false));
+    EXPECT_TRUE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
+        STREAM_USAGE_UNKNOWN, SOURCE_TYPE_MIC, false));
 }
 
 } // namespace AudioStandard

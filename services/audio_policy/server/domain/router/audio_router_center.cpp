@@ -470,13 +470,14 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
     if (audioDeviceRefinerCb_ != nullptr) {
-        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, innerRouterType, sourceType, clientUID, PIPE_TYPE_IN_NORMAL);
+        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, innerRouterType,
+            sourceType, clientUID, PIPE_TYPE_IN_NORMAL);
     }
     if (descs.size() > 0 && descs[0] != nullptr) {
-        int32_t audioId_ = descs[0]->deviceId_;
+        int32_t audioId = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
         AUDIO_PRERELEASE_LOGI("source:%{public}d uid:%{public}d fetch type:%{public}d id:%{public}d router:%{public}d",
-            sourceType, clientUID, type, audioId_, innerRouterType);
+            sourceType, clientUID, type, audioId, innerRouterType);
     }
     StopArbiterContext();
     return move(descs[0]);
