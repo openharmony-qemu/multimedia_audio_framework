@@ -537,11 +537,6 @@ static OHConverterTestInfo g_converterTestCases[] = {
         AudioSampleFormat::SAMPLE_S24LE,
         AudioSamplingRate::SAMPLE_RATE_8000, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE},
-    // {"16000_2_32_11min.pcm", "ch_out_016.pcm", "efe2906b3f3f4f19055f22e282b500dc",
-    //     AudioSamplingRate::SAMPLE_RATE_16000, AudioChannelLayout::CH_LAYOUT_STEREO,
-    //     AudioSampleFormat::SAMPLE_F32LE,
-    //     AudioSamplingRate::SAMPLE_RATE_16000, AudioChannelLayout::CH_LAYOUT_STEREO,
-    //     AudioSampleFormat::SAMPLE_F32LE},
 };
 
 static AudioSuite::PcmBufferFormat SetupInputFormat(const OHConverterTestInfo& info)
