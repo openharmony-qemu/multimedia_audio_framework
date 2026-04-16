@@ -23,7 +23,10 @@ ohos_unittest("audio_server_unit_test") {
 
   cflags = [ "-fno-access-control" ]
 
-  sources = [ "./src/audio_server_unit_test.cpp" ]
+  sources = [
+    "./src/audio_server_extra_parameters_unit_test.cpp",
+    "./src/audio_server_unit_test.cpp",
+  ]
 
   include_dirs = [
     "../include",
