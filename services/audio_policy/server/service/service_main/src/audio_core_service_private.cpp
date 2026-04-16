@@ -2201,10 +2201,11 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
 {
     std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice(DEFAULT_UID);
+    RouterType routerType = ROUTER_TYPE_NONE;
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && Bluetooth::AudioHfpManager::IsRecognitionStatus()) {
-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1);
+        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1, routerType);
     } else {
-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
+        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1, routerType);
     }
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is nullptr");
 

@@ -511,6 +511,42 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningOutputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        if (it->pipeRole_ == PIPE_ROLE_OUTPUT) {
+            for (auto &desc : it->streamDescriptors_) {
+                CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+                if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                    streamDescs.push_back(desc);
+                }
+            }
+        }
+    }
+    return streamDescs;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningInputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        if (it->pipeRole_ == PIPE_ROLE_INPUT) {
+            for (auto &desc : it->streamDescriptors_) {
+                CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+                if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                    streamDescs.push_back(desc);
+                }
+            }
+        }
+    }
+    return streamDescs;
+}
+
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);

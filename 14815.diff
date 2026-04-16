@@ -1,0 +1,1128 @@
+diff --git a/services/audio_policy/BUILD.gn b/services/audio_policy/BUILD.gn
+index f3b5a6faa8b74042d15d796bec3b717d97114816..7d8aec944720691050ab25920ac50a9607928192 100644
+--- a/services/audio_policy/BUILD.gn
++++ b/services/audio_policy/BUILD.gn
+@@ -248,6 +248,7 @@ audio_ohos_library("audio_policy_service") {
+     "server/domain/router/public_priority_router.cpp",
+     "server/domain/router/stream_filter_router.cpp",
+     "server/domain/router/user_select_router.cpp",
++    "server/domain/router/wireless_conflict_handler.cpp",
+     "server/domain/router_context/audio_device_simple_descriptor.cpp",
+     "server/domain/router_context/audio_router_follow_strategy.cpp",
+     "server/domain/router_context/audio_router_independent_strategy.cpp",
+diff --git a/services/audio_policy/server/domain/device/src/audio_device_common.cpp b/services/audio_policy/server/domain/device/src/audio_device_common.cpp
+index e6d797c42d4b65003f90aedfab75929d3b216290..323052503dfa3388b3bb89322bb06f3f11ca82c8 100644
+--- a/services/audio_policy/server/domain/device/src/audio_device_common.cpp
++++ b/services/audio_policy/server/domain/device/src/audio_device_common.cpp
+@@ -258,7 +258,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
+     }
+ 
+     if (networkId == LOCAL_NETWORK_ID) {
+-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
++        RouterType routerType = ROUTER_TYPE_NONE;
++        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType);
+         CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr.");
+         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
+             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
+diff --git a/services/audio_policy/server/domain/device/test/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp b/services/audio_policy/server/domain/device/test/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp
+index 84460d4caa52ea81dedfbc112454cb1468002de1..f74112b818f2ff3e9b3ca2e90416e6fef9aa1bb2 100644
+--- a/services/audio_policy/server/domain/device/test/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp
++++ b/services/audio_policy/server/domain/device/test/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp
+@@ -39,7 +39,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_001, Te
+     AudioCapturerInfo captureInfo;
+     captureInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+     std::string networkId = LOCAL_NETWORK_ID;
+-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1)->deviceType_ = DEVICE_TYPE_NONE;
++    RouterType routerType = ROUTER_TYPE_NONE;
++    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
+ 
+     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+         audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+@@ -76,7 +77,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_003, Te
+     AudioCapturerInfo captureInfo;
+     captureInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
+     std::string networkId = LOCAL_NETWORK_ID;
+-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1)->deviceType_ = DEVICE_TYPE_NONE;
++    RouterType routerType = ROUTER_TYPE_NONE;
++    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
+ 
+     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+         audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+diff --git a/services/audio_policy/server/domain/pipe/include/audio_pipe_manager.h b/services/audio_policy/server/domain/pipe/include/audio_pipe_manager.h
+index e9b49e90e7fc83c66deec85c6712784eff2dbe0e..b6c85a9c1ff6877fb8f4d75d8e6b2c952f3e8bc1 100644
+--- a/services/audio_policy/server/domain/pipe/include/audio_pipe_manager.h
++++ b/services/audio_policy/server/domain/pipe/include/audio_pipe_manager.h
+@@ -94,6 +94,8 @@ public:
+     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
+     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
+     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
++    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningOutputStreamDescs();
++    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningInputStreamDescs();
+     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
+     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
+     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
+diff --git a/services/audio_policy/server/domain/pipe/src/audio_pipe_manager.cpp b/services/audio_policy/server/domain/pipe/src/audio_pipe_manager.cpp
+index 5ca056c3485152d7bb0b7aef667cddfc21d8e2e0..a88a988916afc3481afb93e39cca3a6a7f6823d6 100644
+--- a/services/audio_policy/server/domain/pipe/src/audio_pipe_manager.cpp
++++ b/services/audio_policy/server/domain/pipe/src/audio_pipe_manager.cpp
+@@ -509,6 +509,42 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
+     return streamDescs;
+ }
+ 
++std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningOutputStreamDescs()
++{
++    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
++    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
++    for (auto &it : curPipeList_) {
++        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
++        if (it->pipeRole_ == PIPE_ROLE_OUTPUT) {
++            for (auto &desc : it->streamDescriptors_) {
++                CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
++                if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
++                    streamDescs.push_back(desc);
++                }
++            }
++        }
++    }
++    return streamDescs;
++}
++
++std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningInputStreamDescs()
++{
++    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
++    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
++    for (auto &it : curPipeList_) {
++        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
++        if (it->pipeRole_ == PIPE_ROLE_INPUT) {
++            for (auto &desc : it->streamDescriptors_) {
++                CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
++                if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
++                    streamDescs.push_back(desc);
++                }
++            }
++        }
++    }
++    return streamDescs;
++}
++
+ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
+ {
+     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+diff --git a/services/audio_policy/server/domain/router/audio_router_center.cpp b/services/audio_policy/server/domain/router/audio_router_center.cpp
+index 44445380ed7d76d5f2f416218ef3d377df3e2ff7..21f065c86a2a1e04b225704c2d7abc5fd88a0247 100644
+--- a/services/audio_policy/server/domain/router/audio_router_center.cpp
++++ b/services/audio_policy/server/domain/router/audio_router_center.cpp
+@@ -50,6 +50,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
+         }
+         shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
+         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
++            if (router->CheckConflict(desc, router->GetRouterType(), streamUsage, SOURCE_TYPE_INVALID, true)) {
++                continue;
++            }
+             routerType = usedType;
+             return desc;
+         }
+@@ -118,6 +121,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
+         }
+         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
+         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
++            if (router->CheckConflict(desc, router->GetRouterType(), streamUsage, SOURCE_TYPE_INVALID, true)) {
++                continue;
++            }
+             routerType = router->GetRouterType();
+             return desc;
+         }
+@@ -135,6 +141,9 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
+         if (descs.front() != nullptr && descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
+             AUDIO_INFO_LOG("RingRender streamUsage %{public}d clientUID %{public}d"
+                 " fetch descs front:%{public}d", streamUsage, clientUID, descs.front()->deviceType_);
++            if (router->CheckConflict(descs.front(), router->GetRouterType(), streamUsage, SOURCE_TYPE_INVALID, true)) {
++                continue;
++            }
+             routerType = router->GetRouterType();
+             if (descs.size() > 1 && VolumeUtils::IsPCVolumeEnable()) {
+                 vector<shared_ptr<AudioDeviceDescriptor>> newDescs;
+@@ -313,21 +322,29 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
+ 
+ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(FetchDeviceInfo info)
+ {
++    StartArbiterContext();
++    
+     vector<shared_ptr<AudioDeviceDescriptor>> descs;
+     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(info.clientUID, info.streamUsage);
+     if (zoneId != 0) {
+         vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
+             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, info.streamUsage,
+                 info.clientUID, ROUTER_TYPE_NONE);
+-        CHECK_AND_RETURN_RET(zoneDescs.size() == 0, zoneDescs);
++        if (zoneDescs.size() != 0) {
++            StopArbiterContext();
++            return zoneDescs;
++        }
+     }
+     if (info.streamUsage == STREAM_USAGE_ULTRASONIC &&
+         AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
+         AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");
+         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
++        StopArbiterContext();
+         return descs;
+     }
+-    return FetchOutputDevicesInner(info);
++    descs = FetchOutputDevicesInner(info);
++    StopArbiterContext();
++    return descs;
+ }
+ 
+ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchDupDevices(
+@@ -423,37 +440,44 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(So
+ }
+ 
+ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType sourceType, int32_t clientUID,
+-    const uint32_t sessionID)
++    RouterType &routerType, const uint32_t sessionID)
+ {
++    StartArbiterContext();
++    
+     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+-    RouterType routerType = ROUTER_TYPE_NONE;
++    RouterType innerRouterType = ROUTER_TYPE_NONE;
+     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+     if (zoneId != 0) {
+         AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
++        StopArbiterContext();
+         return AudioZoneService::GetInstance().FetchInputDevice(zoneId, sourceType, clientUID);
+     }
+     if (sourceType == SOURCE_TYPE_ULTRASONIC &&
+         AudioStreamCollector::GetAudioStreamCollector().GetRunningSourceTypeNoUltrasonic() == SOURCE_TYPE_INVALID) {
+         AUDIO_INFO_LOG("Source ULTRASONIC always choose mic");
++        StopArbiterContext();
+         return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
+     }
+     if (IsConfigRouterStrategy(sourceType)) {
+-        desc = FetchCapturerInputDevice(sourceType, clientUID, routerType, sessionID);
++        desc = FetchCapturerInputDevice(sourceType, clientUID, innerRouterType, sessionID);
+     } else {
+         AUDIO_INFO_LOG("sourceType %{public}d didn't config router strategy, skipped", sourceType);
++        StopArbiterContext();
+         return desc;
+     }
++    routerType = innerRouterType;
+     vector<shared_ptr<AudioDeviceDescriptor>> descs;
+     descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+     if (audioDeviceRefinerCb_ != nullptr) {
+-        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PIPE_TYPE_IN_NORMAL);
++        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, innerRouterType, sourceType, clientUID, PIPE_TYPE_IN_NORMAL);
+     }
+     if (descs.size() > 0 && descs[0] != nullptr) {
+         int32_t audioId_ = descs[0]->deviceId_;
+         DeviceType type = descs[0]->deviceType_;
+         AUDIO_PRERELEASE_LOGI("source:%{public}d uid:%{public}d fetch type:%{public}d id:%{public}d router:%{public}d",
+-            sourceType, clientUID, type, audioId_, routerType);
++            sourceType, clientUID, type, audioId_, innerRouterType);
+     }
++    StopArbiterContext();
+     return move(descs[0]);
+ }
+ 
+@@ -463,6 +487,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallCaptureDevice(Sour
+     for (auto &router : callCaptureRouters_) {
+         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallCaptureDevice(sourceType, clientUID, sessionID);
+         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
++            if (router->CheckConflict(desc, router->GetRouterType(), STREAM_USAGE_UNKNOWN, sourceType, false)) {
++                continue;
++            }
+             routerType = router->GetRouterType();
+             return desc;
+         }
+@@ -479,6 +506,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchRecordCaptureDevice(So
+             continue;
+         }
+         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
++            if (router->CheckConflict(desc, router->GetRouterType(), STREAM_USAGE_UNKNOWN, sourceType, false)) {
++                continue;
++            }
+             routerType = router->GetRouterType();
+             return desc;
+         }
+@@ -492,6 +522,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchVoiceMessageCaptureDev
+     for (auto &router : voiceMessageRouters_) {
+         shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
++            if (router->CheckConflict(desc, router->GetRouterType(), STREAM_USAGE_UNKNOWN, sourceType, false)) {
++                continue;
++            }
+             routerType = router->GetRouterType();
+             return desc;
+         }
+@@ -535,6 +568,23 @@ int32_t AudioRouterCenter::GetSplitInfo(std::string &splitInfo)
+     return audioDeviceRefinerCb_->GetSplitInfoRefined(splitInfo);
+ }
+ 
++void AudioRouterCenter::RegisterConflictHandlers(std::shared_ptr<ConflictHandler> handler)
++{
++    if (handler == nullptr) {
++        return;
++    }
++    ForEachRouter([&handler](std::unique_ptr<RouterBase> &router) {
++        router->RegisterConflictHandler(handler);
++    });
++}
++
++void AudioRouterCenter::ClearConflictHandlers()
++{
++    ForEachRouter([](std::unique_ptr<RouterBase> &router) {
++        router->ClearConflictHandler();
++    });
++}
++
+ int32_t AudioRouterCenter::SetSplitModeReady()
+ {
+     CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCb_ != nullptr, ERROR, "nullptr");
+@@ -586,8 +636,65 @@ bool AudioRouterCenter::IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc)
+ #ifdef FEATURE_DEVICE_MANAGER
+     return desc->dmDeviceType_ == DistributedHardware::DEVICE_TYPE_CAR;
+ #endif
+-
+     return false;
+ }
++
++void AudioRouterCenter::StartArbiterContext()
++{
++    ClearConflictHandlers();
++    
++    auto pipeManager = AudioPipeManager::GetPipeManager();
++    auto runningOutputStreams = pipeManager->GetRunningOutputStreamDescs();
++    auto runningInputStreams = pipeManager->GetRunningInputStreamDescs();
++    
++    std::vector<StreamDeviceInfo> outputDevices;
++    for (auto &desc : runningOutputStreams) {
++        if (desc == nullptr) {
++            continue;
++        }
++        StreamDeviceInfo info;
++        info.uid = desc->callerUid_;
++        info.sessionId = desc->sessionId_;
++        info.streamUsage = desc->rendererInfo_.streamUsage;
++        
++        FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
++        auto devices = FetchOutputDevicesInner(fetchInfo);
++        if (!devices.empty()) {
++            info.device = devices.front();
++            info.routerType = fetchInfo.routerType;
++        }
++        outputDevices.push_back(info);
++    }
++    
++    std::vector<StreamDeviceInfo> inputDevices;
++    for (auto &desc : runningInputStreams) {
++        if (desc == nullptr) {
++            continue;
++        }
++        StreamDeviceInfo info;
++        info.uid = desc->callerUid_;
++        info.sessionId = desc->sessionId_;
++        info.sourceType = desc->capturerInfo_.sourceType;
++        
++        RouterType routerType = ROUTER_TYPE_NONE;
++        info.device = FetchCapturerInputDevice(info.sourceType, info.uid, routerType, info.sessionId);
++        info.routerType = routerType;
++        inputDevices.push_back(info);
++    }
++    
++    wirelessConflictHandler_ = std::make_shared<WirelessConflictHandler>();
++    wirelessConflictHandler_->SetSelectedDevices(outputDevices, inputDevices);
++    RegisterConflictHandlers(wirelessConflictHandler_);
++}
++
++void AudioRouterCenter::StopArbiterContext()
++{
++    ClearConflictHandlers();
++    if (wirelessConflictHandler_ != nullptr) {
++        wirelessConflictHandler_->ClearSelectedDevices();
++    }
++    wirelessConflictHandler_ = nullptr;
++}
++
+ } // namespace AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_policy/server/domain/router/audio_router_center.h b/services/audio_policy/server/domain/router/audio_router_center.h
+index 2e92ee9b4ea32fd96d33bcebaa35953883090cce..fc2538ef8b7398ff0e6d17a5e4d6b8172577cf57 100644
+--- a/services/audio_policy/server/domain/router/audio_router_center.h
++++ b/services/audio_policy/server/domain/router/audio_router_center.h
+@@ -28,6 +28,7 @@
+ #include "audio_stream_collector.h"
+ #include "audio_strategy_router_parser.h"
+ #include "audio_usage_strategy_parser.h"
++#include "wireless_conflict_handler.h"
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+@@ -42,7 +43,7 @@ public:
+     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo info);
+     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
+     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID,
+-        const uint32_t sessionID = 0);
++        RouterType &routerType, const uint32_t sessionID = 0);
+     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
+     int32_t UnsetAudioDeviceRefinerCallback();
+     bool isCallRenderRouter(StreamUsage streamUsage);
+@@ -53,7 +54,8 @@ public:
+     int32_t NotifyDistributedOutputChange(bool isRemote);
+ 
+     bool IsConfigRouterStrategy(SourceType sourceType);
+-
++    void RegisterConflictHandlers(std::shared_ptr<ConflictHandler> handler);
++    void ClearConflictHandlers();
+     int32_t SetSplitModeReady();
+     bool UpdateVehiclePriority(bool enable);
+ private:
+@@ -159,6 +161,35 @@ private:
+         StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType);
+     bool IsWirelessPrivacyDevice(shared_ptr<AudioDeviceDescriptor> desc);
+     bool IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc);
++
++    void StartArbiterContext();
++    void StopArbiterContext();
++    std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
++
++    template<typename Func>
++    void ForEachRouter(Func func) {
++        for (auto &router : mediaRenderRouters_) {
++            if (router != nullptr) func(router);
++        }
++        for (auto &router : callRenderRouters_) {
++            if (router != nullptr) func(router);
++        }
++        for (auto &router : callCaptureRouters_) {
++            if (router != nullptr) func(router);
++        }
++        for (auto &router : ringRenderRouters_) {
++            if (router != nullptr) func(router);
++        }
++        for (auto &router : toneRenderRouters_) {
++            if (router != nullptr) func(router);
++        }
++        for (auto &router : recordCaptureRouters_) {
++            if (router != nullptr) func(router);
++        }
++        for (auto &router : voiceMessageRouters_) {
++            if (router != nullptr) func(router);
++        }
++    }
+ };
+ } // namespace AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_policy/server/domain/router/conflict_handler.h b/services/audio_policy/server/domain/router/conflict_handler.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a5d672142afd10ca2bfb15bfb578f8e5a5cf845
+--- /dev/null
++++ b/services/audio_policy/server/domain/router/conflict_handler.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2026 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef ST_CONFLICT_HANDLER_H
++#define ST_CONFLICT_HANDLER_H
++
++#include "audio_device_descriptor.h"
++#include "audio_info.h"
++#include <vector>
++#include <memory>
++
++namespace OHOS {
++namespace AudioStandard {
++
++struct StreamDeviceInfo {
++    int32_t uid = -1;
++    uint32_t sessionId = 0;
++    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
++    SourceType sourceType = SOURCE_TYPE_INVALID;
++    std::shared_ptr<AudioDeviceDescriptor> device = nullptr;
++    RouterType routerType = ROUTER_TYPE_NONE;
++};
++
++class ConflictHandler {
++public:
++    virtual ~ConflictHandler() = default;
++    virtual bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
++        StreamUsage streamUsage, SourceType sourceType, bool isOutput) = 0;
++};
++} // namespace AudioStandard
++} // namespace OHOS
++#endif // ST_CONFLICT_HANDLER_H
+\ No newline at end of file
+diff --git a/services/audio_policy/server/domain/router/router_base.h b/services/audio_policy/server/domain/router/router_base.h
+index 2087e1b78ce98274ad426ef79152c2036dfff8f0..e2df136fa5e6518f40e041272120dc56cc8021a7 100644
+--- a/services/audio_policy/server/domain/router/router_base.h
++++ b/services/audio_policy/server/domain/router/router_base.h
+@@ -22,6 +22,7 @@
+ #include "audio_state_manager.h"
+ #include "audio_policy_utils.h"
+ #include "audio_router_select_strategy.h"
++#include "conflict_handler.h"
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+@@ -159,6 +160,30 @@ public:
+         AUDIO_INFO_LOG("Wired cast, ALARM, NOTIFICATION, ENFORCED_TONE and VOICE_ASSISTANT sound on local device");
+         return true;
+     }
++
++    void RegisterConflictHandler(std::shared_ptr<ConflictHandler> handler)
++    {
++        handlers.push_back(handler);
++    }
++
++    void ClearConflictHandler()
++    {
++        handlers.clear();
++    }
++
++    bool CheckConflict(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
++        StreamUsage streamUsage, SourceType sourceType, bool isOutput)
++    {
++        for (auto &handler : handlers) {
++            if (handler != nullptr && handler->Detect(device, routerType, streamUsage, sourceType, isOutput)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++private:
++    std::vector<std::shared_ptr<ConflictHandler>> handlers;
+ };
+ } // namespace AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_policy/server/domain/router/wireless_conflict_handler.cpp b/services/audio_policy/server/domain/router/wireless_conflict_handler.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0566a34b00d5be9cc9a82c53d971c4f897f7199
+--- /dev/null
++++ b/services/audio_policy/server/domain/router/wireless_conflict_handler.cpp
+@@ -0,0 +1,114 @@
++/*
++ * Copyright (c) 2026 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef LOG_TAG
++#define LOG_TAG "WirelessConflictHandler"
++#endif
++
++#include "wireless_conflict_handler.h"
++
++using namespace std;
++
++namespace OHOS {
++namespace AudioStandard {
++bool WirelessConflictHandler::IsCallStreamUsage(StreamUsage streamUsage)
++{
++    return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
++           streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
++           streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
++           streamUsage == STREAM_USAGE_RINGTONE ||
++           streamUsage == STREAM_USAGE_VOICE_RINGTONE;
++}
++
++bool WirelessConflictHandler::IsForcedRouterType(RouterType routerType)
++{
++    return routerType == ROUTER_TYPE_USER_SELECT ||
++           routerType == ROUTER_TYPE_APP_SELECT;
++}
++
++int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sourceType, RouterType routerType, bool isOutput)
++{
++    if (isOutput && IsCallStreamUsage(streamUsage)) {
++        return 5;
++    }
++    if (!isOutput && IsForcedRouterType(routerType)) {
++        return 4;
++    }
++    if (!isOutput) {
++        return 3;
++    }
++    if (isOutput && IsForcedRouterType(routerType)) {
++        return 2;
++    }
++    if (isOutput) {
++        return 1;
++    }
++    return 0;
++}
++
++bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
++    StreamUsage streamUsage, SourceType sourceType, bool isOutput)
++{
++    if (device == nullptr || device->macAddress_.empty()) {
++        return false;
++    }
++    
++    int currentPriority = GetPriority(streamUsage, sourceType, routerType, isOutput);
++    int highestPriority = 0;
++    std::string highestPriorityMac;
++    
++    for (auto &info : outputStreamDevices_) {
++        if (info.device == nullptr || info.device->macAddress_.empty()) {
++            continue;
++        }
++        int priority = GetPriority(info.streamUsage, SOURCE_TYPE_INVALID, info.routerType, true);
++        if (priority > highestPriority) {
++            highestPriority = priority;
++            highestPriorityMac = info.device->macAddress_;
++        }
++    }
++    
++    for (auto &info : inputStreamDevices_) {
++        if (info.device == nullptr || info.device->macAddress_.empty()) {
++            continue;
++        }
++        int priority = GetPriority(STREAM_USAGE_UNKNOWN, info.sourceType, info.routerType, false);
++        if (priority > highestPriority) {
++            highestPriority = priority;
++            highestPriorityMac = info.device->macAddress_;
++        }
++    }
++    
++    if (highestPriority > currentPriority && highestPriorityMac != device->macAddress_) {
++        return true;
++    }
++    
++    return false;
++}
++
++void WirelessConflictHandler::SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
++    const std::vector<StreamDeviceInfo> &inputDevices)
++{
++    outputStreamDevices_ = outputDevices;
++    inputStreamDevices_ = inputDevices;
++}
++
++void WirelessConflictHandler::ClearSelectedDevices()
++{
++    outputStreamDevices_.clear();
++    inputStreamDevices_.clear();
++}
++
++} // namespace AudioStandard
++} // namespace OHOS
+diff --git a/services/audio_policy/server/domain/router/wireless_conflict_handler.h b/services/audio_policy/server/domain/router/wireless_conflict_handler.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..1c1e1f9e618fc159ea07f706a4bec0d1f44db66e
+--- /dev/null
++++ b/services/audio_policy/server/domain/router/wireless_conflict_handler.h
+@@ -0,0 +1,43 @@
++/*
++ * Copyright (c) 2026 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef ST_WIRELESS_CONFLICT_HANDLER_H
++#define ST_WIRELESS_CONFLICT_HANDLER_H
++
++#include "conflict_handler.h"
++#include <vector>
++
++namespace OHOS {
++namespace AudioStandard {
++class WirelessConflictHandler : public ConflictHandler {
++public:
++    ~WirelessConflictHandler() override = default;
++    bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
++        StreamUsage streamUsage, SourceType sourceType, bool isOutput) override;
++    void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
++        const std::vector<StreamDeviceInfo> &inputDevices);
++    void ClearSelectedDevices();
++
++private:
++    bool IsCallStreamUsage(StreamUsage streamUsage);
++    bool IsForcedRouterType(RouterType routerType);
++    int GetPriority(StreamUsage streamUsage, SourceType sourceType, RouterType routerType, bool isOutput);
++    
++    std::vector<StreamDeviceInfo> outputStreamDevices_;
++    std::vector<StreamDeviceInfo> inputStreamDevices_;
++};
++} // namespace AudioStandard
++} // namespace OHOS
++#endif // ST_WIRELESS_CONFLICT_HANDLER_H
+diff --git a/services/audio_policy/server/service/service_main/src/audio_core_service.cpp b/services/audio_policy/server/service/service_main/src/audio_core_service.cpp
+index af010d153876adbad27783ec439b447b36f43c5c..4d3b4289dfdd1bffa7eaab1d7de4c0796839c7db 100644
+--- a/services/audio_policy/server/service/service_main/src/audio_core_service.cpp
++++ b/services/audio_policy/server/service/service_main/src/audio_core_service.cpp
+@@ -657,8 +657,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetCaptureClientDevice(
+         !hasRunningStream, std::make_shared<AudioDeviceDescriptor>(
+             audioActiveDevice_.GetCurrentInputDevice(GetRealUid(streamDesc))));
+ 
++    RouterType routerType = ROUTER_TYPE_NONE;
+     return audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType,
+-        GetRealUid(streamDesc), sessionId);
++        GetRealUid(streamDesc), routerType, sessionId);
+ }
+ 
+ void AudioCoreService::SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+@@ -1374,7 +1375,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
+     }
+ 
+     if (networkId == LOCAL_NETWORK_ID) {
+-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
++        RouterType routerType = ROUTER_TYPE_NONE;
++        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType);
+         CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr");
+         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
+             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
+@@ -2086,9 +2088,10 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
+     for (auto streamDesc : inputStreamDescs) {
+         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+         pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
++        RouterType routerType = ROUTER_TYPE_NONE;
+         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
+             audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
+-                streamDesc->sessionId_);
++                routerType, streamDesc->sessionId_);
+         CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
+         pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
+         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
+@@ -3051,8 +3054,9 @@ bool AudioCoreService::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDev
+ {
+     AudioDeviceDescriptor realInputDevice = inputDevice;
+     AudioDeviceDescriptor realOutputDevice = outputDevice;
++    RouterType routerType = ROUTER_TYPE_NONE;
+     shared_ptr<AudioDeviceDescriptor> inputDesc =
+-        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
++        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1, routerType);
+     if (inputDesc != nullptr) {
+         realInputDevice = *inputDesc;
+     }
+@@ -3290,7 +3294,8 @@ void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &o
+ void AudioCoreService::UpdateEnhanceEffectState(SourceType source)
+ {
+     AudioEnhancePropertyArray enhancePropertyArray = {};
+-    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
++    RouterType routerType = ROUTER_TYPE_NONE;
++    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1, routerType);
+     CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
+     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
+         inputDesc->deviceType_);
+@@ -3396,7 +3401,8 @@ int32_t AudioCoreService::FetchTargetInfoForSessionAdd(const SessionInfo session
+     uint32_t targetBufferMs = CalculateTargetBufferDurationMs(targetInfo);
+ 
+     if (isEcFeatureEnable_) {
+-        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
++        RouterType routerType = ROUTER_TYPE_NONE;
++        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1, routerType);
+         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
+             targetInfo.channels_ == PC_MIC_CHANNEL_NUM) {
+             // only built-in mic can use 4 channel, update later by using xml to describe
+@@ -3488,7 +3494,8 @@ void AudioCoreService::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo>
+     if (!isEcFeatureEnable_) {
+         return;
+     }
+-    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
++    RouterType routerType = ROUTER_TYPE_NONE;
++    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1, routerType);
+     if (inputDesc == nullptr || inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET
+             || inputDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+         return;
+@@ -3580,8 +3587,9 @@ void AudioCoreService::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceTyp
+     FetchDeviceInfo info = { STREAM_USAGE_VOICE_COMMUNICATION, "UpdateStreamEcInfo" };
+     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
+         audioRouterCenter_.FetchOutputDevices(info);
++    RouterType routerType = ROUTER_TYPE_NONE;
+     std::shared_ptr<AudioDeviceDescriptor> inputDesc =
+-        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
++        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1, routerType);
+ 
+     CHECK_AND_RETURN_LOG(inputDesc && !outputDesc.empty() && outputDesc.front(), "Device is nullptr");
+     UpdateAudioEcInfo(*inputDesc, *outputDesc.front());
+@@ -3633,7 +3641,8 @@ void AudioCoreService::UpdateModuleInfoDeviceType(AudioModuleInfo &moduleInfo,
+ void AudioCoreService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
+     SourceType sourceType)
+ {
+-    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
++    RouterType routerType = ROUTER_TYPE_NONE;
++    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1, routerType);
+     if (!isEcFeatureEnable_) {
+         moduleInfo = primaryMicModuleInfo_;
+         // current layout represents the number of channel. This will need to be modify in the future.
+@@ -3790,7 +3799,8 @@ std::string AudioCoreService::ShouldOpenMicRef(SourceType source)
+         return shouldOpen;
+     }
+ 
+-    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
++    RouterType routerType = ROUTER_TYPE_NONE;
++    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1, routerType);
+     CHECK_AND_RETURN_RET_LOG(inputDesc != nullptr, shouldOpen, "inputDesc is nullptr");
+     auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
+     if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
+diff --git a/services/audio_policy/server/service/service_main/src/audio_core_service_private.cpp b/services/audio_policy/server/service/service_main/src/audio_core_service_private.cpp
+index 5e8604229ecc37892bde313f905fbd34ec892dfa..5461db1b22b0b7441778dd9dc7839b1890c54afb 100644
+--- a/services/audio_policy/server/service/service_main/src/audio_core_service_private.cpp
++++ b/services/audio_policy/server/service/service_main/src/audio_core_service_private.cpp
+@@ -2199,10 +2199,11 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
+ {
+     std::shared_ptr<AudioDeviceDescriptor> desc;
+     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice(DEFAULT_UID);
++    RouterType routerType = ROUTER_TYPE_NONE;
+     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && Bluetooth::AudioHfpManager::IsRecognitionStatus()) {
+-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1);
++        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1, routerType);
+     } else {
+-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
++        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1, routerType);
+     }
+     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is nullptr");
+ 
+diff --git a/services/audio_policy/test/BUILD.gn b/services/audio_policy/test/BUILD.gn
+index ab4445c1848b21c647ce6b8f0d66fe865a975ccd..6d43371cb3ed939786f4cc68547bd7bc7ac9a3f1 100644
+--- a/services/audio_policy/test/BUILD.gn
++++ b/services/audio_policy/test/BUILD.gn
+@@ -2738,6 +2738,7 @@ ohos_unittest("audio_router_center_unit_test") {
+   sources = [
+     "./unittest/audio_router_center_unit_test/src/audio_router_center_unit_test.cpp",
+     "./unittest/audio_router_center_unit_test/src/default_router_unit_test.cpp",
++    "./unittest/audio_router_center_unit_test/src/wireless_conflict_handler_unit_test.cpp",
+   ]
+ 
+   deps = [
+diff --git a/services/audio_policy/test/unittest/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp b/services/audio_policy/test/unittest/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp
+index 95f96ea5f9818bf8a6c4175d58153b652d603f3c..a90c12831a2448e2a5aa8225283034c13d1ae011 100644
+--- a/services/audio_policy/test/unittest/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp
++++ b/services/audio_policy/test/unittest/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp
+@@ -39,7 +39,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_001, Te
+     AudioCapturerInfo captureInfo;
+     captureInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+     std::string networkId = LOCAL_NETWORK_ID;
+-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1)->deviceType_ = DEVICE_TYPE_NONE;
++    RouterType routerType = ROUTER_TYPE_NONE;
++    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
+ 
+     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+         audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+@@ -76,7 +77,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_003, Te
+     AudioCapturerInfo captureInfo;
+     captureInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
+     std::string networkId = LOCAL_NETWORK_ID;
+-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1)->deviceType_ = DEVICE_TYPE_NONE;
++    RouterType routerType = ROUTER_TYPE_NONE;
++    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
+ 
+     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+         audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+diff --git a/services/audio_policy/test/unittest/audio_router_center_unit_test/src/wireless_conflict_handler_unit_test.cpp b/services/audio_policy/test/unittest/audio_router_center_unit_test/src/wireless_conflict_handler_unit_test.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e3e6da85cf9752c6476a8597c6c5516e6102deb
+--- /dev/null
++++ b/services/audio_policy/test/unittest/audio_router_center_unit_test/src/wireless_conflict_handler_unit_test.cpp
+@@ -0,0 +1,266 @@
++/*
++ * Copyright (c) 2026 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "audio_router_center_unit_test.h"
++#include "wireless_conflict_handler.h"
++#include "audio_errors.h"
++#include "audio_policy_log.h"
++#include <gtest/gtest.h>
++#include <memory>
++#include <vector>
++
++using namespace testing::ext;
++using namespace OHOS::AudioStandard;
++
++namespace OHOS {
++namespace AudioStandard {
++
++/**
++ * @tc.name  : Test WirelessConflictHandler IsCallStreamUsage.
++ * @tc.number: WirelessConflictHandler_001
++ * @tc.desc  : Test IsCallStreamUsage interface with various stream usages.
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_001, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
++    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_MODEM_COMMUNICATION));
++    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VIDEO_COMMUNICATION));
++    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_RINGTONE));
++    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_RINGTONE));
++    EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_MUSIC));
++    EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_MEDIA));
++    EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_UNKNOWN));
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler IsForcedRouterType.
++ * @tc.number: WirelessConflictHandler_002
++ * @tc.desc  : Test IsForcedRouterType interface with various router types.
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_002, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_USER_SELECT));
++    EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_APP_SELECT));
++    EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_DEFAULT));
++    EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_PAIR_DEVICE));
++    EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_NONE));
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler GetPriority.
++ * @tc.number: WirelessConflictHandler_003
++ * @tc.desc  : Test GetPriority interface with various parameters.
++ *             Priority order: call > forced input > input > forced output > output
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    // Call output stream: priority 5
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_COMMUNICATION, SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), 5);
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_RINGTONE, SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), 5);
++    
++    // Forced input: priority 4
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN, SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, false), 4);
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN, SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, false), 4);
++    
++    // Normal input: priority 3
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN, SOURCE_TYPE_MIC, ROUTER_TYPE_NONE, false), 3);
++    
++    // Forced output: priority 2
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, true), 2);
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, true), 2);
++    
++    // Normal output: priority 1
++    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), 1);
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler Detect with nullptr device.
++ * @tc.number: WirelessConflictHandler_004
++ * @tc.desc  : Test Detect interface with nullptr device, should return false.
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_004, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    EXPECT_FALSE(handler.Detect(nullptr, ROUTER_TYPE_NONE, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler Detect with empty mac address.
++ * @tc.number: WirelessConflictHandler_005
++ * @tc.desc  : Test Detect interface with empty mac address, should return false.
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_005, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    auto device = std::make_shared<AudioDeviceDescriptor>();
++    device->macAddress_ = "";
++    
++    EXPECT_FALSE(handler.Detect(device, ROUTER_TYPE_NONE, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler SetSelectedDevices and ClearSelectedDevices.
++ * @tc.number: WirelessConflictHandler_006
++ * @tc.desc  : Test SetSelectedDevices and ClearSelectedDevices interfaces.
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_006, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    std::vector<StreamDeviceInfo> outputDevices;
++    std::vector<StreamDeviceInfo> inputDevices;
++    
++    StreamDeviceInfo outputInfo;
++    outputInfo.uid = 1001;
++    outputInfo.sessionId = 1;
++    outputInfo.streamUsage = STREAM_USAGE_MUSIC;
++    outputInfo.routerType = ROUTER_TYPE_DEFAULT;
++    auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
++    outputDevice->macAddress_ = "00:11:22:33:44:55";
++    outputInfo.device = outputDevice;
++    outputDevices.push_back(outputInfo);
++    
++    StreamDeviceInfo inputInfo;
++    inputInfo.uid = 1002;
++    inputInfo.sessionId = 2;
++    inputInfo.sourceType = SOURCE_TYPE_MIC;
++    inputInfo.routerType = ROUTER_TYPE_DEFAULT;
++    auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
++    inputDevice->macAddress_ = "00:11:22:33:44:56";
++    inputInfo.device = inputDevice;
++    inputDevices.push_back(inputInfo);
++    
++    handler.SetSelectedDevices(outputDevices, inputDevices);
++    
++    // Clear selected devices
++    handler.ClearSelectedDevices();
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler Detect no conflict with same device.
++ * @tc.number: WirelessConflictHandler_007
++ * @tc.desc  : Test Detect when current device has same mac as highest priority device,
++ *             should return false (no conflict).
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_007, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    std::vector<StreamDeviceInfo> outputDevices;
++    StreamDeviceInfo info;
++    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
++    info.routerType = ROUTER_TYPE_DEFAULT;
++    auto device = std::make_shared<AudioDeviceDescriptor>();
++    device->macAddress_ = "00:11:22:33:44:55";
++    info.device = device;
++    outputDevices.push_back(info);
++    
++    handler.SetSelectedDevices(outputDevices, {});
++    
++    // Same mac address, no conflict
++    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
++    currentDevice->macAddress_ = "00:11:22:33:44:55";
++    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler Detect conflict with different device.
++ * @tc.number: WirelessConflictHandler_008
++ * @tc.desc  : Test Detect when current device has different mac from highest priority device,
++ *             and current priority is lower, should return true (conflict).
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_008, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    std::vector<StreamDeviceInfo> outputDevices;
++    StreamDeviceInfo info;
++    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION; // priority 5
++    info.routerType = ROUTER_TYPE_DEFAULT;
++    auto device = std::make_shared<AudioDeviceDescriptor>();
++    device->macAddress_ = "00:11:22:33:44:55";
++    info.device = device;
++    outputDevices.push_back(info);
++    
++    handler.SetSelectedDevices(outputDevices, {});
++    
++    // Different mac address, current is music (priority 1), call is priority 5
++    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
++    currentDevice->macAddress_ = "00:11:22:33:44:66";
++    EXPECT_TRUE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler Detect no conflict when priority is higher.
++ * @tc.number: WirelessConflictHandler_009
++ * @tc.desc  : Test Detect when current stream has higher priority than existing,
++ *             should return false (no conflict).
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_009, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    std::vector<StreamDeviceInfo> outputDevices;
++    StreamDeviceInfo info;
++    info.streamUsage = STREAM_USAGE_MUSIC; // priority 1
++    info.routerType = ROUTER_TYPE_DEFAULT;
++    auto device = std::make_shared<AudioDeviceDescriptor>();
++    device->macAddress_ = "00:11:22:33:44:55";
++    info.device = device;
++    outputDevices.push_back(info);
++    
++    handler.SetSelectedDevices(outputDevices, {});
++    
++    // Current is call (priority 5), existing is music (priority 1), no conflict
++    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
++    currentDevice->macAddress_ = "00:11:22:33:44:66";
++    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_VOICE_COMMUNICATION, SOURCE_TYPE_INVALID, true));
++}
++
++/**
++ * @tc.name  : Test WirelessConflictHandler Detect with input stream.
++ * @tc.number: WirelessConflictHandler_010
++ * @tc.desc  : Test Detect with input stream devices.
++ */
++HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_010, TestSize.Level1)
++{
++    WirelessConflictHandler handler;
++    
++    std::vector<StreamDeviceInfo> inputDevices;
++    StreamDeviceInfo info;
++    info.sourceType = SOURCE_TYPE_MIC; // priority 3 for input
++    info.routerType = ROUTER_TYPE_USER_SELECT; // priority 4 for forced input
++    auto device = std::make_shared<AudioDeviceDescriptor>();
++    device->macAddress_ = "00:11:22:33:44:55";
++    info.device = device;
++    inputDevices.push_back(info);
++    
++    handler.SetSelectedDevices({}, inputDevices);
++    
++    // Different mac, current is normal input (priority 3), existing is forced input (priority 4)
++    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
++    currentDevice->macAddress_ = "00:11:22:33:44:66";
++    EXPECT_TRUE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT, STREAM_USAGE_UNKNOWN, SOURCE_TYPE_MIC, false));
++}
++
++} // namespace AudioStandard
++} // namespace OHOS
+\ No newline at end of file
+diff --git a/test/fuzztest/audiopolicy_fuzzer/audioroutercenter_fuzzer/audio_router_center_fuzzer.cpp b/test/fuzztest/audiopolicy_fuzzer/audioroutercenter_fuzzer/audio_router_center_fuzzer.cpp
+index bdc33d4498bf8adf05eefde72bfdbfa0c88e0962..6d3e431c9b4753a4986d6455724338e7ef0fe323 100644
+--- a/test/fuzztest/audiopolicy_fuzzer/audioroutercenter_fuzzer/audio_router_center_fuzzer.cpp
++++ b/test/fuzztest/audiopolicy_fuzzer/audioroutercenter_fuzzer/audio_router_center_fuzzer.cpp
+@@ -185,8 +185,9 @@ void FetchInputDeviceFuzzTest(FuzzedDataProvider& fdp)
+     SourceType sourceType = SourceTypeVec[sourceTypeCount];
+     int32_t clientUID = GetData<int32_t>();
+     uint32_t sessionID = GetData<uint32_t>();
++    RouterType routerType = ROUTER_TYPE_NONE;
+     
+-    AudioRouterCenter::GetAudioRouterCenter().FetchInputDevice(sourceType, clientUID, sessionID);
++    AudioRouterCenter::GetAudioRouterCenter().FetchInputDevice(sourceType, clientUID, routerType, sessionID);
+ }
+ 
+ void SetAudioDeviceRefinerCallbackFuzzTest(FuzzedDataProvider& fdp)

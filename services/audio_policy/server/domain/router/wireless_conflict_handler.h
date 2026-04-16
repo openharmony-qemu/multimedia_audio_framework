@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef ST_WIRELESS_CONFLICT_HANDLER_H
+#define ST_WIRELESS_CONFLICT_HANDLER_H
+
+#include "conflict_handler.h"
+#include <vector>
+
+namespace OHOS {
+namespace AudioStandard {
+class WirelessConflictHandler : public ConflictHandler {
+public:
+    ~WirelessConflictHandler() override = default;
+    bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
+        StreamUsage streamUsage, SourceType sourceType, bool isOutput) override;
+    void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
+        const std::vector<StreamDeviceInfo> &inputDevices);
+    void ClearSelectedDevices();
+
+private:
+    bool IsCallStreamUsage(StreamUsage streamUsage);
+    bool IsForcedRouterType(RouterType routerType);
+    int GetPriority(StreamUsage streamUsage, SourceType sourceType, RouterType routerType, bool isOutput);
+    
+    std::vector<StreamDeviceInfo> outputStreamDevices_;
+    std::vector<StreamDeviceInfo> inputStreamDevices_;
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // ST_WIRELESS_CONFLICT_HANDLER_H

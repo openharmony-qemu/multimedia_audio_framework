@@ -714,8 +714,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetCaptureClientDevice(
         !hasRunningStream, std::make_shared<AudioDeviceDescriptor>(
             audioActiveDevice_.GetCurrentInputDevice(GetRealUid(streamDesc))));
 
+    RouterType routerType = ROUTER_TYPE_NONE;
     return audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType,
-        GetRealUid(streamDesc), sessionId);
+        GetRealUid(streamDesc), routerType, sessionId);
 }
 
 void AudioCoreService::SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -1496,7 +1497,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     }
 
     if (networkId == LOCAL_NETWORK_ID) {
-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, uid);
+        RouterType routerType = ROUTER_TYPE_NONE;
+        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, uid, routerType);
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr");
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
@@ -2208,9 +2210,10 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
     for (auto streamDesc : inputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
+        RouterType routerType = ROUTER_TYPE_NONE;
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
             audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
-                streamDesc->sessionId_);
+                routerType, streamDesc->sessionId_);
         CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
         pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
@@ -3173,8 +3176,9 @@ bool AudioCoreService::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDev
 {
     AudioDeviceDescriptor realInputDevice = inputDevice;
     AudioDeviceDescriptor realOutputDevice = outputDevice;
+    RouterType routerType = ROUTER_TYPE_NONE;
     shared_ptr<AudioDeviceDescriptor> inputDesc =
-        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1, routerType);
     if (inputDesc != nullptr) {
         realInputDevice = *inputDesc;
     }
@@ -3412,7 +3416,8 @@ void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &o
 void AudioCoreService::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
-    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
+    RouterType routerType = ROUTER_TYPE_NONE;
+    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1, routerType);
     CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
         inputDesc->deviceType_);
@@ -3518,7 +3523,8 @@ int32_t AudioCoreService::FetchTargetInfoForSessionAdd(const SessionInfo session
     uint32_t targetBufferMs = CalculateTargetBufferDurationMs(targetInfo);
 
     if (isEcFeatureEnable_) {
-        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
+        RouterType routerType = ROUTER_TYPE_NONE;
+        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1, routerType);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channels_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
@@ -3610,7 +3616,8 @@ void AudioCoreService::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo>
     if (!isEcFeatureEnable_) {
         return;
     }
-    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
+    RouterType routerType = ROUTER_TYPE_NONE;
+    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1, routerType);
     if (inputDesc == nullptr || inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET
             || inputDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         return;
@@ -3702,8 +3709,9 @@ void AudioCoreService::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceTyp
     FetchDeviceInfo info = { STREAM_USAGE_VOICE_COMMUNICATION, "UpdateStreamEcInfo" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
         audioRouterCenter_.FetchOutputDevices(info);
+    RouterType routerType = ROUTER_TYPE_NONE;
     std::shared_ptr<AudioDeviceDescriptor> inputDesc =
-        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1, routerType);
 
     CHECK_AND_RETURN_LOG(inputDesc && !outputDesc.empty() && outputDesc.front(), "Device is nullptr");
     UpdateAudioEcInfo(*inputDesc, *outputDesc.front());
@@ -3755,7 +3763,8 @@ void AudioCoreService::UpdateModuleInfoDeviceType(AudioModuleInfo &moduleInfo,
 void AudioCoreService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
     SourceType sourceType)
 {
-    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
+    RouterType routerType = ROUTER_TYPE_NONE;
+    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1, routerType);
     if (!isEcFeatureEnable_) {
         moduleInfo = primaryMicModuleInfo_;
         // current layout represents the number of channel. This will need to be modify in the future.
@@ -3912,7 +3921,8 @@ std::string AudioCoreService::ShouldOpenMicRef(SourceType source)
         return shouldOpen;
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
+    RouterType routerType = ROUTER_TYPE_NONE;
+    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1, routerType);
     CHECK_AND_RETURN_RET_LOG(inputDesc != nullptr, shouldOpen, "inputDesc is nullptr");
     auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
     if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
