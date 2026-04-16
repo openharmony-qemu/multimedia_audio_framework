@@ -754,6 +754,11 @@ void AudioServer::OnStart()
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
     RecordBootStateTime(AudioServerBootState::LOAD_LIBXML2, ClockTime::GetCurMilli());
     DlopenUtils::Init();
+    auto info = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfo();
+    if (!info.IsEmpty()) {
+        cacheSoundCardInfo_ = std::make_shared<SoundCardInfo>(info);
+        AUDIO_INFO_LOG("Cached sound card info: name=%{public}s", info.name.c_str());
+    }
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_ASAsyncHandler");
@@ -1308,11 +1313,27 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-
+    
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     if (deviceManager != nullptr) {
-        if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+        std::string result = HandleSpecificKey(key, deviceManager);
+        if (!result.empty()) {
+            return result;
+        }
+    }
+
+    if (AudioServer::audioParameters.count(key)) {
+        return AudioServer::audioParameters[key];
+    } else {
+        return "";
+    }
+}
+
+std::string AudioServer::HandleSpecificKey(const std::string &key,
+    const std::shared_ptr<IDeviceManager> &deviceManager)
+{
+    if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
             return deviceManager->GetAudioParameter("primary", PARAM_KEY_LOWPOWER, "");
         }
         if (key.starts_with("need_change_usb_device#C")) {
@@ -1326,6 +1347,9 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
         }
         if (key == "perf_info") {
             return deviceManager->GetAudioParameter("primary", AudioParamKey::PERF_INFO, key);
+        }
+        if (key == "sound_card_info") {
+            return deviceManager->GetAudioParameter("primary", AudioParamKey::SOUND_CARD_INFO, key);
         }
         if (key == "concurrent_capture_stream_info") {
             return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
@@ -1345,13 +1369,8 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
                     key.substr(mmiPre.size(), key.size() - mmiPre.size()));
             }
         }
-    }
 
-    if (AudioServer::audioParameters.count(key)) {
-        return AudioServer::audioParameters[key];
-    } else {
         return "";
-    }
 }
 
 const std::string AudioServer::GetVAParameter(const std::string &key)
@@ -2836,8 +2855,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
 void AudioServer::RegisterAudioRendererSinkCallback()
 {
     // Only watch primary and fast sink for now, watch other sinks later.
-    IdHandler &idHandler = IdHandler::GetInstance();
-    std::function<bool(uint32_t)> limitFunc = [&idHandler] (uint32_t id) -> bool {
+    std::function<bool(uint32_t)> limitFunc = [] (uint32_t id) -> bool {
         // Register for all sinks
         return true;
     };

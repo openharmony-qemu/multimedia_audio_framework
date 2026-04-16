@@ -331,6 +331,42 @@ napi_value NapiAudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(napi
     return NapiAsyncWork::Enqueue(env, context, "SelectInputDeviceForAudioCapturer", executor, complete);
 }
 
+napi_value NapiAudioDeviceEnhanceManager::GetSoundCardInfo(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetSoundCardInfo failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioDeviceEnhanceManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckDeviceEnhanceManagerStatus(napiManager, context),
+            "device enhance manager state is error.");
+        context->soundCardInfo = napiManager->audioDeviceEnhanceMngr_->GetSoundCardInfo();
+    };
+    auto complete = [env, context](napi_value &output) {
+        napi_value jsObj = nullptr;
+        napi_status status = NapiParamUtils::ConvertSoundCardInfoToJs(env, context->soundCardInfo, jsObj);
+        if (status != napi_ok) {
+            NapiAudioError::ThrowError(env, "Fail to convert SoundCardInfo to Js object", NAPI_ERR_SYSTEM);
+            output = NapiParamUtils::GetUndefinedValue(env);
+            return;
+        }
+        output = jsObj;
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetSoundCardInfo", executor, complete);
+}
+
 napi_value NapiAudioDeviceEnhanceManager::Init(napi_env env, napi_value exports)
 {
     napi_value result = nullptr;
@@ -342,6 +378,7 @@ napi_value NapiAudioDeviceEnhanceManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("selectInputDevice", SelectInputDevice),
         DECLARE_NAPI_FUNCTION("selectOutputDeviceForAudioRenderer", SelectOutputDeviceForAudioRenderer),
         DECLARE_NAPI_FUNCTION("selectInputDeviceForAudioCapturer", SelectInputDeviceForAudioCapturer),
+        DECLARE_NAPI_FUNCTION("getSoundCardInfo", GetSoundCardInfo),
     };
 
     napi_value constructor = nullptr;

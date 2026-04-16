@@ -1737,5 +1737,23 @@ napi_status NapiParamUtils::ToJsActiveStreamsVolumeInfo(const napi_env &env,
     }
     return status;
 }
+
+napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
+    const SoundCardInfo &info, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create napi_create_object failed");
+    status = SetValueString(env, "name", info.name, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set name failed");
+    status = SetValueString(env, "vendor", info.vendor, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set vendor failed");
+    status = SetValueString(env, "model", info.model, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set model failed");
+    status = SetValueString(env, "busAddress", info.busAddress, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set busAddress failed");
+    status = SetValueString(env, "driver", info.driver, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set driver failed");
+    return napi_ok;
+}
 } // namespace AudioStandard
 } // namespace OHOS

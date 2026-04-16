@@ -32,6 +32,7 @@
 #include "audio_system_manager.h"
 #include "audio_stream_manager.h"
 #include "audio_device_descriptor.h"
+#include "audio_device_enhance_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -227,6 +228,8 @@ public:
         napi_value in);
     static napi_status ToJsActiveStreamsVolumeInfo(const napi_env &env,
         const std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo, napi_value &result);
+    static napi_status ConvertSoundCardInfoToJs(const napi_env &env,
+        const SoundCardInfo &info, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS
