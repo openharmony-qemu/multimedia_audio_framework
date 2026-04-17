@@ -41,7 +41,7 @@ const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 constexpr int32_t INVALID_VALUE = -1;
 
-static sptr<AudioServer> audioServer;
+sptr<AudioServer> audioServer;
 
 void AudioServerUnitTest::SetUpTestCase(void)
 {
@@ -66,7 +66,13 @@ void AudioServerUnitTest::SetUp(void)
 
 void AudioServerUnitTest::TearDown(void)
 {
-    // input testcase teardown step，teardown invoked after each testcases
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL].reset();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_REMOTE].reset();
+    AudioServer::audioParameterKeys.clear();
+    if (audioServer != nullptr) {
+        audioServer->isAudioParameterParsed_.store(true);
+    }
 }
 
 enum PermissionStatus {
