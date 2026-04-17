@@ -1352,9 +1352,6 @@ int32_t HpaeCapturerManager::OpenCollaborativePrimary()
 
 void HpaeCapturerManager::CloseCollaborativePrimary()
 {
-    // 什么时候关闭 ？stop的时候关闭， 流运行中关闭
-    // 统一期间，先执行disconnect，再deinit
-    // 怎么知道这个这个节点连接了哪些呢？ -> 提供给HpaeSourceProcessCluster 一个 reload接口 ？让他内部自己重构？ -> 不行，连接会烂掉
     auto collabInput = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
     CHECK_AND_RETURN_LOG(collabInput != nullptr, "collaborative sourceInput is nullptr");
     collabInput->CapturerSourceDeInit();
