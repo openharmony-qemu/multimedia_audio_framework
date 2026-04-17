@@ -56,7 +56,7 @@ static const std::unordered_set<AudioSampleFormat> SUPPORTED_SAMPLE_FORMATS = {
 constexpr int32_t MAX_CALLBACK_DATA_SIZE = 400 * 1024; // 400KB
 
 AudioFormatConverterImpl::AudioFormatConverterImpl()
-    : inputFinished_(false)
+    : inputFinished_(false), destroyed_(false)
 {
 }
 
