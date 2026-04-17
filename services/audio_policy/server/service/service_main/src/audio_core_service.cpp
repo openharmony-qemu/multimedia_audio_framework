@@ -1297,6 +1297,20 @@ int32_t AudioCoreService::StandbyClient(uint32_t sessionId)
     return SUCCESS;
 }
 
+void AudioCoreService::NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    if (standbyStatus) {
+        pipeManager_->StandbyClient(sessionId);
+        auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+        if (streamDesc) {
+            ForceRemoveSleStreamType(streamDesc);
+        }
+    } else {
+        pipeManager_->ClearStandbyFlag(sessionId);
+    }
+}
+
 int32_t AudioCoreService::StopClient(uint32_t sessionId)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
