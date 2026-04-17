@@ -488,7 +488,7 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_102, TestSize.Leve
  * tc.number : HpaeCaptureEffectNodeTest_103
  * tc.desc   : Test SignalProcess with SCENE_COLLABORATIVE_RECORD
  */
-HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_103, TestSize.Level0)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_103, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -498,6 +498,11 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_103, TestSize.Leve
 
     PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAME_LENGTH, SAMPLE_RATE_48000);
     hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+    uint32_t bufferLength = DEFAULT_FRAME_LENGTH * STEREO * sizeof(float);
+    hpaeCaptureEffectNode->micCache_.resize(bufferLength);
+    hpaeCaptureEffectNode->micRefCache_.resize(bufferLength);
+    hpaeCaptureEffectNode->micBufferLength_ = bufferLength;
+    hpaeCaptureEffectNode->micrefBufferLength_ = bufferLength;
 
     std::vector<HpaePcmBuffer *> inputs;
     HpaePcmBuffer micBuffer(pcmBufferInfo);
@@ -517,7 +522,7 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_103, TestSize.Leve
  * tc.number : HpaeCaptureEffectNodeTest_104
  * tc.desc   : Test SignalProcessCollaboration with only mic input
  */
-HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_104, TestSize.Level0)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_104, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -527,6 +532,9 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_104, TestSize.Leve
 
     PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAME_LENGTH, SAMPLE_RATE_48000);
     hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+    uint32_t bufferLength = DEFAULT_FRAME_LENGTH * STEREO * sizeof(float);
+    hpaeCaptureEffectNode->micCache_.resize(bufferLength);
+    hpaeCaptureEffectNode->micBufferLength_ = bufferLength;
 
     std::vector<HpaePcmBuffer *> inputs;
     HpaePcmBuffer micBuffer(pcmBufferInfo);
@@ -542,7 +550,7 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_104, TestSize.Leve
  * tc.number : HpaeCaptureEffectNodeTest_105
  * tc.desc   : Test SignalProcessCollaboration with only ref input
  */
-HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_105, TestSize.Level0)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_105, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -552,6 +560,9 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_105, TestSize.Leve
 
     PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAME_LENGTH, SAMPLE_RATE_48000);
     hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+    uint32_t bufferLength = DEFAULT_FRAME_LENGTH * STEREO * sizeof(float);
+    hpaeCaptureEffectNode->micRefCache_.resize(bufferLength);
+    hpaeCaptureEffectNode->micrefBufferLength_ = bufferLength;
 
     std::vector<HpaePcmBuffer *> inputs;
     HpaePcmBuffer refBuffer(pcmBufferInfo);
@@ -567,7 +578,7 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_105, TestSize.Leve
  * tc.number : HpaeCaptureEffectNodeTest_106
  * tc.desc   : Test CaptureEffectCreate with SCENE_COLLABORATIVE_RECORD
  */
-HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_106, TestSize.Level0)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_106, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -593,7 +604,7 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_106, TestSize.Leve
  * tc.number : HpaeCaptureEffectNodeTest_107
  * tc.desc   : Test CaptureEffectCreate with different channel configs
  */
-HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_107, TestSize.Level0)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_107, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -611,6 +622,54 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_107, TestSize.Leve
     uint64_t sceneKeyCode = 12345;
     EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectCreate(sceneKeyCode, attr), 0);
     EXPECT_EQ(hpaeCaptureEffectNode->CaptureEffectRelease(sceneKeyCode), 0);
+}
+
+/*
+ * tc.name   : Test SetCapturerEffectConfig with SCENE_COLLABORATIVE_RECORD
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_108
+ * tc.desc   : Test SetCapturerEffectConfig covers SCENE_COLLABORATIVE_RECORD branch
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_108, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    nodeInfo.effectInfo.enhanceScene = SCENE_COLLABORATIVE_RECORD;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+
+    AudioBufferConfig audioBufferConfig1 = {
+        .samplingRate = SAMPLE_RATE_48000,
+        .channels = CHANNEL_4,
+        .format = DEFAULT_FORMAT,
+    };
+    AudioBufferConfig audioBufferConfig2 = {
+        .samplingRate = SAMPLE_RATE_16000,
+        .channels = STEREO,
+        .format = DEFAULT_FORMAT,
+    };
+    AudioBufferConfig audioBufferConfig3 = {
+        .samplingRate = SAMPLE_RATE_44100,
+        .channels = CHANNEL_4,
+        .format = DEFAULT_FORMAT,
+    };
+    hpaeCaptureEffectNode->SetCapturerEffectConfig(audioBufferConfig1, audioBufferConfig2, audioBufferConfig3);
+
+    HpaeNodeInfo nodeInfo1;
+    EXPECT_EQ(hpaeCaptureEffectNode->GetCapturerEffectConfig(nodeInfo1), true);
+    EXPECT_EQ(nodeInfo1.samplingRate, audioBufferConfig1.samplingRate);
+    EXPECT_EQ(nodeInfo1.channels, audioBufferConfig1.channels);
+    EXPECT_EQ(nodeInfo1.format, SAMPLE_F32LE);
+
+    HpaeNodeInfo nodeInfo2;
+    EXPECT_EQ(hpaeCaptureEffectNode->GetCapturerEffectConfig(nodeInfo2, HPAE_SOURCE_BUFFER_TYPE_EC), true);
+    EXPECT_EQ(nodeInfo2.samplingRate, audioBufferConfig2.samplingRate);
+    EXPECT_EQ(nodeInfo2.channels, audioBufferConfig2.channels);
+
+    HpaeNodeInfo nodeInfo3;
+    EXPECT_EQ(hpaeCaptureEffectNode->GetCapturerEffectConfig(nodeInfo3, HPAE_SOURCE_BUFFER_TYPE_DEFAULT), true);
+    EXPECT_EQ(nodeInfo3.samplingRate, audioBufferConfig3.samplingRate);
+    EXPECT_EQ(nodeInfo3.channels, audioBufferConfig3.channels);
+    EXPECT_EQ(nodeInfo3.format, SAMPLE_F32LE);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
