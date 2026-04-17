@@ -147,6 +147,8 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     // load configuration
     std::unique_ptr<AudioFocusParser> parser = make_unique<AudioFocusParser>();
     int32_t ret = parser->LoadConfig(focusCfgMap_);
+    server->RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_INTERRUPT_POLICY_CONFIG,
+        ClockTime::GetCurMilli());
     if (ret != SUCCESS) {
         WriteServiceStartupError();
     }
@@ -290,7 +292,7 @@ void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const A
 }
 
 AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
-    const AudioSessionStrategy &strategy, const bool isStandalone)
+    const AudioSessionStrategy &strategy, const bool isStandalone, int32_t callerUid)
 {
     AudioXCollie audioXCollie("AudioInterruptService::ActivateAudioSession", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
@@ -299,7 +301,7 @@ AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t z
     std::lock_guard<std::mutex> lock(mutex_);
     AudioInterruptResult result;
     bool isActivated = sessionService_.IsAudioSessionActivated(callerPid);
-    result.retCode = sessionService_.ActivateAudioSession(callerPid, strategy);
+    result.retCode = sessionService_.ActivateAudioSession(callerPid, strategy, callerUid);
     if (result.retCode != SUCCESS) {
         HILOG_COMM_ERROR("[ActivateAudioSession]Failed to activate audio session for pid %{public}d!", callerPid);
         return result;
@@ -348,10 +350,10 @@ AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t z
     return result;
 }
 
-int32_t AudioInterruptService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene)
+int32_t AudioInterruptService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene, int32_t callerUid)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    return sessionService_.SetAudioSessionScene(callerPid, scene);
+    return sessionService_.SetAudioSessionScene(callerPid, scene, callerUid);
 }
 
 void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
@@ -3253,14 +3255,10 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
         case INTERRUPT_HINT_RESUME:
             muteFlag = false;
             SetNonInterruptMute(streamId, muteFlag);
-            policyServer_->UpdateDefaultOutputDeviceWhenStarting(streamId);
             break;
         case INTERRUPT_HINT_PAUSE:
         case INTERRUPT_HINT_STOP: {
             SetNonInterruptMute(streamId, muteFlag);
-            stopFuture_ = std::async(std::launch::async, [this, streamId] {
-                policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
-            });
             break;
         }
         default:

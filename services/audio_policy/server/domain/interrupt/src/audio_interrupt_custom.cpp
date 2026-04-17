@@ -91,6 +91,32 @@ void AudioInterruptCustom::CeliaCustomFocus(const AudioInterrupt &incomingInterr
     }
 }
 
+static const std::map<std::pair<SourceType, SourceType>,
+    std::pair<AudioFocuState, InterruptHint>> UNPROESSED_FOCUS_MAP = {
+    {{SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_WAKEUP }, {ACTIVE, INTERRUPT_HINT_NONE}},
+    {{SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_VOICE_RECOGNITION }, {ACTIVE, INTERRUPT_HINT_NONE}}
+};
+ 	  
+void AudioInterruptCustom::UnprocessedCustomFocus(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
+{
+    if (!activeInterrupt.mixWithWakeUp) {
+        return;
+    }
+
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    SourceType activeSourceType = activeInterrupt.audioFocusType.sourceType;
+    std::pair<SourceType, SourceType> UnprocessedFocus = {activeSourceType, incomingSourceType};
+    auto it = UNPROESSED_FOCUS_MAP.find(UnprocessedFocus);
+    if (it != UNPROESSED_FOCUS_MAP.end()) {
+        incomingState = it->second.first;
+        interruptEvent.hintType = it->second.second;
+        AUDIO_INFO_LOG("Two streams can mix because of activeInterrupt flag is %{public}d,"\
+            "incoming %{public}d, active %{public}d", activeInterrupt.mixWithWakeUp,
+            incomingSourceType, activeSourceType);
+    }
+}
+
 void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
@@ -100,6 +126,7 @@ void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &
         bundleName = AudioBundleManager::GetBundleNameFromUid(incomingInterrupt.uid);
     }
     CeliaCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent, bundleName);
+    UnprocessedCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
     UltraSonicCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
 }
 

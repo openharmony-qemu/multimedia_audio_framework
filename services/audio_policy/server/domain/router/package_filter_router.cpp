@@ -20,12 +20,14 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID, const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID, const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

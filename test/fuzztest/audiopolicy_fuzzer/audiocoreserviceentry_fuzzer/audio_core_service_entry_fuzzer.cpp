@@ -237,7 +237,7 @@ void OnPnpDeviceStatusUpdatedFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioCoreServiceEventEntryLoadSplitModuleFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::string splitArgs = "splitArgs";
+    std::string splitArgs = "";
     std::string networkId = "networkId";
     eventEntry->LoadSplitModule(splitArgs, networkId);
 }
@@ -313,7 +313,7 @@ void AudioCoreServiceEventEntryGetPreferredOutputDeviceDescriptorsFuzzTest(Fuzze
     rendererInfo.contentType = CONTENT_TYPE_UNKNOWN;
     rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
     std::string networkId = "networkId";
-    eventEntry->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+    eventEntry->GetPreferredOutputDeviceDescriptors(rendererInfo, -1, networkId);
 }
 
 void AudioCoreServiceEventEntrySetDeviceActiveFuzzTest(FuzzedDataProvider& fdp)

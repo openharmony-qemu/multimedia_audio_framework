@@ -22,6 +22,7 @@ ohos_unittest("multiple_audio_capturer_unit_test") {
   include_dirs = [
     "./include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audio_debug_manager/include",
   ]
 
   cflags = [

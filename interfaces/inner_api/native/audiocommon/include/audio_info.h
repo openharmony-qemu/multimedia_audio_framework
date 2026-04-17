@@ -58,6 +58,7 @@ constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
+constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
@@ -383,6 +384,12 @@ enum AdjustStreamVolume {
     DUCK_VOLUME_INFO,
 };
 
+enum UnderrunInfoType : uint32_t {
+    UNDERRUN_TYPE_ISTIMEOUT = 1 << 0,
+    UNDERRUN_TYPE_ISUSEARK = 1 << 1,
+    UNDERRUN_TYPE_MAX = 1 << 2,
+};
+
 struct AdjustStreamVolumeInfo {
     float volume;
     uint32_t sessionId;
@@ -453,6 +460,7 @@ struct VolumeEvent : public Parcelable {
     DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool notifyRssWhenAccountsChange = false;
+    int32_t appUid = -1;
 
     VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
         volume(volLevel), updateUi(isUiUpdated) {}
@@ -468,7 +476,8 @@ struct VolumeEvent : public Parcelable {
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(notifyRssWhenAccountsChange)
-            && parcel.WriteInt32(static_cast<int32_t>(deviceType));
+            && parcel.WriteInt32(static_cast<int32_t>(deviceType))
+            && parcel.WriteInt32(appUid);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -481,6 +490,7 @@ struct VolumeEvent : public Parcelable {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         notifyRssWhenAccountsChange = parcel.ReadBool();
         deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        appUid = parcel.ReadInt32();
     }
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
@@ -686,6 +696,7 @@ struct AudioRendererInfo : public Parcelable {
     uint32_t audioFlag = 0x0;
     bool forceToNormal = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    bool voipNoPrivacyFlag = false;
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
@@ -726,6 +737,7 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
+            && parcel.WriteBool(voipNoPrivacyFlag)
             && parcel.WriteBool(toneFlag)
             && parcel.WriteBool(keepRunning)
             && parcel.WriteBool(isStatic);
@@ -755,6 +767,7 @@ struct AudioRendererInfo : public Parcelable {
         audioFlag = parcel.ReadUint32();
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+        voipNoPrivacyFlag = parcel.ReadBool();
         toneFlag = parcel.ReadBool();
         keepRunning = parcel.ReadBool();
         isStatic = parcel.ReadBool();
@@ -784,6 +797,7 @@ public:
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
+    bool mixWithWakeUp = false;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -805,7 +819,8 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
             parcel.WriteBool(isLoopback) &&
-            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode))&&
+            parcel.WriteBool(mixWithWakeUp);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -821,6 +836,7 @@ public:
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        mixWithWakeUp = parcel.ReadBool();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -837,13 +853,6 @@ public:
 struct AudioRendererDesc {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-};
-
-struct AudioRendererOptions {
-    AudioStreamInfo streamInfo;
-    AudioRendererInfo rendererInfo;
-    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
-    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct MicStateChangeEvent : public Parcelable {
@@ -1143,6 +1152,14 @@ struct AppInfo {
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
     std::string deviceId {""};
+};
+
+struct AudioRendererOptions {
+    AudioStreamInfo streamInfo;
+    AudioRendererInfo rendererInfo;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
+    AppInfo appInfo;
 };
 
 struct BufferQueueState {
@@ -1473,6 +1490,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(capturerInfo.recorderType);
         parcel.WriteBool(capturerInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
+        parcel.WriteBool(capturerInfo.mixWithWakeUp);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1537,6 +1555,7 @@ struct AudioProcessConfig : public Parcelable {
         config->capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         config->capturerInfo.isLoopback = parcel.ReadBool();
         config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
@@ -1586,6 +1605,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
         parcel.WriteBool(rendererInfo.isVirtualKeyboard);
         parcel.WriteBool(rendererInfo.keepRunning);
+        parcel.WriteBool(rendererInfo.voipNoPrivacyFlag);
         parcel.WriteBool(rendererInfo.isStatic);
     }
 
@@ -1608,6 +1628,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
         config->rendererInfo.keepRunning = parcel.ReadBool();
+        config->rendererInfo.voipNoPrivacyFlag = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();
     }
 };
@@ -1755,6 +1776,7 @@ enum AudioParamKey {
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
     AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
+    SOUND_CARD_INFO = 1002,
 };
 
 struct DStatusInfo {
@@ -1916,6 +1938,11 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
+}
+
+static inline bool ValidStreamId(uint32_t streamId)
+{
+    return streamId != 0 && streamId != INVALID_STREAM_ID;
 }
 
 enum RouterType {
@@ -2190,11 +2217,32 @@ struct FetchDeviceInfo : public Parcelable {
     AudioPipeType audioPipeType = PIPE_TYPE_UNKNOWN;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     std::string caller = "";
+    std::string bundleName = "";
+    RouterType bypassType = ROUTER_TYPE_NONE;
+    int32_t streamId = INVALID_STREAM_ID;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
         : streamUsage(streamUsage), preStreamUsage(preStreamUsage), clientUID(clientUID),
           routerType(routerType), audioPipeType(audioPipeType), privacyType(privacyType)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, std::string caller)
+        : streamUsage(streamUsage), caller(caller)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, std::string caller, RouterType bypassType)
+        : streamUsage(streamUsage), caller(caller), bypassType(bypassType)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID, std::string caller)
+        : streamUsage(streamUsage), clientUID(clientUID), caller(caller)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID, AudioPrivacyType privacyType,
+        std::string caller, std::string bundleName)
+        : streamUsage(streamUsage), clientUID(clientUID), privacyType(privacyType),
+          caller(caller), bundleName(bundleName)
     {}
 
     FetchDeviceInfo() = default;
@@ -2207,7 +2255,9 @@ struct FetchDeviceInfo : public Parcelable {
             parcel.WriteInt32(static_cast<int32_t>(routerType)) &&
             parcel.WriteInt32(static_cast<int32_t>(audioPipeType)) &&
             parcel.WriteInt32(static_cast<int32_t>(privacyType)) &&
-            parcel.WriteString(caller);
+            parcel.WriteString(caller) &&
+            parcel.WriteString(bundleName) &&
+            parcel.WriteInt32(static_cast<int32_t>(bypassType));
     }
 
     static FetchDeviceInfo *Unmarshalling(Parcel &parcel)
@@ -2224,6 +2274,8 @@ struct FetchDeviceInfo : public Parcelable {
         info->audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         info->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         info->caller = parcel.ReadString();
+        info->bundleName = parcel.ReadString();
+        info->bypassType = static_cast<RouterType>(parcel.ReadInt32());
 
         return info;
     }
@@ -2237,6 +2289,8 @@ struct FetchDeviceInfo : public Parcelable {
         audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         caller = parcel.ReadString();
+        bundleName = parcel.ReadString();
+        bypassType = static_cast<RouterType>(parcel.ReadInt32());
     }
 };
 
@@ -2262,6 +2316,8 @@ struct CapturerStreamInfo {
     bool mute_ = MUTE_INVALID;
 
     int32_t uid_ = UID_INVALID;
+
+    bool mixWithWakeUp_ = false;
 };
 
 /**

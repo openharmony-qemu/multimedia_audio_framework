@@ -21,6 +21,7 @@ config("audio_config") {
     "../audioutils/include/",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audioloopback/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../interfaces/inner_api/native/audiostream/include",
@@ -60,6 +61,7 @@ ohos_shared_library("ohaudio") {
     "./OHAudioDeviceDescriptor.cpp",
     "./OHAudioDeviceEnhanceManager.cpp",
     "./OHAudioManager.cpp",
+    "./OHAudioDebugManager.cpp",
     "./OHAudioRenderer.cpp",
     "./OHAudioRoutingManager.cpp",
     "./OHAudioSessionManager.cpp",
@@ -75,6 +77,7 @@ ohos_shared_library("ohaudio") {
     "../../../services/audio_service:audio_engine_manager",
     "../../../services/audio_service:audio_policy_manager",
     "../../../services/audio_service:audio_stream_client",
+    "../audio_debug_manager:audio_debug_manager",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
   ]

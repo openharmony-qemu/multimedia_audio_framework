@@ -39,6 +39,7 @@ public:
     int32_t GetSplitInfoRefined(std::string &splitInfo) override;
     int32_t OnDistributedOutputChange(bool isRemote) override;
     int32_t OnDistributedServiceOnline() override;
+    int32_t SetSplitModeReadyRefined() override;
 private:
     std::mutex deviceRefinerCallbackMutex_;
     std::weak_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_;

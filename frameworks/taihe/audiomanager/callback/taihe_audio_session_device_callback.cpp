@@ -44,7 +44,7 @@ void TaiheAudioSessionDeviceCallback::OnAudioSessionCurrentDeviceChanged(
     cb->audioSessionDeviceEvent.devices = deviceEvent.devices;
     cb->audioSessionDeviceEvent.changeReason = deviceEvent.changeReason;
     cb->audioSessionDeviceEvent.recommendedAction = deviceEvent.recommendedAction;
-
+    cb->audioSessionDeviceEvent.preDevices = deviceEvent.preDevices;
     return OnJsCallbackAudioSessionDevice(cb);
 }
 

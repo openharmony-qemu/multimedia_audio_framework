@@ -59,7 +59,6 @@ public:
     void SetEcEnableState(bool ecEnableState);
     AudioSampleFormat GetFastFormat() const;
     bool IsSupportInnerCaptureOffload();
-    bool GetEnhancedRoutingSupported();
     bool NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc);
     int32_t GetMaxRendererInstances();
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
@@ -88,17 +87,21 @@ public:
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
+    void StandbyClient(uint32_t sessionId);
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
     int32_t GetStreamCount(const std::string adapterName, const uint32_t routeFlag);
     uint32_t GetPaIndexByIoHandle(AudioIOHandle id);
+    uint32_t QueryPipeIdBySessionId(uint32_t sessionId);
     void UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     void UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     uint32_t PcmOffloadSessionCount();
@@ -131,6 +134,9 @@ public:
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
     bool IsStreamUsageActive(const StreamUsage &usage);
+    bool IsInterphoneStreamActive();
+    bool IsInterphoneCapturerActive();
+    bool IsVoipOrCellularStreamActive();
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
@@ -146,8 +152,11 @@ public:
     void AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateNewDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByStreamUsage(StreamUsage streamUsage);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsBySourceType(SourceType sourceType);
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    StreamUsage GetLastestRunningCallStreamUsage();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

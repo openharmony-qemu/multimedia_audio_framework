@@ -27,7 +27,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
     if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
@@ -43,7 +44,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamU
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

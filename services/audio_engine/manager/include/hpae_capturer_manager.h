@@ -18,6 +18,7 @@
 #include <memory>
 #include <atomic>
 #include <string>
+#include <set>
 #include <mutex>
 #include <shared_mutex>
 #include "audio_effect.h"
@@ -83,6 +84,10 @@ public:
         const SourceType &sourceType) override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
+
+    void EnableCaptureCollaboration(SourceType sourceType) override;
+    void DisableCaptureCollaboration(SourceType sourceType) override;
+
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
@@ -114,10 +119,16 @@ private:
     bool CheckMicRefCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &micRefNodeInfo);
     void StopOuputNode();
     void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, CapturerState state,
-        uint32_t appUid = INVALID_UID, bool mute = false);
+        uint32_t appUid = INVALID_UID, bool mute = false, bool mixWithWakeUp = false);
     void UpdateSourceAttr(IAudioSourceAttr &attr);
     void UpdateSourceInputNodeInfoForRecognition(HpaeNodeInfo &nodeInfo);
     void UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo);
+    int32_t OpenCollaborativePrimary();
+    void CloseCollaborativePrimary();
+    void OpenCollaboration(SourceType sourceType);
+    void CloseCollaboration(SourceType sourceType);
+    void GetCollaborativeSourceInfo(IAudioSourceAttr &attr, HpaeNodeInfo &nodeInfo);
+    HpaeProcessorType GetEffectiveSceneType(uint32_t sessionId);
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;
@@ -136,6 +147,8 @@ private:
 
     std::vector<int32_t> appsUid_;
     std::vector<int32_t> sessionsId_;
+
+    std::set<SourceType> activeCollabSourceTypes_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

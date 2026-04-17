@@ -36,6 +36,7 @@ static const int32_t OPERATION_TIMEOUT_IN_MS = 1000;  // 1000ms
 AudioServerHpaeDump::AudioServerHpaeDump()
 {
     AUDIO_DEBUG_LOG("AudioServerHpaeDump construct");
+    serverBootInfo_ = std::vector<int64_t>(static_cast<size_t>(AudioServerBootState::MAX), 0);
     InitDumpFuncMap();
 }
 
@@ -53,6 +54,7 @@ void AudioServerHpaeDump::InitDumpFuncMap()
     dumpFuncMap[u"-cm"] = &AudioServerHpaeDump::AudioCacheMemoryDump;
     dumpFuncMap[u"-pm"] = &AudioServerHpaeDump::AudioPerformMonitorDump;
     dumpFuncMap[u"-ha"] = &AudioServerHpaeDump::HdiAdapterDump;
+    dumpFuncMap[u"-boot"] = &AudioServerHpaeDump::AudioServerBootDump;
 }
 
 void AudioServerHpaeDump::AudioDataDump(std::string &dumpString, std::queue<std::u16string> &argQue)
@@ -180,6 +182,7 @@ void AudioServerHpaeDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -h\t\t\t|help text for hidumper audio\n");
     AppendFormat(dumpString, "  -p\t\t\t|dump hpae playback streams\n");
     AppendFormat(dumpString, "  -r\t\t\t|dump hpae record streams\n");
+    AppendFormat(dumpString, "  -boot\t\t\t|dump audio server boot state info\n");
 }
 
 int32_t AudioServerHpaeDump::Initialize()
@@ -388,5 +391,38 @@ void AudioServerHpaeDump::OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputI
     AUDIO_INFO_LOG("AudioServerHpaeDump OnDumpSourceOutputsInfoCb result %{public}d", result);
     callbackCV_.notify_all();
 }
+
+void AudioServerHpaeDump::RecordBootStateTime(AudioServerBootState state, int64_t curTime)
+{
+    CHECK_AND_RETURN(state < AudioServerBootState::MAX);
+    serverBootInfo_[static_cast<size_t>(state)] = curTime;
+}
+
+std::string AudioServerHpaeDump::BootStateTime(AudioServerBootState state)
+{
+    CHECK_AND_RETURN_RET(state < AudioServerBootState::MAX, "err");
+    return std::to_string(serverBootInfo_[static_cast<size_t>(state)]);
+}
+
+void AudioServerHpaeDump::AudioServerBootDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioServerBootDump");
+    AppendFormat(dumpString, "==== Audio Server Boot State Timestamp(ms) ====\n");
+    AppendFormat(dumpString, "start audio server:\t\t\t\t %s\n",
+        BootStateTime(AudioServerBootState::BEGIN).c_str());
+    AppendFormat(dumpString, "  - Load Libxml2:\t\t\t\t %s\n",
+        BootStateTime(AudioServerBootState::LOAD_LIBXML2).c_str());
+    AppendFormat(dumpString, "audio server publish available:\t\t\t %s\n",
+        BootStateTime(AudioServerBootState::PUBLISH_AVAILABLE).c_str());
+    AppendFormat(dumpString, "  - Init PreAudio:\t\t\t\t %s\n",
+        BootStateTime(AudioServerBootState::INIT_PREEAUDIO).c_str());
+    AppendFormat(dumpString, "  - load audio_param_config.xml:\t\t %s\n",
+        BootStateTime(AudioServerBootState::LOAD_AUDIO_PARAM_CONFIG_XML).c_str());
+    AppendFormat(dumpString, "  - stay resident:\t\t\t\t %s\n",
+        BootStateTime(AudioServerBootState::STAY_RESIDENT).c_str());
+    AppendFormat(dumpString, "started audio server:\t\t\t\t %s\n",
+        BootStateTime(AudioServerBootState::END).c_str());
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

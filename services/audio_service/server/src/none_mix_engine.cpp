@@ -57,6 +57,7 @@ NoneMixEngine::NoneMixEngine()
       stream_(nullptr),
       startFadein_(false),
       startFadeout_(false),
+      engineState_(EngineState::IDLE),
       uChannel_(0),
       uFormat_(sizeof(int32_t)),
       uSampleRate_(0),
@@ -125,6 +126,7 @@ int32_t NoneMixEngine::Start()
         startFadein_ = true;
         ret = sink->Start();
         isStart_ = true;
+        engineState_ = EngineState::RUNNING;
     }
     if (!playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->Start();
@@ -143,6 +145,7 @@ int32_t NoneMixEngine::Stop()
         playbackThread_ = nullptr;
         return ret;
     }
+    engineState_ = EngineState::STOPPING;
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
         [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr,
@@ -162,11 +165,16 @@ int32_t NoneMixEngine::Stop()
     ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
     ret = StopAudioSink();
     isStart_ = false;
+    engineState_ = EngineState::IDLE;
     return ret;
 }
 
 void NoneMixEngine::PauseAsync()
 {
+    if (engineState_ != EngineState::RUNNING) {
+        AUDIO_INFO_LOG("engine is not running, skip PauseAsync");
+        return;
+    }
     // stop thread when failed 5 times,do not add logic inside.
     if (playbackThread_ && playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->PauseAsync();
@@ -203,6 +211,7 @@ int32_t NoneMixEngine::Pause(bool isStandby)
         PauseAsync();
         return SUCCESS;
     }
+    engineState_ = EngineState::PAUSING;
     AudioXCollie audioXCollie(
         "NoneMixEngine::Pause", DIRECT_STOP_TIMEOUT_IN_SEC,
         [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr,
@@ -221,6 +230,7 @@ int32_t NoneMixEngine::Pause(bool isStandby)
     ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
     int32_t ret = StopAudioSink();
     isStart_ = false;
+    engineState_ = EngineState::IDLE;
     return ret;
 }
 

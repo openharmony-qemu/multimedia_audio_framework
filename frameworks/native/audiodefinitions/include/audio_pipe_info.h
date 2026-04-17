@@ -18,6 +18,7 @@
 #define HDI_INVALID_ID 0xFFFFFFFF
 
 #include <memory>
+#include <new>
 #include "parcel.h"
 
 #include "audio_module_info.h"
@@ -166,6 +167,7 @@ private:
 
     bool ultraFastPipe_ = false;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // PIPE_INFO_H

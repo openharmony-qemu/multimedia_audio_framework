@@ -680,7 +680,10 @@ int32_t AudioSocketThread::DetectSwitchDeviceState(const char* switchPath, const
             switchPath ? switchPath : "null", switchName);
         return ERROR;
     }
-
+    if (switchPath[0] != '/') {
+        AUDIO_ERR_LOG("DetectSwitchDeviceState: path is not absolute: %{public}s", switchPath);
+        return HDF_ERR_INVALID_PARAM;
+    }
     FILE* fp = fopen(switchPath, "r");
     if (fp == nullptr) {
         AUDIO_ERR_LOG("DetectSwitchDeviceState: open file failed: %{public}s, err=%{public}d",
@@ -712,13 +715,11 @@ int32_t AudioSocketThread::DetectSwitchDeviceState(const char* switchPath, const
         AUDIO_ERR_LOG("DetectSwitchDeviceState: parse evvent failed for %{public}s", switchName);
         return ERROR;
     }
-
     if (audioEvent->eventType == PNP_EVENT_DEVICE_ADD) {
         AUDIO_INFO_LOG("%s: detected state=%{public}c", logPrefix, state);
     } else {
         AUDIO_INFO_LOG("%s: detected state=%{public}c", logPrefix, state);
     }
-
     return SUCCESS;
 }
 

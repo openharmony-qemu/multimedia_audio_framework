@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <algorithm>
+
 #include "gtest/gtest.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -20,6 +22,7 @@
 #include "pa_adapter_manager.h"
 #include "capturer_in_server.h"
 #include "core_service_handler.h"
+#include "record_privacy_manager.h"
 
 using namespace testing::ext;
 
@@ -116,6 +119,11 @@ public:
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
     void AbortCallback(int32_t abortTimes) override { return; }
+};
+
+class ICapturerStreamStartFailTest : public ICapturerStreamTest1 {
+public:
+    int32_t Start() override { return ERR_OPERATION_FAILED; }
 };
 
 /**
@@ -440,8 +448,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_011, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_012, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t TIME_OUT_SECONDS = 10;
-    processConfig.callerUid = TIME_OUT_SECONDS;
+    int32_t timeOutSeconds = 10;
+    processConfig.callerUid = timeOutSeconds;
     processConfig.capturerInfo.sourceType = SOURCE_TYPE_EC;
     std::weak_ptr<IStreamListener> streamListener;
 
@@ -498,8 +506,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_013, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_014, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t TIME_OUT_SECONDS = 10;
-    processConfig.callerUid = TIME_OUT_SECONDS;
+    int32_t timeOutSeconds = 10;
+    processConfig.callerUid = timeOutSeconds;
     processConfig.capturerInfo.sourceType = SOURCE_TYPE_EC;
     std::weak_ptr<IStreamListener> streamListener;
 
@@ -783,6 +791,56 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024, TestSize.Level1
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
     EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_024A.
+ * @tc.desc  : Test UpdatePlaybackCaptureConfig auto appends voip usages in modern mode.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024A, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    AudioPlaybackCaptureConfig config;
+    config.isModernInnerCapturer = true;
+    processConfig.innerCapMode = MODERN_INNER_CAP;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VOICE_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
+    EXPECT_NE(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VIDEO_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_024B.
+ * @tc.desc  : Test UpdatePlaybackCaptureConfig keeps usages untouched when modern flag is false.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024B, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    AudioPlaybackCaptureConfig config;
+    config.isModernInnerCapturer = false;
+    processConfig.innerCapMode = MODERN_INNER_CAP;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VOICE_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
+    EXPECT_EQ(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VIDEO_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
 }
 #endif
 
@@ -1197,12 +1255,33 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_037, TestSize.Level1
 
     CapturerState capturerState = CAPTURER_NEW;
     capturerInServer_->processConfig_.appInfo.appFullTokenId = (static_cast<uint64_t>(1) << 32);
-    auto ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    auto ret = capturerInServer_->CheckBgRecordPermission(capturerState);
     EXPECT_EQ(ret, false);
 
     capturerInServer_->isMicIndicatorOn_ = true;
-    ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    ret = capturerInServer_->TurnOnMicIndicator();
     EXPECT_EQ(true, ret);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_037A.
+ * @tc.desc  : Test TurnOnMicIndicator failure path when NotifyPrivacyStart fails.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_037A, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    capturerInServer_->streamIndex_ = 100;
+    capturerInServer_->isMicIndicatorOn_ = false;
+    capturerInServer_->processConfig_.appInfo.appTokenId = 0;
+    auto ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_FALSE(ret);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
 }
 
 /**
@@ -1224,7 +1303,287 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1
 
     capturerInServer_->isMicIndicatorOn_ = true;
     ret = capturerInServer_->TurnOffMicIndicator(capturerState);
-    EXPECT_EQ(false, ret);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038J.
+ * @tc.desc  : Test TurnOffMicIndicator failure path when NotifyPrivacyStop fails.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038J, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    capturerInServer_->streamIndex_ = 101;
+    capturerInServer_->isMicIndicatorOn_ = true;
+    capturerInServer_->processConfig_.appInfo.appTokenId = 0;
+    manager.tokenIdRecordMap_[0] = {capturerInServer_->streamIndex_};
+
+    auto ret = capturerInServer_->TurnOffMicIndicator(CAPTURER_STOPPED);
+    EXPECT_FALSE(ret);
+    EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
+    EXPECT_EQ(manager.tokenIdRecordMap_[0].size(), 1);
+    manager.tokenIdRecordMap_.clear();
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038A.
+ * @tc.desc  : Test CheckBgRecordPermission success path.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038A, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.callerUid = CAPTURER_FLAG;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->streamIndex_ = 123;
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_TRUE(capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING));
+    EXPECT_TRUE(capturerInServer_->TurnOffMicIndicator(CAPTURER_RELEASED));
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038B.
+ * @tc.desc  : Test StartInner with remote cast source.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038B, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 1;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+
+    EXPECT_EQ(capturerInServer_->StartInner(), ERROR);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038C.
+ * @tc.desc  : Test StartInner with playback capture source.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038C, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 2;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+
+    EXPECT_EQ(capturerInServer_->StartInner(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038D.
+ * @tc.desc  : Test StartInner when capturer stream start fails.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038D, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 3;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamStartFailTest>();
+
+    EXPECT_EQ(capturerInServer_->StartInner(), ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038E.
+ * @tc.desc  : Test StartInner when need turn on mic indicator.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038E, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    processConfig.capturerInfo.isLoopback = false;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 123;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    capturerInServer_->isMicIndicatorOn_ = true;
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_EQ(capturerInServer_->StartInner(), ERROR);
+    EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038K.
+ * @tc.desc  : Test StartInner when TurnOnMicIndicator fails.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038K, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    processConfig.capturerInfo.isLoopback = false;
+    processConfig.appInfo.appTokenId = 0;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 125;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_EQ(capturerInServer_->StartInner(), ERR_PERMISSION_DENIED);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038F.
+ * @tc.desc  : Test StartInner when loopback stream should not turn on mic indicator.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038F, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    processConfig.capturerInfo.isLoopback = true;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 124;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_EQ(capturerInServer_->StartInner(), ERROR);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038G.
+ * @tc.desc  : Test Pause when mic indicator is on.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038G, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_STARTED;
+    capturerInServer_->isMicIndicatorOn_ = true;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+
+    EXPECT_EQ(capturerInServer_->Pause(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038H.
+ * @tc.desc  : Test Stop when mic indicator is on.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038H, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_STARTED;
+    capturerInServer_->isMicIndicatorOn_ = true;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+
+    EXPECT_EQ(capturerInServer_->Stop(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038I.
+ * @tc.desc  : Test Release when mic indicator is on.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038I, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    processConfig.innerCapMode = INVALID_CAP_MODE;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_RELEASING;
+    capturerInServer_->isMicIndicatorOn_ = true;
+
+    EXPECT_EQ(capturerInServer_->Release(), SUCCESS);
 }
 
 /**

@@ -17,7 +17,6 @@
 #define ST_APP_SELECT_ROUTER_H
 
 #include "router_base.h"
-#include "audio_affinity_manager.h"
 #include "audio_state_manager.h"
 
 namespace OHOS {
@@ -37,14 +36,16 @@ public:
         return ROUTER_TYPE_APP_SELECT;
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
-    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
     std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0) override;
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
         int32_t clientUID) override;
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0) override;
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
     std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
 private:
     bool IsCurrentOutPutDevicePublic();

@@ -33,6 +33,7 @@
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
 #include "core_service_handler.h"
+#include "record_privacy_manager.h"
 #include "stream_dfx_manager.h"
 #include "audio_stream_concurrency_detector.h"
 #include "format_converter.h"
@@ -56,6 +57,16 @@ static constexpr int64_t REPORT_RUNNING_TIMEOUT_MS = 3 * 60 * 1000;
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 #endif
+
+std::set<AudioStreamType> FAST_STREAMTYPE_ABUSE_LIST = {
+    STREAM_MUSIC,
+    STREAM_SPEECH,
+    STREAM_MOVIE,
+    STREAM_NAVIGATION,
+    STREAM_RING,
+    STREAM_ALARM,
+};
+
 enum CallbackHandlerEvent : uint32_t {
     NOTIFY_VOIP_START = 0,
 };
@@ -88,6 +99,7 @@ void AudioProcessInServer::RemoveStreamInfo()
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
+    voipNoPrivacyFlag_.store(processConfig_.rendererInfo.voipNoPrivacyFlag);
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId_ = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
@@ -360,7 +372,7 @@ void AudioProcessInServer::ReportNoBgPermissionEvent()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
+bool AudioProcessInServer::CheckBgRecordPermission(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
@@ -378,11 +390,16 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         return false;
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
-
+    return true;
+}
+ 
+bool AudioProcessInServer::TurnOnMicIndicator()
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", sessionId_);
     } else {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
+        CHECK_AND_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
         AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = true;
@@ -403,7 +420,8 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        CHECK_AND_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, sessionId_),
+            false, "NotifyPrivacyStop failed!");
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = false;
     } else {
@@ -444,15 +462,22 @@ int32_t AudioProcessInServer::StartInner()
         HILOG_COMM_ERROR("[StartInner]Start failed, invalid status."));
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
+        !processConfig_.capturerInfo.isLoopback &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
-            HILOG_COMM_ERROR("[StartInner]Turn on micIndicator failed or check backgroud capture failed for "
+        CHECK_AND_CALL_FUNC_RETURN_RET(CheckBgRecordPermission(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[StartInner]Check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
+    }
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
+            processConfig_.capturerInfo.isLoopback, processConfig_.capturerInfo.sourceType)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[StartInner]Turn on micIndicator failed for stream:%{public}d!", sessionId_));
     }
     TurnOnRemoteMicIndicator();
     MarkStaticFadeIn(true);
@@ -532,7 +557,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     CHECK_AND_CALL_FUNC_RETURN_RET(streamStatus_->load() == STREAM_PAUSING, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Pause]Pause failed, invalid status."));
         
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
     TurnOffRemoteMicIndicator();
@@ -568,14 +593,21 @@ int32_t AudioProcessInServer::Resume()
         ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Resume]Resume failed, invalid status."));
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
+        !processConfig_.capturerInfo.isLoopback &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
-            HILOG_COMM_ERROR("[Resume]Turn on micIndicator failed or check backgroud capture failed for "
+        CHECK_AND_CALL_FUNC_RETURN_RET(CheckBgRecordPermission(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[Resume]Check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
+    }
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
+            processConfig_.capturerInfo.isLoopback, processConfig_.capturerInfo.sourceType)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[Resume]Turn on micIndicator failed for stream:%{public}d!", sessionId_));
     }
     TurnOnRemoteMicIndicator();
     MarkStaticFadeIn(false);
@@ -596,6 +628,8 @@ int32_t AudioProcessInServer::Resume()
 
 void AudioProcessInServer::ReportExceptionForFast()
 {
+    AudioStreamType streamType = GetAudioStreamType();
+    CHECK_AND_RETURN(FAST_STREAMTYPE_ABUSE_LIST.find(streamType) != FAST_STREAMTYPE_ABUSE_LIST.end());
     bool isTimeout = ((ClockTime::GetCurNano() - runningStamp_) / AUDIO_US_PER_SECOND >= REPORT_RUNNING_TIMEOUT_MS);
     CHECK_AND_RETURN(isTimeout);
     std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
@@ -603,10 +637,10 @@ void AudioProcessInServer::ReportExceptionForFast()
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
     bean->Add("APP_NAME", appName);
-    bean->Add("STREAM_TYPE", GetAudioStreamType());
+    bean->Add("STREAM_TYPE", streamType);
     bean->Add("TYPE", TYPE_FAST_ABUSE);
     AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
-        appName.c_str(), GetAudioStreamType(), TYPE_FAST_ABUSE);
+        appName.c_str(), streamType, TYPE_FAST_ABUSE);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -622,7 +656,7 @@ int32_t AudioProcessInServer::Stop(int32_t stageIn)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_CALL_FUNC_RETURN_RET(streamStatus_->load() == STREAM_STOPPING, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Stop]Stop failed, invalid status."));
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
     TurnOffRemoteMicIndicator();
@@ -675,7 +709,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
 
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     TurnOffRemoteMicIndicator();
@@ -1367,16 +1401,31 @@ int32_t AudioProcessInServer::SetRebuildFlag()
     return SUCCESS;
 }
 
+int32_t AudioProcessInServer::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
+{
+    voipNoPrivacyFlag_.store(voipNoPrivacyFlag);
+    return SUCCESS;
+}
+
 int32_t AudioProcessInServer::GetServerKeepRunning(bool &keepRunning)
 {
     keepRunning = keepRunning_;
     return SUCCESS;
 }
 
+bool AudioProcessInServer::GetVoipNoPrivacyFlag() const
+{
+    return voipNoPrivacyFlag_.load();
+}
+
 int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
     uint64_t curWritePos = processBuffer_->GetCurWriteFrame();
+
+    // Loopback shoule not copy data to the buffer!
+    CHECK_AND_RETURN_RET(!processConfig_.capturerInfo.isLoopback, SUCCESS);
+
     Trace trace("WriteProcessData-<" + std::to_string(curWritePos));
 
     int32_t writeAbleSize = processBuffer_->GetWritableDataFrames();
@@ -1427,6 +1476,15 @@ void AudioProcessInServer::DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc)
     AddNormalFrameSize();
     VolumeTools::CalcMuteFrame(bufferDesc, GetStreamInfo(), logUtilsTag_, volumeDataCount_, lastWriteMuteFrame_);
     AddMuteFrameSize(volumeDataCount_);
+}
+
+int32_t AudioProcessInServer::UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal)
+{
+    UnderrunInfoType infoType = static_cast<UnderrunInfoType>(underrunInfoKey);
+    if (infoType == UNDERRUN_TYPE_ISTIMEOUT) {
+        AudioPerformanceMonitor::GetInstance().UpdateIsTimeoutCB(sessionId_, static_cast<bool>(underrunInfoVal));
+    }
+    return SUCCESS;
 }
 
 int32_t AudioProcessInServer::SetLoopTimes(int64_t bufferLoopTimes)

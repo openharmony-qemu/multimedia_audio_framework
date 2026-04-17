@@ -14,6 +14,8 @@
  */
 
 #include "audio_router_context_test_base.h"
+#include "audio_device_simple_descriptor.h"
+#include "audio_router_independent_strategy.h"
 #include "audio_router_follow_strategy.h"
 #include "audio_device_manager.h"
 #include "audio_device_descriptor.h"
@@ -248,21 +250,21 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, GetRecognitionInputDevice_002, Test
 HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateStreamDefaultDevice_001, TestSize.Level1)
 {
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
-    AudioRouterFollowStrategy strategy;
-    strategy.UpdateStreamDefaultDevice(TEST_APP_UID_10001, 1, speaker);
-    strategy.UpdateStreamDefaultDevice(TEST_APP_UID_10001, 2, earpiece);
+    AudioRouterIndependentStrategy strategy;
+    strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 1, speaker);
+    strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 2, sco);
 
-    auto result1 = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 1);
+    auto result1 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
     ASSERT_NE(result1, nullptr);
     EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_SPEAKER);
 
-    auto result2 = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 2);
+    auto result2 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 2);
     ASSERT_NE(result2, nullptr);
-    EXPECT_EQ(result2->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(result2->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 
-    auto result3 = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 3);
+    auto result3 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 3);
     EXPECT_EQ(result3, nullptr);
 }
 
@@ -271,15 +273,15 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateStreamDefaultDevice_002, Test
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
 
     AudioRouterFollowStrategy strategy;
-    strategy.UpdateStreamDefaultDevice(TEST_APP_UID_10001, 1, speaker);
+    strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 1, speaker);
 
-    auto result1 = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 1);
+    auto result1 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
     ASSERT_NE(result1, nullptr);
     EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_SPEAKER);
 
-    strategy.UpdateStreamDefaultDevice(TEST_APP_UID_10001, 1, nullptr);
+    strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 1, nullptr);
 
-    auto result2 = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 1);
+    auto result2 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
     EXPECT_EQ(result2, nullptr);
 }
 
@@ -289,23 +291,111 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateStreamDefaultDevice_003, Test
     auto bluetooth = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
-    strategy.UpdateStreamDefaultDevice(TEST_APP_UID_10001, 1, speaker);
-    strategy.UpdateStreamDefaultDevice(TEST_APP_UID_10002, 2, bluetooth);
+    strategy.UpdateCallDefaultOutputDevice(TEST_APP_UID_10001, 1, speaker);
+    strategy.UpdateCallDefaultOutputDevice(TEST_APP_UID_10002, 2, bluetooth);
 
-    auto result1 = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 1);
+    auto result1 = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, 1);
     ASSERT_NE(result1, nullptr);
     EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_SPEAKER);
 
-    auto result2 = strategy.GetStreamDefaultDevice(TEST_APP_UID_10002, 2);
+    auto result2 = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10002, 2);
     ASSERT_NE(result2, nullptr);
     EXPECT_EQ(result2->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 }
 
-HWTEST_F(AudioRouterSelectStrategyExtraTest, GetStreamDefaultDevice_004, TestSize.Level1)
+HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateStreamDefaultDevice_004, TestSize.Level1)
+{
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterFollowStrategy strategy;
+    strategy.UpdateCallDefaultOutputDevice(TEST_APP_UID_10001, 1, speaker);
+
+    auto result1 = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, 1);
+    ASSERT_NE(result1, nullptr);
+    EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_SPEAKER);
+
+    strategy.UpdateCallDefaultOutputDevice(TEST_APP_UID_10001, 1, nullptr);
+
+    auto result2 = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, 1);
+    EXPECT_EQ(result2, nullptr);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetStreamDefaultDevice_005, TestSize.Level1)
 {
     AudioRouterFollowStrategy strategy;
 
-    auto result = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 1);
+    auto result = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
+    EXPECT_EQ(result, nullptr);
+    result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, 1);
+    EXPECT_EQ(result, nullptr);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_001, TestSize.Level1)
+{
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:01");
+    AudioDeviceSimpleDescriptor simpleDesc(speaker->deviceType_, speaker->deviceRole_, speaker->deviceId_,
+        speaker->networkId_, speaker->macAddress_);
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, speaker->deviceType_);
+    EXPECT_EQ(result->deviceRole_, speaker->deviceRole_);
+    EXPECT_EQ(result->deviceId_, speaker->deviceId_);
+    EXPECT_EQ(result->networkId_, speaker->networkId_);
+    EXPECT_EQ(result->macAddress_, speaker->macAddress_);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_002, TestSize.Level1)
+{
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:02");
+    AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:10:03");
+    AudioDeviceSimpleDescriptor simpleDesc(speaker->deviceType_, speaker->deviceRole_, speaker->deviceId_ + 100,
+        "mismatch_network", "");
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, speaker->deviceType_);
+    EXPECT_EQ(result->deviceId_, speaker->deviceId_);
+    EXPECT_EQ(result->macAddress_, speaker->macAddress_);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_003, TestSize.Level1)
+{
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:04");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "11:22:33:44:55:66");
+    AudioDeviceSimpleDescriptor simpleDesc(sco->deviceType_, INPUT_DEVICE, sco->deviceId_ + 200,
+        "another_network", sco->macAddress_);
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, sco->deviceType_);
+    EXPECT_EQ(result->macAddress_, sco->macAddress_);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_004, TestSize.Level1)
+{
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:05");
+    AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:10:06");
+    AudioDeviceSimpleDescriptor simpleDesc(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, 99999,
+        "unknown_network", "ff:ee:dd:cc:bb:aa");
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    EXPECT_EQ(result, nullptr);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_005, TestSize.Level1)
+{
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:07");
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:08");
+    AudioDeviceSimpleDescriptor simpleDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 99998,
+        "unknown_network", "ff:ee:dd:cc:bb:ab");
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
     EXPECT_EQ(result, nullptr);
 }
 

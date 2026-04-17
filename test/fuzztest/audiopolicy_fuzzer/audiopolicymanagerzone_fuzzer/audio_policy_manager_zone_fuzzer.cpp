@@ -70,8 +70,8 @@ void CreateAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = fdp.ConsumeRandomLengthString(100);
     AudioZoneContext context;
-    context.focusStrategy_ = static_cast<AudioZoneFocusStrategy>(GetData<int32_t>() % NUM_2);
-    context.backStrategy_ = static_cast<MediaBackStrategy>(GetData<int32_t>() % NUM_2);
+    context.focusStrategy_ = static_cast<AudioZoneFocusStrategy>(GetData<uint32_t>() % NUM_2);
+    context.backStrategy_ = static_cast<MediaBackStrategy>(GetData<uint32_t>() % NUM_2);
     AudioPolicyManager::GetInstance().CreateAudioZone(name, context);
 }
 

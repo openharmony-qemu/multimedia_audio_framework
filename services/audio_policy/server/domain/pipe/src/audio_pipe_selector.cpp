@@ -51,10 +51,46 @@ static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
     {SAMPLE_F32LE, "f32"},
 };
 
+static bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_MIC:
+        case DEVICE_TYPE_WAKEUP:
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool IsVoiceRecognitionMicInEcSupportedInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr && deviceDesc->networkId_ == LOCAL_NETWORK_ID &&
+        IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceDesc->deviceType_);
+}
+
+static bool HasDegradeInputDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    return std::any_of(deviceDescs.begin(), deviceDescs.end(), [](const auto &deviceDesc) {
+        return deviceDesc != nullptr && !IsVoiceRecognitionMicInEcSupportedInputDevice(deviceDesc);
+    });
+}
+
+static bool IsDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return HasDegradeInputDevice(streamDesc->newDeviceDescs_) || HasDegradeInputDevice(streamDesc->oldDeviceDescs_);
+}
+
 static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        !IsDegradeInputStream(streamDesc) &&
         (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
 }
 
@@ -564,7 +600,9 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
     } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
     } else if (flag & AUDIO_INPUT_FLAG_RAW_AI) {
-            return PIPE_TYPE_IN_NORMAL_RAW_AI;
+        return PIPE_TYPE_IN_NORMAL_RAW_AI;
+    } else if (flag & AUDIO_INPUT_FLAG_INTERPHONE) {
+        return PIPE_TYPE_IN_INTERPHONE;
     } else {
         return PIPE_TYPE_IN_NORMAL;
     }
@@ -591,6 +629,8 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             return PIPE_TYPE_OUT_OFFLOAD;
         } else if (flag & AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION) {
             return PIPE_TYPE_OUT_CELLULAR_CALL;
+        } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
+            return PIPE_TYPE_OUT_INTERPHONE;
         } else {
             return PIPE_TYPE_OUT_NORMAL;
         }
@@ -869,7 +909,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
-    info.moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+    info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(
         streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
@@ -1094,8 +1134,7 @@ void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> 
 bool AudioPipeSelector::IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
     std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
-    std::string channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
-        streamPropInfo->channelLayout_));
+    std::string channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
     std::string channelLayout = std::to_string(streamPropInfo->channelLayout_);
     auto format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     std::string sampleRate = std::to_string(streamPropInfo->sampleRate_);
@@ -1113,8 +1152,7 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
 
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
-    info.moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
-        streamPropInfo->channelLayout_));
+    info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
     info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 

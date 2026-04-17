@@ -247,7 +247,7 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
     rendererNapi->rendererOptions_ = rendererOptions;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-    rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
+    rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions, rendererOptions.appInfo);
 #else
     std::string cacheDir = "";
     rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
@@ -2480,7 +2480,7 @@ napi_value NapiAudioRenderer::SetIndependentAudioSessionStrategy(napi_env env, n
     size_t argc = ARGS_TWO;
     napi_value argv[ARGS_TWO] = {};
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "argcCount invaild");
 
     AudioSessionStrategy audioSessionStrategy;

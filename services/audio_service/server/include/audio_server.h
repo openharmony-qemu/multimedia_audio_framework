@@ -44,9 +44,38 @@
 #include "iaudio_engine_callback_handle.h"
 #include "audio_engine_callback_types.h"
 #include "audio_stream_types.h"
+#include "audio_capturer_types.h"
+#include "audio_device_enhance_manager.h"
+#include "adapter/i_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+enum WakeupStageCode {
+    STAGE_CREATE_ENTER  = 0x0100,    /* fwk stage start */
+    STAGE_CREATE_EXIT   = 0x015F,
+    STAGE_START_ENTER   = 0x0160,
+    STAGE_START_EXIT    = 0x01AF,    /* fwk stage end */
+    STAGE_END           = 0x01FF,
+};
+
+enum WakeupErrorCode {
+    WAKEUP_NO_ERROR = 0x1000,
+    WAKEUP_CREATE_ERROR,
+    WAKEUP_START_ERROR
+};
+
+enum WakeupResult {
+    RESULT_DEFAULT,
+    RESULT_SUCC,
+    RESULT_FAIL
+};
+
+struct WakeupTrackInfo {
+    enum WakeupStageCode stage;
+    enum WakeupResult result;
+    enum WakeupErrorCode errCode;
+};
 class AudioServer;
 class ProxyDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
@@ -68,7 +97,6 @@ private:
     bool releaseFlag_ = true; // Determines whether to release pipe info in policy
     uint32_t sessionId_ = 0;
 };
-
 class AudioServer : public SystemAbility, public StandardAudioServiceStub,
     public IAudioSinkCallback, IAudioSourceCallback,
     public IAudioServerInnerCall, public DataTransferStateChangeCallbackForMonitor {
@@ -103,12 +131,11 @@ public:
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<StringPair> &result) override;
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
+    std::string HandleSpecificKey(const std::string &key, const std::shared_ptr<IDeviceManager> &deviceManager);
     int32_t GetAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
-    int32_t UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
-        int32_t a2dpOffloadFlag, const std::string &deviceName,
-        const std::string &networkId = LOCAL_NETWORK_ID) override;
+        int32_t a2dpOffloadFlag, const uint32_t pipeId, const std::string &networkId = LOCAL_NETWORK_ID) override;
     int32_t ReleaseActiveDeviceRoute(int32_t deviceType, int32_t deviceFlag, const std::string &networkId) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
@@ -298,6 +325,8 @@ public:
         const std::string& condition, std::string& value) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
+    int32_t CheckInnerCapVoIP(uint32_t sessionId) override;
+    int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -408,12 +437,12 @@ private:
         std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo);
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "",
-        const std::string &networkId = LOCAL_NETWORK_ID);
-    int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
-    int32_t SetIORoutesForRemote(DeviceType type, DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
+        BluetoothOffloadState a2dpOffloadFlag, const uint32_t pipeId, const std::string &networkId = LOCAL_NETWORK_ID);
+    int32_t SetIORoutes(const DeviceType type, const DeviceFlag flag, std::vector<DeviceType> deviceTypes);
+    int32_t SetIORoutesForRemote(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
         const std::string &networkId);
+    int32_t SetIORoutesForSpecificPipe(const DeviceType type, const DeviceFlag flag,
+        std::vector<DeviceType> &deviceTypes, const uint32_t pipeId, const std::string &networkId);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
@@ -473,7 +502,11 @@ private:
     int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
     void OnStartExpansion();
     bool AudioParameterValueCheck(const std::string &key, const std::string &value);
-
+    void RecordBootStateTime(AudioServerBootState state, int64_t curTime);
+    void InitAudioEngine();
+    void RegisterResSchedSys();
+    void HapReportWakeupEvent(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -486,11 +519,14 @@ private:
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;
 
     pthread_t m_paDaemonThread;
+    std::shared_ptr<SoundCardInfo> cacheSoundCardInfo_;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::string playTaskId_ = "0"; // only use by homemusic
 
     bool isEarpiece_ = false;
     float audioBalanceValue_ = 0.0f;
+
+    float audioD2DValue_ = 0.0f;
 
     // Capturer status flags: each capturer is represented by a single bit.
     // 0 indicates the capturer has stopped; 1 indicates the capturer has started.

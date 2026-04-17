@@ -27,6 +27,7 @@ bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInf
 HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);
 HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene);
 HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType);
+bool IsCollabRecordSupported(SourceType sourceType);
 bool CheckSceneTypeNeedEc(HpaeProcessorType processorType);
 bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType);
 std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo);

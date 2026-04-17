@@ -2682,6 +2682,11 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateStreamUsage_002, TestSize.Level1)
 */
 HWTEST(AudioEffectChainManagerUnitTest, FindMaxEffectChannels_001, TestSize.Level1)
 {
+    std::string sceneTypeMovie = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->NotifyAndCreateAudioEffectChain(sceneTypeMovie);
+
     std::string sceneType = "";
     std::set<std::string> sessions = {"test1"};
     uint32_t channels = 0;
@@ -2689,9 +2694,25 @@ HWTEST(AudioEffectChainManagerUnitTest, FindMaxEffectChannels_001, TestSize.Leve
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_NONE;
     AudioEffectChainManager::GetInstance()->FindMaxEffectChannels(sceneType, sessions, channels, channelLayout);
     EXPECT_EQ(channels, STEREO);
-
     channels = 10;
     AudioEffectChainManager::GetInstance()->FindMaxEffectChannels(sceneType, sessions, channels, channelLayout);
+
+    SessionEffectInfo infoTemp;
+    infoTemp.channels = static_cast<uint32_t>(CHANNEL_6);
+    infoTemp.channelLayout = CH_LAYOUT_5POINT1;
+    infoTemp.sceneMode = "EFFECT_DEFAULT";
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["test1"] = infoTemp;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectHandle handle = nullptr;
+    std::string key = std::string("SCENE_MOVIE") + "_&_" + "DEVICE_TYPE_SPEAKER";
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key]->standByEffectHandles_.push_back(handle);
+    sceneType = "SCENE_MOVIE";
+    channels = static_cast<uint32_t>(STEREO);
+    channelLayout = CH_LAYOUT_STEREO;
+
+    AudioEffectChainManager::GetInstance()->FindMaxEffectChannels(sceneType, sessions, channels, channelLayout);
+    EXPECT_EQ(channels, static_cast<uint32_t>(CHANNEL_6));
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 

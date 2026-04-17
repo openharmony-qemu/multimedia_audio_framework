@@ -100,6 +100,7 @@ struct HpaeStreamInfo {
     std::string deviceName;
     bool isMoveAble = true;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    bool mixWithWakeUp = false;
 };
 
 struct HpaeSinkInfo {
@@ -127,6 +128,7 @@ struct HpaeSinkInfo {
     std::string splitMode;
     bool needEmptyChunk = true;
     bool auxSinkEnable = false;
+    uint32_t routeFlag = 0;
 };
 
 enum HpaeEcType {

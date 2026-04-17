@@ -481,6 +481,137 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_102, TestSize.Leve
     // Test SetAppsEnhanceMuteState after effect release
     EXPECT_EQ(hpaeCaptureEffectNode->CaptureEffectRelease(sceneKeyCode), 0);
 }
+
+/*
+ * tc.name   : Test collaborative recording branch
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_103
+ * tc.desc   : Test SignalProcess with SCENE_COLLABORATIVE_RECORD
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_103, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    nodeInfo.effectInfo.enhanceScene = SCENE_COLLABORATIVE_RECORD;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAME_LENGTH, SAMPLE_RATE_48000);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+
+    std::vector<HpaePcmBuffer *> inputs;
+    HpaePcmBuffer micBuffer(pcmBufferInfo);
+    micBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_MIC);
+    inputs.emplace_back(&micBuffer);
+
+    HpaePcmBuffer refBuffer(pcmBufferInfo);
+    refBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_DEFAULT);
+    inputs.emplace_back(&refBuffer);
+
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
+}
+
+/*
+ * tc.name   : Test collaborative recording branch with only mic
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_104
+ * tc.desc   : Test SignalProcessCollaboration with only mic input
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_104, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    nodeInfo.effectInfo.enhanceScene = SCENE_COLLABORATIVE_RECORD;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAME_LENGTH, SAMPLE_RATE_48000);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+
+    std::vector<HpaePcmBuffer *> inputs;
+    HpaePcmBuffer micBuffer(pcmBufferInfo);
+    micBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_MIC);
+    inputs.emplace_back(&micBuffer);
+
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
+}
+
+/*
+ * tc.name   : Test collaborative recording branch with only ref
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_105
+ * tc.desc   : Test SignalProcessCollaboration with only ref input
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_105, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    nodeInfo.effectInfo.enhanceScene = SCENE_COLLABORATIVE_RECORD;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAME_LENGTH, SAMPLE_RATE_48000);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+
+    std::vector<HpaePcmBuffer *> inputs;
+    HpaePcmBuffer refBuffer(pcmBufferInfo);
+    refBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_DEFAULT);
+    inputs.emplace_back(&refBuffer);
+
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
+}
+
+/*
+ * tc.name   : Test collaborative recording with CaptureEffectCreate
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_106
+ * tc.desc   : Test CaptureEffectCreate with SCENE_COLLABORATIVE_RECORD
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_106, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    nodeInfo.effectInfo.enhanceScene = SCENE_COLLABORATIVE_RECORD;
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+
+    CaptureEffectAttr attr = {
+        .micChannels = STEREO,
+        .ecChannels = 0,
+        .micRefChannels = STEREO,
+    };
+
+    uint64_t sceneKeyCode = 12345;
+    EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectCreate(sceneKeyCode, attr), 0);
+    EXPECT_EQ(hpaeCaptureEffectNode->CaptureEffectRelease(sceneKeyCode), 0);
+}
+
+/*
+ * tc.name   : Test collaborative recording with different channels
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_107
+ * tc.desc   : Test CaptureEffectCreate with different channel configs
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_107, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    nodeInfo.effectInfo.enhanceScene = SCENE_COLLABORATIVE_RECORD;
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+
+    CaptureEffectAttr attr = {
+        .micChannels = CHANNEL_4,
+        .ecChannels = 0,
+        .micRefChannels = CHANNEL_4,
+    };
+
+    uint64_t sceneKeyCode = 12345;
+    EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectCreate(sceneKeyCode, attr), 0);
+    EXPECT_EQ(hpaeCaptureEffectNode->CaptureEffectRelease(sceneKeyCode), 0);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

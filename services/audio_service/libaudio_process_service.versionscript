@@ -87,6 +87,8 @@
     *SetEndpointMuteForSwitchDevice*;
     *RequestUserPrivacyAuthority*;
     *ReportPlaybackCaptureUserChoice*;
+    *CheckInnerCapVoIP*;
+    *ReportWakeupEvent*;
   local:
     *;
 };

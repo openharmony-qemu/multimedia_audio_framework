@@ -312,6 +312,7 @@ public:
     InterruptEventCallbackType callbackType {INTERRUPT_EVENT_CALLBACK_DEFAULT};
     AudioSessionActiveBehaviors behaviorFlags_ {};
     AudioSessionStrategy independentStrategy = { AudioConcurrencyMode::INVALID };
+    bool mixWithWakeUp = false;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -366,6 +367,7 @@ public:
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.voipNoPrivacyFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.muteWhenInterruptFlag);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.independentStrategy.concurrencyMode));
+        res = res && parcel.WriteBool(interrupt.mixWithWakeUp);
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -400,6 +402,7 @@ public:
         interrupt.behaviorFlags_.voipNoPrivacyFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.muteWhenInterruptFlag = parcel.ReadBool();
         interrupt.independentStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
+        interrupt.mixWithWakeUp = parcel.ReadBool();
     }
 
     bool Marshalling(Parcel &parcel) const override

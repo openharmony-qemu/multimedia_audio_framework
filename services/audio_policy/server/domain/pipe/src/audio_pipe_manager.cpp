@@ -23,16 +23,18 @@
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
-namespace {
-constexpr int32_t DECIMAL = 10;
-}
+
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t DECIMAL = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 const uint32_t RING_SESSIONID = 1;
 const uint32_t VOIP_SESSIONID = 2;
 const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
+const uint32_t DEFAULT_PIPE_ID = 0;
+}
 AudioPipeManager::AudioPipeManager()
     : audioConfigManager_(AudioCoreConfigManager::GetInstance()),
       audioConcurrencyManager_(AudioConcurrencyManager::GetInstance())
@@ -155,11 +157,6 @@ bool AudioPipeManager::IsSupportInnerCaptureOffload()
     return audioConfigManager_.IsSupportInnerCaptureOffload();
 }
 
-bool AudioPipeManager::GetEnhancedRoutingSupported()
-{
-    return audioConfigManager_.GetEnhancedRoutingSupported();
-}
-
 int32_t AudioPipeManager::GetMaxRendererInstances()
 {
     return audioConfigManager_.GetMaxRendererInstances();
@@ -268,6 +265,15 @@ void AudioPipeManager::PauseClient(uint32_t sessionId)
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
 }
 
+void AudioPipeManager::StandbyClient(uint32_t sessionId)
+{
+    Trace trace("AudioPipeManager::StandbyClient");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->isStandby_ = true;
+}
+
 void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     Trace trace("AudioPipeManager::StopClient");
@@ -339,7 +345,9 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_UNPROCESS) ||
         (routeFlag & AUDIO_INPUT_FLAG_ULTRASONIC) ||
         (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) ||
-        (routeFlag & AUDIO_INPUT_FLAG_RAW_AI)) {
+        (routeFlag & AUDIO_INPUT_FLAG_RAW_AI) ||
+        (routeFlag & AUDIO_INPUT_FLAG_INTERPHONE) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
@@ -503,6 +511,38 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningOutputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
+            streamDescs.push_back(desc);
+        }
+    }
+    return streamDescs;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningInputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_INPUT, "not input pipe");
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
+            streamDescs.push_back(desc);
+        }
+    }
+    return streamDescs;
+}
+
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -574,6 +614,21 @@ uint32_t AudioPipeManager::GetPaIndexByIoHandle(AudioIOHandle id)
         }
     }
     return HDI_INVALID_ID;
+}
+
+uint32_t AudioPipeManager::QueryPipeIdBySessionId(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        for (const auto &streamDesc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+            if (streamDesc->sessionId_ == sessionId) {
+                return it->id_;
+            }
+        }
+    }
+    return DEFAULT_PIPE_ID;
 }
 
 void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
@@ -1143,5 +1198,123 @@ void AudioPipeManager::UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamD
     streamDesc->UpdateNewDevice(newDeviceDesc);
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByStreamUsage(StreamUsage streamUsage)
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> result;
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->audioMode_ == AUDIO_MODE_PLAYBACK &&
+                desc->rendererInfo_.streamUsage == streamUsage) {
+                result.push_back(desc);
+            }
+        }
+    }
+    return result;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsBySourceType(SourceType sourceType)
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> result;
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->audioMode_ == AUDIO_MODE_RECORD &&
+                desc->capturerInfo_.sourceType == sourceType) {
+                result.push_back(desc);
+            }
+        }
+    }
+    return result;
+}
+
+bool AudioPipeManager::IsInterphoneStreamActive()
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = GetAllOutputStreamDescs();
+    for (auto &desc : outputDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        if (desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE &&
+            desc->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioPipeManager::IsInterphoneCapturerActive()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (const auto &pipe : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is null");
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is null");
+            if (stream->capturerInfo_.sourceType == SOURCE_TYPE_INTERPHONE &&
+                stream->streamStatus_ == STREAM_STATUS_STARTED) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool AudioPipeManager::IsVoipOrCellularStreamActive()
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = GetAllOutputStreamDescs();
+    for (auto &desc : outputDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        if ((desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) &&
+            desc->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (const auto &pipe : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is null");
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is null");
+            if ((stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
+                stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_CALL) &&
+                stream->streamStatus_ == STREAM_STATUS_STARTED) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+StreamUsage AudioPipeManager::GetLastestRunningCallStreamUsage()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &entry : modemCommunicationIdMap_) {
+        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "streamDesc is nullptr");
+        if (entry.second->streamStatus_ == STREAM_STATUS_STARTED) {
+            AUDIO_INFO_LOG("GetLastestRunningCallStreamUsage from modem: %{public}d",
+                entry.second->rendererInfo_.streamUsage);
+            return entry.second->rendererInfo_.streamUsage;
+        }
+    }
+
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->streamStatus_ == STREAM_STATUS_STARTED &&
+                (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)) {
+                AUDIO_INFO_LOG("GetLastestRunningCallStreamUsage: %{public}d",
+                    desc->rendererInfo_.streamUsage);
+                return desc->rendererInfo_.streamUsage;
+            }
+        }
+    }
+    return STREAM_USAGE_UNKNOWN;
+}
 } // namespace AudioStandard
 } // namespace OHOS

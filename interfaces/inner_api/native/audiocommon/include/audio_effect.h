@@ -481,7 +481,8 @@ enum AudioEnhanceScene {
     SCENE_ASR = 4,
     SCENE_VOICE_MESSAGE = 5,
     SCENE_RECOGNITION = 6,
-    SCENE_NONE = 7,
+    SCENE_COLLABORATIVE_RECORD = 7,
+    SCENE_NONE = 8,
 };
 
 /**
@@ -701,6 +702,7 @@ enum AudioEffectChainSetParamIndex {
     FRONTEND_APP_TYPE = 18,
     STEREO_ENHANCEMENT_INDEX = 19,
     MAX_PARAM_INDEX,
+    MAX_PARAM_CAPACITY = 99,
 };
 
 enum AudioEffectCommandCode {

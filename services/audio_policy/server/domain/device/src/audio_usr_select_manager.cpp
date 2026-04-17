@@ -79,6 +79,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
     std::lock_guard<std::mutex> lock(mutex_);
 
     int index = GetIdFromRecordDeviceInfoList(uid);
+    if (index < 0 && mcSelectedFlag_ && IsSourceTypeSupportedByMC(sourceType)) {
+        return JudgeFinalSelectDevice(mcInputPreferred_, sourceType, PREFERRED_NONE);
+    }
+
     std::shared_ptr<AudioDeviceDescriptor> capturerDevice = std::make_shared<AudioDeviceDescriptor>();
 #ifdef INPUT_FEATURE_INDEPENDENT_MODE
     CHECK_AND_RETURN_RET(!recordDeviceInfoList_.empty() && index >= 0, capturerDevice);
@@ -105,7 +109,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
         return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
     }
 
-    if (IsSourcePreferHighQuality(sourceType) || category == PREFERRED_HIGH_QUALITY) {
+    if (IsSourceTypeSupportedByMC(sourceType) || category == PREFERRED_HIGH_QUALITY) {
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
         bool isA2dpinConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dpin);
@@ -113,18 +117,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     }
 
     return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
-}
-
-bool AudioUsrSelectManager::IsSourcePreferHighQuality(SourceType type)
-{
-    switch (type) {
-        case SOURCE_TYPE_MIC:
-        case SOURCE_TYPE_CAMCORDER:
-        case SOURCE_TYPE_LIVE:
-            return true;
-        default:
-            return false;
-    }
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice(int32_t index)
@@ -194,8 +186,14 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, Record
 
 bool AudioUsrSelectManager::IsSourceTypeSupportedByMC(SourceType type)
 {
-    return type == SOURCE_TYPE_MIC || type == SOURCE_TYPE_CAMCORDER ||
-        type == SOURCE_TYPE_UNPROCESSED || type == SOURCE_TYPE_LIVE;
+    switch (type) {
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_CAMCORDER:
+        case SOURCE_TYPE_LIVE:
+            return true;
+        default:
+            return false;
+    }
 }
  
 bool AudioUsrSelectManager::HasMCSourceTypeStreamRunning()

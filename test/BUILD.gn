@@ -220,7 +220,6 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicy_fuzzer/audioactivedevice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioadaptermanager_fuzzer:fuzztest",
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
-    "fuzztest/audioaffinitymanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiobackgroundmanager_fuzzer:fuzztest",
     "fuzztest/audiobufferbase_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioclienttrackercallbacklistener_fuzzer:fuzztest",

@@ -44,7 +44,7 @@ class AudioPipeManager;
 class AudioSession {
 public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-        AudioSessionStateMonitor &audioSessionStateMonitor);
+        AudioSessionStateMonitor &audioSessionStateMonitor, int32_t callerUid = INVALID_UID);
     ~AudioSession();
     bool IsSceneParameterSet();
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
@@ -68,7 +68,8 @@ public:
     bool GetAndClearNeedToFetchFlag();
     bool IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
         const std::shared_ptr<AudioDeviceDescriptor> desc);
-    bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &oldDeviceDescriptors);
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
     StreamUsage GetAudioSessionStreamUsageForDevice();
@@ -92,6 +93,7 @@ private:
     bool IsSessionDefaultDeviceEnabled();
     bool IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage);
     int32_t callerPid_;
+    int32_t callerUid_;
     bool needToFetch_ = false;
     AudioSessionStrategy strategy_ {AudioConcurrencyMode::INVALID};
     AudioSessionStateMonitor &audioSessionStateMonitor_;

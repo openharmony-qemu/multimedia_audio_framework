@@ -46,9 +46,11 @@
 #include "volume_tools.h"
 #include "audio_manager_util.h"
 #include "audio_effect_map.h"
+#include "audio_common_utils.h"
 
 #include "media_monitor_manager.h"
 #include "parameters.h"
+#include "app_bundle_manager.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -146,6 +148,9 @@ void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
         case STOP_STREAM :
             state_ = STOPPED;
             break;
+        case STANDBY:
+            Standby();
+            break;
         default :
             break;
     }
@@ -189,6 +194,14 @@ int32_t RendererInClientInner::SetInMainThreadState(bool isInMainThread)
     return ERR_NOT_SUPPORTED;
 }
 
+void RendererInClientInner::CheckInnerCapVoIP()
+{
+    sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gasp != nullptr,
+        "[CheckInnerCapVoIP]failed, can not get service.");
+    gasp->CheckInnerCapVoIP(sessionId_);
+}
+
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
@@ -210,6 +223,10 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
     rendererInfo_.encodingType = curStreamParams_.encoding;
     rendererInfo_.channelLayout = curStreamParams_.channelLayout;
+    if (ipcStream_ != nullptr) {
+        int32_t ret = ipcStream_->SetVoipNoPrivacyFlag(rendererInfo_.voipNoPrivacyFlag);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetVoipNoPrivacyFlag failed");
+    }
     UpdateTracker("UPDATE");
 }
 
@@ -773,6 +790,38 @@ float RendererInClientInner::GetSpeed()
     return realSpeed_.has_value() ? realSpeed_.value() : 1.0f;
 }
 
+int32_t RendererInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
+{
+    AUDIO_DEBUG_LOG("GetAudioDebugInfo enter");
+    uint32_t sessionId = UINT32_MAX;
+    if (GetAudioSessionID(sessionId) != SUCCESS) {
+        AUDIO_WARNING_LOG("GetAudioSessionID failed");
+    }
+
+    auto FillClientOnlyInfo = [&debugInfo, this]() {
+        debugInfo.speed = GetSpeed();
+        debugInfo.pitch = 1.0f; // Audio pitch debug is not implemented currently, keep default value.
+        debugInfo.effectMode = GetAudioEffectMode();
+    };
+
+    if (sessionId != UINT32_MAX) {
+        int32_t ret = AudioPolicyManager::GetInstance().GetAudioDebugInfo(sessionId, debugInfo);
+        if (ret == SUCCESS) {
+            FillClientOnlyInfo();
+            return SUCCESS;
+        }
+        AUDIO_WARNING_LOG("GetAudioDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
+    }
+
+    debugInfo.sessionId = sessionId;
+    GetAudioStreamInfo(debugInfo.streamParams);
+    GetRendererInfo(debugInfo.rendererInfo);
+
+    FillClientOnlyInfo();
+    AUDIO_DEBUG_LOG("GetAudioDebugInfo fallback with local info, sessionId:%{public}u", sessionId);
+    return SUCCESS;
+}
+
 void RendererInClientInner::InitCallbackLoop()
 {
     cbThreadReleased_ = false;
@@ -1177,14 +1226,15 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 
 void RendererInClientInner::ReportExceptionForInterval()
 {
+    std::string appName = AppBundleManager::GetSelfBundleName();
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("APP_NAME", GetBundleName());
+    bean->Add("APP_NAME", appName);
     bean->Add("STREAM_TYPE", eStreamType_);
     bean->Add("TYPE", TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
     AUDIO_ERR_LOG("ReportExceptionForInterval: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
-        GetBundleName().c_str(), eStreamType_, TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
+        appName.c_str(), eStreamType_, TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

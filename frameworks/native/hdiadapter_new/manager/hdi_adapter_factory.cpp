@@ -107,6 +107,9 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_REMOTE_OFFLOAD:
             sink = CreateRemoteOffloadRenderSink(info);
             break;
+        case HDI_ID_TYPE_INTERPHONE:
+            sink = CreateRemoteOffloadRenderSink(info);
+            break;
 #endif
         default:
             AUDIO_ERR_LOG("invalid type");

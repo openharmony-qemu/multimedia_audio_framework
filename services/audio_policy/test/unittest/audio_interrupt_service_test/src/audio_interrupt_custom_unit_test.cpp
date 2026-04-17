@@ -254,5 +254,56 @@ HWTEST_F(AudioInterruptCustomUnitTest, UpdateCustomFocusStrategy_04, TestSize.Le
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_NONE);
 }
 
+/**
+* @tc.name  : Test UnprocessedCustomFocus.
+* @tc.number: UnprocessedCustomFocus_01
+* @tc.desc  : Test UnprocessedCustomFocus.
+*/
+HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedCustomFocus_01, TestSize.Level1)
+{
+    AudioFocuState incomingState = PAUSE;
+    InterruptEventInternal interruptEvent;
+    interruptEvent.hintType = INTERRUPT_HINT_NONE;
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_UNPROCESSED;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_WAKEUP;
+
+    activeInterrupt.mixWithWakeUp = false;
+    AudioInterruptCustom interruptCustom;
+    interruptCustom.UnprocessedCustomFocus(incomingInterrupt, activeInterrupt,
+    incomingState, interruptEvent);
+    EXPECT_NE(incomingState, ACTIVE);
+
+    activeInterrupt.mixWithWakeUp = true;
+    interruptCustom.UnprocessedCustomFocus(incomingInterrupt, activeInterrupt,
+    incomingState, interruptEvent);
+    EXPECT_EQ(incomingState, ACTIVE);
+}
+ 	  
+/**
+* @tc.name  : Test UnprocessedCustomFocus.
+* @tc.number: UnprocessedCustomFocus_02
+* @tc.desc  : Test UnprocessedCustomFocus.
+*/
+HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedCustomFocus_02, TestSize.Level1)
+{
+    AudioFocuState incomingState = PAUSE;
+    InterruptEventInternal interruptEvent;
+    interruptEvent.hintType = INTERRUPT_HINT_NONE;
+    
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_UNPROCESSED;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    
+    activeInterrupt.mixWithWakeUp = true;
+    AudioInterruptCustom interruptCustom;
+    interruptCustom.UnprocessedCustomFocus(incomingInterrupt, activeInterrupt,
+    incomingState, interruptEvent);
+    EXPECT_NE(incomingState, ACTIVE);
+}
+ 	 
 } // namespace AudioStandard
 } // namespace OHOS

@@ -162,12 +162,6 @@ void AudioCoreConfigManager::OnInterruptGroupParsed(std::unordered_map<std::stri
 void AudioCoreConfigManager::OnUpdateRouteSupport(bool isSupported)
 {
     isUpdateRouteSupported_ = isSupported;
-    isEnhancedRoutingSupported_ = isSupported;
-}
-
-void AudioCoreConfigManager::SetEnhancedRoutingSupported(bool isSupported)
-{
-    isEnhancedRoutingSupported_ = isSupported;
 }
 
 void AudioCoreConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
@@ -238,7 +232,7 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
             streamProp->format_ = deviceStreamInfo.format;
             streamProp->sampleRate_ = static_cast<uint32_t>(rate);
             streamProp->channelLayout_ = layout;
-            streamProp->channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(layout);
+            streamProp->channels_ = ConvertLayoutToAudioChannel(layout);
             streamProp->bufferSize_ = AudioDefinitionPolicyUtils::PcmFormatToBytes(streamProp->format_) *
                 streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC;
             streamPropInfos.push_back(streamProp);
@@ -441,11 +435,6 @@ bool AudioCoreConfigManager::GetVoipConfig()
 bool AudioCoreConfigManager::GetUpdateRouteSupport()
 {
     return isUpdateRouteSupported_;
-}
-
-bool AudioCoreConfigManager::GetEnhancedRoutingSupported()
-{
-    return isEnhancedRoutingSupported_;
 }
 
 bool AudioCoreConfigManager::GetAdapterInfoFlag()

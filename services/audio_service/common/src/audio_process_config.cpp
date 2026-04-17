@@ -33,6 +33,7 @@ static std::map<StreamUsage, std::string> USAGE_TO_STRING_MAP = {
     {STREAM_USAGE_MEDIA, "MEDIA"},
     {STREAM_USAGE_MUSIC, "MUSIC"},
     {STREAM_USAGE_VOICE_COMMUNICATION, "VOICE_COMMUNICATION"},
+    {STREAM_USAGE_INTERPHONE, "INTERPHONE"},
     {STREAM_USAGE_VOICE_ASSISTANT, "VOICE_ASSISTANT"},
     {STREAM_USAGE_ALARM, "ALARM"},
     {STREAM_USAGE_VOICE_MESSAGE, "VOICE_MESSAGE"},
@@ -123,7 +124,7 @@ std::string ProcessConfig::DumpProcessConfig(const AudioProcessConfig &config)
             config.rendererInfo.contentType << ") flag(" << config.rendererInfo.rendererFlags << ") ";
     } else {
         temp << "[capturerInfo]:sourceType(" << config.capturerInfo.sourceType << ") flag(" <<
-            config.capturerInfo.capturerFlags << ") ";
+            config.capturerInfo.capturerFlags << ") mixWithWakeUp (" << config.capturerInfo.mixWithWakeUp << ")";
     }
 
     temp << "streamType<" << config.streamType << "> ";

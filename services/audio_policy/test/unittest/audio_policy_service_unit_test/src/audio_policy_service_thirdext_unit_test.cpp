@@ -20,6 +20,7 @@
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
 #include "audio_errors.h"
+#include "audio_unit_test.h"
 #include <thread>
 #include <memory>
 #include <vector>
@@ -337,23 +338,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_003, TestSize
     EXPECT_FALSE(ret);
 }
 
-#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
-/**
-* @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
-* @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateDefaultOutputDeviceWhenStopping_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UpdateDefaultOutputDeviceWhenStopping_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    int32_t uid = getuid();
-    GetServerUtil::GetServerPtr()->
-        audioPolicyService_.audioDeviceLock_.UpdateDefaultOutputDeviceWhenStopping(uid);
-    EXPECT_EQ(SUCCESS, uid);
-}
-#endif
 /**
 * @tc.name  : Test OnA2dpPlayingStateChanged.
 * @tc.number: OnA2dpPlayingStateChanged_001
@@ -901,6 +885,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceManager_001, TestSize.Leve
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001 start");
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
@@ -917,6 +903,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestS
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
+    MockNative::Resume();
 }
 
 /**
@@ -927,6 +914,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestS
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002 start");
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
@@ -943,6 +932,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestS
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
+    MockNative::Resume();
 }
 
 /**
@@ -2200,34 +2190,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
     propertyArray.property.push_back({"voip_up", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test GetOutputDevice
-* @tc.number: GetOutputDevice_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetOutputDevice_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetOutputDevice_002 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-    audioRendererFilter->uid = 456;
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor>speaker = std::make_shared<AudioDeviceDescriptor>();
-    speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
-    speaker->deviceId_ = 2;
-
-    deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
-
-    server->audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, speaker);
-    deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
-    EXPECT_EQ(deviceList[0]->deviceId_, 2);
-    server->audioAffinityManager_.DelSelectRendererDevice(456);
 }
 
 /**

@@ -810,5 +810,10 @@ int32_t OHAudioCapturer::SetIndependentAudioSessionStrategy(
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
     return audioCapturer_->SetIndependentAudioSessionStrategy(strategy, behavior);
 }
+
+const AudioCapturer *OHAudioCapturer::GetAudioCapturer() const
+{
+    return audioCapturer_.get();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

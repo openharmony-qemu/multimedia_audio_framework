@@ -246,8 +246,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     sptr<AudioRendererFilter> fuzzAudioRendererFilter = new AudioRendererFilter();
 
     // set offload support on for covery
-    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.HandleRecoveryPreferredDevices(fuzzInt32One,
-        fuzzInt32Two, fuzzInt32Three);
     GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(fuzzInt32One, fuzzBool);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.DeviceParamsCheck(fuzzDeviceRole,
@@ -317,7 +315,7 @@ void AudioPolicyServiceSubscribeSafeVolumeEventFuzztest(const uint8_t *rawData, 
         return;
     }
 
-    SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
+    OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
 }
 
 void AudioPolicyServiceSetAppVolumeLevelFuzztest(const uint8_t *rawData, size_t size)
@@ -410,7 +408,7 @@ void AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest(const uint8_t 
     }
     AudioCapturerInfo captureInfo;
     std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId);
+    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, -1);
 }
 
 void AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest(const uint8_t *rawData, size_t size)
@@ -420,7 +418,7 @@ void AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest(const uint8_t *
     }
     AudioRendererInfo rendererInfo;
     std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
+    GetServerPtr()->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, -1);
 }
 
 void AudioPolicyServiceGetOutputDeviceFuzztest(const uint8_t *rawData, size_t size)
@@ -902,7 +900,7 @@ void GetPreferredInputDeviceDescInnerFuzzTest(const uint8_t *rawData, size_t siz
     }
     AudioCapturerInfo captureInfo;
     std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId, -1);
 }
 
 void AudioPolicyServiceOnPrivacyDeviceSelectedFuzztest(const uint8_t *rawData, size_t size)

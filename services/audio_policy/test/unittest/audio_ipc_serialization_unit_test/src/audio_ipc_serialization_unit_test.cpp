@@ -168,6 +168,7 @@ static bool IsAudioProcessConfigEqual(const AudioProcessConfig &a, const AudioPr
         a.capturerInfo.recorderType == b.capturerInfo.recorderType &&
         a.capturerInfo.isLoopback == b.capturerInfo.isLoopback &&
         a.capturerInfo.loopbackMode == b.capturerInfo.loopbackMode &&
+        a.capturerInfo.mixWithWakeUp == b.capturerInfo.mixWithWakeUp &&
         a.streamType == b.streamType &&
         a.deviceType == b.deviceType &&
         a.isInnerCapturer == b.isInnerCapturer &&
@@ -1071,6 +1072,28 @@ HWTEST(AudioIpcSerializationUnitTest, CurrentOutputDeviceChangedEvent_001, TestS
     EXPECT_NE(device, nullptr);
 
     event.devices.assign(CurrentOutputDeviceChangedEvent::DEVICE_CHANGE_VALID_SIZE + 1, device);
+    EXPECT_TRUE(event.Marshalling(parcel));
+    auto newEvent = std::shared_ptr<CurrentOutputDeviceChangedEvent>(
+        CurrentOutputDeviceChangedEvent::Unmarshalling(parcel));
+    EXPECT_EQ(newEvent, nullptr);
+}
+
+/**
+ * @tc.name  : Test CurrentOutputDeviceChangedEvent.
+ * @tc.number: CurrentOutputDeviceChangedEvent_002
+ * @tc.desc  : Test CurrentOutputDeviceChangedEvent Deserialization.
+ */
+HWTEST(AudioIpcSerializationUnitTest, CurrentOutputDeviceChangedEvent_002, TestSize.Level1)
+{
+    Parcel parcel;
+    CurrentOutputDeviceChangedEvent event = {};
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    auto preDevice = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(device, nullptr);
+    EXPECT_NE(preDevice, nullptr);
+
+    event.devices.assign(CurrentOutputDeviceChangedEvent::DEVICE_CHANGE_VALID_SIZE - 1, device);
+    event.preDevices.assign(CurrentOutputDeviceChangedEvent::DEVICE_CHANGE_VALID_SIZE + 1, preDevice);
     EXPECT_TRUE(event.Marshalling(parcel));
     auto newEvent = std::shared_ptr<CurrentOutputDeviceChangedEvent>(
         CurrentOutputDeviceChangedEvent::Unmarshalling(parcel));

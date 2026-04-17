@@ -27,7 +27,6 @@
 #include "audio_volume_config.h"
 #include "audio_errors.h"
 #include "audio_device_manager.h"
-#include "audio_affinity_manager.h"
 #include "audio_a2dp_offload_flag.h"
 #include "audio_a2dp_device.h"
 #include "audio_iohandle_map.h"
@@ -78,10 +77,11 @@ public:
     DeviceCategory GetCurrentOutputDeviceCategory();
     std::string GetCurrentOutputDeviceNetworkId();
     std::string GetCurrentOutputDeviceMacAddr();
-    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
-        const std::string &deviceName = "", std::string networkId = LOCAL_NETWORK_ID);
+    // pipeId == renderId == ioHandle
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag, const uint32_t pipeId,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
-        const std::string &deviceName = "", const std::string &networkId = LOCAL_NETWORK_ID);
+        const uint32_t pipeId, const std::string &networkId = LOCAL_NETWORK_ID);
     void ReleaseActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag, const std::string &networkId);
     bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
@@ -102,7 +102,6 @@ public:
 private:
     AudioActiveDevice()
         : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()) {}
@@ -132,7 +131,6 @@ private:
         std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
 
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioConnectedDevice& audioConnectedDevice_;
