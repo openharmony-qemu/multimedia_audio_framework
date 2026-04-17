@@ -1341,31 +1341,6 @@ void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 }
 
-void AudioAdapterManager::UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream)
-{
-    std::lock_guard<std::mutex> lock(activeDeviceMutex_);
-    bool isScoActive = audioActiveDevice_.IsDeviceInActiveOutputDevices(DEVICE_TYPE_BLUETOOTH_SCO, false);
-    AudioVolume::GetInstance()->SetScoActive(isScoActive);
-
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(targetStream->rendererInfo_.streamUsage);
-    auto desc = targetStream->newDeviceDescs_.front();
-    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
-    CHECK_AND_RETURN_LOG(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE, "controlMode is PASS_THROUGH_MODE");
-    CHECK_AND_RETURN_LOG(desc->volumeBehavior_.controlMode != HILINK_MODE, "controlMode is HILINK_MODE");
-    CHECK_AND_RETURN_LOG(volumeDataMaintainer_.LoadVolumeUpdateStateFromMap(desc, volumeType), "no volume update");
-
-    int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
-    SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
-    SetVolumeDb(desc, volumeType);
-    UpdateVolumeForLowLatency(desc, volumeType);
-    HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
-        "device: %{public}s, sessionId: %{public}d", volumeLevel, GetStreamMuteInternal(desc, volumeType),
-        volumeType, desc->GetName().c_str(), targetStream->sessionId_);
-    
-    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(desc, volumeType, false);
-    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
-}
-
 void AudioAdapterManager::RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
     AudioVolumeType &volumeType)
 {
@@ -3468,7 +3443,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
     }
-    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(desc, STREAM_MUSIC, true);
 
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 
@@ -3491,8 +3465,6 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
     isAbsVolumeMute_ = mute;
     auto descA2DP = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
     SetVolumeDbForDeviceInPipe(descA2DP, STREAM_MUSIC);
-
-    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(descA2DP, STREAM_MUSIC, true);
 }
 
 bool AudioAdapterManager::IsAbsVolumeMute() const
@@ -3506,7 +3478,6 @@ void AudioAdapterManager::SetAbsVolumeMuteNearlink(bool mute)
     isAbsVolumeMuteNearlink_ = mute;
     auto descNearlink = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
     SetVolumeDbForDeviceInPipe(descNearlink, STREAM_MUSIC);
-    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(descNearlink, STREAM_MUSIC, true);
 }
 
 void AudioAdapterManager::NotifyAccountsChanged(const int &id)

@@ -1080,7 +1080,6 @@ void VolumeDataMaintainer::SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescr
     volume.Adjust({volumeLevel, volumeDegree});
     volumeLevel = volume.VolumeLevel();
     volumeDegree = volume.VolumeDegree();
-    SaveVolumeUpdateStateToMap(device, volumeType, true, zoneId);
     AUDIO_INFO_LOG("[zoneId %{public}d, device %{public}s, streamType %{public}d]"\
         "Save volume success, volumeLevel %{public}d, volumeDegree %{public}d",
         zoneId, device->GetName().c_str(), volumeType, volumeLevel, volumeDegree);
@@ -1247,7 +1246,6 @@ void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> 
     std::string volumeKey = device->GetName();
 #endif
     muteStatusMap_[volumeKey][volumeType] = muteStatus;
-    SaveVolumeUpdateStateToMap(device, volumeType, true, zoneId);
     AUDIO_INFO_LOG("SaveMuteToMap zoneId %{public}d device %{public}s streamType %{public}d muteStatus %{public}d",
         zoneId, device->GetName().c_str(), streamType, muteStatus);
 }
@@ -1382,36 +1380,6 @@ int32_t VolumeDataMaintainer::CheckMuteState(std::shared_ptr<AudioDeviceDescript
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     bool muteState = false;
     return audioSettingProvider.GetBoolValue(muteKey, muteState, "system");
-}
-
-void VolumeDataMaintainer::SaveVolumeUpdateStateToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, bool state, int32_t zoneId)
-{
-    std::lock_guard<ffrt::mutex> lock(volumeForUpdateMutex_);
-    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-#ifdef FEATURE_AUDIO_ZONE
-    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
-#else
-    std::string volumeKey = device->GetName();
-#endif
-    volumeUpdateStateMap_[volumeKey][volumeType] = state;
-    AUDIO_INFO_LOG("set %{public}s stream %{public}d update state as %{public}d",
-        device->GetName().c_str(), volumeType, state);
-}
-
-bool VolumeDataMaintainer::LoadVolumeUpdateStateFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, int32_t zoneId)
-{
-    std::lock_guard<ffrt::mutex> lock(volumeForUpdateMutex_);
-    CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-#ifdef FEATURE_AUDIO_ZONE
-    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
-#else
-    std::string volumeKey = device->GetName();
-#endif
-    return volumeUpdateStateMap_[volumeKey][volumeType];
 }
 
 int32_t VolumeDataMaintainer::SaveSystemAppVolumeLevelToDb()
