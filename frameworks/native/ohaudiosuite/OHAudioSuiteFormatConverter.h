@@ -28,6 +28,7 @@
 #include "audio_suite_pcm_buffer.h"
 #include "native_audio_converter.h"
 #include "audio_format_converter_impl.h"
+#include "audio_format_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
