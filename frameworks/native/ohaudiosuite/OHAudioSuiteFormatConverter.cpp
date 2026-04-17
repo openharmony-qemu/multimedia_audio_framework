@@ -277,12 +277,11 @@ OH_AudioConverter_Result OHAudioConverter::Create(
         MAP_LAYOUT_TO_CHANNEL[outputFormat->channelLayout]);
 
     // Create an InnerAPI instance (no-argument constructor)
-    impl_ = std::make_unique<AudioSuite::AudioFormatConverterImpl>();
+    impl_ = IAudioFormatConverter::Create(inputFormat_, outputFormat_);
     CHECK_AND_RETURN_RET_LOG(
-        impl_ != nullptr, AUDIOCONVERTER_ERROR_MEMORY_ALLOC_FAILED, "Create failed: memory alloc failed");
-
-    int32_t ret = impl_->Create(inputFormat_, outputFormat_);
-    return ConvertConverterError(ret);
+        impl_ != nullptr, AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT, "Create failed: memory alloc failed");
+ 
+    return AUDIOCONVERTER_SUCCESS;
 }
 
 void OHAudioConverter::Destroy()

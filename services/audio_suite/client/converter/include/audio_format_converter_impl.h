@@ -69,17 +69,21 @@ public:
     AudioFormatConverterImpl();
     ~AudioFormatConverterImpl() override;
 
-    // Interface 1: Create - Initialize the converter (with format parameters and format validation)
-    int32_t Create(const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat) override;
-
-    // Interface 2: SetInputCallback - Sets the data request callback
+    // Interface 1: SetInputCallback - Sets the data request callback
     int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) override;
 
-    // Interface 3: Process - Processes audio data
+    // Interface 2: Process - Processes audio data
     int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) override;
 
-    // Interface 4: Destroy - Destruction Converter
+    // Interface 3: Destroy - Destruction Converter
     void Destroy() override;
+
+    // member variables
+    PcmBufferFormat inputFormat_;
+    PcmBufferFormat outputFormat_;
+    std::shared_ptr<AudioSuiteFormatConversion> formatConversion_;
+    bool destroyed_ = false;
+    std::mutex mutex_;
 
 private:
     // Internal implementation method
@@ -119,17 +123,11 @@ private:
     int32_t ProcessConversion(void* audioData, uint32_t outputCapacity,
         uint32_t* outputSize, uint32_t outputBytesPerFrame, uint32_t maxOutputFrames);
     
-    // member variables
-    PcmBufferFormat inputFormat_;
-    PcmBufferFormat outputFormat_;
-    std::unique_ptr<AudioSuiteFormatConversion> formatConversion_;
     std::shared_ptr<FormatConverterDataCallback> dataCallback_;
     
     std::vector<uint8_t> cachedInputData_;
     std::vector<uint8_t> cachedOutputData_;
     bool inputFinished_ = false;
-    bool destroyed_ = false;
-    std::mutex mutex_;
 };
 
 } // namespace AudioSuite

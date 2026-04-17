@@ -566,17 +566,14 @@ static AudioSuite::PcmBufferFormat SetupOutputFormat(const OHConverterTestInfo& 
     return format;
 }
 
-static std::unique_ptr<AudioSuite::AudioFormatConverterImpl> CreateConverter(const OHConverterTestInfo& info)
+static std::shared_ptr<AudioSuite::IAudioFormatConverter> CreateConverter(const OHConverterTestInfo& info)
 {
     AudioSuite::PcmBufferFormat inputFormat = SetupInputFormat(info);
     AudioSuite::PcmBufferFormat outputFormat = SetupOutputFormat(info);
-    
-    auto converter = std::make_unique<AudioSuite::AudioFormatConverterImpl>();
-    int32_t ret = converter->Create(inputFormat, outputFormat);
-    if (ret != SUCCESS) {
+    auto converter = AudioSuite::IAudioFormatConverter::Create(inputFormat, outputFormat);
+    if (converter == nullptr) {
         return nullptr;
     }
-    
     return converter;
 }
 
@@ -592,7 +589,7 @@ static FILE* OpenOutputFile(const OHConverterTestInfo& info)
     return fopen(outputFilePath.c_str(), "wb");
 }
 
-static bool ProcessConversion(AudioSuite::AudioFormatConverterImpl* converter, FILE* outputFile)
+static bool ProcessConversion(AudioSuite::IAudioFormatConverter* converter, FILE* outputFile)
 {
     uint8_t outputBuffer[EXTRA_LARGE_BUFFER_SIZE] = {0};
     int32_t totalBytesWritten = 0;
@@ -739,15 +736,12 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_002, TestSize.Lev
         AudioSamplingRate::SAMPLE_RATE_48000, 2,
         AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE);
-    
-    auto converter = std::make_unique<AudioSuite::AudioFormatConverterImpl>();
-    int32_t ret = converter->Create(inputFormat, outputFormat);
-    EXPECT_EQ(ret, SUCCESS);
+    auto converter = AudioSuite::IAudioFormatConverter::Create(inputFormat, outputFormat);
     
     // Calling Process directly without setting a callback should return a "callback not set" error.
     uint8_t outputBuffer[DEFAULT_BUFFER_SIZE] = {0};
     uint32_t outputSize = 0;
-    ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
+    int32_t ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
     EXPECT_EQ(ret, ERR_CALLBACK_NOT_SET);
     
     converter->Destroy();

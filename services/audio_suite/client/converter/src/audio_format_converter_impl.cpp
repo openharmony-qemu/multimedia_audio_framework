@@ -54,9 +54,10 @@ static const std::unordered_set<AudioSampleFormat> SUPPORTED_SAMPLE_FORMATS = {
 };
 
 constexpr int32_t MAX_CALLBACK_DATA_SIZE = 400 * 1024; // 400KB
+std::mutex IAudioFormatConverter::createMutex_;
 
 AudioFormatConverterImpl::AudioFormatConverterImpl()
-    : inputFinished_(false), destroyed_(false)
+    : destroyed_(false), inputFinished_(false)
 {
 }
 
@@ -64,44 +65,47 @@ AudioFormatConverterImpl::~AudioFormatConverterImpl()
 {
 }
 
-int32_t AudioFormatConverterImpl::Create(const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat)
+std::shared_ptr<IAudioFormatConverter> IAudioFormatConverter::Create(
+    const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET_LOG(!destroyed_, ERR_ILLEGAL_STATE, "Create: converter already destroyed");
+    std::lock_guard<std::mutex> lock(createMutex_);
+
     // Format validation: Sampling rate
     if (SUPPORTED_SAMPLE_RATES.find(inputFormat.sampleRate) == SUPPORTED_SAMPLE_RATES.end() ||
         SUPPORTED_SAMPLE_RATES.find(outputFormat.sampleRate) == SUPPORTED_SAMPLE_RATES.end()) {
         AUDIO_ERR_LOG("Create: unsupported sampling rate");
-        return ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT;
+        return nullptr;
     }
 
     // Format verification: Audio channel layout
     if (LAYOUT_TO_CHANNEL.find(inputFormat.channelLayout) == LAYOUT_TO_CHANNEL.end() ||
         LAYOUT_TO_CHANNEL.find(outputFormat.channelLayout) == LAYOUT_TO_CHANNEL.end()) {
         AUDIO_ERR_LOG("Create: unsupported channel layout");
-        return ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT;
+        return nullptr;
     }
 
     // Format validation: Sampling format
     if (SUPPORTED_SAMPLE_FORMATS.find(inputFormat.sampleFormat) == SUPPORTED_SAMPLE_FORMATS.end() ||
         SUPPORTED_SAMPLE_FORMATS.find(outputFormat.sampleFormat) == SUPPORTED_SAMPLE_FORMATS.end()) {
         AUDIO_ERR_LOG("Create: unsupported sample format");
-        return ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT;
+        return nullptr;
     }
-
-    // Save input/output format
-    inputFormat_ = inputFormat;
-    outputFormat_ = outputFormat;
-
+    
     AUDIO_DEBUG_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
         inputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(inputFormat.channelLayout),
         outputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(outputFormat.channelLayout));
 
+    auto audioFormatConverter = std::make_shared<AudioFormatConverterImpl>();
+    // Save input/output format
+    audioFormatConverter->inputFormat_ = inputFormat;
+    audioFormatConverter->outputFormat_ = outputFormat;
+
     // Create a format conversion instance
-    formatConversion_ = std::make_unique<AudioSuiteFormatConversion>();
-    CHECK_AND_RETURN_RET_LOG(
-        formatConversion_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "Create: Failed to create format conversion instance");
-    return SUCCESS;
+    audioFormatConverter->formatConversion_ = std::make_unique<AudioSuiteFormatConversion>();
+    CHECK_AND_RETURN_RET_LOG(audioFormatConverter->formatConversion_ != nullptr,
+        nullptr,
+        "Create: Failed to create format conversion instance");
+    return audioFormatConverter;
 }
 
 int32_t AudioFormatConverterImpl::SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback)

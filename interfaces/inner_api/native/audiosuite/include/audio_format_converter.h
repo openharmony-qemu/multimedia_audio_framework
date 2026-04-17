@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 
 #include "audio_suite_pcm_buffer.h"
 
@@ -47,7 +48,8 @@ public:
     virtual ~IAudioFormatConverter() = default;
 
     // Interface 1: Create - Initialize the converter (with format parameters and format validation)
-    virtual int32_t Create(const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat) = 0;
+    static std::shared_ptr<IAudioFormatConverter> Create(
+        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat);
 
     // Interface 2: SetInputCallback - Sets the data request callback
     virtual int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) = 0;
@@ -57,6 +59,8 @@ public:
 
     // Interface 4: Destroy - Destruction Converter
     virtual void Destroy() = 0;
+private:
+    static std::mutex createMutex_;
 };
 
 } // namespace AudioSuite
