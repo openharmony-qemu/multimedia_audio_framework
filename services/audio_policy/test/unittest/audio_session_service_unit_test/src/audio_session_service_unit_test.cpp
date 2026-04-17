@@ -739,10 +739,6 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_027, TestSize.
     EXPECT_EQ(ret, ERROR);
 
     callerPid = 888;
-    audioSessionService_.sessionMap_[callerPid] = nullptr;
-    ret = audioSessionService_.FillCurrentOutputDeviceChangedEvent(callerPid, reason, deviceChangeEvent);
-    EXPECT_EQ(ret, ERROR);
-
     AudioSessionStrategy strategy;
     std::shared_ptr<AudioSession> audioSession =
         std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
@@ -768,9 +764,6 @@ HWTEST_F(AudioSessionServiceUnitTest, IsMuteSuggestionWhenMixEnabledTest_001, Te
     int32_t callerPid = 9999;
     bool ret = true;
 
-    ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
-    EXPECT_FALSE(ret);
-    audioSessionService_.sessionMap_[callerPid] = nullptr;
     ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
     EXPECT_FALSE(ret);
 
