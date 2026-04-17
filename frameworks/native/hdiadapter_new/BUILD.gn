@@ -196,6 +196,8 @@ ohos_unittest("hdiadapter_unit_test") {
 
   sources = [
     "test/unittest/adapter_unit_test.cpp",
+    "test/unittest/local_device_manager_unit_test.cpp",
+    "test/unittest/bluetooth_device_manager_unit_test.cpp",
     "test/unittest/manager_unit_test.cpp",
     "test/unittest/sink/audio_render_sink_unit_test.cpp",
     "test/unittest/sink/bluetooth_audio_render_sink_unit_test.cpp",
@@ -241,6 +243,7 @@ ohos_unittest("hdiadapter_unit_test") {
   
   if (audio_framework_feature_distributed_audio) {
     sources += [
+      "test/unittest/remote_device_manager_unit_test.cpp",
       "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
       "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
       "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
