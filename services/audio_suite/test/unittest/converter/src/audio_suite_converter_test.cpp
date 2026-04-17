@@ -683,11 +683,11 @@ static int32_t RunAllOHConverterTests()
     return SUCCESS;
 }
 
-void OHAudioConverterTest::SetUpTestCase(void) { }
+void AudioSuiteConverterTest::SetUpTestCase(void) { }
 
-void OHAudioConverterTest::TearDownTestCase(void) { }
+void AudioSuiteConverterTest::TearDownTestCase(void) { }
 
-void OHAudioConverterTest::SetUp(void)
+void AudioSuiteConverterTest::SetUp(void)
 {
     g_requestDataCallCount = 0;
     g_callbackCallCount = 0;
@@ -695,14 +695,14 @@ void OHAudioConverterTest::SetUp(void)
     g_totalBytesRead = 0;
 }
 
-void OHAudioConverterTest::TearDown(void) { }
+void AudioSuiteConverterTest::TearDown(void) { }
 
 /**
  * @tc.name  : Test OH_AudioConverter_Process.
  * @tc.number: OH_AudioConverter_Process_019
  * @tc.desc  : Test conversion from real pcm file and save to compare pcm.
  */
-HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Compare_Pcm, TestSize.Level0)
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Compare_Pcm, TestSize.Level0)
 {
     int32_t ret = RunAllOHConverterTests();
     EXPECT_EQ(ret, SUCCESS);
@@ -713,7 +713,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Compare_Pcm, TestSize.L
  * @tc.number: OH_AudioConverter_DonConvert_001
  * @tc.desc  : Test calling Process before Create.
  */
-HWTEST_F(OHAudioConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Level0)
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Level0)
 {
     auto converter = std::make_unique<AudioSuite::AudioFormatConverterImpl>();
     uint8_t outputBuffer[DEFAULT_BUFFER_SIZE] = {0};
@@ -729,7 +729,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Level0
  * @tc.number: OH_AudioConverter_DonConvert_002
  * @tc.desc  : Test calling Process without setting callback.
  */
-HWTEST_F(OHAudioConverterTest, OH_AudioConverter_DonConvert_002, TestSize.Level0)
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_002, TestSize.Level0)
 {
     AudioSuite::PcmBufferFormat inputFormat(
         AudioSamplingRate::SAMPLE_RATE_44100, 2,
@@ -762,7 +762,7 @@ static std::atomic<int32_t> g_mtFailCount(0);
  * @tc.number: OH_AudioConverter_Multithread_003
  * @tc.desc  : Test multiple threads performing actual audio file conversions.
  */
-HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Multithread_003, TestSize.Level0)
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Multithread_003, TestSize.Level0)
 {
     g_mtSuccessCount = 0;
     g_mtFailCount = 0;

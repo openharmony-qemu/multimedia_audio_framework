@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class OHAudioConverterTest : public testing::Test {
+class AudioSuiteConverterTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
