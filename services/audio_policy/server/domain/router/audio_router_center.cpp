@@ -450,9 +450,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
     if (zoneId != 0) {
         AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
+        StopArbiterContext();
         shared_ptr<AudioDeviceDescriptor> zoneDesc =
             AudioZoneService::GetInstance().FetchInputDevice(zoneId, sourceType, clientUID);
-        StopArbiterContext();
         CHECK_AND_RETURN_RET(zoneDesc == nullptr, zoneDesc);
     }
     if (sourceType == SOURCE_TYPE_ULTRASONIC &&
