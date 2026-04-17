@@ -267,6 +267,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     RouterType routerType = ROUTER_TYPE_NONE;
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     FetchDeviceInfo bak = info;
+    bak.preStreamUsage = streamUsage;
     bak.audioPipeType = PIPE_TYPE_OUT_NORMAL;
 
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
