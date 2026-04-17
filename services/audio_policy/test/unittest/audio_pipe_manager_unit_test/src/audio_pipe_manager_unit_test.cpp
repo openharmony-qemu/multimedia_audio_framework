@@ -1842,12 +1842,12 @@ HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_003, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetUnusedPipe_004
+ * @tc.name: GetUnusedPipe_007
  * @tc.desc: Test GetUnusedPipe when pipe className is primary_extra.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_004, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_007, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -1864,12 +1864,12 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_004, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetUnusedPipe_005
+ * @tc.name: GetUnusedPipe_008
  * @tc.desc: Test GetUnusedPipe when pipe className is primary_extra but streamDescriptors is not empty.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_005, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_008, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();

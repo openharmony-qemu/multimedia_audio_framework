@@ -348,10 +348,10 @@ HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
 
 /**
  * @tc.name   : Test IdHandler API
- * @tc.number : IdHandlerUnitTest_004
+ * @tc.number : IdHandlerUnitTest_008
  * @tc.desc   : Test primary_extra device class
  */
-HWTEST_F(UtilUnitTest, IdHandlerUnitTest_004, TestSize.Level1)
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_008, TestSize.Level1)
 {
     IdHandler &idHandler = IdHandler::GetInstance();
     uint32_t typecId = idHandler.GetRenderIdByDeviceClass("primary_extra", "Typec_Speaker");

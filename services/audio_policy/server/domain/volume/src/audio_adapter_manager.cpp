@@ -1711,9 +1711,6 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_INTERPHONE;
         }
-    } else if (pipeInfo->adapterName_ == "primary_extra") {
-        idType = HDI_ID_TYPE_PRIMARY;
-        idInfo = pipeInfo->moduleInfo_.name;
     } else if (pipeInfo->adapterName_ == "a2dp") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_BLUETOOTH;

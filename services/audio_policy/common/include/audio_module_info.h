@@ -130,7 +130,10 @@ struct AudioModuleInfo {
     std::string renderInIdleState;
     std::string OpenMicSpeaker;
     std::string fileName;
+
+    // in multistream, it means secondary classification for primary_extra class
     std::string networkId;
+    
     std::string macAddress;
     std::string busAddress;
     std::string deviceType;

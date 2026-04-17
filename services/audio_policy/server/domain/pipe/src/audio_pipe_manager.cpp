@@ -304,7 +304,6 @@ const std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetPipeList(
 
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
 {
-    // need add ut
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {

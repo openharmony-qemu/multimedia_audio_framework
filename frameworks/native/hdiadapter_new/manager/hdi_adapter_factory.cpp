@@ -188,7 +188,7 @@ std::shared_ptr<IDeviceManager> HdiAdapterFactory::CreateDeviceManager(uint32_t 
 
 bool HdiAdapterFactory::IsMultiStreamInfo(const std::string &info)
 {
-    return info == "Typec_Speaker" || info == "3rd_Speaker" ||
+    return info == "Typec_Speaker" || info == "Wired_Speaker" ||
            info == "Hdmi_Speaker" || info == "Wireless_Speaker";
 }
 

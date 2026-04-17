@@ -68,7 +68,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_INTERPHONE "interphone"
 
 #define HDI_ID_INFO_PRIMARY_EXTRA_TYPEC "Typec_Speaker"
-#define HDI_ID_INFO_PRIMARY_EXTRA_3RD "3rd_Speaker"
+#define HDI_ID_INFO_PRIMARY_EXTRA_WIRED "Wired_Speaker"
 #define HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS "Wireless_Speaker"
 #define HDI_ID_INFO_PRIMARY_EXTRA_HDMI "Hdmi_Speaker"
 

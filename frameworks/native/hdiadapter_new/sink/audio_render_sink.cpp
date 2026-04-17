@@ -47,7 +47,7 @@ const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
     {HDI_ID_INFO_DIRECT, HDI_RENDER_OFFSET_DIRECT},
     {HDI_ID_INFO_INTERPHONE, HDI_RENDER_OFFSET_INTERPHONE},
     {HDI_ID_INFO_PRIMARY_EXTRA_TYPEC, HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC},
-    {HDI_ID_INFO_PRIMARY_EXTRA_3RD, HDI_RENDER_OFFSET_PRIMARY_EXTRA_3RD},
+    {HDI_ID_INFO_PRIMARY_EXTRA_WIRED, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED},
     {HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS},
     {HDI_ID_INFO_PRIMARY_EXTRA_HDMI, HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI},
 };
@@ -968,8 +968,7 @@ int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    int32_t ret = deviceManager->SetOutputRoute(adapterNameCase_, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+    int32_t ret = deviceManager->SetOutputRoute(adapterNameCase_, outputDevices, GetUniqueId());
     return ret;
 }
 

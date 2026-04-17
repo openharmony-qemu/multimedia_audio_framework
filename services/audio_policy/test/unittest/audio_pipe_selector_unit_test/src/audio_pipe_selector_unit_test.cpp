@@ -280,8 +280,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetAdapterNameByStreamDesc_001, TestSize.Lev
     streamDesc->streamInfo_.channels = AudioChannel::STEREO;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    std::string result = audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc);
-    EXPECT_EQ(result, "");
+    std::string adapterName;
+    std::string pipeName;
+    audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc, adapterName, pipeName);
+    EXPECT_EQ(adapterName, "");
+    EXPECT_EQ(pipeName, "");
 }
 
 /**
@@ -2124,6 +2127,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_001, TestSize.Level1)
     AudioModuleInfo moduleInfo;
     moduleInfo.networkId = LOCAL_NETWORK_ID;
     fastPipeInfo->moduleInfo_ = moduleInfo;
+    fastPipeInfo->name_ = "test_out";
     
     for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
         fastPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
@@ -2135,6 +2139,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_001, TestSize.Level1)
     adapterInfo->adapterName = "test_adapter";
     auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
     pipeInfoPtr->adapterInfo_ = adapterInfo;
+    pipeInfoPtr->name_ = "test_out";
     
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 1001;
@@ -2172,6 +2177,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_002, TestSize.Level1)
     AudioModuleInfo moduleInfo;
     moduleInfo.networkId = LOCAL_NETWORK_ID;
     fastPipeInfo->moduleInfo_ = moduleInfo;
+    fastPipeInfo->name_ = "test_out";
     
     for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT - 1; i++) {
         fastPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
@@ -2183,6 +2189,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_002, TestSize.Level1)
     adapterInfo->adapterName = "test_adapter";
     auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
     pipeInfoPtr->adapterInfo_ = adapterInfo;
+    pipeInfoPtr->name_ = "test_out";
     
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 1002;
@@ -2222,6 +2229,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_003, TestSize.Level1)
     AudioModuleInfo moduleInfo;
     moduleInfo.networkId = LOCAL_NETWORK_ID;
     normalPipeInfo->moduleInfo_ = moduleInfo;
+    normalPipeInfo->name_ = "test_out";
     
     for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
         normalPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
@@ -2233,6 +2241,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_003, TestSize.Level1)
     adapterInfo->adapterName = "test_adapter";
     auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
     pipeInfoPtr->adapterInfo_ = adapterInfo;
+    pipeInfoPtr->name_ = "test_out";
     
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 1003;
@@ -2272,6 +2281,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_004, TestSize.Level1)
     AudioModuleInfo moduleInfo;
     moduleInfo.networkId = LOCAL_NETWORK_ID;
     normalPipeInfo->moduleInfo_ = moduleInfo;
+    normalPipeInfo->name_ = "test_out";
     
     for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT - 1; i++) {
         normalPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
@@ -2283,6 +2293,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_004, TestSize.Level1)
     adapterInfo->adapterName = "test_adapter";
     auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
     pipeInfoPtr->adapterInfo_ = adapterInfo;
+    pipeInfoPtr->name_ = "test_out";
     
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 1004;
@@ -2323,6 +2334,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_005, TestSize.Level1)
     AudioModuleInfo moduleInfo;
     moduleInfo.networkId = LOCAL_NETWORK_ID;
     fastInputPipeInfo->moduleInfo_ = moduleInfo;
+    fastInputPipeInfo->name_ = "test_in";
     
     for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
         fastInputPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
@@ -2334,6 +2346,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_005, TestSize.Level1)
     adapterInfo->adapterName = "test_adapter";
     auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
     pipeInfoPtr->adapterInfo_ = adapterInfo;
+    pipeInfoPtr->name_ = "test_in";
     
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 1005;
@@ -2927,87 +2940,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetIncomingStreamPriority_002, TestSize.Leve
 }
 
 /**
- * @tc.name: IsMultiStreamPrimary_001
- * @tc.desc: Test IsMultiStreamPrimary with primary_typec_output.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, IsMultiStreamPrimary_001, TestSize.Level1)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
-
-    bool result = audioPipeSelector->IsMultiStreamPrimary("primary_typec_output");
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name: IsMultiStreamPrimary_002
- * @tc.desc: Test IsMultiStreamPrimary with primary_3rd_output.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, IsMultiStreamPrimary_002, TestSize.Level1)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
-
-    bool result = audioPipeSelector->IsMultiStreamPrimary("primary_3rd_output");
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name: IsMultiStreamPrimary_003
- * @tc.desc: Test IsMultiStreamPrimary with primary_wireless_output.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, IsMultiStreamPrimary_003, TestSize.Level1)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
-
-    bool result = audioPipeSelector->IsMultiStreamPrimary("primary_wireless_output");
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name: IsMultiStreamPrimary_004
- * @tc.desc: Test IsMultiStreamPrimary with primary_hdmi_output.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, IsMultiStreamPrimary_004, TestSize.Level1)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
-
-    bool result = audioPipeSelector->IsMultiStreamPrimary("primary_hdmi_output");
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name: IsMultiStreamPrimary_005
- * @tc.desc: Test IsMultiStreamPrimary with invalid pipeName.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, IsMultiStreamPrimary_005, TestSize.Level1)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
-
-    bool result = audioPipeSelector->IsMultiStreamPrimary("primary_output");
-    EXPECT_FALSE(result);
-
-    result = audioPipeSelector->IsMultiStreamPrimary("invalid_name");
-    EXPECT_FALSE(result);
-
-    result = audioPipeSelector->IsMultiStreamPrimary("");
-    EXPECT_FALSE(result);
-}
-
-/**
  * @tc.name: IsPipeMatch_001
  * @tc.desc: Test IsPipeMatch with pipeName matching.
  * @tc.type: FUNC
@@ -3024,7 +2956,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_001, TestSize.Level1)
     streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     pipeInfo->adapterName_ = "primary";
     pipeInfo->name_ = "primary_output";
 
@@ -3052,7 +2984,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_002, TestSize.Level1)
     streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     pipeInfo->adapterName_ = "primary";
     pipeInfo->name_ = "primary_output";
 
@@ -3080,7 +3012,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_003, TestSize.Level1)
     streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     pipeInfo->adapterName_ = "primary";
     pipeInfo->name_ = "primary_output";
 
@@ -3108,7 +3040,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_004, TestSize.Level1)
     streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     pipeInfo->adapterName_ = "primary";
     pipeInfo->name_ = "primary_output";
 

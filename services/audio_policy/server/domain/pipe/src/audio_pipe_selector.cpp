@@ -837,11 +837,13 @@ void AudioPipeSelector::GetAdapterNameByStreamDesc(
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Adapter info is null");
+        return;
     }
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
     if (adapterInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Pipe info is null");
+        return;
     }
     adapterName = adapterInfoPtr->adapterName;
     pipeName = pipeInfoPtr->name_;
@@ -849,7 +851,7 @@ void AudioPipeSelector::GetAdapterNameByStreamDesc(
 
 static bool IsMultiStreamPrimary(const std::string &pipeName)
 {
-    return pipeName == "primary_typec_output" || pipeName == "primary_3rd_output" ||
+    return pipeName == "primary_typec_output" || pipeName == "primary_wired_output" ||
            pipeName == "primary_hdmi_output" || pipeName == "primary_wireless_output";
 }
 
