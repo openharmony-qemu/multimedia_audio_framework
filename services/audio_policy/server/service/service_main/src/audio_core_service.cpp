@@ -61,6 +61,7 @@ static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
+static constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
 
 static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_WIRED_HEADSET,
@@ -826,7 +827,7 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         return false;
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
-    if (!deviceDesc->GetDeviceSupportMmap()) {
+    if (deviceDesc->getType() ==  DEVICE_TYPE_USB_ARM_HEADSET && !deviceDesc->GetDeviceSupportMmap()) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
@@ -922,6 +923,11 @@ AudioFlag AudioCoreService::GetFlagForMmapStream(std::shared_ptr<AudioStreamDesc
         IsFastAllowed(streamDesc->bundleName_)) {
         return AUDIO_OUTPUT_FLAG_FAST;
     }
+    if (streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_USB_ARM_HEADSET &&
+        streamDesc->newDeviceDescs_.front()->GetDeviceSupportMmap() == ONLY_SUPPORT_MMAP) {
+        streamDesc->SetUltraFastRequested(false);
+        return AUDIO_OUTPUT_FLAG_FAST;
+    }
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
@@ -965,7 +971,7 @@ bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescripto
         return false;
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
-    if (!deviceDesc->GetDeviceSupportMmap()) {
+    if (deviceDesc->getType() ==  DEVICE_TYPE_USB_ARM_HEADSET && !deviceDesc->GetDeviceSupportMmap()) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
