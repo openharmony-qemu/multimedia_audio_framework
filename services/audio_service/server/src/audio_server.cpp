@@ -939,11 +939,8 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
         CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
         std::string homeMusicNetworkId = newPair[0].second;
         std::string homeMusicZoneValue = newPair[1].second;
-        HdiAdapterManager &managerRemote = HdiAdapterManager::GetInstance();
-        std::shared_ptr<IDeviceManager> deviceManager = managerRemote.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "remote device manager is nullptr");
-        deviceManager->SetAudioParameter(homeMusicNetworkId, AudioParamKey::NONE, ZONE_ID_CHANGE, homeMusicZoneValue);
-        return SUCCESS;
+        return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_REMOTE,
+            homeMusicNetworkId, ZONE_ID_CHANGE, homeMusicZoneValue);
     }
 
     if (key == EFFECT_LIVE_KEY) {
@@ -974,11 +971,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     bool isParamValid = ProcessKeyValuePairs(key, newPair, mainKeyIt->second, value);
     CHECK_AND_RETURN_RET_LOG(isParamValid, ERR_INVALID_PARAM, "invalid subkey or value");
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
-    return SUCCESS;
+    return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "", value);
 }
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
@@ -1275,34 +1268,22 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
         return ERR_INVALID_PARAM;
     }
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
-    std::unordered_map<std::string, std::set<std::string>> subKeyMap = mainKeyIt->second;
+    std::vector<std::string> validSubKeys;
     if (subKeys.empty()) {
-        for (auto it = subKeyMap.begin(); it != subKeyMap.end(); it++) {
-            std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, it->first);
-            result.emplace_back(std::make_pair(it->first, value));
+        for (const auto &item : mainKeyIt->second) {
+            validSubKeys.emplace_back(item.first);
         }
-        return SUCCESS;
-    }
-
-    bool match = true;
-    for (auto it = subKeys.begin(); it != subKeys.end(); it++) {
-        auto subKeyIt = subKeyMap.find(*it);
-        if (subKeyIt != subKeyMap.end()) {
-            std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, *it);
-            result.emplace_back(std::make_pair(*it, value));
-        } else {
-            match = false;
-            break;
+    } else {
+        for (const auto &subKey : subKeys) {
+            auto subKeyIt = mainKeyIt->second.find(subKey);
+            if (subKeyIt == mainKeyIt->second.end()) {
+                result.clear();
+                return ERR_INVALID_PARAM;
+            }
+            validSubKeys.emplace_back(subKey);
         }
     }
-    if (!match) {
-        result.clear();
-        return ERR_INVALID_PARAM;
-    }
-    return SUCCESS;
+    return HdiAdapterManager::GetInstance().GetExtraParameters(validSubKeys, result);
 }
 
 int32_t AudioServer::GetAudioParameter(const std::string &key, std::string &value)

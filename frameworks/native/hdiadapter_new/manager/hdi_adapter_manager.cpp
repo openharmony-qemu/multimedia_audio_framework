@@ -184,6 +184,27 @@ int32_t HdiAdapterManager::LoadAdapter(HdiDeviceManagerType type, const std::str
     return deviceManager->LoadAdapter(adapterName);
 }
 
+int32_t HdiAdapterManager::SetExtraParameters(HdiDeviceManagerType type, const std::string &adapterName,
+    const std::string &condition, const std::string &value)
+{
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
+    deviceManager->SetAudioParameter(adapterName, AudioParamKey::NONE, condition, value);
+    return SUCCESS;
+}
+
+int32_t HdiAdapterManager::GetExtraParameters(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
+    for (const std::string &subKey : subKeys) {
+        std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, subKey);
+        result.emplace_back(subKey, value);
+    }
+    return SUCCESS;
+}
+
 void HdiAdapterManager::UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force)
 {
     SetRemoteHdiInvalidState(type, adapterName, force);
