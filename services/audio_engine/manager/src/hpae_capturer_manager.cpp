@@ -83,7 +83,7 @@ HpaeProcessorType HpaeCapturerManager::GetEffectiveSceneType(uint32_t sessionId)
     auto it = sessionNodeMap_.find(sessionId);
     CHECK_AND_RETURN_RET(it != sessionNodeMap_.end(), HPAE_SCENE_EFFECT_NONE);
     CHECK_AND_RETURN_RET(activeCollabSourceTypes_.count(it->second.sourceType) == 0,
-        HPAE_SCENE_COLLABORATIVE);
+        HPAE_SCENE_COLLABORATIVE_RECORD);
     return it->second.sceneType;
 }
 
@@ -183,7 +183,7 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
         }
     }
 
-    if (sceneType == HPAE_SCENE_COLLABORATIVE) {
+    if (sceneType == HPAE_SCENE_COLLABORATIVE_RECORD) {
         HpaeNodeInfo collabNodeInfo;
         auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
         if (collabInputCluster && sceneCluster->GetCapturerEffectConfig(collabNodeInfo,
@@ -340,7 +340,7 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
             scnenCluster->ConnectWithInfo(sourceInputClusterMap_[mainMicType_], micNodeInfo); // mic
         }
 
-        if (sceneType == HPAE_SCENE_COLLABORATIVE) {
+        if (sceneType == HPAE_SCENE_COLLABORATIVE_RECORD) {
             HpaeNodeInfo collabNodeInfo;
             auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
             if (collabInputCluster && scnenCluster->GetCapturerEffectConfig(collabNodeInfo,
@@ -1368,8 +1368,8 @@ void HpaeCapturerManager::OpenCollaboration(SourceType sourceType)
     }
 
     activeCollabSourceTypes_.insert(sourceType);
-    CreateSceneCluster(HPAE_SCENE_COLLABORATIVE,
-        TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE));
+    CreateSceneCluster(HPAE_SCENE_COLLABORATIVE_RECORD,
+        TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE_RECORD));
 
     CheckIfAnyStreamRunning();
 
@@ -1387,9 +1387,9 @@ void HpaeCapturerManager::CloseCollaboration(SourceType sourceType)
     HpaeProcessorType normalSceneType = TransSourceTypeToSceneType(sourceType);
     CreateSceneCluster(normalSceneType, TransProcessType2EnhanceScene(normalSceneType));
 
-    if (activeCollabSourceTypes_.empty() && SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE)) {
-        CaptureEffectRelease(HPAE_SCENE_COLLABORATIVE);
-        sceneClusterMap_.erase(HPAE_SCENE_COLLABORATIVE);
+    if (activeCollabSourceTypes_.empty() && SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE_RECORD)) {
+        CaptureEffectRelease(HPAE_SCENE_COLLABORATIVE_RECORD);
+        sceneClusterMap_.erase(HPAE_SCENE_COLLABORATIVE_RECORD);
     }
 
     CheckIfAnyStreamRunning();
