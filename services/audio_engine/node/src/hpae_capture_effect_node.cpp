@@ -259,6 +259,8 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
     AudioEnhanceDeviceAttr enhanceAttr = {};
+    enhanceAttr.needEc = attr.needEc;
+    enhanceAttr.needMicRef = attr.needMicRef;
     enhanceAttr.micChannels = attr.micChannels;
     enhanceAttr.ecChannels = attr.ecChannels;
     enhanceAttr.micRefChannels = attr.micRefChannels;
