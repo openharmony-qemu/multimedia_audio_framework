@@ -60,7 +60,7 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     const AudioEnhanceScene &sceneType)
 {
     // DEVICE_TYPE_ACCESSORY effect move to HAL
-    CHECK_AND_RETURN_RET_LOG(sourceType_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
+    CHECK_AND_RETURN_RET_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
         "captureId_ %{public}d needn't create effect", captureId_);
     const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
         GetEnhanceSupportedSceneType();
