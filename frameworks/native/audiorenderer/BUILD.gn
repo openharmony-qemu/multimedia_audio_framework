@@ -24,7 +24,6 @@ config("audio_renderer_config") {
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
     "../audioschedule/include",
-    "../../../services/audio_service/common/include/dfx",
     "../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../audiodefinitions/include",
     "../../../services/audio_service/common/include/dfx",
