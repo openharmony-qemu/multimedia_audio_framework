@@ -73,6 +73,9 @@ static const map<InterruptHint, InterruptStage> HINT_STAGE_MAP = {
 
 inline AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
+    if (audioInterrupt.isCallWaitingTone) {
+        return AUDIO_SCENE_DEFAULT;
+    }
     if (audioInterrupt.audioFocusType.streamType == STREAM_RING) {
         return AUDIO_SCENE_RINGING;
     } else if (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||

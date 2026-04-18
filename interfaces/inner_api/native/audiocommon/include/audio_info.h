@@ -701,6 +701,7 @@ struct AudioRendererInfo : public Parcelable {
     bool keepRunning = false;
     bool isStatic = false;
     uint32_t ultraFastFlag = ULTRA_NONE;
+    bool isCallWaitingTone = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -740,7 +741,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(voipNoPrivacyFlag)
             && parcel.WriteBool(toneFlag)
             && parcel.WriteBool(keepRunning)
-            && parcel.WriteBool(isStatic);
+            && parcel.WriteBool(isStatic)
+            && parcel.WriteBool(isCallWaitingTone);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -771,6 +773,7 @@ struct AudioRendererInfo : public Parcelable {
         toneFlag = parcel.ReadBool();
         keepRunning = parcel.ReadBool();
         isStatic = parcel.ReadBool();
+        isCallWaitingTone = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
