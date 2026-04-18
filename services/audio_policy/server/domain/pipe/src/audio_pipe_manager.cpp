@@ -1123,7 +1123,6 @@ bool AudioPipeManager::IsStreamUseUltraFastRoute(uint32_t sessionId)
 
 bool AudioPipeManager::HasRunningRecognitionCapturerStream()
 {
-    Trace trace("AudioPipeManager::HasRunningRecognitionCapturerStream");
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     bool hasRunningRecognitionCapturerStream = false;
     for (auto &pipeInfo : curPipeList_) {

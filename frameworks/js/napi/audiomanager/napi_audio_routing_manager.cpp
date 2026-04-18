@@ -92,6 +92,7 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getDevicesSync", GetDevicesSync),
         DECLARE_NAPI_FUNCTION("selectOutputDevice", SelectOutputDevice),
         DECLARE_NAPI_FUNCTION("selectOutputDeviceByFilter", SelectOutputDeviceByFilter),
+        DECLARE_NAPI_FUNCTION("restoreOutputDeviceByFilter", RestoreOutputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("selectInputDevice", SelectInputDevice),
         DECLARE_NAPI_FUNCTION("selectInputDeviceByFilter", SelectInputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("excludeOutputDevices", ExcludeOutputDevices),
@@ -347,6 +348,44 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SelectOutputDeviceByFilter", executor, complete);
+}
+
+napi_value NapiAudioRoutingManager::RestoreOutputDeviceByFilter(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("RestoreOutputDeviceByFilter failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        NapiParamUtils::GetAudioRendererFilter(env, context->audioRendererFilter,
+            context->bArgTransFlag, argv[PARAM0]);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRoutingManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
+            "context object state is error.");
+        if (!context->bArgTransFlag) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+        }
+        context->intValue = napiAudioRoutingManager->audioMngr_->RestoreOutputDevice(context->audioRendererFilter);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "RestoreOutputDeviceByFilter failed",
+            NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "RestoreOutputDeviceByFilter", executor, complete);
 }
 
 napi_value NapiAudioRoutingManager::SelectInputDevice(napi_env env, napi_callback_info info)
