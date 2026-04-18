@@ -652,9 +652,9 @@ void AudioRouterCenter::StartArbiterContext()
     
     std::vector<StreamDeviceInfo> outputDevices;
     for (auto &desc : runningOutputStreams) {
-        if (desc == nullptr) {	 
-             continue; 
-         }
+        if (desc == nullptr) {
+            continue; 
+        }
         StreamDeviceInfo info;
         info.uid = desc->callerUid_;
         info.sessionId = desc->sessionId_;
@@ -671,9 +671,9 @@ void AudioRouterCenter::StartArbiterContext()
     
     std::vector<StreamDeviceInfo> inputDevices;
     for (auto &desc : runningInputStreams) {
-        if (desc == nullptr) {	 
-             continue; 
-         }
+        if (desc == nullptr) {
+            continue; 
+        }
         StreamDeviceInfo info;
         info.uid = desc->callerUid_;
         info.sessionId = desc->sessionId_;
