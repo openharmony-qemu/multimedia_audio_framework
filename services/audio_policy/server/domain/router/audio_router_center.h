@@ -108,6 +108,8 @@ private:
                     capturerConfig.first, capturerConfig.second.c_str());
             }
         }
+
+        wirelessConflictHandler_ = std::make_shared<WirelessConflictHandler>();
     }
 
     ~AudioRouterCenter() {}
