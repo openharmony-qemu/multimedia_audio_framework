@@ -136,7 +136,7 @@ int32_t AudioFormatConverterImpl::ReadAndCacheInputData(bool* shouldStopProcessi
 {
     const void* inputDataPtr = nullptr;
     InputDataStatus status = InputDataStatus::HAVE_DATA;
-
+    CHECK_AND_RETURN_RET_LOG(dataCallback_ != nullptr, ERR_CALLBACK_NOT_SET, "Callback function not set.");
     int32_t inputSize = dataCallback_->OnRequestData(&inputDataPtr, &status);
     if (inputSize > MAX_CALLBACK_DATA_SIZE || inputSize < 0) {
         AUDIO_ERR_LOG("The callback function returned an error indicating the amount of data was incorrect: %{public}d",
@@ -482,10 +482,6 @@ int32_t AudioFormatConverterImpl::Process(
     *outputSize = 0;
 
     CHECK_AND_RETURN_RET_LOG(formatConversion_ != nullptr, ERR_ILLEGAL_STATE, "Process: Converter not initialized");
-    if (dataCallback_ == nullptr) {
-        AUDIO_ERR_LOG("Process: Callback not set");
-        return ERR_CALLBACK_NOT_SET;
-    }
 
     uint32_t outputSampleSize = AudioSuiteUtil::GetSampleSize(outputFormat_.sampleFormat);
     uint32_t outputBytesPerFrame = outputFormat_.channelCount * outputSampleSize;
