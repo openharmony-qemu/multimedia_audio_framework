@@ -15,6 +15,9 @@
 
 #include "audio_server_unit_test.h"
 
+#include <chrono>
+#include <thread>
+
 #include "audio_errors.h"
 #include "audio_server.h"
 #include "gmock/gmock.h"
@@ -222,6 +225,77 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_011, TestSize.Level1
     ASSERT_EQ(1u, result.size());
     EXPECT_EQ("subkey1", result[0].firstParam);
     EXPECT_EQ("value1", result[0].secondParam);
+}
+
+/**
+ * @tc.name  : Test WaitAudioParameterParsed API - Verify notify wakes waiter
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerWaitAudioParameterParsed_001
+ * @tc.desc  : Verify WaitAudioParameterParsed returns true after NotifyAudioParameterParsed.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerWaitAudioParameterParsed_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    audioServer->isAudioParameterParsed_.store(false);
+
+    std::thread notifyThread([]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        audioServer->NotifyAudioParameterParsed();
+    });
+
+    EXPECT_TRUE(audioServer->WaitAudioParameterParsed());
+    notifyThread.join();
+    EXPECT_TRUE(audioServer->isAudioParameterParsed_.load());
+}
+
+/**
+ * @tc.name  : Test SetExtraParameters API - Verify cockpit direct rejects non-cockpit uid
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetExtraParameters_008
+ * @tc.desc  : Verify cockpit direct main key returns permission denied for unexpected uid.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_008, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    if (IPCSkeleton::GetCallingUid() == 1041) {
+        GTEST_SKIP() << "current test uid is cockpit uid";
+    }
+
+    audioServer->isAudioParameterParsed_.store(false);
+    audioServer->audioExtraParameterCacheVector_.clear();
+    std::vector<StringPair> kvpairs = {
+        {"subkey1", "value1"}
+    };
+
+    int32_t ret = audioServer->SetExtraParameters("cockpit_direct", kvpairs);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
+    EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
+    EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API - Verify cockpit direct rejects non-cockpit uid
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_012
+ * @tc.desc  : Verify cockpit direct main key returns permission denied for unexpected uid.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_012, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    if (IPCSkeleton::GetCallingUid() == 1041) {
+        GTEST_SKIP() << "current test uid is cockpit uid";
+    }
+
+    audioServer->isAudioParameterParsed_.store(false);
+    std::vector<StringPair> result;
+    std::vector<std::string> subKeys = {"subkey1"};
+
+    int32_t ret = audioServer->GetExtraParameters("cockpit_direct", subKeys, result);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
+    EXPECT_TRUE(result.empty());
 }
 } // namespace AudioStandard
 } // namespace OHOS

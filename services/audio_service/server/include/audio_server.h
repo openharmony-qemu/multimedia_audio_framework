@@ -447,8 +447,10 @@ private:
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
     void ParseAudioParameter();
+    void NotifyAudioParameterParsed();
     bool CacheExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    bool WaitAudioParameterParsed();
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
@@ -543,6 +545,7 @@ private:
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     std::atomic<bool> isAudioParameterParsed_ = false;
+    std::condition_variable isAudioParameterParsedCv_;
     std::mutex audioParameterCacheMutex_;
     std::vector<std::pair<std::string,
         std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;

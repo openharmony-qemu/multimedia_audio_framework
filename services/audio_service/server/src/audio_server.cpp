@@ -101,9 +101,11 @@ const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
 const std::string HOME_MUSIC_KEY = "HomeMusic";
+const std::string COCKPIT_DIRECT_KEY = "cockpit_direct";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
 const std::string MAIN_KEY_DFX = "dfx";
 const std::string SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT = "update_wakeup_trace_result";
+constexpr int32_t UID_COCKPIT_SA = 1041;
 constexpr int32_t UID_CALL_MANAGER_SA = 1001;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
@@ -207,6 +209,7 @@ const std::set<std::string> ASR_FORBIDDEN_KEYS = {
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
+static constexpr unsigned int WAIT_AUDIO_PARAMETER_PARSED_TIMEOUT_SECONDS = 5;
 static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 static constexpr int32_t RESTORE_SESSION_TRY_COUNT = 10;
 static constexpr uint32_t  RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS = 50000;
@@ -245,6 +248,21 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_UNPROCESSED,
     SOURCE_TYPE_LIVE,
 };
+
+static bool IsCockpitDirectCallerAllowed()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    return callingUid == UID_COCKPIT_SA || callingUid == ROOT_UID;
+}
+
+static std::string BuildExtraParameterValue(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    std::string value;
+    for (const auto &item : kvpairs) {
+        value += item.first + "=" + item.second + ";";
+    }
+    return value;
+}
 
 static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
 {
@@ -805,7 +823,7 @@ void AudioServer::ParseAudioParameter()
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
-    isAudioParameterParsed_.store(true);
+    NotifyAudioParameterParsed();
     RecordBootStateTime(AudioServerBootState::LOAD_AUDIO_PARAM_CONFIG_XML, ClockTime::GetCurMilli());
 
     {
@@ -818,6 +836,23 @@ void AudioServer::ParseAudioParameter()
     }
     AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
     PermissionUtil::UpdateBGSet();
+}
+
+void AudioServer::NotifyAudioParameterParsed()
+{
+    std::lock_guard<std::mutex> lock(audioParameterCacheMutex_);
+    isAudioParameterParsed_.store(true);
+    isAudioParameterParsedCv_.notify_all();
+}
+
+bool AudioServer::WaitAudioParameterParsed()
+{
+    if (isAudioParameterParsed_.load()) {
+        return true;
+    }
+    std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
+    return isAudioParameterParsedCv_.wait_for(lock, std::chrono::seconds(WAIT_AUDIO_PARAMETER_PARSED_TIMEOUT_SECONDS),
+        [this]() { return isAudioParameterParsed_.load(); });
 }
 
 void AudioServer::WriteServiceStartupError()
@@ -954,8 +989,52 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
         return SUCCESS;
     }
-    HapReportWakeupEvent(key, newPair);
-    CHECK_AND_RETURN_RET_LOG(!CacheExtraParameters(key, newPair), ERROR, "cached");
+
+    if (key == COCKPIT_DIRECT_KEY) {
+        return SetCockpitDirectExtraParameters(newPair);
+    }
+
+    return SetCommonExtraParameters(key, newPair);
+}
+
+int32_t AudioServer::SetHomeMusicExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
+    std::string homeMusicNetworkId = kvpairs[0].second;
+    std::string homeMusicZoneValue = kvpairs[1].second;
+    return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_REMOTE,
+        homeMusicNetworkId, ZONE_ID_CHANGE, homeMusicZoneValue);
+}
+
+int32_t AudioServer::SetEffectLiveExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    bool ret = SetEffectLiveParameter(kvpairs);
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetPcmDumpExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    bool ret = SetPcmDumpParameter(kvpairs);
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetCockpitDirectExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    CHECK_AND_RETURN_RET_LOG(IsCockpitDirectCallerAllowed(), ERR_PERMISSION_DENIED,
+        "set cockpit direct extra parameters failed: invalid caller uid");
+    CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
+        "set cockpit direct extra parameters failed: audio parameters not ready");
+    return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "",
+        BuildExtraParameterValue(kvpairs));
+}
+
+int32_t AudioServer::SetCommonExtraParameters(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    HapReportWakeupEvent(key, kvpairs);
+    CHECK_AND_RETURN_RET_LOG(!CacheExtraParameters(key, kvpairs), ERROR, "cached");
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
@@ -1254,8 +1333,13 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
         return SUCCESS;
     } else if (mainKey == HOME_MUSIC_KEY) {
         return GetTaskIdParameter(subKeys, result);
+    } else if (mainKey == COCKPIT_DIRECT_KEY) {
+        CHECK_AND_RETURN_RET_LOG(IsCockpitDirectCallerAllowed(), ERR_PERMISSION_DENIED,
+            "get cockpit direct extra parameters failed: invalid caller uid");
+        CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
+            "get cockpit direct extra parameters failed: audio parameters not ready");
+        return HdiAdapterManager::GetInstance().GetExtraParameters(subKeys, result);
     }
-
     CHECK_AND_RETURN_RET_LOG(isAudioParameterParsed_.load(), ERROR, "audioParameterKeys is not ready");
 
     if (audioParameterKeys.empty()) {
