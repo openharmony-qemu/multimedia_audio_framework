@@ -263,15 +263,18 @@ std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType)
 
 bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInfo)
 {
+    uint32_t preEffectiveRate = preNodeInfo.GetEffectiveSampleRate();
+    uint32_t curEffectiveRate = curNodeInfo.GetEffectiveSampleRate();
     return preNodeInfo.channels == curNodeInfo.channels &&  //&& preNodeInfo.format == curNodeInfo.format todo
-           preNodeInfo.samplingRate == curNodeInfo.samplingRate &&
+           preEffectiveRate == curEffectiveRate &&
            preNodeInfo.channelLayout == curNodeInfo.channelLayout;
 }
 
 std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
 {
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
     std::string nodeKey = std::to_string(nodeInfo.sourceBufferType) + "_" +
-                          std::to_string(nodeInfo.samplingRate) + "_" +
+                          std::to_string(effectiveRate) + "_" +
                           std::to_string(nodeInfo.channels) + "_" +
                           std::to_string(nodeInfo.format) + "_" +
                           std::to_string(nodeInfo.channelLayout);
@@ -289,19 +292,21 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
-    return usTime * nodeInfo.samplingRate / TIME_US_PER_S / nodeInfo.frameLen;
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    return usTime * effectiveRate / TIME_US_PER_S / nodeInfo.frameLen;
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
 {
-    if (nodeInfo.channels == 0 || GetSizeFromFormat(nodeInfo.format) == 0 || nodeInfo.samplingRate == 0) {
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    if (nodeInfo.channels == 0 || GetSizeFromFormat(nodeInfo.format) == 0 || effectiveRate == 0) {
         AUDIO_ERR_LOG("invalid nodeInfo");
         return 0;
     }
 
     double samples = static_cast<double>(bufferSize) /
                      (nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
-    double seconds = samples / static_cast<int32_t>(nodeInfo.samplingRate);
+    double seconds = samples / static_cast<double>(effectiveRate);
     double microseconds = seconds * TIME_US_PER_S;
 
     return static_cast<uint64_t>(microseconds);
