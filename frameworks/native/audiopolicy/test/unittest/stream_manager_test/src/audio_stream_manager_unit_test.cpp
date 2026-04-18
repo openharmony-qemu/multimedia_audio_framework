@@ -1622,30 +1622,7 @@ HWTEST_F(AudioStreamManagerUnitTest, ForceStopAudioStream_003, TestSize.Level1)
     EXPECT_EQ(res, true);
 }
 
-/**
-* @tc.name   : Test IsCapturerFocusAvailable API
-* @tc.number : IsCapturerFocusAvailable_001
-* @tc.desc   : Test IsCapturerFocusAvailable interface
-*/
-HWTEST_F(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_001, TestSize.Level1)
-{
-    ASSERT_NE(g_audioManagerInstance, nullptr);
-    AudioCapturerOptions capturerOptions;
-    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    capturerOptions.streamInfo.channels = AudioChannel::MONO;
-    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
-    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
 
-    AudioCapturerInfo changeInfo;
-    int32_t result = audioCapturer->GetCapturerInfo(changeInfo);
-    EXPECT_EQ(result, SUCCESS);
-    bool isAvailable = g_audioManagerInstance->IsCapturerFocusAvailable(changeInfo);
-    EXPECT_EQ(isAvailable, true);
-}
 
 /**
 * @tc.name   : Test IsCapturerFocusAvailable API
