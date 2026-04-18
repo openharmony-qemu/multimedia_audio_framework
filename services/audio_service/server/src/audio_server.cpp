@@ -105,7 +105,6 @@ const std::string COCKPIT_DIRECT_KEY = "cockpit_direct";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
 const std::string MAIN_KEY_DFX = "dfx";
 const std::string SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT = "update_wakeup_trace_result";
-constexpr int32_t UID_COCKPIT_SA = 1041;
 constexpr int32_t UID_CALL_MANAGER_SA = 1001;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
