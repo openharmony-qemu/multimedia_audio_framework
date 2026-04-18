@@ -54,6 +54,7 @@ public:
     bool IsVoiceCallRelatedScene();
     bool IsInPhoneCallScene();
     bool IsHangUpScene();
+    bool IsCallEnded();
     bool IsPhoneCallOrChatSceneTriggeredByUid(int32_t uid) const;
     void SetPhoneCallOrChatSceneTriggerUid(int32_t uid);
     int32_t GetAudioSceneOwnerUid();
