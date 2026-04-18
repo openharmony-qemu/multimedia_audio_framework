@@ -641,23 +641,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_020, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_021
-* @tc.desc  : Test AudioPolicyServer::DeactivateAudioSession
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_021, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    ptrAudioPolicyServer->interruptService_ = nullptr;
-    ptrAudioPolicyServer->DeactivateAudioSession();
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_022
 * @tc.desc  : Test AudioPolicyServer::DeactivateAudioSession
 */

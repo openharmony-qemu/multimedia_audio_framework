@@ -552,6 +552,11 @@ public:
         return sharedAudioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
     }
 
+    int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override
+    {
+        return sharedAudioRenderer_->GetRendererDebugInfo(debugInfo);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }
