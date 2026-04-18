@@ -113,6 +113,8 @@ private:
     void SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     bool IsAvailableFrontDeviceInVector(
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
+    void UpdateDeviceListWithStreamState(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+ 	    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 
 private:
     std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_

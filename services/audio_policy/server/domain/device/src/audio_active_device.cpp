@@ -379,15 +379,27 @@ bool AudioActiveDevice::IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> 
     return false;
 }
 
+void AudioActiveDevice::UpdateDeviceListWithStreamState(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "Device dsc is null");
+    for (auto &it : descs) {
+        CHECK_AND_CONTINUE(it != nullptr);
+        CHECK_AND_CONTINUE(it->IsSameDeviceDesc(desc));
+        CHECK_AND_RETURN(!it->hasStreamRunning_);
+        it->hasStreamRunning_ |= desc->hasStreamRunning_;
+        return;
+    }
+    descs.push_back(desc);
+}
+
 void AudioActiveDevice::UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "streamDesc is null");
     CHECK_AND_RETURN_LOG(desc->newDeviceDescs_.front() != nullptr, "Devicedesc is null");
 
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
-    CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(), volumeTypeDeviceMap_[volumeType]));
-
-    volumeTypeDeviceMap_[volumeType].push_back(desc->newDeviceDescs_.front());
+    UpdateDeviceListWithStreamState(desc->newDeviceDescs_.front(), volumeTypeDeviceMap_[volumeType]);
 }
 
 void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc)
@@ -397,7 +409,8 @@ void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDe
     CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(),
         streamUsageDeviceMap_[desc->rendererInfo_.streamUsage]));
 
-    streamUsageDeviceMap_[desc->rendererInfo_.streamUsage].push_back(desc->newDeviceDescs_.front());
+    UpdateDeviceListWithStreamState(desc->newDeviceDescs_.front(),
+        streamUsageDeviceMap_[desc->rendererInfo_.streamUsage]);
 }
 
 void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
@@ -409,13 +422,16 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     activeOutputDevices_.clear();
     volumeTypeDeviceMap_.clear();
     streamUsageDeviceMap_.clear();
-    std::string logStr = "";
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
+        CHECK_AND_CONTINUE(!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_.front() != nullptr);
+        desc->newDeviceDescs_.front()->hasStreamRunning_ = desc->IsRunning() ? true :
+            desc->newDeviceDescs_.front()->hasStreamRunning_;
         AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
-            "usage:%{public}d devices:%{public}s",
+            "usage:%{public}d devices:%{public}s, status:%{public}d",
             desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
-            desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str());
+            desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str(),
+            desc->newDeviceDescs_.front()->hasStreamRunning_);
         UpdateVolumeTypeDeviceMap(desc);
         UpdateStreamUsageDeviceMap(desc);
 
@@ -424,7 +440,6 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
             activeOutputDevices_.push_back(device);
         }
     }
-    AUDIO_INFO_LOG("%{public}s", logStr.c_str());
 
     for (auto& [volumeType, deviceList] : volumeTypeDeviceMap_) {
         SortDevicesByPriority(deviceList);
@@ -458,11 +473,18 @@ bool AudioActiveDevice::IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDevic
 
 void AudioActiveDevice::SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    std::sort(descs.begin(), descs.end(), [this] (const std::shared_ptr<AudioDeviceDescriptor> &a,
-                                                  const std::shared_ptr<AudioDeviceDescriptor> &b) {
+    bool hasAdjustVolumeZone = GetAdjustVolumeZoneId() != 0;
+    std::sort(descs.begin(), descs.end(), [this, hasAdjustVolumeZone] (
+        const std::shared_ptr<AudioDeviceDescriptor> &a, const std::shared_ptr<AudioDeviceDescriptor> &b) {
         if (!a || !b) {
             return a < b;
         }
+        if (hasAdjustVolumeZone) {
+            bool isDeviceInAudioZoneA = AudioZoneService::GetInstance().CheckDeviceInAudioZone(*a);
+            bool isDeviceInAudioZoneB = AudioZoneService::GetInstance().CheckDeviceInAudioZone(*b);
+            CHECK_AND_RETURN_RET(isDeviceInAudioZoneA == isDeviceInAudioZoneB, isDeviceInAudioZoneA);
+        }
+        CHECK_AND_RETURN_RET(a->hasStreamRunning_ == b->hasStreamRunning_, a->hasStreamRunning_);
         return audioDeviceManager_.GetDevicePriority(a) < audioDeviceManager_.GetDevicePriority(b);
     });
 }

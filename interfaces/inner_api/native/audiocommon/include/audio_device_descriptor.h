@@ -240,6 +240,7 @@ public:
     VolumeBehavior volumeBehavior_;
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
+    bool hasStreamRunning_ = false;
     std::string dmDeviceInfo_ = "";
 
     uint32_t glassesWearCount_ = 0;
