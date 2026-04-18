@@ -324,6 +324,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(FetchDeviceInfo info)
 {
+    std::lock_guard<std::mutex> lock(routerMutex_);
     StartArbiterContext();
     
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
@@ -444,6 +445,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(So
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType sourceType, int32_t clientUID,
     RouterType &routerType, const uint32_t sessionID)
 {
+    std::lock_guard<std::mutex> lock(routerMutex_);
     StartArbiterContext();
     
     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
@@ -684,8 +686,10 @@ void AudioRouterCenter::StartArbiterContext()
         inputDevices.push_back(info);
     }
     
-    wirelessConflictHandler_->SetSelectedDevices(outputDevices, inputDevices);
-    RegisterConflictHandlers(wirelessConflictHandler_);
+    if (wirelessConflictHandler_ != nullptr) {
+        wirelessConflictHandler_->SetSelectedDevices(outputDevices, inputDevices);
+        RegisterConflictHandlers(wirelessConflictHandler_);
+    }
 }
 
 void AudioRouterCenter::StopArbiterContext()
