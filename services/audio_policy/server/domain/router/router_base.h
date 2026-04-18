@@ -23,6 +23,7 @@
 #include "audio_policy_utils.h"
 #include "audio_router_select_strategy.h"
 #include "conflict_handler.h"
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -163,18 +164,25 @@ public:
 
     void RegisterConflictHandler(std::shared_ptr<ConflictHandler> handler)
     {
+        std::lock_guard<std::mutex> lock(handlersMutex_);
         handlers.push_back(handler);
     }
 
     void ClearConflictHandler()
     {
+        std::lock_guard<std::mutex> lock(handlersMutex_);
         handlers.clear();
     }
 
     bool CheckConflict(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
         StreamUsage streamUsage, SourceType sourceType, bool isOutput)
     {
-        for (auto &handler : handlers) {
+        std::vector<std::shared_ptr<ConflictHandler>> handlersCopy;
+        {
+            std::lock_guard<std::mutex> lock(handlersMutex_);
+            handlersCopy = handlers;
+        }
+        for (auto &handler : handlersCopy) {
             if (handler != nullptr && handler->Detect(device, routerType, streamUsage, sourceType, isOutput)) {
                 return true;
             }
@@ -183,6 +191,7 @@ public:
     }
 
 private:
+    std::mutex handlersMutex_;
     std::vector<std::shared_ptr<ConflictHandler>> handlers;
 };
 } // namespace AudioStandard

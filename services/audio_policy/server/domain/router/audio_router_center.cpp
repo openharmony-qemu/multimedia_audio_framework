@@ -684,8 +684,10 @@ void AudioRouterCenter::StartArbiterContext()
         inputDevices.push_back(info);
     }
     
-    wirelessConflictHandler_->SetSelectedDevices(outputDevices, inputDevices);
-    RegisterConflictHandlers(wirelessConflictHandler_);
+    if (wirelessConflictHandler_ != nullptr) {
+        wirelessConflictHandler_->SetSelectedDevices(outputDevices, inputDevices);
+        RegisterConflictHandlers(wirelessConflictHandler_);
+    }
 }
 
 void AudioRouterCenter::StopArbiterContext()
