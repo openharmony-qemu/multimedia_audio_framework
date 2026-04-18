@@ -307,11 +307,10 @@ OH_AudioConverter_Result OHAudioConverter::SetRequestDataCallback(
     std::lock_guard<std::mutex> lock(mutex_);
     int32_t ret = 0;
     // Create a callback implementation class object and pass it via shared_ptr.
-    if (impl_ != nullptr) {
-        auto callbackImpl = std::make_shared<ConverterDataCallbackImpl>(callback, userData);
-        ret = impl_->SetInputCallback(callbackImpl);
-    }
-
+    CHECK_AND_RETURN_RET_LOG(
+        impl_ != nullptr, AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "The audio format converter pointer is empty.");
+    auto callbackImpl = std::make_shared<ConverterDataCallbackImpl>(callback, userData);
+    ret = impl_->SetInputCallback(callbackImpl);
     return ConvertConverterError(ret);
 }
 
