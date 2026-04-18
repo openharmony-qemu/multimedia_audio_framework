@@ -17,6 +17,7 @@
 #define DFX_STREAM_DFX_MANAGER_H
 
 #include "audio_info.h"
+#include "audio_errors.h"
 #include <unordered_map>
 #include <mutex>
 
@@ -32,12 +33,13 @@ class StreamDfxManager {
 public:
     static StreamDfxManager& GetInstance();
     void CheckStreamOccupancy(uint32_t sessionId, const AudioProcessConfig &processConfig, bool isStart);
+    void SendAudioErrorEvent(int32_t uid, int32_t errorCode, const std::string &erroDesc, bool isClient);
 
 private:
     StreamDfxManager() = default;
     ~StreamDfxManager() = default;
     void ReportStreamOccupancyTimeout(uint32_t sessionId, int64_t startTime, int64_t currentTime);
-
+    int32_t BuildAudioErrorCode(uint32_t errorCode, uint32_t interfaceCode);
     std::mutex streamMutex_;
     std::unordered_map<uint32_t, StreamRecord> streamRecordMap_{};
 };

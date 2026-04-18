@@ -40,6 +40,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_device_info.h"
 #include "boot_animation_state_info.h"
+#include "stream_dfx_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -371,6 +372,19 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
+bool AudioRenderer::CheckUltrasonicPermission(AudioStreamType audioStreamType, StreamUsage streamUsage)
+{
+    if (audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA) {
+        return true;
+    }
+    AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+            BusinessScenario::CREATE, ERR_INVALID_PARAM), "ULTRASONIC can only create by MSDP", false);
+    AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+    return false;
+}
+
 std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions,
     std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
     const AppInfo &appInfo)
@@ -383,11 +397,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
         nullptr, "sa not start");
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
-    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(CheckUltrasonicPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage),
+        nullptr, "CheckUltrasonicPermission fail");
 
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
     if (audioRenderer == nullptr) {
@@ -537,6 +548,9 @@ bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType
         if (!PermissionUtil::VerifySystemPermission()) {
             AudioRenderer::SendRendererCreateError(streamUsage, ERR_PERMISSION_DENIED);
             AUDIO_ERR_LOG("ANNOUNCEMENT or EMERGENCY can only create by system app");
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                    BusinessScenario::CREATE, ERR_PERMISSION_DENIED), "ULTRASONIC can only create by MSDP", false);
             return false;
         }
     }
