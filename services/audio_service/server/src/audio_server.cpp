@@ -828,8 +828,7 @@ void AudioServer::ParseAudioParameter()
     {
         std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
         for (const auto &pair : audioExtraParameterCacheVector_) {
-            std::vector<StringPair> params = ConvertStringPair(pair.second);
-            SetExtraParameters(pair.first, params);
+            SetCommonExtraParameters(pair.first, pair.second);
         }
         audioExtraParameterCacheVector_.clear();
     }
