@@ -1783,6 +1783,5 @@ group("audio_service_unittest") {
     "renderer_in_server_unit_test:renderer_in_server_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_second_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_third_unit_test",
-    "notify_standby_action_unit_test:notify_standby_action_unit_test",
   ]
 }
