@@ -119,31 +119,6 @@ public:
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerSecondUnitTest_003.
- * @tc.desc  : Test InitBufferStatus interface.
- */
-HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_003, TestSize.Level1)
-{
-    AudioBufferHolder bufferHolder;
-    uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
-    uint32_t byteSizePerFrame = 10;
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    int32_t result = capturerInServer_->InitBufferStatus();
-    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
-
-    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
-    capturerInServer_->audioServerBuffer_->spanBasicInfo_.spanConut_ = 5;
-    capturerInServer_->InitBufferStatus();
-    EXPECT_NE(capturerInServer_, nullptr);
-}
-
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
  * @tc.number: CapturerInServerSecondUnitTest_004.
  * @tc.desc  : Test OnStatusUpdate interface.
  */

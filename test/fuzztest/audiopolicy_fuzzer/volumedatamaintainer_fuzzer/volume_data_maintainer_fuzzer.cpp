@@ -369,18 +369,6 @@ void VolumeDataMaintainerCheckMuteStateFuzzTest(const uint8_t *rawData, size_t s
     AudioStreamType streamType = g_testStreamTypes[index_1];
     volumeDataMaintainerRet->CheckMuteState(device, streamType);
 }
-
-void VolumeDataMaintainerLoadVolumeUpdateStateFromMapFuzzTest(const uint8_t *rawData, size_t size)
-{
-    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
-    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
-    uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
-    device->deviceType_ =  g_testDeviceTypes[index];
-
-    uint32_t index_1 = static_cast<uint32_t>(size) % g_testStreamTypes.size();
-    AudioStreamType streamType = g_testStreamTypes[index_1];
-    volumeDataMaintainerRet->LoadVolumeUpdateStateFromMap(device, streamType);
-}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -409,7 +397,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::VolumeDataMaintainerLoadVolumeDegreeFromDbFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerCheckVolumeStateFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerCheckMuteStateFuzzTest,
-    OHOS::AudioStandard::VolumeDataMaintainerLoadVolumeUpdateStateFromMapFuzzTest,
 };
 
 /* Fuzzer entry point */

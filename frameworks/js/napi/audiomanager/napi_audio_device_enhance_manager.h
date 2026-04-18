@@ -42,6 +42,7 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
         std::shared_ptr<AudioRenderer> audioRenderer = nullptr;
         std::shared_ptr<AudioCapturer> audioCapturer = nullptr;
+        SoundCardInfo soundCardInfo;
     };
     static bool CheckContextStatus(std::shared_ptr<AudioDeviceEnhanceManagerAsyncContext> context);
     static bool CheckDeviceEnhanceManagerStatus(
@@ -53,7 +54,7 @@ private:
     static napi_value SelectInputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectOutputDeviceForAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value SelectInputDeviceForAudioCapturer(napi_env env, napi_callback_info info);
-
+    static napi_value GetSoundCardInfo(napi_env env, napi_callback_info info);
 private:
     AudioDeviceEnhanceManager *audioDeviceEnhanceMngr_;
     napi_env env_;

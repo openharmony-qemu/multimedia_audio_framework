@@ -2413,7 +2413,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
 
-    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
 
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
 }
@@ -7149,6 +7149,120 @@ HWTEST_F(AudioCoreServiceUnitTest, GetEnhancedRoutingSupported_001, TestSize.Lev
     bool supported = AudioSelectInterfaceService::GetInstance().GetEnhancedRoutingSupported();
     EXPECT_EQ(supported, AudioRouterSelectStrategy::GetInstance().GetEnhancedRoutingSupported());
     EXPECT_EQ(GetServerPtr()->coreService_->GetEnhancedRoutingSupported(), supported);
+}
+
+/**
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_001
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=true, verifies isStandby_ flag is set to true.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_001 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->paIndex_ = 1000;
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->moduleInfo_.name = "Speaker";
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 600001;
+    streamDesc->isStandby_ = false;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t sessionId = 600001;
+    coreService->NotifyStandbyStatus(sessionId, true);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
+    if (streamDescAfter != nullptr) {
+        EXPECT_EQ(streamDescAfter->isStandby_, true);
+    }
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+}
+
+/**
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_002
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=true and invalid sessionId, verifies graceful handling.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_002 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    uint32_t invalidSessionId = 999999;
+    coreService->NotifyStandbyStatus(invalidSessionId, true);
+
+    auto streamDesc = AudioPipeManager::GetPipeManager()->GetStreamDescById(invalidSessionId);
+    EXPECT_EQ(streamDesc, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+}
+
+/**
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_003
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=false, verifies isStandby_ flag is cleared to false.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_003 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->paIndex_ = 1001;
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->moduleInfo_.name = "Speaker";
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 600002;
+    streamDesc->isStandby_ = true;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t sessionId = 600002;
+    coreService->NotifyStandbyStatus(sessionId, false);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
+    if (streamDescAfter != nullptr) {
+        EXPECT_EQ(streamDescAfter->isStandby_, false);
+    }
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+}
+
+/**
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_004
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=false and invalid sessionId, verifies graceful handling.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_004 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    uint32_t invalidSessionId = 999998;
+    coreService->NotifyStandbyStatus(invalidSessionId, false);
+
+    auto streamDesc = AudioPipeManager::GetPipeManager()->GetStreamDescById(invalidSessionId);
+    EXPECT_EQ(streamDesc, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS

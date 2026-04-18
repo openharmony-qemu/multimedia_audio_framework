@@ -179,11 +179,6 @@ public:
     int32_t CheckVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
     int32_t CheckMuteState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
 
-    void SaveVolumeUpdateStateToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, bool state, int32_t zoneId = 0);
-    bool LoadVolumeUpdateStateFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, int32_t zoneId = 0);
-
 private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
         std::string networkId = LOCAL_NETWORK_ID);
@@ -210,7 +205,6 @@ private:
     ffrt::mutex volumeMutex_;
     ffrt::mutex volumeForDbMutex_;
     ffrt::mutex volumeForMapMutex_;
-    ffrt::mutex volumeForUpdateMutex_;
 
     AudioActiveDevice& audioActiveDevice_;
     AudioConnectedDevice& audioConnectedDevice_;
@@ -219,8 +213,6 @@ private:
         std::unordered_map<AudioStreamType, bool>> muteStatusMap_;
     std::unordered_map<std::string,
         std::unordered_map<AudioStreamType, int32_t>> volumeLevelMap_;
-    std::unordered_map<std::string,
-        std::unordered_map<AudioStreamType, bool>> volumeUpdateStateMap_;
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
     std::unordered_map<int32_t, int32_t> systemAppVolumeLevelMap_; // save system-controlled app volume level

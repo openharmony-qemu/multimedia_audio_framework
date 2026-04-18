@@ -249,7 +249,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
     }
 
     if (networkId == LOCAL_NETWORK_ID) {
-        auto desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, uid, streamId);
+        RouterType routerType = ROUTER_TYPE_NONE;
+        auto desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, uid, routerType, streamId);
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr.");
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {

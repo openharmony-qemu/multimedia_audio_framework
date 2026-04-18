@@ -1802,7 +1802,11 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_001, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = true;
-    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload, true), ERROR);
+
+    hpaeRendererManager->InitManager(isReload, false);
+    isReload = false;
+    hpaeRendererManager->InitManager(isReload, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
@@ -1827,7 +1831,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_002, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = true;
-    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload, true), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
@@ -2749,6 +2753,8 @@ HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    hpaeRendererManager->sinkInputNodeMap_.clear();
+    hpaeRendererManager->EnableCollaboration();
     
     HpaeNodeInfo nodeInfo1;
     uint32_t sessionIdTemp1 = TEST_STREAM_SESSION_ID;
@@ -2771,6 +2777,32 @@ HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
     hpaeRendererManager->EnableCollaboration();
 
     WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test OnCollborationFadeDone
+ * @tc.type  : FUNC
+ * @tc.number: OnCollborationFadeDone_001
+ * @tc.desc  : Test OnCollborationFadeDone.
+ */
+HWTEST_F(HpaeRendererManagerTest, OnCollborationFadeDone_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    hpaeRendererManager->isReloadManagerFromCollStateChange_ = false;
+    hpaeRendererManager->OnCollborationFadeDone(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->isReloadManagerFromCollStateChange_ = true;
+    hpaeRendererManager->OnCollborationFadeDone(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(hpaeRendererManager);
+
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }

@@ -274,6 +274,15 @@ void AudioPipeManager::StandbyClient(uint32_t sessionId)
     streamDesc->isStandby_ = true;
 }
 
+void AudioPipeManager::ClearStandbyFlag(uint32_t sessionId)
+{
+    Trace trace("AudioPipeManager::ClearStandbyFlag");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->isStandby_ = false;
+}
+
 void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     Trace trace("AudioPipeManager::StopClient");
@@ -506,6 +515,38 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
         CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
         if (it->pipeRole_ == PIPE_ROLE_INPUT) {
             streamDescs.insert(streamDescs.end(), it->streamDescriptors_.begin(), it->streamDescriptors_.end());
+        }
+    }
+    return streamDescs;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningOutputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
+            streamDescs.push_back(desc);
+        }
+    }
+    return streamDescs;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningInputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_INPUT, "not input pipe");
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
+            streamDescs.push_back(desc);
         }
     }
     return streamDescs;
