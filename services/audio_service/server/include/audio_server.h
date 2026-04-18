@@ -451,6 +451,12 @@ private:
     bool CacheExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool WaitAudioParameterParsed();
+    int32_t SetHomeMusicExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetEffectLiveExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetPcmDumpExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetCockpitDirectExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetCommonExtraParameters(const std::string &key,
+        const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);

@@ -970,23 +970,15 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     std::vector<std::pair<std::string, std::string>> newPair = ConvertStringPair(kvpairs);
 
     if (key == HOME_MUSIC_KEY) {
-        CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
-        std::string homeMusicNetworkId = newPair[0].second;
-        std::string homeMusicZoneValue = newPair[1].second;
-        return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_REMOTE,
-            homeMusicNetworkId, ZONE_ID_CHANGE, homeMusicZoneValue);
+        return SetHomeMusicExtraParameters(newPair);
     }
 
     if (key == EFFECT_LIVE_KEY) {
-        ret = SetEffectLiveParameter(newPair);
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
-        return SUCCESS;
+        return SetEffectLiveExtraParameters(newPair);
     }
 
     if (key == PCM_DUMP_KEY) {
-        ret = SetPcmDumpParameter(newPair);
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
-        return SUCCESS;
+        return SetPcmDumpExtraParameters(newPair);
     }
 
     if (key == COCKPIT_DIRECT_KEY) {
@@ -1046,7 +1038,7 @@ int32_t AudioServer::SetCommonExtraParameters(const std::string &key,
     }
 
     std::string value;
-    bool isParamValid = ProcessKeyValuePairs(key, newPair, mainKeyIt->second, value);
+    bool isParamValid = ProcessKeyValuePairs(key, kvpairs, mainKeyIt->second, value);
     CHECK_AND_RETURN_RET_LOG(isParamValid, ERR_INVALID_PARAM, "invalid subkey or value");
 
     return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "", value);
