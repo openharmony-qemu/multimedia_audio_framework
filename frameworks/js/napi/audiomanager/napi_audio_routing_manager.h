@@ -65,6 +65,7 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value SelectOutputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectOutputDeviceByFilter(napi_env env, napi_callback_info info);
+    static napi_value RestoreOutputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value SelectInputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectInputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value ExcludeOutputDevices(napi_env env, napi_callback_info info);
