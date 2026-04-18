@@ -35,7 +35,13 @@ AudioSessionClientManager &AudioSessionClientManager::GetInstance()
 int32_t AudioSessionClientManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
     AUDIO_INFO_LOG("Activate audio session with strategy: %{public}d", static_cast<int32_t>(strategy.concurrencyMode));
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy);
+    if (isFirstActivateV2_ && audioSessionSceneFlag_) {
+        if (!stateChangeCallbackFlag_) {
+            stateChangeCallbackByIpcFlag_ = true;
+        }
+        isFirstActivateV2_ = false;
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy, stateChangeCallbackFlag_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ActivateAudioSession failed, ret:%{public}d", ret);
 
     std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);
@@ -108,6 +114,7 @@ int32_t AudioSessionClientManager::SetAudioSessionScene(const AudioSessionScene 
 {
     AUDIO_INFO_LOG("Set audio session scene: %{public}d", static_cast<int32_t>(audioSessionScene));
 
+    audioSessionSceneFlag_ = true;
     int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionScene(audioSessionScene);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "SetAudioSessionScene failed, result:%{public}d", result);
 
@@ -338,6 +345,15 @@ int32_t AudioSessionClientManager::SetAudioSessionBehavior(const uint32_t behavi
     restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_BEHAVIOR,
         behavior);
     return result;
+}
+
+void AudioSessionClientManager::SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag)
+{
+    if (stateChangeCallbackByIpcFlag_) {
+        AudioPolicyManager::GetInstance().SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
+        stateChangeCallbackByIpcFlag_ = false;
+    }
+    stateChangeCallbackFlag_ = true;
 }
 
 bool AudioSessionClientManager::Restore()

@@ -562,6 +562,10 @@ public:
     SharedAudioRendererWrapper &operator=(const SharedAudioRendererWrapper &) = delete;
     SharedAudioRendererWrapper(SharedAudioRendererWrapper &&) = delete;
     SharedAudioRendererWrapper &operator=(SharedAudioRendererWrapper &&) = delete;
+    void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override
+    {
+        sharedAudioRenderer_->SetRegisterInterruptCallbackFlag(interruptCallbackFlag);
+    }
 
 private:
     int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override

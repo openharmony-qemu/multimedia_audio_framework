@@ -145,6 +145,7 @@ public:
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
+    void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override;
     int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
     bool IsFastRenderer() override;
 
@@ -284,6 +285,7 @@ private:
     std::string &GetBundleNameByUid();
     std::string &GetBundleNameByAppUid(int32_t uid);
     int32_t ActivateAudioInterruptInStart(const bool isMute);
+    void HandleAudioInterruptInfo();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -339,6 +341,8 @@ private:
     bool inSwitchingFlag_ = false;
     std::atomic<int32_t> audioInterruptState_ = INVALID;
     bool isFirstSetMainUseArk_ = true;
+    bool interruptCallbackByIpcFlag_ = false;
+    bool isFirstStart_ = true;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

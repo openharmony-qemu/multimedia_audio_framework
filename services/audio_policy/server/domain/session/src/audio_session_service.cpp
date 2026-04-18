@@ -75,8 +75,8 @@ bool AudioSessionService::IsSameTypeForAudioSession(const AudioStreamType incomi
     return SESSION_TYPE_MAP.at(incomingType) == SESSION_TYPE_MAP.at(existedType);
 }
 
-int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid,
-    const AudioSessionStrategy &strategy, int32_t callerUid)
+int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
+    const bool stateChangeCallbackFlag, int32_t callerUid)
 {
     AUDIO_INFO_LOG("ActivateAudioSession: callerPid %{public}d, concurrencyMode %{public}d",
         callerPid, static_cast<int32_t>(strategy.concurrencyMode));
@@ -87,6 +87,8 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid,
         AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
         return ERROR;
     }
+
+    audioSession->SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
 
     if (audioSession->IsSceneParameterSet()) {
         GenerateFakeStreamId(callerPid);
@@ -210,6 +212,15 @@ int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessio
     return audioSession->SetAudioSessionScene(scene);
 }
 
+void AudioSessionService::SetRegisterStateChangeCallbackFlag(int32_t callerPid, const bool stateChangeCallbackFlag)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        session->second->SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag, stateChangeCallbackFlag);
+    }
+}
+
 StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
@@ -219,6 +230,16 @@ StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
     }
 
     return STREAM_USAGE_INVALID;
+}
+
+void AudioSessionService::GetStateChangeCallbackFlag(int32_t callerPid,
+    bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        session->second->GetStateChangeCallbackFlag(registerCallbackFlag, activatedRegisterCallbackFlag);
+    }
 }
 
 StreamUsage AudioSessionService::GetAudioSessionStreamUsageForDevice(const int32_t callerPid)

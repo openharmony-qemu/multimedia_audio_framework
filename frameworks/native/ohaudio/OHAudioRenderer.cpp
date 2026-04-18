@@ -824,11 +824,13 @@ void OHAudioRenderer::SetInterruptCallback(RendererCallback rendererCallbacks, v
         audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(
             rendererCallbacks.onInterruptEventCallback, (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
+        audioRenderer_->SetRegisterInterruptCallbackFlag(true);
     } else if (interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_COMBINED &&
         rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
         audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(rendererCallbacks.callbacks,
             (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
+        audioRenderer_->SetRegisterInterruptCallbackFlag(true);
     } else {
         AUDIO_WARNING_LOG("The audio renderer interrupt callback function is not set");
     }

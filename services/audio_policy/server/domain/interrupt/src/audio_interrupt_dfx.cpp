@@ -24,9 +24,12 @@
 #include "audio_utils.h"
 #include "dfx_msg_manager.h"
 #include "media_monitor_manager.h"
+#include "app_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+const int64_t LONG_PLAYBACK_TIME_NS = 3LL * 60 * 1000 * 1000 * 1000;
 
 AudioInterruptDfx::AudioInterruptDfx()
     : sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
@@ -280,6 +283,40 @@ void AudioInterruptDfx::DelayCheckMuteStreamInterrupt(uint32_t streamId)
 
     std::thread(checkTask).detach();
     AUDIO_INFO_LOG("Started Check MuteStream %{public}d with 10s delay", streamId);
+}
+
+void AudioInterruptDfx::HandleInterruptCallbackEvent(const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_RETURN(audioInterrupt.isAudioSessionInterrupt == false);
+    if (audioInterrupt.audioFocusType.streamType == STREAM_MUSIC ||
+        audioInterrupt.audioFocusType.streamType == STREAM_MOVIE ||
+        audioInterrupt.audioFocusType.streamType == STREAM_SPEECH) {
+        if (!audioInterrupt.registerCallbackFlag) {
+            int64_t stamp = ClockTime::GetCurNano() - audioInterrupt.startTimeNs;
+            if (stamp > LONG_PLAYBACK_TIME_NS && PermissionUtil::IsHap()) {
+                WriteInterruptOrSessionCallbackErrorEvent(audioInterrupt.audioFocusType.streamType, audioInterrupt.uid,
+                    TYPE_MEDIA_PLAYBACK_NOT_LISTENING_INTERRUPT_CHANGE);
+            }
+        }
+        if (audioInterrupt.registerCallbackFlag && audioInterrupt.activatedRegisterCallbackFlag) {
+            int64_t stamp = ClockTime::GetCurNano() - audioInterrupt.startTimeNs;
+            if (stamp > LONG_PLAYBACK_TIME_NS && PermissionUtil::IsHap()) {
+                WriteInterruptOrSessionCallbackErrorEvent(audioInterrupt.audioFocusType.streamType, audioInterrupt.uid,
+                    TYPE_MEDIA_PLAYBACK_ACTIVATED_LISTENING_INTERRUPT_CHANGE);
+            }
+        }
+    }
+}
+
+void AudioInterruptDfx::HandleStateChangeCallbackEvent(int32_t usage, int32_t uid, int32_t type)
+{
+    WriteInterruptOrSessionCallbackErrorEvent(usage, uid, type);
+}
+
+void AudioInterruptDfx::WriteInterruptOrSessionCallbackErrorEvent(int32_t usage, int32_t uid, int32_t type)
+{
+    std::string appName = AppBundleManager::GetBundleNameFromUid(uid);
+    AUDIO_ERR_LOG("APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d", appName.c_str(), usage, type);
 }
 } // namespace AudioStandard
 } // namespace OHOS

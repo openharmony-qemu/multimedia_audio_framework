@@ -379,6 +379,7 @@ void NapiAudioSessionMgr::RegisterAudioSessionStateCallback(napi_env env, napi_v
     cb->SaveCallbackReference(args[PARAM1]);
     if (!cb->GetAudioSessionStateTsfnFlag()) {
         cb->CreateAudioSessionStateTsfn(env);
+        napiSessionMgr->audioSessionMngr_->SetRegisterStateChangeCallbackFlag(true);
     }
 
     AUDIO_INFO_LOG("OnAudioSessionStateChangeCallback is successful");

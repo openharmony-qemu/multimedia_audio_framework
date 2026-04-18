@@ -357,6 +357,8 @@ public:
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
 
     int32_t SetCapturerMuteHint(bool mute);
+
+    void SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag);
 private:
     AudioSessionClientManager() = default;
     ~AudioSessionClientManager() = default;
@@ -375,6 +377,10 @@ private:
     std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> sessionManagerRestoreCb_ = nullptr;
 
     AudioSessionRestoreParams restoreParams_;
+    bool stateChangeCallbackFlag_ = false;
+    bool stateChangeCallbackByIpcFlag_ = false;
+    bool audioSessionSceneFlag_ = false;
+    bool isFirstActivateV2_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

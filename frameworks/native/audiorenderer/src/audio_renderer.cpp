@@ -1022,6 +1022,18 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
     return SUCCESS;
 }
 
+void AudioRendererPrivate::SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag)
+{
+    if (interruptCallbackByIpcFlag_) {
+        AudioPolicyManager::GetInstance().SetRegisterInterruptCallbackFlag(audioInterrupt_.streamId,
+            interruptCallbackFlag);
+        audioInterrupt_.activatedRegisterCallbackFlag = interruptCallbackFlag;
+        interruptCallbackByIpcFlag_ = false;
+    }
+
+    audioInterrupt_.registerCallbackFlag = interruptCallbackFlag;
+}
+
 int32_t AudioRendererPrivate::SetRendererPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPositionCallback> &callback)
 {
@@ -1276,6 +1288,7 @@ int32_t AudioRendererPrivate::ActivateAudioInterruptInStart(const bool isMute)
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
         audioInterrupt_.state = audioInterruptState_.load();
+        HandleAudioInterruptInfo();
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
     }
@@ -1325,6 +1338,21 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_END);
     AudioPolicyManager::GetInstance().RecordBootAnimationClientStateTime(g_bootAnimationInfo);
     return ret;
+}
+
+void AudioRendererPrivate::HandleAudioInterruptInfo()
+{
+    if (!audioInterrupt_.registerCallbackFlag && isFirstStart_) {
+        interruptCallbackByIpcFlag_ = true;
+    }
+    if (isFirstStart_) {
+        isFirstStart_ = false;
+    }
+    if (audioInterrupt_.audioFocusType.streamType == STREAM_MUSIC ||
+        audioInterrupt_.audioFocusType.streamType == STREAM_MOVIE ||
+        audioInterrupt_.audioFocusType.streamType == STREAM_SPEECH) {
+        audioInterrupt_.startTimeNs = ClockTime::GetCurNano();
+    }
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
