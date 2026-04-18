@@ -620,6 +620,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.contentType = rendererInfo_.contentType;
     audioInterrupt_.sessionStrategy = strategy_;
     audioInterrupt_.api = rendererInfo_.playerType;
+    audioInterrupt_.isCallWaitingTone = rendererInfo_.isCallWaitingTone;
     audioInterrupt_.bundleName = audioStream_->GetBundleName();
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AppBundleManager::GetSelfBundleName();
