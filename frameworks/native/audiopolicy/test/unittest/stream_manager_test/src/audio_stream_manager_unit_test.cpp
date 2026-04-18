@@ -1622,8 +1622,6 @@ HWTEST_F(AudioStreamManagerUnitTest, ForceStopAudioStream_003, TestSize.Level1)
     EXPECT_EQ(res, true);
 }
 
-
-
 /**
 * @tc.name   : Test IsCapturerFocusAvailable API
 * @tc.number : IsCapturerFocusAvailable_002

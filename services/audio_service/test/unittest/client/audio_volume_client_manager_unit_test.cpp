@@ -1009,8 +1009,6 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetVolume_003, TestSize.Level4)
     EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
 }
 
-
-
 /**
  * @tc.name   : Test SetVolumeWithDevice API
  * @tc.number : SetVolumeWithDevice_002
