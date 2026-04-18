@@ -954,6 +954,7 @@ int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
     if (!result) {
         params.sampleFormat = static_cast<AudioSampleFormat>(audioStreamParams.format);
         params.sampleRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        params.customSampleRate = audioStreamParams.customSampleRate;
         params.channelCount = static_cast<AudioChannel>(audioStreamParams.channels);
         params.encodingType = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         params.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
@@ -981,6 +982,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         streamInfo.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+        streamInfo.customSampleRate = audioStreamParams.customSampleRate;
     }
 
     return result;

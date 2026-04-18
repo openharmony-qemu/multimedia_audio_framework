@@ -476,7 +476,7 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
 
     // If not a standard enum value, treat as custom sample rate
     CHECK_AND_RETURN_RET(!isStandardEnum, napi_ok);
-    streamInfo->samplingRate = SAMPLE_RATE_48000; // default fallback
+    streamInfo->samplingRate = SAMPLE_RATE_8000; // default fallback
     streamInfo->customSampleRate = static_cast<uint32_t>(intValue);
     AUDIO_INFO_LOG("custom sample rate: %{public}d", intValue);
     return napi_ok;

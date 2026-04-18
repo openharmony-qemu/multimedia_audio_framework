@@ -502,7 +502,13 @@ public:
     bool operator==(const AudioStreamInfo &info) const
     {
         return encoding == info.encoding && format == info.format && channels == info.channels &&
-            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
+            channelLayout == info.channelLayout && samplingRate == info.samplingRate &&
+            customSampleRate == info.customSampleRate;
+    }
+
+    uint32_t GetEffectiveSampleRate() const
+    {
+        return customSampleRate != 0 ? customSampleRate : static_cast<uint32_t>(samplingRate);
     }
 
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
