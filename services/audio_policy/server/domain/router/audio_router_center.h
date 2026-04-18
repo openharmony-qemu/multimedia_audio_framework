@@ -29,6 +29,7 @@
 #include "audio_strategy_router_parser.h"
 #include "audio_usage_strategy_parser.h"
 #include "wireless_conflict_handler.h"
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -171,6 +172,7 @@ private:
     void StartArbiterContext();
     void StopArbiterContext();
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
+    std::mutex routerMutex_;
 
     template<typename Func>
     void ForEachRouter(Func func)
