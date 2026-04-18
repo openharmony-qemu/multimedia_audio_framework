@@ -647,14 +647,13 @@ void AudioRouterCenter::StartArbiterContext()
     ClearConflictHandlers();
     
     auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN(pipeManager != nullptr);
     auto runningOutputStreams = pipeManager->GetRunningOutputStreamDescs();
     auto runningInputStreams = pipeManager->GetRunningInputStreamDescs();
     
     std::vector<StreamDeviceInfo> outputDevices;
     for (auto &desc : runningOutputStreams) {
-        if (desc == nullptr) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(desc != nullptr)
         StreamDeviceInfo info;
         info.uid = desc->callerUid_;
         info.sessionId = desc->sessionId_;
@@ -671,9 +670,7 @@ void AudioRouterCenter::StartArbiterContext()
     
     std::vector<StreamDeviceInfo> inputDevices;
     for (auto &desc : runningInputStreams) {
-        if (desc == nullptr) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(desc != nullptr)
         StreamDeviceInfo info;
         info.uid = desc->callerUid_;
         info.sessionId = desc->sessionId_;
