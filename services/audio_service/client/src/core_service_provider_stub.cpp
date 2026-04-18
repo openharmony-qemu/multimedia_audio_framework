@@ -166,5 +166,12 @@ int32_t CoreServiceProviderWrapper::SetCapturerMuteHint(uint32_t sessionId, bool
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->SetCapturerMuteHint(sessionId, mute);
 }
+
+int32_t CoreServiceProviderWrapper::NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->NotifySessionStandbyStatus(sessionId, standbyStatus);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -31,6 +31,7 @@
 #include "audio_stream_checker.h"
 #include "audio_static_buffer_processor.h"
 #include "audio_static_buffer_provider.h"
+#include "async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +45,17 @@ struct RendererLatestInfoForWorkgroup {
     float systemVolume;
 };
 class RendererInServer;
+
+class NotifyStandbyAction : public AsyncActionHandler::AsyncAction {
+public:
+    NotifyStandbyAction(uint32_t sessionId, bool isStandbyOn)
+        : sessionId_(sessionId), isStandbyOn_(isStandbyOn) {}
+    void Exec() override;
+private:
+    uint32_t sessionId_;
+    bool isStandbyOn_;
+};
+
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
     StreamCallbacks(uint32_t streamIndex, std::weak_ptr<RendererInServer> renderer);
@@ -83,7 +95,6 @@ public:
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
-    int32_t Standby();
     int32_t Pause();
     int32_t Flush();
     int32_t Drain(bool stopFlag = false);
@@ -202,6 +213,7 @@ private:
     int32_t OffloadSetVolumeInner();
     int32_t StartInner();
     int32_t StopInner();
+    int32_t Standby(bool isStandbyOn);
     int64_t GetLastAudioDuration();
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
     void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
@@ -372,6 +384,7 @@ private:
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
     bool isWriteFirst_ = false;
     bool isOffloadJankReport = false;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -223,6 +223,7 @@ public:
         int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
             uint32_t &timeStamp) override;
         int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
+        void NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
 
@@ -316,6 +317,7 @@ public:
     int32_t StartClient(uint32_t sessionId);
     int32_t PauseClient(uint32_t sessionId);
     int32_t StandbyClient(uint32_t sessionId);
+    void NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus);
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);

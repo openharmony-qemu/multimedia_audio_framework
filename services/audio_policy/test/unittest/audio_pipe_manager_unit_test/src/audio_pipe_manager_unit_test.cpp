@@ -1840,5 +1840,55 @@ HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_003, TestSize.Level1)
     bool ret = audioPipeManager->IsOnPrimaryAdapter(targetSessionId);
     EXPECT_FALSE(ret);
 }
+
+/**
+ * @tc.name  : Test ClearStandbyFlag.
+ * @tc.number: ClearStandbyFlag_001.
+ * @tc.desc  : Valid sessionId, streamDesc exists, sets isStandby_ to false
+ */
+HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+    streamDesc->isStandby_ = true;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t targetSessionId = 10000;
+    audioPipeManager->ClearStandbyFlag(targetSessionId);
+    EXPECT_FALSE(streamDesc->isStandby_);
+}
+
+/**
+ * @tc.name  : Test ClearStandbyFlag.
+ * @tc.number: ClearStandbyFlag_002.
+ * @tc.desc  : Invalid sessionId, streamDesc doesn't exist, returns early without modification
+ */
+HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+    streamDesc->isStandby_ = true;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t invalidSessionId = 99999;
+    audioPipeManager->ClearStandbyFlag(invalidSessionId);
+    EXPECT_TRUE(streamDesc->isStandby_);
+}
 } // namespace AudioStandard
 } // namespace OHOS
