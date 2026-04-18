@@ -105,27 +105,8 @@ HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_IsEnhan
 }
 
 /**
- * @tc.name  : Test OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported.
- * @tc.number: OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_003
- * @tc.desc  : Test valid parameter.
- */
-HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_003,
-    TestSize.Level0)
-{
-    OH_AudioDeviceEnhanceManager *manager = nullptr;
-    auto ret = OH_AudioManager_GetAudioDeviceEnhanceManager(&manager);
-    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(manager, nullptr);
-
-    bool supported = false;
-    ret = OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported(manager, &supported);
-    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_EQ(supported, true);
-}
-
-/**
- * @tc.name  : Test OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported.
- * @tc.number: OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_004
+* @tc.name  : Test OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported.
+* @tc.number: OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_004
  * @tc.desc  : Test C API result is consistent with native wrapper result.
  */
 HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_004,

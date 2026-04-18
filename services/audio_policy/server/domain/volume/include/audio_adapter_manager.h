@@ -36,6 +36,7 @@
 #include "istandard_audio_service.h"
 #include "audio_active_device.h"
 #include "audio_connected_device.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -176,8 +177,6 @@ public:
         DeviceFlag flag = ALL_DEVICES_FLAG);
 
     void UpdateVolumeForStreams();
-
-    void UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream);
 
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
@@ -375,6 +374,8 @@ public:
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
     void SetMuteFromRemote(std::string networkId, bool mute);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
     int32_t SetLegacyHighVolumeCheckTime(int64_t checkTime);
     int64_t GetLegacyHighVolumeCheckTime();
     void InitLegacyHighVolumeCheckTime(bool isFirstBoot);

@@ -210,11 +210,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, IsWiredHeadSet_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     DeviceType deviceType = DeviceType::DEVICE_TYPE_MAX;
-    bool ret = server->audioPolicyService_.audioVolumeManager_.IsWiredHeadSet(deviceType);
+    bool ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(ret, false);
 
     deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    ret = server->audioPolicyService_.audioVolumeManager_.IsWiredHeadSet(deviceType);
+    ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(ret, true);
 }
 
@@ -227,11 +227,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, IsBlueTooth_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    bool ret = server->audioPolicyService_.audioVolumeManager_.IsBlueTooth(deviceType);
+    bool ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(ret, false);
 
     deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    ret = server->audioPolicyService_.audioVolumeManager_.IsBlueTooth(deviceType);
+    ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(ret, true);
 }
 

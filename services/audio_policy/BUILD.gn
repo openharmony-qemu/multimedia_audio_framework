@@ -20,7 +20,6 @@ import("../../config.gni")
 
 group("audio_policy_packages") {
   deps = [
-    ":audio_affinity_config",
     ":audio_converter_config",
     ":audio_device_config",
     ":audio_interrupt_policy_config",
@@ -190,7 +189,6 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/appclient/src/audio_background_manager.cpp",
     "server/infra/appclient/src/client_type_manager.cpp",
     "server/infra/appclient/src/client_type_manager_handler.cpp",
-    "server/infra/config/parser/src/audio_affinity_parser.cpp",
     "server/infra/config/parser/src/audio_concurrency_parser.cpp",
     "server/infra/config/parser/src/audio_converter_parser.cpp",
     "server/infra/config/parser/src/audio_device_parser.cpp",
@@ -215,7 +213,6 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/stream/audio_stream_collector.cpp",
     "server/domain/stream/audio_stream_id_allocator.cpp",
     "server/infra/appclient/src/background_task_listener.cpp",
-    "server/domain/device/src/audio_affinity_manager.cpp",
     "server/domain/device/src/audio_device_factory.cpp",
     "server/domain/device/src/audio_device_manager.cpp",
     "server/domain/pipe/src/audio_global_config_manager.cpp",
@@ -251,6 +248,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/router/public_priority_router.cpp",
     "server/domain/router/stream_filter_router.cpp",
     "server/domain/router/user_select_router.cpp",
+    "server/domain/router/wireless_conflict_handler.cpp",
     "server/domain/router_context/audio_device_simple_descriptor.cpp",
     "server/domain/router_context/audio_router_follow_strategy.cpp",
     "server/domain/router_context/audio_router_independent_strategy.cpp",
@@ -274,8 +272,11 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_scene_manager.cpp",
     "server/domain/tone/audio_tone_manager.cpp",
     "server/domain/volume/src/audio_volume_manager.cpp",
+    "server/domain/volume/src/app_volume_manager.cpp",
     "server/domain/volume/src/audio_loud_volume_manager.cpp",
     "server/domain/volume/src/audio_safe_volume_event_subscriber.cpp",
+    "server/domain/volume/src/safe_volume_manager.cpp",
+    "server/domain/volume/src/ringer_mode_manager.cpp",
     "server/domain/device/src/a2dp/audio_a2dp_device_behavior.cpp",
     "server/domain/device/src/pnp/audio_arm_device_behavior.cpp",
     "server/domain/device/src/hearing_aid/audio_hearing_aid_device_behavior.cpp",
@@ -526,14 +527,6 @@ ohos_prebuilt_etc("audio_device_config") {
 
 ohos_prebuilt_etc("audio_volume_config") {
   source = "server/infra/config/file/audio_volume_config.xml"
-
-  subsystem_name = "multimedia"
-  relative_install_dir = "audio"
-  part_name = "audio_framework"
-}
-
-ohos_prebuilt_etc("audio_affinity_config") {
-  source = "server/infra/config/file/audio_affinity_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"

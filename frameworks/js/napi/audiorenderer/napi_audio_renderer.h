@@ -84,6 +84,7 @@ private:
         AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioRendererInfo rendererInfo;
         AudioStreamInfo streamInfo;
+        AppInfo appInfo;
     };
 
     static napi_status InitNapiAudioRenderer(napi_env env, napi_value &constructor);

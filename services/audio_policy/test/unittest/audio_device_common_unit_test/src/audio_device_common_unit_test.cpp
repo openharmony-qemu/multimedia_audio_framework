@@ -391,7 +391,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_026, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
@@ -410,7 +409,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_027, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
@@ -932,7 +930,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, ClearPreferredDevices_001, TestSize.Level1)
     dev->macAddress_ = "card=2;device=0";
     comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
     strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
-    strategy.SetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID, dev);
+    strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
     comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);

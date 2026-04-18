@@ -2075,8 +2075,9 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, streamDesc));
     EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
+    FetchDeviceInfo info = { STREAM_USAGE_VOICE_MODEM_COMMUNICATION, "" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs =
-        audioCoreService->audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "");
+        audioCoreService->audioRouterCenter_.FetchOutputDevices(info);
 
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
@@ -2103,8 +2104,9 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_002, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, streamDesc));
     EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
+    FetchDeviceInfo info = { STREAM_USAGE_VOICE_MODEM_COMMUNICATION, "" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs =
-        audioCoreService->audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "");
+        audioCoreService->audioRouterCenter_.FetchOutputDevices(info);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
     EXPECT_EQ(ret, SUCCESS);
@@ -2205,6 +2207,52 @@ HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Leve
 
 /**
 * @tc.name  : Test AudioCoreService
+* @tc.number: PauseClient_002
+* @tc.desc  : Test PauseClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, PauseClient_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 123;
+    desc->audioMode_ == AUDIO_MODE_PLAYBACK;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    uint32_t targetSessionId = 123;
+    auto ret = audioCoreService->PauseClient(targetSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: PauseClient_003
+* @tc.desc  : Test PauseClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, PauseClient_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 123;
+    desc->audioMode_ == AUDIO_MODE_RECORD;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    uint32_t targetSessionId = 123;
+    auto ret = audioCoreService->PauseClient(targetSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
 * @tc.number: StandbyClient_001
 * @tc.desc  : Test StandbyClient
 */
@@ -2213,6 +2261,98 @@ HWTEST_F(AudioCoreServicePrivateTest, StandbyClient_001, TestSize.Level1)
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
     auto ret = audioCoreService->StandbyClient(1000);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: StopClient_002
+* @tc.desc  : Test StopClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, StopClient_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 123;
+    desc->audioMode_ == AUDIO_MODE_PLAYBACK;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    uint32_t targetSessionId = 123;
+    auto ret = audioCoreService->StopClient(targetSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: StopClient_003
+* @tc.desc  : Test StopClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, StopClient_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 123;
+    desc->audioMode_ == AUDIO_MODE_RECORD;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    uint32_t targetSessionId = 123;
+    auto ret = audioCoreService->StopClient(targetSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: ReleaseClient_002
+* @tc.desc  : Test ReleaseClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, ReleaseClient_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 123;
+    desc->audioMode_ == AUDIO_MODE_PLAYBACK;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    uint32_t targetSessionId = 123;
+    auto ret = audioCoreService->ReleaseClient(targetSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: ReleaseClient_003
+* @tc.desc  : Test ReleaseClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, ReleaseClient_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 123;
+    desc->audioMode_ == AUDIO_MODE_RECORD;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    uint32_t targetSessionId = 123;
+    auto ret = audioCoreService->ReleaseClient(targetSessionId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -3733,8 +3873,7 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
     pipeInfo->name_ = "offload_distributed_output";
     pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
     pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
-    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
-        AudioChannelLayout::CH_LAYOUT_STEREO));
+    pipeInfo->moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
     pipeInfo->moduleInfo_.networkId = "test_networkId";
     pipeInfoList.push_back(pipeInfo);

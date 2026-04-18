@@ -130,6 +130,7 @@ public:
 class ClockTime {
 public:
     static int64_t GetCurNano();
+    static int64_t GetCurMilli();
     static int64_t GetRealNano();
     static int64_t GetBootNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
@@ -612,6 +613,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_ULTRASONIC = 14,
     HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
     HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT = 16,
+    HDI_CAPTURE_OFFSET_INTERPHONE = 17,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -631,6 +633,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
     HDI_RENDER_OFFSET_HEARING_AID = 15,
     HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
+    HDI_RENDER_OFFSET_INTERPHONE = 17,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

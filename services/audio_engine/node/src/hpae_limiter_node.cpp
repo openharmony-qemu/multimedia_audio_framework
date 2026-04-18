@@ -88,6 +88,7 @@ HpaePcmBuffer *HpaeLimiterNode::SignalProcess(const std::vector<HpaePcmBuffer *>
     limiterOutput_.Reset();
     CHECK_AND_RETURN_RET_LOG((!inputs.empty()) && inputs[0], &limiterOutput_,
         "NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
+    CHECK_AND_RETURN_RET(inputs[0]->IsValid(), inputs[0]);
     if (limiter_ == nullptr) {
         Trace trace("HpaeLimiterNode::SignalProcess::NoneLimiter");
         return inputs[0];

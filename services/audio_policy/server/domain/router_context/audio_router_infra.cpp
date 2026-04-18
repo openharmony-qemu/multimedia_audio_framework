@@ -94,7 +94,6 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
             appContext->appSelectDevice_.mediaOutput_.device_ = device;
             appContext->appSelectDevice_.mediaOutput_.selectTime_ = currentTime;
             AdjustOutputPriority(uid, HasRunningOutputStream(uid), appContext->isForeground_, true);
-            WriteSelectOutputSysEvents(device, type);
             break;
         case SelectDeviceType::CALL_INPUT:
             appContext->appSelectDevice_.callInput_.device_ = device;
@@ -186,7 +185,6 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.mediaOutput_.device_)) {
                     appSelect.mediaOutput_.device_ = nullptr;
                     appSelect.mediaOutput_.selectTime_ = 0;
-                    WriteSelectOutputSysEvents(device, type);
                 }
                 break;
             case SelectDeviceType::CALL_INPUT:
@@ -304,25 +302,6 @@ AudioSelectDeviceInfo AudioRouterInfra::GetLatestAppSelectDevice(SelectDeviceTyp
     return latestSelectInfo;
 }
 
-AudioSelectDeviceInfo AudioRouterInfra::GetHighestPrioritySelectDevice(SelectDeviceType type)
-{
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    if (type == SelectDeviceType::MEDIA_INPUT || type == SelectDeviceType::CALL_INPUT) {
-        if (inputPriorityList_.empty()) {
-            return AudioSelectDeviceInfo();
-        }
-        int32_t highestUid = inputPriorityList_.front();
-        return GetAppSelectDevice(type, highestUid);
-    } else {
-        if (outputPriorityList_.empty()) {
-            return AudioSelectDeviceInfo();
-        }
-        int32_t highestUid = outputPriorityList_.front();
-        return GetAppSelectDevice(type, highestUid);
-    }
-}
-
 void AudioRouterInfra::UpdatePreferredInputCategory(int32_t uid,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
@@ -415,7 +394,7 @@ std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetC
 }
 
 void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId,
-    SourceType sourceType, StreamState state)
+    SourceType sourceType, CapturerState state)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -425,18 +404,25 @@ void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId,
     }
 
     auto &appContext = it->second;
-    if (state == StreamState::STARTED) {
+    if (state == CapturerState::CAPTURER_RUNNING) {
         appContext->inputStreams_[streamId] = sourceType;
-    } else if (state == StreamState::STOPPED || state == StreamState::PAUSED) {
+        AdjustInputPriority(uid, true, appContext->isForeground_, false);
+    } else if (state == CapturerState::CAPTURER_STOPPED || state == CapturerState::CAPTURER_PAUSED) {
         appContext->inputStreams_.erase(streamId);
+    } else if (state == CapturerState::CAPTURER_RELEASED) {
+        appContext->inputStreams_.erase(streamId);
+        appContext->streamSelectDevices_.erase(streamId);
+        appContext->mediaDefaultDevices_.erase(streamId);
+        appContext->callDefaultDevices_.erase(streamId);
     }
 
-    bool hasRunningStream = HasRunningInputStream(uid);
-    AdjustInputPriority(uid, hasRunningStream, appContext->isForeground_, false);
+    if (!HasRunningInputStream(uid)) {
+        AdjustInputPriority(uid, false, appContext->isForeground_, false);
+    }
 }
 
 void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
-    StreamUsage streamUsage, StreamState state)
+    StreamUsage streamUsage, RendererState state, bool updatePriority)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -447,24 +433,41 @@ void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
 
     auto &appContext = it->second;
     CHECK_AND_RETURN_LOG(appContext != nullptr, "appContext is nullptr");
-    if (state == StreamState::STARTED) {
+    if (state == RendererState::RENDERER_RUNNING) {
         appContext->outputStreams_[streamId] = streamUsage;
-    } else if (state == StreamState::STOPPED || state == StreamState::PAUSED) {
+        if (updatePriority) {
+            AdjustOutputPriority(uid, true, appContext->isForeground_, false);
+        }
+    } else if (state == RendererState::RENDERER_STOPPED || state == RendererState::RENDERER_PAUSED) {
         appContext->outputStreams_.erase(streamId);
+    } else if (state == RendererState::RENDERER_RELEASED) {
+        appContext->outputStreams_.erase(streamId);
+        appContext->streamSelectDevices_.erase(streamId);
+        appContext->mediaDefaultDevices_.erase(streamId);
+        appContext->callDefaultDevices_.erase(streamId);
     }
 
-    bool hasRunningStream = HasRunningOutputStream(uid);
-    AdjustOutputPriority(uid, hasRunningStream, appContext->isForeground_, false);
+    if (!HasRunningOutputStream(uid)) {
+        AdjustOutputPriority(uid, false, appContext->isForeground_, false);
+    }
+}
+
+int32_t AudioRouterInfra::GetHighestInputPriorityApp()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (inputPriorityList_.empty()) {
+        return INVALID_UID;
+    }
+    return inputPriorityList_.front();
 }
 
 int32_t AudioRouterInfra::GetHighestOutputPriorityApp()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET_LOG(!outputPriorityList_.empty(), INVALID_UID, "outputPriorityList_ is empty");
-    auto it = appContexts_.find(outputPriorityList_.front());
-    CHECK_AND_RETURN_RET_LOG(it != appContexts_.end(), INVALID_UID, "cannot find appContext");
-    CHECK_AND_RETURN_RET_LOG(it->second != nullptr, INVALID_UID, "audioAppRouterContext is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!it->second->outputStreams_.empty(), INVALID_UID, "no running stream");
+    if (outputPriorityList_.empty()) {
+        return INVALID_UID;
+    }
     return outputPriorityList_.front();
 }
 
@@ -515,16 +518,18 @@ void AudioRouterInfra::Unlock()
     mutex_.unlock();
 }
 
-std::vector<SourceType> AudioRouterInfra::GetHighestPriorityRunningSourceTypes()
+std::vector<SourceType> AudioRouterInfra::GetAppRunningSourceTypes(int32_t uid)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    if (inputPriorityList_.empty()) {
+    if (uid == INVALID_UID) {
         return {};
     }
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return GetAppRunningSourceTypesNoLock(uid);
+}
 
-    int32_t highestUid = inputPriorityList_.front();
-    auto it = appContexts_.find(highestUid);
+std::vector<SourceType> AudioRouterInfra::GetAppRunningSourceTypesNoLock(int32_t uid)
+{
+    auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
         return {};
     }
@@ -536,16 +541,13 @@ std::vector<SourceType> AudioRouterInfra::GetHighestPriorityRunningSourceTypes()
     return sourceTypes;
 }
 
-std::vector<StreamUsage> AudioRouterInfra::GetHighestPriorityRunningStreamUsages()
+std::vector<StreamUsage> AudioRouterInfra::GetAppRunningStreamUsages(int32_t uid)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    if (outputPriorityList_.empty()) {
+    if (uid == INVALID_UID) {
         return {};
     }
-
-    int32_t highestUid = outputPriorityList_.front();
-    auto it = appContexts_.find(highestUid);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
         return {};
     }
@@ -623,13 +625,12 @@ void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream,
 {
     if (isSelfSelecting) {
         if (isForeground && hasRunningStream) {
-            CHECK_AND_RETURN(HasAppSelectOutputDevice(uid));
+            CHECK_AND_RETURN(HasValidSelectDevice(GetAppSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid)));
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
         }
     } else {
-        if (hasRunningStream) {
-            CHECK_AND_RETURN(HasAppSelectOutputDevice(uid));
+        if (isForeground && hasRunningStream) {
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
         } else {
@@ -641,6 +642,7 @@ void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream,
 
 bool AudioRouterInfra::HasRunningInputStream(int32_t uid)
 {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
         return false;
@@ -650,6 +652,7 @@ bool AudioRouterInfra::HasRunningInputStream(int32_t uid)
 
 bool AudioRouterInfra::HasRunningOutputStream(int32_t uid)
 {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
         return false;
@@ -658,29 +661,10 @@ bool AudioRouterInfra::HasRunningOutputStream(int32_t uid)
     return !it->second->outputStreams_.empty();
 }
 
-bool AudioRouterInfra::HasAppSelectOutputDevice(int32_t uid)
-{
-    auto it = appContexts_.find(uid);
-    CHECK_AND_RETURN_RET(it != appContexts_.end(), false);
-    CHECK_AND_RETURN_RET(it->second != nullptr, false);
-    return it->second->appSelectDevice_.mediaOutput_.device_ != nullptr &&
-        it->second->appSelectDevice_.mediaOutput_.device_->deviceType_ != DEVICE_TYPE_NONE;
-}
-
-SourceType AudioRouterInfra::GetFirstAppRunningSourceType(int32_t uid)
+bool AudioRouterInfra::HasValidSelectDevice(AudioSelectDeviceInfo selectInfo)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    auto it = appContexts_.find(uid);
-    if (it == appContexts_.end()) {
-        return SourceType::SOURCE_TYPE_INVALID;
-    }
-
-    if (it->second->inputStreams_.empty()) {
-        return SourceType::SOURCE_TYPE_INVALID;
-    }
-
-    return it->second->inputStreams_.begin()->second;
+    return selectInfo.device_ != nullptr && selectInfo.device_->deviceType_ != DEVICE_TYPE_NONE;
 }
 
 void AudioRouterInfra::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
@@ -698,7 +682,7 @@ void AudioRouterInfra::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
     appContext->streamSelectDevices_[streamId] = device;
 }
 
-void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
+void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId, SelectDeviceType type,
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -709,7 +693,11 @@ void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
     }
 
     auto &appContext = it->second;
-    appContext->streamDefaultDevices_[streamId] = device;
+    if (type == SelectDeviceType::MEDIA_OUTPUT) {
+        appContext->mediaDefaultDevices_[streamId] = device;
+    } else if (type == SelectDeviceType::CALL_OUTPUT) {
+        appContext->callDefaultDevices_[streamId] = device;
+    }
 }
 
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamSelectDevice(int32_t uid,
@@ -731,7 +719,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamSelectDe
 }
 
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultDevice(int32_t uid,
-    uint32_t streamId)
+    uint32_t streamId, SelectDeviceType type)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -741,11 +729,85 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultD
     }
 
     auto& appContext = it->second;
-    auto streamIt = appContext->streamDefaultDevices_.find(streamId);
-    if (streamIt == appContext->streamDefaultDevices_.end()) {
+    if (type == SelectDeviceType::MEDIA_OUTPUT) {
+        auto streamIt = appContext->mediaDefaultDevices_.find(streamId);
+        if (streamIt == appContext->mediaDefaultDevices_.end()) {
+            return nullptr;
+        }
+        return streamIt->second;
+    } else if (type == SelectDeviceType::CALL_OUTPUT) {
+        auto streamIt = appContext->callDefaultDevices_.find(streamId);
+        if (streamIt == appContext->callDefaultDevices_.end()) {
+            return nullptr;
+        }
+        return streamIt->second;
+    }
+    return nullptr;
+}
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetFirstRunningStreamDefaultDevice(
+    int32_t uid, SelectDeviceType type)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
         return nullptr;
     }
-    return streamIt->second;
+
+    auto& appContext = it->second;
+    if (type == SelectDeviceType::MEDIA_OUTPUT) {
+        for (const auto& [streamId, device] : appContext->mediaDefaultDevices_) {
+            if (appContext->outputStreams_.find(streamId) != appContext->outputStreams_.end()) {
+                return device;
+            }
+        }
+    } else if (type == SelectDeviceType::CALL_OUTPUT) {
+        for (const auto& [streamId, device] : appContext->callDefaultDevices_) {
+            if (appContext->outputStreams_.find(streamId) != appContext->outputStreams_.end()) {
+                return device;
+            }
+        }
+    }
+    return GetFirstRunningStreamDefaultDeviceNoLock(uid, type);
+}
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetFirstRunningStreamDefaultDeviceNoLock(
+    int32_t uid, SelectDeviceType type)
+{
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        return nullptr;
+    }
+
+    auto& appContext = it->second;
+    if (type == SelectDeviceType::MEDIA_OUTPUT) {
+        for (const auto& [streamId, device] : appContext->mediaDefaultDevices_) {
+            if (appContext->outputStreams_.find(streamId) != appContext->outputStreams_.end()) {
+                return device;
+            }
+        }
+    } else if (type == SelectDeviceType::CALL_OUTPUT) {
+        for (const auto& [streamId, device] : appContext->callDefaultDevices_) {
+            if (appContext->outputStreams_.find(streamId) != appContext->outputStreams_.end()) {
+                return device;
+            }
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetLatestStreamSelectDevice(SelectDeviceType type)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    for (const auto &uid : outputPriorityList_) {
+        auto simpleDesc = GetFirstRunningStreamDefaultDeviceNoLock(uid, type);
+        if (simpleDesc != nullptr) {
+            return simpleDesc;
+        }
+    }
+    return nullptr;
 }
 
 void AudioRouterInfra::ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device)
@@ -904,20 +966,20 @@ void AudioRouterInfra::WriteExcludeOutputSysEvents(const AudioDeviceUsage audioD
 void AudioRouterInfra::WriteSelectOutputSysEvents(
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, SelectDeviceType type)
 {
+    CHECK_AND_RETURN(device != nullptr);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_FORCE_USE_AUDIO_DEVICE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
-    AudioDeviceDescriptor curOutputDeviceDesc = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
     bean->Add("CLIENT_UID", static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
-    bean->Add("DEVICE_TYPE", curOutputDeviceDesc.deviceType_);
+    bean->Add("DEVICE_TYPE", device->deviceType_);
     if (type == SelectDeviceType::MEDIA_OUTPUT) {
         bean->Add("STREAM_TYPE", STREAM_USAGE_MEDIA);
     } else if (type == SelectDeviceType::CALL_OUTPUT) {
         bean->Add("STREAM_TYPE", STREAM_USAGE_VOICE_COMMUNICATION);
     }
-    bean->Add("BT_TYPE", curOutputDeviceDesc.deviceCategory_);
-    bean->Add("DEVICE_NAME", curOutputDeviceDesc.deviceName_);
-    bean->Add("ADDRESS", curOutputDeviceDesc.macAddress_);
+    bean->Add("BT_TYPE", 0);
+    bean->Add("DEVICE_NAME", "");
+    bean->Add("ADDRESS", device->macAddress_);
     bean->Add("IS_PLAYBACK", 1);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
@@ -951,6 +1013,13 @@ bool AudioRouterInfra::IsPreferredDevice(const std::shared_ptr<AudioDeviceSimple
                 preferred->macAddress_ == desc->macAddress_ && preferred->networkId_ == desc->networkId_;
         });
         CHECK_AND_RETURN_RET(!isPreferred, isPreferred);
+        for (const auto& [sessionId, streamDevice] : context->streamSelectDevices_) {
+            CHECK_AND_CONTINUE_LOG(
+                streamDevice != nullptr, "Null streamDevice found for sessionId: %{public}d", sessionId);
+            isPreferred = streamDevice->deviceType_ == desc->deviceType_ &&
+                streamDevice->macAddress_ == desc->macAddress_ && streamDevice->networkId_ == desc->networkId_;
+            CHECK_AND_RETURN_RET(!isPreferred, isPreferred);
+        }
     }
     return false;
 }

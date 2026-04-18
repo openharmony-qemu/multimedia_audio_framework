@@ -122,7 +122,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC},
     {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION},
     {"STREAM_USAGE_ANNOUNCEMENT", STREAM_USAGE_ANNOUNCEMENT},
-    {"STREAM_USAGE_EMERGENCY", STREAM_USAGE_EMERGENCY}
+    {"STREAM_USAGE_EMERGENCY", STREAM_USAGE_EMERGENCY},
+    {"STREAM_USAGE_INTERPHONE", STREAM_USAGE_INTERPHONE}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceRoleMap = {
@@ -176,6 +177,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::sourceTypeMap = {
     {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
     {"SOURCE_TYPE_LIVE", SOURCE_TYPE_LIVE},
     {"SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT", SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT},
+    {"SOURCE_TYPE_INTERPHONE", SOURCE_TYPE_INTERPHONE},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::volumeAdjustTypeMap = {
@@ -596,7 +598,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferre
     {"PREFERRED_HIGH_QUALITY", PREFERRED_HIGH_QUALITY},
 };
 
-const std::map<std::string, int32_t> NapiAudioEnum::AudioSessionBehaviorFlagsMap = {
+const std::map<std::string, int32_t> NapiAudioEnum::audioSessionBehaviorFlagsMap = {
     {"DEFAULT_BEHAVIOR", static_cast<int32_t>(AudioSessionBehaviorFlags::DEFAULT)},
     {"VOIP_PRIVACY_TYPE_PUBLIC", static_cast<int32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)},
     {"MUTE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)},
@@ -775,7 +777,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("BluetoothAndNearlinkPreferredRecordCategory",
             CreateEnumObject(env, BluetoothAndNearlinkPreferredRecordCategoryMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionBehaviorFlags",
-            CreateEnumObject(env, AudioSessionBehaviorFlagsMap)),
+            CreateEnumObject(env, audioSessionBehaviorFlagsMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1231,6 +1233,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_UNPROCESSED:
         case TYPE_LIVE:
         case TYPE_UNPROCESSED_VOICE_ASSISTANT:
+        case TYPE_INTERPHONE:
             result = true;
             break;
         default:
@@ -1487,6 +1490,9 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
             result = NapiAudioEnum::USAGE_VOICE_COMMUNICATION;
             break;
+        case StreamUsage::STREAM_USAGE_INTERPHONE:
+            result = NapiAudioEnum::USAGE_INTERPHONE;
+            break;
         case StreamUsage::STREAM_USAGE_VOICE_ASSISTANT:
             result = NapiAudioEnum::USAGE_VOICE_ASSISTANT;
             break;
@@ -1548,6 +1554,9 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
         case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
+            break;
+        case StreamUsage::STREAM_USAGE_INTERPHONE:
+            result = NapiAudioEnum::USAGE_INTERPHONE;
             break;
 #ifdef MULTI_ALARM_LEVEL
         case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
@@ -1720,6 +1729,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_VOICE_RINGTONE:
         case STREAM_USAGE_ANNOUNCEMENT:
         case STREAM_USAGE_EMERGENCY:
+        case STREAM_USAGE_INTERPHONE:
             result = true;
             break;
         default:
@@ -1876,6 +1886,9 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
             break;
         case NapiAudioEnum::USAGE_VIDEO_COMMUNICATION:
             result = STREAM_USAGE_VIDEO_COMMUNICATION;
+            break;
+        case NapiAudioEnum::USAGE_INTERPHONE:
+            result = STREAM_USAGE_INTERPHONE;
             break;
         case NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
             result = STREAM_USAGE_VOICE_CALL_ASSISTANT;

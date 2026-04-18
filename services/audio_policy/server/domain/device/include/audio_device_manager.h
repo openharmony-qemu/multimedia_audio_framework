@@ -90,20 +90,13 @@ public:
     bool HasConnectedA2dp();
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
     int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
-    int32_t UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
-    int32_t UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
-    int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
-    shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
-    shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> GetBuiltinOutputDevice(DeviceType devType);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     VolumeBehavior GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType);
     void Dump(std::string &dumpString);
     void UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
-    bool IsSessionSetDefaultDevice(uint32_t sessionId);
     bool ExistsByType(DeviceType devType);
     bool ExistsByTypeAndAddress(DeviceType devType, const string &address);
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
@@ -206,10 +199,6 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
     bool hasEarpiece_ = false;
     unordered_map<uint32_t, std::pair<DeviceType, StreamUsage>> selectedDefaultOutputDeviceInfo_;
-    vector<std::pair<uint32_t, DeviceType>> mediaDefaultOutputDevices_;
-    vector<std::pair<uint32_t, DeviceType>> callDefaultOutputDevices_;
-    DeviceType selectedMediaDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
-    DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
     std::mutex currentActiveDevicesMutex_;
     std::string remoteInfoNetworkId_ = "";

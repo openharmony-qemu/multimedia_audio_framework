@@ -29,13 +29,11 @@
 #include "audio_bundle_manager.h"
 #include "ipc_skeleton.h"
 #include "sle_audio_device_manager.h"
-#include "audio_affinity_manager.h"
 #include "audio_stream_collector.h"
 #include "audio_router_map.h"
 #include "bluetooth_device_manager.h"
 #include "audio_bluetooth_manager.h"
 #include "audio_scene_manager.h"
-#include "audio_router_follow_strategy.h"
 #include "hisysevent.h"
 
 namespace OHOS {
@@ -169,15 +167,11 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
 
     AudioActiveDevice::GetInstance().NotifyUserSelectionEventToRemote(selectedDesc[0]);
     SetDeviceEnableAndUsage(selectedDesc[0]);
-    RestoreSelectRendererDevice(selectedDesc[0], audioRendererFilter->uid);
 
-    if (audioDeviceSelectMode == SELECT_STRATEGY_STREAM) {
+    if (audioDeviceSelectMode == SELECT_STRATEGY_STREAM || audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT) {
+        CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid > 0, ERR_INVALID_OPERATION, "Invalid uid");
         AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(audioRendererFilter->uid,
             audioRendererFilter->streamId, selectedDesc[0]);
-        res = FetchInputAndOutputDevice("SelectOutputDevice");
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "FetchInputAndOutputDevice failed");
-    } else if (audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT && audioRendererFilter->uid >= 0) {
-        return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
     } else if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     } else {
@@ -229,31 +223,6 @@ void AudioSelectInterfaceService::SetDeviceEnableAndUsage(const std::shared_ptr<
     AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE, reason);
 }
 
-void AudioSelectInterfaceService::RestoreSelectRendererDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, const int32_t uid)
-{
-    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
-    if (deviceDesc->deviceType_ == DEVICE_TYPE_NONE && uid >= 0) {
-        AudioAffinityManager::GetAudioAffinityManager().DelSelectRendererDevice(uid);
-    }
-}
-
-int32_t AudioSelectInterfaceService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
-{
-    AudioAffinityManager::GetAudioAffinityManager().AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    AudioStreamCollector::GetAudioStreamCollector().GetCurrentRendererChangeInfos(rendererChangeInfos);
-    for (auto &changeInfo : rendererChangeInfos) {
-        if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
-            RestoreInfo restoreInfo;
-            restoreInfo.restoreReason = STREAM_SPLIT;
-            AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, restoreInfo);
-        }
-    }
-    return SUCCESS;
-}
-
 int32_t AudioSelectInterfaceService::SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
@@ -271,7 +240,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDeviceForFastInner(sptr<AudioRe
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     coreService->FetchOutputDeviceAndRoute("SelectOutputDeviceForFastInner",
         AudioStreamDeviceChangeReason::OVERRODE);
-    return true;
+    return SUCCESS;
 }
 
 int32_t AudioSelectInterfaceService::SetRenderDeviceForUsage(StreamUsage streamUsage,
@@ -346,7 +315,7 @@ int32_t AudioSelectInterfaceService::SetMediaOutputDeviceByUid(DeviceType device
 {
     int32_t callerUid = GetPreferredUid(uid);
     if (deviceType == DEVICE_TYPE_DEFAULT) {
-        AudioRouterFollowStrategy::GetInstance().SetMediaOutputDevice(
+        AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(
             callerUid, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
         return SUCCESS;
     }
@@ -358,9 +327,9 @@ int32_t AudioSelectInterfaceService::SetMediaOutputDeviceByUid(DeviceType device
         AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice()
     };
     auto itr = std::find_if(mediaDevices.begin(), mediaDevices.end(), isPresent);
-    CHECK_AND_RETURN_RET_LOG(itr != mediaDevices.end(), ERR_OPERATION_FAILED,
+    CHECK_AND_RETURN_RET_LOG(itr != mediaDevices.end(), SUCCESS,
         "Requested device not available %{public}d", deviceType);
-    AudioRouterFollowStrategy::GetInstance().SetMediaOutputDevice(callerUid, INVALID_STREAM_ID, *itr);
+    AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(callerUid, INVALID_STREAM_ID, *itr);
     return SUCCESS;
 }
 
@@ -372,14 +341,15 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
     AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] pid[%{public}d]",
         audioCapturerFilter->uid, selectedDesc[0]->deviceType_, AudioPolicyUtils::GetInstance().GetEncryptAddr(
             selectedDesc[0]->macAddress_).c_str(), IPCSkeleton::GetCallingPid());
-    CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0]->deviceRole_ == INPUT_DEVICE,
-        ERR_INVALID_OPERATION, "Device err");
+    CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 &&
+        AudioDeviceManager::GetAudioDeviceManager().IsDeviceConnected(selectedDesc[0]) &&
+        IsInputDevice(selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_), ERR_INVALID_OPERATION, "err");
 
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     int32_t selectUid = audioCapturerFilter->uid == -1 ? SYSTEM_UID : audioCapturerFilter->uid;
-    int32_t selectStreamId = audioCapturerFilter->audioDeviceSelectMode == SELECT_STRATEGY_STREAM ?
-        audioCapturerFilter->streamId : INVALID_STREAM_ID;
+    uint32_t selectStreamId = audioCapturerFilter->audioDeviceSelectMode == SELECT_STRATEGY_STREAM ?
+        static_cast<uint32_t>(audioCapturerFilter->streamId) : INVALID_STREAM_ID;
     SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
     AudioScene scene = AudioSceneManager::GetInstance().GetAudioScene(true);
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST) {
@@ -598,10 +568,55 @@ int32_t AudioSelectInterfaceService::SetSessionDefaultOutputDevice(const int32_t
     return SUCCESS;
 }
 
-int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(
-    const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
-    bool skipForce)
+int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType deviceType,
+    const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager->GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
+    CHECK_AND_RETURN_RET_LOG(pipeManager->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
+        "sessionId is not exist");
+
+    auto &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
+    if (!audioSessionService.IsStreamAllowedToSetDevice(sessionID)) {
+        AUDIO_ERR_LOG("current stream is contained in a session which had set default output device");
+        return ERR_NOT_SUPPORTED;
+    }
+
+    AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
+        isRunning ? "running" : "not running", sessionID);
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    streamCollector.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    bool forceFetch = false;
+    int32_t clientUid = INVALID_UID;
+    for (auto &changeInfo : audioRendererChangeInfos) {
+        if (changeInfo->sessionId != static_cast<int32_t>(sessionID)) {
+            continue;
+        }
+        if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            CHECK_AND_CONTINUE(!skipForce);
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
+            forceFetch = true;
+        }
+        clientUid = changeInfo->clientUID;
+    }
+    if (clientUid == INVALID_UID) {
+        return SUCCESS;
+    }
+
+    int32_t ret = SUCCESS;
+    if (isRunning) {
+        ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(deviceType, clientUid,
+            sessionID, streamUsage);
+    }
+    if (ret == NEED_TO_FETCH || forceFetch) {
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
+            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+        return SUCCESS;
+    }
     return SUCCESS;
 }
 
@@ -672,8 +687,8 @@ void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, co
     Media::MediaMonitor::MediaMonitorManager::GetInstance().ErasePreferredDeviceByType(type);
 
     bool hasUsablePrivateCallDevice {false};
-    auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION,
-        -1, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT);
+    FetchDeviceInfo info = { STREAM_USAGE_VOICE_COMMUNICATION, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT};
+    auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     auto pDevs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     for (auto &dev : devs) {
         auto it = find_if(pDevs.cbegin(), pDevs.cend(), [&dev](auto &item) {

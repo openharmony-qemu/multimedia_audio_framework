@@ -28,6 +28,18 @@
 namespace ANI::Audio {
 static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
 static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+
+static AudioDevicePair ConvertNativeDevicePair(const OHOS::AudioStandard::AudioDevicePair &nativePair)
+{
+    AudioDevicePair pair {
+        .inputDevice = nativePair.first == nullptr ? TaiheParamUtils::MakeEmptyDeviceDescriptor() :
+            TaiheParamUtils::SetDeviceDescriptor(*nativePair.first),
+        .outputDevice = nativePair.second == nullptr ? TaiheParamUtils::MakeEmptyDeviceDescriptor() :
+            TaiheParamUtils::SetDeviceDescriptor(*nativePair.second),
+    };
+    return pair;
+}
+
 std::mutex AudioLoopbackImpl::createMutex_;
 int32_t AudioLoopbackImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
 OHOS::AudioStandard::AudioLoopbackMode AudioLoopbackImpl::sLoopbackMode_ = OHOS::AudioStandard::LOOPBACK_HARDWARE;
@@ -108,6 +120,48 @@ void AudioLoopbackImpl::SetVolumeSync(double volume)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return;
     }
+}
+
+taihe::array<AudioDevicePair> AudioLoopbackImpl::GetSupportedDevicePairs()
+{
+    AUDIO_INFO_LOG("GetSupportedDevicePairs called");
+    std::vector<AudioDevicePair> result;
+    CHECK_AND_RETURN_RET_LOG(loopback_ != nullptr, array<AudioDevicePair>(result), "loopback_ is nullptr");
+
+    std::vector<OHOS::AudioStandard::AudioDevicePair> nativePairs = loopback_->GetSupportedDevicePairs();
+    result.reserve(nativePairs.size());
+    for (const auto &nativePair : nativePairs) {
+        if (nativePair.first == nullptr || nativePair.second == nullptr) {
+            AUDIO_WARNING_LOG("getSupportedDevicePairs skip invalid pair");
+            continue;
+        }
+        result.emplace_back(ConvertNativeDevicePair(nativePair));
+    }
+    return array<AudioDevicePair>(result);
+}
+
+AudioDevicePairOrNull AudioLoopbackImpl::GetPreferredDevicePair()
+{
+    AUDIO_INFO_LOG("GetPreferredDevicePair called");
+    OHOS::AudioStandard::AudioDevicePair nativePair;
+    if (loopback_ == nullptr) {
+        AUDIO_WARNING_LOG("loopback_ is nullptr");
+        return AudioDevicePairOrNull::make_type_null();
+    }
+    nativePair = loopback_->GetPreferredDevicePair();
+    if (nativePair.first == nullptr || nativePair.second == nullptr) {
+        return AudioDevicePairOrNull::make_type_null();
+    }
+    return AudioDevicePairOrNull::make_type_audioDevicePair(ConvertNativeDevicePair(nativePair));
+}
+
+double AudioLoopbackImpl::GetVolume()
+{
+    if (loopback_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
+        return 0.0;
+    }
+    return static_cast<double>(loopback_->GetVolume());
 }
 
 bool AudioLoopbackImpl::EnableSync(bool enable)

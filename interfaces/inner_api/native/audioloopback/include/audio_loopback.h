@@ -21,6 +21,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct AudioLoopbackDebugInfo;
+class AudioLoopbackDebugCallback;
 
 class AudioLoopbackCallback {
 public:
@@ -59,6 +61,8 @@ public:
 
     virtual int32_t SetVolume(float volume) = 0;
 
+    virtual float GetVolume() = 0;
+
     virtual int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) = 0;
 
     virtual int32_t RemoveAudioLoopbackCallback() = 0;
@@ -70,6 +74,16 @@ public:
     virtual bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) = 0;
 
     virtual AudioLoopbackEqualizerPreset GetEqualizerPreset() = 0;
+
+    virtual int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
+    {
+        (void)debugInfo;
+        return 0;
+    }
+
+    virtual std::vector<AudioDevicePair> GetSupportedDevicePairs() = 0;
+
+    virtual AudioDevicePair GetPreferredDevicePair() = 0;
 
     virtual ~AudioLoopback();
 };

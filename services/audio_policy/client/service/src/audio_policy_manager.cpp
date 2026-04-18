@@ -28,6 +28,7 @@
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_spatialization_state_change_listener.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1770,6 +1771,19 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
     return retMicList;
 }
 
+int32_t AudioPolicyManager::GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo &audioDebugInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    std::shared_ptr<AudioDebugInfo> audioDebugInfoPtr = nullptr;
+    int32_t ret = gsp->GetAudioDebugInfo(sessionId, audioDebugInfoPtr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioDebugInfo failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(audioDebugInfoPtr != nullptr, ERR_OPERATION_FAILED,
+        "GetAudioDebugInfo failed: audioDebugInfo is nullptr");
+    audioDebugInfo = *audioDebugInfoPtr;
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
     const int32_t volume)
 {
@@ -3193,6 +3207,26 @@ bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const
     return ret;
 }
 
+bool AudioPolicyManager::SetLoopbackVolume(float volume)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->SetLoopbackVolume(volume, ret);
+    return ret;
+}
+
+float AudioPolicyManager::GetLoopbackVolume()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0.0f, "audio policy manager proxy is NULL.");
+    float volume = 0.0f;
+    bool ret = false;
+    gsp->GetLoopbackVolume(volume, ret);
+    CHECK_AND_RETURN_RET_LOG(ret, 0.0f, "GetLoopbackVolume failed");
+    return volume;
+}
+
 bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType)
 {
     Trace trace("AudioPolicyManager::IsAudioLoopbackSupported");
@@ -3201,6 +3235,47 @@ bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode, Device
     bool support = false;
     gsp->IsAudioLoopbackSupported(mode, deviceType, support);
     return support;
+}
+
+std::vector<AudioDevicePair> AudioPolicyManager::GetLoopbackSupportedDevicePairs()
+{
+    Trace trace("AudioPolicyManager::GetLoopbackSupportedDevicePairs");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, {}, "audio policy manager proxy is NULL.");
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    int32_t ret = 0;
+    gsp->GetLoopbackSupportedDevicePairs(inputDevices, outputDevices, ret);
+
+    std::vector<AudioDevicePair> devicePairs;
+    CHECK_AND_RETURN_RET(ret == SUCCESS && !inputDevices.empty() && !outputDevices.empty(), devicePairs);
+
+    CHECK_AND_RETURN_RET_LOG(inputDevices.size() == outputDevices.size(),
+        devicePairs, "inputDevices size %{public}zu not match outputDevices size %{public}zu",
+        inputDevices.size(), outputDevices.size());
+
+    for (size_t i = 0; i < inputDevices.size(); i++) {
+        devicePairs.push_back(std::make_pair(inputDevices[i], outputDevices[i]));
+    }
+
+    return devicePairs;
+}
+
+AudioDevicePair AudioPolicyManager::GetLoopbackPreferredDevicePair()
+{
+    Trace trace("AudioPolicyManager::GetLoopbackPreferredDevicePair");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, {}, "audio policy manager proxy is NULL.");
+
+    std::shared_ptr<AudioDeviceDescriptor> inputDevice;
+    std::shared_ptr<AudioDeviceDescriptor> outputDevice;
+    int32_t ret = 0;
+    gsp->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
+
+    CHECK_AND_RETURN_RET(ret == SUCCESS && inputDevice != nullptr && outputDevice != nullptr, {});
+
+    return std::make_pair(inputDevice, outputDevice);
 }
 
 bool AudioPolicyManager::IsSupportInnerCaptureOffload()
@@ -3533,6 +3608,14 @@ int32_t AudioPolicyManager::UpdateSafeVolumeByStrMode()
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     return gsp->UpdateSafeVolumeByStrMode();
+}
+
+int32_t AudioPolicyManager::RecordBootAnimationClientStateTime(const BootAnimationInfo &info)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->RecordBootAnimationClientStateTime(info);
 }
 
 int32_t AudioPolicyManager::RegisterCollaborationEnabledForCurrentDeviceEventListener(

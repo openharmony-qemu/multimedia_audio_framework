@@ -160,6 +160,12 @@ public:
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+
+    // interface for collaborative record
+    void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType) override;
+    void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

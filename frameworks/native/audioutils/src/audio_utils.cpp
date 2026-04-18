@@ -298,6 +298,11 @@ int64_t ClockTime::GetCurNano()
     return result;
 }
 
+int64_t ClockTime::GetCurMilli()
+{
+    return GetCurNano() / AUDIO_NS_PER_MILLISECOND;
+}
+
 int64_t ClockTime::GetRealNano()
 {
     int64_t result = -1; // -1 for bad result
@@ -1878,7 +1883,8 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
     {STREAM_VOICE_CALL, {
         STREAM_USAGE_VOICE_COMMUNICATION,
         STREAM_USAGE_VIDEO_COMMUNICATION,
-        STREAM_USAGE_VOICE_MODEM_COMMUNICATION}},
+        STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+        STREAM_USAGE_INTERPHONE}},
     {STREAM_VOICE_CALL_ASSISTANT, {
         STREAM_USAGE_VOICE_CALL_ASSISTANT}},
     {STREAM_RING, {
@@ -1964,6 +1970,7 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_UNKNOWN, STREAM_MUSIC},
     {STREAM_USAGE_MUSIC, STREAM_MUSIC},
     {STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_COMMUNICATION},
+    {STREAM_USAGE_INTERPHONE, STREAM_VOICE_COMMUNICATION},
     {STREAM_USAGE_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_USAGE_ALARM, STREAM_ALARM},
     {STREAM_USAGE_VOICE_MESSAGE, STREAM_VOICE_MESSAGE},
@@ -2094,7 +2101,8 @@ AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamUsage(StreamUsage streamUsag
 std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamUsageMap_ = {
     {STREAM_RING, {STREAM_USAGE_VOICE_RINGTONE}},
     {STREAM_NOTIFICATION, {STREAM_USAGE_NOTIFICATION}},
-    {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION}},
+    {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION,
+        STREAM_USAGE_INTERPHONE}},
     {STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
     {STREAM_ALARM, {STREAM_USAGE_ALARM}},
     {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
@@ -2186,7 +2194,7 @@ int32_t VolumeUtils::VolumeLevelToDegree(int32_t level, int32_t maxLevel)
     if (level == VOLUME_LEVEL_ZERO) {
         return VOLUME_DEGREE_ZERO;
     }
-    
+
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }

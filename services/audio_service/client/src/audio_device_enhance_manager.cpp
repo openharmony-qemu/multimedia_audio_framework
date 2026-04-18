@@ -21,6 +21,7 @@
 #include "audio_policy_manager.h"
 #include "audio_renderer.h"
 #include "audio_device_info.h"
+#include "audio_service_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -71,6 +72,72 @@ int32_t AudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(
 {
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, ERR_INVALID_PARAM, "capturer is nullptr");
     return capturer->SelectInputDevice(desc);
+}
+
+SoundCardInfo ParseSoundCardInfo(const std::string &halResponse)
+{
+    SoundCardInfo info;
+    if (halResponse.empty()) {
+        AUDIO_INFO_LOG("Sound card info response is empty");
+        return info;
+    }
+
+    std::istringstream stream(halResponse);
+    std::string line;
+    std::string key;
+    std::string value;
+
+    while (std::getline(stream, line)) {
+        if (line.empty()) {
+            continue;
+        }
+
+        size_t pos = line.find(":");
+        if (pos == std::string::npos) {
+            continue;
+        }
+
+        key = line.substr(0, pos);
+        value = line.substr(pos + 1);
+        size_t first = value.find_first_not_of(" \t\r\n");
+        size_t last = value.find_last_not_of(" \t\r\n");
+        if (first != std::string::npos) {
+            value = value.substr(first, (last - first + 1));
+        } else {
+            value = "";
+        }
+
+        if (key == "Name") {
+            info.name = value;
+        } else if (key == "Vendor") {
+            info.vendor = value;
+        } else if (key == "Model") {
+            info.model = value;
+        } else if (key == "BusAddress") {
+            info.busAddress = value;
+        } else if (key == "Driver") {
+            info.driver = value;
+        }
+    }
+    return info;
+}
+
+SoundCardInfo AudioDeviceEnhanceManager::GetSoundCardInfo() const
+{
+    std::string key = "sound_card_info";
+    std::string value = "";
+
+    const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("Audio service proxy unavailable.");
+        return SoundCardInfo();
+    }
+    int32_t ret = gasp->GetAudioParameter(key, value);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetAudioParameter failed, ret: %{public}d", ret);
+        return SoundCardInfo();
+    }
+    return ParseSoundCardInfo(value);
 }
 } // namespace AudioStandard
 } // namespace OHOS

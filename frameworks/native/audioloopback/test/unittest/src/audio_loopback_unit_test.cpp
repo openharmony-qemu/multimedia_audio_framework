@@ -513,30 +513,6 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GlobalMode_002, TestSize.Level1)
     EXPECT_EQ(capturerConfig.strategy.concurrencyMode, AudioConcurrencyMode::INVALID);
 }
 
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_NearlinkDevice_001, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_NEARLINK;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_MIC;
-    auto result = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(result, DEFAULT_OK);
-    EXPECT_TRUE(audioLoopback->isRendererUsb_);
-    EXPECT_TRUE(audioLoopback->isCapturerUsb_);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_OnOutputDeviceChange_Nearlink_001, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    auto renderCallback = std::make_shared<AudioLoopbackPrivate::RendererCallbackImpl>(*audioLoopback);
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_SPEAKER;
-    audioLoopback->isRendererUsb_ = false;
-    AudioDeviceDescriptor deviceInfo;
-    deviceInfo.deviceType_ = DEVICE_TYPE_NEARLINK;
-    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    renderCallback->OnOutputDeviceChange(deviceInfo, reason);
-    EXPECT_TRUE(audioLoopback->isRendererUsb_);
-}
-
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_OnOutputDeviceChange_Normal_001, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
@@ -561,86 +537,6 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_OnOutputDeviceChange_SameDevice_0
     AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
     renderCallback->OnOutputDeviceChange(deviceInfo, reason);
     EXPECT_TRUE(audioLoopback->isRendererUsb_);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_Global_001, TestSize.Level1)
-{
-    std::shared_ptr<MockAudioRenderer> mockRenderer = std::make_shared<NiceMock<MockAudioRenderer>>();
-    std::shared_ptr<MockAudioCapturer> mockCapturer = std::make_shared<NiceMock<MockAudioCapturer>>();
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->isGlobal_ = true;
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_SPEAKER;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_SPEAKER;
-    EXPECT_CALL(*mockRenderer, SetRendererWriteCallback(_)).Times(1);
-    EXPECT_CALL(*mockRenderer, SetSilentModeAndMixWithOthers(true)).Times(1);
-    audioLoopback->audioRenderer_ = mockRenderer;
-    audioLoopback->audioCapturer_ = mockCapturer;
-    audioLoopback->CreateAudioLoopback();
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_Global_002, TestSize.Level1)
-{
-    std::shared_ptr<MockAudioRenderer> mockRenderer = std::make_shared<NiceMock<MockAudioRenderer>>();
-    std::shared_ptr<MockAudioCapturer> mockCapturer = std::make_shared<NiceMock<MockAudioCapturer>>();
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->isGlobal_ = false;
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_SPEAKER;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_SPEAKER;
-    EXPECT_CALL(*mockRenderer, SetRendererWriteCallback(_)).Times(1);
-    EXPECT_CALL(*mockRenderer, SetSilentModeAndMixWithOthers(_)).Times(0);
-    audioLoopback->audioRenderer_ = mockRenderer;
-    audioLoopback->audioCapturer_ = mockCapturer;
-    audioLoopback->CreateAudioLoopback();
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_Nearlink_001, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_NEARLINK;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_MIC;
-    auto result = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(result, DEFAULT_OK);
-    EXPECT_TRUE(audioLoopback->isRendererUsb_);
-    EXPECT_TRUE(audioLoopback->isCapturerUsb_);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_Nearlink_002, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_NEARLINK;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_SPEAKER;
-    auto result = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(result, ERROR_DEVICE_MISMATCH);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_Nearlink_003, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_SPEAKER;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_NEARLINK;
-    auto result = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(result, ERROR_DEVICE_MISMATCH);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_Nearlink_004, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_MIC;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_NEARLINK;
-    auto result = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(result, ERROR_DEVICE_MISMATCH);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_Nearlink_LoopbackSupported_001, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_NEARLINK;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_MIC;
-    audioLoopback->mode_ = LOOPBACK_HARDWARE;
-    auto result = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(result, DEFAULT_OK);
-    EXPECT_TRUE(audioLoopback->isRendererUsb_);
-    EXPECT_TRUE(audioLoopback->isCapturerUsb_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

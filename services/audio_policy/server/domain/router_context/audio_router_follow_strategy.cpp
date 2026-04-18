@@ -31,7 +31,8 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     SourceType &effectiveSourceType, BluetoothAndNearlinkPreferredRecordCategory &category)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
-    auto highestPrioritySourceTypes = routerInfra.GetHighestPriorityRunningSourceTypes();
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    auto highestPrioritySourceTypes = routerInfra.GetAppRunningSourceTypes(highestUid);
     if (!highestPrioritySourceTypes.empty()) {
         effectiveSourceType = highestPrioritySourceTypes[0];
     }
@@ -40,8 +41,29 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
         SOURCE_TYPE_MIC, SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_LIVE
     };
     bool isSystemSelectActive = routerInfra.HasHighestPriorityRunningSourceType(checkSourceTypes);
+    return GetMediaInputDeviceByPriority(highestUid, category, isSystemSelectActive);
+}
 
-    auto appSelectInfo = routerInfra.GetHighestPrioritySelectDevice(SelectDeviceType::MEDIA_INPUT);
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMediaInputDeviceWhenNoRunningStream(
+    int32_t uid, BluetoothAndNearlinkPreferredRecordCategory &category, SourceType sourceType)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    if (uid == INVALID_UID) {
+        auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
+        return systemSelectInfo.device_;
+    }
+
+    category = routerInfra.GetPreferredInputCategory(uid);
+    bool isSystemSelectActive = (sourceType == SOURCE_TYPE_MIC) ||
+        (sourceType == SOURCE_TYPE_CAMCORDER) || (sourceType == SOURCE_TYPE_LIVE);
+    return GetMediaInputDeviceByPriority(uid, category, isSystemSelectActive);
+}
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMediaInputDeviceByPriority(
+    int uid, BluetoothAndNearlinkPreferredRecordCategory &category, bool isSystemSelectActive)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
     auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
 
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
@@ -65,28 +87,6 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     return simpleDesc;
 }
 
-std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMediaInputDeviceWhenNoRunningStream(
-    int32_t uid, BluetoothAndNearlinkPreferredRecordCategory &category)
-{
-    auto &routerInfra = AudioRouterInfra::GetInstance();
-    if (uid == INVALID_UID) {
-        auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
-        return systemSelectInfo.device_;
-    }
-
-    category = routerInfra.GetPreferredInputCategory(uid);
-    auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
-    std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
-
-    if (appSelectInfo.device_ != nullptr) {
-        simpleDesc = appSelectInfo.device_;
-    } else {
-        simpleDesc = ConvertDeviceToSimple(GetPreferDevice(category));
-    }
-
-    return simpleDesc;
-}
-
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputDevice(int32_t uid,
     uint32_t streamId, SourceType sourceType)
 {
@@ -100,10 +100,11 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     BluetoothAndNearlinkPreferredRecordCategory category =
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 
-    if (!routerInfra.GetHighestPriorityRunningSourceTypes().empty()) {
+    auto appSourceTypes = routerInfra.GetAppRunningSourceTypes(uid);
+    if (!appSourceTypes.empty()) {
         simpleDesc = GetMediaInputDeviceWhenHasRunningStream(effectiveSourceType, category);
     } else {
-        simpleDesc = GetMediaInputDeviceWhenNoRunningStream(uid, category);
+        simpleDesc = GetMediaInputDeviceWhenNoRunningStream(uid, category, sourceType);
     }
 
     if (simpleDesc != nullptr) {
@@ -119,7 +120,7 @@ void AudioRouterFollowStrategy::SetMediaInputDevice(int32_t uid, uint32_t stream
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
-    if (uid != SYSTEM_UID && streamId != 0) {
+    if (uid != SYSTEM_UID && ValidStreamId(streamId)) {
         AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);
     } else {
         AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc);
@@ -129,24 +130,28 @@ void AudioRouterFollowStrategy::SetMediaInputDevice(int32_t uid, uint32_t stream
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaOutputDevice(int32_t uid,
     uint32_t streamId)
 {
+    AudioRouterInfra::GetInstance().Lock();
     auto &routerInfra = AudioRouterInfra::GetInstance();
     int32_t appUid = routerInfra.GetHighestOutputPriorityApp();
     AUDIO_DEBUG_LOG("highestOutputPriorityAppUid: %{public}d", appUid);
     auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_OUTPUT, appUid);
+    appSelectInfo = routerInfra.HasRunningOutputStream(appUid) ? appSelectInfo : AudioSelectDeviceInfo();
     auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
-    if (HasVaildSelectDevice(appSelectInfo) && HasVaildSelectDevice(systemSelectInfo)) {
+    if (AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo) &&
+        AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo)) {
         if (appSelectInfo.selectTime_ >= systemSelectInfo.selectTime_) {
             simpleDesc = appSelectInfo.device_;
         } else {
             simpleDesc = systemSelectInfo.device_;
         }
-    } else if (HasVaildSelectDevice(appSelectInfo)) {
+    } else if (AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo)) {
         simpleDesc = appSelectInfo.device_;
-    } else if (HasVaildSelectDevice(systemSelectInfo)) {
+    } else if (AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo)) {
         simpleDesc = systemSelectInfo.device_;
     }
     auto result = ConvertSimpleToDevice(simpleDesc);
+    AudioRouterInfra::GetInstance().Unlock();
     CHECK_AND_RETURN_RET(result != nullptr, std::make_shared<AudioDeviceDescriptor>());
     return result;
 }
@@ -154,21 +159,24 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaOutput
 void AudioRouterFollowStrategy::SetMediaOutputDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
+    AudioRouterInfra::GetInstance().Lock();
     CHECK_AND_RETURN_LOG(device != nullptr, "device is nullptr");
     AUDIO_INFO_LOG("callerUid: %{public}d, deviceType_: %{public}d", uid, device->deviceType_);
     auto simpleDesc = ConvertDeviceToSimple(device);
     CHECK_AND_RETURN_LOG(simpleDesc != nullptr, "simpleDesc is nullptr");
-    if (uid != SYSTEM_UID && streamId != INVALID_STREAM_ID) {
+    if (uid != SYSTEM_UID && ValidStreamId(streamId)) {
         AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);
     } else {
         AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid, simpleDesc);
     }
+    AudioRouterInfra::GetInstance().Unlock();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallInputDevice(int32_t uid, uint32_t streamId)
 {
     auto systemSelectInfo = AudioRouterInfra::GetInstance().GetSystemSelectDevice(SelectDeviceType::CALL_INPUT);
     auto result = ConvertSimpleToDevice(systemSelectInfo.device_);
+    CHECK_AND_RETURN_RET(result != nullptr, std::make_shared<AudioDeviceDescriptor>());
     return result;
 }
 
@@ -191,7 +199,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputD
             auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
             simpleDesc = GetCallOutputDeviceByUid(callOwnerUid);
         } else {
-            simpleDesc = GetCallLatestOutputDevice();
+            auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::CALL_OUTPUT);
+            simpleDesc = systemSelectInfo.device_;
         }
     } else {
         simpleDesc = GetCallOutputDeviceByUid(uid);
@@ -218,26 +227,6 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetCallO
     return simpleDesc;
 }
 
-std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetCallLatestOutputDevice()
-{
-    std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
-    auto &routerInfra = AudioRouterInfra::GetInstance();
-    auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::CALL_OUTPUT);
-    auto latestAppSelectInfo = routerInfra.GetLatestAppSelectDevice(SelectDeviceType::CALL_OUTPUT);
-    if (latestAppSelectInfo.device_ != nullptr && systemSelectInfo.device_ != nullptr) {
-        if (latestAppSelectInfo.selectTime_ >= systemSelectInfo.selectTime_) {
-            simpleDesc = latestAppSelectInfo.device_;
-        } else {
-            simpleDesc = systemSelectInfo.device_;
-        }
-    } else if (latestAppSelectInfo.device_ != nullptr) {
-        simpleDesc = latestAppSelectInfo.device_;
-    } else if (systemSelectInfo.device_ != nullptr) {
-        simpleDesc = systemSelectInfo.device_;
-    }
-    return simpleDesc;
-}
-
 void AudioRouterFollowStrategy::SetCallOutputDevice(int32_t uid,
     uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device, const std::string caller)
 {
@@ -251,15 +240,14 @@ void AudioRouterFollowStrategy::SetCallOutputDevice(int32_t uid,
         device->deviceType_, uid, callerPid, AudioSceneManager::GetInstance().GetAudioSceneOwnerUid(),
         bundleName.c_str(), caller.c_str());
     if (device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE) {
-        ClearCallOutputDevice(uid, streamId, caller);
+        ClearCallOutputDevice(uid, streamId);
     } else {
         RefreshCallOutputDevice(uid, streamId, device);
     }
     AudioRouterInfra::GetInstance().Unlock();
 }
 
-void AudioRouterFollowStrategy::ClearCallOutputDevice(int32_t uid, uint32_t streamId,
-    const std::string caller)
+void AudioRouterFollowStrategy::ClearCallOutputDevice(int32_t uid, uint32_t streamId)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
     auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
@@ -291,9 +279,41 @@ void AudioRouterFollowStrategy::RefreshCallOutputDevice(int32_t uid, uint32_t st
     routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, uid, simpleDesc);
 }
 
-bool AudioRouterFollowStrategy::HasVaildSelectDevice(AudioSelectDeviceInfo selectInfo)
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaDefaultOutputDevice(
+    int32_t uid, uint32_t streamId)
 {
-    return selectInfo.device_ != nullptr && selectInfo.device_->deviceType_ != DEVICE_TYPE_NONE;
+    AudioRouterInfra::GetInstance().Lock();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
+
+    if (streamId == INVALID_STREAM_ID ||
+        routerInfra.GetStreamStreamUsage(uid, streamId) != StreamUsage::STREAM_USAGE_INVALID) {
+        simpleDesc = routerInfra.GetLatestStreamSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
+    } else {
+        simpleDesc = routerInfra.GetStreamDefaultDevice(uid, streamId, SelectDeviceType::MEDIA_OUTPUT);
+    }
+
+    AudioRouterInfra::GetInstance().Unlock();
+    return ConvertSimpleToDevice(simpleDesc);
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallDefaultOutputDevice(
+    int32_t uid, uint32_t streamId)
+{
+    AudioRouterInfra::GetInstance().Lock();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
+    
+    if (AudioSceneManager::GetInstance().IsInAudioCallScene()) {
+        auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
+        simpleDesc = routerInfra.GetFirstRunningStreamDefaultDevice(callOwnerUid,
+            SelectDeviceType::CALL_OUTPUT);
+    } else {
+        simpleDesc = routerInfra.GetStreamDefaultDevice(uid, streamId, SelectDeviceType::CALL_OUTPUT);
+    }
+    
+    AudioRouterInfra::GetInstance().Unlock();
+    return ConvertSimpleToDevice(simpleDesc);
 }
 }
 }

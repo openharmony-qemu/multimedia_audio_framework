@@ -58,6 +58,7 @@ constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
+constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
@@ -854,13 +855,6 @@ struct AudioRendererDesc {
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
 };
 
-struct AudioRendererOptions {
-    AudioStreamInfo streamInfo;
-    AudioRendererInfo rendererInfo;
-    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
-    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
-};
-
 struct MicStateChangeEvent : public Parcelable {
     bool mute;
 
@@ -1158,6 +1152,14 @@ struct AppInfo {
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
     std::string deviceId {""};
+};
+
+struct AudioRendererOptions {
+    AudioStreamInfo streamInfo;
+    AudioRendererInfo rendererInfo;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
+    AppInfo appInfo;
 };
 
 struct BufferQueueState {
@@ -1774,6 +1776,7 @@ enum AudioParamKey {
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
     AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
+    SOUND_CARD_INFO = 1002,
 };
 
 struct DStatusInfo {
@@ -1935,6 +1938,11 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
+}
+
+static inline bool ValidStreamId(uint32_t streamId)
+{
+    return streamId != 0 && streamId != INVALID_STREAM_ID;
 }
 
 enum RouterType {
@@ -2209,11 +2217,32 @@ struct FetchDeviceInfo : public Parcelable {
     AudioPipeType audioPipeType = PIPE_TYPE_UNKNOWN;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     std::string caller = "";
+    std::string bundleName = "";
+    RouterType bypassType = ROUTER_TYPE_NONE;
+    int32_t streamId = INVALID_STREAM_ID;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
         : streamUsage(streamUsage), preStreamUsage(preStreamUsage), clientUID(clientUID),
           routerType(routerType), audioPipeType(audioPipeType), privacyType(privacyType)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, std::string caller)
+        : streamUsage(streamUsage), caller(caller)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, std::string caller, RouterType bypassType)
+        : streamUsage(streamUsage), caller(caller), bypassType(bypassType)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID, std::string caller)
+        : streamUsage(streamUsage), clientUID(clientUID), caller(caller)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID, AudioPrivacyType privacyType,
+        std::string caller, std::string bundleName)
+        : streamUsage(streamUsage), clientUID(clientUID), privacyType(privacyType),
+          caller(caller), bundleName(bundleName)
     {}
 
     FetchDeviceInfo() = default;
@@ -2226,7 +2255,9 @@ struct FetchDeviceInfo : public Parcelable {
             parcel.WriteInt32(static_cast<int32_t>(routerType)) &&
             parcel.WriteInt32(static_cast<int32_t>(audioPipeType)) &&
             parcel.WriteInt32(static_cast<int32_t>(privacyType)) &&
-            parcel.WriteString(caller);
+            parcel.WriteString(caller) &&
+            parcel.WriteString(bundleName) &&
+            parcel.WriteInt32(static_cast<int32_t>(bypassType));
     }
 
     static FetchDeviceInfo *Unmarshalling(Parcel &parcel)
@@ -2243,6 +2274,8 @@ struct FetchDeviceInfo : public Parcelable {
         info->audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         info->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         info->caller = parcel.ReadString();
+        info->bundleName = parcel.ReadString();
+        info->bypassType = static_cast<RouterType>(parcel.ReadInt32());
 
         return info;
     }
@@ -2256,6 +2289,8 @@ struct FetchDeviceInfo : public Parcelable {
         audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         caller = parcel.ReadString();
+        bundleName = parcel.ReadString();
+        bypassType = static_cast<RouterType>(parcel.ReadInt32());
     }
 };
 

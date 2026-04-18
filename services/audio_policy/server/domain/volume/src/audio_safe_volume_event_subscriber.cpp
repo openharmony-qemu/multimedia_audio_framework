@@ -27,6 +27,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
+SafeVolumeEventSubscriber::SafeVolumeEventSubscriber()
+{
+}
+
+SafeVolumeEventSubscriber::~SafeVolumeEventSubscriber()
+{
+}
+
 class SafeVolumeEventHandler : public EventFwk::CommonEventSubscriber {
 public:
     explicit SafeVolumeEventHandler(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,

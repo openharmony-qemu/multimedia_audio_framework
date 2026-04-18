@@ -1304,8 +1304,10 @@ void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::s
     AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
         make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
     bool hasUsablePrivateCallDevice{false};
-    auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION,
-        -1, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT);
+    FetchDeviceInfo info = {
+        STREAM_USAGE_VOICE_COMMUNICATION, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT
+    };
+    auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     auto pDevs = audioDeviceManager_.GetCommRenderPrivacyDevices();
     for (auto &dev : devs) {
         auto it = find_if(pDevs.cbegin(), pDevs.cend(), [&dev](auto &item) {
@@ -1452,9 +1454,9 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     }
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
-    bool result = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command, reason);
+    bool isStatusUpdated = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command, reason);
     CheckForA2dpSuspend(desc);
-    if (result) {
+    if (isStatusUpdated) {
         OnPreferredStateUpdated(desc, command, reason);
     }
 #ifdef BLUETOOTH_ENABLE
@@ -1571,8 +1573,11 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     auto usage = audioDeviceManager_.GetDeviceUsage(desc);
     AudioStateManager &stateManager = AudioStateManager::GetAudioStateManager();
 
+    FetchDeviceInfo info = {
+        STREAM_USAGE_MEDIA, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT
+    };
     auto mediaFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT)
+        .FetchOutputDevices(info)
         .front();
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     if ((usage & MEDIA) == MEDIA &&
@@ -1582,9 +1587,11 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
             std::make_shared<AudioDeviceDescriptor>());
     }
 
+    info = {
+        STREAM_USAGE_VOICE_COMMUNICATION, "ClearPreferredWhenCategoryUpdated_2", ROUTER_TYPE_USER_SELECT
+    };
     auto callFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "ClearPreferredWhenCategoryUpdated_2",
-            ROUTER_TYPE_USER_SELECT)
+        .FetchOutputDevices(info)
         .front();
     if ((usage & VOICE) == VOICE &&
         NeedClearPreferredWhenCategoryUpdated(*existed, callFetched,

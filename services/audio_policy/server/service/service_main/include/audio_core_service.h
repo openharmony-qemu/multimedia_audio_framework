@@ -25,6 +25,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
+#include "audio_debug_info.h"
 #include "audio_ec_info.h"
 #include "microphone_descriptor.h"
 #include "audio_stream_change_info.h"
@@ -53,6 +54,8 @@
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
 #include "async_action_handler.h"
+#include "audio_policy_dump.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,6 +67,7 @@ enum OffloadType {
 
 const uint32_t PCM_8_BIT = 8;
 const uint32_t SESSION_ID_INVALID = 0;
+const int32_t AUDIO_EXT_UID = 1041;
 const std::string PIPE_PRIMARY_INPUT = "primary_input";
 const std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 const std::string PIPE_PRIMARY_INPUT_AI = "primary_input_AI";
@@ -119,11 +123,13 @@ public:
         int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning, bool skipForce = false) override;
+        int32_t RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime) override;
         int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         std::string GetModuleNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false) override;
+        int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
         uint32_t GenerateSessionId() override;
         int32_t SetSplitModeReady();
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
@@ -184,12 +190,13 @@ public:
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
         int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-        int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+        int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType,
+            int32_t callerUid = INVALID_UID);
 
         // Functions related to get operations - device related
         bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-            AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
+            AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId = LOCAL_NETWORK_ID);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
             AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId = LOCAL_NETWORK_ID);
         std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
@@ -234,6 +241,7 @@ public:
         std::condition_variable serviceReadyCV_;
         std::atomic<bool> serviceReady_ = false;
         int32_t serviceReadyWaitCount_ = 0;
+        AudioPolicyDump &audioPolicyDump_;
     };
 
     // Ctor & dtor
@@ -311,15 +319,14 @@ public:
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);
+    void ForceStopInterphoneRenderer();
 
     // ICoreServiceProvider from EventEntry
-    int32_t SetDefaultOutputDevice(
-        const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
-        bool skipForce = false);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast);
+    int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
     uint32_t GenerateSessionId();
     int32_t SetSplitModeReady();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
@@ -382,14 +389,15 @@ public:
     bool HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene);
     bool IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene);
     int32_t SetSessionDefaultOutputDevice(
-        const int32_t callerPid, const DeviceType &deviceType, bool skipForce = false);
+        const int32_t callerPid, const DeviceType &deviceType, bool skipForce = false,
+        int32_t callerUid = INVALID_UID);
     int32_t FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     // Functions related to get operations - device related
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId);
+        AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
@@ -459,6 +467,8 @@ public:
     void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
         const AudioStreamDeviceChangeReason reason);
@@ -492,6 +502,10 @@ private:
 
     bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource);
     static std::string GetEncryptAddr(const std::string &addr);
+    int32_t GetPipeBaseDebugInfo(const std::shared_ptr<AudioPipeInfo> &pipe, AudioDebugInfo &debugInfo);
+    int32_t GetStreamDebugInfo(uint32_t sessionId, const std::shared_ptr<AudioPipeInfo> &pipe,
+        AudioDebugInfo &debugInfo);
+    int32_t GetVolumeDebugInfo(AudioDebugInfo &debugInfo);
     void DecidedAudioFlagForStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -601,6 +615,7 @@ private:
     bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportOutputInterPhone(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsDeviceSwitching(const AudioStreamDeviceChangeReasonExt reason);
 
     void AddSessionId(const uint32_t sessionId);
@@ -709,6 +724,9 @@ private:
     void GetFlagForUltraFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
 
     void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
+    void ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
+    int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, uint32_t& audioFlag);
+    int32_t CheckCapturerStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
     void UnloadInnerCapturerSink(std::string moduleName);
     void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
@@ -735,7 +753,7 @@ private:
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo);
     std::pair<SourceType, uint32_t> GetTargetSessionForEc();
-    bool HasNormalTypeSession(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList);
+    bool HasNormalTypeCapturerSession(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList);
     bool IsSourceTypeValidForEc(SourceType sourceType);
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
@@ -768,7 +786,6 @@ private:
     AudioRouteMap& audioRouteMap_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
     AudioSessionService &audioSessionService_;
@@ -842,8 +859,7 @@ private:
     bool isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
-    // key:sessionId value:adapterName, use for getting pipe when release
-    std::unordered_map<uint32_t, std::string> sessionWithInputPipeAdapterName_;
+    std::unordered_map<uint32_t, SourceType> sessionSourceTypeMap_;
 
     AudioModuleInfo usbSinkModuleInfo_ = {};
     AudioModuleInfo usbSourceModuleInfo_ = {};
@@ -861,6 +877,7 @@ private:
     bool isMicRefRecordOn_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
+    AudioPolicyDump &audioPolicyDump_;
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     int32_t isSupportUltraFast_ = 0;

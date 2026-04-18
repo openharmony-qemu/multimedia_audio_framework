@@ -59,7 +59,7 @@ void AudioVolumeManagerIsWiredHeadSetFuzzTest(FuzzedDataProvider& fdp)
     DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.IsWiredHeadSet(deviceType);
+    audioVolumeManager.safeVolumeManager_.IsWiredHeadSet(deviceType);
 }
 
 void AudioVolumeManagerIsBlueToothFuzzTest(FuzzedDataProvider& fdp)
@@ -67,7 +67,7 @@ void AudioVolumeManagerIsBlueToothFuzzTest(FuzzedDataProvider& fdp)
     DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.IsBlueTooth(deviceType);
+    audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
 }
 
 void AudioVolumeManagerCheckMixActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)
@@ -327,7 +327,7 @@ void AudioVolumeManagerCancelSafeVolumeNotificationFuzzTest(FuzzedDataProvider& 
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     int32_t notificationId = g_fuzzUtils.GetData<int32_t>();
-    audioVolumeManager.CancelSafeVolumeNotification(notificationId);
+    audioVolumeManager.safeVolumeManager_.CancelSafeVolumeNotification(notificationId);
 }
 
 void AudioVolumeManagerSetRestoreVolumeLevelFuzzTest(FuzzedDataProvider& fdp)

@@ -25,6 +25,9 @@ config("audio_renderer_config") {
     "../../../services/audio_service/test/example",
     "../audioschedule/include",
     "../../../services/audio_service/common/include/dfx",
+    "../../../interfaces/inner_api/native/audio_debug_manager/include",
+    "../audiodefinitions/include",
+    "../../../services/audio_service/common/include/dfx",
   ]
   cflags = [
     "-Wall",
@@ -67,6 +70,7 @@ ohos_shared_library("audio_renderer") {
     "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
     "../audioschedule:audio_schedule",
+    "../audio_debug_manager:audio_debug_manager",
   ]
   external_deps = [
     "c_utils:utils",

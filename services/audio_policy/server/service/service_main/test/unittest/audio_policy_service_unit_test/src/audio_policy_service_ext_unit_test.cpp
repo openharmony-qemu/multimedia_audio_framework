@@ -164,7 +164,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_004, TestSize.Lev
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, SafeVolumeEventSubscriber_001, TestSize.Level1)
 {
-    SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
+    OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
 }
 
 /**

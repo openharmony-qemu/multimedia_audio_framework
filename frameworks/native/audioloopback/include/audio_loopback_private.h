@@ -63,6 +63,7 @@ public:
     bool Enable(bool enable) override;
     AudioLoopbackStatus GetStatus() override;
     int32_t SetVolume(float volume) override;
+    float GetVolume() override;
     int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) override;
     int32_t RemoveAudioLoopbackCallback() override;
     void OnWriteData(size_t length) override;
@@ -72,10 +73,14 @@ public:
     AudioLoopbackReverbPreset GetReverbPreset() override;
     bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) override;
     AudioLoopbackEqualizerPreset GetEqualizerPreset() override;
+    int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const override;
+
+    std::vector<AudioDevicePair> GetSupportedDevicePairs() override;
+
+    AudioDevicePair GetPreferredDevicePair() override;
 
     static void ReportAudioLoopbackException(const AudioLoopbackReportInfo &info);
 private:
-
     class RendererCallbackImpl : public AudioRendererCallback,
                                  public AudioRendererOutputDeviceChangeCallback,
                                  public AudioRendererFastStatusChangeCallback {

@@ -274,8 +274,7 @@ void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> cur
             std::string channelLayoutStr;
             curNode->GetProp("channelLayout", channelLayoutStr);
             streamPropInfo.channelLayout_ = AudioDefinitionPolicyUtils::layoutStrToEnum[channelLayoutStr];
-            streamPropInfo.channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
-                streamPropInfo.channelLayout_);
+            streamPropInfo.channels_ = ConvertLayoutToAudioChannel(streamPropInfo.channelLayout_);
             std::string bufferSizeStr;
             curNode->GetProp("bufferSize", bufferSizeStr);
             StringConverter(bufferSizeStr, streamPropInfo.bufferSize_);

@@ -952,13 +952,18 @@ bool AudioPolicyServerHandler::IsForceGetZoneDevice(int32_t uid)
 void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t clientPid,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    if (IsForceGetZoneDevice(pidUidMap_[clientPid])) {
-        int32_t zoneId = AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId();
-        if (zoneId > 0) {
-            deviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
-                STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
-        }
+    int32_t zoneId = AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId();
+    if (IsForceGetZoneDevice(pidUidMap_[clientPid]) && zoneId > 0) {
+        deviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
+            STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
+        return;
     }
+    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid]);
+    CHECK_AND_RETURN(zoneId != 0);
+    auto tmpDeviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
+        STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
+    CHECK_AND_RETURN(!tmpDeviceDescs.empty());
+    deviceDescs = tmpDeviceDescs;
 }
 
 bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent)
@@ -1474,7 +1479,7 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
             AudioRendererInfo rendererInfo;
             rendererInfo.streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
             deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetEventEntry()->
-                GetPreferredOutputDeviceDescriptors(rendererInfo);
+                GetPreferredOutputDeviceDescriptors(rendererInfo, eventContextObj->uid_);
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");

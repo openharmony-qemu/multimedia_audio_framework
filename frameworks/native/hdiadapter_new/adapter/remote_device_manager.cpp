@@ -70,21 +70,24 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
-    std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
-    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        GetEncryptStr(adapterName).c_str());
-    CHECK_AND_RETURN_LOG(force || (wrapper->hdiRenderIds_.size() == 0 && wrapper->hdiCaptureIds_.size() == 0),
-        "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu",
-        GetEncryptStr(adapterName).c_str(), wrapper->hdiRenderIds_.size(),
-        wrapper->hdiCaptureIds_.size());
+    {
+        std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
+        std::scoped_lock ioLock(wrapper->renderMtx_, wrapper->captureMtx_);
+        CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
+            GetEncryptStr(adapterName).c_str());
+        const size_t renderNum = wrapper->hdiRenderIds_.size();
+        const size_t captureNum = wrapper->hdiCaptureIds_.size();
+        CHECK_AND_RETURN_LOG(force || (renderNum == 0 && captureNum == 0),
+            "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu",
+            GetEncryptStr(adapterName).c_str(), renderNum, captureNum);
 
-    if (wrapper->routeHandle_ != -1) {
-        wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
-        wrapper->routeHandle_ = -1;
+        if (wrapper->routeHandle_ != -1) {
+            wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
+            wrapper->routeHandle_ = -1;
+        }
+        audioManager_->UnloadAdapter(wrapper->adapterDesc_.adapterName);
+        wrapper->adapter_ = nullptr;
     }
-    audioManager_->UnloadAdapter(wrapper->adapterDesc_.adapterName);
-    wrapper->adapter_ = nullptr;
-    innerLock.unlock();
     std::lock_guard<std::mutex> lock(adapterMtx_);
     adapters_[adapterName].reset();
     adapters_.erase(adapterName);
@@ -338,10 +341,13 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
     AudioDeviceDescriptor &remoteDeviceDesc = *(static_cast<struct AudioDeviceDescriptor *>(deviceDesc));
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     remoteDeviceDesc.portId = GetPortId(PORT_OUT);
 
+    std::unique_lock<std::mutex> lock(wrapper->renderMtx_);
+    CHECK_AND_RETURN_RET_LOG(wrapper->adapter_ != nullptr, nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     sptr<IAudioRender> render = nullptr;
     int32_t ret = wrapper->adapter_->CreateRender(remoteDeviceDesc, remoteParam, render, hdiRenderId);
     if (ret != SUCCESS || render == nullptr) {
@@ -356,7 +362,6 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
     AUDIO_INFO_LOG("create render success, hdiRenderId: %{public}u, desc: %{public}s", hdiRenderId,
         remoteDeviceDesc.desc.c_str());
 
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
     wrapper->hdiRenderIds_.insert(hdiRenderId);
     return rawRender;
 }
@@ -366,18 +371,21 @@ void RemoteDeviceManager::DestroyRender(const std::string &adapterName, uint32_t
     AUDIO_INFO_LOG("destroy render, hdiRenderId: %{public}u", hdiRenderId);
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
+    std::unique_lock<std::mutex> lock(wrapper->renderMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
     if (wrapper->hdiRenderIds_.count(hdiRenderId) == 0) {
+        bool shouldUnload = !wrapper->isValid_;
+        lock.unlock();
         AUDIO_ERR_LOG("render not exist");
-        if (!wrapper->isValid_) {
+        if (shouldUnload) {
             UnloadAdapter(adapterName);
         }
         return;
     }
     wrapper->adapter_->DestroyRender(hdiRenderId);
 
-    std::unique_lock<std::mutex> lock(wrapper->renderMtx_);
     wrapper->hdiRenderIds_.erase(hdiRenderId);
     lock.unlock();
     UnloadAdapter(adapterName);
@@ -392,10 +400,13 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
     AudioDeviceDescriptor &remoteDeviceDesc = *(static_cast<struct AudioDeviceDescriptor *>(deviceDesc));
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     remoteDeviceDesc.portId = GetPortId(PORT_IN);
 
+    std::unique_lock<std::mutex> lock(wrapper->captureMtx_);
+    CHECK_AND_RETURN_RET_LOG(wrapper->adapter_ != nullptr, nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     sptr<IAudioCapture> capture = nullptr;
     int32_t ret = wrapper->adapter_->CreateCapture(remoteDeviceDesc, remoteParam, capture, hdiCaptureId);
     if (ret != SUCCESS || capture == nullptr) {
@@ -410,7 +421,6 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId,
         remoteDeviceDesc.desc.c_str());
 
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
     wrapper->hdiCaptureIds_.insert(hdiCaptureId);
     return rawCapture;
 }
@@ -420,18 +430,21 @@ void RemoteDeviceManager::DestroyCapture(const std::string &adapterName, uint32_
     AUDIO_INFO_LOG("destroy capture, hdiCaptureId: %{public}u", hdiCaptureId);
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
+    std::unique_lock<std::mutex> lock(wrapper->captureMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
     if (wrapper->hdiCaptureIds_.count(hdiCaptureId) == 0) {
+        bool shouldUnload = !wrapper->isValid_;
+        lock.unlock();
         AUDIO_ERR_LOG("capture not exist");
-        if (!wrapper->isValid_) {
+        if (shouldUnload) {
             UnloadAdapter(adapterName);
         }
         return;
     }
     wrapper->adapter_->DestroyCapture(hdiCaptureId);
 
-    std::unique_lock<std::mutex> lock(wrapper->captureMtx_);
     wrapper->hdiCaptureIds_.erase(hdiCaptureId);
     lock.unlock();
     UnloadAdapter(adapterName);
@@ -440,8 +453,13 @@ void RemoteDeviceManager::DestroyCapture(const std::string &adapterName, uint32_
 void RemoteDeviceManager::DumpInfo(std::string &dumpString)
 {
     for (auto &item : adapters_) {
-        uint32_t renderNum = item.second == nullptr ? 0 : item.second->hdiRenderIds_.size();
-        uint32_t captureNum = item.second == nullptr ? 0 : item.second->hdiCaptureIds_.size();
+        uint32_t renderNum = 0;
+        uint32_t captureNum = 0;
+        if (item.second != nullptr) {
+            std::scoped_lock lock(item.second->renderMtx_, item.second->captureMtx_);
+            renderNum = item.second->hdiRenderIds_.size();
+            captureNum = item.second->hdiCaptureIds_.size();
+        }
         dumpString += "  - remote/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
             std::to_string(captureNum) + "\n";
     }

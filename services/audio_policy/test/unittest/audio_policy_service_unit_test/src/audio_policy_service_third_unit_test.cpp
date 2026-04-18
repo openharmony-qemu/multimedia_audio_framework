@@ -822,7 +822,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredInputDeviceDescriptors_001
     std::string networkId = "1";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
 
-    ret = server->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId);
+    ret = server->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, -1);
     EXPECT_NE(ret.size(), 0);
 }
 
@@ -840,7 +840,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredOutputDeviceDescInner_001,
     std::string networkId = "1";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
 
-    ret = server->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
+    ret = server->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, -1);
     EXPECT_NE(ret.size(), 0);
 }
 
@@ -858,7 +858,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredInputDeviceDescInner_001, 
     std::string networkId = "1";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
 
-    ret = server->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    ret = server->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId, -1);
     EXPECT_NE(ret.size(), 0);
 }
 
@@ -1487,22 +1487,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, UpdateStreamState_001, TestSize.Level1
 
     int32_t ret = server->streamCollector_.UpdateStreamState(clientUid, streamSetStateEventInternal);
     EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test RemoveDeviceForUid.
- * @tc.number: RemoveDeviceForUid_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, RemoveDeviceForUid_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    int32_t uid = 1;
-    server->audioAffinityManager_.DelSelectCapturerDevice(uid);
-    server->audioAffinityManager_.DelSelectRendererDevice(uid);
-    EXPECT_NE(server, nullptr);
 }
 
 /**

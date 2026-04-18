@@ -263,7 +263,8 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     strategy.ExcludeDevices(devices, MEDIA_OUTPUT_DEVICES);
 
     systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_NONE);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrategyExcludeDeviceUnitTest_012,
@@ -276,17 +277,20 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
 
     AudioRouterFollowStrategy strategy;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = { sco };
-
     strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, STREAM_USAGE_MEDIA,
+        RendererState::RENDERER_RUNNING);
     auto app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
-    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_NONE);
 
     strategy.ExcludeDevices(devices, MEDIA_OUTPUT_DEVICES);
 
     app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10001Result, nullptr);
+    ASSERT_NE(app10001Result, nullptr);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_NONE);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrategyExcludeDeviceUnitTest_013,
@@ -308,7 +312,8 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     strategy.ExcludeDevices(devices, MEDIA_INPUT_DEVICES);
     auto stream2Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
         SOURCE_TYPE_MIC);
-    EXPECT_EQ(stream2Result, nullptr);
+    ASSERT_NE(stream2Result, nullptr);
+    EXPECT_EQ(stream2Result->deviceType_, DEVICE_TYPE_NONE);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrategyExcludeDeviceUnitTest_014,

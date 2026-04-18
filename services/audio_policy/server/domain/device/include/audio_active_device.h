@@ -27,7 +27,6 @@
 #include "audio_volume_config.h"
 #include "audio_errors.h"
 #include "audio_device_manager.h"
-#include "audio_affinity_manager.h"
 #include "audio_a2dp_offload_flag.h"
 #include "audio_a2dp_device.h"
 #include "audio_iohandle_map.h"
@@ -103,7 +102,6 @@ public:
 private:
     AudioActiveDevice()
         : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()) {}
@@ -133,7 +131,6 @@ private:
         std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
 
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioConnectedDevice& audioConnectedDevice_;
