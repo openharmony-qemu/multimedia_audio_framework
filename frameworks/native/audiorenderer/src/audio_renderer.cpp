@@ -461,6 +461,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
 
     rendererInfo_.privacyType = rendererOptions.privacyType;
     rendererInfo_.voipNoPrivacyFlag = rendererOptions.rendererInfo.voipNoPrivacyFlag;
+    rendererInfo_.isCallWaitingTone = rendererOptions.rendererInfo.isCallWaitingTone;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
 }
