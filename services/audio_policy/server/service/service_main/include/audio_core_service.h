@@ -721,6 +721,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void OnRemoteDeviceStatusUpdatedWhenNoRunningStream(std::shared_ptr<AudioDeviceDescriptor> newDesc);
     void OnRemoteDeviceStatusUpdated();
+    void StopNoRunningPipe();
 
     bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
     void GetFlagForUltraFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);

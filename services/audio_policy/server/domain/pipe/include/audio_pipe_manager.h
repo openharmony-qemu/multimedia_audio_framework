@@ -158,6 +158,12 @@ public:
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
     StreamUsage GetLastestRunningCallStreamUsage();
+    bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    std::vector<std::string> GetNoRunningPipeModuleName();
+    bool CheckNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool CheckRemoteNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool IsPipeNeedStop(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    std::string GetModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

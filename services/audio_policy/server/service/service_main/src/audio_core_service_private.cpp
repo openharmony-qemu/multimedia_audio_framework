@@ -954,6 +954,7 @@ void AudioCoreService::RemoveUnusedPipe()
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
     }
+    StopNoRunningPipe();
 }
 
 void AudioCoreService::RemoveUnusedRecordPipe()
@@ -3191,6 +3192,14 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
     }
     CHECK_AND_RETURN(isNeedUpdate);
     NotifyRemoteDeviceStatusUpdate(oldDesc);
+}
+
+void AudioCoreService::StopNoRunningPipe()
+{
+    std::vector<std::string> moduleNames = pipeManager_->GetNoRunningPipeModuleName();
+    for (auto moduleName : moduleNames) {
+        audioPolicyManager_.StopAudioPort(moduleName);
+    }
 }
 
 void AudioCoreService::GetFlagForUltraFastStream(
