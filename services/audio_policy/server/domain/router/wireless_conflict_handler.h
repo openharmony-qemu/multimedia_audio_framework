@@ -37,12 +37,14 @@ public:
     void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
         const std::vector<StreamDeviceInfo> &inputDevices);
     void ClearSelectedDevices();
+    bool HasNonPairScoSelected();
 
 private:
     bool IsCallStreamUsage(StreamUsage streamUsage);
     bool IsForcedRouterType(RouterType routerType);
     int GetPriority(StreamUsage streamUsage, SourceType sourceType,
         RouterType routerType, bool isOutput);
+    bool IsScoDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     
     std::vector<StreamDeviceInfo> outputStreamDevices_;
     std::vector<StreamDeviceInfo> inputStreamDevices_;

@@ -45,7 +45,7 @@ std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shar
 std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::atomic<bool> AudioHfpManager::isRecognitionScene_ = false;
-std::atomic<bool> AudioHfpManager::isForceSelected_ = false;
+std::atomic<bool> AudioHfpManager::isScoSelected_ = false;
 std::map<pid_t, bool> AudioHfpManager::virtualCalls_;
 std::mutex AudioHfpManager::virtualCallMutex_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
@@ -610,17 +610,17 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
     return SUCCESS;
 }
 
-int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool forceSelected)
+int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isScoSelected)
 {
     if (scene_.load() != scene) {
         AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d with recordscene",
             scene_.load(), scene);
     }
-    if (isForceSelected_.load() != forceSelected) {
-        AUDIO_INFO_LOG("%{public}s forceSelected", forceSelected ? "is" : "not");
+    if (isScoSelected_.load() != isScoSelected) {
+        AUDIO_INFO_LOG("%{public}s scoSelected", isScoSelected ? "is" : "not");
     }
     scene_.store(scene);
-    isForceSelected_.store(forceSelected);
+    isScoSelected_.store(isScoSelected);
     return TryUpdateScoCategory();
 }
 
@@ -728,7 +728,7 @@ int32_t AudioHfpManager::TryUpdateScoCategoryNoLock()
     }
 
     auto category = JudgeScoCategory();
-    if (category == ScoCategory::SCO_DEFAULT && !isForceSelected_.load()) {
+    if (category == ScoCategory::SCO_DEFAULT && !isScoSelected_.load()) {
         return DisconnectScoWrapper();
     }
 

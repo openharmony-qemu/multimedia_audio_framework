@@ -552,6 +552,24 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunning
     return streamDescs;
 }
 
+bool AudioPipeManager::HasRunningScoOutputStream()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
+            CHECK_AND_CONTINUE_LOG(!desc->newDeviceDescs_.empty(), "newDeviceDescs is empty");
+            if (desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
