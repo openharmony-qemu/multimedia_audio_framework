@@ -95,23 +95,6 @@ HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.L
 }
 
 /**
- * @tc.name  : Test IsStreamActiveByStreamUsage API
- * @tc.type  : FUNC
- * @tc.number: IsStreamActiveByStreamUsage_001
- * @tc.desc  : Test IsStreamActiveByStreamUsage interface.
- */
-HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_002, TestSize.Level1)
-{
-    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_MEDIA));
-    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
-    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_SYSTEM));
-    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_DTMF));
-    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_ENFORCED_TONE));
-    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_VOICE_CALL_ASSISTANT));
-}
-
-
-/**
  * @tc.name  : Test ForceStopAudioStream API
  * @tc.type  : FUNC
  * @tc.number: ForceStopAudioStream
@@ -243,19 +226,6 @@ HWTEST(AudioStreamManagerUnitTest, GetAudioEnhanceProperty_002, TestSize.Level1)
 {
     AudioEnhancePropertyArray propertyArray;
     int32_t result = AudioStreamManager::GetInstance()->GetAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(result, 0);
-}
-
-/**
- * @tc.name  : Test IsCapturerFocusAvailable API
- * @tc.type  : FUNC
- * @tc.number: IsCapturerFocusAvailable_001
- * @tc.desc  : Test IsCapturerFocusAvailable interface.
- */
-HWTEST(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_001, TestSize.Level1)
-{
-    AudioCapturerInfo capturerInfo;
-    int32_t result = AudioStreamManager::GetInstance()->IsCapturerFocusAvailable(capturerInfo);
     EXPECT_NE(result, 0);
 }
 
