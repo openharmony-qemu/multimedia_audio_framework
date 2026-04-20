@@ -2551,6 +2551,8 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_006, TestSize.Level1)
     capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(capturerManager);
 
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
     // MoveAllStream: should not crash
     std::vector<uint32_t> sessionIds = {streamInfo.sessionId};
     capturerManager->MoveAllStream(DEFAULT_SOURCE_NAME, sessionIds, MOVE_ALL);
