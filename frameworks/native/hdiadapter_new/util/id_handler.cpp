@@ -63,6 +63,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, info);
 #endif
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "primary_extra") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, info);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     } else if (deviceClass == "dp") {
@@ -83,7 +85,14 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     } else if (deviceClass == "remote_offload") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_OFFLOAD, info);
 #endif
-    } else if (deviceClass == "offload") {
+    }
+    return GetRenderIdByDeviceClassSub(deviceClass, info, routeFlag);
+}
+
+uint32_t IdHandler::GetRenderIdByDeviceClassSub(const std::string &deviceClass, const std::string &info,
+    uint32_t routeFlag)
+{
+    if (deviceClass == "offload") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "multichannel") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_MULTICHANNEL, HDI_ID_INFO_DEFAULT);
@@ -103,6 +112,7 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{public}s", deviceClass.c_str(), info.c_str());
     return HDI_INVALID_ID;
 }
+
 
 uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t routeFlag)
 {

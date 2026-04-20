@@ -1842,6 +1842,79 @@ HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetUnusedPipe_007
+ * @tc.desc: Test GetUnusedPipe when pipe className is primary_extra.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_007, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe1->moduleInfo_.className = "primary_extra";
+    pipe1->streamDescriptors_.clear();
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 1);
+    EXPECT_EQ(unusedPipes[0]->moduleInfo_.className, "primary_extra");
+}
+
+/**
+ * @tc.name: GetUnusedPipe_008
+ * @tc.desc: Test GetUnusedPipe when pipe className is primary_extra but streamDescriptors is not empty.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_008, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe1->moduleInfo_.className = "primary_extra";
+    pipe1->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+
+/**
+ * @tc.name: AudioPipeInfo_IsSameName_001
+ * @tc.desc: Test AudioPipeInfo IsSameName when name matches.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeInfo_IsSameName_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->name_ = "primary_output";
+
+    bool result = pipeInfo->IsSameName("primary_output");
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: AudioPipeInfo_IsSameName_002
+ * @tc.desc: Test AudioPipeInfo IsSameName when name does not match.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeInfo_IsSameName_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->name_ = "primary_output";
+
+    bool result = pipeInfo->IsSameName("primary_typec_output");
+    EXPECT_FALSE(result);
+}
+
+/**
  * @tc.name  : Test ClearStandbyFlag.
  * @tc.number: ClearStandbyFlag_001.
  * @tc.desc  : Valid sessionId, streamDesc exists, sets isStandby_ to false

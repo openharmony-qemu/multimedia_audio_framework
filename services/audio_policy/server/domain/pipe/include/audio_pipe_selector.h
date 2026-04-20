@@ -54,7 +54,8 @@ private:
         std::shared_ptr<AudioStreamDescriptor> incomingStream,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
     uint32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    std::string GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::string &adapterName, std::string &pipeName);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     AudioStreamAction JudgeStreamAction(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
@@ -114,7 +115,7 @@ private:
     void UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
         AudioModuleInfo &moduleInfo);
     bool IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName, const std::string &pipeName);
     ConcurrencyAction DetermineConcurrencyAction(std::shared_ptr<AudioStreamDescriptor> &existingStream,
         std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     void GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
@@ -128,6 +129,8 @@ private:
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
     bool GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
+    bool IsMultiStreamPrimary(const std::string &pipeName);
+    
     void UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
 

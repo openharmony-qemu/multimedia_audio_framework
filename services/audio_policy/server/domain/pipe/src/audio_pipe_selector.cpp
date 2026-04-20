@@ -335,7 +335,9 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
                 return std::find_if(pipeInfos.begin(), pipeInfos.end(), condition);
     };
     if (streamDesc != nullptr && streamDesc->IsRecording()) {
-        std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+        std::string streamDescAdapterName{};
+        std::string pipeName{};
+        GetAdapterNameByStreamDesc(streamDesc, streamDescAdapterName, pipeName);
         busPipeIter = FindPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return IsRecordingPipeMatched(busAddresses, streamDesc, streamDescAdapterName, newPipeInfo);
         });
@@ -375,7 +377,9 @@ void AudioPipeSelector::HandleFindMatchPipe(
     HandleFindBusPipe(busAddresses, newPipeInfoList, streamDesc, matchPipeIter);
 #else
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-    std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+    std::string streamDescAdapterName{};
+    std::string pipeName{};
+    GetAdapterNameByStreamDesc(streamDesc, streamDescAdapterName, pipeName);
     // When the paused offload/multichannel stream needs recons, pipeManager the stream has reconstucted,
     // but due to delay recons, the actual recons operation do not occur, the stream is still in old pipe,
     // which may cause two offload/multichannel streams running in concurrency.
@@ -390,7 +394,7 @@ void AudioPipeSelector::HandleFindMatchPipe(
         // find if curStream's prefer pipe has already exist
     matchPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
                                  [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
-                                     return IsPipeMatch(streamDesc, newPipeInfo, streamDescAdapterName);
+                                     return IsPipeMatch(streamDesc, newPipeInfo, streamDescAdapterName, pipeName);
                                 });
 #endif
 }
@@ -438,7 +442,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
         newPipeInfo->pipeAction_ = (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW &&
             newPipeInfo->pipeAction_ != PIPE_ACTION_RELOAD) ? PIPE_ACTION_UPDATE : newPipeInfo->pipeAction_;
         AUDIO_INFO_LOG("[PipeFetchInfo] Name %{public}s, PipeAction: %{public}d",
-            newPipeInfo->name_.c_str(), newPipeInfo->pipeAction_);
+            newPipeInfo->moduleInfo_.name.c_str(), newPipeInfo->pipeAction_);
 
         std::vector<uint64_t> sessionIdForLog{};
         for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
@@ -851,27 +855,33 @@ void AudioPipeSelector::GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioSt
 #endif
 }
 
-std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioPipeSelector::GetAdapterNameByStreamDesc(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, std::string &adapterName, std::string &pipeName)
 {
-    std::string name = "";
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, name, "streamDesc is nullptr");
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
-    CHECK_AND_RETURN_RET_LOG(streamPropInfo != nullptr, "", "StreamProp Info is null");
+    CHECK_AND_RETURN_LOG(streamPropInfo != nullptr, "StreamProp Info is null");
 
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Adapter info is null");
-        return "";
+        return;
     }
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
     if (adapterInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Pipe info is null");
-        return "";
+        return;
     }
-    name = adapterInfoPtr->adapterName;
-    return name;
+    adapterName = adapterInfoPtr->adapterName;
+    pipeName = pipeInfoPtr->name_;
+}
+
+static bool IsMultiStreamPrimary(const std::string &pipeName)
+{
+    return pipeName == "primary_typec_output" || pipeName == "primary_wired_output" ||
+           pipeName == "primary_hdmi_output" || pipeName == "primary_wireless_output";
 }
 
 static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
@@ -903,6 +913,10 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.name =
             AudioPolicyUtils::GetInstance().GetRemoteModuleName(streamDesc->newDeviceDescs_[0]->networkId_,
             AudioPolicyUtils::GetInstance().GetDeviceRole(streamDesc->newDeviceDescs_[0]->deviceType_)) + "_offload";
+    } else if (IsMultiStreamPrimary(pipeInfoPtr->name_)) {
+        info.moduleInfo_.className = "primary_extra";
+        // engine uses networkId to distinguish different renders
+        info.moduleInfo_.networkId = info.moduleInfo_.name;
     }
 }
 
@@ -963,7 +977,6 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]info.moduleInfo_.channels: %{public}s, "
         "info.moduleInfo_.channelLayout: %{public}s", info.moduleInfo_.channels.c_str(),
         info.moduleInfo_.channelLayout.c_str());
-    FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
     info.moduleInfo_.renderInIdleState = pipeInfoPtr->paProp_.renderInIdleState_;
@@ -971,6 +984,9 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     if (!streamDesc->newDeviceDescs_.empty()) {
         UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
+    // engine uses networkId to distinguish different renders,
+    // so we need to set networkId after UpdateMouleInfoWitchDevice;
+    FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.streamDescriptors_.push_back(streamDesc);
     info.streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -1117,7 +1133,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
             CHECK_AND_CONTINUE(pipeInfoPtr->paProp_.busAddress_ == pipeInfo->moduleInfo_.busAddress);
         }
 #else
-        CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName));
+        CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName, pipeInfoPtr->name_));
 #endif
 
         MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
@@ -1200,11 +1216,12 @@ void AudioPipeSelector::UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescri
 }
 
 bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName)
+    const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName, const std::string &pipeName)
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr && pipeInfo != nullptr, false);
 
-    CHECK_AND_RETURN_RET(pipeInfo->GetRoute() == streamDesc->GetRoute() && pipeInfo->IsSameAdapter(adapterName), false);
+    CHECK_AND_RETURN_RET(pipeInfo->GetRoute() == streamDesc->GetRoute() && pipeInfo->IsSameAdapter(adapterName) &&
+        pipeInfo->IsSameName(pipeName), false);
 
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();

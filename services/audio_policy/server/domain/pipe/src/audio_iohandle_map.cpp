@@ -198,6 +198,9 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     pipeInfo->id_ = ioHandle;
     pipeInfo->paIndex_ = paIndex;
     pipeInfo->name_ = moduleName;
+    if (pipeInfo->name_ == PRIMARY_SPEAKER) {
+        pipeInfo->name_ = PRIMARY_SPEAKER_PIPENAME;
+    }
     if (moduleInfo.role == "sink") {
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
         pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;

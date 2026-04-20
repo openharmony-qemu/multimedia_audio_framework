@@ -124,6 +124,11 @@ public:
         return adapterName_ == targetAdapterName;
     }
 
+    bool IsSameName(const std::string &targetPipeName) const
+    {
+        return name_ == targetPipeName;
+    }
+
     bool IsSameNetworkId(const std::string &targetNetworkId) const
     {
         return moduleInfo_.networkId == targetNetworkId;

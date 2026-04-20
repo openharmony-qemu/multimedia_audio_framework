@@ -28,9 +28,15 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
+#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enbale";
+    const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
+}
+
 OffloadAudioRenderSink::~OffloadAudioRenderSink()
 {
     if (sinkInited_) {
@@ -835,7 +841,16 @@ int32_t OffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outp
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
     currentActiveDevice_ = outputDevices[0];
-    return SUCCESS;
+    if (!IS_DEVICE_ENHANCED_SUPPORTED) {
+        return SUCCESS;
+    }
+    ChangePipeDevice(outputDevices);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD));
+    return ret;
 }
 
 bool OffloadAudioRenderSink::IsInA2dpOffload()

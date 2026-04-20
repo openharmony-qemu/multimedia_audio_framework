@@ -346,5 +346,32 @@ HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
 }
 
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_008
+ * @tc.desc   : Test primary_extra device class
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_008, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t typecId = idHandler.GetRenderIdByDeviceClass("primary_extra", "Typec_Speaker");
+    EXPECT_NE(typecId, HDI_INVALID_ID);
+    
+    uint32_t btId = idHandler.GetRenderIdByDeviceClass("primary_extra", "BT_Speaker");
+    EXPECT_NE(btId, HDI_INVALID_ID);
+    
+    uint32_t base = idHandler.ParseBase(typecId);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+    
+    uint32_t type = idHandler.ParseType(typecId);
+    EXPECT_EQ(type, HDI_ID_TYPE_PRIMARY);
+    
+    std::string info = idHandler.ParseInfo(typecId);
+    EXPECT_EQ(info, "Typec_Speaker");
+    
+    info = idHandler.ParseInfo(btId);
+    EXPECT_EQ(info, "BT_Speaker");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
