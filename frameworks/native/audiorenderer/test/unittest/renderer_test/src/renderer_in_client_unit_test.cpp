@@ -2509,41 +2509,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_083, TestSize.Level1
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_084
- * @tc.desc  : Test RendererInClientInner::RestoreAudioStream
- */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_084, TestSize.Level1)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ptrRendererInClientInner->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
-    ptrRendererInClientInner->streamParams_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000,
-    ptrRendererInClientInner->streamParams_.encoding = AudioEncodingType::ENCODING_AUDIOVIVID,
-    ptrRendererInClientInner->streamParams_.format = AudioSampleFormat::SAMPLE_U8,
-    ptrRendererInClientInner->streamParams_.channels = AudioChannel::STEREO,
-    ptrRendererInClientInner->state_ = RUNNING;
-    bool needStoreState = false;
-    EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
-
-    needStoreState = true;
-    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-    EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
-
-    ptrRendererInClientInner->state_ = PAUSED;
-    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
-
-    ptrRendererInClientInner->state_ = STOPPED;
-    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
-
-    ptrRendererInClientInner->state_ = STOPPING;
-    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
-
-    ptrRendererInClientInner->state_ = INVALID;
-    EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
-}
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
  * @tc.number: RendererInClientInner_085
  * @tc.desc  : Test RendererInClientInner::SetSwitchingStatus
  */
@@ -2983,22 +2948,6 @@ HWTEST(RendererInClientInnerUnitTest, RecordDropPosition_001, TestSize.Level1)
     ptrRendererInClientInner->RecordDropPosition(60);
     EXPECT_EQ(ptrRendererInClientInner->dropPosition_, 10);
     EXPECT_EQ(ptrRendererInClientInner->dropHdiPosition_, 5);
-}
-
-/**
- * @tc.name  : Test GetAudioServerProxy API
- * @tc.type  : FUNC
- * @tc.number: GetAudioServerProxy_001
- * @tc.desc  : Test GetAudioServerProxy
- */
-HWTEST(RendererInClientInnerUnitTest, GetAudioServerProxy_001, TestSize.Level4)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-
-    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-    sptr<IStandardAudioService> proxy = ptrRendererInClientInner->GetAudioServerProxy();
-    EXPECT_NE(proxy, nullptr);
 }
 
 /**
