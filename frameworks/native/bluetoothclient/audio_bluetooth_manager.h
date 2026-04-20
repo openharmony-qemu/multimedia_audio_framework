@@ -141,7 +141,7 @@ public:
     static void CheckHfpDeviceReconnect();
     static int32_t Connect(const std::string &macAddress);
 
-    static int32_t UpdateAudioScene(AudioStandard::AudioScene scene, bool forceSelected);
+    static int32_t UpdateAudioScene(AudioStandard::AudioScene scene, bool isScoSelected);
     static int32_t UpdateAudioScene(AudioStandard::AudioScene scene);
     static int32_t HandleScoWithRecongnition(bool handleFlag);
     static bool IsRecognitionStatus();
@@ -164,7 +164,7 @@ private:
     static std::atomic<AudioStandard::AudioScene> scene_;
     static BluetoothRemoteDevice activeHfpDevice_;
     static std::atomic<bool> isRecognitionScene_;
-    static std::atomic<bool> isForceSelected_;
+    static std::atomic<bool> isScoSelected_;
     static std::map<pid_t, bool> virtualCalls_;
     static std::mutex virtualCallMutex_;
 };
