@@ -1160,6 +1160,31 @@ bool AudioPipeManager::HasRunningRecognitionCapturerStream()
     return hasRunningRecognitionCapturerStream;
 }
 
+bool AudioPipeManager::HasRunningNormalCapturerStream(DeviceType type)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
+                (desc->capturerInfo_.sourceType == SOURCE_TYPE_MIC ||
+                 desc->capturerInfo_.sourceType == SOURCE_TYPE_WAKEUP ||
+                 desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_MESSAGE ||
+                 desc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER ||
+                 desc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED) &&
+                ((type == DEVICE_TYPE_NONE) ||
+                 (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
+                  desc->newDeviceDescs_[0]->deviceType_ == type))) {
+                AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
+                    desc->sessionId_, type);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool AudioPipeManager::IsOnPrimaryAdapter(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
