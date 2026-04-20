@@ -606,12 +606,20 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         auto sourceType = streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType;
         auto sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+        auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+        bool isScoDevice = streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+            streamDesc->newDeviceDescs_[0] != nullptr &&
+            streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+        if (isScoDevice) {
+            bool hasScoRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+            bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
+            bool isScoSelected = hasScoPlay || hasScoRecord;
+            Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isScoSelected);
+        }
         if (Util::IsScoSupportSource(sourceType)) {
             audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
         }
-        bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
-        Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isRecord);
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
     }
 }
@@ -954,6 +962,7 @@ void AudioCoreService::RemoveUnusedPipe()
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
     }
+    StopNoRunningPipe();
 }
 
 void AudioCoreService::RemoveUnusedRecordPipe()
@@ -3191,6 +3200,14 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
     }
     CHECK_AND_RETURN(isNeedUpdate);
     NotifyRemoteDeviceStatusUpdate(oldDesc);
+}
+
+void AudioCoreService::StopNoRunningPipe()
+{
+    std::vector<std::string> moduleNames = pipeManager_->GetNoRunningPipeModuleName();
+    for (auto moduleName : moduleNames) {
+        audioPolicyManager_.StopAudioPort(moduleName);
+    }
 }
 
 void AudioCoreService::GetFlagForUltraFastStream(

@@ -399,6 +399,12 @@ enum SleSelectState {
     USER_SELECT_SLE = 2,
 };
 
+enum HdPlaybackMode {
+    HD_NOT_SUPPORTED = 0,
+    APP_LEVEL,
+    DEVICE_LEVEL,
+};
+
 enum VolumeControlMode {
     DEFAULT_MODE = 0,
     LOCAL_MODE = DEFAULT_MODE,

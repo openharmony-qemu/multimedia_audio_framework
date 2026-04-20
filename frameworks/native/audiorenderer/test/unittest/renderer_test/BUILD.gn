@@ -30,6 +30,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../../../../../../services/audio_policy/client/include",
+    "../../../../../../services/audio_service/common/include/dfx",
     "../../../../../audio_utils/include",
     "../../../../audioschedule/include",
   ]

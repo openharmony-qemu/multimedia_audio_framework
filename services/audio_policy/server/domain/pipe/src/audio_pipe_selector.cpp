@@ -722,6 +722,7 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     SetPipeTypeByStreamType(commingPipe, incomingStream);
     ConcurrencyAction action = AudioConcurrencyManager::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
+    UpdateActionForHdPlay(existingStream, incomingStream, action);
     bool isIncomingStreamIsLoopback = incomingStream->capturerInfo_.isLoopback ||
         incomingStream->rendererInfo_.isLoopback;
     // No running offload can not concede incoming special pipe
@@ -781,29 +782,57 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         case PLAY_BOTH:
             break;
         case CONCEDE_INCOMING:
-            incomingStream->ResetToNormalRoute(false);
-            SetOriginalFlagForcedNormalIfNeed(incomingStream);
-            existingStream->SetFutureRoute(AUDIO_FLAG_NONE);
-            incomingStream->SetFutureRoute(incomingStream->GetRoute());
+            HandleConcedeIncoming(existingStream, incomingStream);
             break;
         case CONCEDE_EXISTING:
-            isUpdate = true;
-            if (existingStream->IsUseMoveToConcedeType()) {
-                existingStream->SetAction(AUDIO_STREAM_ACTION_MOVE);
-                // Do not move stream here, because it is still in for-each loop
-                streamsToMove.push_back(existingStream);
-            } else {
-                existingStream->SetAction(AUDIO_STREAM_ACTION_RECREATE);
-            }
-            // Set stream route flag to normal here so it will not affect later streams in loop
-            existingStream->ResetToNormalRoute(true);
-            SetOriginalFlagForcedNormalIfNeed(existingStream);
-            incomingStream->SetFutureRoute(AUDIO_FLAG_NONE);
-            existingStream->SetFutureRoute(existingStream->GetRoute());
+            isUpdate = HandleConcedeExisting(existingStream, incomingStream, streamsToMove);
+            break;
+        case CONCEDE_BOTH:
+            isUpdate = HandleConcedeBoth(existingStream, incomingStream, streamsToMove);
             break;
         default:
             break;
     }
+    return isUpdate;
+}
+
+void AudioPipeSelector::HandleConcedeIncoming(std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream)
+{
+    incomingStream->ResetToNormalRoute(false);
+    SetOriginalFlagForcedNormalIfNeed(incomingStream);
+    existingStream->SetFutureRoute(AUDIO_FLAG_NONE);
+    incomingStream->SetFutureRoute(incomingStream->GetRoute());
+}
+
+bool AudioPipeSelector::HandleConcedeExisting(std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
+{
+    bool isUpdate = true;
+    if (existingStream->IsUseMoveToConcedeType()) {
+        existingStream->SetAction(AUDIO_STREAM_ACTION_MOVE);
+        // Do not move stream here, because it is still in for-each loop
+        streamsToMove.push_back(existingStream);
+    } else {
+        existingStream->SetAction(AUDIO_STREAM_ACTION_RECREATE);
+    }
+    // Set stream route flag to normal here so it will not affect later streams in loop
+    existingStream->ResetToNormalRoute(true);
+    SetOriginalFlagForcedNormalIfNeed(existingStream);
+    incomingStream->SetFutureRoute(AUDIO_FLAG_NONE);
+    existingStream->SetFutureRoute(existingStream->GetRoute());
+    return isUpdate;
+}
+
+bool AudioPipeSelector::HandleConcedeBoth(std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
+{
+    bool isUpdate = HandleConcedeExisting(existingStream, incomingStream, streamsToMove);
+    incomingStream->ResetToNormalRoute(false);
+    SetOriginalFlagForcedNormalIfNeed(incomingStream);
+    incomingStream->SetFutureRoute(incomingStream->GetRoute());
     return isUpdate;
 }
 
@@ -1211,6 +1240,29 @@ int32_t AudioPipeSelector::SetCustomAudioMix(const std::string &zoneName, const 
 #else
     return SUCCESS;
 #endif
+}
+
+// If hd playback only supports app level, set normal routeflag for more than two active streams.
+void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
+{
+    CHECK_AND_RETURN(!existingStream->newDeviceDescs_.empty() && !incomingStream->newDeviceDescs_.empty(),
+        "newDeviceDescs_ empty");
+    auto existingHdPlayMode = existingStream->newDeviceDescs_[0]->hdPlaybackMode_;
+    auto incomingHdPlayMode = incomingStream->newDeviceDescs_[0]->hdPlaybackMode_;
+    CHECK_AND_RETURN(existingHdPlayMode == HdPlaybackMode::APP_LEVEL &&
+        incomingHdPlayMode == HdPlaybackMode::APP_LEVEL &&
+        (existingStream->IsRouteOffload() || incomingStream->IsRouteOffload()));
+
+    ConcurrencyAction newAction = action;
+    if (existingStream->IsRouteOffload()) {
+        newAction = (action == CONCEDE_INCOMING) ? CONCEDE_BOTH :
+            (action == PLAY_BOTH) ? CONCEDE_EXISTING : action;
+    } else if (incomingStream->IsRouteOffload()) {
+        newAction = (action == PLAY_BOTH) ? CONCEDE_INCOMING : action;
+    }
+    AUDIO_INFO_LOG("old action: %{public}d, update as %{public}d", action, newAction);
+    action = newAction;
 }
 } // namespace AudioStandard
 } // namespace OHOS

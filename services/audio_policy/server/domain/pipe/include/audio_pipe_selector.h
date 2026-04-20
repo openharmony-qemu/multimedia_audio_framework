@@ -45,6 +45,14 @@ private:
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
+    void HandleConcedeIncoming(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream);
+    bool HandleConcedeExisting(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream,
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
+    bool HandleConcedeBoth(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream,
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
     uint32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::string &adapterName, std::string &pipeName);
@@ -123,6 +131,9 @@ private:
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     bool IsMultiStreamPrimary(const std::string &pipeName);
     
+    void UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
+
     std::shared_ptr<AudioPipeManager> pipeManager_;
 };
 } // namespace AudioStandard

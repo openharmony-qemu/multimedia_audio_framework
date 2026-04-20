@@ -1051,6 +1051,16 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     CHECK_AND_RETURN(streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK);
 
+    bool isScoDevice = !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_[0] != nullptr &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+    if (isScoDevice) {
+        bool hasScoRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+        bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
+        bool isScoSelected = hasScoPlay || hasScoRecord;
+        Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isScoSelected);
+    }
+
     // Do not trigger FetchOutputDeviceAndRoute on single call stream stop,
     // FetchOutputDeviceAndRoute is triggered by AudioScene changes instead of a single call stream stop.
     if (!audioSceneManager_.IsPhoneCallOrChatSceneTriggeredByUid(streamDesc->callerUid_) ||

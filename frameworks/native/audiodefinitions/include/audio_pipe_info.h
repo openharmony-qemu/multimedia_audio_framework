@@ -56,6 +56,8 @@ public:
 
     bool softLinkFlag_ = false;
 
+    bool isRunning_ = false;
+
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> streamDescMap_ = {};
@@ -162,6 +164,8 @@ public:
     bool GetUltraFastFlag() const;
 
     bool HasStream();
+
+    bool IsPipeMatch(const std::string adapterName, const uint32_t targetFlag);
 
 private:
     void DumpCommonAttrs(std::string &dumpString);

@@ -2870,87 +2870,123 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_001, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsPipeMatch_002
- * @tc.desc: Test IsPipeMatch with pipeName not matching.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
+ * @tc.name  : UpdateActionForHdPlay_001
+ * @tc.number: UpdateActionForHdPlay_001
+ * @tc.desc  : Test UpdateActionForHdPlay when existingStream is Offload and action is CONCEDE_INCOMING.
  */
-HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_002, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_001, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
 
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
-    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    existingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    existingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
 
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    pipeInfo->adapterName_ = "primary";
-    pipeInfo->name_ = "primary_output";
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    incomingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
 
-    std::string adapterName = "primary";
-    std::string pipeName = "primary_typec_output";
-
-    bool result = audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName, pipeName);
-    EXPECT_FALSE(result);
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
+    EXPECT_EQ(action, CONCEDE_BOTH);
 }
 
 /**
- * @tc.name: IsPipeMatch_003
- * @tc.desc: Test IsPipeMatch with adapterName not matching.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
+ * @tc.name  : UpdateActionForHdPlay_002
+ * @tc.number: UpdateActionForHdPlay_002
+ * @tc.desc  : Test UpdateActionForHdPlay when existingStream is Offload and action is PLAY_BOTH.
  */
-HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_003, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_002, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
 
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
-    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    existingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    existingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
 
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    pipeInfo->adapterName_ = "primary";
-    pipeInfo->name_ = "primary_output";
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    incomingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
 
-    std::string adapterName = "remote";
-    std::string pipeName = "primary_output";
-
-    bool result = audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName, pipeName);
-    EXPECT_FALSE(result);
+    ConcurrencyAction action = PLAY_BOTH;
+    audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 
 /**
- * @tc.name: IsPipeMatch_004
- * @tc.desc: Test IsPipeMatch with routeFlag not matching.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
+ * @tc.name  : UpdateActionForHdPlay_003
+ * @tc.number: UpdateActionForHdPlay_003
+ * @tc.desc  : Test UpdateActionForHdPlay when existingStream is Offload and action is CONCEDE_EXISTING.
  */
-HWTEST_F(AudioPipeSelectorUnitTest, IsPipeMatch_004, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_003, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    ASSERT_NE(audioPipeSelector, nullptr);
 
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
-    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
-    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    existingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    existingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
 
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    pipeInfo->adapterName_ = "primary";
-    pipeInfo->name_ = "primary_output";
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    incomingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
 
-    std::string adapterName = "primary";
-    std::string pipeName = "primary_output";
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
 
-    bool result = audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName, pipeName);
-    EXPECT_FALSE(result);
+/**
+ * @tc.name  : UpdateActionForHdPlay_004
+ * @tc.number: UpdateActionForHdPlay_004
+ * @tc.desc  : Test UpdateActionForHdPlay when incomingStream is Offload and action is PLAY_BOTH.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    existingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    existingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    incomingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    ConcurrencyAction action = PLAY_BOTH;
+    audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
+    EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
+ * @tc.name  : UpdateActionForHdPlay_005
+ * @tc.number: UpdateActionForHdPlay_005
+ * @tc.desc  : Test UpdateActionForHdPlay when incomingStream is Offload and action is CONCEDE_INCOMING.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    existingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    existingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    incomingStream->newDeviceDescs_[0]->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
+    EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 } // namespace AudioStandard
 } // namespace OHOS

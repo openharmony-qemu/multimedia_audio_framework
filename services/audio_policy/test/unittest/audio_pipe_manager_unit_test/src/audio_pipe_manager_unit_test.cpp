@@ -1963,5 +1963,156 @@ HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_002, TestSize.Level1)
     audioPipeManager->ClearStandbyFlag(invalidSessionId);
     EXPECT_TRUE(streamDesc->isStandby_);
 }
+
+/**
+ * @tc.name  : CheckNoRunningCondition_001
+ * @tc.number: CheckNoRunningCondition_001
+ * @tc.desc  : Test CheckNoRunningCondition with REMOTE+NORMAL pipe calls CheckRemoteNoRunningCondition.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckNoRunningCondition_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = false;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto remoteOffloadPipe = std::make_shared<AudioPipeInfo>();
+    remoteOffloadPipe->adapterName_ = ADAPTER_TYPE_REMOTE;
+    remoteOffloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    audioPipeManager->AddAudioPipeInfo(remoteOffloadPipe);
+
+    bool result = audioPipeManager->CheckNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+    audioPipeManager->RemoveAudioPipeInfo(remoteOffloadPipe);
+}
+
+/**
+ * @tc.name  : CheckNoRunningCondition_002
+ * @tc.number: CheckNoRunningCondition_002
+ * @tc.desc  : Test CheckNoRunningCondition with non-REMOTE pipe returns false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckNoRunningCondition_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_PRIMARY;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->CheckNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : CheckRemoteNoRunningCondition_001
+ * @tc.number: CheckRemoteNoRunningCondition_001
+ * @tc.desc  : Test CheckRemoteNoRunningCondition returns true when conditions met and isRunning is true.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckRemoteNoRunningCondition_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    auto remoteOffloadPipe = std::make_shared<AudioPipeInfo>();
+    remoteOffloadPipe->adapterName_ = ADAPTER_TYPE_REMOTE;
+    remoteOffloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    remoteOffloadPipe->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(remoteOffloadPipe);
+
+    bool result = audioPipeManager->CheckRemoteNoRunningCondition(pipeInfo);
+    EXPECT_TRUE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+    audioPipeManager->RemoveAudioPipeInfo(remoteOffloadPipe);
+}
+
+/**
+ * @tc.name  : CheckRemoteNoRunningCondition_002
+ * @tc.number: CheckRemoteNoRunningCondition_002
+ * @tc.desc  : Test CheckRemoteNoRunningCondition returns false when remoteOffloadPipe is nullptr.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckRemoteNoRunningCondition_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->CheckRemoteNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : IsPipeNeedStop_001
+ * @tc.number: IsPipeNeedStop_001
+ * @tc.desc  : Test IsPipeNeedStop returns true when isRunning is true and sets isRunning to false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsPipeNeedStop_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->IsPipeNeedStop(pipeInfo);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(pipeInfo->isRunning_);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : IsPipeNeedStop_002
+ * @tc.number: IsPipeNeedStop_002
+ * @tc.desc  : Test IsPipeNeedStop returns false when isRunning is false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsPipeNeedStop_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->isRunning_ = false;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->IsPipeNeedStop(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

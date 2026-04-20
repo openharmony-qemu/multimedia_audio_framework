@@ -95,6 +95,13 @@ int32_t AudioDevicesClientManager::SelectOutputDevice(sptr<AudioRendererFilter> 
         audioDeviceSelectMode);
 }
 
+int32_t AudioDevicesClientManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_INVALID_PARAM, "invalid parameter");
+    AUDIO_DEBUG_LOG("[%{public}d] RestoreOutputDevice: uid<%{public}d>", getpid(), audioRendererFilter->uid);
+    return AudioPolicyManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
+}
+
 int32_t AudioDevicesClientManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {

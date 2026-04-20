@@ -18,6 +18,8 @@
 
 #include "wireless_conflict_handler.h"
 
+#include "audio_policy_log.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -58,11 +60,36 @@ int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sou
     return PRIORITY_NONE;
 }
 
+bool WirelessConflictHandler::IsScoDevice(const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    CHECK_AND_RETURN_RET(device != nullptr, false);
+    return device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+}
+
+bool WirelessConflictHandler::HasNonPairScoSelected()
+{
+    for (auto &info : outputStreamDevices_) {
+        if (IsScoDevice(info.device) && info.routerType != ROUTER_TYPE_PAIR_DEVICE) {
+            return true;
+        }
+    }
+    for (auto &info : inputStreamDevices_) {
+        if (IsScoDevice(info.device) && info.routerType != ROUTER_TYPE_PAIR_DEVICE) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
     StreamUsage streamUsage, SourceType sourceType, bool isOutput)
 {
     if (device == nullptr || device->macAddress_.empty()) {
         return false;
+    }
+    
+    if (IsScoDevice(device) && routerType == ROUTER_TYPE_PAIR_DEVICE && !HasNonPairScoSelected()) {
+        return true;
     }
     
     int currentPriority = GetPriority(streamUsage, sourceType, routerType, isOutput);
