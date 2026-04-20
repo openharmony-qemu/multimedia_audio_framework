@@ -7151,6 +7151,105 @@ HWTEST_F(AudioCoreServiceUnitTest, GetEnhancedRoutingSupported_001, TestSize.Lev
     EXPECT_EQ(GetServerPtr()->coreService_->GetEnhancedRoutingSupported(), supported);
 }
 
+struct DirectTestParams {
+    AudioSampleFormat format;
+    AudioSamplingRate samplingRate;
+    DeviceType deviceType;
+    bool expectedResult;
+    std::string description;
+};
+
+static std::shared_ptr<AudioStreamDescriptor> CreateDirectTestStream(const DirectTestParams& params)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = params.format;
+    streamDesc->streamInfo_.samplingRate = params.samplingRate;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = params.deviceType;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    
+    return streamDesc;
+}
+
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_001 start");
+    
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, DEVICE_TYPE_USB_HEADSET, true, "48k+24bit+USB"},
+        {SAMPLE_S32LE, SAMPLE_RATE_48000, DEVICE_TYPE_USB_HEADSET, true, "48k+32bit+USB"},
+        {SAMPLE_S24LE, SAMPLE_RATE_88200, DEVICE_TYPE_WIRED_HEADSET, true, "88.2k+24bit+WIRED"},
+        {SAMPLE_S32LE, SAMPLE_RATE_88200, DEVICE_TYPE_WIRED_HEADSET, true, "88.2k+32bit+WIRED"},
+        {SAMPLE_S24LE, SAMPLE_RATE_96000, DEVICE_TYPE_USB_HEADSET, true, "96k+24bit+USB"},
+        {SAMPLE_S32LE, SAMPLE_RATE_96000, DEVICE_TYPE_USB_HEADSET, true, "96k+32bit+USB"},
+        {SAMPLE_S24LE, SAMPLE_RATE_176400, DEVICE_TYPE_NEARLINK, true, "176.4k+24bit+NEARLINK"},
+        {SAMPLE_S32LE, SAMPLE_RATE_176400, DEVICE_TYPE_NEARLINK, true, "176.4k+32bit+NEARLINK"},
+        {SAMPLE_S24LE, SAMPLE_RATE_192000, DEVICE_TYPE_USB_HEADSET, true, "192k+24bit+USB"},
+        {SAMPLE_S32LE, SAMPLE_RATE_192000, DEVICE_TYPE_USB_HEADSET, true, "192k+32bit+USB"},
+    };
+    
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
+}
+
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_002 start");
+    
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S24LE, SAMPLE_RATE_44100, DEVICE_TYPE_USB_HEADSET, false, "44.1k unsupported rate"},
+        {SAMPLE_S32LE, SAMPLE_RATE_64000, DEVICE_TYPE_USB_HEADSET, false, "64k unsupported rate"},
+        {SAMPLE_S24LE, SAMPLE_RATE_384000, DEVICE_TYPE_USB_HEADSET, false, "384k unsupported rate"},
+    };
+    
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
+}
+
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_003 start");
+    
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S16LE, SAMPLE_RATE_48000, DEVICE_TYPE_USB_HEADSET, false, "16bit unsupported format"},
+        {SAMPLE_U8, SAMPLE_RATE_96000, DEVICE_TYPE_USB_HEADSET, false, "U8 unsupported format"},
+        {SAMPLE_F32LE, SAMPLE_RATE_192000, DEVICE_TYPE_USB_HEADSET, false, "F32LE unsupported format"},
+    };
+    
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
+}
+
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_004 start");
+    
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, DEVICE_TYPE_BLUETOOTH_A2DP, false, "BLUETOOTH_A2DP unsupported device"},
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, DEVICE_TYPE_SPEAKER, false, "SPEAKER unsupported device"},
+    };
+    
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
+}
+
 /**
 * @tc.name  : Test NotifyStandbyStatus.
 * @tc.number: NotifyStandbyStatus_001
