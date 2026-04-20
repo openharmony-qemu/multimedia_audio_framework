@@ -1276,6 +1276,7 @@ int32_t RendererInServer::Standby(bool isStandbyOn)
     auto action = std::make_shared<NotifyStandbyAction>(streamIndex_, isStandbyOn);
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    CHECK_AND_RETURN_RET_LOG(asyncHandler_ != nullptr, ERR_OPERATION_FAILED, "asyncHandler is null");
     bool ret = asyncHandler_->PostAsyncAction(desc);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "Post failed for sessionId %{public}u", streamIndex_);
     return SUCCESS;
