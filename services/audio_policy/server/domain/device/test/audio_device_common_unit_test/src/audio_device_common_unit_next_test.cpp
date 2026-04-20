@@ -350,54 +350,6 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_006, TestSize.Level4)
 }
 
 /**
-* @tc.name  : Test ClientDiedDisconnectScoNormal.
-* @tc.number: ClientDiedDisconnectScoNormal_001
-* @tc.desc  : Test ClientDiedDisconnectScoNormal interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoNormal_001, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    AudioDeviceDescriptor outputDevice;
-    outputDevice.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDevice(outputDevice);
-
-    audioDeviceCommon.streamCollector_.audioRendererChangeInfos_.clear();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererState = RENDERER_RUNNING;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    audioDeviceCommon.streamCollector_.audioRendererChangeInfos_.push_back(rendererChangeInfo);
-
-    audioDeviceCommon.ClientDiedDisconnectScoNormal();
-    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentOutputDeviceType(), DEVICE_TYPE_BLUETOOTH_SCO);
-}
-
-/**
-* @tc.name  : Test ClientDiedDisconnectScoNormal.
-* @tc.number: ClientDiedDisconnectScoNormal_002
-* @tc.desc  : Test ClientDiedDisconnectScoNormal interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoNormal_002, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    AudioDeviceDescriptor outputDevice;
-    outputDevice.deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDevice(outputDevice);
-
-    audioDeviceCommon.streamCollector_.audioRendererChangeInfos_.clear();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererState = RENDERER_RUNNING;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    audioDeviceCommon.streamCollector_.audioRendererChangeInfos_.push_back(rendererChangeInfo);
-
-    audioDeviceCommon.ClientDiedDisconnectScoNormal();
-    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentOutputDeviceType(), DEVICE_TYPE_SPEAKER);
-}
-
-/**
 * @tc.name  : Test ClientDiedDisconnectScoRecognition.
 * @tc.number: ClientDiedDisconnectScoRecognition_001
 * @tc.desc  : Test ClientDiedDisconnectScoRecognition interface.
@@ -413,7 +365,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_001, 
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
 
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
-    EXPECT_TRUE(audioDeviceCommon.streamCollector_.HasRunningRecognitionCapturerStream());
+    EXPECT_TRUE(audioDeviceCommon.pipeManager_->HasRunningRecognitionCapturerStream());
 }
 
 /**
