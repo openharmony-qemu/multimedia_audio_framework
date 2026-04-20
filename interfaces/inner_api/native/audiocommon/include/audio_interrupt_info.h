@@ -313,6 +313,9 @@ public:
     AudioSessionActiveBehaviors behaviorFlags_ {};
     AudioSessionStrategy independentStrategy = { AudioConcurrencyMode::INVALID };
     bool mixWithWakeUp = false;
+    int64_t startTimeNs = 0;
+    bool registerCallbackFlag = false;
+    bool activatedRegisterCallbackFlag = false;
     bool isCallWaitingTone = false;
 
     AudioInterrupt() = default;
@@ -369,6 +372,9 @@ public:
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.muteWhenInterruptFlag);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.independentStrategy.concurrencyMode));
         res = res && parcel.WriteBool(interrupt.mixWithWakeUp);
+        res = res && parcel.WriteInt64(interrupt.startTimeNs);
+        res = res && parcel.WriteBool(interrupt.registerCallbackFlag);
+        res = res && parcel.WriteBool(interrupt.activatedRegisterCallbackFlag);
         res = res && parcel.WriteBool(interrupt.isCallWaitingTone);
         return res;
     }
@@ -405,6 +411,9 @@ public:
         interrupt.behaviorFlags_.muteWhenInterruptFlag = parcel.ReadBool();
         interrupt.independentStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
         interrupt.mixWithWakeUp = parcel.ReadBool();
+        interrupt.startTimeNs = parcel.ReadInt64();
+        interrupt.registerCallbackFlag = parcel.ReadBool();
+        interrupt.activatedRegisterCallbackFlag = parcel.ReadBool();
         interrupt.isCallWaitingTone = parcel.ReadBool();
     }
 

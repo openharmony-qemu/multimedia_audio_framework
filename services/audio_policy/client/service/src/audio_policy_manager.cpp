@@ -1188,6 +1188,13 @@ int32_t AudioPolicyManager::ActivateAudioInterrupt(
     return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
 }
 
+int32_t AudioPolicyManager::SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetRegisterInterruptCallbackFlag(streamId, interruptCallbackFlag);
+}
+
 int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
     AudioConcurrencyMode audioConcurrencyMode = static_cast<AudioConcurrencyMode>(mode);
@@ -2348,7 +2355,8 @@ void AudioPolicyManager::AudioSessionManagerCallback()
     cbSharedPtr->OnAudioPolicyServiceDied();
 }
 
-int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
+int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &strategy,
+    const bool stateChangeCallbackFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -2359,7 +2367,7 @@ int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &str
             return result;
         }
     }
-    return gsp->ActivateAudioSession(static_cast<int32_t>(strategy.concurrencyMode));
+    return gsp->ActivateAudioSession(static_cast<int32_t>(strategy.concurrencyMode), stateChangeCallbackFlag);
 }
 
 int32_t AudioPolicyManager::DeactivateAudioSession()
@@ -2485,6 +2493,20 @@ int32_t AudioPolicyManager::SetAudioSessionScene(const AudioSessionScene audioSe
         }
     }
     return gsp->SetAudioSessionScene(static_cast<int32_t>(audioSessionScene));
+}
+
+int32_t AudioPolicyManager::SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback client");
+            return result;
+        }
+    }
+    return gsp->SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
 }
 
 int32_t AudioPolicyManager::SetAudioSessionStateChangeCallback(

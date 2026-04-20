@@ -575,6 +575,13 @@ bool PermissionUtil::VerifySystemPermission()
     return false;
 }
 
+bool PermissionUtil::IsHap()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return tokenTypeFlag == Security::AccessToken::TOKEN_HAP;
+}
+
 bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_t tokenId)
 {
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);

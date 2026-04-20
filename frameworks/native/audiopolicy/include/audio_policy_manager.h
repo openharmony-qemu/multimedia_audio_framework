@@ -271,13 +271,17 @@ public:
 
     static void AudioSessionManagerCallback();
 
-    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy, const bool stateChangeCallbackFlag = false);
 
     int32_t DeactivateAudioSession();
 
     bool IsAudioSessionActivated();
 
     bool IsOtherMediaPlaying();
+
+    int32_t SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag);
+
+    int32_t SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag);
 
     int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
 

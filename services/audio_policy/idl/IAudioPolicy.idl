@@ -226,7 +226,7 @@ interface IAudioPolicy {
     void SetAudioEnhanceProperty([in] AudioEnhancePropertyArray propertyArray);
     void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray);
     void InjectInterruption([in] String networkId, [in] InterruptEvent event);
-    void ActivateAudioSession([in] int strategy);
+    void ActivateAudioSession([in] int strategy, [in] boolean stateChangeCallbackFlag);
     void DeactivateAudioSession();
     void IsAudioSessionActivated([out] boolean retIsActivated);
     void SetInputDevice([in] int deviceType, [in] unsigned int session_ID, [in] int sourceType, [in] boolean isRunning);
@@ -347,4 +347,6 @@ interface IAudioPolicy {
     void SetAudioZoneVolumeConfig([in] String zoneName, [in] List<AudioZoneVolumeConfig> configs);
     void TriggerAudioZoneVolumeSync();
     void SetMediaOutputDevice([in] int deviceType /* deviceType */);
+    void SetRegisterInterruptCallbackFlag([in] unsigned int streamId, [in] boolean interruptCallbackFlag);
+    void SetRegisterStateChangeCallbackFlag([in] boolean interruptCallbackFlag);
 }

@@ -174,6 +174,7 @@ public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
+    static bool IsHap();
     static bool VerifyBluetoothPermission();
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool VerifyGeneralPermission(
