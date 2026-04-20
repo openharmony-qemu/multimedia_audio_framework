@@ -65,13 +65,13 @@ int32_t AudioHearingAidDeviceBehavior::ActivateDevice(const std::shared_ptr<Audi
 
     std::string networkId = AudioActiveDevice::GetInstance().GetCurrentOutputDeviceNetworkId();
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_HEARING_AID);
-    result = LoadHearingAidModule(DEVICE_TYPE_HEARING_AID, audioStreamInfo, networkId, sinkName, SOURCE_TYPE_INVALID);
+    result = LoadHearingAidModule(deviceDesc, audioStreamInfo, networkId, sinkName, SOURCE_TYPE_INVALID);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadHearingAidModule failed %{public}d", result);
 #endif
     return result;
 }
 
-int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(DeviceType deviceType,
+int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
     const AudioStreamInfo &audioStreamInfo, std::string networkId, std::string sinkName, SourceType sourceType)
 {
     std::list<AudioModuleInfo> moduleInfoList;
@@ -90,7 +90,7 @@ int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(DeviceType deviceTyp
             continue;
         }
         DeviceRole configRole = OUTPUT_DEVICE;
-        DeviceRole deviceRole = deviceType == DEVICE_TYPE_HEARING_AID ? OUTPUT_DEVICE : INPUT_DEVICE;
+        DeviceRole deviceRole = deviceDesc->deviceType_ == DEVICE_TYPE_HEARING_AID ? OUTPUT_DEVICE : INPUT_DEVICE;
         AUDIO_INFO_LOG("Load hearingAid module [%{public}s], role[%{public}d], config role[%{public}d]",
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) {continue;}
@@ -120,6 +120,8 @@ int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(DeviceType deviceTyp
             CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_OPERATION_FAILED, "pipeManager is null");
             pipeManager->AddAudioPipeInfo(pipeInfo);
             AUDIO_INFO_LOG("Add PipeInfo %{public}u in load hearingAid.", pipeInfo->id_);
+            PipeDeviceVolumeInfo info(pipeInfo->id_, deviceDesc, {STREAM_VOICE_CALL});
+            AudioAdapterManager::GetInstance().UpdateAudioPipeVolume({info});
         }
     }
 

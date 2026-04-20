@@ -45,7 +45,7 @@ public:
     }
 
     uint32_t GetOffloadSessionId(OffloadAdapter offloadAdapter);
-    void SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_t sessionId);
+    void SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_t sessionId, uint32_t ioHandle);
     void UnsetOffloadStatus(uint32_t sessionId);
     void HandlePowerStateChanged(PowerMgr::PowerState state);
     void UpdateOffloadStatusFromUpdateTracker(uint32_t sessionId, RendererState state);
@@ -65,7 +65,7 @@ private:
     }
     ~AudioOffloadStream() {}
 
-    void SetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter);
+    void SetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter, uint32_t ioHandle);
     void UnsetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter);
 
 private:

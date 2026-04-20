@@ -566,9 +566,7 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 {
     struct VolumeValues volumes;
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamType());
-    std::string deviceClass = GetDeviceClass();
-    std::string volumeDeviceClass = deviceClass == "remote_offload" ? "remote" : deviceClass;
-    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, volumeDeviceClass, &volumes);
+    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, renderId_, &volumes);
     float volumeBeg = AudioVolume::GetInstance()->GetHistoryVolume(GetSessionId());
     if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",

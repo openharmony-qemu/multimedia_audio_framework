@@ -32,8 +32,6 @@ class AudioServiceAdapterCallback {
 public:
     virtual void OnAudioStreamRemoved(const uint64_t sessionID) = 0;
 
-    virtual void OnSetVolumeDbCb() = 0;
-
     virtual ~AudioServiceAdapterCallback() {}
 };
 

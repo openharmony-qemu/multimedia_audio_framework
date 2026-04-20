@@ -29,6 +29,7 @@
 #include "hpae_info.h"
 #include "audio_engine_log.h"
 #include "audio_errors.h"
+#include "util/id_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -132,7 +133,8 @@ void HpaeGainNode::ResetVolume()
         curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
     } else {
         struct VolumeValues volumes;
-        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), rendererId, &volumes);
     }
     audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
     audioVolume->Monitor(GetSessionId(), true);
@@ -260,7 +262,8 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
         preSystemGain = audioVolume->GetHistoryVolume(GetSessionId());
         durationMs = audioVolume->GetDurationMs(GetSessionId());
     } else {
-        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), rendererId, &volumes);
         preSystemGain = volumes.volumeHistory;
         durationMs = volumes.durationMs;
     }
