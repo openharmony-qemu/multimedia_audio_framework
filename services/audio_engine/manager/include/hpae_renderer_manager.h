@@ -164,6 +164,7 @@ private:
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
+    void StopInterphoneSinkIfNeeded();
 
 private:
 
