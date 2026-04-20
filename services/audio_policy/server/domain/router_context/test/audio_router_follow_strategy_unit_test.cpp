@@ -53,7 +53,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_EARPIECE);
     EXPECT_EQ(appResult->deviceId_, earpiece->deviceId_);
 
-    strategy.SetMediaOutputDevice(SYSTEM_UID, 1, nullptr);
+    strategy.SetMediaOutputDevice(SYSTEM_UID, 1, std::make_shared<AudioDeviceDescriptor>());
 
     systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
     ASSERT_NE(systemResult, nullptr);
@@ -539,7 +539,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_EARPIECE);
     EXPECT_EQ(appResult->deviceId_, earpiece->deviceId_);
 
-    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
+    strategy.SetCallOutputDevice(
+        SYSTEM_UID, TEST_STREAM_INVALID_ID, std::make_shared<AudioDeviceDescriptor>());
 
     systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
     ASSERT_NE(systemResult, nullptr);
@@ -609,7 +610,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
 
     strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
 
-    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
+    strategy.SetCallOutputDevice(
+        SYSTEM_UID, TEST_STREAM_INVALID_ID, std::make_shared<AudioDeviceDescriptor>());
 
     auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
     ASSERT_NE(systemResult, nullptr);
@@ -632,7 +634,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
 
     strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
 
-    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, nullptr);
+    strategy.SetCallOutputDevice(
+        TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, std::make_shared<AudioDeviceDescriptor>());
 
     auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
@@ -785,25 +788,29 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
 
     AudioRouterFollowStrategy strategy;
 
-    strategy.SetMediaOutputDevice(SYSTEM_UID, -1, earpiece);
-    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, earpiece);
+    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID);
     ASSERT_NE(systemResult, nullptr);
     EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_EARPIECE);
-    EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
 
-    strategy.SetMediaOutputDevice(TEST_APP_UID_10001, -1, speaker);
+    strategy.SetMediaOutputDevice(TEST_APP_UID_10001, INVALID_STREAM_ID, speaker);
     AudioRouterInfra::GetInstance().UpdateOutputStreamState(
         TEST_APP_UID_10001, 100000, STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
-    auto appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    AudioRouterInfra::GetInstance().UpdateAppForegroundState(TEST_APP_UID_10001, true);
+    auto appResult = strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID);
     ASSERT_NE(appResult, nullptr);
 
-    strategy.SetMediaOutputDevice(SYSTEM_UID, -1, earpiece);
-    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, speaker);
+    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID);
     ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_SPEAKER);
 
-    strategy.SetMediaOutputDevice(SYSTEM_UID, -1, nullptr);
-    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    strategy.SetMediaOutputDevice(TEST_APP_UID_10001, -1, nullptr);
+    strategy.SetMediaOutputDevice(
+        SYSTEM_UID, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
+    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_SPEAKER);
+    strategy.SetMediaOutputDevice(
+        TEST_APP_UID_10001, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
 }
 }
 }

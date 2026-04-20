@@ -27,6 +27,14 @@ void AudioPipeManagerUnitTest::TearDownTestCase(void) {}
 void AudioPipeManagerUnitTest::SetUp(void) {}
 void AudioPipeManagerUnitTest::TearDown(void) {}
 
+static std::shared_ptr<AudioStreamDescriptor> MakeCallStreamDesc(StreamUsage usage, AudioStreamStatus status)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = usage;
+    streamDesc->streamStatus_ = status;
+    return streamDesc;
+}
+
 /**
  * @tc.name: Init_001
  * @tc.desc: Test Init when adapter info has been loaded.
@@ -1237,6 +1245,99 @@ HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_002, Test
 }
 
 /**
+ * @tc.name: GetLastestRunningCallStreamUsage_001
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns running modem stream usage first.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    audioPipeManager->modemCommunicationIdMap_[100000] =
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_STATUS_STARTED);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_002
+ * @tc.desc: Test GetLastestRunningCallStreamUsage skips invalid modem and pipe entries, then returns voice usage.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    audioPipeManager->modemCommunicationIdMap_[100000] = nullptr;
+    audioPipeManager->modemCommunicationIdMap_[100001] =
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_STATUS_STOPPED);
+
+    audioPipeManager->curPipeList_.push_back(nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(nullptr);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_COMMUNICATION, STREAM_STATUS_STARTED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_VOICE_COMMUNICATION);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_003
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns running video communication usage from pipe list.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_VIDEO_COMMUNICATION, STREAM_STATUS_STARTED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_VIDEO_COMMUNICATION);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_004
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns unknown when no running call stream exists.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_004, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_VOICE_COMMUNICATION, STREAM_STATUS_STOPPED));
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_MUSIC, STREAM_STATUS_STARTED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_UNKNOWN);
+}
+
+/**
  * @tc.name: GetNormalSourceInfo_001
  * @tc.desc: Test GetNormalSourceInfo when isEcFeatureEnable is true.
  * @tc.type: FUNC
@@ -1738,6 +1839,207 @@ HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_003, TestSize.Level1)
     uint32_t targetSessionId = 10000;
     bool ret = audioPipeManager->IsOnPrimaryAdapter(targetSessionId);
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test ClearStandbyFlag.
+ * @tc.number: ClearStandbyFlag_001.
+ * @tc.desc  : Valid sessionId, streamDesc exists, sets isStandby_ to false
+ */
+HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+    streamDesc->isStandby_ = true;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t targetSessionId = 10000;
+    audioPipeManager->ClearStandbyFlag(targetSessionId);
+    EXPECT_FALSE(streamDesc->isStandby_);
+}
+
+/**
+ * @tc.name  : Test ClearStandbyFlag.
+ * @tc.number: ClearStandbyFlag_002.
+ * @tc.desc  : Invalid sessionId, streamDesc doesn't exist, returns early without modification
+ */
+HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+    streamDesc->isStandby_ = true;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t invalidSessionId = 99999;
+    audioPipeManager->ClearStandbyFlag(invalidSessionId);
+    EXPECT_TRUE(streamDesc->isStandby_);
+}
+
+/**
+ * @tc.name  : CheckNoRunningCondition_001
+ * @tc.number: CheckNoRunningCondition_001
+ * @tc.desc  : Test CheckNoRunningCondition with REMOTE+NORMAL pipe calls CheckRemoteNoRunningCondition.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckNoRunningCondition_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = false;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto remoteOffloadPipe = std::make_shared<AudioPipeInfo>();
+    remoteOffloadPipe->adapterName_ = ADAPTER_TYPE_REMOTE;
+    remoteOffloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    audioPipeManager->AddAudioPipeInfo(remoteOffloadPipe);
+
+    bool result = audioPipeManager->CheckNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+    audioPipeManager->RemoveAudioPipeInfo(remoteOffloadPipe);
+}
+
+/**
+ * @tc.name  : CheckNoRunningCondition_002
+ * @tc.number: CheckNoRunningCondition_002
+ * @tc.desc  : Test CheckNoRunningCondition with non-REMOTE pipe returns false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckNoRunningCondition_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_PRIMARY;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->CheckNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : CheckRemoteNoRunningCondition_001
+ * @tc.number: CheckRemoteNoRunningCondition_001
+ * @tc.desc  : Test CheckRemoteNoRunningCondition returns true when conditions met and isRunning is true.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckRemoteNoRunningCondition_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    auto remoteOffloadPipe = std::make_shared<AudioPipeInfo>();
+    remoteOffloadPipe->adapterName_ = ADAPTER_TYPE_REMOTE;
+    remoteOffloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    remoteOffloadPipe->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(remoteOffloadPipe);
+
+    bool result = audioPipeManager->CheckRemoteNoRunningCondition(pipeInfo);
+    EXPECT_TRUE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+    audioPipeManager->RemoveAudioPipeInfo(remoteOffloadPipe);
+}
+
+/**
+ * @tc.name  : CheckRemoteNoRunningCondition_002
+ * @tc.number: CheckRemoteNoRunningCondition_002
+ * @tc.desc  : Test CheckRemoteNoRunningCondition returns false when remoteOffloadPipe is nullptr.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckRemoteNoRunningCondition_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->CheckRemoteNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : IsPipeNeedStop_001
+ * @tc.number: IsPipeNeedStop_001
+ * @tc.desc  : Test IsPipeNeedStop returns true when isRunning is true and sets isRunning to false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsPipeNeedStop_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->IsPipeNeedStop(pipeInfo);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(pipeInfo->isRunning_);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : IsPipeNeedStop_002
+ * @tc.number: IsPipeNeedStop_002
+ * @tc.desc  : Test IsPipeNeedStop returns false when isRunning is false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsPipeNeedStop_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->isRunning_ = false;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->IsPipeNeedStop(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

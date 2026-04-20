@@ -223,6 +223,7 @@ void AudioPerformanceMonitor::NotifyXperf(int32_t faultcode, uint32_t uid, uint3
 
 void AudioPerformanceMonitor::UpdateIsBackPlay(int32_t appPid, bool isBackPlay)
 {
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     for (auto it = silenceDetectMap_.begin(); it != silenceDetectMap_.end(); ++it) {
         if (it->second.appPid == appPid) {
             it->second.isBackPlay = isBackPlay;
@@ -232,16 +233,19 @@ void AudioPerformanceMonitor::UpdateIsBackPlay(int32_t appPid, bool isBackPlay)
 
 void AudioPerformanceMonitor::UpdateIsUseArk(uint32_t sessionId, bool isUseArk)
 {
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     silenceDetectMap_[sessionId].isUseArk = isUseArk;
 }
 
 void AudioPerformanceMonitor::UpdateIsTimeoutCB(uint32_t sessionId, bool isTimeoutCb)
 {
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     silenceDetectMap_[sessionId].isTimeoutCb = isTimeoutCb;
 }
 
 void AudioPerformanceMonitor::UpdateIsNoDdl(uint32_t sessionId, bool isNoDdl)
 {
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     silenceDetectMap_[sessionId].isNoDdl = isNoDdl;
 }
 

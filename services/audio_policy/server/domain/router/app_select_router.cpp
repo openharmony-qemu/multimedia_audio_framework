@@ -32,13 +32,13 @@ namespace AudioStandard {
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     const uint32_t sessionID)
 {
-    return AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(clientUID, sessionID);
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     const uint32_t sessionID)
 {
-    return AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(clientUID, sessionID);
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,

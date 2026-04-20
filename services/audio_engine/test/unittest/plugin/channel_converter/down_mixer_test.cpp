@@ -202,6 +202,25 @@ HWTEST_F(DownMixerTest, CheckIsHOATest, TestSize.Level0)
     EXPECT_EQ(true, CheckIsHOA(CH_LAYOUT_HOA_ORDER2_ACN_SN3D));
     EXPECT_EQ(false, CheckIsHOA(CH_LAYOUT_UNKNOWN));
 }
+
+/**
+ * @tc.name : Test SetNormalization API
+ * @tc.type : FUNC
+ * @tc.number : SetParam
+ * @tc.desc : Test SetNormalization interface
+*/
+HWTEST_F(DownMixerTest, SetNormalizationTest, TestSize.Level0)
+{
+    DownMixer downMixer;
+    bool normalizing = true;
+    downMixer.SetNormalization(normalizing);
+    EXPECT_EQ(true, downMixer.normalizing_);
+
+    normalizing = false;
+    downMixer.SetNormalization(normalizing);
+    EXPECT_EQ(false, downMixer.normalizing_);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -231,7 +231,8 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithDeviceInternal_001, TestSize
     int32_t result = ptrAudioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(
         streamType, volumeLevel, isUpdateUi, deviceType);
 
-    EXPECT_EQ(result, ptrAudioPolicyServer->SetSingleStreamVolumeWithDevice(
+    auto &audioVolumeManager = ptrAudioPolicyServer->audioVolumeManager_;
+    EXPECT_EQ(result, audioVolumeManager.SetSingleStreamVolumeWithDevice(
         streamType, volumeLevel, isUpdateUi, deviceType));
 }
 
@@ -1069,10 +1070,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_042, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
 
     AudioStreamType streamType = STREAM_ALL;
-    int res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    int res = ptrAudioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamType);
     EXPECT_EQ(res, 5);
     streamType = STREAM_MUSIC;
-    res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    res = ptrAudioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamType);
     EXPECT_EQ(res, 5);
 }
 
@@ -1340,6 +1341,27 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_002, TestSize.Level1
     EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
     ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
     ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+}
+
+/**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_003
+* @tc.desc  : Test AudioPolicyServer::MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    desc.deviceRole_ == INPUT_DEVICE;
+    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
+    ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_WIRED_MICIN);
 }
 
 /**
@@ -2618,7 +2640,8 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_127, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    server->UpdateSystemMuteStateAccordingMusicState(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, false, true);
+    server->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, false, true);
 }
 
 /**
@@ -2633,10 +2656,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_128, TestSize.Level1)
 
     bool isUpdateUi = true;
     server->audioPolicyServerHandler_ = nullptr;
-    server->SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 
     server->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    server->SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 }
 
 /**
@@ -2667,12 +2692,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_130, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     server->coreService_ = std::make_shared<AudioCoreService>();
-    server->ProcUpdateRingerModeForMute(false, true);
-    server->supportVibrator_ = false;
-    server->ProcUpdateRingerModeForMute(true, true);
+    server->audioVolumeManager_.ProcUpdateRingerModeForMute(false, true);
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = false;
+    server->audioVolumeManager_.ProcUpdateRingerModeForMute(true, true);
 
-    server->supportVibrator_ = true;
-    server->ProcUpdateRingerModeForMute(true, true);
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = true;
+    server->audioVolumeManager_.ProcUpdateRingerModeForMute(true, true);
 }
 
 /**
@@ -2722,10 +2747,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_133, TestSize.Level1)
 
     bool isUpdateUi = true;
     server->audioPolicyServerHandler_ = nullptr;
-    server->SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 
     server->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    server->SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 }
 
 /**
@@ -2739,10 +2766,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_134, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     server->coreService_ = std::make_shared<AudioCoreService>();
-    server->supportVibrator_ = true;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = true;
     server->audioVolumeManager_.ProcUpdateRingerMode();
 
-    server->supportVibrator_ = false;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = false;
     server->audioVolumeManager_.ProcUpdateRingerMode();
 }
 
@@ -3074,8 +3101,8 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_155, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    server->GetSystemVolumeLevelInternal(AudioStreamType::STREAM_ALL);
-    server->GetSystemVolumeLevelInternal(AudioStreamType::STREAM_VOICE_RING);
+    server->audioVolumeManager_.GetSystemVolumeLevelInterface(AudioStreamType::STREAM_ALL);
+    server->audioVolumeManager_.GetSystemVolumeLevelInterface(AudioStreamType::STREAM_VOICE_RING);
 }
 
 /**
@@ -3105,19 +3132,21 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_157, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     int32_t volumeLevel = 1;
-    server->volumeStep_ = 1;
-    auto ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 1;
+    auto ret =
+        server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
     EXPECT_EQ(ret, false);
 
-    server->volumeStep_ = 0;
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 0;
+    ret =
+        server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
     EXPECT_EQ(ret, true);
 
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, true);
 
-    server->volumeStep_ = 1;
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 1;
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, true);
 }
 
@@ -3132,14 +3161,16 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_158, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     int32_t volumeLevel = 1;
-    server->volumeStep_ = 1;
-    auto ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_CALL, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 1;
+    auto ret =
+        server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_CALL, volumeLevel);
     EXPECT_EQ(ret, false);
 
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_ALARM, volumeLevel);
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_ALARM, volumeLevel);
     EXPECT_EQ(ret, false);
 
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_COMMUNICATION, volumeLevel);
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(
+        AudioVolumeType::STREAM_VOICE_COMMUNICATION, volumeLevel);
     EXPECT_EQ(ret, false);
 }
 

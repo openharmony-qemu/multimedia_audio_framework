@@ -55,6 +55,9 @@ private:
     static napi_value CreateAudioLoopback(napi_env env, napi_callback_info info);
     static napi_value GetStatus(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
+    static napi_value GetVolume(napi_env env, napi_callback_info info);
+    static napi_value GetSupportedDevicePairs(napi_env env, napi_callback_info info);
+    static napi_value GetPreferredDevicePair(napi_env env, napi_callback_info info);
     static napi_value Enable(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);

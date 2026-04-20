@@ -1401,10 +1401,10 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredOutputDeviceDescriptors_001, Test
         AudioRendererInfo rendererInfo;
         rendererInfo.streamUsage = STREAM_USAGE_INVALID;
         string networkId = REMOTE_NETWORK_ID;
-        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, -1, networkId);
 
         rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredOutputDeviceDescriptors(rendererInfo, -1, networkId);
     );
 }
 
@@ -2413,7 +2413,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
 
-    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
 
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
 }
@@ -7038,6 +7038,108 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test HasNormalTypeCapturerSession.
+* @tc.number: HasNormalTypeCapturerSession_001
+* @tc.desc  : Test HasNormalTypeCapturerSession - empty pipeList returns false.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HasNormalTypeCapturerSession_001 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> emptyPipeList;
+    bool result = coreService->HasNormalTypeCapturerSession(emptyPipeList);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_002
+* @tc.desc  : Test OnCapturerSessionRemoved - sessionID in sessionWithInputPipeRouteFlag_ only.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_002 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    uint64_t sessionId = 500001;
+    coreService->sessionWithInputPipeRouteFlag_[sessionId] = AUDIO_INPUT_FLAG_NORMAL;
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->sessionWithInputPipeRouteFlag_.count(sessionId), 0);
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_003
+* @tc.desc  : Test OnCapturerSessionRemoved - sessionID not in any map, goes to capturerSessionIdisRemovedSet_.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_003 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    uint64_t sessionId = 500002;
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->capturerSessionIdisRemovedSet_.count(sessionId), 1);
+
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_004
+* @tc.desc  : Test OnCapturerSessionRemoved - special source type, HandleRemoteCastDevice(false).
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_004 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    uint64_t sessionId = 500003;
+    coreService->sessionSourceTypeMap_[sessionId] = SOURCE_TYPE_REMOTE_CAST;
+
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(sessionId), 0);
+
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_005
+* @tc.desc  : Test OnCapturerSessionRemoved - VOICE_COMMUNICATION, ResetAudioEcInfo and CloseNormalSource.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_005 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    uint64_t sessionId = 500004;
+    coreService->sessionSourceTypeMap_[sessionId] = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(sessionId), 0);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
  * @tc.name  : GetEnhancedRoutingSupported_001
  * @tc.number: GetEnhancedRoutingSupported_001
  * @tc.desc  : Verify AudioSelectInterfaceService forwards enhanced routing support from strategy layer.
@@ -7049,436 +7151,217 @@ HWTEST_F(AudioCoreServiceUnitTest, GetEnhancedRoutingSupported_001, TestSize.Lev
     EXPECT_EQ(GetServerPtr()->coreService_->GetEnhancedRoutingSupported(), supported);
 }
 
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_001
- * @tc.desc  : Test 48k + 24bit + USB_HEADSET should support direct
- */
+struct DirectTestParams {
+    AudioSampleFormat format;
+    AudioSamplingRate samplingRate;
+    DeviceType deviceType;
+    bool expectedResult;
+    std::string description;
+};
+
+static std::shared_ptr<AudioStreamDescriptor> CreateDirectTestStream(const DirectTestParams& params)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = params.format;
+    streamDesc->streamInfo_.samplingRate = params.samplingRate;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = params.deviceType;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    
+    return streamDesc;
+}
+
 HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_001 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, DEVICE_TYPE_USB_HEADSET, true, "48k+24bit+USB"},
+        {SAMPLE_S32LE, SAMPLE_RATE_48000, DEVICE_TYPE_USB_HEADSET, true, "48k+32bit+USB"},
+        {SAMPLE_S24LE, SAMPLE_RATE_88200, DEVICE_TYPE_WIRED_HEADSET, true, "88.2k+24bit+WIRED"},
+        {SAMPLE_S32LE, SAMPLE_RATE_88200, DEVICE_TYPE_WIRED_HEADSET, true, "88.2k+32bit+WIRED"},
+        {SAMPLE_S24LE, SAMPLE_RATE_96000, DEVICE_TYPE_USB_HEADSET, true, "96k+24bit+USB"},
+        {SAMPLE_S32LE, SAMPLE_RATE_96000, DEVICE_TYPE_USB_HEADSET, true, "96k+32bit+USB"},
+        {SAMPLE_S24LE, SAMPLE_RATE_176400, DEVICE_TYPE_NEARLINK, true, "176.4k+24bit+NEARLINK"},
+        {SAMPLE_S32LE, SAMPLE_RATE_176400, DEVICE_TYPE_NEARLINK, true, "176.4k+32bit+NEARLINK"},
+        {SAMPLE_S24LE, SAMPLE_RATE_192000, DEVICE_TYPE_USB_HEADSET, true, "192k+24bit+USB"},
+        {SAMPLE_S32LE, SAMPLE_RATE_192000, DEVICE_TYPE_USB_HEADSET, true, "192k+32bit+USB"},
+    };
     
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
 }
 
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_002
- * @tc.desc  : Test 48k + 32bit + USB_HEADSET should support direct
- */
 HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_002 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S24LE, SAMPLE_RATE_44100, DEVICE_TYPE_USB_HEADSET, false, "44.1k unsupported rate"},
+        {SAMPLE_S32LE, SAMPLE_RATE_64000, DEVICE_TYPE_USB_HEADSET, false, "64k unsupported rate"},
+        {SAMPLE_S24LE, SAMPLE_RATE_384000, DEVICE_TYPE_USB_HEADSET, false, "384k unsupported rate"},
+    };
     
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
 }
 
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_003
- * @tc.desc  : Test 88.2k + 24bit + WIRED_HEADSET should support direct
- */
 HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_003, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_003 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_88200;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S16LE, SAMPLE_RATE_48000, DEVICE_TYPE_USB_HEADSET, false, "16bit unsupported format"},
+        {SAMPLE_U8, SAMPLE_RATE_96000, DEVICE_TYPE_USB_HEADSET, false, "U8 unsupported format"},
+        {SAMPLE_F32LE, SAMPLE_RATE_192000, DEVICE_TYPE_USB_HEADSET, false, "F32LE unsupported format"},
+    };
     
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
 }
 
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_004
- * @tc.desc  : Test 88.2k + 32bit + WIRED_HEADSET should support direct
- */
 HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_004, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_004 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_88200;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    std::vector<DirectTestParams> testCases = {
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, DEVICE_TYPE_BLUETOOTH_A2DP, false, "BLUETOOTH_A2DP unsupported device"},
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, DEVICE_TYPE_SPEAKER, false, "SPEAKER unsupported device"},
+    };
     
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
+    for (const auto& params : testCases) {
+        auto streamDesc = CreateDirectTestStream(params);
+        bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
+        EXPECT_EQ(result, params.expectedResult) << "Failed for: " << params.description;
+    }
 }
 
 /**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_005
- * @tc.desc  : Test 96k + 24bit + USB_HEADSET should support direct
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_005, TestSize.Level1)
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_001
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=true, verifies isStandby_ flag is set to true.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_005 start");
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_001 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->paIndex_ = 1000;
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->moduleInfo_.name = "Speaker";
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
+    streamDesc->sessionId_ = 600001;
+    streamDesc->isStandby_ = false;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t sessionId = 600001;
+    coreService->NotifyStandbyStatus(sessionId, true);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
+    if (streamDescAfter != nullptr) {
+        EXPECT_EQ(streamDescAfter->isStandby_, true);
+    }
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
 }
 
 /**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_006
- * @tc.desc  : Test 96k + 32bit + USB_HEADSET should support direct
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_006, TestSize.Level1)
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_002
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=true and invalid sessionId, verifies graceful handling.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_002, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_006 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_002 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    uint32_t invalidSessionId = 999999;
+    coreService->NotifyStandbyStatus(invalidSessionId, true);
+
+    auto streamDesc = AudioPipeManager::GetPipeManager()->GetStreamDescById(invalidSessionId);
+    EXPECT_EQ(streamDesc, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
 }
 
 /**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_007
- * @tc.desc  : Test 176.4k + 24bit + NEARLINK should support direct
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_007, TestSize.Level1)
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_003
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=false, verifies isStandby_ flag is cleared to false.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_003, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_007 start");
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_003 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->paIndex_ = 1001;
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->moduleInfo_.name = "Speaker";
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_176400;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
+    streamDesc->sessionId_ = 600002;
+    streamDesc->isStandby_ = true;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t sessionId = 600002;
+    coreService->NotifyStandbyStatus(sessionId, false);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
+    if (streamDescAfter != nullptr) {
+        EXPECT_EQ(streamDescAfter->isStandby_, false);
+    }
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
 }
 
 /**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_008
- * @tc.desc  : Test 176.4k + 32bit + NEARLINK should support direct
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_008, TestSize.Level1)
+* @tc.name  : Test NotifyStandbyStatus.
+* @tc.number: NotifyStandbyStatus_004
+* @tc.desc  : Test NotifyStandbyStatus with standbyStatus=false and invalid sessionId, verifies graceful handling.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_004, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_008 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_176400;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
-}
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest NotifyStandbyStatus_004 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
 
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_009
- * @tc.desc  : Test 192k + 24bit + USB_HEADSET should support direct
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_009, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_009 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
-}
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    uint32_t invalidSessionId = 999998;
+    coreService->NotifyStandbyStatus(invalidSessionId, false);
 
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_010
- * @tc.desc  : Test 192k + 32bit + USB_HEADSET should support direct
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_010, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_010 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_TRUE(result);
-}
+    auto streamDesc = AudioPipeManager::GetPipeManager()->GetStreamDescById(invalidSessionId);
+    EXPECT_EQ(streamDesc, nullptr);
 
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_011
- * @tc.desc  : Test 44.1k + 24bit + USB_HEADSET should NOT support direct (sample rate not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_011, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_011 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_012
- * @tc.desc  : Test 64k + 32bit + USB_HEADSET should NOT support direct (sample rate not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_012, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_012 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_64000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_013
- * @tc.desc  : Test 384k + 24bit + USB_HEADSET should NOT support direct (sample rate not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_013, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_013 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_384000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_014
- * @tc.desc  : Test 48k + 16bit + USB_HEADSET should NOT support direct (format not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_014, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_014 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_015
- * @tc.desc  : Test 96k + U8 + USB_HEADSET should NOT support direct (format not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_015, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_015 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_U8;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_016
- * @tc.desc  : Test 192k + F32LE + USB_HEADSET should NOT support direct (format not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_016, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_016 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_F32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_017
- * @tc.desc  : Test 48k + 24bit + BLUETOOTH_A2DP should NOT support direct (device type not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_017, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_017 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportDirect
- * @tc.number: IsStreamSupportDirect_018
- * @tc.desc  : Test 48k + 24bit + SPEAKER should NOT support direct (device type not supported)
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_018, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsStreamSupportDirect_018 start");
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    
-    bool result = GetServerPtr()->coreService_->IsStreamSupportDirect(streamDesc);
-    EXPECT_FALSE(result);
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS

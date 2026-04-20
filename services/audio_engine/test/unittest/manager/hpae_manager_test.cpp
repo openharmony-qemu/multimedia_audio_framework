@@ -2296,36 +2296,6 @@ HWTEST_F(HpaeManagerUnitTest, HandleAppsEnhanceMuteState_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test HpaeManager UpdateCollaborativeProductId API
- * @tc.type  : FUNC
- * @tc.number: UpdateCollaborativeProductId_001
- * @tc.desc  : Test HpaeManager UpdateCollaborativeProductId with different session ids
- */
-HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeProductId_001, TestSize.Level1)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    std::string vaildProductId = "default_product_id";
-
-    EXPECT_EQ(hpaeManager_->UpdateCollaborativeProductId(vaildProductId), SUCCESS);
-}
-
-/**
- * @tc.name  : Test HpaeManager UpdateCollaborativeProductId API
- * @tc.type  : FUNC
- * @tc.number: UpdateCollaborativeProductId_002
- * @tc.desc  : Test HpaeManager UpdateCollaborativeProductId with different session ids
- */
-HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeProductId_002, TestSize.Level1)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    std::string invaildProductId = "";
-
-    EXPECT_EQ(hpaeManager_->UpdateCollaborativeProductId(invaildProductId), ERROR);
-}
-
-/**
  * @tc.name  : Test HpaeManager EnableCaptureCollaboration API
  * @tc.type  : FUNC
  * @tc.number: EnableCaptureCollaboration_001

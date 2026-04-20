@@ -85,5 +85,21 @@ void StreamDfxManager::ReportStreamOccupancyTimeout(uint32_t sessionId, int64_t 
     bean->Add("UPLOAD_TIME", static_cast<uint64_t>(currentTime));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
+
+void StreamDfxManager::SendAudioErrorEvent(int32_t uid, int32_t errorCode, const std::string &erroDesc,
+    bool isClient)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO,
+        Media::MediaMonitor::EventId::UNIFIED_FAULT_CODE,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("ERROR_UID", uid);
+    bean->Add("ERROR_CODE", errorCode);
+    bean->Add("ERROR_REASON", erroDesc);
+    if (isClient) {
+        AUDIO_DEBUG_LOG("check send event isClient");
+    }
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -111,7 +111,9 @@ void AudioPolicyDataShareListener::RegisterVehiclePriority()
         ErrCode ret = settingProvider.GetBoolValue(CONFIG_VEHICLE_PRIORITY_KEY, value, "system");
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "get hicar.audio.preferred_car_device value failed");
         AUDIO_INFO_LOG("hicar.audio.preferred_car_device = %{public}s", value ? "true" : "false");
-        AudioPolicyService::GetAudioPolicyService().OnVehiclePriorityChanged(value);
+        std::thread([value]() {
+            AudioPolicyService::GetAudioPolicyService().OnVehiclePriorityChanged(value);
+        }).detach();
     };
     sptr observer = settingProvider.CreateObserver(CONFIG_VEHICLE_PRIORITY_KEY, updateFuncPriority);
     ErrCode ret = settingProvider.RegisterObserver(observer, "system");

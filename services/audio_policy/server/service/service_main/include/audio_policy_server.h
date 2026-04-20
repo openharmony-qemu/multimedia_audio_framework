@@ -16,6 +16,7 @@
 #ifndef ST_AUDIO_POLICY_SERVER_H
 #define ST_AUDIO_POLICY_SERVER_H
 
+#include <atomic>
 #include <mutex>
 #include <pthread.h>
 
@@ -376,8 +377,14 @@ public:
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;
+    int32_t GetLoopbackSupportedDevicePairs(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices, int32_t &ret) override;
+    int32_t GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
+        std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
     int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
+    int32_t SetLoopbackVolume(float volume, bool &ret) override;
+    int32_t GetLoopbackVolume(float &volume, bool &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -665,11 +672,6 @@ public:
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
-    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
-    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0, int32_t previousVolume = -1);
-
     uint32_t TranslateErrorCode(int32_t result);
 
     int32_t SetCollaborativePlaybackEnabledForDevice(
@@ -815,30 +817,14 @@ private:
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedRingtoneVolume = false);
-    int32_t SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
-    int32_t SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
-    int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
         bool isUpdateUi, DeviceType deviceType);
-    int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
-        DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId = 0);
-    int32_t GetSelfAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);
-    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
-    float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
-    void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
-    void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
-    bool IsRingerModeValid(AudioRingerMode ringMode);
-    bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 
-    int32_t SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage);
-    int32_t GetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t &volumePercentage);
-    int32_t SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
 
     // Permission and privacy
@@ -894,6 +880,8 @@ private:
     void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
     void InfoDumpHelp(std::string &dumpString);
 
+    bool IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescriptor> device);
+
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
     void AddSystemAbilityListenerAfterAudioServerStart();
@@ -901,7 +889,6 @@ private:
 
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
-    int32_t GetSystemVolumeDegreeInternal(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy);
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
@@ -974,11 +961,11 @@ private:
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
     bool screenOffAdjustVolumeEnable_ = false;
-    bool supportVibrator_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     int32_t loudVolumeSupportMode_ = 0;
 #endif
     bool isHighResolutionExist_ = false;
+    std::atomic<float> loopbackVolume_ = 0.0f;
     std::mutex descLock_;
 
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);

@@ -1454,9 +1454,9 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     }
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
-    bool result = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command, reason);
+    bool isStatusUpdated = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command, reason);
     CheckForA2dpSuspend(desc);
-    if (result) {
+    if (isStatusUpdated) {
         OnPreferredStateUpdated(desc, command, reason);
     }
 #ifdef BLUETOOTH_ENABLE
@@ -1796,6 +1796,9 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
     if (capability.protocol_ == 0) {
         device.model_ = "hiplay";
     }
+
+    device.hdPlaybackMode_ = static_cast<HdPlaybackMode>(capability.hdPlaybackMode_);
+    AUDIO_INFO_LOG("Update hdPlaybackMode success, mode: %{public}d", device.hdPlaybackMode_);
 }
 
 bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,

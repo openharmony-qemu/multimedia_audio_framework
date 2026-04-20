@@ -17,6 +17,7 @@
 #include "audio_system_manager.h"
 #include "standard_client_tracker_proxy.h"
 #include "audio_spatialization_service.h"
+#include "app_state_listener.h"
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_zone_service.h"
@@ -2273,6 +2274,27 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_103, TestSize.Level1
     AudioStreamCollector collector;
     int32_t ret = collector.CapturerMutedFlagChange(1, true);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_104
+* @tc.desc  : Test HandleBackgroundAppStateChange.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_104, TestSize.Level1)
+{
+    AppStateListener appStateListener;
+    int32_t state = static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_FOREGROUND);
+    appStateListener.HandleBackgroundAppStateChange(111111, 222222, state);
+    EXPECT_EQ(state, static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_FOREGROUND));
+
+    state = static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_BACKGROUND);
+    appStateListener.HandleBackgroundAppStateChange(111111, 222222, state);
+    EXPECT_EQ(state, static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
+
+    state = static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_TERMINATED);
+    appStateListener.HandleBackgroundAppStateChange(111111, 222222, state);
+    EXPECT_EQ(state, static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_TERMINATED));
 }
 } // namespace AudioStandard
 } // namespace OHOS

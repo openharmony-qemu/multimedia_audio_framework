@@ -308,7 +308,7 @@ void AudioPolicyServiceEnhanceSevenFuzzTest(FuzzedDataProvider& fdp)
     GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(desc, ENABLE_UPDATE);
     AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Tone Load Configuration failed");
 
-    GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = false;
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetRingerModeMute(false);
 
     std::string deviceAddress = "";
     vector<int32_t> sessionIds = {0};

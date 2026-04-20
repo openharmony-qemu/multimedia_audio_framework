@@ -341,8 +341,6 @@ private:
 
     int32_t CallStartWhenInStandby();
 
-    int32_t Standby();
-
     void NotifyStopWaiting();
 
     void UpdateStopState();

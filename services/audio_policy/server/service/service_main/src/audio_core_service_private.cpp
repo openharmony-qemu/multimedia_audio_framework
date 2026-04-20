@@ -45,7 +45,6 @@ const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
 const uid_t MCU_UID = 7500;
 const uid_t TV_SERVICE_UID = 7501;
-const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 constexpr int32_t REMOTE_USER_TERMINATED = 200;
 constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
@@ -107,7 +106,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_UNPROCESS_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
-    std::string(PRIMARY_RAW_AI_MIC)
+    std::string(PRIMARY_RAW_AI_MIC),
+    std::string(PRIMARY_INTERPHON_MIC)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -606,12 +606,20 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         auto sourceType = streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType;
         auto sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+        auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+        bool isScoDevice = streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+            streamDesc->newDeviceDescs_[0] != nullptr &&
+            streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+        if (isScoDevice) {
+            bool hasScoRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+            bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
+            bool isScoSelected = hasScoPlay || hasScoRecord;
+            Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isScoSelected);
+        }
         if (Util::IsScoSupportSource(sourceType)) {
             audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
         }
-        bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
-        Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isRecord);
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
     }
 }
@@ -954,6 +962,7 @@ void AudioCoreService::RemoveUnusedPipe()
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
     }
+    StopNoRunningPipe();
 }
 
 void AudioCoreService::RemoveUnusedRecordPipe()
@@ -1583,7 +1592,7 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
         streamDesc->newDeviceDescs_.front()->getType() != DEVICE_TYPE_SPEAKER) {
         audioPolicyManager_.SetDeviceNoMuteForRinger(streamDesc->newDeviceDescs_.front());
         audioVolumeManager_.SetRingerModeMute(false);
-        if (audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_RING) <
+        if (audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(STREAM_RING) <
             audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
             audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
                 audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
@@ -1984,7 +1993,8 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
             ((pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI) && (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_UNPROCESS) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_ULTRASONIC) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI))) {
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI) &&
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_INTERPHONE))) {
             audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)),
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }
@@ -2200,10 +2210,11 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
 {
     std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice(DEFAULT_UID);
+    RouterType routerType = ROUTER_TYPE_NONE;
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && Bluetooth::AudioHfpManager::IsRecognitionStatus()) {
-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1);
+        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1, routerType);
     } else {
-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
+        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1, routerType);
     }
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is nullptr");
 
@@ -2801,6 +2812,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     } else {
         FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
             streamDesc->bundleName_ };
+        info.streamId = streamDesc->sessionId_;
         devices = audioRouterCenter_.FetchOutputDevices(info);
     }
 
@@ -2824,6 +2836,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
 
     FetchDeviceInfo info = { streamDesc->GetRenderUsage(), GetRealUid(streamDesc),
         streamDesc->GetRenderPrivacyType(), caller, streamDesc->bundleName_ };
+    info.streamId = streamDesc->sessionId_;
     auto devices = audioRouterCenter_.FetchOutputDevices(info);
 
     pipeManager_->UpdateNewDeviceDesc(streamDesc, devices);
@@ -3114,7 +3127,7 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
             streamDesc->rendererInfo_.privacyType, "StartClient", streamDesc->bundleName_ };
-
+        info.streamId = streamDesc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
@@ -3187,6 +3200,14 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
     }
     CHECK_AND_RETURN(isNeedUpdate);
     NotifyRemoteDeviceStatusUpdate(oldDesc);
+}
+
+void AudioCoreService::StopNoRunningPipe()
+{
+    std::vector<std::string> moduleNames = pipeManager_->GetNoRunningPipeModuleName();
+    for (auto moduleName : moduleNames) {
+        audioPolicyManager_.StopAudioPort(moduleName);
+    }
 }
 
 void AudioCoreService::GetFlagForUltraFastStream(
