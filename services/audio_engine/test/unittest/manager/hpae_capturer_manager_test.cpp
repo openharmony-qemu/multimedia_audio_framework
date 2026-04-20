@@ -2449,6 +2449,10 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_004, TestSize.Level1)
     EXPECT_EQ(capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
     // cleanup
     EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
