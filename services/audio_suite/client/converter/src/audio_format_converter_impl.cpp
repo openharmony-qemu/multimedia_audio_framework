@@ -431,7 +431,7 @@ int32_t AudioFormatConverterImpl::ProcessDataBlocks(ProcessingContext& context, 
             break;
         }
     }
-    return SUCCESS;
+    return ret;
 }
 
 int32_t AudioFormatConverterImpl::ProcessConversion(void* audioData, uint32_t outputCapacity,
@@ -519,13 +519,16 @@ int32_t AudioFormatConverterImpl::WrapInputData(
     int32_t result = buffer.ResizePcmBuffer(inputFormat_, dataDurationMs);
     CHECK_AND_RETURN_RET_LOG(result == 0, ERR_MEMORY_ALLOC_FAILED, "WrapInputData: Memory allocation failed.");
 
-    if (buffer.GetPcmData() != nullptr && inputData != nullptr) {
-        uint32_t bufferSize = buffer.GetDataSize();
-        CHECK_AND_RETURN_RET_LOG(
-            bufferSize >= inputSize, ERR_OPERATION_FAILED, "WrapInputData: memcpy_s Insufficient target buffer size");
-        errno_t ret = memcpy_s(buffer.GetPcmData(), bufferSize, inputData, inputSize);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "WrapInputData: memcpy_s Execution failed");
-    }
+    CHECK_AND_RETURN_RET_LOG(buffer.GetPcmData() != nullptr && inputData != nullptr,
+        ERR_INVALID_PARAM,
+        "The pointer to the data storage buffer is null.");
+ 
+    uint32_t bufferSize = buffer.GetDataSize();
+    CHECK_AND_RETURN_RET_LOG(
+        bufferSize >= inputSize, ERR_OPERATION_FAILED, "WrapInputData: memcpy_s Insufficient target buffer size");
+    errno_t ret = memcpy_s(buffer.GetPcmData(), bufferSize, inputData, inputSize);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "WrapInputData: memcpy_s Execution failed");
+
     return SUCCESS;
 }
 
@@ -539,17 +542,22 @@ AudioSuitePcmBuffer* AudioFormatConverterImpl::DoConvert(AudioSuitePcmBuffer* in
 int32_t AudioFormatConverterImpl::CopyOutputData(
     AudioSuitePcmBuffer* buffer, void* outputBuffer, uint32_t maxFrameSize, uint32_t* actualFrameSize)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        buffer != nullptr, ERR_INVALID_PARAM, "CopyOutputData: buffer pointer is nullptr.");
     uint32_t availableFrames = buffer->GetFrameLen();
     *actualFrameSize = (availableFrames < maxFrameSize)
                       ? availableFrames : maxFrameSize;
-
+    CHECK_AND_RETURN_RET_LOG(
+        outputBuffer != nullptr, ERR_INVALID_PARAM, "CopyOutputData: outputBuffer is nullptr but framesToWrite > 0");
+    
     uint32_t outputSampleSize = AudioSuiteUtil::GetSampleSize(outputFormat_.sampleFormat);
     uint32_t outputBytes = *actualFrameSize * outputFormat_.channelCount * outputSampleSize;
 
-    if (outputBuffer != nullptr && buffer->GetPcmData() != nullptr) {
-        int32_t ret = memcpy_s(outputBuffer, outputBytes, buffer->GetPcmData(), outputBytes);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "memcpy_s failed: memcpy_s for cached data failed");
-    }
+    CHECK_AND_RETURN_RET_LOG(
+        buffer->GetPcmData() != nullptr, ERR_INVALID_PARAM, "CopyOutputData: buffer->GetPcmData is nullptr");
+    int32_t ret = memcpy_s(outputBuffer, outputBytes, buffer->GetPcmData(), outputBytes);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "memcpy_s failed: memcpy_s for cached data failed");
+
     if (*actualFrameSize < availableFrames) {
         uint32_t totalBytes = availableFrames * outputFormat_.channelCount * outputSampleSize;
         uint32_t copiedBytes = outputBytes;
