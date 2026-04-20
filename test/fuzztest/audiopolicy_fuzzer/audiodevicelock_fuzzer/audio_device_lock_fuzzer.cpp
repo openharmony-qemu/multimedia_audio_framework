@@ -155,20 +155,6 @@ void RegisterTrackerFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void HandleAudioCaptureStateFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
-    AudioMode mode = static_cast<AudioMode>(GetData<uint8_t>() % modeCount);
-    AudioStreamChangeInfo streamChangeInfo;
-    int32_t capturerStateCount = static_cast<int32_t>(CapturerState::CAPTURER_PAUSED) + 1;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState =
-        static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
-    uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SourceTypeVec[sourceTypeCount];
-    OnStop();
-}
-
 void SendA2dpConnectedWhileRunningFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
@@ -376,7 +362,6 @@ void Test(FuzzedDataProvider& fdp)
     auto func = fdp.PickValueInArray({
     RegisterTrackerFuzzTest,
     SendA2dpConnectedWhileRunningFuzzTest,
-    HandleAudioCaptureStateFuzzTest,
     UpdateTrackerFuzzTest,
     RegisteredTrackerClientDiedFuzzTest,
     OnDeviceStatusUpdatedFuzzTest,

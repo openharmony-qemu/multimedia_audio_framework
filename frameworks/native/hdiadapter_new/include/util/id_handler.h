@@ -61,6 +61,7 @@ private:
 
     uint32_t CreateInfoId(void);
     uint32_t GetIdForSolePipeSource(SourceType sourceType, uint32_t routeFlag);
+    uint32_t GetRenderIdByDeviceClassSub(const std::string &deviceClass, const std::string &info, uint32_t routeFlag);
 
 private:
     static constexpr uint32_t HDI_ID_BASE_OFFSET = 12;

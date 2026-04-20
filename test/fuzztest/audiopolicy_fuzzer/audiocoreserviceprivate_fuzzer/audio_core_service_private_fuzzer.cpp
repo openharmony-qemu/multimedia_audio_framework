@@ -355,19 +355,6 @@ void CheckModemSceneFuzzTest()
     audioCoreService->CheckModemScene(modemDescs, reason);
 }
 
-void HandleAudioCaptureStateFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    constexpr int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
-    AudioMode mode = static_cast<AudioMode>(GetData<uint8_t>() % modeCount);
-    AudioStreamChangeInfo streamChangeInfo;
-    constexpr int32_t capturerStateCount = static_cast<int32_t>(CapturerState::CAPTURER_PAUSED) + 1;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState =
-        static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = GetData<SourceType>();
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-}
-
 void IsSameDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();

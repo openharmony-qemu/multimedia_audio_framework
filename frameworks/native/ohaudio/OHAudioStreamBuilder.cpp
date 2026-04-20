@@ -386,7 +386,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
                 rate % SAMPLE_RATE_RESOLUTION_10 == 0)) {
                 AUDIO_INFO_LOG("custom samplingRate %{public}d", rate);
                 customSampleRate_ = static_cast<uint32_t>(rate);
-                samplingRate_ = SAMPLE_RATE_48000;
+                samplingRate_ = SAMPLE_RATE_8000;
                 return AUDIOSTREAM_SUCCESS;
             }
             AUDIO_ERR_LOG("samplingRate input value is invalid");

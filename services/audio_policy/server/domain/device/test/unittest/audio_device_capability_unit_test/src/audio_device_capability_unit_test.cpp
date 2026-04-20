@@ -63,5 +63,35 @@ HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString, TestSize.Level4)
     EXPECT_EQ(capability.protocol_, 2);
     EXPECT_EQ(capability.isSupportHiLinkControl_, true);
 }
+
+/**
+ * @tc.name  : FromJsonString_HdPlaybackMode_001
+ * @tc.number: FromJsonString_HdPlaybackMode_001
+ * @tc.desc  : Test FromJsonString when hd_play_mode is not a number type.
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_HdPlaybackMode_001, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "hd_play_mode": "invalid_string"
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.hdPlaybackMode_, 0);
+}
+
+/**
+ * @tc.name  : FromJsonString_HdPlaybackMode_002
+ * @tc.number: FromJsonString_HdPlaybackMode_002
+ * @tc.desc  : Test FromJsonString when hd_play_mode is a valid number.
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_HdPlaybackMode_002, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "hd_play_mode": 2
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.hdPlaybackMode_, 2);
+}
 }
 }

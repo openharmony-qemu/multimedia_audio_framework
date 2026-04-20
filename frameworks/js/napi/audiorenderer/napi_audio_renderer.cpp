@@ -2405,7 +2405,7 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
 
     CHECK_AND_RETURN_LOG(napiRenderer->rendererOptions_.has_value(), "rendererOptions_ has no value");
     const auto &streamInfo = napiRenderer->rendererOptions_->streamInfo;
-    uint32_t sampleRate = streamInfo.samplingRate;
+    uint32_t sampleRate = streamInfo.GetEffectiveSampleRate();
     uint32_t bytesPerSample = (streamInfo.channels * Util::GetSamplePerFrame(streamInfo.format));
     size_t bufferSize = Util::CalculatePcmSizeFromDurationCeiling(
         std::chrono::microseconds(MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);

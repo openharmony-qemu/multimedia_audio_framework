@@ -1126,5 +1126,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, RedirectVolumeType, TestSize.Level1)
     audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
     EXPECT_EQ(volumeType, STREAM_VOICE_ASSISTANT);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

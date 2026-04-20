@@ -32,9 +32,11 @@ constexpr uint32_t CAPTURER_ID_OFFSET = 16;
 constexpr uint32_t BITLENGTH = 8;
 
 struct CaptureEffectAttr {
-    uint32_t micChannels;
-    uint32_t ecChannels;
-    uint32_t micRefChannels;
+    bool needEc { false };
+    bool needMicRef { false };
+    uint32_t micChannels { 0 };
+    uint32_t ecChannels { 0 };
+    uint32_t micRefChannels { 0 };
 };
 
 class HpaeCaptureEffectNode : public HpaePluginNode {

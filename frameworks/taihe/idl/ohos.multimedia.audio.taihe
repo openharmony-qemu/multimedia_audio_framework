@@ -417,6 +417,10 @@ interface AudioRoutingManager {
   SelectOutputDeviceByFilterWithStrategySync(filter: AudioRendererFilter,
     outputAudioDevices: Array<AudioDeviceDescriptor>, strategy: AudioDevcieSelectStrategy): void;
 
+  @gen_async("restoreOutputDeviceByFilter")
+  @gen_promise("restoreOutputDeviceByFilter")
+  RestoreOutputDeviceByFilterSync(filter: AudioRendererFilter): void;
+
   @gen_async("selectInputDevice")
   @gen_promise("selectInputDevice")
   SelectInputDeviceSync(inputAudioDevices: Array<AudioDeviceDescriptor>): void;

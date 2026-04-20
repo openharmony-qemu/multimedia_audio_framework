@@ -86,6 +86,11 @@ namespace {
     static const int32_t THREE_DA_BYTES_PER_FRAME = 1;
 }
 
+void NotifyStandbyAction::Exec()
+{
+    CoreServiceHandler::GetInstance().NotifySessionStandbyStatus(sessionId_, isStandbyOn_);
+}
+
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
     : processConfig_(processConfig)
 {
@@ -99,6 +104,7 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     InitLatencyMeasurement();
+    asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_RISAsyncHandler");
 }
 
 RendererInServer::~RendererInServer()
@@ -533,9 +539,7 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
-    auto stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener, "streamListener_ expired");
-    stateListener->OnOperationHandled(STANDBY, 0);
+    Standby(true);
     RecordStandbyTime(standByEnable_, true);
     enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
@@ -1267,9 +1271,15 @@ int32_t RendererInServer::Start()
     return ret;
 }
 
-int32_t RendererInServer::Standby()
+int32_t RendererInServer::Standby(bool isStandbyOn)
 {
-    return CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
+    auto action = std::make_shared<NotifyStandbyAction>(streamIndex_, isStandbyOn);
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    CHECK_AND_RETURN_RET_LOG(asyncHandler_ != nullptr, ERR_OPERATION_FAILED, "asyncHandler is null");
+    bool ret = asyncHandler_->PostAsyncAction(desc);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "Post failed for sessionId %{public}u", streamIndex_);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::StartInnerDuringStandby()
@@ -1281,9 +1291,15 @@ int32_t RendererInServer::StartInnerDuringStandby()
     isOffloadJankReport = false;
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
+
+    // Async notify coreService to exit standby mode
+    ret = Standby(false);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PostStandbyAction failed");
+
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[StartInnerDuringStandby]Policy start client failed, reason: %{public}d", ret));
+
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     RecordStandbyTime(true, false);
@@ -1675,6 +1691,10 @@ int32_t RendererInServer::Release(bool isSwitchStream)
             AUDIO_INFO_LOG("Already released");
             return SUCCESS;
         }
+    }
+
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->RemoveAllEvents();
     }
 
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);

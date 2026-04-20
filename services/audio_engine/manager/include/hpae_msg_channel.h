@@ -141,6 +141,11 @@ struct HpaeDfxNodeInfo {
     std::string nodeName;
     SourceType sourceType;
     uint32_t routeFlag = 0;
+
+    uint32_t GetEffectiveSampleRate() const
+    {
+        return customSampleRate != 0 ? customSampleRate : static_cast<uint32_t>(samplingRate);
+    }
 };
 
 struct OffloadCallbackData {

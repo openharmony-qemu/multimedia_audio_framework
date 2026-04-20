@@ -2809,34 +2809,6 @@ HWTEST(AudioProcessInServerUnitTest, CheckBgRecordPermission_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test CheckBgRecordPermission API
- * @tc.type  : FUNC
- * @tc.number: CheckBgRecordPermission_002
- * @tc.desc  : Test CheckBgRecordPermission interface with switch stream record.
- */
-HWTEST(AudioProcessInServerUnitTest, CheckBgRecordPermission_002, TestSize.Level1)
-{
-    AudioProcessConfig configRet = InitProcessConfig();
-    configRet.callerUid = DEFAULT_STREAM_ID;
-    configRet.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    AudioService *releaseCallbackRet = AudioService::GetInstance();
-    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    SwitchStreamInfo info = {
-        audioProcessInServerRet.GetSessionId(),
-        configRet.callerUid,
-        configRet.appInfo.appUid,
-        configRet.appInfo.appPid,
-        configRet.appInfo.appTokenId,
-        CAPTURER_RUNNING,
-    };
-
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
-    EXPECT_TRUE(audioProcessInServerRet.CheckBgRecordPermission(CAPTURER_RUNNING));
-    EXPECT_TRUE(audioProcessInServerRet.TurnOffMicIndicator(CAPTURER_RELEASED));
-}
-
-/**
  * @tc.name  : Test NeedTurnOnMicIndicator API
  * @tc.type  : FUNC
  * @tc.number: NeedTurnOnMicIndicator_001

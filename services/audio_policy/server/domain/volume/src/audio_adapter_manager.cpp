@@ -2146,6 +2146,9 @@ std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioMo
     if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload") {
         return audioModuleInfo.networkId;
     }
+    if (audioModuleInfo.className == "primary_extra") {
+        return audioModuleInfo.name;
+    }
     return HDI_ID_INFO_DEFAULT;
 }
 

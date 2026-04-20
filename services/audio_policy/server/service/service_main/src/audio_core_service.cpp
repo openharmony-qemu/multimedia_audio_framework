@@ -1045,6 +1045,31 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
     CHECK_AND_RETURN_LOG(res == SUCCESS, "remote device state is invalid!");
 }
 
+void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    
+    bool isScoDevice = !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_[0] != nullptr &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+    if (isScoDevice) {
+        bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+        bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
+        bool isScoSelected = hasScoPlay || hasScoRecord;
+        Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isScoSelected);
+    }
+
+    if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+        auto sourceType = streamDesc->capturerInfo_.sourceType;
+        auto sessionId = streamDesc->sessionId_;
+        if (Util::IsScoSupportSource(sourceType)) {
+            audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
+            Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
+        }
+        audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
+    }
+}
+
 void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     std::string caller)
 {
@@ -1282,7 +1307,10 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     }
     ForceRemoveSleStreamType(streamDesc);
 
-    HandlePlaybackStoppingOperations(streamDesc, "PauseClient");
+    CheckScoState(streamDesc);
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        HandlePlaybackStoppingOperations(streamDesc, "PauseClient");
+    }
 
     return SUCCESS;
 }
@@ -1295,6 +1323,20 @@ int32_t AudioCoreService::StandbyClient(uint32_t sessionId)
     CHECK_AND_RETURN_RET(streamDesc, SUCCESS);
     ForceRemoveSleStreamType(streamDesc);
     return SUCCESS;
+}
+
+void AudioCoreService::NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    if (standbyStatus) {
+        pipeManager_->StandbyClient(sessionId);
+        auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+        if (streamDesc) {
+            ForceRemoveSleStreamType(streamDesc);
+        }
+    } else {
+        pipeManager_->ClearStandbyFlag(sessionId);
+    }
 }
 
 int32_t AudioCoreService::StopClient(uint32_t sessionId)
@@ -1314,7 +1356,10 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
             streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_STOPPED);
     }
 
-    HandlePlaybackStoppingOperations(streamDesc, "StopClient");
+    CheckScoState(streamDesc);
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        HandlePlaybackStoppingOperations(streamDesc, "StopClient");
+    }
 
     return SUCCESS;
 }
@@ -1341,7 +1386,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
 
-    HandlePlaybackStoppingOperations(streamDesc, "ReleaseClient");
+    CheckScoState(streamDesc);
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        HandlePlaybackStoppingOperations(streamDesc, "ReleaseClient");
+    }
 
     RemoveUnusedPipe();
     if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
@@ -1400,6 +1448,8 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
     } else if (lastAudioScene == AUDIO_SCENE_PHONE_CALL && audioScene != AUDIO_SCENE_PHONE_CALL) {
         audioVolumeManager_.SetVoiceRingtoneMute(false);
+    }
+    if (audioSceneManager_.IsCallEnded()) {
         audioVolumeManager_.ClearLoudVolumeHoldMapForCall();
     }
     if (audioSceneManager_.IsHangUpScene()) {
@@ -1802,7 +1852,6 @@ void AudioCoreService::UnsetAudioRouteCallback(uint32_t sessionId)
 int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
-    HandleAudioCaptureState(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     if (mode == AUDIO_MODE_PLAYBACK &&
@@ -1844,7 +1893,6 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
     FetchInputDeviceAndRoute("RegisteredTrackerClientDied");
-    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 }
 

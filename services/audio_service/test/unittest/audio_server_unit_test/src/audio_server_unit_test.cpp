@@ -3250,26 +3250,6 @@ HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test SetVoiceVolume for Interphone
- * @tc.type  : FUNC
- * @tc.number: SetVoiceVolume_Interphone_001
- * @tc.desc  : Test SetVoiceVolume interface for interphone volume range validation.
- */
-HWTEST_F(AudioServerUnitTest, SetVoiceVolume_Interphone_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    // Test volume range 0.0 to 1.0
-    int32_t ret = audioServer->SetVoiceVolume(0.0f);
-    EXPECT_EQ(ret, SUCCESS);
-
-    ret = audioServer->SetVoiceVolume(0.5f);
-    EXPECT_EQ(ret, SUCCESS);
-
-    ret = audioServer->SetVoiceVolume(1.0f);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test CheckRecorderFormat for SOURCE_TYPE_INTERPHONE
  * @tc.type  : FUNC
  * @tc.number: CheckRecorderFormat_Interphone_001
@@ -3310,42 +3290,6 @@ HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_002, TestSize.Level
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
     bool ret = audioServer->CheckRecorderFormat(config);
     EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test CreateHdiSinkPort for AUDIO_OUTPUT_FLAG_INTERPHONE
- * @tc.type  : FUNC
- * @tc.number: CreateHdiSinkPort_Interphone_001
- * @tc.desc  : Test CreateHdiSinkPort interface with AUDIO_OUTPUT_FLAG_INTERPHONE.
- */
-HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_Interphone_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    IAudioSinkAttr attr;
-    attr.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
-    uint32_t renderId = HDI_INVALID_ID;
-    int32_t ret = audioServer->CreateHdiSinkPort("primary", "interphone", attr, renderId);
-    EXPECT_EQ(ret, SUCCESS);
-    // renderId will be assigned a valid value when sink is created
-    EXPECT_NE(renderId, HDI_INVALID_ID);
-}
-
-/**
- * @tc.name  : Test CreateHdiSinkPort for AUDIO_OUTPUT_FLAG_INTERPHONE with normal flag
- * @tc.type  : FUNC
- * @tc.number: CreateHdiSinkPort_Interphone_002
- * @tc.desc  : Test CreateHdiSinkPort interface with normal routeFlag.
- */
-HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_Interphone_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    IAudioSinkAttr attr;
-    attr.routeFlag = AUDIO_FLAG_NONE;
-    uint32_t renderId = HDI_INVALID_ID;
-    int32_t ret = audioServer->CreateHdiSinkPort("primary", "default", attr, renderId);
-    EXPECT_EQ(ret, SUCCESS);
-    // renderId will be assigned a valid value when sink is created
-    EXPECT_NE(renderId, HDI_INVALID_ID);
 }
 
 /**

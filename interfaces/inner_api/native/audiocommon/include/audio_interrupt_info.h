@@ -316,6 +316,7 @@ public:
     int64_t startTimeNs = 0;
     bool registerCallbackFlag = false;
     bool activatedRegisterCallbackFlag = false;
+    bool isCallWaitingTone = false;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -374,6 +375,7 @@ public:
         res = res && parcel.WriteInt64(interrupt.startTimeNs);
         res = res && parcel.WriteBool(interrupt.registerCallbackFlag);
         res = res && parcel.WriteBool(interrupt.activatedRegisterCallbackFlag);
+        res = res && parcel.WriteBool(interrupt.isCallWaitingTone);
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -412,6 +414,7 @@ public:
         interrupt.startTimeNs = parcel.ReadInt64();
         interrupt.registerCallbackFlag = parcel.ReadBool();
         interrupt.activatedRegisterCallbackFlag = parcel.ReadBool();
+        interrupt.isCallWaitingTone = parcel.ReadBool();
     }
 
     bool Marshalling(Parcel &parcel) const override
