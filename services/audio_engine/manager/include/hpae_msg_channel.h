@@ -107,6 +107,9 @@ enum HpaeProcessorType {
     // scene for collaboration
     HPAE_SCENE_COLLABORATIVE = 25,
     HPAE_SCENE_RECOGNITION = 26,
+
+    // scene for collaborative record
+    HPAE_SCENE_COLLABORATIVE_RECORD = 27,
 };
 
 // mark sourceInputNode(cluster)
@@ -138,6 +141,11 @@ struct HpaeDfxNodeInfo {
     std::string nodeName;
     SourceType sourceType;
     uint32_t routeFlag = 0;
+
+    uint32_t GetEffectiveSampleRate() const
+    {
+        return customSampleRate != 0 ? customSampleRate : static_cast<uint32_t>(samplingRate);
+    }
 };
 
 struct OffloadCallbackData {

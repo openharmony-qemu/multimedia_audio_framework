@@ -1061,6 +1061,9 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
     }
+    if (rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        return true;
+    }
 
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
         HILOG_COMM_ERROR("[DrainAudioStreamInner]ipcStream is not inited!"));
@@ -1187,13 +1190,6 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
-}
-
-int32_t RendererInClientInner::Standby()
-{
-    std::unique_lock<std::mutex> stateLock(statusMutex_);
-    CHECK_AND_RETURN_RET(state_ == RUNNING, SUCCESS);
-    return ipcStream_->Standby();
 }
 
 int32_t RendererInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)

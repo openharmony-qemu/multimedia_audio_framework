@@ -1479,7 +1479,7 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
             AudioRendererInfo rendererInfo;
             rendererInfo.streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
             deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetEventEntry()->
-                GetPreferredOutputDeviceDescriptors(rendererInfo);
+                GetPreferredOutputDeviceDescriptors(rendererInfo, eventContextObj->uid_);
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");

@@ -264,23 +264,23 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPrefe
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescInner(
-    AudioCapturerInfo &captureInfo, std::string networkId)
+    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
 {
-    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(audioRendererFilter->rendererInfo,
-        LOCAL_NETWORK_ID, audioRendererFilter->uid);
+        LOCAL_NETWORK_ID, audioRendererFilter->uid, audioRendererFilter->streamId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    return deviceList;
+    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(audioCapturerFilter->capturerInfo,
+        LOCAL_NETWORK_ID, audioCapturerFilter->uid, audioCapturerFilter->streamId);
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveOutputDeviceDescriptor()

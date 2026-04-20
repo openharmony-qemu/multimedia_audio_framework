@@ -1796,6 +1796,9 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
     if (capability.protocol_ == 0) {
         device.model_ = "hiplay";
     }
+
+    device.hdPlaybackMode_ = static_cast<HdPlaybackMode>(capability.hdPlaybackMode_);
+    AUDIO_INFO_LOG("Update hdPlaybackMode success, mode: %{public}d", device.hdPlaybackMode_);
 }
 
 bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,

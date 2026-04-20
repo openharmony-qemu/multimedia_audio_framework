@@ -284,7 +284,7 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
         RendererState::RENDERER_RUNNING);
     auto app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
-    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_NONE);
 
     strategy.ExcludeDevices(devices, MEDIA_OUTPUT_DEVICES);
 

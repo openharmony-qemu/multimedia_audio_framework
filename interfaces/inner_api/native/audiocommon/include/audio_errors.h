@@ -50,6 +50,9 @@ constexpr uint32_t OPEN_PORT_FAILURE = (uint32_t) -1;
 using ErrCode = int32_t;
 constexpr int SUBSYSTEM_BIT_NUM = 21;
 constexpr int MODULE_BIT_NUM = 16;
+constexpr int PROBLEM_CATEGORY_BIT_NUM = 24;
+constexpr int OPERATION_TYPE_BIT_NUM = 16;
+constexpr int BUSINESS_SCENARIO_BIT_NUM = 8;
 
 constexpr ErrCode ErrCodeOffset(unsigned int subsystem, unsigned int module = 0)
 {
@@ -221,6 +224,51 @@ const int32_t ERR_CALLBACK_INVALID = BASE_AUDIO_ERR_OFFSET - 52;
 /** callback not set */
 const int32_t ERR_CALLBACK_NOT_SET = BASE_AUDIO_ERR_OFFSET - 53;
 
+/** operation timeout */
+const int32_t ERR_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 51;
+
+/** service unavailable */
+const int32_t ERR_SERVICE_UNAVAILABLE = BASE_AUDIO_ERR_OFFSET - 52;
+
+/** result invalid */
+const int32_t ERR_RESULT_INVALID = BASE_AUDIO_ERR_OFFSET - 53;
+
+/** callback register failed */
+const int32_t ERR_CALLBACK_REGISTER_FAILED = BASE_AUDIO_ERR_OFFSET - 54;
+
+/** callback unregister failed */
+const int32_t ERR_CALLBACK_UNREGISTER_FAILED = BASE_AUDIO_ERR_OFFSET - 55;
+
+/** callback already registered */
+const int32_t ERR_CALLBACK_ALREADY_REGISTERED = BASE_AUDIO_ERR_OFFSET - 56;
+
+/** callback not found */
+const int32_t ERR_CALLBACK_NOT_FOUND = BASE_AUDIO_ERR_OFFSET - 57;
+
+/** device not found */
+const int32_t ERR_DEVICE_NOT_FOUND = BASE_AUDIO_ERR_OFFSET - 58;
+
+/** device mismatch */
+const int32_t ERR_DEVICE_MISMATCH = BASE_AUDIO_ERR_OFFSET - 59;
+
+/** device unavailable */
+const int32_t ERR_DEVICE_UNAVAILABLE = BASE_AUDIO_ERR_OFFSET - 60;
+
+/** privacy auth failed */
+const int32_t ERR_PRIVACY_AUTH_FAILED = BASE_AUDIO_ERR_OFFSET - 61;
+
+/** session unavailable */
+const int32_t ERR_SESSION_UNAVAILABLE = BASE_AUDIO_ERR_OFFSET - 62;
+
+/** Buffer too small */
+const int32_t ERR_BUFFER_TOO_SMALL = BASE_AUDIO_ERR_OFFSET - 63;
+ 
+/** callback invalid */
+const int32_t ERR_CALLBACK_INVALID = BASE_AUDIO_ERR_OFFSET - 64;
+ 
+/** callback not set */
+const int32_t ERR_CALLBACK_NOT_SET = BASE_AUDIO_ERR_OFFSET - 65;
+
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
 
@@ -228,7 +276,7 @@ const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
 const int32_t ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 
 /** success but not continue */
-const int32_t SUCCESS_BUT_NOT_CONTINUE = BASE_AUDIO_ERR_OFFSET - 300;
+const int32_t SUCCESS_BUT_NOT_CONTINUE = BASE_AUDIO_ERR_OFFSET - 255;
 
 const std::unordered_map<int32_t, std::string> ErrCode2ErrMessage = {
     {SUCCESS, "success"},
@@ -242,6 +290,54 @@ inline std::string ErrMessage(int32_t ec)
 {
     auto it = ErrCode2ErrMessage.find(ec);
     return it != ErrCode2ErrMessage.end() ? it->second : "unknown error";
+}
+
+enum class ProblemCategory : uint8_t {
+    FAULT_GENERAL = 0x00,
+    FAULT_NO_SOUND = 0x01,
+    FAULT_LOW_VOLUME = 0x02,
+    FAULT_STUTTER_NOISE = 0x03,
+    FAULT_AUTO_STOP = 0x04,
+    FAULT_VOLUME_ABNORMAL = 0x05,
+    FAULT_WRONG_DEVICE = 0x06,
+    FAULT_AUTO_PLAY = 0x07,
+    FAULT_CONTROL_ABNORMAL = 0x08,
+    FAULT_DEVICE_SWUTCG_FAIL = 0x09,
+    FAULT_STATE_INCONSISTENT = 0x0A,
+};
+
+enum class OperationType : uint8_t {
+    GENERAL = 0x00,
+    PLAY = 0x01,
+    RECORD = 0x02,
+    CONTROL = 0x03,
+    EDIT = 0x04,
+    HIPLAY = 0x05,
+};
+
+enum class BusinessScenario : uint8_t {
+    GENERAL = 0x00,
+    CREATE = 0x01,
+    START = 0x02,
+    SEND_DATA = 0x03,
+    DEVICE_SWITCH = 0x04,
+    FOCUS_EVENT = 0x05,
+    PAUSE = 0x06,
+    STOP = 0x07,
+    FLUSH = 0x08,
+    RELEASE = 0x09,
+    QUERY = 0x0A,
+    CALLBACK = 0x0B,
+    CONFING = 0x0C,
+};
+
+constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operationType,
+    BusinessScenario scenario, int32_t detail)
+{
+    return static_cast<int32_t>((static_cast<uint32_t>(category) << PROBLEM_CATEGORY_BIT_NUM) |
+        (static_cast<uint32_t>(operationType) << OPERATION_TYPE_BIT_NUM) |
+        (static_cast<uint32_t>(scenario) << BUSINESS_SCENARIO_BIT_NUM) |
+        ((BASE_AUDIO_ERR_OFFSET - detail) & 0xFF));
 }
 
 }  // namespace AudioStandard

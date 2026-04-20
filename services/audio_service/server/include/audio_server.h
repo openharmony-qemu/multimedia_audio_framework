@@ -45,6 +45,8 @@
 #include "audio_engine_callback_types.h"
 #include "audio_stream_types.h"
 #include "audio_capturer_types.h"
+#include "audio_device_enhance_manager.h"
+#include "adapter/i_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,7 +76,6 @@ struct WakeupTrackInfo {
     enum WakeupResult result;
     enum WakeupErrorCode errCode;
 };
-
 class AudioServer;
 class ProxyDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
@@ -96,7 +97,6 @@ private:
     bool releaseFlag_ = true; // Determines whether to release pipe info in policy
     uint32_t sessionId_ = 0;
 };
-
 class AudioServer : public SystemAbility, public StandardAudioServiceStub,
     public IAudioSinkCallback, IAudioSourceCallback,
     public IAudioServerInnerCall, public DataTransferStateChangeCallbackForMonitor {
@@ -131,6 +131,7 @@ public:
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<StringPair> &result) override;
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
+    std::string HandleSpecificKey(const std::string &key, const std::shared_ptr<IDeviceManager> &deviceManager);
     int32_t GetAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
@@ -518,11 +519,14 @@ private:
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;
 
     pthread_t m_paDaemonThread;
+    std::shared_ptr<SoundCardInfo> cacheSoundCardInfo_;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::string playTaskId_ = "0"; // only use by homemusic
 
     bool isEarpiece_ = false;
     float audioBalanceValue_ = 0.0f;
+
+    float audioD2DValue_ = 0.0f;
 
     // Capturer status flags: each capturer is represented by a single bit.
     // 0 indicates the capturer has stopped; 1 indicates the capturer has started.

@@ -66,4 +66,5 @@ interface ICoreServiceProviderIpc {
     void GetModuleNameBySessionId([in] unsigned int sessionID, [out] String name);
     void SetCapturerMuteHint([in] unsigned int sessionId, [in] boolean mute);
     [oneway] void RecordBootStateTime([in] int state, [in] int uid, [in] long curTime);
+    [oneway] void NotifySessionStandbyStatus([in] unsigned int sessionId, [in] boolean standbyStatus);
 }

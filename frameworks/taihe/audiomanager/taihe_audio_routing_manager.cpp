@@ -307,6 +307,26 @@ void AudioRoutingManagerImpl::SelectOutputDeviceByFilterWithStrategySync(AudioRe
     }
 }
 
+void AudioRoutingManagerImpl::RestoreOutputDeviceByFilterSync(AudioRendererFilter const &filter)
+{
+    bool bArgTransFlag = true;
+    OHOS::sptr<OHOS::AudioStandard::AudioRendererFilter> audioRendererFilter;
+    TaiheParamUtils::GetAudioRendererFilter(audioRendererFilter, bArgTransFlag, filter);
+
+    if (!bArgTransFlag) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED);
+        return;
+    }
+
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioMngr_->RestoreOutputDevice(audioRendererFilter) != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "RestoreOutputDeviceByFilterSync failed");
+    }
+}
+
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter)
 {
     std::vector<AudioDeviceDescriptor> emptyResult;

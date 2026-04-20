@@ -81,15 +81,19 @@ void BluetoothDeviceManager::UnloadAdapter(const std::string &adapterName, bool 
 
     std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
-    std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
-    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
-    CHECK_AND_RETURN_LOG(force || (wrapper->renders_.size() == 0 && wrapper->captures_.size() == 0),
-        "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
-        wrapper->renders_.size(), wrapper->captures_.size());
+    {
+        std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
+        std::scoped_lock ioLock(wrapper->renderMtx_, wrapper->captureMtx_);
+        CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+        const size_t renderNum = wrapper->renders_.size();
+        const size_t captureNum = wrapper->captures_.size();
+        CHECK_AND_RETURN_LOG(force || (renderNum == 0 && captureNum == 0),
+            "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu",
+            adapterName.c_str(), renderNum, captureNum);
 
-    audioManager_->UnloadAdapter(audioManager_, wrapper->adapter_);
-    wrapper->adapter_ = nullptr;
-    innerLock.unlock();
+        audioManager_->UnloadAdapter(audioManager_, wrapper->adapter_);
+        wrapper->adapter_ = nullptr;
+    }
     std::lock_guard<std::mutex> lock(adapterMtx_);
     adapters_[adapterName].reset();
     adapters_.erase(adapterName);
@@ -160,13 +164,16 @@ void *BluetoothDeviceManager::CreateRender(const std::string &adapterName, void 
     struct AudioDeviceDescriptor *bluetoothDeviceDesc = static_cast<struct AudioDeviceDescriptor *>(deviceDesc);
 
     std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     bluetoothDeviceDesc->portId = GetPortId(adapterName, PORT_OUT);
 
+    std::unique_lock<std::mutex> lock(wrapper->renderMtx_);
+    CHECK_AND_RETURN_RET_LOG(wrapper->adapter_ != nullptr, nullptr, "adapter %{public}s is nullptr",
+        adapterName.c_str());
     struct AudioRender *render = nullptr;
     int32_t ret = wrapper->adapter_->CreateRender(wrapper->adapter_, bluetoothDeviceDesc, bluetoothParam, &render);
     if (ret != SUCCESS || render == nullptr) {
+        lock.unlock();
         AUDIO_ERR_LOG("create render fail");
         HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
             " create render fail, id:" + std::to_string(hdiRenderId)));
@@ -175,8 +182,7 @@ void *BluetoothDeviceManager::CreateRender(const std::string &adapterName, void 
     }
     AUDIO_INFO_LOG("create render success, desc: %{public}s", bluetoothDeviceDesc->desc);
 
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
-    hdiRenderId = GetHdiRenderId(adapterName);
+    hdiRenderId = GetHdiRenderId(wrapper);
     wrapper->renders_[hdiRenderId] = render;
     return render;
 }
@@ -186,13 +192,14 @@ void BluetoothDeviceManager::DestroyRender(const std::string &adapterName, uint3
     AUDIO_INFO_LOG("destroy render, hdiRenderId: %{public}u", hdiRenderId);
 
     std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    std::unique_lock<std::mutex> lock(wrapper->renderMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     CHECK_AND_RETURN_LOG(wrapper->renders_.count(hdiRenderId) != 0, "render not exist");
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
     wrapper->adapter_->DestroyRender(wrapper->adapter_, wrapper->renders_[hdiRenderId]);
     wrapper->renders_.erase(hdiRenderId);
     wrapper->freeHdiRenderIdSet_.insert(hdiRenderId);
+    lock.unlock();
     UnloadAdapter(adapterName);
 }
 
@@ -204,13 +211,16 @@ void *BluetoothDeviceManager::CreateCapture(const std::string &adapterName, void
     struct AudioDeviceDescriptor *bluetoothDeviceDesc = static_cast<struct AudioDeviceDescriptor *>(deviceDesc);
 
     std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     bluetoothDeviceDesc->portId = GetPortId(adapterName, PORT_IN);
 
+    std::unique_lock<std::mutex> lock(wrapper->captureMtx_);
+    CHECK_AND_RETURN_RET_LOG(wrapper->adapter_ != nullptr, nullptr, "adapter %{public}s is nullptr",
+        adapterName.c_str());
     struct AudioCapture *capture = nullptr;
     int32_t ret = wrapper->adapter_->CreateCapture(wrapper->adapter_, bluetoothDeviceDesc, bluetoothParam, &capture);
     if (ret != SUCCESS || capture == nullptr) {
+        lock.unlock();
         AUDIO_ERR_LOG("create capture fail");
         HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
             " create capture fail, id:" + std::to_string(hdiCaptureId)));
@@ -219,8 +229,7 @@ void *BluetoothDeviceManager::CreateCapture(const std::string &adapterName, void
     }
     AUDIO_INFO_LOG("create capture success, desc: %{public}s", bluetoothDeviceDesc->desc);
 
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
-    hdiCaptureId = GetHdiCaptureId(adapterName);
+    hdiCaptureId = GetHdiCaptureId(wrapper);
     wrapper->captures_[hdiCaptureId] = capture;
     return capture;
 }
@@ -230,21 +239,27 @@ void BluetoothDeviceManager::DestroyCapture(const std::string &adapterName, uint
     AUDIO_INFO_LOG("destroy capture, hdiCaptureId: %{public}u", hdiCaptureId);
 
     std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    std::unique_lock<std::mutex> lock(wrapper->captureMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     CHECK_AND_RETURN_LOG(wrapper->captures_.count(hdiCaptureId) != 0, "capture not exist");
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
     wrapper->adapter_->DestroyCapture(wrapper->adapter_, wrapper->captures_[hdiCaptureId]);
     wrapper->captures_.erase(hdiCaptureId);
     wrapper->freeHdiCaptureIdSet_.insert(hdiCaptureId);
+    lock.unlock();
     UnloadAdapter(adapterName);
 }
 
 void BluetoothDeviceManager::DumpInfo(std::string &dumpString)
 {
     for (auto &item : adapters_) {
-        uint32_t renderNum = item.second == nullptr ? 0 : item.second->renders_.size();
-        uint32_t captureNum = item.second == nullptr ? 0 : item.second->captures_.size();
+        uint32_t renderNum = 0;
+        uint32_t captureNum = 0;
+        if (item.second != nullptr) {
+            std::scoped_lock lock(item.second->renderMtx_, item.second->captureMtx_);
+            renderNum = item.second->renders_.size();
+            captureNum = item.second->captures_.size();
+        }
         dumpString += "  - bt/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
             std::to_string(captureNum) + "\n";
     }
@@ -324,10 +339,9 @@ uint32_t BluetoothDeviceManager::GetPortId(const std::string &adapterName, enum 
     return portId;
 }
 
-uint32_t BluetoothDeviceManager::GetHdiRenderId(const std::string &adapterName)
+uint32_t BluetoothDeviceManager::GetHdiRenderId(const std::shared_ptr<BluetoothAdapterWrapper> &wrapper)
 {
-    std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, 0, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, 0, "wrapper is nullptr");
 
     if (wrapper->freeHdiRenderIdSet_.empty()) {
         return wrapper->renders_.size();
@@ -337,10 +351,9 @@ uint32_t BluetoothDeviceManager::GetHdiRenderId(const std::string &adapterName)
     return hdiRenderId;
 }
 
-uint32_t BluetoothDeviceManager::GetHdiCaptureId(const std::string &adapterName)
+uint32_t BluetoothDeviceManager::GetHdiCaptureId(const std::shared_ptr<BluetoothAdapterWrapper> &wrapper)
 {
-    std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, 0, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, 0, "wrapper is nullptr");
 
     if (wrapper->freeHdiCaptureIdSet_.empty()) {
         return wrapper->captures_.size();

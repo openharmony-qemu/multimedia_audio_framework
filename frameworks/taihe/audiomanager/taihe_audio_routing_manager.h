@@ -50,6 +50,7 @@ public:
         array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceByFilterWithStrategySync(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices, AudioDevcieSelectStrategy strategy);
+    void RestoreOutputDeviceByFilterSync(AudioRendererFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceByFilter(AudioRendererFilter const &filter);
     void SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,

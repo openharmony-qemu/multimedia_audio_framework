@@ -50,11 +50,15 @@ uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &inf
     return id;
 }
 
-uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info)
+uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info,
+    uint32_t routeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!deviceClass.empty(), HDI_INVALID_ID, "invalid device class");
 
     if (deviceClass == "primary") {
+        if (routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+            return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
+        }
 #ifdef MULTI_BUS_ENABLE
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, info);
 #endif
@@ -112,6 +116,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t route
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION);
     } else if (routeFlag == AUDIO_INPUT_FLAG_RAW_AI) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_RAW_AI);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_INTERPHONE) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
     }
     return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
 }

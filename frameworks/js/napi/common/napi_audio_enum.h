@@ -77,6 +77,7 @@ public:
         USAGE_VOICE_CALL_ASSISTANT = 21,
         USAGE_ANNOUNCEMENT = 22,
         USAGE_EMERGENCY = 23,
+        USAGE_INTERPHONE = 24,
         USAGE_MAX = 100
     };
 
@@ -115,6 +116,7 @@ public:
         TYPE_UNPROCESSED = 14,
         TYPE_LIVE = 17,
         TYPE_UNPROCESSED_VOICE_ASSISTANT = 19,
+        TYPE_INTERPHONE = 20
     };
 
     enum AudioDataCallbackResult {

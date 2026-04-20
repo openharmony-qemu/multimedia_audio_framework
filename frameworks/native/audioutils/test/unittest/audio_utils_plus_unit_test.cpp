@@ -689,25 +689,6 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_007, TestSize.Level3)
 }
 
 /**
-* @tc.name  : Test RecordPaSilenceState API
-* @tc.type  : FUNC
-* @tc.number: RecordPaSilenceState_001
-* @tc.desc  : Test RecordPaSilenceState
-*/
-HWTEST(AudioUtilsPlusUnitTest, RecordPaSilenceState_001, TestSize.Level3)
-{
-    uint32_t sessionId = 111111;
-    bool isSilence = true;
-    enum PA_PIPE_TYPE paPipeType = static_cast<PA_PIPE_TYPE>(100);
-    uint32_t  uid = 1000;
-    RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_NORMAL, uid);
-    RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_MULTICHANNEL, uid);
-    RecordPaSilenceState(sessionId, isSilence, paPipeType, uid);
-    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
-    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), 1);
-}
-
-/**
 * @tc.name  : Test PauseSilenceMonitor API
 * @tc.type  : FUNC
 * @tc.number: PauseSilenceMonitor_001

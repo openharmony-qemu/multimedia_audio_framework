@@ -40,6 +40,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_device_info.h"
 #include "boot_animation_state_info.h"
+#include "stream_dfx_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -75,6 +76,7 @@ static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
+    {STREAM_VOICE_CALL, STREAM_USAGE_INTERPHONE},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_USAGE_VOICE_CALL_ASSISTANT},
     {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_USAGE_ALARM},
@@ -370,6 +372,19 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
+bool AudioRenderer::CheckUltrasonicPermission(AudioStreamType audioStreamType, StreamUsage streamUsage)
+{
+    if (audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA) {
+        return true;
+    }
+    AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+            BusinessScenario::CREATE, ERR_INVALID_PARAM), "ULTRASONIC can only create by MSDP", false);
+    AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+    return false;
+}
+
 std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions,
     std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
     const AppInfo &appInfo)
@@ -382,11 +397,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
         nullptr, "sa not start");
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
-    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(CheckUltrasonicPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage),
+        nullptr, "CheckUltrasonicPermission fail");
 
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
     if (audioRenderer == nullptr) {
@@ -449,6 +461,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
 
     rendererInfo_.privacyType = rendererOptions.privacyType;
     rendererInfo_.voipNoPrivacyFlag = rendererOptions.rendererInfo.voipNoPrivacyFlag;
+    rendererInfo_.isCallWaitingTone = rendererOptions.rendererInfo.isCallWaitingTone;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
 }
@@ -536,6 +549,9 @@ bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType
         if (!PermissionUtil::VerifySystemPermission()) {
             AudioRenderer::SendRendererCreateError(streamUsage, ERR_PERMISSION_DENIED);
             AUDIO_ERR_LOG("ANNOUNCEMENT or EMERGENCY can only create by system app");
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                    BusinessScenario::CREATE, ERR_PERMISSION_DENIED), "ULTRASONIC can only create by MSDP", false);
             return false;
         }
     }
@@ -619,6 +635,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.contentType = rendererInfo_.contentType;
     audioInterrupt_.sessionStrategy = strategy_;
     audioInterrupt_.api = rendererInfo_.playerType;
+    audioInterrupt_.isCallWaitingTone = rendererInfo_.isCallWaitingTone;
     audioInterrupt_.bundleName = audioStream_->GetBundleName();
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AppBundleManager::GetSelfBundleName();
@@ -931,6 +948,9 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
     } else if (flag & AUDIO_OUTPUT_FLAG_HWDECODING) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_HWDECODING;
+    } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_INTERPHONE_VOIP;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_INTERPHONE;
     } else {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
@@ -950,6 +970,7 @@ int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
     if (!result) {
         params.sampleFormat = static_cast<AudioSampleFormat>(audioStreamParams.format);
         params.sampleRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        params.customSampleRate = audioStreamParams.customSampleRate;
         params.channelCount = static_cast<AudioChannel>(audioStreamParams.channels);
         params.encodingType = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         params.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
@@ -977,6 +998,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         streamInfo.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+        streamInfo.customSampleRate = audioStreamParams.customSampleRate;
     }
 
     return result;

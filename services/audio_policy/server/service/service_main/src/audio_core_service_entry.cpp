@@ -371,10 +371,10 @@ int32_t AudioCoreService::EventEntry::SetInputDevice(const DeviceType deviceType
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, std::string networkId)
+    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
+    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, uid, networkId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(
@@ -733,6 +733,13 @@ int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->CaptureConcurrentCheck(sessionId);
+}
+
+void AudioCoreService::EventEntry::NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyStandbyStatus(sessionId, standbyStatus);
 }
 
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)

@@ -85,9 +85,9 @@ uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::str
 }
 
 uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info,
-    bool isResident, bool tryCreate)
+    bool isResident, bool tryCreate, uint32_t routeFlag)
 {
-    uint32_t id = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
+    uint32_t id = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, routeFlag);
     AUDIO_INFO_LOG("Device class: %{public}s, id: %{public}u", deviceClass.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
     ProcessIdUseCount(id, isResident, tryCreate);

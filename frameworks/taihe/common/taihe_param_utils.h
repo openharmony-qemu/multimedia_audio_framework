@@ -51,6 +51,7 @@ public:
         AudioCapturerOptions const &options);
     static int32_t GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,
         AudioRendererOptions const &options);
+    static int32_t GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppIdInfo const &options);
     static int32_t GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
         AudioSpatialDeviceState in);
     static int32_t GetAudioDeviceDescriptor(

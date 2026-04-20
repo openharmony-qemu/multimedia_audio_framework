@@ -58,6 +58,7 @@ constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
+constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
@@ -700,6 +701,7 @@ struct AudioRendererInfo : public Parcelable {
     bool keepRunning = false;
     bool isStatic = false;
     uint32_t ultraFastFlag = ULTRA_NONE;
+    bool isCallWaitingTone = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -739,7 +741,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(voipNoPrivacyFlag)
             && parcel.WriteBool(toneFlag)
             && parcel.WriteBool(keepRunning)
-            && parcel.WriteBool(isStatic);
+            && parcel.WriteBool(isStatic)
+            && parcel.WriteBool(isCallWaitingTone);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -770,6 +773,7 @@ struct AudioRendererInfo : public Parcelable {
         toneFlag = parcel.ReadBool();
         keepRunning = parcel.ReadBool();
         isStatic = parcel.ReadBool();
+        isCallWaitingTone = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -852,13 +856,6 @@ public:
 struct AudioRendererDesc {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-};
-
-struct AudioRendererOptions {
-    AudioStreamInfo streamInfo;
-    AudioRendererInfo rendererInfo;
-    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
-    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct MicStateChangeEvent : public Parcelable {
@@ -1158,6 +1155,14 @@ struct AppInfo {
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
     std::string deviceId {""};
+};
+
+struct AudioRendererOptions {
+    AudioStreamInfo streamInfo;
+    AudioRendererInfo rendererInfo;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
+    AppInfo appInfo;
 };
 
 struct BufferQueueState {
@@ -1774,6 +1779,7 @@ enum AudioParamKey {
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
     AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
+    SOUND_CARD_INFO = 1002,
 };
 
 struct DStatusInfo {
@@ -1935,6 +1941,11 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
+}
+
+static inline bool ValidStreamId(uint32_t streamId)
+{
+    return streamId != 0 && streamId != INVALID_STREAM_ID;
 }
 
 enum RouterType {
@@ -2211,6 +2222,7 @@ struct FetchDeviceInfo : public Parcelable {
     std::string caller = "";
     std::string bundleName = "";
     RouterType bypassType = ROUTER_TYPE_NONE;
+    int32_t streamId = INVALID_STREAM_ID;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)

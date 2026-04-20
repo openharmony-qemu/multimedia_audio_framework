@@ -215,6 +215,7 @@ bool AudioStreamManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) co
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_RANGING:
         case STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case STREAM_USAGE_INTERPHONE:
         case STREAM_USAGE_VOICE_RINGTONE:
             break;
         case STREAM_USAGE_SYSTEM:
