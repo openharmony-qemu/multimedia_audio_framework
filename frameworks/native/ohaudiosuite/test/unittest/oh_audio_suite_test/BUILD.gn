@@ -26,6 +26,7 @@ if (audio_framework_feature_audiosuite_support) {
       "${audio_framework_root}/interfaces/inner_api/native/audiosuite/include",
       "${audio_framework_root}/services/audio_suite/client/utils/include",
       "${audio_framework_root}/services/audio_engine/plugin/resample/include",
+      "${audio_framework_root}/services/audio_suite/client/converter/include",
     ]
 
     cflags = [

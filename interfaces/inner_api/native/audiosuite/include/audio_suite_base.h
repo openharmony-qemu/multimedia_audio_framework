@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 #include "audio_stream_info.h"
 
 namespace OHOS {
@@ -65,6 +66,42 @@ typedef enum {
     ENCODING_TYPE_AUDIOVIVID = 1,
     ENCODING_TYPE_E_AC3 = 2,
 } AudioStreamEncodingType;
+
+// Channel layout to channel number mapping table
+inline static const std::unordered_map<AudioChannelLayout, AudioChannel> LAYOUT_TO_CHANNEL = {
+    {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
+    {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
+    {AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX, AudioChannel::STEREO},
+    {AudioChannelLayout::CH_LAYOUT_2POINT1, AudioChannel::CHANNEL_3},
+    {AudioChannelLayout::CH_LAYOUT_3POINT0, AudioChannel::CHANNEL_3},
+    {AudioChannelLayout::CH_LAYOUT_SURROUND, AudioChannel::CHANNEL_3},
+    {AudioChannelLayout::CH_LAYOUT_3POINT1, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_4POINT0, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_QUAD_SIDE, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_QUAD, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_2POINT0POINT2, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_4POINT1, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_5POINT0, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_5POINT0_BACK, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_2POINT1POINT2, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_3POINT0POINT2, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1_BACK, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_6POINT0, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_HEXAGONAL, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_3POINT1POINT2, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_6POINT1, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_6POINT1_BACK, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_7POINT0, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_OCTAGONAL, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1POINT2, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8}
+};
 
 struct AudioFormat {
     AudioChannelInfo audioChannelInfo;
