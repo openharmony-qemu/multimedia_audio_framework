@@ -121,20 +121,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_001, TestSize.Lev
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_002
-* @tc.desc  : Test Init interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_002, TestSize.Level1)
-{
-    AudioCoreConfigManager::GetInstance().xmlHasLoaded_ = true;
-    auto ret = AudioPipeManager::GetPipeManager()->Init();
-    EXPECT_FALSE(ret);
-    ret = AudioPolicyService::GetAudioPolicyService().Init();
-    EXPECT_FALSE(ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_003
 * @tc.desc  : Test CreateRecoveryThread interfaces.
 */

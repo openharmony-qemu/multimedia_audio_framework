@@ -3934,5 +3934,35 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_002, 
     ret = rendererInServer->StartInnerDuringStandby();
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
+
+/**
+ * @tc.name  : Test NotifyStandbyAction Exec
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStandbyActionExec_001
+ * @tc.desc  : Test NotifyStandbyAction Exec when isStandbyOn_ is true.
+ */
+HWTEST_F(RendererInServerUnitTest, NotifyStandbyActionExec_001, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    auto action = std::make_shared<NotifyStandbyAction>(sessionId, true);
+    ASSERT_NE(nullptr, action);
+    
+    action->Exec();
+}
+
+/**
+ * @tc.name  : Test NotifyStandbyAction Exec
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStandbyActionExec_002
+ * @tc.desc  : Test NotifyStandbyAction Exec when isStandbyOn_ is false.
+ */
+HWTEST_F(RendererInServerUnitTest, NotifyStandbyActionExec_002, TestSize.Level1)
+{
+    uint32_t sessionId = 456;
+    auto action = std::make_shared<NotifyStandbyAction>(sessionId, false);
+    ASSERT_NE(nullptr, action);
+    
+    action->Exec();
+}
 } // namespace AudioStandard
 } // namespace OHOS

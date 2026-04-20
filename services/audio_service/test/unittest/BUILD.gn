@@ -396,7 +396,6 @@ ohos_unittest("audio_service_unit_test") {
   sources = [
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
-    "./client/audio_volume_client_manager_unit_test.cpp",
     "./client/audio_wakeup_manager_unit_test.cpp",
     "./client/audio_workgroup_manager_unit_test.cpp",
     "./client/audio_session_manager_unit_test.cpp",
@@ -1777,12 +1776,63 @@ ohos_unittest("audio_highpass_filter_unit_test") {
   defines = [ "TEST_COVERAGE=1" ]
 }
 
+ohos_unittest("audio_volume_client_manager_unit_test") {
+  module_out_path = audio_policy_module_output_path
+
+  configs = [ ":module_private_config" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/include/dfx",
+    "../../../../services/audio_service/client/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audiopolicy/include",
+    "../../../../services/audio_policy/server/include",
+  ]
+
+  sources = [ "./client/audio_volume_client_manager_unit_test.cpp" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_foundation",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_common",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = [ "-std=c++20" ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  defines = [ "TEST_COVERAGE=1" ]
+}
+
 group("audio_service_unittest") {
   testonly = true
   deps = [
     "renderer_in_server_unit_test:renderer_in_server_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_second_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_third_unit_test",
-    "notify_standby_action_unit_test:notify_standby_action_unit_test",
   ]
 }

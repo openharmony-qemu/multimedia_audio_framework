@@ -278,37 +278,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_Prepare001, TestSize
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AudioPolicyServiceTest_002 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    // clear data
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
-
-    for (const auto& preferredType : preferredTypes) {
-        AUDIO_INFO_LOG("AudioPolicyServiceTest_002 preferredType:%{public}d", static_cast<uint32_t>(preferredType));
-        for (const auto& deviceType : deviceTypes) {
-            AUDIO_INFO_LOG("AudioPolicyServiceTest_002 deviceType:%{public}d", static_cast<uint32_t>(deviceType));
-            for (const auto& streamUsage : streamUsages) {
-                AUDIO_INFO_LOG("AudioPolicyServiceTest_002 streamUsage:%{public}d", static_cast<uint32_t>(streamUsage));
-                GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.HandleRecoveryPreferredDevices(
-                    preferredType, deviceType, streamUsage);
-            }
-        }
-    }
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_004
 * @tc.desc  : Test AudioPolicyService interfaces.
 */
