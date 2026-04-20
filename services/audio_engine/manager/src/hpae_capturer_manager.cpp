@@ -437,7 +437,8 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Pause");
-        AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
+        AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s",
+            sessionId, sourceInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
@@ -445,9 +446,21 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_PAUSED);
+        
+        StopInterphoneSourceIfNeeded();
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeCapturerManager::StopInterphoneSourceIfNeeded()
+{
+    if (sourceInfo_.deviceName.find("interphone") != std::string::npos) {
+        AUDIO_INFO_LOG("Interphone capturer paused, stopping source cluster immediately");
+        if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
+            sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
+        }
+    }
 }
 
 int32_t HpaeCapturerManager::Flush(uint32_t sessionId)

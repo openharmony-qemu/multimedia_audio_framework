@@ -2934,6 +2934,170 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_013, TestSize.Level1)
     WaitForMsgProcessing(capturerManager);
 }
 
+/**
+ * @tc.name  : Test StopInterphoneSourceIfNeeded for interphone capturer
+ * @tc.type  : FUNC
+ * @tc.number: StopInterphoneSourceIfNeeded_001
+ * @tc.desc  : Test StopInterphoneSourceIfNeeded when deviceName contains "Interphone".
+ */
+HWTEST_F(HpaeCapturerManagerTest, StopInterphoneSourceIfNeeded_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.deviceName = "Interphone_Source";  // deviceName contains "Interphone"
+    sourceInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    sourceInfo.filePath = g_rootCapturerPath;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    sourceInfo.micRef = HPAE_REF_OFF;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    // Test StopInterphoneSourceIfNeeded function directly with deviceName containing "Interphone"
+    capturerManager->StopInterphoneSourceIfNeeded();
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test StopInterphoneSourceIfNeeded for non-interphone capturer
+ * @tc.type  : FUNC
+ * @tc.number: StopInterphoneSourceIfNeeded_002
+ * @tc.desc  : Test StopInterphoneSourceIfNeeded when deviceName does not contain "Interphone".
+ */
+HWTEST_F(HpaeCapturerManagerTest, StopInterphoneSourceIfNeeded_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);  // deviceName is "Built_in_mic", does not contain "Interphone"
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    // Test StopInterphoneSourceIfNeeded - should not stop for non-interphone deviceName
+    capturerManager->StopInterphoneSourceIfNeeded();
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test Pause for interphone capturer stream
+ * @tc.type  : FUNC
+ * @tc.number: Pause_Interphone_001
+ * @tc.desc  : Test Pause when deviceName contains "Interphone", calls StopInterphoneSourceIfNeeded.
+ */
+HWTEST_F(HpaeCapturerManagerTest, Pause_Interphone_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.deviceName = "Interphone_Source";  // deviceName contains "Interphone"
+    sourceInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    sourceInfo.filePath = g_rootCapturerPath;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    sourceInfo.micRef = HPAE_REF_OFF;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    streamInfo.sessionId = DEFAULT_SESSION_ID;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+    
+    // Pause will call StopInterphoneSourceIfNeeded internally for interphone deviceName
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+    
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test Pause for non-interphone capturer stream
+ * @tc.type  : FUNC
+ * @tc.number: Pause_NonInterphone_001
+ * @tc.desc  : Test Pause when deviceName does not contain "Interphone".
+ */
+HWTEST_F(HpaeCapturerManagerTest, Pause_NonInterphone_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);  // deviceName is "Built_in_mic", does not contain "Interphone"
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sessionId = DEFAULT_SESSION_ID;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+    
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+    
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
