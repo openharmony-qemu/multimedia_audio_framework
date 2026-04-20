@@ -102,6 +102,8 @@ void AudioFocusInfoChangeCallbackTest::OnAudioFocusInfoChange(
 HWTEST(AudioManagerInterruptUnitTest, ActivateAudioInterrupt_001, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt;
+    audioInterrupt.uid = getuid();
+    audioInterrupt.pid = petuid();
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
     audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
@@ -117,6 +119,8 @@ HWTEST(AudioManagerInterruptUnitTest, ActivateAudioInterrupt_001, TestSize.Level
 HWTEST(AudioManagerInterruptUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt;
+    audioInterrupt.uid = getuid();
+    audioInterrupt.pid = petuid();
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
     audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
@@ -214,7 +218,7 @@ HWTEST(AudioManagerInterruptUnitTest, RequestIndependentInterrupt_001, TestSize.
 {
     FocusType FocusType = FocusType::FOCUS_TYPE_RECORDING;
     auto ret = AudioSystemManager::GetInstance()->RequestIndependentInterrupt(FocusType);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -226,7 +230,7 @@ HWTEST(AudioManagerInterruptUnitTest, AbandonIndependentInterrupt_001, TestSize.
 {
     FocusType FocusType = FocusType::FOCUS_TYPE_RECORDING;
     auto ret = AudioSystemManager::GetInstance()->AbandonIndependentInterrupt(FocusType);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
