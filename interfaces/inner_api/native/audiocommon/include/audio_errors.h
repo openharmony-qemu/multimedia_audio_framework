@@ -215,15 +215,6 @@ const int32_t ERR_NO_MEMORY = BASE_AUDIO_ERR_OFFSET - 48;
 /** object init failed */
 const int32_t ERR_INIT_FAILED = BASE_AUDIO_ERR_OFFSET - 49;
 
-/** Buffer too small */
-const int32_t ERR_BUFFER_TOO_SMALL = BASE_AUDIO_ERR_OFFSET - 51;
- 
-/** callback invalid */
-const int32_t ERR_CALLBACK_INVALID = BASE_AUDIO_ERR_OFFSET - 52;
- 
-/** callback not set */
-const int32_t ERR_CALLBACK_NOT_SET = BASE_AUDIO_ERR_OFFSET - 53;
-
 /** operation timeout */
 const int32_t ERR_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 51;
 
