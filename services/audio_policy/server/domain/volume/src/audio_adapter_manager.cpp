@@ -109,6 +109,10 @@ bool AudioAdapterManager::Init()
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
     auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
+    if (streamVolumeInfos_.find(STREAM_APP) == streamVolumeInfos_.end()) {
+        AUDIO_INFO_LOG("APP volume config not found in product config, load from default");
+        audiovolumeParser->LoadDefaultAppVolumeConfig(streamVolumeInfos_);
+    }
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_VOLUME_CONFIG, ClockTime::GetCurMilli());
     lowerVolumeInfos_ = audiovolumeParser->GetLowerVolumeInfoCfg();
     AudioVolumeUtils::GetInstance().Init();
