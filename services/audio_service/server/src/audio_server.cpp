@@ -824,15 +824,6 @@ void AudioServer::ParseAudioParameter()
     }
     NotifyAudioParameterParsed();
     RecordBootStateTime(AudioServerBootState::LOAD_AUDIO_PARAM_CONFIG_XML, ClockTime::GetCurMilli());
-
-    {
-        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
-        for (const auto &pair : audioExtraParameterCacheVector_) {
-            SetCommonExtraParameters(pair.first, pair.second);
-        }
-        audioExtraParameterCacheVector_.clear();
-    }
-    AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
     PermissionUtil::UpdateBGSet();
 }
 
@@ -967,6 +958,8 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
     std::vector<std::pair<std::string, std::string>> newPair = ConvertStringPair(kvpairs);
+    CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
+        "set extra parameters failed: audio parameters not ready");
 
     if (key == HOME_MUSIC_KEY) {
         return SetHomeMusicExtraParameters(newPair);
@@ -1014,8 +1007,6 @@ int32_t AudioServer::SetCockpitDirectExtraParameters(const std::vector<std::pair
 {
     CHECK_AND_RETURN_RET_LOG(IsCockpitDirectCallerAllowed(), ERR_PERMISSION_DENIED,
         "set cockpit direct extra parameters failed: invalid caller uid");
-    CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
-        "set cockpit direct extra parameters failed: audio parameters not ready");
     return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "",
         BuildExtraParameterValue(kvpairs));
 }
@@ -1024,7 +1015,6 @@ int32_t AudioServer::SetCommonExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
     HapReportWakeupEvent(key, kvpairs);
-    CHECK_AND_RETURN_RET_LOG(!CacheExtraParameters(key, kvpairs), ERROR, "cached");
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
@@ -1069,24 +1059,6 @@ bool AudioServer::ProcessKeyValuePairs(const std::string &key,
 }
 
 // LCOV_EXCL_START
-bool AudioServer::CacheExtraParameters(const std::string &key,
-    const std::vector<std::pair<std::string, std::string>> &kvpairs)
-{
-    if (!isAudioParameterParsed_.load()) {
-        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
-        if (!isAudioParameterParsed_.load()) {
-            AUDIO_INFO_LOG("Audio extra parameters will be cached");
-            std::pair<std::string,
-                std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
-            audioExtraParameterCacheVector_.push_back(cache);
-
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool AudioServer::CheckAndPreStoreA2dpParam(std::shared_ptr<IAudioRenderSink> btSink,
     AudioParamKey parmKey, const std::string &renderValue)
 {
@@ -1313,6 +1285,8 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
 int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
+    CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
+        "get extra parameters failed: audio parameters not ready");
     if (mainKey == EFFECT_LIVE_KEY) {
         bool ret = GetEffectLiveParameter(subKeys, result);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get effect live parameters failed.");
@@ -1326,11 +1300,8 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
     } else if (mainKey == COCKPIT_DIRECT_KEY) {
         CHECK_AND_RETURN_RET_LOG(IsCockpitDirectCallerAllowed(), ERR_PERMISSION_DENIED,
             "get cockpit direct extra parameters failed: invalid caller uid");
-        CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
-            "get cockpit direct extra parameters failed: audio parameters not ready");
         return HdiAdapterManager::GetInstance().GetExtraParameters(subKeys, result);
     }
-    CHECK_AND_RETURN_RET_LOG(isAudioParameterParsed_.load(), ERROR, "audioParameterKeys is not ready");
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");

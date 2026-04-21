@@ -448,8 +448,6 @@ private:
     void WriteServiceStartupError();
     void ParseAudioParameter();
     void NotifyAudioParameterParsed();
-    bool CacheExtraParameters(const std::string &key,
-        const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool WaitAudioParameterParsed();
     int32_t SetHomeMusicExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
     int32_t SetEffectLiveExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
@@ -553,8 +551,6 @@ private:
     std::atomic<bool> isAudioParameterParsed_ = false;
     std::condition_variable isAudioParameterParsedCv_;
     std::mutex audioParameterCacheMutex_;
-    std::vector<std::pair<std::string,
-        std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
 
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};
