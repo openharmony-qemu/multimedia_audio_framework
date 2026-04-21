@@ -317,6 +317,7 @@ public:
     bool registerCallbackFlag = false;
     bool activatedRegisterCallbackFlag = false;
     bool isCallWaitingTone = false;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
