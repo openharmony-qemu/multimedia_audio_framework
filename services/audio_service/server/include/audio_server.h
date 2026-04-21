@@ -131,7 +131,6 @@ public:
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<StringPair> &result) override;
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
-    std::string HandleSpecificKey(const std::string &key, const std::shared_ptr<IDeviceManager> &deviceManager);
     int32_t GetAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,

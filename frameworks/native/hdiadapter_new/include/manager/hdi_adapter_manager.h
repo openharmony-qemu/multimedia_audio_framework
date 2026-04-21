@@ -62,6 +62,11 @@ public:
     std::shared_ptr<IAudioRenderSink> GetAuxiliarySink();
 
     int32_t LoadAdapter(HdiDeviceManagerType type, const std::string &adapterName);
+    int32_t SetAudioParameter(HdiDeviceManagerType type, const std::string &adapterName, AudioParamKey key,
+        const std::string &condition, const std::string &value);
+    std::string GetAudioParameter(HdiDeviceManagerType type, const std::string &adapterName, AudioParamKey key,
+        const std::string &condition);
+    std::string GetAudioParameterByKey(HdiDeviceManagerType type, const std::string &key);
     void UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force = false);
     int32_t SetExtraParameters(HdiDeviceManagerType type, const std::string &adapterName,
         const std::string &condition, const std::string &value);

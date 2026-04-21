@@ -342,6 +342,80 @@ HWTEST_F(ManagerUnitTest, SetExtraParameters_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : SetAudioParameter_001
+ * @tc.number : SetAudioParameter_001
+ * @tc.desc   : Verify direct audio parameter forwarding behavior.
+ */
+HWTEST_F(ManagerUnitTest, SetAudioParameter_001, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    auto mockDeviceManager = std::make_shared<MockDeviceManager>();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = mockDeviceManager;
+
+    EXPECT_CALL(*mockDeviceManager, SetAudioParameter("primary", AudioParamKey::MMI, "", "mmi=on"))
+        .WillOnce(testing::Return(SUCCESS));
+
+    int32_t ret = manager.SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary",
+        AudioParamKey::MMI, "", "mmi=on");
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : GetAudioParameter_001
+ * @tc.number : GetAudioParameter_001
+ * @tc.desc   : Verify direct audio parameter query forwarding behavior.
+ */
+HWTEST_F(ManagerUnitTest, GetAudioParameter_001, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    auto mockDeviceManager = std::make_shared<MockDeviceManager>();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_REMOTE] = mockDeviceManager;
+
+    EXPECT_CALL(*mockDeviceManager, GetAudioParameter("networkId_001", AudioParamKey::PERF_INFO, "perf_info"))
+        .WillOnce(testing::Return("perf_value"));
+
+    std::string value = manager.GetAudioParameter(HDI_DEVICE_MANAGER_TYPE_REMOTE, "networkId_001",
+        AudioParamKey::PERF_INFO, "perf_info");
+    EXPECT_EQ(value, "perf_value");
+}
+
+/**
+ * @tc.name   : GetAudioParameterByKey_001
+ * @tc.number : GetAudioParameterByKey_001
+ * @tc.desc   : Verify special key is forwarded to local device manager.
+ */
+HWTEST_F(ManagerUnitTest, GetAudioParameterByKey_001, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    auto mockDeviceManager = std::make_shared<MockDeviceManager>();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = mockDeviceManager;
+
+    EXPECT_CALL(*mockDeviceManager, GetAudioParameter("primary", AudioParamKey::PERF_INFO, "perf_info"))
+        .WillOnce(testing::Return("perf_value"));
+
+    std::string value = manager.GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, "perf_info");
+    EXPECT_EQ(value, "perf_value");
+}
+
+/**
+ * @tc.name   : GetAudioParameterByKey_002
+ * @tc.number : GetAudioParameterByKey_002
+ * @tc.desc   : Verify mmi prefix is converted before forwarding.
+ */
+HWTEST_F(ManagerUnitTest, GetAudioParameterByKey_002, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    auto mockDeviceManager = std::make_shared<MockDeviceManager>();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = mockDeviceManager;
+
+    EXPECT_CALL(*mockDeviceManager, GetAudioParameter("primary", AudioParamKey::MMI, "speaker"))
+        .WillOnce(testing::Return("mmi_value"));
+
+    std::string value = manager.GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, "mmi_speaker");
+    EXPECT_EQ(value, "mmi_value");
+}
+
+/**
  * @tc.name   : GetExtraParameters_001
  * @tc.number : GetExtraParameters_001
  * @tc.desc   : Verify all subkeys are forwarded to local device manager.
