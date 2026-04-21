@@ -348,7 +348,8 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    timestamp.framePosition = readPos;
+    timestamp.framePosition = readPos > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(readPos);
     int64_t audioTimeResult = handleTime;
 
     if (offloadEnable_) {
@@ -408,7 +409,8 @@ bool RendererInClientInner::GetHWDecodingTime(Timestamp &timestamp, Timestamp::T
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "failed to get time:%{public}d", ret);
 
-    timestamp.framePosition = readIdx;
+    timestamp.framePosition = readIdx > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(readIdx);
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     Trace trace("GetHWDecodingTime::ReadIndex:" + std::to_string(readIdx) + ",time:" + std::to_string(timestampVal));
@@ -456,7 +458,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
             framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
     }
 
-    timestamp.framePosition = framePosition;
+    timestamp.framePosition = framePosition > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(framePosition);
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     return ret == SUCCESS;
@@ -2085,7 +2088,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         ", timestamp %{public}" PRIu64 ", totlatency %{public}" PRIu64,
         framePosition, lastFlushReadIndex_, timestampVal, frameLatency);
 
-    timestamp.framePosition = framePosition;
+    timestamp.framePosition = framePosition > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(framePosition);
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     return ret;

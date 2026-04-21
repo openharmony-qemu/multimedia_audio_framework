@@ -94,7 +94,7 @@ public:
     // methods for support IAudioStream
     int32_t GetSessionID(uint32_t &sessionID) override;
 
-    bool GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec) override;
+    bool GetAudioTime(int64_t &framePos, int64_t &sec, int64_t &nanoSec) override;
 
     int32_t GetBufferSize(size_t &bufferSize) override;
 
@@ -467,7 +467,7 @@ int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
     return SUCCESS;
 }
 
-bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec)
+bool AudioProcessInClientInner::GetAudioTime(int64_t &framePos, int64_t &sec, int64_t &nanoSec)
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, false, "buffer is null, maybe not inited.");
 
@@ -476,11 +476,8 @@ bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, i
     bool ret = audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
     CHECK_AND_RETURN_RET_LOG(ret, false, "GetHandleInfo failed");
 
-    if (serverHandlePos > UINT32_MAX) {
-        framePos = serverHandlePos % UINT32_MAX;
-    } else {
-        framePos = static_cast<uint32_t>(serverHandlePos);
-    }
+    framePos = serverHandlePos > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(serverHandlePos);
 
     auto lastHandleInfo = lastHandleInfo_.load();
     if (lastHandleInfo.serverHandlePos < framePos || lastHandleInfo.serverHandleTime == 0) {
