@@ -30,7 +30,7 @@ namespace OHOS {
 namespace AudioStandard {
 static SafeMap<void *, std::weak_ptr<HpaeCapturerStreamImpl>> paCapturerMap_;
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 2;
+const int32_t FRAME_LEN_10MS = (2 * SOURCE_PERIOD_SIZE);
 const int32_t TENMS_PER_SEC = 100;
 
 HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
