@@ -1130,6 +1130,17 @@ ohos_unittest("hpae_co_buffer_node_test") {
     "../../../audio_service:audio_common",
   ]
 
+  defines = []
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   sanitize = {
     cfi = true
     cfi_cross_dso = false
