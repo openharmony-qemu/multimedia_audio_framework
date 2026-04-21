@@ -3250,7 +3250,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
         StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(pid);
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(uid, streamUsage);
         AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", pid, zoneId);
-        interruptService_->DeactivateAudioSession(zoneId, pid);
+        AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, pid);
     }
 
     if (audioPolicyServerHandler_ != nullptr) {
@@ -5040,8 +5040,8 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateSession(const int32_t zo
     int32_t callerUid)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone,
-        stateChangeCallbackFlag, callerUid);
+    AudioInterruptResult result = AudioZoneService::GetInstance().ActivateAudioSession(zoneId,
+        callerPid, strategy, isStandalone, stateChangeCallbackFlag, callerUid);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -5059,7 +5059,7 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
         callerPid, zoneId, streamUsage);
-    return interruptService_->DeactivateAudioSession(zoneId, callerPid);
+    return AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, callerPid);
 }
 
 int32_t AudioPolicyServer::IsAudioSessionActivated(bool &isActive)

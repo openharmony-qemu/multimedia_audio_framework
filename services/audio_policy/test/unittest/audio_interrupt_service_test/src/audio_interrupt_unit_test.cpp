@@ -4847,12 +4847,18 @@ HWTEST_F(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level2)
         std::make_shared<AudioSession>(CALLER_PID, strategy, audioSessionStateMonitor_);
     audioInterruptServiceWithoutHandler->sessionService_.sessionMap_[CALLER_PID]->AddStreamInfo(audioInterrupt);
 
+    bool callbackCalled = false;
+    auto callback = [&callbackCalled]() {
+        callbackCalled = true;
+    }
     audioInterruptServiceWithoutHandler->sessionService_.sessionMap_[CALLER_PID]->state_
         = AudioSessionState::SESSION_NEW;
     audioInterruptServiceWithoutHandler->DelayToDeactivateStreamsInAudioSession(
-        DEFAULT_ZONE_ID, CALLER_PID, audioInterruptServiceWithoutHandler->sessionService_.GetStreams(CALLER_PID));
+        DEFAULT_ZONE_ID, CALLER_PID, audioInterruptServiceWithoutHandler->sessionService_.GetStreams(CALLER_PID),
+        callback);
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
+    EXPECT_TRUE(callbackCalled);
 }
 
 /**

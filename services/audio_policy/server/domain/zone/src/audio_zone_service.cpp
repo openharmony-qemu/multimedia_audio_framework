@@ -49,6 +49,8 @@ void AudioZoneService::Init(std::shared_ptr<AudioPolicyServerHandler> handler,
     zoneClientManager_ = std::make_shared<AudioZoneClientManager>(handler);
     CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr, "create audio zone client manager failed");
     handler->SetAudioZoneEventDispatcher(zoneClientManager_);
+    sessionTimeoutCallbackPtr_ = std::shared_ptr<SessionTimeOutCallback>(this, [](SessionTimeOutCallback*) {});
+    OHOS::Singleton<AudioSessionService>::GetInstance().SetSessionTimeOutCallback(sessionTimeoutCallbackPtr_);
 }
 
 void AudioZoneService::DeInit()
@@ -59,6 +61,7 @@ void AudioZoneService::DeInit()
     AudioZoneInterruptReporter::DisableAllInterruptReport();
     zoneClientManager_ = nullptr;
     interruptService_ = nullptr;
+    sessionTimeoutCallbackPtr_ = nullptr;
 }
 
 int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid)
@@ -958,6 +961,87 @@ void AudioZoneService::NotifyStreamSilentChange(uint32_t streamId)
         for (auto &report : reporters) {
             report->ReportInterrupt();
         }
+    }
+}
+
+AudioInterruptResult AudioZoneService::ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+    const AudioSessionStrategy &strategy, const bool isStandalone, const bool stateChangeCallbackFlag,
+    int32_t callerUid)
+{
+    AudioInterruptResult result;
+    result.retCode = ERROR;
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
+    {
+        JUDGE_AND_INFO_LOG(zoneId != 0, "active audio session of zone %{public}d", zoneId);
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_CALL_FUNC_RETURN_RET(zoneClientManager_ != nullptr && interruptService_ != nullptr, result,
+            HILOG_COMM_ERROR("[ActivateAudioSession]zoneClientManager or interruptService is nullptr"));
+        CHECK_AND_CALL_FUNC_RETURN_RET(CheckIsZoneValid(zoneId), result,
+            HILOG_COMM_ERROR("[ActivateAudioSession]zone id %{public}d is not valid", zoneId));
+        tmp = interruptService_;
+    }
+
+    CHECK_AND_CALL_FUNC_RETURN_RET(tmp != nullptr, result,
+        HILOG_COMM_ERROR("[ActivateAudioSession]interruptService_ tmp is nullptr"));
+    
+    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
+        tmp, zoneClientManager_,
+        AudioZoneInterruptReason::REMOTE_INJECT);
+    result = tmp->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone, stateChangeCallbackFlag, callerUid);
+    for (auto &report : reporters) {
+        report->ReportInterrupt();
+    }
+    return result;
+}
+
+int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t callerPid)   
+{
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
+    {
+        JUDGE_AND_INFO_LOG(zoneId != 0, "deactive audio session of zone %{public}d", zoneId);
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_CALL_FUNC_RETURN_RET(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
+            HILOG_COMM_ERROR("[DeactivateAudioSession]zoneClientManager or interruptService is nullptr"));
+        CHECK_AND_CALL_FUNC_RETURN_RET(CheckIsZoneValid(zoneId), ERROR,
+            HILOG_COMM_ERROR("[DeactivateAudioSession]zone id %{public}d is not valid", zoneId));
+        tmp = interruptService_;
+    }
+
+    CHECK_AND_CALL_FUNC_RETURN_RET(tmp != nullptr, ERROR,
+        HILOG_COMM_ERROR("[DeactivateAudioSession]interruptService_ tmp is nullptr"));
+    
+    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
+        tmp, zoneClientManager_,
+        AudioZoneInterruptReason::REMOTE_INJECT);
+    auto onFakeInterruptDeactivate = [reporters]() {
+        for (auto &report : reporters) {
+            report->ReportInterrupt();
+        }
+    };
+    int32_t result = tmp->DeactivateAudioSession(zoneId, callerPid, onFakeInterruptDeactivate);
+    return result;
+}
+
+void AudioZoneService::OnSessionTimeout(const int32_t pid)
+{
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
+            "zoneClientManager or interruptService is nullptr");
+        tmp = interruptService_;
+    }
+
+    CHECK_AND_RETURN_LOG(tmp != nullptr, "interruptService_ tmp is nullptr");
+
+    int32_t zoneId = tmp->GetAudioSessionZoneidByPid(pid);
+    CHECK_AND_RETURN_LOG(CheckIsZoneValid(zoneId), "zone id %{public}d is not valid", zoneId);
+
+    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
+        tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
+    result = tmp->OnSessionTimeout(pid);
+    for (auto &report : reporters) {
+        report->ReportInterrupt();
     }
 }
 } // namespace AudioStandard
