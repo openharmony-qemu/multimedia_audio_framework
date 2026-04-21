@@ -102,10 +102,9 @@ void GetVolumeFuzzTest(FuzzedDataProvider& fdp)
     uint32_t sessionId = 1;
     uint32_t index = GetData<uint32_t>() % AudioStreamTypeVec.size();
     int32_t volumeType = AudioStreamTypeVec[index];
-    std::string deviceClass = "speaker";
-    AudioVolume::GetInstance()->SetVgsVolumeSupported(GetData<uint8_t>() % NUM_2);
+    uint32_t pipeId = GetData<uint32_t>();
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, pipeId, &volumes);
 }
 
 void GetDoNotDisturbStatusVolumeFuzzTest(FuzzedDataProvider& fdp)
@@ -242,32 +241,21 @@ void SetDefaultAppVolumeFuzzTest(FuzzedDataProvider& fdp)
 
 void SetSystemVolume1FuzzTest(FuzzedDataProvider& fdp)
 {
-    int32_t volumeType = GetData<int32_t>();
-    std::string deviceClass = "speaker";
+    uint32_t pipeId = GetData<uint32_t>();
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
     float volume = GetData<float>();
     int32_t volumeLevel = GetData<int32_t>();
     bool isMuted = GetData<int32_t>() % NUM_2;
-    SystemVolume systemVolume(volumeType, deviceClass, volume, volumeLevel, isMuted);
-    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
-}
-
-void SetSystemVolume2FuzzTest(FuzzedDataProvider& fdp)
-{
-    int32_t volumeType = GetData<int32_t>();
-    std::string deviceClass = "speaker";
-    float volume = GetData<float>();
-    int32_t volumeLevel = GetData<int32_t>();
-    AudioVolume::GetInstance()->SetSystemVolume(volumeType, deviceClass, volume, volumeLevel);
+    PipeVolume pipeVolume(pipeId, volumeType, volume, volumeLevel, isMuted);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
 }
 
 void SetSystemVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
 {
-    int32_t volumeType = GetData<int32_t>();
-    std::vector<std::string> deviceClassVec = {"speaker", "test"};
-    uint32_t deviceClassCount = GetData<uint32_t>() % deviceClassVec.size();
-    std::string deviceClass = deviceClassVec[deviceClassCount];
+    uint32_t pipeId = GetData<uint32_t>();
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
     bool isMuted = GetData<int32_t>() % NUM_2;
-    AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
+    AudioVolume::GetInstance()->SetPipeVolumeMute(pipeId, volumeType, isMuted);
 }
 
 void ConvertStreamTypeStrToIntFuzzTest(FuzzedDataProvider& fdp)
@@ -364,14 +352,6 @@ void RemoveStopFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
     uint32_t fadeoutState = static_cast<FadePauseState>(GetData<uint8_t>() % fadePauseStateCount);
     AudioVolume::GetInstance()->SetStopFadeoutState(streamIndex, fadeoutState);
     AudioVolume::GetInstance()->RemoveStopFadeoutState(streamIndex);
-}
-
-void SetVgsVolumeSupportedFuzzTest(FuzzedDataProvider& fdp)
-{
-    uint32_t sessionId = GetData<uint32_t>();
-    int32_t volumeType = GetData<int32_t>();
-    std::string deviceClass = "speaker";
-    AudioVolume::GetInstance()->SetVgsVolumeSupported(GetData<uint8_t>() % NUM_2);
 }
 
 void SetOffloadEnableFuzzTest(FuzzedDataProvider& fdp)
@@ -480,7 +460,6 @@ void Test(FuzzedDataProvider& fdp)
     SetAppVolumeFuzzTest,
     SetDefaultAppVolumeFuzzTest,
     SetSystemVolume1FuzzTest,
-    SetSystemVolume2FuzzTest,
     SetSystemVolumeMuteFuzzTest,
     ConvertStreamTypeStrToIntFuzzTest,
     IsSameVolumeFuzzTest,
@@ -492,7 +471,6 @@ void Test(FuzzedDataProvider& fdp)
     SetStopFadeoutStateFuzzTest,
     GetStopFadeoutStateFuzzTest,
     RemoveStopFadeoutStateFuzzTest,
-    SetVgsVolumeSupportedFuzzTest,
     GetCurrentActiveDeviceFuzzTest,
     SetOffloadEnableFuzzTest,
     GetOffloadEnableFuzzTest,

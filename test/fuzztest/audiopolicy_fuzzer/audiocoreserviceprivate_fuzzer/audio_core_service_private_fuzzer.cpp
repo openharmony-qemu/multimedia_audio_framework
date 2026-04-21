@@ -938,9 +938,10 @@ void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
     if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
         return;
     }
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor);
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
+    uint32_t ioHandle = GetData<uint32_t>();
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor, ioHandle);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor, ioHandle);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor, ioHandle);
 }
 
 void AudioCoreServicePrivateNotifyRouteUpdate()
