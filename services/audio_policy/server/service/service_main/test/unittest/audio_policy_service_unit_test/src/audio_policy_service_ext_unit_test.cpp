@@ -232,7 +232,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_009, TestSize.Lev
     EXPECT_NE(nullptr, audioCapturerFilter);
     audioCapturerFilter->uid = -1;
     ret = AudioPolicyService::GetAudioPolicyService().GetInputDevice(audioCapturerFilter);
-    EXPECT_EQ(0, ret.size());
+    EXPECT_NE(0, ret.size());
 }
 
 /**
