@@ -5200,5 +5200,155 @@ HWTEST_F(AudioInterruptUnitTest, AddInterruptErrorEventTest, TestSize.Level1)
     );
 }
 
+/**
+* @tc.name  : Test RefreshAudioSceneAfterDelay.
+* @tc.number: AudioInterruptService_RefreshAudioSceneAfterDelay_001
+* @tc.desc  : Test RefreshAudioSceneAfterDelay when zone not found.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_RefreshAudioSceneAfterDelay_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    
+    EXPECT_NO_THROW(
+        interruptServiceTest->RefreshAudioSceneAfterDelay(0);
+    );
+}
+
+/**
+* @tc.name  : Test RefreshAudioSceneAfterDelay.
+* @tc.number: AudioInterruptService_RefreshAudioSceneAfterDelay_002
+* @tc.desc  : Test RefreshAudioSceneAfterDelay with valid zone and focus list.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_RefreshAudioSceneAfterDelay_002, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterrupt.audioFocusType.isPlay = false;
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, AudioFocuState{ACTIVE});
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    
+    EXPECT_NO_THROW(
+        interruptServiceTest->RefreshAudioSceneAfterDelay(0);
+    );
+}
+
+/**
+* @tc.name  : Test RefreshAudioSceneAfterDelay.
+* @tc.number: AudioInterruptService_RefreshAudioSceneAfterDelay_003
+* @tc.desc  : Test RefreshAudioSceneAfterDelay with multiple interrupts.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_RefreshAudioSceneAfterDelay_003, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt1;
+    audioInterrupt1.audioFocusType.streamType = STREAM_VOICE_CALL;
+    audioInterrupt1.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterrupt1.audioFocusType.isPlay = false;
+    
+    AudioInterrupt audioInterrupt2;
+    audioInterrupt2.audioFocusType.streamType = STREAM_RING;
+    audioInterrupt2.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterrupt2.audioFocusType.isPlay = false;
+    
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt1, AudioFocuState{ACTIVE});
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt2, AudioFocuState{PAUSE});
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    
+    EXPECT_NO_THROW(
+        interruptServiceTest->RefreshAudioSceneAfterDelay(0);
+    );
+}
+
+/**
+* @tc.name  : Test ResumeAudioFocusList AudioScene update.
+* @tc.number: AudioInterruptService_ResumeAudioFocusList_AudioScene_001
+* @tc.desc  : Test ResumeAudioFocusList updates AudioScene before focus removal.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_ResumeAudioFocusList_AudioScene_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterrupt.audioFocusType.isPlay = false;
+    audioInterrupt.streamId = 1000;
+    
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, AudioFocuState{PAUSE});
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    
+    EXPECT_NO_THROW(
+        interruptServiceTest->ResumeAudioFocusList(0, false);
+    );
+}
+
+/**
+* @tc.name  : Test ResumeAudioFocusList AudioScene update.
+* @tc.number: AudioInterruptService_ResumeAudioFocusList_AudioScene_002
+* @tc.desc  : Test ResumeAudioFocusList with notification app resume scenario.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_ResumeAudioFocusList_AudioScene_002, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt callInterrupt;
+    callInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
+    callInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    callInterrupt.audioFocusType.isPlay = false;
+    callInterrupt.streamId = 1000;
+    
+    AudioInterrupt notificationInterrupt;
+    notificationInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
+    notificationInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    notificationInterrupt.audioFocusType.isPlay = false;
+    notificationInterrupt.streamId = 2000;
+    
+    audioInterruptZone->audioFocusInfoList.emplace_back(callInterrupt, AudioFocuState{ACTIVE});
+    audioInterruptZone->audioFocusInfoList.emplace_back(notificationInterrupt, AudioFocuState{PAUSE});
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    
+    EXPECT_NO_THROW(
+        interruptServiceTest->ResumeAudioFocusList(0, false);
+    );
+}
+
+/**
+* @tc.name  : Test ResumeAudioFocusList AudioScene update.
+* @tc.number: AudioInterruptService_ResumeAudioFocusList_AudioScene_003
+* @tc.desc  : Test ResumeAudioFocusList with empty focus list.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_ResumeAudioFocusList_AudioScene_003, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    
+    EXPECT_NO_THROW(
+        interruptServiceTest->ResumeAudioFocusList(0, false);
+    );
+    EXPECT_EQ(audioInterruptZone->audioFocusInfoList.size(), 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
