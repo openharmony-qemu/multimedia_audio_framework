@@ -103,7 +103,7 @@ HWTEST(AudioManagerInterruptUnitTest, ActivateAudioInterrupt_001, TestSize.Level
 {
     AudioInterrupt audioInterrupt;
     audioInterrupt.uid = getuid();
-    audioInterrupt.pid = getuid();
+    audioInterrupt.pid = getpid();
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
     audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
@@ -120,7 +120,7 @@ HWTEST(AudioManagerInterruptUnitTest, DeactivateAudioInterrupt_001, TestSize.Lev
 {
     AudioInterrupt audioInterrupt;
     audioInterrupt.uid = getuid();
-    audioInterrupt.pid = getuid();
+    audioInterrupt.pid = getpid();
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
     audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
