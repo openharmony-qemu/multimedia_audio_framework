@@ -50,6 +50,7 @@ public:
     int32_t CaptureConcurrentCheck(const uint32_t sessionId) override;
     int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
     int32_t RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime) override;
+    int32_t NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

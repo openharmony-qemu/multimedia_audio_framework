@@ -40,6 +40,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_device_info.h"
 #include "boot_animation_state_info.h"
+#include "stream_dfx_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -371,6 +372,19 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
+bool AudioRenderer::CheckUltrasonicPermission(AudioStreamType audioStreamType, StreamUsage streamUsage)
+{
+    if (audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA) {
+        return true;
+    }
+    AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+            BusinessScenario::CREATE, ERR_INVALID_PARAM), "ULTRASONIC can only create by MSDP", false);
+    AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+    return false;
+}
+
 std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions,
     std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
     const AppInfo &appInfo)
@@ -383,11 +397,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
         nullptr, "sa not start");
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
-    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(CheckUltrasonicPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage),
+        nullptr, "CheckUltrasonicPermission fail");
 
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
     if (audioRenderer == nullptr) {
@@ -450,6 +461,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
 
     rendererInfo_.privacyType = rendererOptions.privacyType;
     rendererInfo_.voipNoPrivacyFlag = rendererOptions.rendererInfo.voipNoPrivacyFlag;
+    rendererInfo_.isCallWaitingTone = rendererOptions.rendererInfo.isCallWaitingTone;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
 }
@@ -537,6 +549,9 @@ bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType
         if (!PermissionUtil::VerifySystemPermission()) {
             AudioRenderer::SendRendererCreateError(streamUsage, ERR_PERMISSION_DENIED);
             AUDIO_ERR_LOG("ANNOUNCEMENT or EMERGENCY can only create by system app");
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                    BusinessScenario::CREATE, ERR_PERMISSION_DENIED), "ULTRASONIC can only create by MSDP", false);
             return false;
         }
     }
@@ -620,6 +635,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.contentType = rendererInfo_.contentType;
     audioInterrupt_.sessionStrategy = strategy_;
     audioInterrupt_.api = rendererInfo_.playerType;
+    audioInterrupt_.isCallWaitingTone = rendererInfo_.isCallWaitingTone;
     audioInterrupt_.bundleName = audioStream_->GetBundleName();
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AppBundleManager::GetSelfBundleName();
@@ -954,6 +970,7 @@ int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
     if (!result) {
         params.sampleFormat = static_cast<AudioSampleFormat>(audioStreamParams.format);
         params.sampleRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        params.customSampleRate = audioStreamParams.customSampleRate;
         params.channelCount = static_cast<AudioChannel>(audioStreamParams.channels);
         params.encodingType = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         params.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
@@ -981,6 +998,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         streamInfo.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+        streamInfo.customSampleRate = audioStreamParams.customSampleRate;
     }
 
     return result;
@@ -1020,6 +1038,18 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
     (void)audioStream_->SetStreamCallback(audioStreamCallback_);
 
     return SUCCESS;
+}
+
+void AudioRendererPrivate::SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag)
+{
+    if (interruptCallbackByIpcFlag_) {
+        AudioPolicyManager::GetInstance().SetRegisterInterruptCallbackFlag(audioInterrupt_.streamId,
+            interruptCallbackFlag);
+        audioInterrupt_.activatedRegisterCallbackFlag = interruptCallbackFlag;
+        interruptCallbackByIpcFlag_ = false;
+    }
+
+    audioInterrupt_.registerCallbackFlag = interruptCallbackFlag;
 }
 
 int32_t AudioRendererPrivate::SetRendererPositionCallback(int64_t markPosition,
@@ -1276,6 +1306,7 @@ int32_t AudioRendererPrivate::ActivateAudioInterruptInStart(const bool isMute)
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
         audioInterrupt_.state = audioInterruptState_.load();
+        HandleAudioInterruptInfo();
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
     }
@@ -1325,6 +1356,21 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_END);
     AudioPolicyManager::GetInstance().RecordBootAnimationClientStateTime(g_bootAnimationInfo);
     return ret;
+}
+
+void AudioRendererPrivate::HandleAudioInterruptInfo()
+{
+    if (!audioInterrupt_.registerCallbackFlag && isFirstStart_) {
+        interruptCallbackByIpcFlag_ = true;
+    }
+    if (isFirstStart_) {
+        isFirstStart_ = false;
+    }
+    if (audioInterrupt_.audioFocusType.streamType == STREAM_MUSIC ||
+        audioInterrupt_.audioFocusType.streamType == STREAM_MOVIE ||
+        audioInterrupt_.audioFocusType.streamType == STREAM_SPEECH) {
+        audioInterrupt_.startTimeNs = ClockTime::GetCurNano();
+    }
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)

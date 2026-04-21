@@ -1302,6 +1302,7 @@ public:
         return 0;
     };
 
+    virtual void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) { return; }
 private:
     virtual int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
 
@@ -1318,6 +1319,7 @@ private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     static bool CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
+    static bool CheckUltrasonicPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
     static std::mutex createRendererMutex_;
 };
 }  // namespace AudioStandard

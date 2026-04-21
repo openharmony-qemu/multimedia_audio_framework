@@ -38,7 +38,7 @@ class AudioSessionService : public AudioSessionStateMonitor {
 public:
     // Audio session manager interfaces
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-        int32_t callerUid = INVALID_UID);
+        const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
 
@@ -90,6 +90,8 @@ public:
     int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
         int32_t callerUid = INVALID_UID);
     AudioSessionActiveBehaviors GetSessionBehaviors(const int32_t callerPid);
+    void SetRegisterStateChangeCallbackFlag(int32_t callerPid, const bool stateChangeCallbackFlag);
+    void GetStateChangeCallbackFlag(int32_t callerPid, bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

@@ -79,11 +79,15 @@ public:
     // interfaces for AudioSessionService
     AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone = false,
-        int32_t callerUid = INVALID_UID);
+        const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID);
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
 
     bool IsOtherMediaPlaying();
+
+    void SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag);
+
+    void SetRegisterStateChangeCallbackFlag(int32_t callerPid, const bool stateChangeCallbackFlag);
 
     bool CheckPlaying(const AudioInterrupt &audioInterrupt);
 
@@ -262,6 +266,8 @@ private:
         const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
     void DeactivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isSessionTimeout = false);
+    bool CheckNeedPlaceHolder(const AudioInterrupt &audioInterrupt,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     void DeactivateAudioInterruptInternalContinue(const int32_t zoneId, bool isSessionTimeout = false);
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo);
@@ -401,6 +407,9 @@ private:
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
     bool IsActiveInjectFocusExist(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
+    void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
+        const InterruptErrorCode interruptErrorCode);
+    int32_t FindAudioInterruptByPid(const int32_t zoneId, const int32_t callerPid, AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

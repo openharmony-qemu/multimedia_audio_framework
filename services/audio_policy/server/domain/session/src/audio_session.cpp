@@ -72,6 +72,19 @@ int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
     return SUCCESS;
 }
 
+void AudioSession::SetRegisterStateChangeCallbackFlag(const bool registerCallbackFlag,
+    const bool activatedRegisterCallbackFlag)
+{
+    registerCallbackFlag_ = registerCallbackFlag;
+    activatedRegisterCallbackFlag_ = activatedRegisterCallbackFlag;
+}
+
+void AudioSession::GetStateChangeCallbackFlag(bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag)
+{
+    registerCallbackFlag = registerCallbackFlag_;
+    activatedRegisterCallbackFlag = activatedRegisterCallbackFlag_;
+}
+
 bool AudioSession::IsActivated()
 {
     return state_ == AudioSessionState::SESSION_ACTIVE;

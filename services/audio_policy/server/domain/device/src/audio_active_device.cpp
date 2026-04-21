@@ -221,7 +221,8 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
     auto currentOutputDevice = std::make_shared<AudioDeviceDescriptor>(GetCurrentOutputDevice());
     CHECK_AND_RETURN_LOG(currentOutputDevice != nullptr, "currentOutputDevice is nullptr");
 
-    bool isSameDevice = audioDeviceDescriptor->IsSameDeviceDesc(*currentOutputDevice);
+    bool isSameDevice = audioDeviceDescriptor->IsSameDeviceDesc(*currentOutputDevice) ||
+        audioDeviceDescriptor->IsSameBtDeviceDesc(*currentOutputDevice);
     NotifyUserDisSelectionEventToBt(currentOutputDevice, isSameDevice, streamUsage);
 
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
@@ -269,7 +270,8 @@ void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDe
     auto curInputDevice = std::make_shared<AudioDeviceDescriptor>(GetCurrentInputDevice());
     CHECK_AND_RETURN_LOG(curInputDevice != nullptr, "curInputDevice is nullptr");
 
-    bool isSameDevice = audioDeviceDescriptor->IsSameDeviceDesc(*curInputDevice);
+    bool isSameDevice = audioDeviceDescriptor->IsSameDeviceDesc(*curInputDevice) ||
+        audioDeviceDescriptor->IsSameBtDeviceDesc(*curInputDevice);
     NotifyUserDisSelectionEventToBt(curInputDevice, isSameDevice);
 #endif
 

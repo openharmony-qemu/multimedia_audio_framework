@@ -579,7 +579,8 @@ void StandbyFuzzTest()
     auto RendererInServerPtr = std::make_shared<RendererInServer>(config, weakListener);
     CHECK_AND_RETURN(RendererInServerPtr != nullptr);
 
-    RendererInServerPtr->Standby();
+    bool isStandby = g_fuzzUtils.GetData<bool>();
+    RendererInServerPtr->Standby(isStandby);
 }
 
 void StartInnerDuringStandbyFuzzTest()

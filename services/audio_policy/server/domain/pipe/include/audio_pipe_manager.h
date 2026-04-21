@@ -88,12 +88,15 @@ public:
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
     void StandbyClient(uint32_t sessionId);
+    void ClearStandbyFlag(uint32_t sessionId);
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
@@ -143,6 +146,8 @@ public:
     bool HasUltraFastStreamRequest();
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
     bool HasRunningRecognitionCapturerStream();
+    bool HasRunningNormalCapturerStream(DeviceType type);
+    bool HasRunningScoOutputStream();
     bool IsOnPrimaryAdapter(uint32_t sessionId);
     void AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void RemoveSwitchStream(uint32_t sessionId);
@@ -155,6 +160,12 @@ public:
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
     StreamUsage GetLastestRunningCallStreamUsage();
+    bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    std::vector<std::string> GetNoRunningPipeModuleName();
+    bool CheckNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool CheckRemoteNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool IsPipeNeedStop(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    std::string GetModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

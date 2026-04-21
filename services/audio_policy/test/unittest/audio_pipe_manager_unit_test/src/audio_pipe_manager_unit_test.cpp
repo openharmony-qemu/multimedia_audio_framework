@@ -1840,5 +1840,409 @@ HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_003, TestSize.Level1)
     bool ret = audioPipeManager->IsOnPrimaryAdapter(targetSessionId);
     EXPECT_FALSE(ret);
 }
+
+/**
+ * @tc.name: GetUnusedPipe_007
+ * @tc.desc: Test GetUnusedPipe when pipe className is primary_extra.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_007, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe1->moduleInfo_.className = "primary_extra";
+    pipe1->streamDescriptors_.clear();
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 1);
+    EXPECT_EQ(unusedPipes[0]->moduleInfo_.className, "primary_extra");
+}
+
+/**
+ * @tc.name: GetUnusedPipe_008
+ * @tc.desc: Test GetUnusedPipe when pipe className is primary_extra but streamDescriptors is not empty.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_008, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe1->moduleInfo_.className = "primary_extra";
+    pipe1->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+
+/**
+ * @tc.name: AudioPipeInfo_IsSameName_001
+ * @tc.desc: Test AudioPipeInfo IsSameName when name matches.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeInfo_IsSameName_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->name_ = "primary_output";
+
+    bool result = pipeInfo->IsSameName("primary_output");
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: AudioPipeInfo_IsSameName_002
+ * @tc.desc: Test AudioPipeInfo IsSameName when name does not match.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeInfo_IsSameName_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->name_ = "primary_output";
+
+    bool result = pipeInfo->IsSameName("primary_typec_output");
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ClearStandbyFlag.
+ * @tc.number: ClearStandbyFlag_001.
+ * @tc.desc  : Valid sessionId, streamDesc exists, sets isStandby_ to false
+ */
+HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+    streamDesc->isStandby_ = true;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t targetSessionId = 10000;
+    audioPipeManager->ClearStandbyFlag(targetSessionId);
+    EXPECT_FALSE(streamDesc->isStandby_);
+}
+
+/**
+ * @tc.name  : Test ClearStandbyFlag.
+ * @tc.number: ClearStandbyFlag_002.
+ * @tc.desc  : Invalid sessionId, streamDesc doesn't exist, returns early without modification
+ */
+HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+    streamDesc->isStandby_ = true;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t invalidSessionId = 99999;
+    audioPipeManager->ClearStandbyFlag(invalidSessionId);
+    EXPECT_TRUE(streamDesc->isStandby_);
+}
+
+/**
+ * @tc.name  : CheckNoRunningCondition_001
+ * @tc.number: CheckNoRunningCondition_001
+ * @tc.desc  : Test CheckNoRunningCondition with REMOTE+NORMAL pipe calls CheckRemoteNoRunningCondition.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckNoRunningCondition_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = false;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto remoteOffloadPipe = std::make_shared<AudioPipeInfo>();
+    remoteOffloadPipe->adapterName_ = ADAPTER_TYPE_REMOTE;
+    remoteOffloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    audioPipeManager->AddAudioPipeInfo(remoteOffloadPipe);
+
+    bool result = audioPipeManager->CheckNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+    audioPipeManager->RemoveAudioPipeInfo(remoteOffloadPipe);
+}
+
+/**
+ * @tc.name  : CheckNoRunningCondition_002
+ * @tc.number: CheckNoRunningCondition_002
+ * @tc.desc  : Test CheckNoRunningCondition with non-REMOTE pipe returns false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckNoRunningCondition_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_PRIMARY;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->CheckNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : CheckRemoteNoRunningCondition_001
+ * @tc.number: CheckRemoteNoRunningCondition_001
+ * @tc.desc  : Test CheckRemoteNoRunningCondition returns true when conditions met and isRunning is true.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckRemoteNoRunningCondition_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->hdPlaybackMode_ = HdPlaybackMode::APP_LEVEL;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    auto remoteOffloadPipe = std::make_shared<AudioPipeInfo>();
+    remoteOffloadPipe->adapterName_ = ADAPTER_TYPE_REMOTE;
+    remoteOffloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    remoteOffloadPipe->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(remoteOffloadPipe);
+
+    bool result = audioPipeManager->CheckRemoteNoRunningCondition(pipeInfo);
+    EXPECT_TRUE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+    audioPipeManager->RemoveAudioPipeInfo(remoteOffloadPipe);
+}
+
+/**
+ * @tc.name  : CheckRemoteNoRunningCondition_002
+ * @tc.number: CheckRemoteNoRunningCondition_002
+ * @tc.desc  : Test CheckRemoteNoRunningCondition returns false when remoteOffloadPipe is nullptr.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, CheckRemoteNoRunningCondition_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_REMOTE;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->CheckRemoteNoRunningCondition(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : IsPipeNeedStop_001
+ * @tc.number: IsPipeNeedStop_001
+ * @tc.desc  : Test IsPipeNeedStop returns true when isRunning is true and sets isRunning to false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsPipeNeedStop_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->isRunning_ = true;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->IsPipeNeedStop(pipeInfo);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(pipeInfo->isRunning_);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : IsPipeNeedStop_002
+ * @tc.number: IsPipeNeedStop_002
+ * @tc.desc  : Test IsPipeNeedStop returns false when isRunning is false.
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsPipeNeedStop_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->isRunning_ = false;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    bool result = audioPipeManager->IsPipeNeedStop(pipeInfo);
+    EXPECT_FALSE(result);
+
+    audioPipeManager->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+* @tc.name  : Test AudioPipeManager.
+* @tc.number: HasRunningNormalCapturerStream_001
+* @tc.desc  : Test HasRunningNormalCapturerStream with no streams.
+*/
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningNormalCapturerStream_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    EXPECT_EQ(audioPipeManager->HasRunningNormalCapturerStream(DEVICE_TYPE_NONE), false);
+}
+
+/**
+* @tc.name  : Test AudioPipeManager.
+* @tc.number: HasRunningNormalCapturerStream_002
+* @tc.desc  : Test HasRunningNormalCapturerStream with running normal capturer stream.
+*/
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningNormalCapturerStream_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->audioMode_ = AUDIO_MODE_RECORD;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    desc->sessionId_ = 123;
+    desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    desc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    EXPECT_EQ(audioPipeManager->HasRunningNormalCapturerStream(DEVICE_TYPE_NONE), true);
+}
+
+/**
+* @tc.name  : Test AudioPipeManager.
+* @tc.number: HasRunningNormalCapturerStream_003
+* @tc.desc  : Test HasRunningNormalCapturerStream with specific device type matching.
+*/
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningNormalCapturerStream_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->audioMode_ = AUDIO_MODE_RECORD;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    desc->sessionId_ = 123;
+    desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    desc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    EXPECT_EQ(audioPipeManager->HasRunningNormalCapturerStream(DEVICE_TYPE_WIRED_HEADSET), false);
+}
+
+/**
+* @tc.name  : Test AudioPipeManager.
+* @tc.number: HasRunningNormalCapturerStream_004
+* @tc.desc  : Test HasRunningNormalCapturerStream with device type matching.
+*/
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningNormalCapturerStream_004, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->audioMode_ = AUDIO_MODE_RECORD;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    desc->sessionId_ = 123;
+    desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    desc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    EXPECT_EQ(audioPipeManager->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO), true);
+}
+
+/**
+* @tc.name  : Test AudioPipeManager.
+* @tc.number: HasRunningRecognitionCapturerStream_001
+* @tc.desc  : Test HasRunningRecognitionCapturerStream with no streams.
+*/
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningRecognitionCapturerStream_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(), false);
+}
+
+/**
+* @tc.name  : Test AudioPipeManager.
+* @tc.number: HasRunningRecognitionCapturerStream_002
+* @tc.desc  : Test HasRunningRecognitionCapturerStream with running recognition capturer stream.
+*/
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningRecognitionCapturerStream_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->audioMode_ = AUDIO_MODE_RECORD;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    desc->sessionId_ = 123;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(), true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

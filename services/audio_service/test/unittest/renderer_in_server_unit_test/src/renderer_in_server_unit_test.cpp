@@ -3846,5 +3846,123 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_008, TestSize
     bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
     EXPECT_TRUE(result);
 }
+
+/**
+ * @tc.name  : Test Standby API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStandby_001
+ * @tc.desc  : Test Standby API when asyncHandler_ is valid.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_NE(nullptr, rendererInServer);
+    
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    
+    ret = rendererInServer->Standby(true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Standby API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStandby_002
+ * @tc.desc  : Test Standby API when asyncHandler_ is nullptr.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_NE(nullptr, rendererInServer);
+    
+    rendererInServer->asyncHandler_ = nullptr;
+    
+    int32_t ret = rendererInServer->Standby(true);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test StartInnerDuringStandby API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStartInnerDuringStandby_001
+ * @tc.desc  : Test StartInnerDuringStandby when asyncHandler_ is valid.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_NE(nullptr, rendererInServer);
+    
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    
+    rendererInServer->standByEnable_ = true;
+    
+    ret = rendererInServer->StartInnerDuringStandby();
+    EXPECT_NE(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test StartInnerDuringStandby API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStartInnerDuringStandby_002
+ * @tc.desc  : Test StartInnerDuringStandby when asyncHandler_ is nullptr.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_NE(nullptr, rendererInServer);
+    
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    
+    rendererInServer->standByEnable_ = true;
+    rendererInServer->asyncHandler_ = nullptr;
+    
+    ret = rendererInServer->StartInnerDuringStandby();
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test NotifyStandbyAction Exec
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStandbyActionExec_001
+ * @tc.desc  : Test NotifyStandbyAction Exec when isStandbyOn_ is true.
+ */
+HWTEST_F(RendererInServerUnitTest, NotifyStandbyActionExec_001, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    auto action = std::make_shared<NotifyStandbyAction>(sessionId, true);
+    ASSERT_NE(nullptr, action);
+    
+    action->Exec();
+}
+
+/**
+ * @tc.name  : Test NotifyStandbyAction Exec
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStandbyActionExec_002
+ * @tc.desc  : Test NotifyStandbyAction Exec when isStandbyOn_ is false.
+ */
+HWTEST_F(RendererInServerUnitTest, NotifyStandbyActionExec_002, TestSize.Level1)
+{
+    uint32_t sessionId = 456;
+    auto action = std::make_shared<NotifyStandbyAction>(sessionId, false);
+    ASSERT_NE(nullptr, action);
+    
+    action->Exec();
+}
 } // namespace AudioStandard
 } // namespace OHOS

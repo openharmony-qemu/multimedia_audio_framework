@@ -129,6 +129,7 @@ private:
     void CloseCollaboration(SourceType sourceType);
     void GetCollaborativeSourceInfo(IAudioSourceAttr &attr, HpaeNodeInfo &nodeInfo);
     HpaeProcessorType GetEffectiveSceneType(uint32_t sessionId);
+    void StopInterphoneSourceIfNeeded();
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;

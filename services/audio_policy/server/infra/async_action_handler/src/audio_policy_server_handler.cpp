@@ -1414,22 +1414,33 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
+    std::stringstream deviceInfoStream;
+    std::stringstream clientInfoStream;
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         int32_t clientPid = it->first;
-        std::vector<AudioCapturerInfo> capturerInfoList = GetCallbackCapturerInfoList(clientPid);
-        for (auto capturerInfo : capturerInfoList) {
+        std::vector<AudioCapturerFilter> capturerFilterList = GetCallbackCapturerInfoList(clientPid);
+        for (auto capturerFilter : capturerFilterList) {
             auto deviceDescs = AudioCoreService::GetCoreService()->
-                GetPreferredInputDeviceDescInner(capturerInfo, pidUidMap_[it->first], LOCAL_NETWORK_ID);
+                GetPreferredInputDeviceDescInner(capturerFilter.capturerInfo, capturerFilter.uid, LOCAL_NETWORK_ID);
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
+            }
+            for (auto &desc : deviceDescs) {
+                CHECK_AND_CONTINUE(desc != nullptr);
+                desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
             }
             if (clientCallbacksMap_.count(clientPid) > 0 &&
                 clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE]) {
-                it->second->OnPreferredInputDeviceUpdated(capturerInfo, deviceDescs);
+                CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
+                deviceInfoStream << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
+                clientInfoStream << clientPid << ":" << capturerFilter.capturerInfo.sourceType << ",";
+                it->second->OnPreferredInputDeviceUpdated(capturerFilter.capturerInfo, deviceDescs);
             }
         }
     }
+    AUDIO_INFO_LOG("[deviceType:deviceId, ...] [%{public}s]  [clientPid:sourceType, ...] [%{public}s]",
+        deviceInfoStream.str().c_str(), clientInfoStream.str().c_str());
 }
 
 void AudioPolicyServerHandler::HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -2141,6 +2152,10 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
 
 int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
+    if (IPCSkeleton::GetCallingUid() != uid) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), PERMISSION_DENIED,
+            "Permission denied for setting callback capturer info with different uid");
+    }
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     lock_guard<mutex> lock(clientCbRendererInfoMapMutex_);
     auto &rendererList = clientCbRendererInfoMap_[clientPid];
@@ -2168,26 +2183,34 @@ std::vector<AudioRendererFilter> AudioPolicyServerHandler::GetCallbackRendererIn
     return it->second;
 }
 
-int32_t AudioPolicyServerHandler::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
+int32_t AudioPolicyServerHandler::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid)
 {
+    if (IPCSkeleton::GetCallingUid() != uid) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+            "Permission denied for setting callback capturer info with different uid");
+    }
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    lock_guard<mutex> lock(clientCbCapturerInfoMapMutex_);
-    auto &capturerList = clientCbCapturerInfoMap_[clientPid];
-    auto it = std::find_if(capturerList.begin(), capturerList.end(),
-        [&capturerInfo](const AudioCapturerInfo &existingCapturer) {
-            return existingCapturer.sourceType == capturerInfo.sourceType;
+    lock_guard<mutex> lock(clientCbCapturerFilterMapMutex_);
+    auto &capturerFilterList = clientCbCapturerFilterMap_[clientPid];
+    auto it = std::find_if(capturerFilterList.begin(), capturerFilterList.end(),
+        [&capturerInfo, uid](const AudioCapturerFilter &existingFilter) {
+            return existingFilter.uid == uid &&
+                existingFilter.capturerInfo.sourceType == capturerInfo.sourceType;
         });
-    if (it == capturerList.end()) {
-        capturerList.push_back(capturerInfo);
+    if (it == capturerFilterList.end()) {
+        AudioCapturerFilter newFilter;
+        newFilter.uid = uid;
+        newFilter.capturerInfo = capturerInfo;
+        capturerFilterList.push_back(newFilter);
     }
     return AUDIO_OK;
 }
 
-std::vector<AudioCapturerInfo> AudioPolicyServerHandler::GetCallbackCapturerInfoList(int32_t clientPid)
+std::vector<AudioCapturerFilter> AudioPolicyServerHandler::GetCallbackCapturerInfoList(int32_t clientPid)
 {
-    lock_guard<mutex> lock(clientCbCapturerInfoMapMutex_);
-    auto it = clientCbCapturerInfoMap_.find(clientPid);
-    if (it == clientCbCapturerInfoMap_.end()) {
+    lock_guard<mutex> lock(clientCbCapturerFilterMapMutex_);
+    auto it = clientCbCapturerFilterMap_.find(clientPid);
+    if (it == clientCbCapturerFilterMap_.end()) {
         return {};
     }
     return it->second;

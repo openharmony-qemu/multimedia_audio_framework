@@ -26,6 +26,7 @@ config("audio_renderer_config") {
     "../audioschedule/include",
     "../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../audiodefinitions/include",
+    "../../../services/audio_service/common/include/dfx",
   ]
   cflags = [
     "-Wall",

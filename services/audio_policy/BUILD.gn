@@ -248,6 +248,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/router/public_priority_router.cpp",
     "server/domain/router/stream_filter_router.cpp",
     "server/domain/router/user_select_router.cpp",
+    "server/domain/router/wireless_conflict_handler.cpp",
     "server/domain/router_context/audio_device_simple_descriptor.cpp",
     "server/domain/router_context/audio_router_follow_strategy.cpp",
     "server/domain/router_context/audio_router_independent_strategy.cpp",

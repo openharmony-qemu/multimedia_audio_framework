@@ -701,6 +701,7 @@ struct AudioRendererInfo : public Parcelable {
     bool keepRunning = false;
     bool isStatic = false;
     uint32_t ultraFastFlag = ULTRA_NONE;
+    bool isCallWaitingTone = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -740,7 +741,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(voipNoPrivacyFlag)
             && parcel.WriteBool(toneFlag)
             && parcel.WriteBool(keepRunning)
-            && parcel.WriteBool(isStatic);
+            && parcel.WriteBool(isStatic)
+            && parcel.WriteBool(isCallWaitingTone);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -771,6 +773,7 @@ struct AudioRendererInfo : public Parcelable {
         toneFlag = parcel.ReadBool();
         keepRunning = parcel.ReadBool();
         isStatic = parcel.ReadBool();
+        isCallWaitingTone = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -1776,6 +1779,7 @@ enum AudioParamKey {
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
     AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
+    SOUND_CARD_INFO = 1002,
 };
 
 struct DStatusInfo {
@@ -2218,7 +2222,7 @@ struct FetchDeviceInfo : public Parcelable {
     std::string caller = "";
     std::string bundleName = "";
     RouterType bypassType = ROUTER_TYPE_NONE;
-    int32_t streamId = INVALID_STREAM_ID;
+    uint32_t streamId = INVALID_STREAM_ID;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
@@ -2256,7 +2260,8 @@ struct FetchDeviceInfo : public Parcelable {
             parcel.WriteInt32(static_cast<int32_t>(privacyType)) &&
             parcel.WriteString(caller) &&
             parcel.WriteString(bundleName) &&
-            parcel.WriteInt32(static_cast<int32_t>(bypassType));
+            parcel.WriteInt32(static_cast<int32_t>(bypassType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(streamId));
     }
 
     static FetchDeviceInfo *Unmarshalling(Parcel &parcel)
@@ -2275,6 +2280,7 @@ struct FetchDeviceInfo : public Parcelable {
         info->caller = parcel.ReadString();
         info->bundleName = parcel.ReadString();
         info->bypassType = static_cast<RouterType>(parcel.ReadInt32());
+        info->streamId = static_cast<uint32_t>(parcel.ReadInt32());
 
         return info;
     }
@@ -2290,6 +2296,7 @@ struct FetchDeviceInfo : public Parcelable {
         caller = parcel.ReadString();
         bundleName = parcel.ReadString();
         bypassType = static_cast<RouterType>(parcel.ReadInt32());
+        streamId = static_cast<uint32_t>(parcel.ReadInt32());
     }
 };
 

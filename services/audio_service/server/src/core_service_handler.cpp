@@ -192,5 +192,11 @@ int32_t CoreServiceHandler::SetCapturerMuteHint(uint32_t sessionId, bool mute)
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     return iCoreServiceProvider_->SetCapturerMuteHint(sessionId, mute);
 }
+
+void CoreServiceHandler::NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr");
+    iCoreServiceProvider_->NotifySessionStandbyStatus(sessionId, standbyStatus);
+}
 } // namespace AudioStandard
 } // namespace OHOS

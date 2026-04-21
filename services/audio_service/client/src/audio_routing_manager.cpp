@@ -88,9 +88,9 @@ int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendere
 }
 
 int32_t AudioRoutingManager::SetPreferredInputDeviceChangeCallback(AudioCapturerInfo capturerInfo,
-    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
+    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback, const int32_t uid)
 {
-    return AudioRoutingClientManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
+    return AudioRoutingClientManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback, uid);
 }
 
 int32_t AudioRoutingManager::UnsetPreferredOutputDeviceChangeCallback(

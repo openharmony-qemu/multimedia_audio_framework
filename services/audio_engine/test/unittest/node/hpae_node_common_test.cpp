@@ -364,7 +364,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_023, TestSize.Level0)
 HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_023b, TestSize.Level0)
 {
     // collaborative scene mapping
-    EXPECT_EQ(TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE), SCENE_COLLABORATIVE_RECORD);
+    EXPECT_EQ(TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE_RECORD), SCENE_COLLABORATIVE_RECORD);
 
     // verify TransEffectSceneToSceneType round-trip for collaborative
     EXPECT_EQ(TransEffectSceneToSceneType(SCENE_COLLABORATIVE), HPAE_SCENE_COLLABORATIVE);

@@ -641,23 +641,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_020, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_021
-* @tc.desc  : Test AudioPolicyServer::DeactivateAudioSession
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_021, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    ptrAudioPolicyServer->interruptService_ = nullptr;
-    ptrAudioPolicyServer->DeactivateAudioSession();
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_022
 * @tc.desc  : Test AudioPolicyServer::DeactivateAudioSession
 */
@@ -1344,6 +1327,27 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_002, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_003
+* @tc.desc  : Test AudioPolicyServer::MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    desc.deviceRole_ == INPUT_DEVICE;
+    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
+    ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_WIRED_MICIN);
+}
+
+/**
 * @tc.name  : Test UpdateDeviceInfo.
 * @tc.number: UpdateDeviceInfo_001
 * @tc.desc  : Test UpdateDeviceInfo.
@@ -1375,7 +1379,8 @@ HWTEST(AudioPolicyUnitTest, SetCallbackCapturerInfo_001, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
     AudioCapturerInfo audioCapturerInfo(sourceType, capturerFlags);
-    int32_t result = ptrAudioPolicyServer->SetCallbackCapturerInfo(audioCapturerInfo);
+    int32_t uid = -1;
+    int32_t result = ptrAudioPolicyServer->SetCallbackCapturerInfo(audioCapturerInfo, uid);
     EXPECT_EQ(result, SUCCESS);
 }
 

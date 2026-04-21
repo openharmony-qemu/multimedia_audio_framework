@@ -43,6 +43,7 @@ private:
 
     std::shared_ptr<IAudioRenderSink> CreatePrimaryRenderSink(const uint32_t renderId, const std::string &info);
     std::shared_ptr<IAudioRenderSink> CreateBluetoothRenderSink(const std::string &info);
+    bool IsMultiStreamInfo(const std::string &info);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     std::shared_ptr<IAudioRenderSink> CreateRemoteRenderSink(const std::string &info);
     std::shared_ptr<IAudioRenderSink> CreateRemoteFastRenderSink(const std::string &info);

@@ -296,6 +296,8 @@ public:
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
 
     int32_t SetCapturerMuteHint(bool mute);
+
+    void SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag);
 };
 } // namespace AudioStandard
 } // namespace OHOS

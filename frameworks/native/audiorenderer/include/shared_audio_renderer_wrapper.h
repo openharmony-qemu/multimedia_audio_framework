@@ -552,6 +552,11 @@ public:
         return sharedAudioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
     }
 
+    int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override
+    {
+        return sharedAudioRenderer_->GetRendererDebugInfo(debugInfo);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }
@@ -562,6 +567,10 @@ public:
     SharedAudioRendererWrapper &operator=(const SharedAudioRendererWrapper &) = delete;
     SharedAudioRendererWrapper(SharedAudioRendererWrapper &&) = delete;
     SharedAudioRendererWrapper &operator=(SharedAudioRendererWrapper &&) = delete;
+    void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override
+    {
+        sharedAudioRenderer_->SetRegisterInterruptCallbackFlag(interruptCallbackFlag);
+    }
 
 private:
     int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override

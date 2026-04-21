@@ -98,7 +98,9 @@ void GetAdapterNameByStreamDescFuzzTest(FuzzedDataProvider& fdp)
     streamDesc->streamInfo_.channels = AudioChannel::STEREO;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    std::string result = audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc);
+    std::string adapterName;
+    std::string pipeName;
+    audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc, adapterName, pipeName);
 }
 
 void ConvertStreamDescToPipeInfoFuzzTest(FuzzedDataProvider& fdp)
@@ -415,9 +417,10 @@ void IsPipeMatchFuzzTest(FuzzedDataProvider& fdp)
     pipeInfo->adapterName_ = "test_adapter";
 
     std::string adapterName = "test_adapter";
+    std::string pipeName = "primary_output";
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName);
+    audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName, pipeName);
 }
 
 void Test(FuzzedDataProvider& fdp)

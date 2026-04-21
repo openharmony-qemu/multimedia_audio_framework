@@ -28,6 +28,8 @@
 #include "audio_stream_collector.h"
 #include "audio_strategy_router_parser.h"
 #include "audio_usage_strategy_parser.h"
+#include "wireless_conflict_handler.h"
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,7 +44,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo info);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0);
+        RouterType &routerType, const uint32_t sessionID = 0);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
@@ -53,7 +55,8 @@ public:
     int32_t NotifyDistributedOutputChange(bool isRemote);
 
     bool IsConfigRouterStrategy(SourceType sourceType);
-
+    void RegisterConflictHandlers(std::shared_ptr<ConflictHandler> handler);
+    void ClearConflictHandlers();
     int32_t SetSplitModeReady();
     bool UpdateVehiclePriority(bool enable);
 private:
@@ -106,6 +109,8 @@ private:
                     capturerConfig.first, capturerConfig.second.c_str());
             }
         }
+
+        wirelessConflictHandler_ = std::make_shared<WirelessConflictHandler>();
     }
 
     ~AudioRouterCenter() {}
@@ -163,6 +168,37 @@ private:
         const uint32_t streamId = INVALID_STREAM_ID);
     bool IsWirelessPrivacyDevice(shared_ptr<AudioDeviceDescriptor> desc);
     bool IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc);
+
+    void StartArbiterContext();
+    void StopArbiterContext();
+    std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
+    std::mutex routerMutex_;
+
+    template<typename Func>
+    void ForEachRouter(Func func)
+    {
+        for (auto &router : mediaRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : callRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : callCaptureRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : ringRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : toneRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : recordCaptureRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : voiceMessageRouters_) {
+            if (router != nullptr) func(router);
+        }
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

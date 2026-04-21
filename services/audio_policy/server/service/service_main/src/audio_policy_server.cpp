@@ -1682,6 +1682,9 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
     if (desc.deviceType_ == DEVICE_TYPE_NEARLINK && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     }
+    if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
+        desc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
+    }
 }
 
 // LCOV_EXCL_START
@@ -2045,10 +2048,10 @@ int32_t AudioPolicyServer::SetCallbackRendererInfo(const AudioRendererInfo &rend
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
+int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid)
 {
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SetCallbackCapturerInfo(capturerInfo);
+        audioPolicyServerHandler_->SetCallbackCapturerInfo(capturerInfo, uid);
     }
     return SUCCESS;
 }
@@ -4993,7 +4996,7 @@ bool AudioPolicyServer::CheckAudioSessionStrategy(const AudioSessionStrategy &se
     return result;
 }
 
-int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
+int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn, const bool stateChangeCallbackFlag)
 {
     AudioConcurrencyMode mode = static_cast<AudioConcurrencyMode>(strategyIn);
     AudioSessionStrategy strategy{mode};
@@ -5016,7 +5019,8 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
 
     bool isStandalone = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
         IPCSkeleton::GetCallingUid(), true);
-    int32_t ret = UpdateAudioSceneAfterActivateSession(zoneId, callerPid, strategy, isStandalone, callerUid);
+    int32_t ret = UpdateAudioSceneAfterActivateSession(zoneId, callerPid, strategy, isStandalone,
+        stateChangeCallbackFlag, callerUid);
     if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(callerPid)) &&
         (eventEntry_ != nullptr)) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioSession",
@@ -5032,11 +5036,12 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
 }
 
 int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
-    const AudioSessionStrategy &strategy, const bool isStandalone, int32_t callerUid)
+    const AudioSessionStrategy &strategy, const bool isStandalone, const bool stateChangeCallbackFlag,
+    int32_t callerUid)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy,
-        isStandalone, callerUid);
+    AudioInterruptResult result = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone,
+        stateChangeCallbackFlag, callerUid);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -5078,6 +5083,27 @@ int32_t AudioPolicyServer::IsOtherMediaPlaying(bool &isExistence)
         return ERR_MEMORY_ALLOC_FAILED;
     }
     isExistence = interruptService_->IsOtherMediaPlaying();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag)
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+    interruptService_->SetRegisterInterruptCallbackFlag(streamId, interruptCallbackFlag);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag)
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    interruptService_->SetRegisterStateChangeCallbackFlag(callerPid, stateChangeCallbackFlag);
     return SUCCESS;
 }
 

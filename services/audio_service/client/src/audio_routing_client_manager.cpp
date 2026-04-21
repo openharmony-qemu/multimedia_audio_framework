@@ -72,12 +72,12 @@ int32_t AudioRoutingClientManager::SetPreferredOutputDeviceChangeCallback(AudioR
 }
 
 int32_t AudioRoutingClientManager::SetPreferredInputDeviceChangeCallback(AudioCapturerInfo capturerInfo,
-    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
+    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback, const int32_t uid)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    return AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
+    return AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback, uid);
 }
 
 int32_t AudioRoutingClientManager::UnsetPreferredOutputDeviceChangeCallback(

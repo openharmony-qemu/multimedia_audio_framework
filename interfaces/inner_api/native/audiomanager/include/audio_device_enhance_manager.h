@@ -27,6 +27,21 @@ namespace AudioStandard {
 class AudioCapturer;
 class AudioRenderer;
 
+struct SoundCardInfo {
+    std::string name;
+    std::string vendor;
+    std::string model;
+    std::string busAddress;
+    std::string driver;
+
+    SoundCardInfo() : name(""), vendor(""), model(""), busAddress(""), driver("") {}
+
+    bool IsEmpty() const
+    {
+        return name.empty() && vendor.empty() && model.empty() &&
+            busAddress.empty() && driver.empty();
+    }
+};
 class AudioDeviceEnhanceManager {
 public:
     static AudioDeviceEnhanceManager &GetInstance();
@@ -38,6 +53,7 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &desc) const;
     int32_t SelectOutputDeviceForAudioRenderer(std::shared_ptr<AudioRenderer> &renderer,
         const std::shared_ptr<AudioDeviceDescriptor> &desc) const;
+    SoundCardInfo GetSoundCardInfo() const;
 private:
     AudioDeviceEnhanceManager() = default;
     ~AudioDeviceEnhanceManager() = default;

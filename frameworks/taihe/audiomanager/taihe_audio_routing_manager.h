@@ -50,6 +50,7 @@ public:
         array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceByFilterWithStrategySync(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices, AudioDevcieSelectStrategy strategy);
+    void RestoreOutputDeviceByFilterSync(AudioRendererFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceByFilter(AudioRendererFilter const &filter);
     void SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,
@@ -79,6 +80,10 @@ public:
         callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
     void OffPreferredOutputDeviceChangeByFilter(
         optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
+    void OnPreferredInputDeviceChangeByFilter(AudioCapturerFilter const &filters,
+        callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
+    void OffPreferredInputDeviceChangeByFilter(
+        optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
 
 private:
     static void RegisterDeviceChangeCallback(DeviceFlag deviceFlag, std::shared_ptr<uintptr_t> &callback,
@@ -87,7 +92,7 @@ private:
         const std::string &cbName, AudioRoutingManagerImpl *taiheRoutingMgr);
     static void RegisterPreferredInputDeviceChangeCallback(AudioCapturerInfo const &capturerInfo,
         std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
-            AudioRoutingManagerImpl *audioRoutingManagerImpl);
+            AudioRoutingManagerImpl *audioRoutingManagerImpl, const int32_t uid = -1);
     static void RegisterPreferredOutputDeviceChangeCallback(AudioRendererInfo const &rendererInfo,
         std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
             AudioRoutingManagerImpl *audioRoutingManagerImpl);

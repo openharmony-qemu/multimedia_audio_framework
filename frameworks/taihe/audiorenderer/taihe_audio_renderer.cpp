@@ -112,7 +112,8 @@ std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeO
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-    audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::CreateRenderer(rendererOptions);
+    audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::CreateRenderer(rendererOptions,
+        rendererOptions.appInfo);
 #else
     std::string cacheDir = "";
     audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::Create(cacheDir, rendererOptions);

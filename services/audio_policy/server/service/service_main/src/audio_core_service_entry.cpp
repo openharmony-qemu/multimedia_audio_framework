@@ -735,6 +735,13 @@ int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
     return coreService_->CaptureConcurrentCheck(sessionId);
 }
 
+void AudioCoreService::EventEntry::NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyStandbyStatus(sessionId, standbyStatus);
+}
+
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

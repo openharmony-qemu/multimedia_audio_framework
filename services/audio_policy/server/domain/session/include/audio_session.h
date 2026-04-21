@@ -80,6 +80,9 @@ public:
     bool IsMuteSuggestionWhenMixEnabled();
     int32_t SetAudioSessionBehavior(const uint32_t behavior);
     AudioSessionActiveBehaviors GetSessionBehaviors();
+    void SetRegisterStateChangeCallbackFlag(const bool registerCallbackFlag,
+        const bool activatedRegisterCallbackFlag = false);
+    void GetStateChangeCallbackFlag(bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
 
 private:
     StreamUsage GetStreamUsageInner();
@@ -110,6 +113,8 @@ private:
     bool isSystemApp_ {false};
     bool isMuteSuggestionEnabled_ = false;
     AudioSessionActiveBehaviors behaviorFlags_ {};
+    bool registerCallbackFlag_ = false;
+    bool activatedRegisterCallbackFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

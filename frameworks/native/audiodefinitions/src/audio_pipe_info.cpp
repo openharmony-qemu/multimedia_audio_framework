@@ -77,6 +77,7 @@ AudioPipeInfo::AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo)
     streamDescMap_ = pipeInfo->streamDescMap_;
     audioStreamInfo_ = pipeInfo->audioStreamInfo_;
     ultraFastPipe_ = pipeInfo->ultraFastPipe_;
+    isRunning_ = pipeInfo->isRunning_;
 }
 
 void AudioPipeInfo::Dump(std::string &dumpString)
@@ -170,6 +171,11 @@ bool AudioPipeInfo::GetUltraFastFlag() const
 bool AudioPipeInfo::HasStream()
 {
     return !streamDescriptors_.empty();
+}
+
+bool AudioPipeInfo::IsPipeMatch(const std::string adapterName, const uint32_t targetFlag)
+{
+    return adapterName_ == adapterName && (routeFlag_ & targetFlag);
 }
 } // AudioStandard
 } // namespace OHOS

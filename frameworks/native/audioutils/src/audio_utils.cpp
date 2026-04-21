@@ -67,6 +67,7 @@ constexpr int32_t UID_AUDIO_BROKER = 5557;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
+constexpr int32_t UID_D2D_SA = 7040;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
@@ -110,6 +111,7 @@ std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_MSDP_SA,
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
+    UID_D2D_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_TELEPHONY_SA, // used in distributed communication call
     UID_DMSDP_SA
@@ -571,6 +573,13 @@ bool PermissionUtil::VerifySystemPermission()
     CHECK_AND_RETURN_RET(!tmp, true);
 
     return false;
+}
+
+bool PermissionUtil::IsHap()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return tokenTypeFlag == Security::AccessToken::TOKEN_HAP;
 }
 
 bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_t tokenId)

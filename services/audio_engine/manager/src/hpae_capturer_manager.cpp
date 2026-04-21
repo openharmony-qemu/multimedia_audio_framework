@@ -59,6 +59,9 @@ HpaeCapturerManager::~HpaeCapturerManager()
 int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &processorType,
     const AudioEnhanceScene &sceneType)
 {
+    // DEVICE_TYPE_ACCESSORY effect move to HAL
+    CHECK_AND_RETURN_RET_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
+        "captureId_ %{public}d needn't create effect", captureId_);
     const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
         GetEnhanceSupportedSceneType();
     auto item = audioEnhanceSupportedSceneTypes.find(sceneType);
@@ -67,8 +70,11 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     uint64_t sceneCode = static_cast<uint64_t>(sceneType);
     uint64_t sceneKeyCode = 0;
     sceneKeyCode = (sceneCode << SCENE_TYPE_OFFSET) + (captureId_ << CAPTURER_ID_OFFSET) + renderId_;
-    AUDIO_INFO_LOG("sceneCode:%{public}" PRIu64 "sceneKeyCode:%{public}" PRIu64, sceneCode, sceneKeyCode);
+    AUDIO_INFO_LOG("sceneCode:%{public}" PRIu64 " captureId_ %{public}d sceneKeyCode:%{public}" PRIu64,
+        sceneCode, captureId_, sceneKeyCode);
     CaptureEffectAttr attr = {};
+    attr.needEc = sourceInfo_.ecType != HPAE_EC_TYPE_NONE;
+    attr.needMicRef = sourceInfo_.micRef == HPAE_REF_ON;
     attr.micChannels = static_cast<uint32_t>(sourceInfo_.channels);
     attr.ecChannels = static_cast<uint32_t>(sourceInfo_.ecChannels);
     attr.micRefChannels = static_cast<uint32_t>(sourceInfo_.micRefChannels);
@@ -83,7 +89,7 @@ HpaeProcessorType HpaeCapturerManager::GetEffectiveSceneType(uint32_t sessionId)
     auto it = sessionNodeMap_.find(sessionId);
     CHECK_AND_RETURN_RET(it != sessionNodeMap_.end(), HPAE_SCENE_EFFECT_NONE);
     CHECK_AND_RETURN_RET(activeCollabSourceTypes_.count(it->second.sourceType) == 0,
-        HPAE_SCENE_COLLABORATIVE);
+        HPAE_SCENE_COLLABORATIVE_RECORD);
     return it->second.sceneType;
 }
 
@@ -183,7 +189,7 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
         }
     }
 
-    if (sceneType == HPAE_SCENE_COLLABORATIVE) {
+    if (sceneType == HPAE_SCENE_COLLABORATIVE_RECORD) {
         HpaeNodeInfo collabNodeInfo;
         auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
         if (collabInputCluster && sceneCluster->GetCapturerEffectConfig(collabNodeInfo,
@@ -340,7 +346,7 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
             scnenCluster->ConnectWithInfo(sourceInputClusterMap_[mainMicType_], micNodeInfo); // mic
         }
 
-        if (sceneType == HPAE_SCENE_COLLABORATIVE) {
+        if (sceneType == HPAE_SCENE_COLLABORATIVE_RECORD) {
             HpaeNodeInfo collabNodeInfo;
             auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
             if (collabInputCluster && scnenCluster->GetCapturerEffectConfig(collabNodeInfo,
@@ -437,7 +443,8 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Pause");
-        AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
+        AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s",
+            sessionId, sourceInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
@@ -445,9 +452,21 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_PAUSED);
+        
+        StopInterphoneSourceIfNeeded();
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeCapturerManager::StopInterphoneSourceIfNeeded()
+{
+    if (sourceInfo_.deviceName.find("interphone") != std::string::npos) {
+        AUDIO_INFO_LOG("Interphone capturer paused, stopping source cluster immediately");
+        if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
+            sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
+        }
+    }
 }
 
 int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
@@ -1352,9 +1371,6 @@ int32_t HpaeCapturerManager::OpenCollaborativePrimary()
 
 void HpaeCapturerManager::CloseCollaborativePrimary()
 {
-    // 什么时候关闭 ？stop的时候关闭， 流运行中关闭
-    // 统一期间，先执行disconnect，再deinit
-    // 怎么知道这个这个节点连接了哪些呢？ -> 提供给HpaeSourceProcessCluster 一个 reload接口 ？让他内部自己重构？ -> 不行，连接会烂掉
     auto collabInput = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
     CHECK_AND_RETURN_LOG(collabInput != nullptr, "collaborative sourceInput is nullptr");
     collabInput->CapturerSourceDeInit();
@@ -1368,8 +1384,8 @@ void HpaeCapturerManager::OpenCollaboration(SourceType sourceType)
     }
 
     activeCollabSourceTypes_.insert(sourceType);
-    CreateSceneCluster(HPAE_SCENE_COLLABORATIVE,
-        TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE));
+    CreateSceneCluster(HPAE_SCENE_COLLABORATIVE_RECORD,
+        TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE_RECORD));
 
     CheckIfAnyStreamRunning();
 
@@ -1387,9 +1403,9 @@ void HpaeCapturerManager::CloseCollaboration(SourceType sourceType)
     HpaeProcessorType normalSceneType = TransSourceTypeToSceneType(sourceType);
     CreateSceneCluster(normalSceneType, TransProcessType2EnhanceScene(normalSceneType));
 
-    if (activeCollabSourceTypes_.empty() && SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE)) {
-        CaptureEffectRelease(HPAE_SCENE_COLLABORATIVE);
-        sceneClusterMap_.erase(HPAE_SCENE_COLLABORATIVE);
+    if (activeCollabSourceTypes_.empty() && SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE_RECORD)) {
+        CaptureEffectRelease(HPAE_SCENE_COLLABORATIVE_RECORD);
+        sceneClusterMap_.erase(HPAE_SCENE_COLLABORATIVE_RECORD);
     }
 
     CheckIfAnyStreamRunning();

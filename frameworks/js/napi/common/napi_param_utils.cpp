@@ -350,7 +350,7 @@ napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendere
         GetStreamInfo(env, &(opts->streamInfo), res);
     }
 
-    status = napi_get_named_property(env, in, "appInfo", &res);
+    status = napi_get_named_property(env, in, "originalAppIdInfo", &res);
     if (status == napi_ok) {
         GetAppInfo(env, &(opts->appInfo), res);
     }
@@ -397,12 +397,6 @@ napi_status NapiParamUtils::GetAppInfo(const napi_env &env, AppInfo *appInfo, na
     if (status == napi_ok) {
         CHECK_AND_RETURN_RET_LOG(int64Value >= 0, napi_invalid_arg, "appFullTokenId is invalid negative value");
         appInfo->appFullTokenId = static_cast<uint64_t>(int64Value);
-    }
-
-    std::string strValue = "";
-    strValue = GetPropertyString(env, in, "deviceId");
-    if (!strValue.empty()) {
-        appInfo->deviceId = strValue;
     }
 
     return napi_ok;
@@ -482,7 +476,7 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
 
     // If not a standard enum value, treat as custom sample rate
     CHECK_AND_RETURN_RET(!isStandardEnum, napi_ok);
-    streamInfo->samplingRate = SAMPLE_RATE_48000; // default fallback
+    streamInfo->samplingRate = SAMPLE_RATE_8000; // default fallback
     streamInfo->customSampleRate = static_cast<uint32_t>(intValue);
     AUDIO_INFO_LOG("custom sample rate: %{public}d", intValue);
     return napi_ok;
@@ -1785,6 +1779,24 @@ napi_status NapiParamUtils::ToJsActiveStreamsVolumeInfo(const napi_env &env,
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set element failed");
     }
     return status;
+}
+
+napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
+    const SoundCardInfo &info, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create napi_create_object failed");
+    status = SetValueString(env, "name", info.name, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set name failed");
+    status = SetValueString(env, "vendor", info.vendor, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set vendor failed");
+    status = SetValueString(env, "model", info.model, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set model failed");
+    status = SetValueString(env, "busAddress", info.busAddress, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set busAddress failed");
+    status = SetValueString(env, "driver", info.driver, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set driver failed");
+    return napi_ok;
 }
 } // namespace AudioStandard
 } // namespace OHOS
