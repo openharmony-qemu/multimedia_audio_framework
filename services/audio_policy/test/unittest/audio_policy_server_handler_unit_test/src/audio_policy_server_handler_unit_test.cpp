@@ -1114,8 +1114,8 @@ HWTEST(AudioPolicyServerHandlerUnitTest, GetCallbackCapturerInfoList_002, TestSi
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 123;
-    std::vector<AudioCapturerInfo> infoList = {AudioCapturerInfo()};
-    audioPolicyServerHandler_->clientCbCapturerInfoMap_[clientPid] = infoList;
+    std::vector<AudioCapturerFilter> filterList = {AudioCapturerFilter()};
+    audioPolicyServerHandler_->clientCbCapturerFilterMap_[clientPid] = filterList;
     audioPolicyServerHandler_->GetCallbackCapturerInfoList(clientPid);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
 }
@@ -1123,14 +1123,15 @@ HWTEST(AudioPolicyServerHandlerUnitTest, GetCallbackCapturerInfoList_002, TestSi
 /**
  * @tc.name  : SetCallbackCapturerInfo_001
  * @tc.number: SetCallbackCapturerInfo_001
- * @tc.desc  : Test SetCallbackCapturerInfo method when set audioCapturerInfo into clientCbCapturerInfoMap_.
+ * @tc.desc  : Test SetCallbackCapturerInfo method when set audioCapturerFilter into clientCbCapturerFilterMap_.
  */
 HWTEST(AudioPolicyServerHandlerUnitTest, SetCallbackCapturerInfo_001, TestSize.Level1)
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     AudioCapturerInfo audioCapturerInfo;
-    int32_t ret = audioPolicyServerHandler_->SetCallbackCapturerInfo(audioCapturerInfo);
+    int32_t uid = -1;
+    int32_t ret = audioPolicyServerHandler_->SetCallbackCapturerInfo(audioCapturerInfo, uid);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 

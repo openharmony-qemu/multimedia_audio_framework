@@ -240,7 +240,7 @@ interface IAudioPolicy {
     void IsAllowedPlayback([in] int uid, [in] int pid, [in] unsigned int sessionId, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
     void SetVoiceRingtoneMute([in] boolean isMute);
     void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo, [in] int uid);
-    void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
+    void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo, [in] int uid);
     void GetStreamInFocusByUid([in]  int uid, [in] int zoneId, [out] int retStreamType); /* zoneID default value: 0 -- local device */
     void SetPreferredDevice([in] int preferredType, [in] sharedptr<AudioDeviceDescriptor> desc, [in] int uid);
     void SetDeviceVolumeBehavior([in] String networkId, [in] int deviceType, [in] VolumeBehavior volumeBehavior);

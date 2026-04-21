@@ -1379,7 +1379,8 @@ HWTEST(AudioPolicyUnitTest, SetCallbackCapturerInfo_001, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
     AudioCapturerInfo audioCapturerInfo(sourceType, capturerFlags);
-    int32_t result = ptrAudioPolicyServer->SetCallbackCapturerInfo(audioCapturerInfo);
+    int32_t uid = -1;
+    int32_t result = ptrAudioPolicyServer->SetCallbackCapturerInfo(audioCapturerInfo, uid);
     EXPECT_EQ(result, SUCCESS);
 }
 

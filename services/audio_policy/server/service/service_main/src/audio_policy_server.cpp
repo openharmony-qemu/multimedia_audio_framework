@@ -2048,10 +2048,10 @@ int32_t AudioPolicyServer::SetCallbackRendererInfo(const AudioRendererInfo &rend
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
+int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid)
 {
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SetCallbackCapturerInfo(capturerInfo);
+        audioPolicyServerHandler_->SetCallbackCapturerInfo(capturerInfo, uid);
     }
     return SUCCESS;
 }
