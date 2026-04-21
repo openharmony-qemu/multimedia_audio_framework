@@ -170,6 +170,7 @@ private:
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int32_t RSS_UID = 1096;
+    static constexpr int32_t SET_SCENE_DELAY = 120;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
     std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
