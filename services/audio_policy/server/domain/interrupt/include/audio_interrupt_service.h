@@ -356,6 +356,7 @@ private:
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
     AudioScene RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
         AudioScene &highestPriorityAudioScene);
+    void RefreshAudioSceneAfterDelay(const int32_t zoneId);
 
     void HandleAppStreamType(const int32_t zoneId, AudioInterrupt &audioInterrupt);
     bool IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt);
