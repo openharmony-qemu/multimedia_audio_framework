@@ -993,10 +993,23 @@ struct AudioCapturerInfo {
   capturerFlags: i32;
 }
 
+enum PlaybackCaptureMode: i32 {
+  DEFAULT = 0,
+  MEDIA = 1,
+  EXCLUDING_SELF = 32768,
+}
+
 struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  playbackCaptureMode: Optional<PlaybackCaptureMode>;
+}
+
+enum PlayCaptureStartState: i32 {
+  SUCCESS = 0,
+  FAILED = 1,
+  NOT_AUTHORIZED = 2,
 }
 
 interface AudioCapturer {
@@ -1047,6 +1060,9 @@ interface AudioCapturer {
 
   @gen_promise("setMuteHint")
   SetMuteHintSync(mute: bool): void;
+
+  @gen_promise("requestPlaybackCaptureStart")
+  RequestPlaybackCaptureStartSync(): PlayCaptureStartState;
 
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 

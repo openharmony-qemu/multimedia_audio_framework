@@ -16,6 +16,8 @@
 #define LOG_TAG "TaiheParamUtils"
 #endif
 
+#include <unistd.h>
+
 #include "taihe_param_utils.h"
 #include "audio_stream_info.h"
 #include "audio_log.h"
@@ -56,6 +58,41 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
     OHOS::AudioStandard::DEVICE_TYPE_HEARING_AID,
     OHOS::AudioStandard::DEVICE_TYPE_DEFAULT
 };
+
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_DEFAULT = 0x0;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_MEDIA = 0x1;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF = 0x8000;
+
+static bool IsValidPlaybackCaptureMode(uint32_t mode)
+{
+    return mode == PLAYBACK_CAPTURE_MODE_DEFAULT || mode == PLAYBACK_CAPTURE_MODE_MEDIA ||
+        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF ||
+        mode == (PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF | PLAYBACK_CAPTURE_MODE_MEDIA);
+}
+
+static void InitPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &config, uint32_t mode)
+{
+    config = OHOS::AudioStandard::AudioPlaybackCaptureConfig();
+    std::vector<OHOS::AudioStandard::StreamUsage> &usages = config.filterOptions.usages;
+    usages.push_back(OHOS::AudioStandard::STREAM_USAGE_UNKNOWN);
+    usages.push_back(OHOS::AudioStandard::STREAM_USAGE_MEDIA);
+    usages.push_back(OHOS::AudioStandard::STREAM_USAGE_MUSIC);
+    usages.push_back(OHOS::AudioStandard::STREAM_USAGE_MOVIE);
+    usages.push_back(OHOS::AudioStandard::STREAM_USAGE_GAME);
+    usages.push_back(OHOS::AudioStandard::STREAM_USAGE_AUDIOBOOK);
+
+    if ((mode & PLAYBACK_CAPTURE_MODE_MEDIA) == 0) {
+        usages.push_back(OHOS::AudioStandard::STREAM_USAGE_NAVIGATION);
+        usages.push_back(OHOS::AudioStandard::STREAM_USAGE_ALARM);
+        usages.push_back(OHOS::AudioStandard::STREAM_USAGE_NOTIFICATION);
+        usages.push_back(OHOS::AudioStandard::STREAM_USAGE_VOICE_ASSISTANT);
+    }
+
+    if (mode & PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF) {
+        config.filterOptions.pids.push_back(getpid());
+        config.filterOptions.pidFilterMode = OHOS::AudioStandard::FilterMode::EXCLUDE;
+    }
+}
 
 const std::unordered_map<OHOS::AudioStandard::AudioSamplingRate, AudioSamplingRate> gNativeToAniAudioSamplingRate = {
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000, AudioSamplingRate::key_t::SAMPLE_RATE_8000},
@@ -205,7 +242,17 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
     status = GetPreferredInputDevice(opts, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse PreferredInputDevice failed");
 
-    AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
+    if (options.playbackCaptureMode.has_value()) {
+        int32_t mode = options.playbackCaptureMode.value().get_value();
+        CHECK_AND_RETURN_RET_LOG(mode >= 0 && IsValidPlaybackCaptureMode(static_cast<uint32_t>(mode)),
+            AUDIO_INVALID_PARAM, "Invalid playbackCaptureMode");
+        opts->capturerInfo.sourceType = OHOS::AudioStandard::SOURCE_TYPE_PLAYBACK_CAPTURE;
+        InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
+        opts->playbackCaptureConfig.isModernInnerCapturer = true;
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureMode");
+    }
+
     return AUDIO_OK;
 }
 

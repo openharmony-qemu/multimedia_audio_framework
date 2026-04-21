@@ -16,6 +16,8 @@
 #define LOG_TAG "AudioCapturerImpl"
 #endif
 
+#include <condition_variable>
+
 #include "taihe_audio_capturer.h"
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
@@ -43,6 +45,79 @@ int32_t AudioCapturerImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
 constexpr int64_t DEFAULT_BUFFER_SIZE = 0;
 constexpr uint32_t DEFAULT_ARRAY_SIZE = 0;
 constexpr uint64_t SEC_TO_NANOSECOND = 1000000000;
+
+namespace {
+class TaihePlaybackCaptureStartStateCallback :
+    public OHOS::AudioStandard::AudioCapturerOnPlaybackCaptureStartCallback {
+public:
+    void OnPlaybackCaptureStartResult(OHOS::AudioStandard::PlaybackCaptureStartState state) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        state_ = state;
+        hasResult_ = true;
+    }
+
+    OHOS::AudioStandard::PlaybackCaptureStartState GetState()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return state_;
+    }
+
+    bool HasResult()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return hasResult_;
+    }
+
+private:
+    std::mutex mutex_;
+    OHOS::AudioStandard::PlaybackCaptureStartState state_ = OHOS::AudioStandard::START_STATE_FAILED;
+    bool hasResult_ = false;
+};
+
+static void ThrowPlaybackCaptureStartError(int32_t ret)
+{
+    if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "Operation not permit at current state");
+    } else if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM ||
+        ret == OHOS::AudioStandard::ERROR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+    } else if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED);
+    } else if (ret == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+    } else if (ret == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+    } else {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "RequestPlaybackCaptureStart failed");
+    }
+}
+
+static PlayCaptureStartState HandlePlaybackCaptureStartResult(
+    OHOS::AudioStandard::PlaybackCaptureStartState state, OHOS::AudioStandard::AudioCapturer *audioCapturer)
+{
+    if (state == OHOS::AudioStandard::START_STATE_SUCCESS) {
+        if (audioCapturer != nullptr && !audioCapturer->Start()) {
+            AUDIO_ERR_LOG("Start playback capture stream failed after authority granted");
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM,
+                "Start playback capture stream failed after authority granted");
+            return PlayCaptureStartState::key_t::FAILED;
+        }
+        return PlayCaptureStartState::key_t::SUCCESS;
+    }
+
+    if (state == OHOS::AudioStandard::START_STATE_NOT_AUTHORIZED) {
+        AUDIO_ERR_LOG("Playback capture start failed: not authorized");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION,
+            "Playback capture start failed: not authorized");
+        return PlayCaptureStartState::key_t::NOT_AUTHORIZED;
+    }
+
+    AUDIO_ERR_LOG("Playback capture start failed: unknown error");
+    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Playback capture start failed: unknown error");
+    return PlayCaptureStartState::key_t::FAILED;
+}
+} // namespace
 
 template <typename T>
 static void GetCapturerTaiheCallback(std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
@@ -156,6 +231,7 @@ std::shared_ptr<AudioCapturerImpl> AudioCapturerImpl::CreateAudioCapturerNativeO
     CHECK_AND_RETURN_RET_LOG(sCapturerOptions_ != nullptr, nullptr, "sCapturerOptions_ is nullptr");
     audioCapturerImpl->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
     OHOS::AudioStandard::AudioCapturerOptions capturerOptions = *sCapturerOptions_;
+    audioCapturerImpl->isModernInnerCapturer_ = capturerOptions.playbackCaptureConfig.isModernInnerCapturer;
     /* AudioCapturer not support other capturerFlags, only support flag 0 */
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;
@@ -345,6 +421,12 @@ void AudioCapturerImpl::StartSync()
 {
     if (audioCapturer_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        return;
+    }
+    // Playback capture created by modern inner capture api forbidden to start. 
+    // It should start by RequestPlaybackCaptureStart.
+    if (sourceType_ == OHOS::AudioStandard::SOURCE_TYPE_PLAYBACK_CAPTURE && isModernInnerCapturer_) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "Modern inner capturer can not use start");
         return;
     }
     int32_t ret = audioCapturer_->StartWithError();
@@ -538,6 +620,39 @@ void AudioCapturerImpl::SetMuteHintSync(bool mute)
     } else if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetMuteHint failed");
     }
+}
+
+PlayCaptureStartState AudioCapturerImpl::RequestPlaybackCaptureStartSync()
+{
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        return PlayCaptureStartState::key_t::FAILED;
+    }
+
+    auto playbackCaptureStartCallback = std::make_shared<TaihePlaybackCaptureStartStateCallback>();
+    if (playbackCaptureStartCallback == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY, "No memory");
+        return PlayCaptureStartState::key_t::FAILED;
+    }
+
+    audioCapturer_->SetPlaybackCaptureStartStateCallback(playbackCaptureStartCallback);
+    int32_t ret = audioCapturer_->StartPlaybackCapture();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        audioCapturer_->SetPlaybackCaptureStartStateCallback(nullptr);
+        ThrowPlaybackCaptureStartError(ret);
+        return PlayCaptureStartState::key_t::FAILED;
+    }
+
+    if (!playbackCaptureStartCallback->HasResult()) {
+        AUDIO_ERR_LOG("Playback capture start result missing");
+        audioCapturer_->SetPlaybackCaptureStartStateCallback(nullptr);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Playback capture start result missing");
+        return PlayCaptureStartState::key_t::FAILED;
+    }
+    PlayCaptureStartState state = HandlePlaybackCaptureStartResult(playbackCaptureStartCallback->GetState(),
+        audioCapturer_.get());
+    audioCapturer_->SetPlaybackCaptureStartStateCallback(nullptr);
+    return state;
 }
 
 taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevices()

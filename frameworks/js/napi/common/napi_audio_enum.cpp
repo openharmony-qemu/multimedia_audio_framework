@@ -317,6 +317,18 @@ const std::map<std::string, int32_t> NapiAudioEnum::interruptRequestResultTypeMa
     {"INTERRUPT_REQUEST_REJECT", INTERRUPT_REQUEST_REJECT},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::playCaptureStartStateMap = {
+    {"SUCCESS", 0},
+    {"FAILED", 1},
+    {"NOT_AUTHORIZED", 2},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureModeMap = {
+    {"DEFAULT", 0x0},
+    {"MEDIA", 0x1},
+    {"EXCLUDING_SELF", 0x8000},
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::deviceFlagMap = {
     {"NONE_DEVICES_FLAG", NONE_DEVICES_FLAG},
     {"OUTPUT_DEVICES_FLAG", OUTPUT_DEVICES_FLAG},
@@ -751,6 +763,10 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, interruptRequestTypeMap)),
         DECLARE_NAPI_PROPERTY("InterruptRequestResultType",
             CreateEnumObject(env, interruptRequestResultTypeMap)),
+        DECLARE_NAPI_PROPERTY("PlayCaptureStartState",
+            CreateEnumObject(env, playCaptureStartStateMap)),
+        DECLARE_NAPI_PROPERTY("PlaybackCaptureMode",
+            CreateEnumObject(env, playbackCaptureModeMap)),
         DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap)),
         DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap)),
         DECLARE_NAPI_PROPERTY("AudioDataCallbackResult",

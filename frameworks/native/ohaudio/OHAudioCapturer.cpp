@@ -52,6 +52,8 @@ OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer)
     AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+    // Playback capture created by modern inner capture api forbidden to start. 
+    // It should start by RequestPlaybackCaptureStart.
     CHECK_AND_RETURN_RET_LOG(audioCapturer->IsModernInnerCapturer() != true, AUDIOSTREAM_ERROR_ILLEGAL_STATE,
         "Innercapturer can not use this interface");
     if (audioCapturer->Start()) {
