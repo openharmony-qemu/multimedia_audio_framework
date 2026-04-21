@@ -3171,7 +3171,7 @@ void AudioInterruptService::PostRefreshAudioSceneAction(const int32_t zoneId)
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
-    desc.delayTimeMs = 120;
+    desc.delayTimeMs = SET_SCENE_DELAY;
     desc.priority = AsyncActionHandler::ActionPriority::LOW;
     if (asyncHandler_ != nullptr) {
         asyncHandler_->PostAsyncAction(desc);
