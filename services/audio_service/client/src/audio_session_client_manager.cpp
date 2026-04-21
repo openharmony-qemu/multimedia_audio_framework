@@ -353,7 +353,7 @@ void AudioSessionClientManager::SetRegisterStateChangeCallbackFlag(const bool st
         AudioPolicyManager::GetInstance().SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
         stateChangeCallbackByIpcFlag_ = false;
     }
-    stateChangeCallbackFlag_ = true;
+    stateChangeCallbackFlag_ = stateChangeCallbackFlag;
 }
 
 bool AudioSessionClientManager::Restore()
