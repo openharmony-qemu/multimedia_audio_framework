@@ -787,6 +787,7 @@ void AudioRendererImpl::RegisterRendererCallback(std::shared_ptr<uintptr_t> &cal
         std::static_pointer_cast<TaiheAudioRendererCallback>(taiheRenderer->callbackTaihe_);
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->SaveCallbackReference(cbName, callback);
+    taiheRenderer->audioRenderer_->SetRegisterInterruptCallbackFlag(true);
 }
 
 void AudioRendererImpl::RegisterPeriodPositionCallback(int64_t frame, std::shared_ptr<uintptr_t> &callback,
