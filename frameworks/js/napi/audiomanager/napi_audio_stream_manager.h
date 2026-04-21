@@ -71,12 +71,6 @@ private:
     static napi_value IsStreamActiveByStreamUsage(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArraySync(napi_env env, napi_callback_info info);
-    static napi_value GetSupportedAudioEffectProperty(napi_env env, napi_callback_info info);
-    static napi_value GetSupportedAudioEnhanceProperty(napi_env env, napi_callback_info info);
-    static napi_value SetAudioEnhanceProperty(napi_env env, napi_callback_info info);
-    static napi_value GetAudioEnhanceProperty(napi_env env, napi_callback_info info);
-    static napi_value GetAudioEffectProperty(napi_env env, napi_callback_info info);
-    static napi_value SetAudioEffectProperty(napi_env env, napi_callback_info info);
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);

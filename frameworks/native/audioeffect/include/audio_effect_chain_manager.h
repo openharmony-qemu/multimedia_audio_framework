@@ -134,8 +134,6 @@ public:
     uint32_t GetSceneTypeToChainCount(const std::string &sceneType);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     void UpdateStreamUsage();
     int32_t InitEffectBuffer(const std::string &sessionID);
     int32_t QueryEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);

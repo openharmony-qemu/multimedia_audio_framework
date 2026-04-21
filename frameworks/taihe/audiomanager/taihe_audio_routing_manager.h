@@ -61,6 +61,7 @@ public:
     void ExcludeOutputDevicesSync(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
     void UnexcludeOutputDevicesWithUsageAndDevices(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
     void UnexcludeOutputDevicesWithUsage(DeviceUsage usage);
+    array<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptorsSync();
     void DeclareDeviceTypesCompatibility(array_view<DeviceType> deviceTypes);
     void OnPreferredInputDeviceChangeForCapturerInfo(AudioCapturerInfo const &capturerInfo,
         callback_view<void(array_view<AudioDeviceDescriptor>)> callback);

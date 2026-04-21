@@ -157,17 +157,6 @@ void AudioServerProxyCheckHibernateStateProxyFuzzTest()
     audioServerProxy.CheckHibernateStateProxy(hibernate);
 }
 
-void AudioServerProxySetAudioEnhancePropertyProxyFuzzTest()
-{
-    if (g_testDeviceTypes.size() == 0) {
-        return;
-    }
-    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    AudioEnhancePropertyArray propertyArray;
-    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    audioServerProxy.SetAudioEnhancePropertyProxy(propertyArray, deviceType);
-}
-
 void AudioServerProxySetSinkMuteForSwitchDeviceProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
@@ -207,8 +196,6 @@ void AudioServerProxySetAudioEffectPropertyProxyFuzzTest()
     DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
     AudioEffectPropertyArrayV3 propertyArrayV3;
     audioServerProxy.SetAudioEffectPropertyProxy(propertyArrayV3, deviceType);
-    AudioEffectPropertyArray propertyArray;
-    audioServerProxy.SetAudioEffectPropertyProxy(propertyArray);
 }
 
 void AudioServerProxySetRotationToEffectProxyFuzzTest()
@@ -277,17 +264,6 @@ void AudioServerProxySetLatestMuteStateFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     bool muteFlag = GetData<bool>();
     audioServerProxy.SetLatestMuteState(sessionId, muteFlag);
-}
-
-void AudioServerProxyGetAudioEnhancePropertyProxyFuzzTest()
-{
-    if (g_testDeviceTypes.size() == 0) {
-        return;
-    }
-    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    AudioEnhancePropertyArray propertyArray;
-    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    audioServerProxy.GetAudioEnhancePropertyProxy(propertyArray, deviceType);
 }
 
 void AudioServerProxyGetAudioEffectPropertyProxyFuzzTest()
@@ -406,7 +382,6 @@ TestPtr g_testPtrs[] = {
     AudioServerProxyUnsetOffloadModeProxyFuzzTest,
     AudioServerProxySetOffloadModeProxyFuzzTest,
     AudioServerProxyCheckHibernateStateProxyFuzzTest,
-    AudioServerProxySetAudioEnhancePropertyProxyFuzzTest,
     AudioServerProxySetSinkMuteForSwitchDeviceProxyFuzzTest,
     AudioServerProxySuspendRenderSinkProxyFuzzTest,
     AudioServerProxyNotifyDeviceInfoProxyFuzzTest,
@@ -421,7 +396,6 @@ TestPtr g_testPtrs[] = {
     AudioServerProxyDestroyHdiPortProxyFuzzTest,
     AudioServerProxySetDeviceConnectedFlagFuzzTest,
     AudioServerProxySetLatestMuteStateFuzzTest,
-    AudioServerProxyGetAudioEnhancePropertyProxyFuzzTest,
     AudioServerProxyGetAudioEffectPropertyProxyFuzzTest,
     AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest,
     AudioServerProxySetKaraokeParametersFuzzTest,

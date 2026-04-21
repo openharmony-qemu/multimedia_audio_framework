@@ -305,29 +305,6 @@ void AudioEffectChainFuzzTest()
     AudioEffectChainManagerFirst(audioEffectChain);
 }
 
-void AudioEnhanceChainManagerFuzzTest(AudioEnhanceChainManager *audioEnhanceChainMananger)
-{
-    AudioEnhancePropertyArray propertyArray;
-    AudioVolumeType volumeType = GetData<AudioVolumeType>();
-    audioEnhanceChainMananger->SetVolumeInfo(volumeType, SYSTEM_VOLINFO);
-    bool isMute = true;
-    audioEnhanceChainMananger->SetMicrophoneMuteInfo(isMute);
-    isMute = false;
-    audioEnhanceChainMananger->SetMicrophoneMuteInfo(isMute);
-    uint32_t renderId = GetData<uint32_t>();
-    DeviceType newDeviceType = GetData<DeviceType>();
-    audioEnhanceChainMananger->SetOutputDevice(renderId, newDeviceType);
-    audioEnhanceChainMananger->GetAudioEnhanceProperty(propertyArray);
-    audioEnhanceChainMananger->ResetInfo();
-    audioEnhanceChainMananger->SetInputDevice(DEFAULT_CHANNEL, newDeviceType);
-    uint32_t sessionId = GetData<uint32_t>();
-    audioEnhanceChainMananger->SetStreamVolumeInfo(sessionId, 0);
-    std::string mainKey = "mainKey";
-    std::string subKey = "subKey";
-    std::string extraSceneType = "extraSceneType";
-    audioEnhanceChainMananger->UpdateExtraSceneType(mainKey, subKey, extraSceneType);
-}
-
 void AudioEnhanceChainManagerCreateFuzzTest(AudioEnhanceChainManager *manager)
 {
     uint64_t sceneKeyCode = GetData<uint64_t>();
@@ -359,10 +336,6 @@ void AudioEnhanceChainManagerPropertyFuzzTest(AudioEnhanceChainManager *manager)
     AudioEffectPropertyArrayV3 propV3Array = {};
     manager->SetAudioEnhanceProperty(propV3Array, deviceType);
     manager->GetAudioEnhanceProperty(propV3Array, deviceType);
-
-    AudioEnhancePropertyArray propArray = {};
-    manager->SetAudioEnhanceProperty(propArray, deviceType);
-    manager->GetAudioEnhanceProperty(propArray, deviceType);
 }
 
 void AudioEnhanceChainFuzzTest()
@@ -403,7 +376,6 @@ void AudioEnhanceChainFuzzTest()
     const char *invalidScene = "SCENE_RECORD";
     uint64_t sceneTypeCode = GetData<uint64_t>();
     GetSceneTypeCode(invalidScene, &sceneTypeCode);
-    AudioEnhanceChainManagerFuzzTest(audioEnhanceChainMananger);
     AudioEnhanceChainManagerCreateFuzzTest(audioEnhanceChainMananger);
     AudioEnhanceChainManagerPropertyFuzzTest(audioEnhanceChainMananger);
 #endif
@@ -469,35 +441,6 @@ void AudioEffectChainLoadEffectPropertiesFuzzTest()
     audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     audioEffectChainManager->LoadEffectProperties();
-}
-
-void AudioEffectChainSetAudioEffectPropertyFuzzTest()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        return;
-    }
-    AudioEffectProperty  audioEffectProperty1 = {
-        .effectClass = "testClass1",
-        .effectProp = "testProp1",
-    };
-    AudioEffectProperty  audioEffectProperty2 = {
-        .effectClass = "testClass2",
-        .effectProp = "testProp2",
-    };
-
-    AudioEffectPropertyArray audioEffectPropertyArray = {};
-    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
-    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
-    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    const char *sceneType = "SCENE_MUSIC";
-    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
-    std::shared_ptr<AudioEffectChain> audioEffectChain =
-        audioEffectChainManager->CreateAudioEffectChain(sceneType, GetData<bool>());
-    audioEffectChainManager->sceneTypeToEffectChainMap_.insert({sceneTypeAndDeviceKey, audioEffectChain});
-    audioEffectChainManager->InitAudioEffectChainDynamic(sceneType);
-    audioEffectChainManager->SetAudioEffectProperty(audioEffectPropertyArray);
 }
 
 void AudioEffectChainGetAudioEffectPropertyFuzzTest()
@@ -1223,7 +1166,6 @@ TestFuncs g_testFuncs[] = {
     AudioEffectChainStreamVolumeUpdateFuzzTest,
     AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest,
     AudioEffectChainLoadEffectPropertiesFuzzTest,
-    AudioEffectChainSetAudioEffectPropertyFuzzTest,
     AudioEffectChainGetAudioEffectPropertyFuzzTest,
     AudioEffectChainWaitAndReleaseEffectChainFuzzTest,
     AudioEffectChainInitEffectBufferFuzzTest,

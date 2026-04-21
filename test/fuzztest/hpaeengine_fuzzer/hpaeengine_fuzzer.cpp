@@ -243,24 +243,10 @@ void GetAudioEffectPropertyV3FuzzTest()
     impl_->GetAudioEffectProperty(propertyArray);
 }
 
-void GetAudioEffectPropertyFuzzTest()
-{
-    SetUp();
-    AudioEffectPropertyArray propertyArray;
-    impl_->GetAudioEffectProperty(propertyArray);
-}
-
 void GetAudioEnhancePropertyV3FuzzTest()
 {
     SetUp();
     AudioEffectPropertyArrayV3 propertyArray;
-    impl_->GetAudioEnhanceProperty(propertyArray);
-}
-
-void GetAudioEnhancePropertyFuzzTest()
-{
-    SetUp();
-    AudioEnhancePropertyArray propertyArray;
     impl_->GetAudioEnhanceProperty(propertyArray);
 }
 
@@ -398,9 +384,7 @@ TestFuncs g_testFuncs = {
     MoveSinkInputByIndexOrNameFuzzTest,
     MoveSourceOutputByIndexOrNameFuzzTest,
     GetAudioEffectPropertyV3FuzzTest,
-    GetAudioEffectPropertyFuzzTest,
     GetAudioEnhancePropertyV3FuzzTest,
-    GetAudioEnhancePropertyFuzzTest,
     OnOpenAudioPortCbFuzzTest,
     OnCloseAudioPortCbFuzzTest,
     OnSetSinkMuteCbFuzzTest,

@@ -54,10 +54,7 @@ public:
     int32_t MoveSourceOutputByIndexOrName(
         uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;

@@ -175,6 +175,18 @@ void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsage(DeviceUsage usage)
     }
 }
 
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetActiveOutputDeviceDescriptorsSync()
+{
+    std::vector<AudioDeviceDescriptor> emptyResult;
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> outDeviceDescriptors =
+        audioMngr_->GetActiveOutputDeviceDescriptors();
+    return TaiheParamUtils::SetDeviceDescriptors(outDeviceDescriptors);
+}
+
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceForRendererInfoSync(
     AudioRendererInfo const &rendererInfo)
 {

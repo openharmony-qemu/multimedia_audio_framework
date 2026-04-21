@@ -663,12 +663,6 @@ public:
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
 
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     std::vector<AudioDevicePair> GetLoopbackSupportedDevicePairs();

@@ -2302,27 +2302,6 @@ int32_t HpaeManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &property
     return SUCCESS;
 }
 
-int32_t HpaeManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
-{
-    auto request = [propertyArray]() {
-        HpaePolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t HpaeManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    auto request = [this, &propertyArray]() {
-        HpaePolicyManager::GetInstance().GetAudioEffectProperty(propertyArray);
-        if (auto serviceCallback = serviceCallback_.lock()) {
-            serviceCallback->OnGetAudioEffectPropertyCb(SUCCESS);
-        }
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
 void HpaeManager::InitHdiState()
 {
     auto request = []() {
@@ -2440,27 +2419,6 @@ int32_t HpaeManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propert
         auto serviceCallback = serviceCallback_.lock();
         CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
         serviceCallback->OnGetAudioEnhancePropertyCbV3(SUCCESS);
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
-{
-    auto request = [propertyArray, deviceType]() {
-        HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray, deviceType);
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t HpaeManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
-{
-    auto request = [this, &propertyArray, deviceType]() {
-        HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);
-        auto serviceCallback = serviceCallback_.lock();
-        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
-        serviceCallback->OnGetAudioEnhancePropertyCb(SUCCESS);
     };
     SendRequest(request, __func__);
     return SUCCESS;

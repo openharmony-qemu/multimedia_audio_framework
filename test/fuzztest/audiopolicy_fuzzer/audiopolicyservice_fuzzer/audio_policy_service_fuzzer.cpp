@@ -822,16 +822,6 @@ void AudioPolicyServiceGetAudioEnhancePropertyFuzztest(const uint8_t *rawData, s
     }
     AudioEffectPropertyArrayV3 propertyArrayv3;
     GetServerPtr()->audioPolicyService_.GetAudioEnhanceProperty(propertyArrayv3);
-    AudioEnhancePropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-}
-
-void AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    AudioEnhancePropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
 }
 
 void AudioPolicyServiceGetAudioEffectPropertyFuzztest(const uint8_t *rawData, size_t size)
@@ -840,16 +830,6 @@ void AudioPolicyServiceGetAudioEffectPropertyFuzztest(const uint8_t *rawData, si
     }
     AudioEffectPropertyArrayV3 propertyArrayv3;
     GetServerPtr()->audioPolicyService_.GetAudioEffectProperty(propertyArrayv3);
-    AudioEffectPropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.GetAudioEffectProperty(propertyArray);
-}
-
-void AudioPolicyServiceSetAudioEnhancePropertyFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    AudioEnhancePropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.SetAudioEnhanceProperty(propertyArray);
 }
 
 void AudioPolicyServiceGetA2dpOffloadFlagFuzztest(const uint8_t *rawData, size_t size)
@@ -1037,8 +1017,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceSetAudioEffectPropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetAudioEnhancePropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetAudioEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetAudioEnhancePropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetA2dpOffloadFlagFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceSetSleAudioOperationCallbackFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerRemovedFuzztest,

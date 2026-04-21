@@ -75,12 +75,6 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
 
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
-
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
-
     void ResetInfo() override;
 
     void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,

@@ -1875,19 +1875,6 @@ int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &
     return ret;
 }
 
-int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->GetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType) const
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
 int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");

@@ -249,12 +249,6 @@ void HpaeManagerFuzzTest::Fisrt()
     AudioEffectPropertyArrayV3 propertyV3;
     hpaeManager_->GetAudioEffectProperty(propertyV3);
     hpaeManager_->SetAudioEffectProperty(propertyV3);
-    AudioEffectPropertyArray property;
-    hpaeManager_->GetAudioEffectProperty(property);
-    hpaeManager_->SetAudioEffectProperty(property);
-    AudioEnhancePropertyArray propertyEn;
-    hpaeManager_->GetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
-    hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
     hpaeManager_->GetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
     hpaeManager_->SetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
     hpaeManager_->UpdateExtraSceneType("123", "456", "789");

@@ -1518,10 +1518,6 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->SetAudioEffectProperty(propertyV3), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    AudioEffectPropertyArray property;
-    EXPECT_EQ(hpaeManager_->GetAudioEffectProperty(property), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-
     hpaeManager_->UpdateEffectBtOffloadSupported(true);
     EXPECT_EQ(hpaeManager_->SetOutputDevice(TEST_STREAM_SESSION_ID, DEVICE_TYPE_SPEAKER), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -1533,14 +1529,6 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 
     EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    
-    AudioEnhancePropertyArray propertyEn;
-    EXPECT_EQ(hpaeManager_->GetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-
-    EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER), SUCCESS);
-    hpaeManager_->UpdateExtraSceneType("123", "456", "789");
     WaitForMsgProcessing(hpaeManager_);
 }
 

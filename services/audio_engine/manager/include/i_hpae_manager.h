@@ -113,8 +113,6 @@ public:
     virtual int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) = 0;
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
-    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
-    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
     virtual void InitHdiState() = 0;
     virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
     virtual void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value) = 0;
@@ -131,10 +129,6 @@ public:
         const AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
     virtual int32_t GetAudioEnhanceProperty(
         AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-    virtual int32_t SetAudioEnhanceProperty(
-        const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-    virtual int32_t GetAudioEnhanceProperty(
-        AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
     virtual void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) = 0;
     virtual void NotifySettingsDataReady() = 0;

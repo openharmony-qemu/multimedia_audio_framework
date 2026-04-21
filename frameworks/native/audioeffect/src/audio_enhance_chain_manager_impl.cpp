@@ -622,18 +622,6 @@ int32_t AudioEnhanceChainManagerImpl::SetAudioEnhancePropertyToChains(const Audi
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChainManagerImpl::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
-{
-    AudioEffectPropertyArrayV3 localPropertyArray = {};
-    for (const auto &prop : propertyArray.property) {
-        AudioEffectPropertyV3 propertyV3 = { prop.enhanceClass, prop.enhanceProp, CAPTURE_EFFECT_FLAG };
-        localPropertyArray.property.emplace_back(std::move(propertyV3));
-    }
-
-    return SetAudioEnhanceProperty(localPropertyArray, deviceType);
-}
-
 int32_t AudioEnhanceChainManagerImpl::WriteEnhancePropertyToDb(const std::string &key, const std::string &property)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
@@ -668,20 +656,6 @@ int32_t AudioEnhanceChainManagerImpl::GetAudioEnhanceProperty(AudioEffectPropert
             propertyArray.property.emplace_back(AudioEffectPropertyV3{effect, prop, CAPTURE_EFFECT_FLAG});
         }
     }
-    return SUCCESS;
-}
-
-int32_t AudioEnhanceChainManagerImpl::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
-{
-    propertyArray.property.clear();
-    AudioEffectPropertyArrayV3 localPropertyArray = {};
-    GetAudioEnhanceProperty(localPropertyArray, deviceType);
-    for (const auto &prop : localPropertyArray.property) {
-        AudioEnhanceProperty property = { prop.name, prop.category };
-        propertyArray.property.emplace_back(std::move(property));
-    }
-
     return SUCCESS;
 }
 

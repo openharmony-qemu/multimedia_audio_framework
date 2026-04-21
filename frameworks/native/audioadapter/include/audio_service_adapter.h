@@ -219,26 +219,11 @@ public:
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
 
     /**
-     * @brief Get current effect property.
-     *
-     * @return int32_t the result.
-     */
-    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
-
-    /**
      * @brief Get current enhance property.
      *
      * @return int32_t the result.
      */
     virtual int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-
-    /**
-     * @brief Get current enhance property.
-     *
-     * @return int32_t the result.
-     */
-    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
     /**

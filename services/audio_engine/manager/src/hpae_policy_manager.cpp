@@ -99,16 +99,6 @@ int32_t HpaePolicyManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &pr
     return AudioEffectChainManager::GetInstance()->GetAudioEffectProperty(propertyArray);
 }
 
-int32_t HpaePolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
-{
-    return AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(propertyArray);
-}
-
-int32_t HpaePolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    return AudioEffectChainManager::GetInstance()->GetAudioEffectProperty(propertyArray);
-}
-
 void HpaePolicyManager::InitHdiState()
 {
     AudioEffectChainManager::GetInstance()->InitHdiState();
@@ -166,19 +156,6 @@ int32_t HpaePolicyManager::SetAudioEnhanceProperty(const AudioEffectPropertyArra
 }
 
 int32_t HpaePolicyManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-    DeviceType deviceType)
-{
-    return AudioEnhanceChainManager::GetInstance()->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-int32_t HpaePolicyManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
-{
-    return AudioEnhanceChainManager::GetInstance()->SetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-// todo: change to callback mode
-int32_t HpaePolicyManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
     DeviceType deviceType)
 {
     return AudioEnhanceChainManager::GetInstance()->GetAudioEnhanceProperty(propertyArray, deviceType);

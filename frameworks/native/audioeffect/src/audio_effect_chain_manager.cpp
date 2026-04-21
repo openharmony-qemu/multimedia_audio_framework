@@ -1508,22 +1508,6 @@ void AudioEffectChainManager::LoadEffectProperties()
 }
 // LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
-int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    for (const auto &property : propertyArray.property) {
-        effectPropertyMap_.insert_or_assign(property.effectClass, property.effectProp);
-        for (const auto &[sceneType, effectChain] : sceneTypeToEffectChainMap_) {
-            if (effectChain) {
-                effectChain->SetEffectProperty(property.effectClass, property.effectProp);
-            }
-        }
-    }
-    return AUDIO_OK;
-}
-// LCOV_EXCL_STOP
-
 int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -1533,18 +1517,6 @@ int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray
             AUDIO_DEBUG_LOG("effect->name %{public}s prop->category %{public}s",
                 effect.c_str(), prop.c_str());
             propertyArray.property.emplace_back(AudioEffectPropertyV3{effect, prop, RENDER_EFFECT_FLAG});
-        }
-    }
-    return AUDIO_OK;
-}
-
-int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    propertyArray.property.clear();
-    for (const auto &[effect, prop] : effectPropertyMap_) {
-        if (!prop.empty()) {
-            propertyArray.property.emplace_back(AudioEffectProperty{effect, prop});
         }
     }
     return AUDIO_OK;

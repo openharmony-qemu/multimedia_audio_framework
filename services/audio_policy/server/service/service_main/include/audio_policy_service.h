@@ -236,14 +236,6 @@ public:
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    // for effect
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    // for enhance
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);

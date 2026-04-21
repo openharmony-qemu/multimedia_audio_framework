@@ -130,22 +130,6 @@ void ReloadSourceForEffectFuzzTest(FuzzedDataProvider& fdp)
     session.ReloadSourceForEffect(propertyArray, newPropertyArray);
 }
 
-void GetEnhancePropByNameFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEnhancePropertyArray propertyArray;
-    std::string propName = "propName";
-    session.GetEnhancePropByName(propertyArray, propName);
-}
-
-void ReloadSourceForEffectDifferentArgsFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-    session.ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
 void GetTargetSessionForEcFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPipeInfo> pipe = std::make_shared<AudioPipeInfo>();
@@ -316,8 +300,6 @@ void Test(FuzzedDataProvider& fdp)
     GetInputDeviceTypeForReloadFuzzTest,
     GetEnhancePropByNameV3FuzzTest,
     ReloadSourceForEffectFuzzTest,
-    GetEnhancePropByNameFuzzTest,
-    ReloadSourceForEffectDifferentArgsFuzzTest,
     GetTargetSessionForEcFuzzTest,
     HandleIndependentInputpipeFuzzTest,
     IsStreamValidFuzzTest,

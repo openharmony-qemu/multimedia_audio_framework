@@ -158,14 +158,6 @@ public:
         int32_t deviceType) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
         int32_t deviceType) override;
-    // for effect
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    // for enhance
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-        int32_t deviceType) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-        int32_t deviceType) override;
 
     int32_t NotifyDeviceInfo(const std::string &networkId, bool connected) override;
 

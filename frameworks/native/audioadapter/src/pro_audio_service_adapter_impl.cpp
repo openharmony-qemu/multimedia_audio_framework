@@ -399,22 +399,6 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyAr
     return SUCCESS;
 }
 
-int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    AUDIO_INFO_LOG("Enter");
-    lock_guard<mutex> lock(lock_);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    isFinishGetAudioEffectProperty_ = false;
-    IHpaeManager::GetHpaeManager().GetAudioEffectProperty(propertyArray);
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishGetAudioEffectProperty_;
-    });
-    if (!stopWaiting) {
-        AUDIO_WARNING_LOG("wait for notify timeout");
-    }
-    return SUCCESS;
-}
-
 int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
     DeviceType deviceType)
 {
@@ -425,23 +409,6 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyA
     IHpaeManager::GetHpaeManager().GetAudioEnhanceProperty(propertyArray);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAudioEnhancePropertyV3_;
-    });
-    if (!stopWaiting) {
-        AUDIO_WARNING_LOG("wait for notify timeout");
-    }
-    return SUCCESS;
-}
-
-int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("Enter");
-    lock_guard<mutex> lock(lock_);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    isFinishGetAudioEnhanceProperty_ = false;
-    IHpaeManager::GetHpaeManager().GetAudioEnhanceProperty(propertyArray);
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishGetAudioEnhanceProperty_;
     });
     if (!stopWaiting) {
         AUDIO_WARNING_LOG("wait for notify timeout");
