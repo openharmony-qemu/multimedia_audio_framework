@@ -3107,8 +3107,26 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
     UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     
     bool isExistActiveInjectFocus = IsActiveInjectFocusExist(audioFocusInfoList);
-    bool hasFocusRemoved = false;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
+    bool hasFocusRemoved = ProcessFocusListIteration(zoneId, isSessionTimeout,
+        audioFocusInfoList, newAudioFocuInfoList, isExistActiveInjectFocus);
+
+    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+        itZone->second->audioFocusInfoList = audioFocusInfoList;
+        SendActiveVolumeTypeChangeEvent(zoneId);
+    }
+    
+    if (hasFocusRemoved) {
+        PostRefreshAudioSceneAction(zoneId);
+    }
+}
+
+bool AudioInterruptService::ProcessFocusListIteration(const int32_t zoneId, bool isSessionTimeout,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> &newAudioFocuInfoList,
+    bool isExistActiveInjectFocus)
+{
+    bool hasFocusRemoved = false;
     for (auto iterActive = audioFocusInfoList.begin(), iterNew = newAudioFocuInfoList.begin();
         iterActive != audioFocusInfoList.end() && iterNew != newAudioFocuInfoList.end();) {
         AudioFocuState oldState = iterActive->second;
@@ -3117,6 +3135,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         bool removeFocusInfo = false;
         if (oldState != newState) {
             if (isSessionTimeout && oldState == PAUSE && (newState == ACTIVE || newState == DUCK)) {
+                // When the audio session is timeout, just send unduck event and skip resume event.
                 AudioInterrupt interruptToRemove = iterActive->first;
                 iterActive = audioFocusInfoList.erase(iterActive);
                 iterNew = newAudioFocuInfoList.erase(iterNew);
@@ -3142,24 +3161,21 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
             ++iterNew;
         }
     }
+    return hasFocusRemoved;
+}
 
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
-        itZone->second->audioFocusInfoList = audioFocusInfoList;
-        SendActiveVolumeTypeChangeEvent(zoneId);
-    }
-    
-    if (hasFocusRemoved) {
-        std::shared_ptr<RefreshAudioSceneAction> action =
-            std::make_shared<RefreshAudioSceneAction>(shared_from_this(), zoneId);
-        CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-        AsyncActionHandler::AsyncActionDesc desc;
-        desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
-        desc.delayTimeMs = 120;
-        desc.priority = AsyncActionHandler::ActionPriority::LOW;
-        if (asyncHandler_ != nullptr) {
-            asyncHandler_->PostAsyncAction(desc);
-            AUDIO_INFO_LOG("Post refresh audio scene action for zone %{public}d with 120ms delay", zoneId);
-        }
+void AudioInterruptService::PostRefreshAudioSceneAction(const int32_t zoneId)
+{
+    std::shared_ptr<RefreshAudioSceneAction> action =
+        std::make_shared<RefreshAudioSceneAction>(shared_from_this(), zoneId);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    desc.delayTimeMs = 120;
+    desc.priority = AsyncActionHandler::ActionPriority::LOW;
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+        AUDIO_INFO_LOG("Post refresh audio scene action for zone %{public}d with 120ms delay", zoneId);
     }
 }
 

@@ -162,6 +162,7 @@ public:
     bool IsAudioStreamActive(const AudioFocuState &state);
     int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
         int32_t callerUid = INVALID_UID);
+    void RefreshAudioSceneAfterDelay(const int32_t zoneId);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -356,7 +357,11 @@ private:
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
     AudioScene RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
         AudioScene &highestPriorityAudioScene);
-    void RefreshAudioSceneAfterDelay(const int32_t zoneId);
+    void PostRefreshAudioSceneAction(const int32_t zoneId);
+    bool ProcessFocusListIteration(const int32_t zoneId, bool isSessionTimeout,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> &newAudioFocuInfoList,
+        bool isExistActiveInjectFocus);
 
     void HandleAppStreamType(const int32_t zoneId, AudioInterrupt &audioInterrupt);
     bool IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt);
