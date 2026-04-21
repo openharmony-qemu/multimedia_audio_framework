@@ -2085,10 +2085,16 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         // If the session is present in audioFocusInfoList and the placeholder's stream type is not VoIP communication,
         // and the incoming stream type is not Capturer, remove and treat it as a new request
         AUDIO_DEBUG_LOG("audioFocusInfoList is not empty");
-        audioFocusInfoList.remove_if(
-            [&audioInterrupt, this](const std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
-            return AudioFocusInfoListRemovalCondition(audioInterrupt, audioFocus);
-        });
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
+            if (AudioFocusInfoListRemovalCondition(audioInterrupt, *iter)) {
+                AudioInterrupt interruptToRemove = iter->first;
+                AUDIO_INFO_LOG("remove interrupt %{public}d when process audio scene", iter->first.streamId);
+                iter = audioFocusInfoList.erase(iter);
+                SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, interruptToRemove);
+            } else {
+                ++iter;
+            }
+        }
 
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[zoneId] = itZone->second;
