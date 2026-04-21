@@ -228,6 +228,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
     "server/domain/interrupt/src/audio_interrupt_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_service_ext.cpp",
+    "server/domain/interrupt/src/audio_interrupt_strategy.cpp",
     "server/domain/interrupt/src/audio_interrupt_custom.cpp",
     "server/domain/interrupt/src/audio_interrupt_dfx.cpp",
     "server/domain/interrupt/src/audio_interrupt_utils.cpp",

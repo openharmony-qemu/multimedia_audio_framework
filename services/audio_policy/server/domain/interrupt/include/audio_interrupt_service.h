@@ -39,7 +39,7 @@
 #include "audio_interrupt_custom.h"
 #include "audio_stream_collector.h"
 #include "audio_interrupt_dfx.h"
-
+#include "audio_interrupt_strategy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -236,13 +236,7 @@ private:
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
-    void UpdateFocusStrategy(const std::string &bundleName,
-        AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
-    void UpdateMapFocusStrategy(const std::string &bundleName,
-        AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
-        AudioFocusEntry &focusEntry);
-    void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
     bool FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt);
@@ -284,15 +278,6 @@ private:
         std::shared_ptr<AudioInterruptZone> &zoneInfo,
         std::list<int32_t> &removeFocusInfoPidList);
     void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
-    void UpdateMicFocusStrategy(const AudioFocusType &existAudioFocusType,
-        const AudioFocusType &incomingAudioFocusType, const std::string &currentBundleName,
-        const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
-    void UpdateMicFocusByUid(const AudioInterrupt &currentInterrupt,
-        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
-    void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
-        const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
-        AudioFocusEntry &focusTypess);
-    bool IsMicSource(SourceType sourceType);
 
     // zone debug interfaces
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
@@ -410,6 +395,7 @@ private:
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
         const InterruptErrorCode interruptErrorCode);
     int32_t FindAudioInterruptByPid(const int32_t zoneId, const int32_t callerPid, AudioInterrupt &audioInterrupt);
+    void MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -442,7 +428,6 @@ private:
     mutable int32_t ownerPid_ = 0;
     mutable int32_t ownerUid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
-    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     AudioStreamType activeStreamType_ = STREAM_MUSIC;
 
     // settingsdata members
@@ -453,6 +438,7 @@ private:
 
     std::unique_ptr<AudioInterruptCustom> interruptCustom_;
     std::shared_ptr<AudioInterruptDfx> interruptDfx_;
+    std::unique_ptr<AudioInterruptStrategy> interruptStrategy_;
 
     AudioStreamCollector& streamCollector_;
 };

@@ -18,6 +18,7 @@
 
 #include "audio_interrupt_service.h"
 #include "audio_policy_server.h"
+#include "audio_interrupt_strategy.h"
 #include <thread>
 #include <memory>
 #include <vector>
@@ -4304,10 +4305,10 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_134, TestSize.Level1)
 */
 HWTEST_F(AudioInterruptUnitTest, UpdateWindowFocusStrategy01, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
     ASSERT_NE(audioInterruptService, nullptr);
-    audioInterruptService->Init(GetPolicyServerTest());
-    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+    audioInterruptStrategy->Init(GetPolicyServerTest());
+    audioInterruptStrategy->SetCallbackHandler(GetServerHandlerTest());
 
     int32_t currentPid = 101;
     int32_t incomingPid = 101;
@@ -4315,22 +4316,20 @@ HWTEST_F(AudioInterruptUnitTest, UpdateWindowFocusStrategy01, TestSize.Level1)
     AudioStreamType existStreamType = STREAM_MUSIC;
     AudioFocusEntry focusEntry;
     focusEntry.hintType = INTERRUPT_HINT_EXIT_STANDALONE;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 }
 
 /**
-* @tc.name  : Test AudioInterruptService
+* @tc.name  : Test AudioInterruptStrategy
 * @tc.number: UpdateWindowFocusStrategy02
-* @tc.desc  : Test AudioInterruptService
+* @tc.desc  : Test AudioInterruptStrategy
 */
 HWTEST_F(AudioInterruptUnitTest, UpdateWindowFocusStrategy02, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
-    audioInterruptService->Init(GetPolicyServerTest());
-    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
     
     int32_t currentPid = 101;
     int32_t incomingPid = 102;
@@ -4338,52 +4337,50 @@ HWTEST_F(AudioInterruptUnitTest, UpdateWindowFocusStrategy02, TestSize.Level1)
     AudioStreamType existStreamType = STREAM_ALARM;
     AudioFocusEntry focusEntry;
     focusEntry.hintType = INTERRUPT_HINT_EXIT_STANDALONE;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 
     incomingStreamType = STREAM_MOVIE;
     existStreamType = STREAM_ALARM;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 
     incomingStreamType = STREAM_SPEECH;
     existStreamType = STREAM_ALARM;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 
     incomingStreamType = STREAM_ALARM;
     existStreamType = STREAM_MUSIC;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 
     incomingStreamType = STREAM_ALARM;
     existStreamType = STREAM_MOVIE;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 
     incomingStreamType = STREAM_ALARM;
     existStreamType = STREAM_SPEECH;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 }
 
 /**
-* @tc.name  : Test AudioInterruptService
+* @tc.name  : Test AudioInterruptStrategy
 * @tc.number: UpdateWindowFocusStrategy03
-* @tc.desc  : Test AudioInterruptService
+* @tc.desc  : Test AudioInterruptStrategy
 */
 HWTEST_F(AudioInterruptUnitTest, UpdateWindowFocusStrategy03, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
-    audioInterruptService->Init(GetPolicyServerTest());
-    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
 
     int32_t currentPid = 101;
     int32_t incomingPid = 102;
@@ -4391,7 +4388,7 @@ HWTEST_F(AudioInterruptUnitTest, UpdateWindowFocusStrategy03, TestSize.Level1)
     AudioStreamType existStreamType = STREAM_MUSIC;
     AudioFocusEntry focusEntry;
     focusEntry.hintType = INTERRUPT_HINT_EXIT_STANDALONE;
-    audioInterruptService->UpdateWindowFocusStrategy(currentPid, incomingPid,
+    audioInterruptStrategy->UpdateWindowFocusStrategy(currentPid, incomingPid,
         existStreamType, incomingStreamType, focusEntry);
     EXPECT_NE(INTERRUPT_HINT_NONE, focusEntry.hintType);
 }
@@ -5057,14 +5054,14 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAllZones_001, T
 }
 
 /**
- * @tc.name  : Test AudioInterruptService
+ * @tc.name  : Test AudioInterruptStrategy
  * @tc.number: UpdateMapFocusStrategy
  * @tc.desc  : Test UpdateMapFocusStrategy
  */
 HWTEST_F(AudioInterruptUnitTest, UpdateMapFocusStrategy, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
 
     SourceType incomingSourceType;
     std::string bundleName = "";
@@ -5072,25 +5069,25 @@ HWTEST_F(AudioInterruptUnitTest, UpdateMapFocusStrategy, TestSize.Level1)
 
     incomingSourceType= SOURCE_TYPE_MIC;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService->UpdateMapFocusStrategy(bundleName, focusEntry, false, incomingSourceType);
+    audioInterruptStrategy->UpdateMapFocusStrategy(bundleName, focusEntry, false, incomingSourceType);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
 
     bundleName = "";
     incomingSourceType= SOURCE_TYPE_INVALID;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
+    audioInterruptStrategy->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
 
     bundleName = "";
     incomingSourceType= SOURCE_TYPE_MIC;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
+    audioInterruptStrategy->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
 
     bundleName = "appname";
     incomingSourceType= SOURCE_TYPE_MIC;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
+    audioInterruptStrategy->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
 }
 

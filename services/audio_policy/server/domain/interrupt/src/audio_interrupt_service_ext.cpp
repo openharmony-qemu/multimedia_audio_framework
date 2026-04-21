@@ -140,37 +140,6 @@ void AudioInterruptService::SetLatestMuteState(const uint32_t &streamId, bool mu
     policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
 }
 
-void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
-    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
-{
-    if (currentInterrupt.strategy == InterruptStrategy::DEFAULT &&
-        incomingInterrupt.strategy == InterruptStrategy::DEFAULT &&
-        !(currentInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == CURRENT) &&
-        !(incomingInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == INCOMING)) {
-        return;
-    }
-
-    if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
-        focusEntry.hintType != INTERRUPT_HINT_PAUSE) ||
-        incomingInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP) {
-        AUDIO_INFO_LOG("streamId: %{public}u, keep current hintType=%{public}d",
-            currentInterrupt.streamId, focusEntry.hintType);
-        return;
-    }
-
-    if (currentInterrupt.strategy == InterruptStrategy::MUTE) {
-        focusEntry.actionOn = CURRENT;
-    }
-    if (incomingInterrupt.strategy == InterruptStrategy::MUTE) {
-        focusEntry.actionOn = INCOMING;
-    }
-
-    AUDIO_INFO_LOG("currentStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
-        currentInterrupt.streamId, incomingInterrupt.streamId, focusEntry.actionOn);
-    focusEntry.isReject = false;
-    focusEntry.hintType = INTERRUPT_HINT_MUTE;
-}
-
 int32_t AudioInterruptService::ProcessActiveStreamFocus(
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
     const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,
@@ -516,9 +485,8 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     bool isInMuteCheckList = false;
     auto bundleName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
     string muteCheckAppName = bundleName;
-    if (queryBundleNameListCallback_ != nullptr) {
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_mute_check",
-            isInMuteCheckList);
+    if (interruptStrategy_ != nullptr) {
+        interruptStrategy_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_mute_check", isInMuteCheckList);
     }
     if (isInMuteCheckList) {
         focusEntry.hintType = INTERRUPT_HINT_NONE;
@@ -562,6 +530,15 @@ void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audi
         SetLatestMuteState(audioInterrupt.streamId, muteFlag);
     } else {
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
+    }
+}
+
+void AudioInterruptService::MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INTERPHONE) {
+        audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+        audioInterrupt.sourceType = SOURCE_TYPE_INTERPHONE;
+        AUDIO_INFO_LOG("Is Capturer InterPhone Interrupt");
     }
 }
 }
