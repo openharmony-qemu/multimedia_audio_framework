@@ -142,7 +142,13 @@ int32_t RemoteOffloadAudioRenderSink::Start(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioRender_->Start();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("start fail, ret: %{public}d", ret);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::START,
+                ERR_NOT_STARTED), "audiorender_ start fail, ret: " + std::to_string(ret), false);
+        return ERR_NOT_STARTED;
+    }
     UpdateSinkState(true);
     dumpFileName_ = "remote_offload_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
@@ -171,7 +177,13 @@ int32_t RemoteOffloadAudioRenderSink::Stop(void)
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     ret = audioRender_->Stop();
     UpdateSinkState(false);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("stop fail");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::STOP,
+                ERR_NOT_STARTED), "audioRender_ stop fail", false);
+        return ERR_NOT_STARTED;
+    }
     started_.store(false);
 
     return SUCCESS;
@@ -210,7 +222,13 @@ int32_t RemoteOffloadAudioRenderSink::Pause(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioRender_->Pause();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "pause fail, ret: %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("pause fail, ret: %{public}d", ret);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::PAUSE,
+                ERR_NOT_STARTED), "audioRender_ pause fail, ret: " + std::to_string(ret), false);
+        return ERR_NOT_STARTED;
+    }
     paused_.store(true);
     return SUCCESS;
 }
@@ -229,6 +247,10 @@ int32_t RemoteOffloadAudioRenderSink::FlushInner(void)
     renderPos_ = 0;
     int32_t ret = audioRender_->Flush();
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "flush fail, ret: %{public}d", ret);
+    // err code ?
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+        BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::FLUSH,
+            ERR_OPERATION_FAILED), "audioRender_ flush fail, ret: " + std::to_string(ret), false);
     isFlushing_.store(false);
     return SUCCESS;
 }
@@ -273,7 +295,13 @@ int32_t RemoteOffloadAudioRenderSink::RenderFrame(char &data, uint64_t len, uint
         runningLock_->UpdateAppsUidToPowerMgr();
     }
 #endif
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("fail, ret: %{public}x", ret);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::SEND_DATA,
+                ERR_WRITE_FAILED), "audioRender_ RenderFrame fail, ret: " + std::to_string(ret), false);
+        return ERR_WRITE_FAILED;
+    }
     if (writeLen != 0) {
         BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
         AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
@@ -307,7 +335,10 @@ void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, co
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     CHECK_AND_RETURN(IsValidState());
     int32_t ret = audioRender_->SetExtraParams(value.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_LOG(ret == SUCCESS, StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+        BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::CONFING,
+            ERR_OPERATION_FAILED), "audioRender_ set parameter fail, error code: " + std::to_string(ret), false),
+        "set parameter fail, error code: %{public}d", ret);
 }
 
 int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
@@ -363,7 +394,13 @@ int32_t RemoteOffloadAudioRenderSink::GetLatencyInner()
 
     uint32_t hdiLatencyMS;
     int32_t ret = audioRender_->GetLatency(hdiLatencyMS);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail, ret: %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("get latency fail, ret: %{public}d", ret);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::QUERY,
+                ERR_OPERATION_FAILED), "audioRender_ get latency fail, ret: " + std::to_string(ret), false);
+        return ERR_OPERATION_FAILED;
+    }
 
     hdiLatencyUS_ = hdiLatencyMS * MICROSECOND_PER_MILLISECOND;
     return SUCCESS;
@@ -506,7 +543,13 @@ int32_t RemoteOffloadAudioRenderSink::GetRenderPositionInner()
     uint64_t tmpFrames;
     struct AudioTimeStamp stamp = {};
     int32_t ret = audioRender_->GetRenderPosition(tmpFrames, stamp);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get render position fail, ret: %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("get render position fail, ret: %{public}d", ret);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::QUERY,
+            ERR_OPERATION_FAILED), "audioRender_ get render position fail, ret: " + std::to_string(ret), false);
+        return ERR_OPERATION_FAILED;
+    }
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it
     CHECK_AND_RETURN_RET_LOG(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
         stamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
@@ -691,7 +734,10 @@ void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
     AUDIO_INFO_LOG("speed: %{public}f", speed);
     CHECK_AND_RETURN(IsValidState());
     int32_t ret = audioRender_->SetRenderSpeed(speed);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set speed fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_LOG(ret == SUCCESS, StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+        BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::CONFING,
+            ERR_OPERATION_FAILED), "audioRender_ set speed fail, ret: " + std::to_string(ret), false),
+        "set speed fail, ret: %{public}d", ret);
 
     // Every time the speed is set, the sampling count needs to be refreshed for two reasons:
     // 1. For easier calculation, avoiding the need to consider multiple segments with different speeds
@@ -726,7 +772,13 @@ int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &
         CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
         std::string appInfoStr = GenerateAppsUidStr(appsUid_);
         int32_t ret = audioRender_->SetExtraParams(appInfoStr.c_str());
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("SetExtraParams error");
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::CONFING,
+                    ERR_INVALID_HANDLE), "audioRender_ SetExtraParams error", false);
+            return ERR_INVALID_HANDLE;
+        }
         AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
     }
     return SUCCESS;
@@ -759,6 +811,9 @@ void RemoteOffloadAudioRenderSink::RegistOffloadHdiCallback(std::function<void(c
     int32_t ret = audioRender_->RegCallback(hdiCallback_.callback_, (int8_t)0);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("fail, error code: %{public}d", ret);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::CALLBACK,
+                ERR_OPERATION_FAILED), "RegistOffloadHdiCallback fail, audioRender RegCallback", false);
     }
 }
 
@@ -775,7 +830,13 @@ int32_t RemoteOffloadAudioRenderSink::SetBufferSize(uint32_t sizeMs)
     AudioMmapBufferDescriptor desc;
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioRender_->ReqMmapBuffer(size, desc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "set buffer size fail");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("set buffer size fail");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::PLAY, BusinessScenario::CONFING,
+                ERR_OPERATION_FAILED), "audioRender_ set buffer size fail", false);
+        return ERR_OPERATION_FAILED;
+    }
     return SUCCESS;
 }
 
@@ -931,10 +992,16 @@ int32_t RemoteOffloadAudioRenderSink::CreateRender(void)
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    CHECK_AND_CALL_FUNC_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::CREATE,
+                ERR_INVALID_HANDLE), "CreateRender fail, deviceManager is nullptr", false));
     void *render = deviceManager->CreateRender(deviceNetworkId_, &param, &deviceDesc, hdiRenderId_);
     audioRender_.ForceSetRefPtr(static_cast<IAudioRender *>(render));
-    CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::CREATE,
+                ERR_NOT_STARTED), "CreateRender fail, audioRender is nullptr", false));
     std::stringstream val;
     val << "offloadParams=" << attr_.sampleRate << "," << std::to_string(attr_.format) << ","
         << attr_.channel << "," << attr_.channelLayout;
@@ -1029,6 +1096,9 @@ int32_t RemoteOffloadAudioRenderSink::SetVolumeInner(float left, float right)
     int32_t ret = audioRender_->SetVolume(volume);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set volume fail");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(GetFirstUid(),
+            BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::CONFING,
+                ERR_OPERATION_FAILED), "audioRender_ set volume fail", false);
     }
 
     return ret;
@@ -1045,6 +1115,11 @@ bool RemoteOffloadAudioRenderSink::IsValidState()
 {
     JUDGE_AND_WARNING_LOG(!validState_.load(), "disconnected, render invalid");
     return validState_.load();
+}
+
+int32_t RemoteOffloadAudioRenderSink::GetFirstUid()
+{
+    return appsUid_.empty() ? -1 : *appsUid_.begin();
 }
 
 } // namespace AudioStandard

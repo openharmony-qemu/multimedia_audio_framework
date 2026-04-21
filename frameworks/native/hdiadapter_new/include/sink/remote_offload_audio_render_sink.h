@@ -143,6 +143,7 @@ private:
     int32_t EstimateRenderPosition();
     int32_t FlushInner(void);
     bool IsValidState();
+    int32_t GetFirstUid();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
