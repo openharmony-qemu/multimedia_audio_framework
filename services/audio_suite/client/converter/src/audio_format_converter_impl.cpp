@@ -220,7 +220,9 @@ int32_t AudioFormatConverterImpl::CalculateProcessableBytesInternal(
         uint32_t maxBytesFor20ms = maxFramesFor20ms * params.inputBytesPerFrame;
         maxProcessableBytes = std::min(maxProcessableBytes, maxBytesFor20ms);
     }
-
+    CHECK_AND_RETURN_RET_LOG(params.minBytesForIntMs != 0,
+        ERR_INVALID_PARAM,
+        "The minimum number of bytes of input data to be processed cannot be zero.");
     if (maxProcessableBytes >= params.minBytesForIntMs) {
         if (is11025SampleRate) {
             alignedProcessableBytes = params.minBytesForIntMs;
