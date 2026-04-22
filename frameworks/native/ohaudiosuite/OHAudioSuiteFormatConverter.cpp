@@ -134,7 +134,7 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
 
 static OHAudioConverter *ConvertAudioSuiteConverter(OH_AudioConverter *audioSuiteConverter)
 {
-    return (OHAudioConverter *)audioSuiteConverter;
+    return reinterpret_cast<OHAudioConverter *>(audioSuiteConverter);
 }
 
 OH_AudioConverter_Result OH_AudioConverter_Create(

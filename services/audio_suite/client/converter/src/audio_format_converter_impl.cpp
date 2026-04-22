@@ -15,6 +15,7 @@
 
 #include "audio_format_converter_impl.h"
 #include "audio_suite_common.h"
+#include "audio_suite_log.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include <cmath>
@@ -229,7 +230,7 @@ int32_t AudioFormatConverterImpl::CalculateProcessableBytesInternal(
             "Process: output capacity too small, maxProcessableBytes=%{public}d, minBytesForIntMs=%{public}d",
             maxProcessableBytes,
             params.minBytesForIntMs);
-        return ERR_BUFFER_TOO_SMALL;
+        shouldStopProcessing = true;
     }
     return SUCCESS;
 }
