@@ -145,7 +145,7 @@ int32_t AudioFormatConverterImpl::ReadAndCacheInputData(bool* shouldStopProcessi
     if (inputSize > MAX_CALLBACK_DATA_SIZE || inputSize < 0) {
         AUDIO_ERR_LOG("The callback function returned an error indicating the amount of data was incorrect: %{public}d",
             inputSize);
-        return ERR_CALLBACK_INVALID;
+        return ERR_INVALID_WRITE;
     }
 
     if (status == InputDataStatus::DATA_FINISHED) {

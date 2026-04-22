@@ -253,9 +253,6 @@ const int32_t ERR_SESSION_UNAVAILABLE = BASE_AUDIO_ERR_OFFSET - 62;
 
 /** Buffer too small */
 const int32_t ERR_BUFFER_TOO_SMALL = BASE_AUDIO_ERR_OFFSET - 63;
- 
-/** callback invalid */
-const int32_t ERR_CALLBACK_INVALID = BASE_AUDIO_ERR_OFFSET - 64;
 
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;

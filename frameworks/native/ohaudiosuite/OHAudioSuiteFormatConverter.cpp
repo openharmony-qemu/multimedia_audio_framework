@@ -123,7 +123,7 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
             return AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL;
         case ERR_ILLEGAL_STATE:
             return AUDIOCONVERTER_ERROR_NOT_INITIALIZED;
-        case ERR_CALLBACK_INVALID:
+        case ERR_INVALID_WRITE:
             return AUDIOCONVERTER_ERROR_CALLBACK_INVALID;
         case ERR_CALLBACK_NOT_FOUND:
             return AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET;
