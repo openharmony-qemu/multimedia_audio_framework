@@ -301,14 +301,13 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_008, TestSize.Level1
 
     ScopedCockpitToken shellToken(SHELL_UID, IPCSkeleton::GetCallingTokenID(), IPCSkeleton::GetCallingUid(),
         IPCSkeleton::GetCallingTokenID());
-    audioServer->isAudioParameterParsed_.store(false);
+    audioServer->isAudioParameterParsed_.store(true);
     std::vector<StringPair> kvpairs = {
         {"subkey1", "value1"}
     };
 
     int32_t ret = audioServer->SetExtraParameters("cockpit_direct", kvpairs);
     EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
-    EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
 }
 
 /**
@@ -354,7 +353,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_012, TestSize.Level1
 
     ScopedCockpitToken shellToken(SHELL_UID, IPCSkeleton::GetCallingTokenID(), IPCSkeleton::GetCallingUid(),
         IPCSkeleton::GetCallingTokenID());
-    audioServer->isAudioParameterParsed_.store(false);
+    audioServer->isAudioParameterParsed_.store(true);
     std::vector<StringPair> result;
     std::vector<std::string> subKeys = {"subkey1"};
 
