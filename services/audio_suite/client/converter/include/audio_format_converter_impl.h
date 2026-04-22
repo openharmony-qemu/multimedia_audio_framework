@@ -60,7 +60,6 @@ struct ProcessingContext {
     uint32_t totalOutputSize;
     uint8_t* outputBufferPtr;
     uint32_t remainingCapacity;
-    std::vector<uint8_t> backupInputData;
 };
 
 class AudioFormatConverterImpl : public AudioFormatConverter {
