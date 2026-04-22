@@ -346,6 +346,14 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerFastStatusChangeCallback(
     return audioStreamBuilder->SetCapturerFastStatusChangeCallback(callback, userData);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerLoopbackEffectEnabled(
+    OH_AudioStreamBuilder* builder, bool enabled)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetCapturerLoopbackEffectEnabled(enabled);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -632,6 +640,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         sourceType_,
         latencyMode_
     };
+    capturerInfo.loopBackEffectEnabled = loopBackEffectEnabled_;
 
     AudioCapturerOptions options = {
         streamInfo,
@@ -835,6 +844,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerFastStatusChangeCallback(
         "SetCapturerFastStatusChangeCallback Error, invalid type input");
     capturerFastStatusChangeCallback_ = callback;
     capturerFastStatusChangeUserData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerLoopbackEffectEnabled(bool enabled)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ == CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCapturerLoopbackEffectEnabled error, invalid type input.");
+    loopBackEffectEnabled_ = enabled;
     return AUDIOSTREAM_SUCCESS;
 }
 }  // namespace AudioStandard

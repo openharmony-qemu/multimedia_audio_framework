@@ -39,6 +39,7 @@
 #include "format_converter.h"
 #include "volume_tools.h"
 #include "app_bundle_manager.h"
+#include "audio_policy_manager.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -161,6 +162,10 @@ AudioProcessInServer::~AudioProcessInServer()
     TurnOffRemoteMicIndicator();
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        processConfig_.capturerInfo.loopBackEffectEnabled) {
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+    }
 }
 
 bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead,

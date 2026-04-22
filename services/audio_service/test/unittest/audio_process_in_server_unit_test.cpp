@@ -3056,5 +3056,43 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_NonLoopback_001, Test
     auto result = audioProcessInServer->WriteToSpecialProcBuf(procParams);
     EXPECT_EQ(result, ERR_INVALID_HANDLE);
 }
+
+/**
+ * @tc.name  : Test AudioProcessInServer destructor branch with loopback effect flag
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_Destructor_LoopBackEffectEnabled_001
+ * @tc.desc  : Cover false and true branches of loopback effect cleanup in destructor.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_Destructor_LoopBackEffectEnabled_001, TestSize.Level1)
+{
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+
+    {
+        AudioProcessConfig configRet = InitProcessConfig();
+        configRet.audioMode = AUDIO_MODE_PLAYBACK;
+        configRet.capturerInfo.loopBackEffectEnabled = true;
+        sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+        ASSERT_NE(audioProcessInServer, nullptr);
+        audioProcessInServer = nullptr;
+    }
+
+    {
+        AudioProcessConfig configRet = InitProcessConfig();
+        configRet.audioMode = AUDIO_MODE_RECORD;
+        configRet.capturerInfo.loopBackEffectEnabled = false;
+        sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+        ASSERT_NE(audioProcessInServer, nullptr);
+        audioProcessInServer = nullptr;
+    }
+
+    {
+        AudioProcessConfig configRet = InitProcessConfig();
+        configRet.audioMode = AUDIO_MODE_RECORD;
+        configRet.capturerInfo.loopBackEffectEnabled = true;
+        sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+        ASSERT_NE(audioProcessInServer, nullptr);
+        audioProcessInServer = nullptr;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

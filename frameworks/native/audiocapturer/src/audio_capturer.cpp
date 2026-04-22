@@ -182,6 +182,7 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
     capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
     capturerInfo_.isLoopback = capturerOptions.capturerInfo.isLoopback;
     capturerInfo_.loopbackMode = capturerOptions.capturerInfo.loopbackMode;
+    capturerInfo_.loopBackEffectEnabled = capturerOptions.capturerInfo.loopBackEffectEnabled;
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     filterConfig_ = capturerOptions.playbackCaptureConfig;
     strategy_ = capturerOptions.strategy;
@@ -1334,9 +1335,16 @@ int32_t AudioCapturerPrivate::StartImpl()
         AUDIO_INFO_LOG("Media SA is startting, flush data.");
         audioStream_->FlushAudioStream();
     }
+    if (capturerInfo_.loopBackEffectEnabled) {
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=true");
+    }
     bool result = audioStream_->StartAudioStream();
     if (!result) {
         AUDIO_ERR_LOG("Start audio stream failed");
+        if (capturerInfo_.loopBackEffectEnabled) {
+            AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER,
+                "Karaoke_capture_reverb=false");
+        }
         ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
         if (ret != 0) {
             AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
@@ -1398,6 +1406,9 @@ bool AudioCapturerPrivate::Pause() const
 
     // When the cellular call stream is pausing, only need to deactivate audio interrupt.
     CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, true);
+    if (capturerInfo_.loopBackEffectEnabled) {
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+    }
     return audioStream_->PauseAudioStream();
 }
 
@@ -1418,6 +1429,9 @@ int32_t AudioCapturerPrivate::StopImpl() const
     }
 
     CHECK_AND_RETURN_RET(isVoiceCallCapturer_ != true, SUCCESS);
+    if (capturerInfo_.loopBackEffectEnabled) {
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+    }
 
     return audioStream_->StopAudioStream() ? SUCCESS : ERROR;
 }
@@ -1452,6 +1466,9 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
     (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(reinterpret_cast<uintptr_t>(this));
+    if (capturerInfo_.loopBackEffectEnabled) {
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+    }
 
     return audioStream_->ReleaseAudioStream() ? SUCCESS : ERROR;
 }
