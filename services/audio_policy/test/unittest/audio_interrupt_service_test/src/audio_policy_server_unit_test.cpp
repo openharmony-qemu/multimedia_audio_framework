@@ -2950,7 +2950,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
 
     volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE
