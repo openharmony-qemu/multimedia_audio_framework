@@ -3615,6 +3615,8 @@ void AudioAdapterManager::UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceD
     if (volumeType == STREAM_MUSIC && device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
         && IsAbsVolumeScene()) {
         vol.isMute = isAbsVolumeMute_;
+    } else if (volumeType == STREAM_MUSIC && device->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        vol.isMute = isAbsVolumeMuteNearlink_.load();
     } else {
         vol.isMute = GetStreamMuteInternal(device, volumeType);
     }
