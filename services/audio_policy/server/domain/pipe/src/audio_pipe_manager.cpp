@@ -234,8 +234,7 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
 
 bool AudioPipeManager::IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo)
 {
-    if ((info->adapterName_ == cmpInfo->adapterName_ && info->routeFlag_ == cmpInfo->routeFlag_ &&
-        info->name_ == cmpInfo->name_) || info->id_ == cmpInfo->id_) {
+    if (info->name_ == cmpInfo->name_ || info->id_ == cmpInfo->id_) {
         return true;
     }
     return false;
