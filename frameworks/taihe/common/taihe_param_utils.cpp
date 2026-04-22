@@ -72,6 +72,7 @@ const std::unordered_map<OHOS::AudioStandard::AudioSamplingRate, AudioSamplingRa
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_96000, AudioSamplingRate::key_t::SAMPLE_RATE_96000},
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_176400, AudioSamplingRate::key_t::SAMPLE_RATE_176400},
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_192000, AudioSamplingRate::key_t::SAMPLE_RATE_192000},
+    {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_384000, AudioSamplingRate::key_t::SAMPLE_RATE_384000},
 };
 
 const std::unordered_map<OHOS::AudioStandard::AudioChannel, AudioChannel> gNativeToAniAudioChannel = {
@@ -119,14 +120,12 @@ int32_t TaiheParamUtils::GetRendererInfo(OHOS::AudioStandard::AudioRendererInfo 
 int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
     AudioCapturerOptions const &options)
 {
-    int32_t intValue = options.streamInfo.samplingRate.get_value();
-    if (intValue >= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000 &&
-        intValue <= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_192000) {
-        audioStreamInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
-    } else {
+    int32_t intValue = GetIntValueFromSamplingRateUnion(options.streamInfo.samplingRate);
+    if (!IsValidAudioSamplingRate(intValue)) {
         AUDIO_ERR_LOG("invaild samplingRate");
         return AUDIO_ERR;
     }
+    audioStreamInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     audioStreamInfo.channels =
         static_cast<OHOS::AudioStandard::AudioChannel>(options.streamInfo.channels.get_value());
     audioStreamInfo.format =
@@ -143,10 +142,12 @@ int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &aud
 int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
     AudioRendererOptions const &options)
 {
-    int32_t intValue = options.streamInfo.samplingRate.get_value();
-    if (intValue >= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000 &&
-        intValue <= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_192000) {
+    int32_t intValue = GetIntValueFromSamplingRateUnion(options.streamInfo.samplingRate);
+    if (IsValidAudioSamplingRate(intValue)) {
         audioStreamInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
+    } else if (IsRendererCustomSampleRateValid(intValue)) {
+        audioStreamInfo.samplingRate = OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000;
+        audioStreamInfo.customSampleRate = static_cast<uint32_t>(intValue);
     } else {
         AUDIO_ERR_LOG("invaild samplingRate");
         return AUDIO_ERR;
@@ -465,14 +466,45 @@ int32_t TaiheParamUtils::GetExtraParametersSubKV(std::vector<std::pair<std::stri
     return AUDIO_OK;
 }
 
-AudioSamplingRate TaiheParamUtils::ToTaiheAudioSamplingRate(OHOS::AudioStandard::AudioSamplingRate audioSamplingRate)
+int32_t TaiheParamUtils::GetIntValueFromSamplingRateUnion(AudioSamplingRateOrInt const &samplingRate)
+{
+    switch (samplingRate.get_tag()) {
+        case AudioSamplingRateOrInt::tag_t::type_enum:
+            return samplingRate.get_type_enum_ptr()->get_value();
+        case AudioSamplingRateOrInt::tag_t::type_int:
+            return *samplingRate.get_type_int_ptr();
+        default:
+            AUDIO_ERR_LOG("GetIntValueFromSamplingRateUnion unknown tag");
+            return 0;
+    }
+}
+
+bool TaiheParamUtils::IsRendererCustomSampleRateValid(int32_t sampleRate)
+{
+    return (sampleRate >= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000 &&
+        sampleRate <= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_384000 &&
+        (sampleRate % OHOS::AudioStandard::SAMPLE_RATE_RESOLUTION_10 == 0) ||
+        (sampleRate == static_cast<int32_t>(OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_11025)));    
+}
+
+bool TaiheParamUtils::IsValidAudioSamplingRate(int32_t sampleRate)
+{
+    for (auto rate : OHOS::AudioStandard::AUDIO_SUPPORTED_SAMPLING_RATES) {
+        if (static_cast<int32_t>(rate) == sampleRate) {
+            return true;
+        }
+    }
+    return false;
+}
+
+AudioSamplingRateOrInt TaiheParamUtils::ToTaiheAudioSamplingRate(OHOS::AudioStandard::AudioSamplingRate audioSamplingRate)
 {
     auto itr = gNativeToAniAudioSamplingRate.find(audioSamplingRate);
     if (itr == gNativeToAniAudioSamplingRate.end()) {
         AUDIO_ERR_LOG("ToTaiheAudioSamplingRate fail");
-        return AudioSamplingRate::key_t::SAMPLE_RATE_8000;
+        return AudioSamplingRateOrInt::make_type_enum(AudioSamplingRate::key_t::SAMPLE_RATE_8000);
     }
-    return itr->second;
+    return AudioSamplingRateOrInt::make_type_enum(itr->second);
 }
 
 AudioChannel TaiheParamUtils::ToTaiheAudioChannel(OHOS::AudioStandard::AudioChannel audioChannel)
@@ -497,8 +529,14 @@ AudioSampleFormat TaiheParamUtils::ToTaiheAudioSampleFormat(OHOS::AudioStandard:
 
 AudioStreamInfo TaiheParamUtils::ToTaiheAudioStreamInfo(std::shared_ptr<OHOS::AudioStandard::AudioStreamInfo> &src)
 {
+    AudioSamplingRateOrInt samplingRateUnion;
+    if (src->customSampleRate != 0) {
+        samplingRateUnion = AudioSamplingRateOrInt::make_type_int(static_cast<int32_t>(src->customSampleRate));
+    } else {
+        samplingRateUnion = ToTaiheAudioSamplingRate(src->samplingRate);
+    }
     AudioStreamInfo streamInfo = {
-        .samplingRate = ToTaiheAudioSamplingRate(src->samplingRate),
+        .samplingRate = samplingRateUnion,
         .channels = ToTaiheAudioChannel(src->channels),
         .sampleFormat = ToTaiheAudioSampleFormat(src->format),
         .encodingType = TaiheAudioEnum::ToTaiheAudioEncodingType(src->encoding),
