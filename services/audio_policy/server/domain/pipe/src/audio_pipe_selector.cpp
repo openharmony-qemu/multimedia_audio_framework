@@ -1007,8 +1007,8 @@ AudioStreamAction AudioPipeSelector::JudgeStreamAction(
 {
     CHECK_AND_RETURN_RET(!IsRemoteOffloadNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
     CHECK_AND_RETURN_RET(!IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
-    if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_ &&
-        newPipe->name_ == oldPipe->name_) {
+
+    if (AudioPipeManager::GetPipeManager()->IsSamePipe(newPipe, oldPipe)) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }
     if (oldPipe->IsRouteFast() || newPipe->IsRouteFast() || oldPipe->IsRouteDirect() || newPipe->IsRouteDirect()) {
