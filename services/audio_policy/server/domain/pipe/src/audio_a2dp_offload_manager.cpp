@@ -21,6 +21,7 @@
 #include "audio_stream_collector.h"
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_service.h"
+#include "audio_pipe_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
 #include "i_hpae_manager.h"
@@ -281,6 +282,31 @@ void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForA2dpDeviceOut()
 }
 
 #ifdef BLUETOOTH_ENABLE
+BluetoothOffloadState AudioA2dpOffloadManager::JudgeA2dpOffloadFlag(const DeviceType deviceType,
+    const std::vector<Bluetooth::A2dpStreamInfo> &allRunningA2dpInfos)
+{
+    bool shouldRequestOffload = false;
+
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        shouldRequestOffload = true;
+    } else if (deviceType == DEVICE_TYPE_NONE) {
+        if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            shouldRequestOffload = true;
+        } else {
+            auto pipeManager = AudioPipeManager::GetPipeManager();
+            CHECK_AND_RETURN_RET_LOG(pipeManager, NO_A2DP_DEVICE, "pipeManager is nullptr");
+            shouldRequestOffload = pipeManager->IsA2dpUsed();
+        }
+    }
+
+    if (shouldRequestOffload) {
+        return static_cast<BluetoothOffloadState>(
+            Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allRunningA2dpInfos));
+    }
+
+    return NO_A2DP_DEVICE;
+}
+
 void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagInternal(
     const std::vector<Bluetooth::A2dpStreamInfo> &allRunningA2dpInfos,
     std::vector<int32_t> &allRunningSessions, DeviceType deviceType)
@@ -288,16 +314,8 @@ void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagInternal(
     if (allRunningA2dpInfos.size() == 0) {
         return;
     }
-    BluetoothOffloadState newA2dpOffloadFlag = NO_A2DP_DEVICE;
+    BluetoothOffloadState newA2dpOffloadFlag = JudgeA2dpOffloadFlag(deviceType, allRunningA2dpInfos);
     BluetoothOffloadState oldA2dpOffloadFlag = GetA2dpOffloadFlag();
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        newA2dpOffloadFlag = static_cast<BluetoothOffloadState>(
-                Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allRunningA2dpInfos));
-    } else if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        audioActiveDevice_.GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID && deviceType == DEVICE_TYPE_NONE) {
-        newA2dpOffloadFlag = static_cast<BluetoothOffloadState>(
-                Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allRunningA2dpInfos));
-    }
 
     std::lock_guard<std::mutex> lock(switchA2dpOffloadMutex_);
     AUDIO_PRERELEASE_LOGI("device: %{public}d, currentDevice: %{public}d, runStreamSize: %{public}zu, "

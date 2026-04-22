@@ -525,5 +525,73 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceInOffload_001, TestSiz
     EXPECT_EQ(A2DP_OFFLOAD, testManager_->GetA2dpOffloadFlag());
 }
 
+/**
+ * @tc.name   : AudioA2dpOffloadManagerUnitTest_JudgeA2dpOffloadFlag_001
+ * @tc.number : JudgeA2dpOffloadFlag_001
+ * @tc.desc   : Test JudgeA2dpOffloadFlag with DEVICE_TYPE_BLUETOOTH_A2DP
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_001, TestSize.Level4)
+{
+    std::vector<Bluetooth::A2dpStreamInfo> allRunningA2dpInfos;
+    Bluetooth::A2dpStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_STREAM_1_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.isSpatialAudio = false;
+    allRunningA2dpInfos.push_back(streamInfo);
+
+    auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_BLUETOOTH_A2DP, allRunningA2dpInfos);
+    EXPECT_NE(A2DP_OFFLOAD, flag);
+}
+
+/**
+ * @tc.name   : AudioA2dpOffloadManagerUnitTest_JudgeA2dpOffloadFlag_002
+ * @tc.number : JudgeA2dpOffloadFlag_002
+ * @tc.desc   : Test JudgeA2dpOffloadFlag with DEVICE_TYPE_NONE and current output is A2DP
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_002, TestSize.Level4)
+{
+    std::vector<Bluetooth::A2dpStreamInfo> allRunningA2dpInfos;
+    Bluetooth::A2dpStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_STREAM_1_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.isSpatialAudio = false;
+    allRunningA2dpInfos.push_back(streamInfo);
+
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    testManager_->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+
+    auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_NONE, allRunningA2dpInfos);
+    EXPECT_NE(A2DP_OFFLOAD, flag);
+}
+
+/**
+ * @tc.name   : AudioA2dpOffloadManagerUnitTest_JudgeA2dpOffloadFlag_003
+ * @tc.number : JudgeA2dpOffloadFlag_003
+ * @tc.desc   : Test JudgeA2dpOffloadFlag with DEVICE_TYPE_NONE and current output is not A2DP
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_003, TestSize.Level4)
+{
+    std::vector<Bluetooth::A2dpStreamInfo> allRunningA2dpInfos;
+
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
+    testManager_->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+
+    auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_NONE, allRunningA2dpInfos);
+    EXPECT_EQ(NO_A2DP_DEVICE, flag);
+}
+
+/**
+ * @tc.name   : AudioA2dpOffloadManagerUnitTest_JudgeA2dpOffloadFlag_004
+ * @tc.number : JudgeA2dpOffloadFlag_004
+ * @tc.desc   : Test JudgeA2dpOffloadFlag with other device type
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_004, TestSize.Level4)
+{
+    std::vector<Bluetooth::A2dpStreamInfo> allRunningA2dpInfos;
+    auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_SPEAKER, allRunningA2dpInfos);
+    EXPECT_EQ(NO_A2DP_DEVICE, flag);
+}
 } // namespace AudioStandard
 } // namespace OHOS
