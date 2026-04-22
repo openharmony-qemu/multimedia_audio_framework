@@ -63,22 +63,17 @@ struct ProcessingContext {
     std::vector<uint8_t> backupInputData;
 };
 
-// Format Converter InnerAPI Class (Implements the interface)
-class AudioFormatConverterImpl : public IAudioFormatConverter {
+class AudioFormatConverterImpl : public AudioFormatConverter {
 public:
     AudioFormatConverterImpl();
     ~AudioFormatConverterImpl() override;
 
-    // Interface 1: SetInputCallback - Sets the data request callback
     int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) override;
 
-    // Interface 2: Process - Processes audio data
     int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) override;
 
-    // Interface 3: Destroy - Destruction Converter
     void Destroy() override;
 
-    // member variables
     PcmBufferFormat inputFormat_;
     PcmBufferFormat outputFormat_;
     std::shared_ptr<AudioSuiteFormatConversion> formatConversion_;

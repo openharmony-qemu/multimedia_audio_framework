@@ -54,7 +54,7 @@ private:
         const OH_AudioConverter_Format *inputFormat, const OH_AudioConverter_Format *outputFormat);
 
     // InnerAPI 实例
-    std::shared_ptr<AudioSuite::IAudioFormatConverter> impl_;
+    std::shared_ptr<AudioSuite::AudioFormatConverter> impl_;
 
     AudioSuite::PcmBufferFormat inputFormat_;
     AudioSuite::PcmBufferFormat outputFormat_;
