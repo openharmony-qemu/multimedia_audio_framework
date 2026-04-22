@@ -28,6 +28,7 @@
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
 #include "audio_volume.h"
+#include "util/id_handler.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -487,9 +488,10 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     AddStreamVolume();
     struct VolumeValues volumes = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     std::string volumeDeviceClass = unit->deviceClass_ == "remote_offload" ? "remote" : "offload";
+    auto renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(volumeDeviceClass);
     uint32_t originStreamIndex = unit->streamIndex_;
     float volume = AudioVolume::GetInstance()->GetVolume(unit->streamIndex_, unit->processConfig_.streamType,
-        volumeDeviceClass, &volumes);
+        renderId, &volumes);
     AudioVolume::GetInstance()->SetHistoryVolume(unit->streamIndex_, volume);
     ret = unit->OffloadSetVolume();
     RemoveStreamVolume();

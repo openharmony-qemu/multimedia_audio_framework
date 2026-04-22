@@ -25,7 +25,6 @@
 #include "audio_info.h"
 #include "audio_utils.h"
 #include "audio_volume_config.h"
-#include "audio_volume_parser.h"
 #include "audio_zone_info.h"
 
 namespace OHOS {

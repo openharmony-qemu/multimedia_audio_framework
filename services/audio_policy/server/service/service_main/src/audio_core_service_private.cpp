@@ -214,13 +214,13 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
 }
 
 void AudioCoreService::CheckAndUpdateOffloadEnableForStream(
-    OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+    OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t ioHandle)
 {
     if (action == OFFLOAD_NEW || action == OFFLOAD_MOVE_IN) {
         // Check stream is offload and then set
         if (streamDesc->IsRouteOffload()) {
             OffloadAdapter adapter = (streamDesc->IsDeviceRemote() ? OFFLOAD_IN_REMOTE : OFFLOAD_IN_PRIMARY);
-            audioOffloadStream_.SetOffloadStatus(adapter, streamDesc->GetSessionId());
+            audioOffloadStream_.SetOffloadStatus(adapter, streamDesc->GetSessionId(), ioHandle);
         }
     } else {
         // Check stream is moved from offload and then unset
@@ -630,7 +630,8 @@ void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pi
     audioPolicyManager_.ReloadAudioPort(pipeInfo->moduleInfo_, paIndex);
     CHECK_AND_CALL_FUNC_RETURN(paIndex != HDI_INVALID_ID,
         HILOG_COMM_ERROR("[ProcessOutputPipeReload]ReloadAudioPort failed paId[%{public}u]", paIndex));
-
+    
+    audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
     pipeInfo->paIndex_ = paIndex;
     ProcessOutputPipeUpdate(pipeInfo, flag, reason);
 }
@@ -762,17 +763,17 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc);
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc, pipeInfo->id_);
                 flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc);
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
                 }
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc, pipeInfo->id_);
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallbackEntry(desc, reason);
@@ -795,18 +796,18 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc);
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc, pipeInfo->id_);
                 flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc);
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
                 }
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc, pipeInfo->id_);
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallbackEntry(desc, reason);
@@ -936,6 +937,7 @@ void AudioCoreService::RemoveUnusedPipe()
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
+        audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
     }
     StopNoRunningPipe();
 }
@@ -949,6 +951,7 @@ void AudioCoreService::RemoveUnusedRecordPipe()
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
+        audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
     }
 }
 
@@ -1033,9 +1036,9 @@ int32_t AudioCoreService::GetVolumeDebugInfo(AudioDebugInfo &debugInfo)
 
     VolumeValues volumeValues = {};
     debugInfo.volume = audioVolume->GetVolume(debugInfo.sessionId,
-        static_cast<int32_t>(debugInfo.volumeType), debugInfo.pipeClassName, &volumeValues);
+        static_cast<int32_t>(debugInfo.volumeType), debugInfo.pipeId, &volumeValues);
     debugInfo.streamVolume = volumeValues.volumeStream;
-    debugInfo.systemVolume = volumeValues.volumeSystem;
+    debugInfo.systemVolume = volumeValues.volumePipe;
     return SUCCESS;
 }
 

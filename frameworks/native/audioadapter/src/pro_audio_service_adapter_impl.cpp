@@ -52,7 +52,6 @@ bool ProAudioServiceAdapterImpl::Connect()
     IHpaeManager::GetHpaeManager().RegisterSerivceCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(g_audioServiceAdapterCallback != nullptr, false,
         "g_audioServiceAdapterCallback is nullptr");
-    g_audioServiceAdapterCallback->OnSetVolumeDbCb();
     return true;
 }
 

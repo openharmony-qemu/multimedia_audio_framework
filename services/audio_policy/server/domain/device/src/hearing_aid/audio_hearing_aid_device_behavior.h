@@ -31,7 +31,8 @@ public:
     int32_t DeactivateDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) override;
 
 private:
-    int32_t LoadHearingAidModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
+    int32_t LoadHearingAidModule(std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+        const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
 };
 } // namespace AudioStandard

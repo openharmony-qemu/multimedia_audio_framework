@@ -1453,5 +1453,144 @@ std::string AudioPipeManager::GetModuleName(std::shared_ptr<AudioPipeInfo> pipeI
         AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole) : "";
     return moduleName;
 }
+
+AudioVolumeType AudioPipeManager::GetVolumeTypeFromStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_ASSISTANT &&
+        !CheckoutSystemAppUtil::CheckoutSystemApp(AudioActiveDevice::GetInstance().GetRealUid(streamDesc))) {
+        return STREAM_MUSIC;
+    }
+    return VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
+}
+
+void AudioPipeManager::AddOrUpdateVolumeInfo(std::vector<PipeDeviceVolumeInfo>& result,
+    AudioIOHandle ioHandle, std::shared_ptr<AudioDeviceDescriptor> deviceDesc, AudioVolumeType volumeType)
+{
+    for (auto &info : result) {
+        if (info.ioHandle_ == ioHandle && info.deviceDesc_->IsSameDeviceDesc(*deviceDesc)) {
+            info.volumeTypes_.insert(volumeType);
+            return;
+        }
+    }
+    PipeDeviceVolumeInfo newInfo(ioHandle, deviceDesc);
+    newInfo.volumeTypes_.insert(volumeType);
+    result.push_back(newInfo);
+}
+
+std::vector<PipeDeviceVolumeInfo> AudioPipeManager::ProcessPipeForVolumeInfo(
+    std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+
+    std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo;
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, pipeDeviceVolumeInfo, "pipeInfo is null");
+    CHECK_AND_RETURN_RET_LOG(!pipeInfo->streamDescriptors_.empty(), pipeDeviceVolumeInfo,
+        "pipe has no stream descriptors");
+    
+    for (auto &streamDesc : pipeInfo->streamDescriptors_) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
+        
+        auto firstDevice = streamDesc->newDeviceDescs_.front();
+        CHECK_AND_CONTINUE(firstDevice != nullptr);
+        AudioVolumeType volumeType = GetVolumeTypeFromStreamDesc(streamDesc);
+        AddOrUpdateVolumeInfo(pipeDeviceVolumeInfo, pipeInfo->id_, firstDevice, volumeType);
+        AUDIO_INFO_LOG("pipeName:%{public}s, ioHandle:%{public}u, sessionId:%{public}u, device:%{public}s",
+            pipeInfo->name_.c_str(), pipeInfo->id_, streamDesc->sessionId_, firstDevice->GetName().c_str());
+        
+        for (size_t i = 1; i < streamDesc->newDeviceDescs_.size(); i++) {
+            auto device = streamDesc->newDeviceDescs_[i];
+            CHECK_AND_CONTINUE(device != nullptr);
+            
+            std::string sinkName = AudioPolicyUtils::GetInstance()
+                .GetSinkName(device, streamDesc->sessionId_);
+            CHECK_AND_CONTINUE(!sinkName.empty());
+            
+            AudioIOHandle ioHandle = OPEN_PORT_FAILURE;
+            CHECK_AND_CONTINUE_LOG(AudioIOHandleMap::GetInstance().GetModuleIdByKey(sinkName, ioHandle),
+                "can not find %{public}s in io map", sinkName.c_str());
+            AddOrUpdateVolumeInfo(pipeDeviceVolumeInfo, ioHandle, device, volumeType);
+            AUDIO_INFO_LOG("sinkName:%{public}s, ioHandle:%{public}u, sessionId:%{public}u, device:%{public}s",
+                sinkName.c_str(), ioHandle, streamDesc->sessionId_, device->GetName().c_str());
+        }
+    }
+    
+    return pipeDeviceVolumeInfo;
+}
+
+std::vector<PipeDeviceVolumeInfo> AudioPipeManager::GetAllPipeDeviceVolumeInfo()
+{
+    std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo;
+    
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        CHECK_AND_CONTINUE(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT);
+        auto info = ProcessPipeForVolumeInfo(pipeInfo);
+        pipeDeviceVolumeInfo.insert(pipeDeviceVolumeInfo.end(), std::make_move_iterator(info.begin()),
+            std::make_move_iterator(info.end()));
+    }
+    
+    return pipeDeviceVolumeInfo;
+}
+
+std::vector<PipeDeviceVolumeInfo> AudioPipeManager::GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id)
+{
+    std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo;
+    
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        CHECK_AND_CONTINUE(pipeInfo->id_ == id);
+        CHECK_AND_CONTINUE(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT);
+        
+        return ProcessPipeForVolumeInfo(pipeInfo);
+    }
+    
+    return pipeDeviceVolumeInfo;
+}
+
+std::vector<PipeDeviceVolumeInfo> AudioPipeManager::GetPipeDeviceVolumeInfoForDevice(
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, {}, "deviceDesc is null");
+    
+    std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo;
+    
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    
+    for (auto &pipeInfo : curPipeList_) {
+        std::shared_ptr<AudioPipeInfo> targetPipe = nullptr;
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        CHECK_AND_CONTINUE(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT);
+        AUDIO_INFO_LOG("pipeId:%{public}d", pipeInfo->id_);
+        CHECK_AND_CONTINUE(!pipeInfo->streamDescriptors_.empty());
+        
+        for (auto &streamDesc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE(streamDesc != nullptr);
+            AUDIO_INFO_LOG("sessionId:%{public}u", streamDesc->sessionId_);
+            CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
+            
+            auto firstDevice = streamDesc->newDeviceDescs_.front();
+            CHECK_AND_CONTINUE(firstDevice != nullptr);
+            
+            if (firstDevice->IsSameDeviceDescPtr(deviceDesc)) {
+                AUDIO_INFO_LOG("pipeId:%{public}d, sessionId:%{public}d", pipeInfo->id_, streamDesc->sessionId_);
+                targetPipe = pipeInfo;
+                break;
+            }
+        }
+        
+        if (targetPipe != nullptr) {
+            auto info = ProcessPipeForVolumeInfo(targetPipe);
+            pipeDeviceVolumeInfo.insert(pipeDeviceVolumeInfo.end(), std::make_move_iterator(info.begin()),
+                std::make_move_iterator(info.end()));
+        }
+    }
+    
+    return pipeDeviceVolumeInfo;
+}
 } // namespace AudioStandard
 } // namespace OHOS

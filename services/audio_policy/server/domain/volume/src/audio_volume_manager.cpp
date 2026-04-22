@@ -234,8 +234,8 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
     AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, \
-        volume:%{public}d",
-        streamType, deviceType, vol.volumeInt);
+        volume:%{public}d, mute:%{public}d, volumeFloat:%{public}f",
+        streamType, deviceType, vol.volumeInt, vol.isMute, vol.volumeFloat);
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     float volumeActual = vol.volumeFloat * mdmMuteFactor;
     AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeActual);
@@ -335,7 +335,7 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
 
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
 
-    audioPolicyManager_.UpdateVolumeForStreams();
+    audioPolicyManager_.UpdateVolumeForAllPipes();
 
     // The volume of voice_call needs to be adjusted separately
     if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
@@ -2154,7 +2154,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType strea
 
 void AudioVolumeManager::RefreshActiveDeviceVolume()
 {
-    audioPolicyManager_.UpdateVolumeForStreams();
+    audioPolicyManager_.UpdateVolumeForAllPipes();
 }
 
 void AudioVolumeManager::InitAudioZoneVolume(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc)
