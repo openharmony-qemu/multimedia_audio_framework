@@ -197,7 +197,9 @@ int32_t HdiAdapterManager::SetAudioParameter(HdiDeviceManagerType type, const st
 {
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "device manager is nullptr");
-    return deviceManager->SetAudioParameter(adapterName, key, condition, value);
+    // Keep historical AudioServer behavior: ignore HDI set failures and always report success upstream.
+    deviceManager->SetAudioParameter(adapterName, key, condition, value);
+    return SUCCESS;
 }
 
 std::string HdiAdapterManager::GetAudioParameter(HdiDeviceManagerType type, const std::string &adapterName,
