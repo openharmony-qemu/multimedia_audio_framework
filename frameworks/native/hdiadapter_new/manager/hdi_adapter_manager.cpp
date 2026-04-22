@@ -25,6 +25,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr char PRIMARY_ADAPTER_NAME[] = "primary";
+constexpr char USB_ADAPTER_NAME[] = "usb";
+constexpr char MMI_PREFIX[] = "mmi_";
+constexpr char CHECK_FAST_BLOCK_PREFIX[] = "Is_Fast_Blocked_For_AppName#";
+constexpr size_t BUNDLE_NAME_LENGTH_LIMIT = 1024;
+}
+
 HdiAdapterManager::~HdiAdapterManager()
 {
     renderSinkMtx_.lock();
@@ -182,6 +190,74 @@ int32_t HdiAdapterManager::LoadAdapter(HdiDeviceManagerType type, const std::str
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     return deviceManager->LoadAdapter(adapterName);
+}
+
+int32_t HdiAdapterManager::SetAudioParameter(HdiDeviceManagerType type, const std::string &adapterName,
+    AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "device manager is nullptr");
+    return deviceManager->SetAudioParameter(adapterName, key, condition, value);
+}
+
+std::string HdiAdapterManager::GetAudioParameter(HdiDeviceManagerType type, const std::string &adapterName,
+    AudioParamKey key, const std::string &condition)
+{
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "", "device manager is nullptr");
+    return deviceManager->GetAudioParameter(adapterName, key, condition);
+}
+
+std::string HdiAdapterManager::GetAudioParameterByKey(HdiDeviceManagerType type, const std::string &key)
+{
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "", "device manager is nullptr");
+
+    if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::PARAM_KEY_LOWPOWER, "");
+    }
+    if (key.starts_with("need_change_usb_device#C") || key.starts_with("is_root_hub#C")) {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::USB_DEVICE, key);
+    }
+    if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel" || key == "concurrent_capture_stream_info") {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::NONE, key);
+    }
+    if (key == "perf_info") {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::PERF_INFO, key);
+    }
+    if (key == "sound_card_info") {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::SOUND_CARD_INFO, key);
+    }
+    if (key == "pm_kara" || key == "pm_kara_code") {
+        return deviceManager->GetAudioParameter(USB_ADAPTER_NAME, AudioParamKey::USB_DEVICE, key);
+    }
+    if (key.size() < BUNDLE_NAME_LENGTH_LIMIT && key.size() > strlen(CHECK_FAST_BLOCK_PREFIX) &&
+        key.substr(0, strlen(CHECK_FAST_BLOCK_PREFIX)) == CHECK_FAST_BLOCK_PREFIX) {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::NONE, key);
+    }
+    if (key.size() > strlen(MMI_PREFIX) && key.substr(0, strlen(MMI_PREFIX)) == MMI_PREFIX) {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::MMI,
+            key.substr(strlen(MMI_PREFIX), key.size() - strlen(MMI_PREFIX)));
+    }
+    return "";
+}
+
+int32_t HdiAdapterManager::SetExtraParameters(HdiDeviceManagerType type, const std::string &adapterName,
+    const std::string &condition, const std::string &value)
+{
+    return SetAudioParameter(type, adapterName, AudioParamKey::NONE, condition, value);
+}
+
+int32_t HdiAdapterManager::GetExtraParameters(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
+    for (const std::string &subKey : subKeys) {
+        std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, subKey);
+        result.emplace_back(subKey, value);
+    }
+    return SUCCESS;
 }
 
 void HdiAdapterManager::UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force)

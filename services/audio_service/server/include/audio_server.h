@@ -131,7 +131,6 @@ public:
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<StringPair> &result) override;
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
-    std::string HandleSpecificKey(const std::string &key, const std::shared_ptr<IDeviceManager> &deviceManager);
     int32_t GetAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
@@ -447,7 +446,13 @@ private:
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
     void ParseAudioParameter();
-    bool CacheExtraParameters(const std::string &key,
+    void NotifyAudioParameterParsed();
+    bool WaitAudioParameterParsed();
+    int32_t SetHomeMusicExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetEffectLiveExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetPcmDumpExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetCockpitDirectExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetCommonExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
@@ -543,9 +548,8 @@ private:
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     std::atomic<bool> isAudioParameterParsed_ = false;
+    std::condition_variable isAudioParameterParsedCv_;
     std::mutex audioParameterCacheMutex_;
-    std::vector<std::pair<std::string,
-        std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
 
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};

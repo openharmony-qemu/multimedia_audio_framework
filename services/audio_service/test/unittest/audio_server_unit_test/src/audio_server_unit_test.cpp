@@ -2517,18 +2517,16 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioSceneInner_005, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test CacheExtraParameters API
+ * @tc.name  : Test WaitAudioParameterParsed API
  * @tc.type  : FUNC
- * @tc.number: CacheExtraParameters_001
- * @tc.desc  : Test CacheExtraParameters interface.
+ * @tc.number: WaitAudioParameterParsed_002
+ * @tc.desc  : Test WaitAudioParameterParsed timeout behavior.
  */
-HWTEST_F(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level4)
+HWTEST_F(AudioServerUnitTest, WaitAudioParameterParsed_002, TestSize.Level4)
 {
     EXPECT_NE(nullptr, audioServer);
-    std::string key = "test_key";
-    std::vector<std::pair<std::string, std::string>> kvpairs = {{"sub_key1", "value1"}, {"sub_key2", "value2"}};
-    int32_t ret = audioServer->CacheExtraParameters(key, kvpairs);
-    EXPECT_EQ(false, ret);
+    audioServer->isAudioParameterParsed_.store(false);
+    EXPECT_FALSE(audioServer->WaitAudioParameterParsed());
 }
 
 /**
