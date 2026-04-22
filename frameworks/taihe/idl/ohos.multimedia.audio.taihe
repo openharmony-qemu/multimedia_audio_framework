@@ -182,7 +182,8 @@ enum AudioSamplingRate: i32 {
   SAMPLE_RATE_88200 = 88200,
   SAMPLE_RATE_96000 = 96000,
   SAMPLE_RATE_176400 = 176400,
-  SAMPLE_RATE_192000 = 192000
+  SAMPLE_RATE_192000 = 192000,
+  SAMPLE_RATE_384000 = 384000
 }
 
 enum AudioEncodingType: i32 {
@@ -222,8 +223,13 @@ enum VolumeFlag: i32 {
   FLAG_SHOW_SYSTEM_UI = 1
 }
 
+union AudioSamplingRateOrInt {
+  type_enum: AudioSamplingRate;
+  type_int: int;
+}
+
 struct AudioStreamInfo {
-  samplingRate: AudioSamplingRate;
+  samplingRate: AudioSamplingRateOrInt;
   channels: AudioChannel;
   sampleFormat: AudioSampleFormat;
   encodingType: AudioEncodingType;
