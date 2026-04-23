@@ -2944,7 +2944,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
     volumeLevel = 6;
-    ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
+    ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
     MockNative::Resume();
 
