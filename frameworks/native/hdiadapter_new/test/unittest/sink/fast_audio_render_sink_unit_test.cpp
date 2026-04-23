@@ -139,14 +139,50 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_004, TestSize.Level1)
 /**
  * @tc.name   : Test FastSink API
  * @tc.number : FastSinkUnitTest_007
- * @tc.desc   : Test fast sink update apps uid
+ * @tc.desc   : Test fast sink update apps uid with empty vector
  */
 HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
     vector<int32_t> appsUid;
     int32_t ret = sink_->UpdateAppsUid(appsUid);
+    EXPECT_EQ(ret, SUCCESS);
+#ifdef FEATURE_POWER_MANAGER
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_007_2
+ * @tc.desc   : Test fast sink update apps uid with valid appsUid
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007_2, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    vector<int32_t> appsUid = {1001, 1002, 1003};
+    int32_t ret = sink_->UpdateAppsUid(appsUid);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_007_3
+ * @tc.desc   : Test fast sink update apps uid with array input
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007_3, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    int32_t appsUid[MAX_MIX_CHANNELS] = {1001, 1002};
+    size_t size = 2;
+    int32_t ret = sink_->UpdateAppsUid(appsUid, size);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

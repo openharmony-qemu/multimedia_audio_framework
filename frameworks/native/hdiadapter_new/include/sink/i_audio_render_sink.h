@@ -20,6 +20,7 @@
 #include <string>
 #include <mutex>
 #include <functional>
+#include <vector>
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_engine_callback_types.h"

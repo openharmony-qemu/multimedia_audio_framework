@@ -34,6 +34,7 @@ namespace AudioStandard {
 constexpr uint64_t TEST_MAX_FRAME_NUM = 5;
 constexpr uint64_t TEST_READ_START_POSITION = 10;
 constexpr uint64_t TEST_MAX_ARRAY_LEN = 100;
+
 class UtilUnitTest : public testing::Test {
 public:
     static void SetUpTestCase() {}

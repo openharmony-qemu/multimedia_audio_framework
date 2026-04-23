@@ -1008,5 +1008,91 @@ HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_006, TestSize.Level1)
     EXPECT_EQ(attr.channel, 2);
 }
 
+/**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : UpdateAppsUid_001
+ * @tc.desc   : Test UpdateAppsUid with array input
+ */
+HWTEST_F(AudioRenderSinkUnitTest, UpdateAppsUid_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    
+    int32_t appsUid[MAX_MIX_CHANNELS] = {1001, 1002, 1003};
+    size_t size = 3;
+    int32_t ret = primarySink_->UpdateAppsUid(appsUid, size);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, SUCCESS);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+    
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : UpdateAppsUid_002
+ * @tc.desc   : Test UpdateAppsUid with vector input
+ */
+HWTEST_F(AudioRenderSinkUnitTest, UpdateAppsUid_002, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    
+    std::vector<int32_t> appsUid = {1001, 1002, 1003};
+    int32_t ret = primarySink_->UpdateAppsUid(appsUid);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, SUCCESS);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+    
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : UpdateAppsUid_Direct_001
+ * @tc.desc   : Test UpdateAppsUid for direct sink with array input
+ */
+HWTEST_F(AudioRenderSinkUnitTest, UpdateAppsUid_Direct_001, TestSize.Level1)
+{
+    InitDirectSink();
+    EXPECT_TRUE(directSink_ && directSink_->IsInited());
+    
+    int32_t appsUid[MAX_MIX_CHANNELS] = {1001, 1002};
+    size_t size = 2;
+    int32_t ret = directSink_->UpdateAppsUid(appsUid, size);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, SUCCESS);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+    
+    DeInitDirectSink();
+}
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : UpdateAppsUid_Direct_002
+ * @tc.desc   : Test UpdateAppsUid for direct sink with vector input
+ */
+HWTEST_F(AudioRenderSinkUnitTest, UpdateAppsUid_Direct_002, TestSize.Level1)
+{
+    InitDirectSink();
+    EXPECT_TRUE(directSink_ && directSink_->IsInited());
+    
+    std::vector<int32_t> appsUid = {1001, 1002};
+    int32_t ret = directSink_->UpdateAppsUid(appsUid);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, SUCCESS);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+    
+    DeInitDirectSink();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

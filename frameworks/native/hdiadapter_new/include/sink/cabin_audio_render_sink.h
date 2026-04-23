@@ -21,6 +21,9 @@
 #include <v6_0/iaudio_manager.h>
 #include "audio_utils.h"
 #include "sink/i_audio_render_sink.h"
+#ifdef MULTI_BUS_ENABLE
+#include "util/audio_playing_app_manager.h"
+#endif
 #include "util/audio_running_lock.h"
 
 namespace OHOS {
@@ -33,7 +36,7 @@ struct Cabin3DAHdiCallback {
 
 class CabinAudioRenderSink : public IAudioRenderSink {
 public:
-    CabinAudioRenderSink() = default;
+    CabinAudioRenderSink();
     ~CabinAudioRenderSink();
 
     int32_t Init(const IAudioSinkAttr &attr) override;
@@ -73,6 +76,7 @@ private:
     void StartTestThread(void);
     AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     uint32_t PcmFormatToBit(AudioSampleFormat format);
+    bool SetPlayingAppNameParam(const std::string &param);
 
 private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -101,6 +105,9 @@ private:
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;
+#endif
+#ifdef MULTI_BUS_ENABLE
+    AudioPlayingAppManager playingAppManager_;
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
