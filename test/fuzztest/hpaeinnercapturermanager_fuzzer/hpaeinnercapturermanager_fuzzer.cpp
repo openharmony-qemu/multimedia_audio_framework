@@ -44,6 +44,9 @@ const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_SESSION_ID = 123456;
+constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50;
+constexpr int32_t MSG_PROCESSING_SLEEP_MS = 20;
+constexpr int32_t MSG_PROCESSING_EXTRA_SLEEP_MS = 40;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
@@ -248,11 +251,11 @@ static HpaeStreamInfo GetInCapRecordFuzzStreamInfo()
 void WaitForMsgProcessing(std::shared_ptr<HpaeInnerCapturerManager>& hpaeInnerCapturerManager)
 {
     int retry = 0;
-    while (hpaeInnerCapturerManager->IsMsgProcessing() && retry < 50) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    while (hpaeInnerCapturerManager->IsMsgProcessing() && retry < MAX_MSG_PROCESSING_RETRY_COUNT) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(MSG_PROCESSING_SLEEP_MS));
         retry++;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    std::this_thread::sleep_for(std::chrono::milliseconds(MSG_PROCESSING_EXTRA_SLEEP_MS));
 }
 
 void HpaeInnerCapturerManagerFuzzTest1()
@@ -808,7 +811,8 @@ void DualPathLifecycleFuzzTest()
     auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     mgr->Init();
     WaitForMsgProcessing(mgr);
-    HpaeStreamInfo playInfo, recInfo;
+    HpaeStreamInfo playInfo;
+    HpaeStreamInfo recInfo;
     InitPlayStreamInfo(playInfo);
     InitRecordStreamInfo(recInfo);
     mgr->CreateStream(playInfo);

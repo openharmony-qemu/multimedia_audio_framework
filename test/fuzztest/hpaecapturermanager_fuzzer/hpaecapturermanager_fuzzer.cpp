@@ -47,7 +47,7 @@ const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const uint32_t ECTYPENUM = 3;
-constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50; 
+constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50;
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
     STEREO,
@@ -1326,13 +1326,13 @@ void MultiStreamCapturerFuzzTest()
 
     HpaeStreamInfo streamInfo1;
     InitReloadStreamInfo(streamInfo1);
-    streamInfo1.sessionId = 123456;
+    streamInfo1.sessionId = GetData<uint32_t>();
     mgr->CreateStream(streamInfo1);
     WaitForMsgProcessing(mgr);
 
     HpaeStreamInfo streamInfo2;
     InitReloadStreamInfo(streamInfo2);
-    streamInfo2.sessionId = 654321;
+    streamInfo2.sessionId = GetData<uint32_t>();
     mgr->CreateStream(streamInfo2);
     WaitForMsgProcessing(mgr);
 

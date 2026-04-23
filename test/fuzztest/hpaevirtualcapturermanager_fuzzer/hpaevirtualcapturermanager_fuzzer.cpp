@@ -117,8 +117,7 @@ HpaeNodeInfo GetFuzzNodeInfo()
 HpaeCaptureMoveInfo GetHpaeCaptureMoveInfo()
 {
     HpaeCaptureMoveInfo moveInfo;
-    HpaeNodeInfo nodeInfo;
-    nodeInfo = GetFuzzNodeInfo();
+    HpaeNodeInfo nodeInfo = GetFuzzNodeInfo();
     moveInfo.sessionId = GetData<uint32_t>();
     moveInfo.sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     return moveInfo;

@@ -38,7 +38,7 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50; 
+constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 std::mutex lock_;
 
