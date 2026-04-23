@@ -1147,9 +1147,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         }
         MatchUltraFastPipe(pipeInfo, streamDesc);
 
-        pipeInfo->streamDescriptors_.push_back(streamDesc);
-        pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-        pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
+        pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
             pipeInfo->ToString().c_str(), streamDesc->sessionId_, pipeInfo->pipeAction_);
         return true;

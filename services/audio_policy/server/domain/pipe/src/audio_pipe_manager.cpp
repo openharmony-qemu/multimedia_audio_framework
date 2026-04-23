@@ -305,6 +305,24 @@ void AudioPipeManager::RemoveClient(uint32_t sessionId)
     }
 }
 
+void AudioPipeManager::AddStreamToPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeAction action)
+{
+    CHECK_AND_RETURN_LOG(pipeInfo != nullptr && streamDesc != nullptr, "pipeInfo or streamDesc is nullptr");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
+    pipeInfo->pipeAction_ = (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) ? PIPE_ACTION_RELOAD : action;
+}
+
+void AudioPipeManager::ClearPipeStreams(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    pipeInfo->streamDescriptors_.clear();
+    pipeInfo->streamDescMap_.clear();
+}
+
 const std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetPipeList()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
