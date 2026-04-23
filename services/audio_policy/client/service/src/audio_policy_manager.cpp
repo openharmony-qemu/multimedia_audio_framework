@@ -3231,6 +3231,25 @@ float AudioPolicyManager::GetLoopbackVolume()
     return volume;
 }
 
+int32_t AudioPolicyManager::CreateLoopback(AudioLoopbackMode mode, LoopbackType type,
+    const sptr<IRemoteObject> &callback, sptr<IRemoteObject> &loopback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    int32_t result = SUCCESS;
+    gsp->CreateLoopback(static_cast<int32_t>(mode), static_cast<int32_t>(type), callback, loopback, result);
+    return result;
+}
+
+int32_t AudioPolicyManager::DestroyLoopback(LoopbackType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    int32_t result = SUCCESS;
+    gsp->DestroyLoopback(static_cast<int32_t>(type), result);
+    return result;
+}
+
 bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType)
 {
     Trace trace("AudioPolicyManager::IsAudioLoopbackSupported");

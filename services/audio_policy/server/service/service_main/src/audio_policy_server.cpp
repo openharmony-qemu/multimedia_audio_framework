@@ -197,6 +197,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
+    loopbackManager_ = std::make_shared<AudioLoopbackManager>();
+
     powerStateCallbackRegister_ = false;
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
     screenOffAdjustVolumeEnable_ = system::GetBoolParameter("const.audio.screenoff_adjust_volume_enable", false);
@@ -5902,6 +5904,29 @@ int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
     for (const auto &zone : audioZones) {
         audioVolumeManager_.TriggerAudioZoneVolumeSync(zone->zoneId_);
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::CreateLoopback(int32_t mode, int32_t type,
+    const sptr<IRemoteObject> &cbObject, sptr<IRemoteObject> &loopback, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(loopbackManager_ != nullptr, ERR_NULL_POINTER, "loopbackManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(cbObject != nullptr, ERR_NULL_POINTER, "cbObject is nullptr");
+
+    sptr<ILoopbackCallback> callbackProxy = iface_cast<ILoopbackCallback>(cbObject);
+    CHECK_AND_RETURN_RET_LOG(callbackProxy != nullptr, ERR_NULL_POINTER, "iface_cast ILoopbackCallback failed");
+
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    ret = loopbackManager_->CreateLoopback(static_cast<AudioLoopbackMode>(mode),
+        static_cast<LoopbackType>(type), callbackProxy, loopback, pid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::DestroyLoopback(int32_t type, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(loopbackManager_ != nullptr, ERR_NULL_POINTER, "loopbackManager is nullptr");
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    ret = loopbackManager_->DestroyLoopback(static_cast<LoopbackType>(type), pid);
     return SUCCESS;
 }
 } // namespace AudioStandard

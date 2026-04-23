@@ -690,6 +690,9 @@ public:
     bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
     bool SetLoopbackVolume(float volume);
     float GetLoopbackVolume();
+    int32_t CreateLoopback(AudioLoopbackMode mode, LoopbackType type,
+        const sptr<IRemoteObject> &callback, sptr<IRemoteObject> &loopback);
+    int32_t DestroyLoopback(LoopbackType type);
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
     int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 

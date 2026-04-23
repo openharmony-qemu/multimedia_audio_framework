@@ -302,6 +302,8 @@ interface IAudioPolicy {
     void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
     [oneway] void RecordBootAnimationClientStateTime([in] List<long> info);
     void GetAudioDebugInfo([in] unsigned int sessionId, [out] sharedptr<AudioDebugInfo> audioDebugInfo);
+void CreateLoopback([in] int mode, [in] int type, [in] IRemoteObject cbObject, [out] IRemoteObject loopback, [out] int ret);
+void DestroyLoopback([in] int type, [out] int ret);
     // AudioPolicyInterfaceCode end
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode

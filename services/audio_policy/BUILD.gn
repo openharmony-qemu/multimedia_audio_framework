@@ -210,6 +210,8 @@ audio_ohos_library("audio_policy_service") {
     "server/common/src/audio_group_handle.cpp",
     "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
+    "server/service/service_main/src/audio_loopback_manager.cpp",
+    "server/service/service_main/src/loopback_in_server.cpp",
     "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
     "server/domain/stream/audio_stream_collector.cpp",
     "server/domain/stream/audio_stream_id_allocator.cpp",

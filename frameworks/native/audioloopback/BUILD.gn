@@ -26,6 +26,18 @@ config("audio_loopback_config") {
     "../../../frameworks/native/audiostream/include",
     "../../../services/audio_service/client/include",
     "../audiodefinitions/include",
+    "../../../services/audio_policy/client/proxy/include",
+    "../../../services/audio_policy/client/stub/include",
+    "../../../services/audio_policy/client/service/include",
+    "../../../services/audio_policy/common/include",
+    "../../../services/audio_policy/client/interface",
+    "../../../services/audio_policy/server/include",
+    "../../../services/audio_policy/server/proxy/include",
+    "../../../services/audio_policy/server/stub/include",
+    "../../../services/audio_policy/server/service/service_main/include",
+    "../../../services/audio_service/common/include",
+    "../../../frameworks/native/audiopolicy/include",
+    "../../../services/audio_service/server/include",
   ]
   cflags = [
     "-Wall",
@@ -50,7 +62,10 @@ ohos_shared_library("audio_loopback") {
 
   configs = [ ":audio_loopback_config" ]
 
-  sources = [ "src/audio_loopback.cpp" ]
+  sources = [
+    "src/audio_loopback.cpp",
+    "src/audio_loopback_wrapper.cpp",
+  ]
 
   defines = []
   if (audio_framework_feature_low_latency) {
@@ -64,6 +79,7 @@ ohos_shared_library("audio_loopback") {
     "../../../services/audio_service:audio_policy_manager",
     "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
+    "../../../services/audio_service/idl:audio_policy_client_idl_interface",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
     "../audiodefinitions:audio_definitions",
