@@ -532,7 +532,7 @@ AudioSampleFormat TaiheParamUtils::ToTaiheAudioSampleFormat(OHOS::AudioStandard:
 
 AudioStreamInfo TaiheParamUtils::ToTaiheAudioStreamInfo(std::shared_ptr<OHOS::AudioStandard::AudioStreamInfo> &src)
 {
-    AudioSamplingRateOrInt samplingRateUnion;
+    AudioSamplingRateOrInt samplingRateUnion = AudioSamplingRateOrInt::make_type_int(0);
     if (src->customSampleRate != 0) {
         samplingRateUnion = AudioSamplingRateOrInt::make_type_int(static_cast<int32_t>(src->customSampleRate));
     } else {
