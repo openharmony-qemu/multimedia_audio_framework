@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 #include <iostream>
 #include <cstddef>
@@ -20,6 +20,8 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <thread>
+#include <chrono>
 #undef private
 #include "audio_info.h"
 #include "audio_stream_info.h"
@@ -45,6 +47,7 @@ const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const uint32_t ECTYPENUM = 3;
+constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50; 
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
     STEREO,
@@ -62,6 +65,74 @@ const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     CHANNEL_14,
     CHANNEL_15,
     CHANNEL_16,
+};
+
+const std::vector<HpaeProcessorType> VALID_PROCESSOR_TYPES {
+    HPAE_SCENE_DEFAULT,
+    HPAE_SCENE_MUSIC,
+    HPAE_SCENE_GAME,
+    HPAE_SCENE_MOVIE,
+    HPAE_SCENE_SPEECH,
+    HPAE_SCENE_RING,
+    HPAE_SCENE_VOIP_DOWN,
+    HPAE_SCENE_OTHERS,
+    HPAE_SCENE_EFFECT_NONE,
+    HPAE_SCENE_EFFECT_OUT,
+    HPAE_SCENE_SPLIT_MEDIA,
+    HPAE_SCENE_SPLIT_NAVIGATION,
+    HPAE_SCENE_SPLIT_COMMUNICATION,
+    HPAE_SCENE_VOIP_UP,
+    HPAE_SCENE_RECORD,
+    HPAE_SCENE_PRE_ENHANCE,
+    HPAE_SCENE_ASR,
+    HPAE_SCENE_VOICE_MESSAGE,
+    HPAE_SCENE_COLLABORATIVE,
+    HPAE_SCENE_RECOGNITION,
+};
+
+const std::vector<HpaeEcType> VALID_EC_TYPES {
+    HPAE_EC_TYPE_NONE,
+    HPAE_EC_TYPE_SAME_ADAPTER,
+    HPAE_EC_TYPE_DIFF_ADAPTER,
+};
+
+const std::vector<HpaeMicRefSwitch> VALID_MIC_REF_SWITCHES {
+    HPAE_REF_OFF,
+    HPAE_REF_ON,
+};
+
+const std::vector<SourceType> VALID_SOURCE_TYPES {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_EC,
+    SOURCE_TYPE_MIC_REF,
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_OFFLOAD_CAPTURE,
+    SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
+    SOURCE_TYPE_INTERPHONE,
+};
+
+const std::vector<HpaeSessionState> VALID_SESSION_STATES {
+    HPAE_SESSION_INVALID,
+    HPAE_SESSION_NEW,
+    HPAE_SESSION_PREPARED,
+    HPAE_SESSION_RUNNING,
+    HPAE_SESSION_PAUSING,
+    HPAE_SESSION_PAUSED,
+    HPAE_SESSION_STOPPING,
+    HPAE_SESSION_STOPPED,
+    HPAE_SESSION_RELEASED,
 };
 
 typedef void (*TestPtr)(const uint8_t *, size_t);
@@ -141,12 +212,8 @@ void RoundSourceInfo(HpaeSourceInfo &sourceInfo)
 {
     RoundVal(sourceInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sourceInfo.format, AUDIO_SUPPORTED_FORMATS);
-    if (GetData<bool>()) {
-        sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
-    } else {
-        sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<uint32_t>() % ECTYPENUM);
-    }
-    sourceInfo.micRef = HPAE_REF_OFF;
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 }
 
 void RoundStreamInfo(HpaeStreamInfo &streamInfo)
@@ -196,6 +263,30 @@ void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceI
     RoundSourceInfo(newSourceInfo);
 }
 
+void InitStreamInfo(HpaeStreamInfo &streamInfo)
+{
+    RoundStreamInfo(streamInfo);
+    streamInfo.sessionId = GetData<uint32_t>();
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
+    streamInfo.deviceName = "Built_in_mic";
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+}
+
+// forward declaration
+static void WaitForMsgProcessing(std::shared_ptr<HpaeCapturerManager> &capturerManager);
+
+std::shared_ptr<HpaeCapturerManager> CreateAndInitManager()
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    return mgr;
+}
+
 void GetFuzzNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     nodeInfo.nodeId = GetData<uint32_t>();
@@ -219,8 +310,10 @@ HpaeCaptureMoveInfo GetHpaeCaptureMoveInfo()
 
 static void WaitForMsgProcessing(std::shared_ptr<HpaeCapturerManager> &capturerManager)
 {
-    while (capturerManager->IsMsgProcessing()) {
+    int retry = 0;
+    while (capturerManager->IsMsgProcessing() && retry < MAX_MSG_PROCESSING_RETRY_COUNT) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20 for sleep
+        retry++;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(40));  // 40 for sleep
 }
@@ -233,7 +326,7 @@ void StateControlFuzzTest(std::shared_ptr<HpaeCapturerManager> &capturerManager,
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(sessionId, sourceOutputInfo);
     capturerManager->IsRunning();
-    
+
     capturerManager->Pause(sessionId);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(sessionId, sourceOutputInfo);
@@ -255,7 +348,7 @@ void StateControlFuzzTest(std::shared_ptr<HpaeCapturerManager> &capturerManager,
 
     capturerManager->Release(sessionId);
     WaitForMsgProcessing(capturerManager);
-    
+
     capturerManager->GetSourceOutputInfo(sessionId, sourceOutputInfo);
     capturerManager->IsRunning();
 }
@@ -267,7 +360,7 @@ void StateControlTest(std::shared_ptr<HpaeCapturerManager> &capturerManager, Hpa
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     capturerManager->IsRunning();
-    
+
     capturerManager->Pause(streamInfo.sessionId);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
@@ -289,7 +382,7 @@ void StateControlTest(std::shared_ptr<HpaeCapturerManager> &capturerManager, Hpa
 
     capturerManager->Release(streamInfo.sessionId);
     WaitForMsgProcessing(capturerManager);
-    
+
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     capturerManager->IsRunning();
 }
@@ -525,7 +618,7 @@ void CaptureEffectCreateFuzzTest()
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
-    streamInfo.sourceType = GetData<SourceType>();
+    RoundVal(streamInfo.sourceType, VALID_SOURCE_TYPES);
     streamInfo.sessionId = GetData<uint32_t>();
     sessionIds.push_back(streamInfo.sessionId);
 
@@ -543,8 +636,8 @@ void StartWithEcAndMicRefFuzzTest()
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
 
-    sourceInfo.ecType = GetData<HpaeEcType>();
-    sourceInfo.micRef = GetData<HpaeMicRefSwitch>();
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
@@ -553,7 +646,7 @@ void StartWithEcAndMicRefFuzzTest()
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
-    streamInfo.sourceType = GetData<SourceType>();
+    RoundVal(streamInfo.sourceType, VALID_SOURCE_TYPES);
     streamInfo.sessionId = GetData<uint32_t>();
 
     capturerManager->CreateStream(streamInfo);
@@ -573,8 +666,8 @@ void DeInitWithCapturerSourceStopForRemoteFuzzTest()
     InitSourceInfo(sourceInfo);
 
     sourceInfo.deviceClass = "remote";
-    sourceInfo.ecType = GetData<HpaeEcType>();
-    sourceInfo.micRef = GetData<HpaeMicRefSwitch>();
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
@@ -588,8 +681,8 @@ void PrepareCapturerEcFuzzTest()
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
 
-    sourceInfo.ecType = GetData<HpaeEcType>();
-    sourceInfo.micRef = GetData<HpaeMicRefSwitch>();
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
@@ -690,13 +783,13 @@ void AddAllNodesToSourceAdvancedFuzzTest()
 
     HpaeNodeInfo nodeInfo;
     GetFuzzNodeInfo(nodeInfo);
-    nodeInfo.sceneType = GetData<HpaeProcessorType>();
+    RoundVal(nodeInfo.sceneType, VALID_PROCESSOR_TYPES);
 
     HpaeCaptureMoveInfo moveInfo;
     moveInfo.sessionId = GetData<uint32_t>();
     moveInfo.sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
 
-    moveInfo.sessionInfo.state = GetData<HpaeSessionState>();
+    RoundVal(moveInfo.sessionInfo.state, VALID_SESSION_STATES);
 
     moveInfos.push_back(moveInfo);
 
@@ -711,8 +804,8 @@ void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
 
-    sourceInfo.ecType = GetData<HpaeEcType>();
-    sourceInfo.micRef = GetData<HpaeMicRefSwitch>();
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
@@ -722,7 +815,7 @@ void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
-    streamInfo.sourceType = GetData<SourceType>();
+    RoundVal(streamInfo.sourceType, VALID_SOURCE_TYPES);
     streamInfo.sessionId = GetData<uint32_t>();
 
     capturerManager->CreateStream(streamInfo);
@@ -742,8 +835,8 @@ void ConnectOutputSessionFuzzTest()
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
 
-    sourceInfo.ecType = GetData<HpaeEcType>();
-    sourceInfo.micRef = GetData<HpaeMicRefSwitch>();
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
@@ -753,7 +846,7 @@ void ConnectOutputSessionFuzzTest()
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
-    streamInfo.sourceType = GetData<SourceType>();
+    RoundVal(streamInfo.sourceType, VALID_SOURCE_TYPES);
     streamInfo.sessionId = GetData<uint32_t>();
 
     capturerManager->CreateStream(streamInfo);
@@ -845,8 +938,8 @@ void DeInitFuzzTest()
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
-    sourceInfo.ecType = GetData<HpaeEcType>();
-    sourceInfo.micRef = GetData<HpaeMicRefSwitch>();
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
@@ -869,8 +962,8 @@ void GetSourceOutputInfoFuzzTest()
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
-    sourceInfo.ecType = GetData<HpaeEcType>();
-    sourceInfo.micRef = GetData<HpaeMicRefSwitch>();
+    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
+    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
 
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
@@ -888,6 +981,503 @@ void GetSourceOutputInfoFuzzTest()
     HpaeSourceOutputInfo sourceOutputInfo;
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     capturerManager->DeInit();
+}
+
+void MicRefSourceInitFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.micRef = HPAE_REF_ON;
+    sourceInfo.ecType = GetData<bool>() ? HPAE_EC_TYPE_DIFF_ADAPTER : HPAE_EC_TYPE_NONE;
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    mgr->DeInit();
+}
+
+void EcDiffAdapterFullFlowFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
+    sourceInfo.micRef = GetData<bool>() ? HPAE_REF_ON : HPAE_REF_OFF;
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    mgr->DeInit();
+}
+
+void EnableDisableCaptureCollaborationFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    SourceType collabType;
+    RoundVal(collabType, VALID_SOURCE_TYPES);
+    mgr->EnableCaptureCollaboration(collabType);
+    WaitForMsgProcessing(mgr);
+    mgr->DisableCaptureCollaboration(collabType);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void DeleteOutputSessionWithActiveClusterFuzzTest()
+{
+    auto mgr = CreateAndInitManager();
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void MoveStreamWithValidSessionFuzzTest()
+{
+    auto mgr = CreateAndInitManager();
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->MoveStream(streamInfo.sessionId, "test_source");
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void DisConnectSceneClusterFullFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
+    sourceInfo.micRef = HPAE_REF_ON;
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Release(streamInfo.sessionId);
+    mgr->DeInit();
+}
+
+void ConnectOutputSessionWithEcMicRefFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
+    sourceInfo.micRef = HPAE_REF_ON;
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void AddSingleNodeRunningStateFuzzTest()
+{
+    auto mgr = CreateAndInitManager();
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = GetData<uint32_t>();
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sceneType = HPAE_SCENE_RECORD;
+
+    HpaeCaptureMoveInfo moveInfo;
+    moveInfo.sessionId = GetData<uint32_t>();
+    moveInfo.sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
+    moveInfo.sessionInfo.state = HPAE_SESSION_RUNNING;
+    bool isConnect = GetData<bool>();
+    mgr->AddAllNodesToSource({moveInfo}, isConnect);
+    mgr->DeInit();
+}
+
+void EcSameAdapterFullFlowFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
+    sourceInfo.micRef = HPAE_REF_OFF;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void EcDiffAdapterWithMicRefFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
+    sourceInfo.micRef = HPAE_REF_ON;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void ConnectOutputSessionSceneRecordFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_MIC;
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void DisConnectOutputSessionFullFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Pause(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void ReloadCaptureManagerRunningFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    HpaeSourceInfo newSourceInfo;
+    newSourceInfo.deviceNetId = "LocalDevice";
+    newSourceInfo.deviceClass = "file_io";
+    newSourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    newSourceInfo.samplingRate = SAMPLE_RATE_48000;
+    newSourceInfo.channels = STEREO;
+    RoundSourceInfo(newSourceInfo);
+
+    mgr->ReloadCaptureManager(newSourceInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void MultiStreamCapturerFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo1;
+    InitReloadStreamInfo(streamInfo1);
+    streamInfo1.sessionId = 123456;
+    mgr->CreateStream(streamInfo1);
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo2;
+    InitReloadStreamInfo(streamInfo2);
+    streamInfo2.sessionId = 654321;
+    mgr->CreateStream(streamInfo2);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Start(streamInfo1.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo2.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Stop(streamInfo1.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo1.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Stop(streamInfo2.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo2.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void CapturerSourceStartStopCycleFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void FlushDrainCapturerFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Flush(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Drain(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void EnableCollaborationFullFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+
+    SourceType collabType;
+    RoundVal(collabType, VALID_SOURCE_TYPES);
+    mgr->EnableCaptureCollaboration(collabType);
+    WaitForMsgProcessing(mgr);
+    mgr->DisableCaptureCollaboration(collabType);
+    WaitForMsgProcessing(mgr);
+
+    mgr->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
+}
+
+void DeleteOutputSessionFullFuzzTest()
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = "LocalDevice";
+    sourceInfo.deviceClass = "file_io";
+    sourceInfo.deviceName = "Built_in_mic";
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+
+    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    mgr->CreateStream(streamInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DestroyStream(streamInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit();
 }
 
 typedef void (*TestFuncs)();
@@ -923,6 +1513,24 @@ TestFuncs g_testFuncs[] = {
     ReloadCaptureManagerFuzzTest,
     DeInitFuzzTest,
     GetSourceOutputInfoFuzzTest,
+    MicRefSourceInitFuzzTest,
+    EcDiffAdapterFullFlowFuzzTest,
+    EnableDisableCaptureCollaborationFuzzTest,
+    DeleteOutputSessionWithActiveClusterFuzzTest,
+    MoveStreamWithValidSessionFuzzTest,
+    DisConnectSceneClusterFullFuzzTest,
+    ConnectOutputSessionWithEcMicRefFuzzTest,
+    AddSingleNodeRunningStateFuzzTest,
+    EcSameAdapterFullFlowFuzzTest,
+    EcDiffAdapterWithMicRefFuzzTest,
+    ConnectOutputSessionSceneRecordFuzzTest,
+    DisConnectOutputSessionFullFuzzTest,
+    ReloadCaptureManagerRunningFuzzTest,
+    MultiStreamCapturerFuzzTest,
+    CapturerSourceStartStopCycleFuzzTest,
+    FlushDrainCapturerFuzzTest,
+    EnableCollaborationFullFuzzTest,
+    DeleteOutputSessionFullFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
