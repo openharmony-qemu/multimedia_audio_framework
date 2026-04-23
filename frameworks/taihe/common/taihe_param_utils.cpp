@@ -499,7 +499,8 @@ bool TaiheParamUtils::IsValidAudioSamplingRate(int32_t sampleRate)
     return false;
 }
 
-AudioSamplingRateOrInt TaiheParamUtils::ToTaiheAudioSamplingRate(OHOS::AudioStandard::AudioSamplingRate audioSamplingRate)
+AudioSamplingRateOrInt TaiheParamUtils::ToTaiheAudioSamplingRate(
+    OHOS::AudioStandard::AudioSamplingRate audioSamplingRate)
 {
     auto itr = gNativeToAniAudioSamplingRate.find(audioSamplingRate);
     if (itr == gNativeToAniAudioSamplingRate.end()) {

@@ -219,7 +219,7 @@ enum VolumeFlag: i32 {
 
 union AudioSamplingRateOrInt {
   type_enum: AudioSamplingRate;
-  type_int: int;
+  type_int: i32;
 }
 
 struct AudioStreamInfo {
