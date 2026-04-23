@@ -301,34 +301,19 @@ public:
         return newDeviceDescs_[0];
     }
 
-    bool HasNewDeviceDescs() const
+    bool HasNewDeviceDescs()
     {
         std::lock_guard<std::mutex> lock(lock_);
         return !newDeviceDescs_.empty() && newDeviceDescs_.front() != nullptr;
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> GetFirstNewDeviceDesc() const
+    std::shared_ptr<AudioDeviceDescriptor> GetFirstNewDeviceDesc()
     {
         std::lock_guard<std::mutex> lock(lock_);
         if (newDeviceDescs_.empty() || newDeviceDescs_.front() == nullptr) {
             return nullptr;
         }
         return newDeviceDescs_.front();
-    }
-
-    std::shared_ptr<AudioDeviceDescriptor> GetFirstOldDeviceDesc() const
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        if (oldDeviceDescs_.empty() || oldDeviceDescs_.front() == nullptr) {
-            return nullptr;
-        }
-        return oldDeviceDescs_.front();
-    }
-
-    bool HasOldDeviceDescs() const
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        return !oldDeviceDescs_.empty() && oldDeviceDescs_.front() != nullptr;
     }
 
     bool IsA2dpOffloadStream()
@@ -372,34 +357,10 @@ public:
         oldDeviceDescs_ = devices;
     }
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetNewDeviceDescsCopy() const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetNewDeviceDescs()
     {
         std::lock_guard<std::mutex> lock(lock_);
         return newDeviceDescs_;
-    }
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOldDeviceDescsCopy() const
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        return oldDeviceDescs_;
-    }
-
-    void UpdateNewDeviceDescsWithLock(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        newDeviceDescs_ = std::move(devices);
-    }
-
-    void UpdateOldDeviceDescsWithLock(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        oldDeviceDescs_ = std::move(devices);
-    }
-
-    void SwapDeviceDescsWithLock()
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        oldDeviceDescs_ = newDeviceDescs_;
     }
 
     void SwapAndUpdateNewDeviceDescs(std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDevices)

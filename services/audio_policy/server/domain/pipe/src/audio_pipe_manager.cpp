@@ -395,7 +395,8 @@ std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         for (auto &desc : pipeInfo->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->HasNewDeviceDescs(), "desc has no device");
+            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+                desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
             if (desc->sessionId_ != sessionId) {
                 continue;
             }
@@ -414,13 +415,13 @@ std::string AudioPipeManager::GetModuleNameBySessionId(uint32_t sessionId)
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         for (auto &desc : pipeInfo->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->HasNewDeviceDescs(), "desc has no device");
+            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+                desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
             if (desc->sessionId_ != sessionId) {
                 continue;
             }
             AUDIO_INFO_LOG("adapter name: %{public}s", pipeInfo->moduleInfo_.name.c_str());
-            auto firstDeviceDesc = desc->GetFirstNewDeviceDesc();
-            return firstDeviceDesc->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
+            return desc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
                 "RemoteCastInnerCapturer" : pipeInfo->moduleInfo_.name;
         }
     }
@@ -456,10 +457,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoByS
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         for (auto &desc : pipeInfo->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->HasNewDeviceDescs(), "desc has no device");
+            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+                desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
             if (desc->sessionId_ == sessionId) {
-                const auto deviceDesc = desc->GetFirstNewDeviceDesc();
-                CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, nullptr, "deviceDesc is nullptr");
+                const auto deviceDesc = desc->newDeviceDescs_.front();
                 AUDIO_INFO_LOG("Device type: %{public}d", deviceDesc->deviceType_);
                 streamInfo = DecideStreamInfo(pipeInfo, deviceDesc);
                 return deviceDesc;
@@ -486,6 +487,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsInfo()
 {
     Trace trace("AudioPipeManager::GetAllOutputStreamDescsInfo");
+    // this function only get useful info for volume control
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     for (auto &it : curPipeList_) {
@@ -494,7 +496,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
         for (auto desc : it->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             std::shared_ptr<AudioStreamDescriptor> tmp = std::make_shared<AudioStreamDescriptor>();
-            tmp->newDeviceDescs_ = desc->GetNewDeviceDescsCopy();
+            tmp->newDeviceDescs_ = desc->GetNewDeviceDescs();
             tmp->rendererInfo_.streamUsage = desc->rendererInfo_.streamUsage;
             tmp->appInfo_ = desc->appInfo_;
             tmp->sessionId_ = desc->sessionId_;
@@ -560,9 +562,8 @@ bool AudioPipeManager::HasRunningScoOutputStream()
         for (auto &desc : it->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            auto firstDeviceDesc = desc->GetFirstNewDeviceDesc();
-            CHECK_AND_CONTINUE_LOG(firstDeviceDesc != nullptr, "firstDeviceDesc is nullptr");
-            if (firstDeviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            CHECK_AND_CONTINUE_LOG(!desc->newDeviceDescs_.empty(), "newDeviceDescs is empty");
+            if (desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
                 return true;
             }
         }
@@ -805,7 +806,7 @@ void AudioPipeManager::UpdateModemStreamStatus(AudioStreamStatus streamStatus)
 
 void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
     for (auto &entry : modemCommunicationIdMap_) {
         CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
         entry.second->SwapAndUpdateNewDeviceDescs(deviceDescs);
@@ -897,13 +898,12 @@ std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> AudioPipeMa
 bool AudioPipeManager::IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    CHECK_AND_RETURN_RET_LOG(!modemCommunicationIdMap_.empty() &&
+    CHECK_AND_RETURN_RET_LOG(modemCommunicationIdMap_.size() > 0 &&
         modemCommunicationIdMap_.begin()->second != nullptr &&
-        modemCommunicationIdMap_.begin()->second->HasOldDeviceDescs(),
+        modemCommunicationIdMap_.begin()->second->oldDeviceDescs_.size() > 0 &&
+        modemCommunicationIdMap_.begin()->second->oldDeviceDescs_.front() != nullptr,
         false, "Invalid modemCommunicationMap, size: %{public}zu", modemCommunicationIdMap_.size());
-    auto firstOldDeviceDesc = modemCommunicationIdMap_.begin()->second->GetFirstOldDeviceDesc();
-    CHECK_AND_RETURN_RET_LOG(firstOldDeviceDesc != nullptr, false, "firstOldDeviceDesc is nullptr");
-    return !firstOldDeviceDesc->IsSameDeviceDescPtr(deviceDescs);
+    return !modemCommunicationIdMap_.begin()->second->oldDeviceDescs_.front()->IsSameDeviceDescPtr(deviceDescs);
 }
 
 std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetNormalSourceInfo(bool isEcFeatureEnable)
@@ -1168,18 +1168,13 @@ bool AudioPipeManager::HasRunningNormalCapturerStream(DeviceType type)
                  desc->capturerInfo_.sourceType == SOURCE_TYPE_WAKEUP ||
                  desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_MESSAGE ||
                  desc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED)) {
-                if (type == DEVICE_TYPE_NONE) {
-                    AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
-                        desc->sessionId_, type);
-                    return true;
-                }
-                auto firstDeviceDesc = desc->GetFirstNewDeviceDesc();
-                if (firstDeviceDesc != nullptr && firstDeviceDesc->deviceType_ == type) {
-                    AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
-                        desc->sessionId_, type);
-                    return true;
-                }
+                 desc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED) &&
+                ((type == DEVICE_TYPE_NONE) ||
+                 (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
+                  desc->newDeviceDescs_[0]->deviceType_ == type))) {
+                AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
+                    desc->sessionId_, type);
+                return true;
             }
         }
     }
@@ -1375,13 +1370,12 @@ bool AudioPipeManager::IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeIn
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "pipe is nullptr");
     for (auto streamDesc : pipeInfo->streamDescriptors_) {
-        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr && streamDesc->HasNewDeviceDescs(), "invalid streamDesc");
-        auto deviceDescs = streamDesc->GetNewDeviceDescsCopy();
-        auto deviceDescIt = std::find_if(deviceDescs.begin(), deviceDescs.end(),
+        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "invalid streamDesc");
+        auto deviceDescIt = std::find_if(streamDesc->newDeviceDescs_.begin(), streamDesc->newDeviceDescs_.end(),
             [](std::shared_ptr<AudioDeviceDescriptor> desc) {
-                return desc != nullptr && desc->GetHdPlaybackMode() == HdPlaybackMode::APP_LEVEL;
+                return desc->GetHdPlaybackMode() == HdPlaybackMode::APP_LEVEL;
             });
-        CHECK_AND_RETURN_RET_LOG(deviceDescIt == deviceDescs.end(), true, "only support app level");
+        CHECK_AND_RETURN_RET_LOG(deviceDescIt == streamDesc->newDeviceDescs_.end(), true, "only support app level");
     }
     return false;
 }
