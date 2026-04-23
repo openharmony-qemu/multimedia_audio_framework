@@ -35,13 +35,17 @@ public:
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = INVALID_UID);
     int32_t UnsetPreferredOutputDeviceChangeCallback(
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr,
+        const AudioRendererInfo &rendererInfo = {},
+        const int32_t uid = INVALID_UID);
     int32_t GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     int32_t SetPreferredInputDeviceChangeCallback(AudioCapturerInfo capturerInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback, const int32_t uid = INVALID_UID);
     int32_t UnsetPreferredInputDeviceChangeCallback(
-        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr);
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr,
+        const AudioCapturerInfo &capturerInfo = {},
+        const int32_t uid = INVALID_UID);
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();

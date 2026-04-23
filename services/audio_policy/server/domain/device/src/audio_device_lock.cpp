@@ -45,21 +45,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetDevices(
     return audioConnectedDevice_.GetDevicesInner(deviceFlag);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, std::string networkId)
-{
-    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    const int32_t callingUid = IPCSkeleton::GetCallingUid();
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, callingUid);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
-{
-    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
-}
-
 void AudioDeviceLock::UpdateAppVolume(int32_t appUid, int32_t volume)
 {
     AUDIO_INFO_LOG("appUid = %{public}d, volume = %{public}d", appUid, volume);

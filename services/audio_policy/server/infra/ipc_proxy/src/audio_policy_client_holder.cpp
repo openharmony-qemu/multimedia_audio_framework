@@ -115,7 +115,7 @@ void AudioPolicyClientHolder::OnMicStateUpdated(const MicStateChangeEvent &micSt
     audioPolicyClient_->OnMicStateUpdated(micStateChangeEvent);
 }
 
-void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo, int32_t uid,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
@@ -125,10 +125,10 @@ void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRenderer
         clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
         deviceDesc->SetClientInfo(clientInfo);
     }
-    audioPolicyClient_->OnPreferredOutputDeviceUpdated(rendererInfo, desc);
+    audioPolicyClient_->OnPreferredOutputDeviceUpdated(rendererInfo, uid, desc);
 }
 
-void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo, int32_t uid,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
@@ -138,7 +138,7 @@ void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerI
         clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
         deviceDesc->SetClientInfo(clientInfo);
     }
-    audioPolicyClient_->OnPreferredInputDeviceUpdated(capturerInfo, desc);
+    audioPolicyClient_->OnPreferredInputDeviceUpdated(capturerInfo, uid, desc);
 }
 
 void AudioPolicyClientHolder::OnRendererStateChange(

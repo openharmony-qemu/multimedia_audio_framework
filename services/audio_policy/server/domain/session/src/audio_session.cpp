@@ -24,7 +24,7 @@
 #include "audio_router_infra.h"
 #include "audio_stream_descriptor.h"
 #include "audio_active_device.h"
-#include "audio_device_common.h"
+#include "audio_core_service.h"
 #include "app_mgr_client.h"
 #include "audio_device_manager.h"
 #include "audio_pipe_manager.h"
@@ -204,8 +204,10 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
     needToFetch_ = (EnableDefaultDevice() == NEED_TO_FETCH) ? true : false;
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = GetStreamUsageInner();
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERROR, "AudioCoreService is null");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredOutputDevices =
-        AudioDeviceCommon::GetInstance().GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID);
+        coreService->GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID);
     if ((preferredOutputDevices.size() == 0) || (preferredOutputDevices[0] == nullptr)) {
         deviceDescriptor_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(callerUid_);
     } else {

@@ -1974,7 +1974,8 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     bool forceNoBTPermission, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     AudioRendererInfo newRendererInfo = rendererInfo;
-    deviceDescs = audioDeviceLock_.GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID);
+    deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(newRendererInfo, IPCSkeleton::GetCallingUid(),
+        LOCAL_NETWORK_ID);
 
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {

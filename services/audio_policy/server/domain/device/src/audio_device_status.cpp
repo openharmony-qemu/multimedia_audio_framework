@@ -128,6 +128,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     updatedDesc.hasPair_ = hasPair;
     updatedDesc.modemCallSupported_ = !(updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "AudioCoreService is null");
 
     if (isConnected) {
         // If device already in list, remove it else do not modify the list
@@ -139,19 +141,6 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
         audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
 
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-#ifdef BLUETOOTH_ENABLE
-    if (updatedDesc.connectState_ == CONNECTED &&
-        updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AudioRendererInfo rendererInfo = {};
-        rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-            audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo);
-        if (preferredDeviceList.size() > 0 &&
-            preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::AudioHfpManager::SetActiveHfpDevice(preferredDeviceList[0]->macAddress_);
-        }
-    }
-#endif
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -161,8 +150,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
     // fetch input&output device
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceStatusUpdated_2", reason);
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_2", reason);
+    coreService->FetchOutputDeviceAndRoute("OnDeviceStatusUpdated_2", reason);
+    coreService->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_2", reason);
 
     if (!isConnected) {
         result = HandleLocalDeviceDisconnected(updatedDesc);
@@ -1423,24 +1412,6 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
     AUDIO_INFO_LOG("Device: %{public}d, isConnected: %{public}d", updatedDesc.deviceType_, isConnected);
 }
 
-#ifdef BLUETOOTH_ENABLE
-void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
-{
-    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
-        AudioRendererInfo rendererInfo = {};
-        rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-            audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo);
-        CHECK_AND_RETURN(preferredDeviceList.size() > 0);
-        if (preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::AudioHfpManager::SetActiveHfpDevice(preferredDeviceList[0]->macAddress_);
-        } else {
-            Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
-        }
-    }
-}
-#endif
-
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     HILOG_COMM_WARN("[ADeviceEvent] bt [%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
@@ -1609,9 +1580,6 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
-#ifdef BLUETOOTH_ENABLE
-        CheckAndActiveHfpDevice(desc);
-#endif
     }
 }
 
