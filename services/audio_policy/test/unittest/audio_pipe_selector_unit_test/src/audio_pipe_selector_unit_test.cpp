@@ -412,6 +412,52 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name: JudgeStreamAction_008
+ * @tc.desc: Test JudgeStreamAction when newPipe and oldPipe have the same adapterName, routeFlag and name_.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_008, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
+    newPipe->adapterName_ = "test_adapter";
+    newPipe->routeFlag_ = 1;
+    newPipe->name_ = "pipe_name";
+
+    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
+    oldPipe->adapterName_ = "test_adapter";
+    oldPipe->routeFlag_ = 1;
+    oldPipe->name_ = "pipe_name";
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
+    EXPECT_EQ(result, AUDIO_STREAM_ACTION_DEFAULT);
+}
+
+/**
+ * @tc.name: JudgeStreamAction_009
+ * @tc.desc: Test JudgeStreamAction when adapterName and routeFlag are the same but name_ is different.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_009, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
+    newPipe->adapterName_ = "test_adapter";
+    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    newPipe->name_ = "pipe_name_new";
+
+    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
+    oldPipe->adapterName_ = "test_adapter";
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    oldPipe->name_ = "pipe_name_old";
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
+    EXPECT_EQ(result, AUDIO_STREAM_ACTION_MOVE);
+}
+
+/**
  * @tc.name: FetchPipeAndExecute_001
  * @tc.desc: Test FetchPipeAndExecute when streamDesc->routeFlag_ == AUDIO_FLAG_NONE and enter the first if branch,
  *           then enter the first for loop's if branch, do not enter the second if branch, finally enter the second

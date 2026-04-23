@@ -305,6 +305,56 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSamePipe_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsSamePipe_005
+ * @tc.desc: Test IsSamePipe when adapterName, routeFlag and name_ are all the same.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSamePipe_005, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    std::shared_ptr<AudioPipeInfo> info = std::make_shared<AudioPipeInfo>();
+    info->adapterName_ = "test_adapter";
+    info->routeFlag_ = 1;
+    info->name_ = "pipe_name";
+    info->id_ = 123;
+
+    std::shared_ptr<AudioPipeInfo> cmpInfo = std::make_shared<AudioPipeInfo>();
+    cmpInfo->adapterName_ = "test_adapter";
+    cmpInfo->routeFlag_ = 1;
+    cmpInfo->name_ = "pipe_name";
+    cmpInfo->id_ = 456;
+
+    bool result = audioPipeManager->IsSamePipe(info, cmpInfo);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: IsSamePipe_006
+ * @tc.desc: Test IsSamePipe when adapterName and routeFlag are the same but name_ is different.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSamePipe_006, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    std::shared_ptr<AudioPipeInfo> info = std::make_shared<AudioPipeInfo>();
+    info->adapterName_ = "test_adapter";
+    info->routeFlag_ = 1;
+    info->name_ = "pipe_name_1";
+    info->id_ = 123;
+
+    std::shared_ptr<AudioPipeInfo> cmpInfo = std::make_shared<AudioPipeInfo>();
+    cmpInfo->adapterName_ = "test_adapter";
+    cmpInfo->routeFlag_ = 1;
+    cmpInfo->name_ = "pipe_name_2";
+    cmpInfo->id_ = 456;
+
+    bool result = audioPipeManager->IsSamePipe(info, cmpInfo);
+    EXPECT_FALSE(result);
+}
+
+/**
  * @tc.name: GetUnusedPipe_001
  * @tc.desc: Test GetUnusedPipe when pipe meets the conditions (streamDescriptors is empty and routeFlag is special).
  * @tc.type: FUNC
