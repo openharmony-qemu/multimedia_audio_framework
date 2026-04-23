@@ -946,6 +946,9 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
 
 void VolumeDataMaintainer::CheckNotificationVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
 {
+    // There is no notification volume on PC. (only all and system)
+    CHECK_AND_RETURN(!VolumeUtils::IsPCVolumeEnable());
+
     // If the user upgrades from the version without notification volume,
     // it is necessary to check whether the initial value of the notification volume is correct.
     if (CheckVolumeState(device, STREAM_NOTIFICATION) != SUCCESS) {
