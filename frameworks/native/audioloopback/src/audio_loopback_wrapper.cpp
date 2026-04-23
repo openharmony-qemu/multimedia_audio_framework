@@ -27,8 +27,6 @@ AudioLoopbackWrapper::AudioLoopbackWrapper(AudioLoopbackMode mode, LoopbackType 
     if (type == LOOPBACK_TYPE_NORMAL || type == LOOPBACK_TYPE_GLOBAL_HANDLER) {
         private_ = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
     }
-
-    callbackStub_ = new LoopbackCallback(shared_from_this());
 }
 
 AudioLoopbackWrapper::~AudioLoopbackWrapper()
@@ -51,6 +49,7 @@ int32_t AudioLoopbackWrapper::Init()
 
 int32_t AudioLoopbackWrapper::CreateLoopbackIpc()
 {
+    callbackStub_ = new LoopbackCallback(shared_from_this());
     sptr<IRemoteObject> loopbackRemote;
     int32_t result = AudioPolicyManager::GetInstance().CreateLoopback(mode_, type_, callbackStub_, loopbackRemote);
     if (result != SUCCESS) {
@@ -287,10 +286,9 @@ void AudioLoopbackWrapper::OnCommandResult(int command, bool success, int errorC
 {
     AUDIO_DEBUG_LOG("OnCommandResultFromServer, command %{public}d, success %{public}d, error %{public}d",
         command, success, errorCode);
-
-    std::lock_guard<std::mutex> lock(callbackMutex_);
-    if (!success && userCallback_ != nullptr) {
-        userCallback_->OnStatusChange(LOOPBACK_UNAVAILABLE_SCENE, CMD_FROM_SYSTEM);
+    bool isEnable = static_cast<LoopbackCommand>(command) == LOOPBACK_CMD_ENABLE ? true : false;
+    if (private_ != nullptr) {
+        private_->Enable(isEnable);
     }
 }
 
@@ -299,7 +297,7 @@ void AudioLoopbackWrapper::OnStatusChange(int status, int reason)
     AUDIO_DEBUG_LOG("OnStatusChangeFromServer, status %{public}d, reason %{public}d", status, reason);
 
     std::lock_guard<std::mutex> lock(callbackMutex_);
-    if (userCallback_ != nullptr) {
+    if (userCallback_ != nullptr && type_ == LOOPBACK_TYPE_GLOBAL_CONTROL) {
         userCallback_->OnStatusChange(static_cast<AudioLoopbackStatus>(status), CMD_FROM_SYSTEM);
     }
 }

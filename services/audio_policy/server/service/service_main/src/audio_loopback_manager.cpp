@@ -111,6 +111,7 @@ void AudioLoopbackManager::RegisterLoopback(LoopbackType type, int32_t pid,
                 [this, pid]() { OnControlDied(pid); });
             callback->AsObject()->AddDeathRecipient(deathRecipient);
             globalControls_[pid] = loopbackInServer;
+            globalControlCallbacks_[pid] = callback;
             AUDIO_INFO_LOG("global control registered for pid %{public}d", pid);
             break;
         }
@@ -148,6 +149,11 @@ int32_t AudioLoopbackManager::DestroyLoopback(LoopbackType type, int32_t pid)
             if (it != globalControls_.end()) {
                 globalControls_.erase(it);
                 AUDIO_INFO_LOG("global control destroyed for pid %{public}d", pid);
+            }
+            auto itr = globalControlCallbacks_.find(pid);
+            if (itr != globalControlCallbacks_.end()) {
+                globalControlCallbacks_.erase(itr);
+                AUDIO_INFO_LOG("global control callback destroyed for pid %{public}d", pid);
             }
             break;
         }
@@ -191,6 +197,14 @@ int32_t AudioLoopbackManager::Enable(LoopbackType type, bool enable, int32_t pid
         BroadcastToControls(enable ? static_cast<int>(LOOPBACK_CMD_ENABLE) : static_cast<int>(LOOPBACK_CMD_DISABLE),
             true, SUCCESS);
         return SUCCESS;
+    }
+
+    if (type == LOOPBACK_TYPE_GLOBAL_HANDLER) {
+        if (enable) {
+            globalHandlerState_ = LOOPBACK_AVAILABLE_RUNNING;
+        } else {
+            globalHandlerState_ = LOOPBACK_AVAILABLE_IDLE;
+        }
     }
 
     return SUCCESS;
@@ -253,6 +267,10 @@ void AudioLoopbackManager::OnControlDied(int32_t pid)
     if (it != globalControls_.end()) {
         globalControls_.erase(it);
     }
+    auto itr = globalControlCallbacks_.find(pid);
+    if (itr != globalControlCallbacks_.end()) {
+        globalControlCallbacks_.erase(itr);
+    }
 }
 
 void AudioLoopbackManager::OnNormalDied(int32_t pid)
@@ -268,14 +286,13 @@ void AudioLoopbackManager::OnNormalDied(int32_t pid)
 
 void AudioLoopbackManager::BroadcastToControls(int command, bool success, int errorCode)
 {
-    for (auto &item : globalControls_) {
-        auto loopbackInServer = item.second;
-        if (loopbackInServer != nullptr) {
-            int32_t result = SUCCESS;
+    for (auto &item : globalControlCallbacks_) {
+        auto loopbackCb= item.second;
+        if (loopbackCb != nullptr) {
             if (command == LOOPBACK_CMD_ENABLE) {
-                loopbackInServer->Enable(true, result);
+                loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
             } else if (command == LOOPBACK_CMD_DISABLE) {
-                loopbackInServer->Enable(false, result);
+                loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM);
             }
         }
     }
@@ -283,11 +300,10 @@ void AudioLoopbackManager::BroadcastToControls(int command, bool success, int er
 
 void AudioLoopbackManager::BroadcastStatusChange(int status, int reason)
 {
-    for (auto &item : globalControls_) {
-        auto loopbackInServer = item.second;
-        if (loopbackInServer != nullptr) {
-            int32_t result = SUCCESS;
-            loopbackInServer->GetStatus(status, result);
+    for (auto &item : globalControlCallbacks_) {
+        auto loopbackCb= item.second;
+        if (loopbackCb != nullptr) {
+            loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM);
         }
     }
 }

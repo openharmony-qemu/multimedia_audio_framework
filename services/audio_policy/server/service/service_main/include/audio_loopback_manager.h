@@ -73,6 +73,7 @@ private:
     AudioLoopbackStatus globalHandlerState_ = LOOPBACK_AVAILABLE_IDLE;
 
     std::map<int32_t, sptr<LoopbackInServer>> globalControls_;
+    std::map<int32_t, sptr<ILoopbackCallback>> globalControlCallbacks_;
 
     float globalHandlerVolume_ = 0.0f;
 

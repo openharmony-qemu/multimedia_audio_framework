@@ -19,6 +19,7 @@
 #include <memory>
 #include <mutex>
 
+#include "audio_errors.h"
 #include "audio_loopback.h"
 #include "audio_loopback_private.h"
 #include "audio_policy_manager.h"
