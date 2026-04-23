@@ -2110,7 +2110,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     }
     attr.address = audioModuleInfo.macAddress;
     if (!audioModuleInfo.hdPlayBackMode.empty()) {
-        attr.hdPlayBackMode = std::stoi(audioModuleInfo.hdPlayBackMode);
+        attr.hdPlayBackMode = static_cast<int32_t>(std::stoul(audioModuleInfo.hdPlayBackMode));
     }
     return attr;
 }

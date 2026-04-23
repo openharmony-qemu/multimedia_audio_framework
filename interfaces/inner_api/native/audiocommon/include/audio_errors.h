@@ -297,7 +297,7 @@ enum class OperationType : uint8_t {
     RECORD = 0x02,
     CONTROL = 0x03,
     EDIT = 0x04,
-    HIPLAY = 0x05,
+    HDPLAY = 0x05,
 };
 
 enum class BusinessScenario : uint8_t {
@@ -324,6 +324,52 @@ constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operati
         (static_cast<uint32_t>(scenario) << BUSINESS_SCENARIO_BIT_NUM) |
         ((BASE_AUDIO_ERR_OFFSET - detail) & 0xFF));
 }
+
+// HDPLAY Error Codes
+// CREATE scenario
+constexpr int32_t HDPLAY_CREATE_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::CREATE, ERR_INVALID_HANDLE);
+
+constexpr int32_t HDPLAY_CREATE_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::CREATE, ERR_NOT_STARTED);
+
+// START scenario
+constexpr int32_t HDPLAY_START_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::START, ERR_NOT_STARTED);
+
+// SEND_DATA scenario
+constexpr int32_t HDPLAY_SEND_DATA_WRITE_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::SEND_DATA, ERR_WRITE_FAILED);
+
+// PAUSE scenario
+constexpr int32_t HDPLAY_PAUSE_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::PAUSE, ERR_NOT_STARTED);
+
+// STOP scenario
+constexpr int32_t HDPLAY_STOP_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::STOP, ERR_NOT_STARTED);
+
+// FLUSH scenario
+constexpr int32_t HDPLAY_FLUSH_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::FLUSH, ERR_OPERATION_FAILED);
+
+// QUERY scenario
+constexpr int32_t HDPLAY_QUERY_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+
+// CALLBACK scenario
+constexpr int32_t HDPLAY_CALLBACK_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+
+// CONFING scenario
+constexpr int32_t HDPLAY_CONFING_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+
+constexpr int32_t HDPLAY_CONFING_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_INVALID_HANDLE);
+
+constexpr int32_t HDPLAY_CONFING_VOLUME_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
 
 }  // namespace AudioStandard
 }  // namespace OHOS

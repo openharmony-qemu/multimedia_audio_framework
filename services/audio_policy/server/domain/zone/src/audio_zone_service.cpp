@@ -28,8 +28,6 @@
 #include "audio_device_manager.h"
 #include "audio_connected_device.h"
 #include "audio_volume_manager.h"
-#include "dfx/stream_dfx_manager.h"
-#include <unistd.h>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -74,13 +72,8 @@ int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZo
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
-        if (zoneMaps_.find(zoneId) != zoneMaps_.end()) {
-            AUDIO_ERR_LOG("zone id %{public}d is duplicate", zoneId);
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::HIPLAY, BusinessScenario::CREATE, ERROR),
-                "zone id " + std::to_string(zoneId) + " is duplicate", false);
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(zoneMaps_.find(zoneId) == zoneMaps_.end(),
+            ERROR, "zone id %{public}d is duplicate", zoneId);
 
         zoneMaps_[zoneId] = zone;
 
@@ -110,11 +103,7 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
-        CHECK_AND_CALL_FUNC_RETURN_LOG(zoneMaps_.find(zoneId) != zoneMaps_.end(),
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::HIPLAY,
-                    BusinessScenario::RELEASE, ERROR),
-                "zone id " + std::to_string(zoneId) + " is not found", false),
+        CHECK_AND_RETURN_LOG(zoneMaps_.find(zoneId) != zoneMaps_.end(),
             "zone id %{public}d is not found", zoneId);
 
         zoneMaps_.erase(zoneId);
@@ -192,24 +181,10 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
-        if (zone == nullptr) {
-            AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::HIPLAY,
-                    BusinessScenario::DEVICE_SWITCH, ERROR),
-                "zone id " + std::to_string(zoneId) + " is not found", false);
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
 
         int ret = zone->AddDeviceDescriptor(devices);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("bind device to zone failed");
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::HIPLAY,
-                    BusinessScenario::DEVICE_SWITCH, ret),
-                "bind device to zone failed", false);
-            return ret;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "bind device to zone failed");
     }
 
     for (auto device : devices) {
@@ -235,14 +210,7 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
-        if (zone == nullptr) {
-            AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::HIPLAY,
-                    BusinessScenario::DEVICE_SWITCH, ERROR),
-                "zone id " + std::to_string(zoneId) + " is not found", false);
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
 
         for (auto it : devices) {
             CHECK_AND_CONTINUE_LOG(it != nullptr, "device is nullptr");
@@ -405,14 +373,7 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
         std::lock_guard<std::mutex> lock(zoneMutex_);
         srcZoneId = FindAudioZoneByKey(uid, deviceTag, streamTag, usage);
         auto zone = FindZone(zoneId);
-        if (zone == nullptr) {
-            AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(uid,
-                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::HIPLAY,
-                    BusinessScenario::CREATE, ERROR),
-                "zone id " + std::to_string(zoneId) + " is not found", false);
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
 
         for (const auto &it : zoneMaps_) {
             CHECK_AND_CONTINUE_LOG(it.first != zoneId && it.second != nullptr,
@@ -510,14 +471,7 @@ int32_t AudioZoneService::RemoveKeysFromAudioZone(int32_t zoneId, const std::vec
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
-        if (zone == nullptr) {
-            AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_GENERAL, OperationType::HIPLAY,
-                    BusinessScenario::RELEASE, ERROR),
-                "zone id " + std::to_string(zoneId) + " is not found", false);
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
         for (const auto &bindKey : bindKeys) {
             AUDIO_DEBUG_LOG("remove key '%{public}s' from zone %{public}d", bindKey.GetString().c_str(), zoneId);
             zone->RemoveKey(bindKey);
