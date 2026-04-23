@@ -1818,13 +1818,11 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_002, TestSize.Le
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallbackHaveData, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // Using non-frame aligned output capacity (STEREO + S16LE = 4 bytes per frame, 1022 is not divisible by 4)
     uint8_t outputData[CUSTOM_BUFFER_SIZE_1022] = {0};
     int32_t outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // The output size should be frame-aligned (a multiple of 4).
     EXPECT_EQ(outputSize % 4, 0);
 
     OH_AudioConverter_Destroy(converter);
@@ -1853,7 +1851,6 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_003, TestSize.Le
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // The first call generates cached data.
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_016, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
@@ -1862,7 +1859,6 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_003, TestSize.Le
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // The second call may use the remaining cached data (partially copied branch).
     outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
