@@ -1240,7 +1240,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
         audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc, true, streamDesc);
         if (pipeManager_->GetUpdateRouteSupport()) {
-            UpdateOutputRoute(streamDesc);
+            UpdateOutputRoute(streamDesc, pipeManager_->QueryPipeIdBySessionId(sessionId));
         }
         streamCollector_.UpdateRendererDeviceInfo(deviceDesc);
     } else {

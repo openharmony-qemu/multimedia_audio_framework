@@ -21,6 +21,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t DEFAULT_PIPE_ID = 0;
 
 void AudioPipeManagerUnitTest::SetUpTestCase(void) {}
 void AudioPipeManagerUnitTest::TearDownTestCase(void) {}
@@ -2942,6 +2943,109 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeDeviceVolumeInfoForDevice_009, TestSiz
     
     auto result = audioPipeManager->GetPipeDeviceVolumeInfoForDevice(queryDevice);
     EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: QueryPipeIdBySessionId_001
+ * @tc.desc: Test QueryPipeIdBySessionId when sessionId not found and pipeList is empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, QueryPipeIdBySessionId_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    uint32_t targetSessionId = 123456;
+    uint32_t pipeId = audioPipeManager->QueryPipeIdBySessionId(targetSessionId);
+    // IS_DEVICE_ENHANCED_SUPPORTED is compile-time constant (default false)
+    // When disabled: expect DEFAULT_PIPE_ID (0)
+    EXPECT_EQ(pipeId, DEFAULT_PIPE_ID);
+}
+
+/**
+ * @tc.name: QueryPipeIdBySessionId_002
+ * @tc.desc: Test QueryPipeIdBySessionId when sessionId exists in pipeList.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, QueryPipeIdBySessionId_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    uint32_t targetSessionId = 123456;
+    uint32_t expectedPipeId = 100;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = expectedPipeId;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = targetSessionId;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t pipeId = audioPipeManager->QueryPipeIdBySessionId(targetSessionId);
+    EXPECT_EQ(pipeId, expectedPipeId);
+}
+
+/**
+ * @tc.name: QueryPipeIdBySessionId_003
+ * @tc.desc: Test QueryPipeIdBySessionId when sessionId not found but pipeList has other sessions.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, QueryPipeIdBySessionId_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    uint32_t existingSessionId = 111;
+    uint32_t targetSessionId = 222;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = 50;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = existingSessionId;
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t pipeId = audioPipeManager->QueryPipeIdBySessionId(targetSessionId);
+    // sessionId not found, return DEFAULT_PIPE_ID when multi-device disabled
+    EXPECT_EQ(pipeId, DEFAULT_PIPE_ID);
+}
+
+/**
+ * @tc.name: QueryPipeIdBySessionId_004
+ * @tc.desc: Test QueryPipeIdBySessionId with multiple pipeInfos containing different sessions.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, QueryPipeIdBySessionId_004, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    uint32_t sessionId1 = 100;
+    uint32_t sessionId2 = 200;
+    uint32_t pipeId1 = 10;
+    uint32_t pipeId2 = 20;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo1 = std::make_shared<AudioPipeInfo>();
+    pipeInfo1->id_ = pipeId1;
+    std::shared_ptr<AudioStreamDescriptor> desc1 = std::make_shared<AudioStreamDescriptor>();
+    desc1->sessionId_ = sessionId1;
+    pipeInfo1->streamDescriptors_.push_back(desc1);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo1);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo2 = std::make_shared<AudioPipeInfo>();
+    pipeInfo2->id_ = pipeId2;
+    std::shared_ptr<AudioStreamDescriptor> desc2 = std::make_shared<AudioStreamDescriptor>();
+    desc2->sessionId_ = sessionId2;
+    pipeInfo2->streamDescriptors_.push_back(desc2);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo2);
+
+    EXPECT_EQ(audioPipeManager->QueryPipeIdBySessionId(sessionId1), pipeId1);
+    EXPECT_EQ(audioPipeManager->QueryPipeIdBySessionId(sessionId2), pipeId2);
 }
 } // namespace AudioStandard
 } // namespace OHOS

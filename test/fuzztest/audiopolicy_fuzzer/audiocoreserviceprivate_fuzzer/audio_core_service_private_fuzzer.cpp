@@ -572,7 +572,8 @@ void AudioCoreServicePrivateUpdateOutputRouteFuzzTest()
     }
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioCoreService->UpdateOutputRoute(streamDesc);
+    uint32_t pipeId = GetData<uint32_t>();
+    audioCoreService->UpdateOutputRoute(streamDesc, pipeId);
 }
 
 void AudioCoreServicePrivateOnPreferredInputDeviceUpdatedFuzzTest()
