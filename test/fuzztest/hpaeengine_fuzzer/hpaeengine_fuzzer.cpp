@@ -74,7 +74,7 @@ public:
     {
         return;
     }
-    void OnSetVolumeDbCb() override
+    void OnSetVolumeDbCb()
     {
         return;
     }

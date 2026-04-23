@@ -663,7 +663,7 @@ void EnableCollaborationWithMovieSceneFuzzTest()
     rendererManager->DeInit();
 }
 
-void OnCollborationFadeDoneFuzzTest()
+void OnCollaborationFadeDoneFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
@@ -765,7 +765,7 @@ TestFuncs g_testFuncs[] = {
     ReConnectNodeForCollaborationFuzzTest,
     EnableAndDisableCollaborationFuzzTest,
     EnableCollaborationWithMovieSceneFuzzTest,
-    OnCollborationFadeDoneFuzzTest,
+    OnCollaborationFadeDoneFuzzTest,
     OnFadeDoneWithActiveSessionFuzzTest,
     CoBufferConnectDisconnectSequenceFuzzTest,
     ConnectProcessClusterFullFlowFuzzTest,

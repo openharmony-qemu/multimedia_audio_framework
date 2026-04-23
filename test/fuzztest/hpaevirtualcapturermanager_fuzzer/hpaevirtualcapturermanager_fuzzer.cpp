@@ -312,6 +312,7 @@ void AddNodeToSourceFuzzTest()
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_S16LE;
     nodeInfo.sceneType = HPAE_SCENE_RECORD;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     moveInfo.sessionId = GetData<uint32_t>();
     moveInfo.sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     mgr->AddNodeToSource(moveInfo);
