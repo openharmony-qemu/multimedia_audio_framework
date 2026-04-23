@@ -146,6 +146,8 @@ int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &aud
     if (IsValidAudioSamplingRate(intValue)) {
         audioStreamInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     } else if (IsRendererCustomSampleRateValid(intValue)) {
+        // When using custom sample rate, set samplingRate to a valid enum value as placeholder.
+        // The actual rate is stored in customSampleRate field.
         audioStreamInfo.samplingRate = OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000;
         audioStreamInfo.customSampleRate = static_cast<uint32_t>(intValue);
     } else {
@@ -481,10 +483,10 @@ int32_t TaiheParamUtils::GetIntValueFromSamplingRateUnion(AudioSamplingRateOrInt
 
 bool TaiheParamUtils::IsRendererCustomSampleRateValid(int32_t sampleRate)
 {
-    return (sampleRate >= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000 &&
+    return ((sampleRate >= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000 &&
         sampleRate <= OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_384000 &&
-        (sampleRate % OHOS::AudioStandard::SAMPLE_RATE_RESOLUTION_10 == 0) ||
-        (sampleRate == static_cast<int32_t>(OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_11025)));    
+        sampleRate % OHOS::AudioStandard::SAMPLE_RATE_RESOLUTION_10 == 0) ||
+        (sampleRate == static_cast<int32_t>(OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_11025)));
 }
 
 bool TaiheParamUtils::IsValidAudioSamplingRate(int32_t sampleRate)
