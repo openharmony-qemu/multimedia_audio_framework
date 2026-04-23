@@ -144,6 +144,8 @@ private:
     int32_t FlushInner(void);
     bool IsValidState();
     int32_t GetFirstUid();
+    void ReportHdPlayError(ProblemCategory category,
+        BusinessScenario scenario, int32_t errorCode, const std::string &desc);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
