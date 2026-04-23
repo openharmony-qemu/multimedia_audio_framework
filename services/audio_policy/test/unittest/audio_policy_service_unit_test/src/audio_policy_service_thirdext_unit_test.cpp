@@ -1628,6 +1628,122 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_003, TestSize.Level
 }
 
 /**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_001
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns matched stream prop.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_001, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    auto usbStreamProp = std::make_shared<PipeStreamPropInfo>();
+    usbStreamProp->channels_ = STEREO;
+    usbStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_USB_HEADSET, std::make_shared<AdapterDeviceInfo>()});
+    auto micStreamProp = std::make_shared<PipeStreamPropInfo>();
+    micStreamProp->channels_ = CHANNEL_3;
+    micStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_MIC, std::make_shared<AdapterDeviceInfo>()});
+    streamPropInfos.push_back(usbStreamProp);
+    streamPropInfos.push_back(micStreamProp);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, micStreamProp);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_002
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice skips nullptr items and finds matched stream prop.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_002, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    streamPropInfos.push_back(nullptr);
+    auto micStreamProp = std::make_shared<PipeStreamPropInfo>();
+    micStreamProp->channels_ = CHANNEL_3;
+    micStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_MIC, std::make_shared<AdapterDeviceInfo>()});
+    streamPropInfos.push_back(micStreamProp);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, micStreamProp);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_003
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice falls back to front when no device matches.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_003, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    auto frontStreamProp = std::make_shared<PipeStreamPropInfo>();
+    frontStreamProp->channels_ = STEREO;
+    streamPropInfos.push_back(frontStreamProp);
+    streamPropInfos.push_back(nullptr);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, frontStreamProp);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_004
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns nullptr for empty stream prop list.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_004, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_005
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns nullptr when front item is nullptr and no match exists.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_005, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    streamPropInfos.push_back(nullptr);
+    auto usbStreamProp = std::make_shared<PipeStreamPropInfo>();
+    usbStreamProp->channels_ = STEREO;
+    usbStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_USB_HEADSET, std::make_shared<AdapterDeviceInfo>()});
+    streamPropInfos.push_back(usbStreamProp);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_006
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns nullptr when all items are nullptr.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_006, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    streamPropInfos.push_back(nullptr);
+    streamPropInfos.push_back(nullptr);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
 * @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: UpdateBasicStreamInfo_001
 * @tc.desc  : Test UpdateBasicStreamInfo

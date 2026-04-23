@@ -14,6 +14,8 @@
  */
 
 #include "audio_interrupt_unit_test.h"
+#include "audio_interrupt_strategy.h"
+
 using namespace testing::ext;
 
 namespace OHOS {
@@ -821,6 +823,8 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_007, TestSize.Lev
 */
 HWTEST_F(AudioInterruptServiceUnitTest, AudioInterruptStrategy_001, TestSize.Level1)
 {
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
     int32_t fakePid = 123;
     AudioInterrupt incomingInterrupt1;
     incomingInterrupt1.pid = fakePid;
@@ -836,12 +840,12 @@ HWTEST_F(AudioInterruptServiceUnitTest, AudioInterruptStrategy_001, TestSize.Lev
 
     AudioFocusEntry focusEntry;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService_->UpdateMuteAudioFocusStrategy(incomingInterrupt1, incomingInterrupt2, focusEntry);
+    audioInterruptStrategy->UpdateMuteAudioFocusStrategy(incomingInterrupt1, incomingInterrupt2, focusEntry);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_MUTE);
 
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
 
-    audioInterruptService_->UpdateMuteAudioFocusStrategy(incomingInterrupt2, incomingInterrupt1, focusEntry);
+    audioInterruptStrategy->UpdateMuteAudioFocusStrategy(incomingInterrupt2, incomingInterrupt1, focusEntry);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_MUTE);
 }
 
@@ -864,6 +868,117 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_008, TestSize.Lev
         &AudioInterruptServiceUnitTest::ThreadRun, this);
     bool ret = audioInterruptService->stopFuture_.valid();
     EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test MirrorInterPhoneInterrupt
+ * @tc.number: MirrorInterPhoneInterrupt
+ * @tc.desc  : Test MirrorInterPhoneInterrupt
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, MirrorInterPhoneInterrupt, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+ 
+    AudioInterrupt sourceInterrupt;
+    sourceInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INTERPHONE;
+    audioInterruptService->MirrorInterPhoneInterrupt(sourceInterrupt);
+    EXPECT_EQ(sourceInterrupt.sourceType, SOURCE_TYPE_INTERPHONE);
+}
+ 
+/**
+ * @tc.name  : Test IsVoipInterrupt
+ * @tc.number: IsVoipInterrupt01
+ * @tc.desc  : Test IsVoipInterrupt
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, IsVoipInterrupt01, TestSize.Level1)
+{
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    EXPECT_EQ(AudioInterruptUtils::IsVoipInterrupt(audioInterrupt), true);
+}
+ 
+/**
+ * @tc.name  : Test IsVoipInterrupt
+ * @tc.number: IsVoipInterrupt02
+ * @tc.desc  : Test IsVoipInterrupt
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, IsVoipInterrupt02, TestSize.Level1)
+{
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    EXPECT_EQ(AudioInterruptUtils::IsVoipInterrupt(audioInterrupt), true);
+}
+ 
+/**
+ * @tc.name  : Test UpdateInterPhoneStrategy
+ * @tc.number: UpdateInterPhoneStrategy01
+ * @tc.desc  : Test UpdateInterPhoneStrategy
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, UpdateInterPhoneStrategy01, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+ 
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    activeInterrupt.streamUsage = STREAM_USAGE_INTERPHONE;
+ 
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+ 
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_NONE;
+ 
+    audioInterruptStrategy->UpdateInterPhoneStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+}
+ 
+/**
+ * @tc.name  : Test UpdateInterPhoneStrategy
+ * @tc.number: UpdateInterPhoneStrategy02
+ * @tc.desc  : Test UpdateInterPhoneStrategy
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, UpdateInterPhoneStrategy02, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+ 
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+ 
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    incomingInterrupt.streamUsage = STREAM_USAGE_INTERPHONE;
+ 
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_NONE;
+ 
+    audioInterruptStrategy->UpdateInterPhoneStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+}
+ 
+/**
+ * @tc.name  : Test UpdateInterPhoneStrategy
+ * @tc.number: UpdateInterPhoneStrategy03
+ * @tc.desc  : Test UpdateInterPhoneStrategy
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, UpdateInterPhoneStrategy03, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+ 
+    AudioInterrupt activeInterrupt;
+    AudioInterrupt incomingInterrupt;
+ 
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_NONE;
+ 
+    audioInterruptStrategy->UpdateInterPhoneStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_NONE);
 }
 
 } // namespace AudioStandard

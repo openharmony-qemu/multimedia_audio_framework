@@ -14,6 +14,7 @@
  */
 #include "audio_policy_server.h"
 #include "audio_interrupt_service_second_unit_test.h"
+#include "audio_interrupt_strategy.h"
 
 using namespace testing::ext;
 
@@ -1151,32 +1152,32 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_038, TestSize.
 }
 
 /**
-* @tc.name  : Test AudioInterruptService
+* @tc.name  : Test AudioInterruptStrategy
 * @tc.number: AudioInterruptService_039
 * @tc.desc  : Test UpdateFocusStrategy
 */
 HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_039, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
     string bundleName = "test";
     AudioFocusEntry focusEntry;
     bool isExistMediaStream = true;
     bool isIncomingMediaStream = true;
     sptr<IStandardAudioPolicyManagerListener> listener(new IStandardAudioPolicyManagerListenerStub());
-    audioInterruptService->queryBundleNameListCallback_ = listener;
-    audioInterruptService->UpdateFocusStrategy(bundleName, focusEntry, isExistMediaStream, isIncomingMediaStream);
+    audioInterruptStrategy->queryBundleNameListCallback_ = listener;
+    audioInterruptStrategy->UpdateFocusStrategy(bundleName, focusEntry, isExistMediaStream, isIncomingMediaStream);
 }
 
 /**
-* @tc.name  : Test AudioInterruptService
+* @tc.name  : Test AudioInterruptStrategy
 * @tc.number: AudioInterruptService_040
 * @tc.desc  : Test UpdateMicFocusStrategy
 */
 HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_040, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
     AudioFocusType existAudioFocusType;
     AudioFocusType incomingAudioFocusType;
     incomingAudioFocusType.sourceType = SOURCE_TYPE_INVALID;
@@ -1185,17 +1186,17 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_040, TestSize.
     string bundleName = "test";
     std::string currentBundleName = "currentTest";
     AudioFocusEntry focusEntry;
-    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+    audioInterruptStrategy->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
         currentBundleName, bundleName, focusEntry);
     incomingAudioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
-    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+    audioInterruptStrategy->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
         currentBundleName, bundleName, focusEntry);
     existAudioFocusType.sourceType = SOURCE_TYPE_MIC;
-    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+    audioInterruptStrategy->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
         currentBundleName, bundleName, focusEntry);
     sptr<IStandardAudioPolicyManagerListener> listener(new IStandardAudioPolicyManagerListenerStub());
-    audioInterruptService->queryBundleNameListCallback_ = listener;
-    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+    audioInterruptStrategy->queryBundleNameListCallback_ = listener;
+    audioInterruptStrategy->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
         currentBundleName, bundleName, focusEntry);
 }
 
@@ -1575,19 +1576,19 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_056, TestSize.
 }
 
 /**
-* @tc.name  : Test AudioInterruptService
+* @tc.name  : Test AudioInterruptStrategy
 * @tc.number: AudioInterruptService_057
 * @tc.desc  : Test SetQueryBundleNameListCallback
 */
 HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_057, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
     sptr<IRemoteObject> object = new RemoteObjectTestStub();
-    auto ret = audioInterruptService->SetQueryBundleNameListCallback(object);
+    auto ret = audioInterruptStrategy->SetQueryBundleNameListCallback(object);
     EXPECT_EQ(SUCCESS, ret);
     object = nullptr;
-    ret = audioInterruptService->SetQueryBundleNameListCallback(object);
+    ret = audioInterruptStrategy->SetQueryBundleNameListCallback(object);
     EXPECT_EQ(ERR_CALLBACK_NOT_REGISTERED, ret);
 }
 

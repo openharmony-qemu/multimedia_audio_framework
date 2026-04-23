@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 class StreamVolume;
-class SystemVolume;
+class PipeVolume;
 class AppVolume;
 class SystemAppVolume;
 enum FadePauseState {
@@ -43,7 +43,7 @@ public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t streamType, const std::string &deviceClass,
+    float GetVolume(uint32_t sessionId, int32_t streamType, uint32_t pipeId,
         VolumeValues *volumes); // all volume
     float GetStreamVolume(uint32_t sessionId); // only stream volume factor
     float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
@@ -62,17 +62,17 @@ public:
     void SetNonInterruptMute(uint32_t sessionId, bool muteFlag);
     void SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted);
 
-    // system volume
-    void SetSystemVolume(SystemVolume &systemVolume);
-    void SetSystemVolume(int32_t volumeType, const std::string &deviceClass, float volume, int32_t volumeLevel);
-    void SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted);
-
     // app volume
     void SetAppVolume(AppVolume &appVolume);
     void SetAppVolumeMute(int32_t appUid, bool muted);
     void SetSystemAppVolume(SystemAppVolume &systemAppVolume);
     void SetSystemAppVolumeMuted(int32_t appUid, bool muted);
     bool SetAppRingMuted(int32_t appUid, bool isMuted);
+
+    //pipe volume
+    void SetPipeVolume(PipeVolume &pipeVolume);
+    void SetPipeVolumeMute(uint32_t pipeId, AudioVolumeType volumeType, bool muted);
+    void RemovePipeVolume(uint32_t pipeId, AudioVolumeType volumeType);
 
     // stream type convert
     int32_t ConvertStreamTypeStrToInt(const std::string &streamType);
@@ -89,10 +89,10 @@ public:
     void RemoveStopFadeoutState(uint32_t streamIndex);
     
     void SetDefaultAppVolume(int32_t level);
-    void SetVgsVolumeSupported(bool isVgsSupported);
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
     void SetScoActive(bool isActive);
+    void SetCurrentActiveDevice(DeviceType currentActiveDevice);
     DeviceType GetCurrentActiveDevice();
     void SetDoNotDisturbStatusVolume(uint32_t sessionId, float volume);
     uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId);
@@ -109,20 +109,17 @@ public:
 private:
     AudioVolume();
     float GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode);
-    bool IsVgsVolumeSupported() const;
     uint32_t GetDoNotDisturbStatusVolumeInternal(int32_t volumeType, int32_t appUid, uint32_t sessionId);
     void ConstructEnforcedToneVolumeValues(VolumeValues *volumes);
-    void GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, const std::string &deviceClass,
-        VolumeValues *volumes);
+    void GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, uint32_t pipeId, VolumeValues *volumes);
     bool ShouldApplySystemAppVolume(AudioStreamType streamType);
     float GetSystemAppVolumeEffective(StreamVolume &stream);
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
-    std::unordered_map<std::string, SystemVolume> systemVolume_ {};
+    std::unordered_map<std::string, PipeVolume> pipeVolume_ {};
     std::unordered_map<int32_t, AppVolume> appVolume_ {};
     std::unordered_map<int32_t, SystemAppVolume> systemAppVolume_ {};
     std::shared_mutex volumeMutex_ {};
-    bool isVgsVolumeSupported_ = false;
     std::shared_mutex fadeoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
     std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};
@@ -192,23 +189,25 @@ private:
     bool isVirtualKeyboard_ = false;
 };
 
-class SystemVolume {
+class PipeVolume {
 public:
-    SystemVolume(int32_t volumeType, std::string deviceClass, float volume, int32_t volumeLevel, bool isMuted)
-        : volumeType_(volumeType), deviceClass_(deviceClass), volume_(volume),
-        volumeLevel_(volumeLevel), isMuted_(isMuted) {};
-    ~SystemVolume() = default;
-    int32_t GetVolumeType() {return volumeType_;};
-    std::string GetDeviceClass() {return deviceClass_;};
+    PipeVolume() = default;
+    PipeVolume(uint32_t pipeId, AudioVolumeType volumeType, float volume, int32_t noMuteVolumeLevel,
+        bool isMuted)
+        : pipeId_(pipeId), volumeType_(volumeType), noMuteVolumeLevel_(noMuteVolumeLevel),
+        isMuted_(isMuted), volume_(volume), totalVolume_(isMuted ? 0.0f : volume) {};
+    ~PipeVolume() = default;
+    AudioVolumeType GetVolumeType() const {return volumeType_;};
+    int32_t GetPipeId() const {return pipeId_;};
 
 private:
-    int32_t volumeType_ = 0;
-    std::string deviceClass_ = "";
+    uint32_t pipeId_ = 0;
+    AudioVolumeType volumeType_ = STREAM_DEFAULT;
 
 public:
-    float volume_ = 0.0f;
-    int32_t volumeLevel_ = 0;
+    int32_t noMuteVolumeLevel_ = 0;
     bool isMuted_ = false;
+    float volume_ = 0.0f;
     float totalVolume_ = 0.0f;
 };
 

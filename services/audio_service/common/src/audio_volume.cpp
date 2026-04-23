@@ -87,43 +87,47 @@ AudioVolume::~AudioVolume()
     appVolume_.clear();
     systemAppVolume_.clear();
     streamVolume_.clear();
-    systemVolume_.clear();
+    pipeVolume_.clear();
     doNotDisturbStatusWhiteListVolume_.clear();
 }
 
 void AudioVolume::ConstructEnforcedToneVolumeValues(VolumeValues *volumes)
 {
     float fixedVolume = VolumeUtils::GetEnforcedToneVolumeFixed();
-    volumes->volumeSystem = fixedVolume;
+    volumes->volumePipe = fixedVolume;
     volumes->volumeStream = 1.0f;
     volumes->volumeApp = 1.0f;
     volumes->volume = fixedVolume;
     volumes->volumeHistory = fixedVolume;
 }
 
-// Note: Time-consuming logic operations cannot be performed on GetVolume.
-float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::string &deviceClass,
+/**
+ * Since this function is called for each frame of data processing, any operations
+ * added within the function should be done with caution to avoid power consumption
+ * and performance issues.
+ */
+float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamTypeIn, uint32_t pipeId,
     VolumeValues *volumes)
 {
     // read or write volume must be called AudioVolume::volumeMutex_
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
-    AudioStreamType srcStreamType = static_cast<AudioStreamType>(streamType);
-    if (srcStreamType == STREAM_SYSTEM_ENFORCED && VolumeUtils::IsEnforcedToneVolumeFixed()) {
+    AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
+    if (streamType == STREAM_SYSTEM_ENFORCED && VolumeUtils::IsEnforcedToneVolumeFixed()) {
         ConstructEnforcedToneVolumeValues(volumes);
         return volumes->volume;
     }
-    GetVolumeValues(sessionId, srcStreamType, deviceClass, volumes);
+    GetVolumeValues(sessionId, streamType, pipeId, volumes);
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
 }
 
-void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, const std::string &deviceClass,
+void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, uint32_t pipeId,
     VolumeValues *volumes)
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t volumeLevel = 0;
-    int32_t appUid = -1;
     volumes->volumeStream = 1.0f;
+    int32_t appUid = -1;
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         volumes->volumeStream = it->second.totalVolume_;
@@ -137,20 +141,18 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     } else {
         AUDIO_DEBUG_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
-    volumes->volumeSystem = 1.0f;
-    std::string key = std::to_string(volumeType) + deviceClass;
-    auto itSV = systemVolume_.find(key);
-    if (itSV != systemVolume_.end()) {
-        volumes->volumeSystem = itSV->second.totalVolume_;
-        volumeLevel = itSV->second.volumeLevel_;
-        if (streamType == STREAM_VOICE_COMMUNICATION && IsVgsVolumeSupported() && volumes->volumeSystem > 0.0f) {
-            volumes->volumeSystem = 1.0f;
-        }
+    //Some devices and volume types always use the maximum volume and do not maintain it in the pipeVolume
+    volumes->volumePipe = 1.0f;
+    std::string volumeKey = std::to_string(pipeId) + "|" + std::to_string(volumeType);
+    auto itSV = pipeVolume_.find(volumeKey);
+    if (itSV != pipeVolume_.end()) {
+        volumes->volumePipe = itSV->second.totalVolume_;
+        volumeLevel = itSV->second.noMuteVolumeLevel_;
     } else {
-        AUDIO_ERR_LOG("no system volume, volumeType:%{public}d deviceClass%{public}s", volumeType, deviceClass.c_str());
+        AUDIO_ERR_LOG("no pipe volume, volumeType:%{public}d pipeId:%{public}d", volumeType, pipeId);
     }
-    float sysVolume = volumes->volumeSystem;
-    if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != systemVolume_.end()) {
+    float sysVolume = volumes->volumePipe;
+    if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != pipeVolume_.end()) {
         sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType,
@@ -160,11 +162,11 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;
-        HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,devClass:%{public}s,"
-            "volumeSystem:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
+        HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,pipeId:%{public}d,"
+            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
             "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", sessionId, volumes->volume, volumeType,
-            deviceClass.c_str(), volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp,
-            it->second.IsVirtualKeyboard(), itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null",
+            pipeId, volumes->volumePipe, volumes->volumeStream, volumes->volumeApp,
+            it->second.IsVirtualKeyboard(), itSV != pipeVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null",
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
     Trace trace("AudioVolume::GetVolume " + std::to_string(volumes->volume));
@@ -488,7 +490,7 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
         appVolume_.emplace(appUid, appVolume);
     }
 
-    AUDIO_INFO_LOG("set volume mute, appUId:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
+    AUDIO_INFO_LOG("set volume mute, appUId:%{public}d, isMuted:%{public}d, appVolumeSize:%{public}zu",
         appUid, isMuted, appVolume_.size());
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
@@ -557,8 +559,8 @@ void AudioVolume::SetAppVolume(AppVolume &appVolume)
         appVolume_.emplace(appUid, appVolume);
     }
 
-    HILOG_COMM_INFO("[SetAppVolume] system volume, appUId:%{public}d, "
-        " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
+    HILOG_COMM_INFO("[SetAppVolume] app volume, appUId:%{public}d, "
+        " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, appVolumeSize:%{public}zu",
         appUid, appVolume.volume_, appVolume.volumeLevel_, appVolume.isMuted_,
         appVolume_.size());
     for (auto &streamVolume : streamVolume_) {
@@ -645,82 +647,54 @@ void AudioVolume::SetDefaultAppVolume(int32_t level)
     defaultAppVolume_ = level;
 }
 
-void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
+void AudioVolume::SetPipeVolume(PipeVolume &pipeVolume)
 {
-    auto volumeType = systemVolume.GetVolumeType();
-    auto deviceClass = systemVolume.GetDeviceClass();
+    AudioVolumeType volumeType = pipeVolume.GetVolumeType();
 #ifdef MULTI_ALARM_LEVEL
     if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
-        AUDIO_WARNING_LOG("SetSystemVolume system volume, volumeType:%{public}d is not settable", volumeType);
+        AUDIO_WARNING_LOG("pipe volume, volumeType:%{public}d is not settable", volumeType);
         return;
     }
 #endif
-    systemVolume.totalVolume_ = systemVolume.isMuted_ ? 0.0f : systemVolume.volume_;
-    std::string key = std::to_string(volumeType) + deviceClass;
+    std::string key = std::to_string(pipeVolume.GetPipeId()) + "|" + std::to_string(volumeType);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    auto it = systemVolume_.find(key);
-    if (it != systemVolume_.end()) {
-        it->second.volume_ = systemVolume.volume_;
-        it->second.volumeLevel_ = systemVolume.volumeLevel_;
-        it->second.isMuted_ = systemVolume.isMuted_;
-        it->second.totalVolume_ = systemVolume.totalVolume_;
-    } else {
-        systemVolume_.emplace(key, systemVolume);
-    }
-
-    HILOG_COMM_INFO("[SetSystemVolume] system volume, volumeType:%{public}d, deviceClass:%{public}s,"
-        " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
-        volumeType, deviceClass.c_str(), systemVolume.volume_, systemVolume.volumeLevel_, systemVolume.isMuted_,
-        systemVolume_.size());
+    pipeVolume_[key] = pipeVolume;
+    AUDIO_INFO_LOG("volumeType:%{public}d, pipeId:%{public}d,volume:%{public}f, noMuteVolumeLevel:%{public}d,"
+        "isMuted:%{public}d, pipeVolumeSize:%{public}zu",  volumeType, pipeVolume.GetPipeId(),
+        pipeVolume.volume_, pipeVolume.noMuteVolumeLevel_, pipeVolume.isMuted_, pipeVolume_.size());
 }
 
-void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceClass,
-    float volume, int32_t volumeLevel)
+void AudioVolume::SetPipeVolumeMute(uint32_t pipeId, AudioVolumeType volumeType, bool isMuted)
 {
 #ifdef MULTI_ALARM_LEVEL
     if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
-        AUDIO_WARNING_LOG("SetSystemVolume system volume, volumeType:%{public}d is not settable", volumeType);
+        AUDIO_WARNING_LOG("volumeType:%{public}d could not be muted", volumeType);
         return;
     }
 #endif
-    std::string key = std::to_string(volumeType) + deviceClass;
+    std::string key = std::to_string(pipeId) + "|" + std::to_string(volumeType);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    auto it = systemVolume_.find(key);
-    if (it != systemVolume_.end()) {
-        it->second.volume_ = volume;
-        it->second.volumeLevel_ = volumeLevel;
-        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f : it->second.volume_;
-    } else {
-        SystemVolume systemVolume(volumeType, deviceClass, volume, volumeLevel, false);
-        systemVolume.totalVolume_ = systemVolume.isMuted_ ? 0.0f : systemVolume.volume_;
-        systemVolume_.emplace(key, systemVolume);
-    }
-
-    AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
-        " volume:%{public}f, volumeLevel:%{public}d, systemVolumeSize:%{public}zu",
-        volumeType, deviceClass.c_str(), volume, volumeLevel, systemVolume_.size());
-}
-
-void AudioVolume::SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted)
-{
-#ifdef MULTI_ALARM_LEVEL
-    if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
-        AUDIO_WARNING_LOG("SetSystemVolumeMute system volume, volumeType:%{public}d is not settable", volumeType);
-        return;
-    }
-#endif
-    AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s, isMuted:%{public}d",
-        volumeType, deviceClass.c_str(), isMuted);
-    std::string key = std::to_string(volumeType) + deviceClass;
-    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    auto it = systemVolume_.find(key);
-    if (it != systemVolume_.end()) {
+    auto it = pipeVolume_.find(key);
+    if (it != pipeVolume_.end()) {
         it->second.isMuted_ = isMuted;
-        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f : it->second.volume_;
+        it->second.totalVolume_ = isMuted ? 0.0f : it->second.volume_;
+        AUDIO_INFO_LOG("pipeId:%{public}d, volumeType:%{public}d, isMuted:%{public}d",
+            pipeId, volumeType, isMuted);
     } else {
-        SystemVolume systemVolume(volumeType, deviceClass, 0.0f, 0, isMuted);
-        systemVolume.totalVolume_ = systemVolume.isMuted_ ? 0.0f : systemVolume.volume_;
-        systemVolume_.emplace(key, systemVolume);
+        AUDIO_ERR_LOG("pipe volume type not exist, pipeId:%{public}d, volumeType:%{public}d,",
+            pipeId, volumeType);
+    }
+}
+
+void AudioVolume::RemovePipeVolume(uint32_t pipeId, AudioVolumeType volumeType)
+{
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    std::string key = std::to_string(pipeId) + "|" + std::to_string(volumeType);
+    auto it = pipeVolume_.find(key);
+    if (it != pipeVolume_.end()) {
+        pipeVolume_.erase(key);
+    } else {
+        AUDIO_ERR_LOG("pipe volume already delete, key:%{public}s", key.c_str());
     }
 }
 
@@ -744,21 +718,21 @@ void AudioVolume::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioVolume dump begin");
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
-    // dump system volume
-    std::vector<SystemVolume> systemVolumeList;
-    for (auto &systemVolume : systemVolume_) {
-        systemVolumeList.push_back(systemVolume.second);
+    // dump pipe volume
+    std::vector<PipeVolume> pipeVolumeList;
+    for (auto &pipeVolume : pipeVolume_) {
+        pipeVolumeList.push_back(pipeVolume.second);
     }
-    std::sort(systemVolumeList.begin(), systemVolumeList.end(), [](SystemVolume &a, SystemVolume &b) {
+    std::sort(pipeVolumeList.begin(), pipeVolumeList.end(), [](PipeVolume &a, PipeVolume &b) {
         return a.GetVolumeType() < b.GetVolumeType();
     });
-    AppendFormat(dumpString, "\n  - audio system volume size: %zu\n", systemVolumeList.size());
-    for (auto &systemVolume : systemVolumeList) {
-        AppendFormat(dumpString, "  streamtype: %d ", systemVolume.GetVolumeType());
-        AppendFormat(dumpString, "  isMute: %s ", (systemVolume.isMuted_ ? "true" : "false"));
-        AppendFormat(dumpString, "  volFloat: %f ", systemVolume.volume_);
-        AppendFormat(dumpString, "  volInt: %d ", systemVolume.volumeLevel_);
-        AppendFormat(dumpString, "  device class: %s \n", systemVolume.GetDeviceClass().c_str());
+    AppendFormat(dumpString, "\n  - audio pipe volume size: %zu\n", pipeVolumeList.size());
+    for (auto &pipeVolume : pipeVolumeList) {
+        AppendFormat(dumpString, "  streamtype: %d ", pipeVolume.GetVolumeType());
+        AppendFormat(dumpString, "  isMute: %s ", (pipeVolume.isMuted_ ? "true" : "false"));
+        AppendFormat(dumpString, "  volFloat: %f ", pipeVolume.volume_);
+        AppendFormat(dumpString, "  volInt: %d ", pipeVolume.noMuteVolumeLevel_);
+        AppendFormat(dumpString, "  pipeId: %d \n", pipeVolume.GetPipeId());
     }
 
     // dump stream volume
@@ -853,20 +827,15 @@ void AudioVolume::RemoveStopFadeoutState(uint32_t streamIndex)
     stopFadeoutState_.erase(streamIndex);
 }
 
-void AudioVolume::SetVgsVolumeSupported(bool isVgsSupported)
-{
-    isVgsVolumeSupported_ = isVgsSupported;
-}
-
-inline bool AudioVolume::IsVgsVolumeSupported() const
-{
-    // solve bluetooth sco connneted then connect typec headset, the volume of typec headset can not be adjusted.
-    return isVgsVolumeSupported_ && isScoActive_;
-}
-
 void AudioVolume::SetScoActive(bool isActive)
 {
     isScoActive_ = isActive;
+}
+
+void AudioVolume::SetCurrentActiveDevice(DeviceType currentActiveDevice)
+{
+    AUDIO_INFO_LOG("SetCurrentActiveDevice %{public}d", currentActiveDevice);
+    currentActiveDevice_ = currentActiveDevice;
 }
 
 DeviceType AudioVolume::GetCurrentActiveDevice()
@@ -970,13 +939,12 @@ extern "C" {
 #endif
 using namespace OHOS::AudioStandard;
 
-float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass,
+float GetCurVolume(uint32_t sessionId, const char *streamType, uint32_t pipeId,
     struct VolumeValues *volumes)
 {
     CHECK_AND_RETURN_RET_LOG(streamType != nullptr, 1.0f, "streamType is nullptr");
-    CHECK_AND_RETURN_RET_LOG(deviceClass != nullptr, 1.0f, "deviceClass is nullptr");
     int32_t stream = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
-    return AudioVolume::GetInstance()->GetVolume(sessionId, stream, deviceClass, volumes);
+    return AudioVolume::GetInstance()->GetVolume(sessionId, stream, pipeId, volumes);
 }
 
 float GetStreamVolume(uint32_t sessionId)

@@ -69,6 +69,7 @@ constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t UID_COCKPIT_SA = 1041;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 constexpr int32_t DEFAULT_ZONEID = 0;
@@ -801,6 +802,7 @@ public:
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
     bool mixWithWakeUp = false;
+    bool loopBackEffectEnabled = false;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -822,8 +824,9 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
             parcel.WriteBool(isLoopback) &&
-            parcel.WriteInt32(static_cast<int32_t>(loopbackMode))&&
-            parcel.WriteBool(mixWithWakeUp);
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode)) &&
+            parcel.WriteBool(mixWithWakeUp) &&
+            parcel.WriteBool(loopBackEffectEnabled);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -840,6 +843,7 @@ public:
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         mixWithWakeUp = parcel.ReadBool();
+        loopBackEffectEnabled = parcel.ReadBool();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -1494,6 +1498,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteBool(capturerInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
         parcel.WriteBool(capturerInfo.mixWithWakeUp);
+        parcel.WriteBool(capturerInfo.loopBackEffectEnabled);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1559,6 +1564,7 @@ struct AudioProcessConfig : public Parcelable {
         config->capturerInfo.isLoopback = parcel.ReadBool();
         config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
+        config->capturerInfo.loopBackEffectEnabled = parcel.ReadBool();
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());

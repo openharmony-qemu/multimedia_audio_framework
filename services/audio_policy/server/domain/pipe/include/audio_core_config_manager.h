@@ -124,6 +124,8 @@ public:
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoForMultiChannel(
         std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
         AudioChannelLayout channelLayout);
+    std::shared_ptr<PipeStreamPropInfo> GetAvailableStreamPropInfoForDevice(
+        const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos, DeviceType deviceType);
     AudioPolicyConfigData &GetAudioPolicyConfigData() const { return audioPolicyConfig_; }
     bool IsDeviceSimulated(std::shared_ptr<AudioDeviceDescriptor> desc);
 

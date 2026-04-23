@@ -71,10 +71,6 @@ public:
     {
         return;
     }
-    void OnSetVolumeDbCb() override
-    {
-        return;
-    }
 };
 
 static AudioModuleInfo InitSinkAudioModeInfo()

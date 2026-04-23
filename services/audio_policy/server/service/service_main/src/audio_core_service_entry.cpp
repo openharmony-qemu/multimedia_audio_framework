@@ -676,6 +676,7 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     coreService_->pipeManager_->RemoveAudioPipeInfo(id);
     coreService_->audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
     coreService_->isOffloadInRelease_[type].store(false);
+    coreService_->audioPolicyManager_.RemoveAudioPipeVolume(id);
     return SUCCESS;
 }
 

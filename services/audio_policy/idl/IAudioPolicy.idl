@@ -348,5 +348,5 @@ interface IAudioPolicy {
     void TriggerAudioZoneVolumeSync();
     void SetMediaOutputDevice([in] int deviceType /* deviceType */);
     void SetRegisterInterruptCallbackFlag([in] unsigned int streamId, [in] boolean interruptCallbackFlag);
-    void SetRegisterStateChangeCallbackFlag([in] boolean interruptCallbackFlag);
+    void SetRegisterStateChangeCallbackFlag([in] boolean stateChangeCallbackFlag);
 }

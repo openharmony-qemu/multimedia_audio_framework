@@ -39,6 +39,7 @@ void FuzzTestSetOffloadStatus(FuzzedDataProvider& fdp)
     AudioOffloadStream &testModule = AudioOffloadStream::GetInstance();
     testModule.SetOffloadStatus(
         g_fuzzUtils.GetData<OffloadAdapter>(),
+        g_fuzzUtils.GetData<uint32_t>(),
         g_fuzzUtils.GetData<uint32_t>());
 }
 

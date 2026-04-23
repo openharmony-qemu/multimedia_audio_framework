@@ -15,6 +15,7 @@
 
 #include "audio_format_converter_impl.h"
 #include "audio_suite_common.h"
+#include "audio_suite_log.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include <cmath>
@@ -54,7 +55,10 @@ static const std::unordered_set<AudioSampleFormat> SUPPORTED_SAMPLE_FORMATS = {
 };
 
 constexpr int32_t MAX_CALLBACK_DATA_SIZE = 400 * 1024; // 400KB
-std::mutex IAudioFormatConverter::createMutex_;
+constexpr uint32_t MIN_FRAMES_FOR_20MS = 20;
+constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
+
+std::mutex AudioFormatConverter::createMutex_;
 
 AudioFormatConverterImpl::AudioFormatConverterImpl()
     : destroyed_(false), inputFinished_(false)
@@ -65,7 +69,7 @@ AudioFormatConverterImpl::~AudioFormatConverterImpl()
 {
 }
 
-std::shared_ptr<IAudioFormatConverter> IAudioFormatConverter::Create(
+std::shared_ptr<AudioFormatConverter> AudioFormatConverter::Create(
     const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat)
 {
     std::lock_guard<std::mutex> lock(createMutex_);
@@ -91,7 +95,7 @@ std::shared_ptr<IAudioFormatConverter> IAudioFormatConverter::Create(
         return nullptr;
     }
     
-    AUDIO_DEBUG_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
+    AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
         inputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(inputFormat.channelLayout),
         outputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(outputFormat.channelLayout));
 
@@ -112,7 +116,7 @@ int32_t AudioFormatConverterImpl::SetInputCallback(std::shared_ptr<FormatConvert
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(!destroyed_, ERR_ILLEGAL_STATE, "SetInputCallback: converter already destroyed");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_CALLBACK_NOT_SET, "Callback not set");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_CALLBACK_NOT_FOUND, "Callback not set");
     dataCallback_ = std::move(callback);
     return SUCCESS;
 }
@@ -136,12 +140,12 @@ int32_t AudioFormatConverterImpl::ReadAndCacheInputData(bool* shouldStopProcessi
 {
     const void* inputDataPtr = nullptr;
     InputDataStatus status = InputDataStatus::HAVE_DATA;
-    CHECK_AND_RETURN_RET_LOG(dataCallback_ != nullptr, ERR_CALLBACK_NOT_SET, "Callback function not set.");
+    CHECK_AND_RETURN_RET_LOG(dataCallback_ != nullptr, ERR_CALLBACK_NOT_FOUND, "Callback function not set.");
     int32_t inputSize = dataCallback_->OnRequestData(&inputDataPtr, &status);
     if (inputSize > MAX_CALLBACK_DATA_SIZE || inputSize < 0) {
         AUDIO_ERR_LOG("The callback function returned an error indicating the amount of data was incorrect: %{public}d",
             inputSize);
-        return ERR_CALLBACK_INVALID;
+        return ERR_INVALID_WRITE;
     }
 
     if (status == InputDataStatus::DATA_FINISHED) {
@@ -202,34 +206,40 @@ int32_t AudioFormatConverterImpl::CalculateProcessableBytesInternal(
     double sampleRateRatio =
         static_cast<double>(inputFormat_.sampleRate) / static_cast<double>(outputFormat_.sampleRate);
     uint32_t estimatedInputFrames = static_cast<uint32_t>(params.maxOutputFrames * sampleRateRatio);
+    if (estimatedInputFrames == 0 && params.maxOutputFrames > 0) {
+        estimatedInputFrames = 1;
+    }
     uint32_t maxProcessableBytes = std::min(params.alignedCachedSize,
         static_cast<uint32_t>(estimatedInputFrames * params.inputBytesPerFrame));
-    bool is11025SampleRate =
-        (inputFormat_.sampleRate == 11025 || outputFormat_.sampleRate == 11025);
+
+    bool is11025SampleRate = (inputFormat_.sampleRate == AudioSamplingRate::SAMPLE_RATE_11025 ||
+                              outputFormat_.sampleRate == AudioSamplingRate::SAMPLE_RATE_11025);
 
     if (!is11025SampleRate) {
-        uint32_t maxFramesFor20ms = (inputFormat_.sampleRate * 20) / 1000;
+        uint32_t maxFramesFor20ms = (inputFormat_.sampleRate * MIN_FRAMES_FOR_20MS) / MILLISECONDS_PER_SECOND;
         uint32_t maxBytesFor20ms = maxFramesFor20ms * params.inputBytesPerFrame;
         maxProcessableBytes = std::min(maxProcessableBytes, maxBytesFor20ms);
     }
-
-    if (is11025SampleRate) {
-        if (maxProcessableBytes >= params.minBytesForIntMs) {
+    CHECK_AND_RETURN_RET_LOG(params.minBytesForIntMs > 0,
+        ERR_INVALID_PARAM,
+        "The minimum number of bytes of input data to be processed cannot be zero.");
+    if (maxProcessableBytes >= params.minBytesForIntMs) {
+        if (is11025SampleRate) {
             alignedProcessableBytes = params.minBytesForIntMs;
         } else {
-            alignedProcessableBytes = 0;
+            alignedProcessableBytes = (maxProcessableBytes / params.minBytesForIntMs) * params.minBytesForIntMs;
         }
+    } else if (params.alignedCachedSize >= params.minBytesForIntMs) {
+        alignedProcessableBytes = params.minBytesForIntMs;
+        AUDIO_DEBUG_LOG("Process: output capacity small, processing min unit and caching excess");
     } else {
-        alignedProcessableBytes = (maxProcessableBytes / params.minBytesForIntMs) *
-                                    params.minBytesForIntMs;
+        alignedProcessableBytes = 0;
     }
 
     if (alignedProcessableBytes == 0) {
-        AUDIO_ERR_LOG(
-            "Process: output capacity too small, maxProcessableBytes=%{public}d, minBytesForIntMs=%{public}d",
-            maxProcessableBytes,
-            params.minBytesForIntMs);
-        return ERR_BUFFER_TOO_SMALL;
+        AUDIO_DEBUG_LOG("Process: insufficient data, maxProcessableBytes=%{public}d, minBytesForIntMs=%{public}d",
+            maxProcessableBytes, params.minBytesForIntMs);
+        shouldStopProcessing = true;
     }
     return SUCCESS;
 }
@@ -341,6 +351,11 @@ int32_t AudioFormatConverterImpl::ProcessSingleBlock(
     uint32_t outputBytesPerFrame, bool& shouldStopProcessing)
 {
     shouldStopProcessing = false;
+    if (context.remainingCapacity < outputBytesPerFrame) {
+        shouldStopProcessing = true;
+        return SUCCESS;
+    }
+
     uint32_t minBytesForIntMs = 0;
     uint32_t alignedCachedSize = 0;
     uint32_t alignedProcessableBytes = 0;
@@ -416,13 +431,14 @@ int32_t AudioFormatConverterImpl::ProcessCachedOutputData(void* audioData, uint3
 int32_t AudioFormatConverterImpl::ProcessDataBlocks(ProcessingContext& context, uint32_t inputBytesPerFrame,
     uint32_t outputBytesPerFrame)
 {
-    int32_t ret;
+    int32_t ret = 0;
     CHECK_AND_RETURN_RET_LOG(
         outputBytesPerFrame != 0, ERR_INVALID_PARAM, "The output format frame length cannot be 0.");
-    while (context.remainingCapacity > 0) {
+    uint32_t maxOutputFrames = context.remainingCapacity / outputBytesPerFrame;
+    while (maxOutputFrames > 0) {
         bool shouldStopProcessing = false;
         InputProcessParams inputParams = {inputBytesPerFrame,
-            context.remainingCapacity / outputBytesPerFrame,
+            maxOutputFrames,
             outputBytesPerFrame,
             context.remainingCapacity};
 
@@ -430,6 +446,7 @@ int32_t AudioFormatConverterImpl::ProcessDataBlocks(ProcessingContext& context, 
         if (ret != 0 || shouldStopProcessing) {
             break;
         }
+        maxOutputFrames = context.remainingCapacity / outputBytesPerFrame;
     }
     return ret;
 }

@@ -225,7 +225,7 @@ struct AudioDebugInfo : public Parcelable {
             parcel.WriteInt32(loopbackMode) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackOutputDeviceType)) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackInputDeviceType)) &&
-            parcel.WriteUint32(captureTimestamp.framePosition) &&
+            parcel.WriteInt64(captureTimestamp.framePosition) &&
             parcel.WriteInt64(static_cast<int64_t>(captureTimestamp.time.tv_sec)) &&
             parcel.WriteInt64(static_cast<int64_t>(captureTimestamp.time.tv_nsec)) &&
             parcel.WriteUint64(captureBufferSize) &&
@@ -330,7 +330,7 @@ struct AudioDebugInfo : public Parcelable {
         loopbackMode = parcel.ReadInt32();
         loopbackOutputDeviceType = static_cast<DeviceType>(parcel.ReadInt32());
         loopbackInputDeviceType = static_cast<DeviceType>(parcel.ReadInt32());
-        captureTimestamp.framePosition = parcel.ReadUint32();
+        captureTimestamp.framePosition = parcel.ReadInt64();
         captureTimestamp.time.tv_sec = static_cast<time_t>(parcel.ReadInt64());
         captureTimestamp.time.tv_nsec = static_cast<long>(parcel.ReadInt64());
         captureBufferSize = parcel.ReadUint64();

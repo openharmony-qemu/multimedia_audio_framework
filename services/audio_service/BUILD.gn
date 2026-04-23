@@ -63,6 +63,7 @@ ohos_shared_library("audio_common") {
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../audio_engine/plugin/resample/include",
+    "../audio_policy/server/domain/volume/include",
   ]
 
   sources = [
@@ -641,11 +642,17 @@ audio_ohos_library("audio_process_service") {
     "../audio_engine/plugin/resample/include",
     "../audio_engine/simd",
     "../audio_policy/client/service/include",
+    "../audio_policy/server/infra/ipc_proxy/include",
+    "../audio_policy/server/common/include",
+    "../audio_policy/server/domain/pipe/include",
+    "../audio_policy/server/domain/device/src/a2dp",
+    "../audio_policy/server/domain/volume/include",
   ]
 
   deps = [
     ":audio_common",
     "../audio_policy:audio_manager_client",
+    "../audio_policy:audio_policy_client",
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",

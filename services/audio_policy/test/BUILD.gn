@@ -4172,6 +4172,7 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "../../../services/audio_policy/server/infra/datashare/include",
     "../../../frameworks/native/audiodefinitions/include",
     "../../../services/audio_policy/server/domain/interrupt/include",
+    "../../../services/audio_policy/server/domain/volume/include",
   ]
 
   use_exceptions = true

@@ -619,7 +619,8 @@ bool CapturerInClientInner::GetAudioTimeInner(
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
     uint64_t currentReadPos = totalBytesRead_ / sizePerFrameInByte_;
-    timestamp.framePosition = currentReadPos;
+    timestamp.framePosition = currentReadPos > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(currentReadPos);
 
     uint64_t writePos = 0;
     int64_t handleTime = 0;
@@ -662,7 +663,8 @@ bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Ti
     CHECK_AND_RETURN_RET_LOG(writeTimeStamp != 0, false, "writeTimeStamp is zero");
     AUDIO_DEBUG_LOG("pos:%{public}" PRIu64 " ts:%{public}" PRIu64, writePos, writeTimeStamp);
 
-    timestamp.framePosition = writePos;
+    timestamp.framePosition = writePos > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(writePos);
     timestamp.time.tv_sec = static_cast<time_t>(writeTimeStamp / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(writeTimeStamp % AUDIO_NS_PER_SECOND);
 

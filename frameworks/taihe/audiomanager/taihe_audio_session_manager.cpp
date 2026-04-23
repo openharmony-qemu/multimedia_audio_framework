@@ -361,6 +361,7 @@ void AudioSessionManagerImpl::RegisterAudioSessionStateCallback(std::shared_ptr<
         std::static_pointer_cast<TaiheAudioSessionStateCallback>(stateChangedCallback);
     taiheSessionManager->sessionStateCallbackList_.push_back(cb);
     cb->SaveCallbackReference(callback);
+    taiheSessionManager->audioSessionMngr_->SetRegisterStateChangeCallbackFlag(true);
 
     AUDIO_INFO_LOG("OnAudioSessionStateChangeCallback is successful");
 }

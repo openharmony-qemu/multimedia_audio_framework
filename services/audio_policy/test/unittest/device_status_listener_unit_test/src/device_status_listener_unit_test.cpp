@@ -278,5 +278,77 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_017, TestSize.Level1)
     deviceStatusListenerPtr->SendDistributeInfo(info);
     EXPECT_EQ(statusInfo.model, "unknown");
 }
+
+/**
+ * @tc.name  : Test DeviceStatusListener.
+ * @tc.number: DeviceStatusListener_019
+ * @tc.desc  : Test DeviceStatusListener::ParseDeviceNameAndAddress().
+ */
+HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_019, TestSize.Level1)
+{
+    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
+    const std::string info = "EVENT_NAME=h2w_micin;DEVICE_ADDRESS=0x123456;";
+    std::string deviceName;
+    std::string portId;
+
+    bool result = deviceStatusListenerPtr->ParseDeviceNameAndAddress(info, deviceName, portId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(deviceName, "MIC");
+    EXPECT_EQ(portId, "0x123456");
+}
+
+/**
+ * @tc.name  : Test DeviceStatusListener.
+ * @tc.number: DeviceStatusListener_020
+ * @tc.desc  : Test DeviceStatusListener::ParseDeviceNameAndAddress().
+ */
+HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_020, TestSize.Level1)
+{
+    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
+    const std::string info = "EVENT_NAME=unknown;DEVICE_ADDRESS=789;";
+    std::string deviceName;
+    std::string portId;
+
+    bool result = deviceStatusListenerPtr->ParseDeviceNameAndAddress(info, deviceName, portId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(deviceName, "unknown");
+    EXPECT_EQ(portId, "789");
+}
+
+/**
+ * @tc.name  : Test DeviceStatusListener.
+ * @tc.number: DeviceStatusListener_021
+ * @tc.desc  : Test DeviceStatusListener::ParseDeviceNameAndAddress().
+ */
+HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_021, TestSize.Level1)
+{
+    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
+    const std::string info = "DEVICE_ADDRESS=abc;";
+    std::string deviceName;
+    std::string portId;
+
+    bool result = deviceStatusListenerPtr->ParseDeviceNameAndAddress(info, deviceName, portId);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(deviceName.empty());
+    EXPECT_EQ(portId, "abc");
+}
+
+/**
+ * @tc.name  : Test DeviceStatusListener.
+ * @tc.number: DeviceStatusListener_022
+ * @tc.desc  : Test DeviceStatusListener::ParseDeviceNameAndAddress().
+ */
+HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_022, TestSize.Level1)
+{
+    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
+    const std::string info = "EVENT_NAME=h2w_micin;";
+    std::string deviceName;
+    std::string portId;
+
+    bool result = deviceStatusListenerPtr->ParseDeviceNameAndAddress(info, deviceName, portId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(deviceName, "MIC");
+    EXPECT_TRUE(portId.empty());
+}
 } // namespace AudioStandard
 } // namespace OHOS

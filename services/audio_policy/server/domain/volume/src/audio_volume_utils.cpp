@@ -18,6 +18,7 @@
 #endif
 
 #include "audio_volume_utils.h"
+#include "audio_volume_parser.h"
 #include "audio_zone_service.h"
 
 namespace OHOS {

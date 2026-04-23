@@ -1408,7 +1408,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_072, TestSize.Lev
         AUDIO_MODE_RECORD, config.appInfo.appUid);
     ptrAudioProcessInClientInner->Init(config, ptrFastAudioStream);
 
-    uint32_t framePos = 0;
+    int64_t framePos = 0;
     int64_t sec = 0;
     int64_t nanoSec = 0;
     auto ret = ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
@@ -2554,7 +2554,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_GetAudioTime_002,
     ptrBufferInfo->handlePos.store(0);
     ptrBufferInfo->handleTime.store(0);
 
-    uint32_t framePos = 0;
+    int64_t framePos = 0;
     int64_t sec = 0;
     int64_t nanoSec = 0;
     auto ret = ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);

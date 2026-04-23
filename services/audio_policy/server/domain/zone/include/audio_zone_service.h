@@ -30,7 +30,7 @@ class AudioZone;
 class AudioZoneClientManager;
 class SessionTimeOutCallback;
 
-class AudioZoneService : public SessionTimeOutCallback{
+class AudioZoneService : public SessionTimeOutCallback {
 public:
     static AudioZoneService &GetInstance();
 

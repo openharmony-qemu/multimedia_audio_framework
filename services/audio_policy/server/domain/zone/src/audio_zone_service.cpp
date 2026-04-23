@@ -994,7 +994,7 @@ AudioInterruptResult AudioZoneService::ActivateAudioSession(const int32_t zoneId
     return result;
 }
 
-int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t callerPid)   
+int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t callerPid)
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
@@ -1019,6 +1019,9 @@ int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t c
         }
     };
     int32_t result = tmp->DeactivateAudioSession(zoneId, callerPid, onFakeInterruptDeactivate);
+    for (auto &report : reporters) {
+        report->ReportInterrupt();
+    }
     return result;
 }
 
@@ -1027,7 +1030,7 @@ void AudioZoneService::OnSessionTimeout(const int32_t pid)
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
-        CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
+        CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr,
             "zoneClientManager or interruptService is nullptr");
         tmp = interruptService_;
     }
@@ -1039,7 +1042,7 @@ void AudioZoneService::OnSessionTimeout(const int32_t pid)
 
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
-    result = tmp->OnSessionTimeout(pid);
+    tmp->OnSessionTimeout(pid);
     for (auto &report : reporters) {
         report->ReportInterrupt();
     }

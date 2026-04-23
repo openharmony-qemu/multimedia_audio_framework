@@ -124,7 +124,6 @@ private:
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
-    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType, std::string volumeDeviceClass);
     uint64_t GetOffloadLatency();
     bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
     void UpdateInnerCapWriteState(bool isWriteFirst);
@@ -134,7 +133,6 @@ private:
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
     State state_ = INVALID;
-    std::future<void> offloadVolumeRmap_;
 
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
