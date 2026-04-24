@@ -944,7 +944,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
         }
 
         if (!PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, processConfig_.appInfo.appTokenId)) {
-            AUDIO_ERR_LOG("voice downlink/message capturer permission check failed");
+            AUDIO_ERR_LOG("downlink capturer permission check failed");
             return ERR_PERMISSION_DENIED;
         }
     }
