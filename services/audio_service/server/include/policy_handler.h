@@ -81,6 +81,8 @@ public:
     int32_t UnloadModernOffloadCapSource();
 #endif
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
+
+    bool IsValidNetworkIdForSendEffectParam(const std::string &networkId);
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

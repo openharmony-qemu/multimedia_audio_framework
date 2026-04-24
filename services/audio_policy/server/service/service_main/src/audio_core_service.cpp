@@ -1665,6 +1665,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         if (deviceList.empty()) {
             deviceList.push_back(make_shared<AudioDeviceDescriptor>());
         }
+        AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
         return deviceList;
     }
     if (networkId == LOCAL_NETWORK_ID) {
@@ -1694,6 +1695,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         }
     }
 
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
     return deviceList;
 }
 
@@ -1706,6 +1708,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         if (deviceList.empty()) {
             deviceList.push_back(make_shared<AudioDeviceDescriptor>());
         }
+        AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
         return deviceList;
     }
 
@@ -1737,6 +1740,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         }
     }
 
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
     return deviceList;
 }
 

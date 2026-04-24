@@ -33,6 +33,7 @@ public:
     bool isSupportHiLinkControl_ = false;
     int32_t protocol_ = -1;
     int32_t hdPlaybackMode_ = 0;
+    uint32_t deviceTokenId_ = 0;
 
     std::string GetJsonString() const;
     void FromJsonString(const std::string &jsonString);

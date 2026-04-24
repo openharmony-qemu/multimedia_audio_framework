@@ -114,6 +114,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     nodeInfo.effectInfo.enhanceScene = enhanceScene;
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     sourceOutputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
+    sourceOutputNodeMap_[streamInfo.sessionId]->SetTokenId(streamInfo.tokenId);
     sessionNodeMap_[streamInfo.sessionId].sceneType = sceneType;
     sessionNodeMap_[streamInfo.sessionId].mixWithWakeUp = streamInfo.mixWithWakeUp;
 
@@ -648,15 +649,18 @@ void HpaeCapturerManager::Process()
 void HpaeCapturerManager::UpdateAppsUidAndSessionId()
 {
     appsUid_.clear();
+    appsTokenId_.clear();
     sessionsId_.clear();
     for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
         if (sourceOutputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
             appsUid_.emplace_back(sourceOutputNodePair.second->GetAppUid());
+            appsTokenId_.emplace_back(sourceOutputNodePair.second->GetTokenId());
             sessionsId_.emplace_back(static_cast<int32_t>(sourceOutputNodePair.first));
         }
     }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
         sourceInputClusterMap_[mainMicType_]->UpdateAppsUidAndSessionId(appsUid_, sessionsId_);
+        sourceInputClusterMap_[mainMicType_]->UpdateAppsTokenId(appsTokenId_);
     }
 }
 void HpaeCapturerManager::NotifyStreamChangeToSource(
@@ -1307,16 +1311,19 @@ void HpaeCapturerManager::TriggerAppsUidUpdate(uint32_t sessionId)
         AUDIO_INFO_LOG("deviceClass: %{public}s", sourceInfo_.deviceClass.c_str());
         CHECK_AND_RETURN(sourceInfo_.deviceClass == REMOTE_DEVICE_CLASS);
         appsUid_.clear();
+        appsTokenId_.clear();
         sessionsId_.clear();
         for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
             if (sourceOutputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||
                 sourceOutputNodePair.first == sessionId) {
                 appsUid_.emplace_back(sourceOutputNodePair.second->GetAppUid());
+                appsTokenId_.emplace_back(sourceOutputNodePair.second->GetTokenId());
                 sessionsId_.emplace_back(static_cast<int32_t>(sourceOutputNodePair.first));
             }
         }
         if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
             sourceInputClusterMap_[mainMicType_]->UpdateAppsUidAndSessionId(appsUid_, sessionsId_);
+            sourceInputClusterMap_[mainMicType_]->UpdateAppsTokenId(appsTokenId_);
         }
     };
     SendRequest(request, __func__);

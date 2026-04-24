@@ -136,6 +136,7 @@ private:
     uint32_t renderId_ = 0;
 
     std::vector<int32_t> appsUid_;
+    std::vector<uint32_t> appsTokenId_;
     std::vector<int32_t> sessionsId_;
 };
 }  // namespace HPAE

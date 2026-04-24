@@ -243,6 +243,7 @@ public:
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     AudioScene GetAudioSceneFromAllZones();
     int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
+    bool IsValidNetworkIdForSendEffectParam(const std::string &networkId);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -326,6 +327,7 @@ private:
     bool IsVoipStreamUsage(StreamUsage streamUsage);
     void SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
         const AudioDeviceDescriptor &sourceDesc, DeviceRole role);
+    bool IsMatchDeviceWithUsage(std::shared_ptr<AudioDeviceDescriptor> desc, AudioDeviceUsage usage);
 private:
 
     static bool isBtListenerRegistered;

@@ -268,5 +268,13 @@ int32_t PolicyHandler::ClearAudioFocusBySessionID(const int32_t &sessionID)
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->ClearAudioFocusBySessionID(sessionID);
 }
+
+bool PolicyHandler::IsValidNetworkIdForSendEffectParam(const std::string &networkId)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "iPolicyProvider_ is nullptr!");
+    bool ret = false;
+    iPolicyProvider_->IsValidNetworkIdForSendEffectParam(networkId, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

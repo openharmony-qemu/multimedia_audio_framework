@@ -307,6 +307,11 @@ void HpaeSourceInputCluster::UpdateAppsUidAndSessionId(std::vector<int32_t> &app
     sourceInputNode_->UpdateAppsUidAndSessionId(appsUid, sessionsId);
 }
 
+void HpaeSourceInputCluster::UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId)
+{
+    sourceInputNode_->UpdateAppsTokenId(appsTokenId);
+}
+
 // for test
 uint32_t HpaeSourceInputCluster::GetConverterNodeCount()
 {

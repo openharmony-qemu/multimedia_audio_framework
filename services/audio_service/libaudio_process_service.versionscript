@@ -91,6 +91,7 @@
     *ReportWakeupEvent*;
     *SetAncoRecordingConfigChanged*;
     *OnMetaData*;
+    *IsValidNetworkIdForSendEffectParam*;
   local:
     *;
 };

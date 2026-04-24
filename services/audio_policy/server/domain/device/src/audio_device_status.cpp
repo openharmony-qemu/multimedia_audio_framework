@@ -1773,6 +1773,11 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
 
     device.hdPlaybackMode_ = static_cast<HdPlaybackMode>(capability.hdPlaybackMode_);
     AUDIO_INFO_LOG("Update hdPlaybackMode success, mode: %{public}d", device.hdPlaybackMode_);
+
+    if (capability.deviceTokenId_ != 0) {
+        device.deviceTokenId_ = capability.deviceTokenId_;
+        AUDIO_INFO_LOG("Update tokenId: %{public}u", device.deviceTokenId_);
+    }
 }
 
 bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,

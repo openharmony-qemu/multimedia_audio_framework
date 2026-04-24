@@ -18,6 +18,7 @@
 
 #include "audio_device_manager.h"
 
+#include "ipc_skeleton.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_device_parser.h"
@@ -1081,6 +1082,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     if (remoteInfoNetworkId_ != "" && remoteInfoDeviceType_ != DEVICE_TYPE_DEFAULT) {
         ReorderAudioDevices(audioDeviceDescriptors, remoteInfoNetworkId_, remoteInfoDeviceType_);
     }
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(audioDeviceDescriptors);
     return audioDeviceDescriptors;
 }
 

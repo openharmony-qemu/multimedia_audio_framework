@@ -268,6 +268,16 @@ int32_t HpaeSourceOutputNode::GetAppUid()
     return appUid_;
 }
 
+void HpaeSourceOutputNode::SetTokenId(uint32_t tokenId)
+{
+    tokenId_ = tokenId;
+}
+
+uint32_t HpaeSourceOutputNode::GetTokenId()
+{
+    return tokenId_;
+}
+
 void HpaeSourceOutputNode::SetMute(bool isMute)
 {
     if (isMute_ != isMute) {

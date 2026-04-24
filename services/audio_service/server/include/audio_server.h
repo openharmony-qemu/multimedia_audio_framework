@@ -506,6 +506,7 @@ private:
     void RegisterResSchedSys();
     void HapReportWakeupEvent(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t TrySetAudioEffectParameterToRemote(const std::vector<std::pair<std::string, std::string>> &newPair);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

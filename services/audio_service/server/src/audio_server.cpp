@@ -104,6 +104,8 @@ const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
 const std::string HOME_MUSIC_KEY = "HomeMusic";
 const std::string COCKPIT_DIRECT_KEY = "cockpit_direct";
+const std::string AUDIO_EFFECT_KEY = "audio_effect";
+const std::string NETWORK_ID_KEY = "NETWORK_ID";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
 const std::string MAIN_KEY_DFX = "dfx";
 const std::string SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT = "update_wakeup_trace_result";
@@ -1015,6 +1017,34 @@ void AudioServer::HapReportWakeupEvent(const std::string &key,
     }
 }
 
+int32_t AudioServer::TrySetAudioEffectParameterToRemote(const std::vector<std::pair<std::string, std::string>> &newPair)
+{
+    std::string networkId = LOCAL_NETWORK_ID;
+    std::string value = "";
+    for (const auto &item : newPair) {
+        if (item.first == NETWORK_ID_KEY) {
+            networkId = item.second;
+        } else {
+            std::string itemValue = (value == "" ? "" : ";") + item.first + "=" + item.second;
+            value += itemValue;
+        }
+    }
+    CHECK_AND_RETURN_RET(networkId != LOCAL_NETWORK_ID &&
+        PolicyHandler::GetInstance().IsValidNetworkIdForSendEffectParam(networkId), ERR_NOT_SUPPORTED);
+
+    AUDIO_INFO_LOG("found match device, networkId: %{public}s", GetEncryptStr(networkId).c_str());
+
+    auto mainKeyIt = audioParameterKeys.find(AUDIO_EFFECT_KEY);
+    CHECK_AND_RETURN_RET_LOG(mainKeyIt != audioParameterKeys.end(), ERR_INVALID_PARAM, "invalid mainkey");
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> remoteDeviceManager =
+        manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(remoteDeviceManager != nullptr, ERROR, "remote device manager is nullptr");
+    remoteDeviceManager->SetAudioParameter(networkId, AudioParamKey::NONE, "", value);
+    return SUCCESS;
+}
+
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
 {
@@ -1045,6 +1075,11 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
 
     if (key == COCKPIT_DIRECT_KEY) {
         return SetCockpitDirectExtraParameters(newPair);
+    }
+
+    if (key == AUDIO_EFFECT_KEY) {
+        int32_t ret = TrySetAudioEffectParameterToRemote(newPair);
+        CHECK_AND_RETURN_RET(ret == ERR_NOT_SUPPORTED, SUCCESS);
     }
 
     return SetCommonExtraParameters(key, newPair);

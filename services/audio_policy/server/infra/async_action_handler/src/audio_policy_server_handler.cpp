@@ -68,6 +68,10 @@ void AudioPolicyServerHandler::AddAudioPolicyClientProxyMap(int32_t clientPid,
     const std::shared_ptr<AudioPolicyClientHolder> &cb)
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
+    if (cb != nullptr) {
+        cb->tokenId_ = IPCSkeleton::GetCallingTokenID();
+        AUDIO_INFO_LOG("clientPid [%{public}d] tokenId [%{public}u]", clientPid, cb->tokenId_);
+    }
     auto [it, res] = audioPolicyClientProxyAPSCbsMap_.try_emplace(clientPid, cb);
     if (!res) {
         if (cb == it->second) {
@@ -116,6 +120,10 @@ void AudioPolicyServerHandler::AddAvailableDeviceChangeMap(int32_t clientId, con
     const std::shared_ptr<AudioPolicyManagerListenerCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
+    if (callback != nullptr) {
+        callback->tokenId_ = IPCSkeleton::GetCallingTokenID();
+        AUDIO_INFO_LOG("clientId [%{public}d] tokenId [%{public}u]", clientId, callback->tokenId_);
+    }
     availableDeviceChangeCbsMap_[{clientId, usage}] = callback;
     AUDIO_INFO_LOG("AddAvailableDeviceChangeMap, group data num [%{public}zu]", availableDeviceChangeCbsMap_.size());
 }
@@ -829,6 +837,16 @@ bool AudioPolicyServerHandler::SendFormatUnsupportedErrorEvent(const AudioErrors
     return ret;
 }
 
+bool AudioPolicyServerHandler::CheckCallbackTokenId(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs, uint32_t callbackTokenId)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDescs.size() > 0, true, "deviceDescriptors is empty");
+    uint32_t deviceTokenId = deviceDescs[0]->deviceTokenId_;
+    CHECK_AND_RETURN_RET(deviceTokenId != 0, true);
+    AUDIO_INFO_LOG("deviceTokenId: %{public}u, callbackTokenId: %{public}u", deviceTokenId, callbackTokenId);
+    return deviceTokenId == callbackTokenId;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -844,6 +862,9 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
             if (clientCallbacksMap_.count(it->first) > 0 &&
                 clientCallbacksMap_[it->first].count(CALLBACK_SET_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[it->first][CALLBACK_SET_DEVICE_CHANGE]) {
+                auto deviceDescs = deviceChangeAction.deviceDescriptors;
+                auto tokenId = it->second->tokenId_;
+                CHECK_AND_CONTINUE(CheckCallbackTokenId(deviceDescs, tokenId));
                 AUDIO_INFO_LOG("Send DeviceChange deviceType[%{public}d] change to clientPid[%{public}d]",
                     deviceChangeAction.deviceDescriptors[0]->deviceType_, it->first);
                 it->second->OnDeviceChange(deviceChangeAction);
@@ -908,6 +929,9 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
                 AudioPolicyService::GetAudioPolicyService().
                     UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
+            auto deviceDescs = deviceChangeAction.deviceDescriptors;
+            auto tokenId = it->second->tokenId_;
+            CHECK_AND_CONTINUE(CheckCallbackTokenId(deviceDescs, tokenId));
             it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
         }
     }
@@ -1456,6 +1480,8 @@ void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t cli
         }
         CHECK_AND_CONTINUE(IsCallbackRegistered(clientPid, CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE));
         CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
+        auto tokenId = clientHolder->tokenId_;
+        CHECK_AND_CONTINUE(CheckCallbackTokenId(deviceDescs, tokenId));
 
         int32_t uid = rendererFilter.uid;
         StreamUsage streamUsage = rendererFilter.rendererInfo.streamUsage;
@@ -1549,6 +1575,8 @@ void AudioPolicyServerHandler::ProcessPreferredInputDeviceForClient(int32_t clie
         }
         CHECK_AND_CONTINUE(IsCallbackRegistered(clientPid, CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE));
         CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
+        auto tokenId = clientHolder->tokenId_;
+        CHECK_AND_CONTINUE(CheckCallbackTokenId(deviceDescs, tokenId));
 
         int32_t uid = capturerFilter.uid;
         SourceType sourceType = capturerFilter.capturerInfo.sourceType;
