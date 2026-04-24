@@ -599,7 +599,6 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MOVIE);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
-        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
     } else {
         config.isModernInnerCapturer = true;
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
@@ -608,7 +607,6 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MOVIE);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
-        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_NAVIGATION);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_ALARM);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_NOTIFICATION);
