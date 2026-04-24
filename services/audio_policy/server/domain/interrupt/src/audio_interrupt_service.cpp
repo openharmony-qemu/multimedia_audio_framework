@@ -184,7 +184,6 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     zoneManager_.CreateAudioInterruptZone(ZONEID_DEFAULT, context, false);
 
-    sessionService_.SetSessionTimeOutCallback(shared_from_this());
     dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
     interruptCustom_ = std::make_unique<AudioInterruptCustom>();
     interruptDfx_ = std::make_shared<AudioInterruptDfx>();
@@ -403,7 +402,8 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
     }
 }
 
-int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid)
+int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+    std::function<void()> onFakeInterruptDeactivate)
 {
     AudioXCollie audioXCollie("AudioInterruptService::DeactivateAudioSession", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
@@ -429,7 +429,7 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
         if (streamsInSession.size() > 0) {
             // Wait for the streams managed by session to stop
             DeactivateAudioSessionErrorEvent(streamsInSession, callerPid);
-            DelayToDeactivateStreamsInAudioSession(zoneId, callerPid, streamsInSession);
+            DelayToDeactivateStreamsInAudioSession(zoneId, callerPid, streamsInSession, onFakeInterruptDeactivate);
         } else {
             // If there is a fake interrupt, it needs to be deactivated.
             DeactivateAudioSessionFakeInterruptInternal(zoneId, callerPid);
@@ -475,10 +475,11 @@ int32_t AudioInterruptService::FindAudioInterruptByPid(const int32_t zoneId, con
 }
 
 void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
-    const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession)
+    const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession,
+    std::function<void()> onFakeInterruptDeactivate)
 {
     auto audioInterruptService = shared_from_this();
-    auto deactivateTask = [audioInterruptService, zoneId, callerPid, streamsInSession] {
+    auto deactivateTask = [audioInterruptService, zoneId, callerPid, streamsInSession, onFakeInterruptDeactivate] {
         if (audioInterruptService == nullptr) {
             return;
         }
@@ -493,6 +494,9 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         // Before deactivating the fake interrupt, all stream interrupts within the session must be stopped.
         audioInterruptService->DeactivateAudioSessionFakeInterrupt(zoneId, callerPid);
+        if (onFakeInterruptDeactivate) {
+            onFakeInterruptDeactivate();
+        }
     };
 
     std::thread(deactivateTask).detach();
