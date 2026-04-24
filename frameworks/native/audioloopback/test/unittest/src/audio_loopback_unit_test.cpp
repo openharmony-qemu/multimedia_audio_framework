@@ -538,5 +538,67 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_OnOutputDeviceChange_SameDevice_0
     renderCallback->OnOutputDeviceChange(deviceInfo, reason);
     EXPECT_TRUE(audioLoopback->isRendererUsb_);
 }
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GetLoopbackDebugInfo_001, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    AudioLoopbackDebugInfo debugInfo;
+    int32_t ret = audioLoopback->GetLoopbackDebugInfo(debugInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(debugInfo.mode, LOOPBACK_HARDWARE);
+    EXPECT_EQ(debugInfo.currentState, LOOPBACK_STATE_IDLE);
+    EXPECT_EQ(debugInfo.activeOutputDevice, DEVICE_TYPE_NONE);
+    EXPECT_EQ(debugInfo.activeInputDevice, DEVICE_TYPE_NONE);
+    EXPECT_EQ(debugInfo.reverbPreset, REVERB_PRESET_THEATER);
+    EXPECT_EQ(debugInfo.equalizerPreset, EQUALIZER_PRESET_BRIGHT);
+    EXPECT_EQ(debugInfo.volume, 0);
+    EXPECT_EQ(debugInfo.uplinkStreamState, RENDERER_INVALID);
+    EXPECT_EQ(debugInfo.downlinkStreamState, CAPTURER_INVALID);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GetLoopbackDebugInfo_002, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
+    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_USB_HEADSET;
+    audioLoopback->activeInputDevice_ = DEVICE_TYPE_USB_HEADSET;
+    audioLoopback->rendererState_ = RENDERER_RUNNING;
+    audioLoopback->capturerState_ = CAPTURER_RUNNING;
+
+    AudioLoopbackDebugInfo debugInfo;
+    int32_t ret = audioLoopback->GetLoopbackDebugInfo(debugInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(debugInfo.appUid, -1);
+    EXPECT_EQ(debugInfo.currentState, LOOPBACK_STATE_RUNNING);
+    EXPECT_EQ(debugInfo.activeOutputDevice, DEVICE_TYPE_USB_HEADSET);
+    EXPECT_EQ(debugInfo.activeInputDevice, DEVICE_TYPE_USB_HEADSET);
+    EXPECT_EQ(debugInfo.uplinkStreamState, RENDERER_RUNNING);
+    EXPECT_EQ(debugInfo.downlinkStreamState, CAPTURER_RUNNING);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GetLoopbackDebugInfo_003, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->karaokeParams_["Karaoke_volume"] = "invalid";
+    AudioLoopbackDebugInfo debugInfo;
+    int32_t ret = audioLoopback->GetLoopbackDebugInfo(debugInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(debugInfo.volume, 0);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GetLoopbackDebugInfo_004, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentReverbPreset_ = REVERB_PRESET_KTV;
+    audioLoopback->currentEqualizerPreset_ = EQUALIZER_PRESET_FLAT;
+    audioLoopback->karaokeParams_["Karaoke_volume"] = "75";
+
+    AudioLoopbackDebugInfo debugInfo;
+    int32_t ret = audioLoopback->GetLoopbackDebugInfo(debugInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(debugInfo.reverbPreset, REVERB_PRESET_KTV);
+    EXPECT_EQ(debugInfo.equalizerPreset, EQUALIZER_PRESET_FLAT);
+    EXPECT_EQ(debugInfo.volume, 75);
+}
 } // namespace AudioStandard
 } // namespace OHOS

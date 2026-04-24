@@ -84,7 +84,11 @@ std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackM
 {
     if (mode == LOOPBACK_HARDWARE) {
         static std::shared_ptr<AudioLoopbackPrivate> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
-        RegisterAudioLoopbackDebugManager(instance);
+        static bool registered = false;
+        if (!registered) {
+            RegisterAudioLoopbackDebugManager(instance);
+            registered = true;
+        }
         return instance;
     }
 
@@ -305,13 +309,6 @@ AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
     return currentEqualizerPreset_;
 }
 
-int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
-{
-    (void)debugInfo;
-    AUDIO_INFO_LOG("GetLoopbackDebugInfo enter, mode:%{public}d, currentState:%{public}d",
-        static_cast<int32_t>(mode_), static_cast<int32_t>(currentState_));
-    return SUCCESS;
-}
 
 std::vector<AudioDevicePair> AudioLoopbackPrivate::GetSupportedDevicePairs()
 {
@@ -321,6 +318,56 @@ std::vector<AudioDevicePair> AudioLoopbackPrivate::GetSupportedDevicePairs()
 AudioDevicePair AudioLoopbackPrivate::GetPreferredDevicePair()
 {
     return AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
+}
+
+int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
+{
+    debugInfo = AudioLoopbackDebugInfo();
+
+    // Application information
+    debugInfo.appUid = appInfo_.appUid;
+    debugInfo.appName = AppBundleManager::GetSelfBundleName(appInfo_.appUid);
+
+    // Loopback status
+    debugInfo.mode = mode_;
+    {
+        std::lock_guard<std::mutex> lock(stateMutex_);
+        debugInfo.currentState = currentState_;
+    }
+
+    // Device information
+    debugInfo.activeOutputDevice = activeOutputDevice_;
+    debugInfo.activeInputDevice = activeInputDevice_;
+
+    // Audio effect information
+    debugInfo.reverbPreset = currentReverbPreset_;
+    debugInfo.equalizerPreset = currentEqualizerPreset_;
+
+    // Volume from karaokeParams_
+    auto it = karaokeParams_.find("Karaoke_volume");
+    if (it != karaokeParams_.end() && !it->second.empty()) {
+        int32_t val = 0;
+        constexpr int32_t maxVolume = 100;
+        constexpr int32_t base = 10;
+        for (char c : it->second) {
+            if (c < '0' || c > '9') {
+                val = 0;
+                break;
+            }
+            val = val * base + (c - '0');
+            if (val > maxVolume) {
+                val = maxVolume;
+                break;
+            }
+        }
+        debugInfo.volume = val;
+    }
+
+    // Stream states
+    debugInfo.uplinkStreamState = rendererState_.load();
+    debugInfo.downlinkStreamState = capturerState_.load();
+
+    return SUCCESS;
 }
 
 bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)

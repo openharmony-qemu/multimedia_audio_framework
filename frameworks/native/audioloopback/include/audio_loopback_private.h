@@ -137,7 +137,7 @@ private:
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioCapturer> audioCapturer_;
     std::mutex loopbackMutex_;
-    std::mutex stateMutex_;
+    mutable std::mutex stateMutex_;
     std::shared_ptr<AudioLoopbackCallback> statusCallback_;
     AudioLoopbackState currentState_ = LOOPBACK_STATE_IDLE;
     AudioLoopbackMode mode_ = LOOPBACK_HARDWARE;
