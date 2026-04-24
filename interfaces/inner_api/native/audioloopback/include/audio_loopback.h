@@ -90,7 +90,6 @@ public:
         return 0;
     }
 
-
     virtual ~AudioLoopback();
 };
 } // namespace AudioStandard

@@ -344,23 +344,26 @@ int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debug
     debugInfo.equalizerPreset = currentEqualizerPreset_;
 
     // Volume from karaokeParams_
-    auto it = karaokeParams_.find("Karaoke_volume");
-    if (it != karaokeParams_.end() && !it->second.empty()) {
-        int32_t val = 0;
-        constexpr int32_t maxVolume = 100;
-        constexpr int32_t base = 10;
-        for (char c : it->second) {
-            if (c < '0' || c > '9') {
-                val = 0;
-                break;
+    {
+        std::lock_guard<std::mutex> lock(loopbackMutex_);
+        auto it = karaokeParams_.find("Karaoke_volume");
+        if (it != karaokeParams_.end() && !it->second.empty()) {
+            int32_t val = 0;
+            constexpr int32_t maxVolume = 100;
+            constexpr int32_t base = 10;
+            for (char c : it->second) {
+                if (c < '0' || c > '9') {
+                    val = 0;
+                    break;
+                }
+                val = val * base + (c - '0');
+                if (val > maxVolume) {
+                    val = maxVolume;
+                    break;
+                }
             }
-            val = val * base + (c - '0');
-            if (val > maxVolume) {
-                val = maxVolume;
-                break;
-            }
+            debugInfo.volume = val;
         }
-        debugInfo.volume = val;
     }
 
     // Stream states
