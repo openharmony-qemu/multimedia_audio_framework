@@ -24,6 +24,7 @@ using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t DEFAULT_PIPE_ID = 0;
 
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
@@ -4107,7 +4108,8 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_001, TestSize.Level1)
     pipeInfo->AddStream(streamDesc);
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
 
-    audioCoreService->UpdateOutputRoute(streamDesc);
+    uint32_t pipeId = DEFAULT_PIPE_ID;
+    audioCoreService->UpdateOutputRoute(streamDesc, pipeId);
     EXPECT_EQ(1, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
 
     audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();

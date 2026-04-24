@@ -21,6 +21,7 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_definition_policy_utils.h"
 #include "audio_policy_utils.h"
+#include "parameters.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -35,6 +36,8 @@ const uint32_t VOIP_SESSIONID = 2;
 const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 const uint32_t DEFAULT_PIPE_ID = 0;
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
 AudioPipeManager::AudioPipeManager()
     : audioConfigManager_(AudioCoreConfigManager::GetInstance()),
@@ -654,6 +657,11 @@ uint32_t AudioPipeManager::QueryPipeIdBySessionId(uint32_t sessionId)
                 return it->id_;
             }
         }
+    }
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        // For multi devices scenario, if sessionId is not found,
+        // return invalid id to avoid primary speaker with wrong device.
+        return HDI_INVALID_ID;
     }
     return DEFAULT_PIPE_ID;
 }
