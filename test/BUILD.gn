@@ -352,6 +352,7 @@ group("audio_fuzz_test") {
     # "fuzztest/hpaesourceoutputnode_fuzzer:fuzztest",
     # "fuzztest/hpaestreammanager_fuzzer:fuzztest",
     # "fuzztest/hpaevirtualprocesscluster_fuzzer:fuzztest",
+    "fuzztest/hpaevirtualcapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanageradd_fuzzer:fuzztest",
     "fuzztest/ipcstreaminserver_fuzzer:fuzztest",
