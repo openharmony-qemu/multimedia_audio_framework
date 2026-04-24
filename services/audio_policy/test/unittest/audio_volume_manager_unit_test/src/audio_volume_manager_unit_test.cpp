@@ -1043,11 +1043,11 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_048, TestSize.Level1)
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
     auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
-    EXPECT_NE(ret, 0);
+    EXPECT_NE(ret, SUCCESS);
 
     internalCall = false;
     ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
-    EXPECT_NE(ret, 0);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -1690,7 +1690,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_001, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t resultSet;
-    int32_t zoneId = -1;
+    int32_t zoneId = 0;
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
@@ -1711,7 +1711,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_002, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MUSIC;
     DeviceType deviceType = DEVICE_TYPE_NEARLINK;
     int32_t resultSet;
-    int32_t zoneId = -1;
+    int32_t zoneId = 0;
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
@@ -1732,7 +1732,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_003, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MUSIC;
     DeviceType deviceType = DEVICE_TYPE_NEARLINK;
     int32_t resultSet;
-    int32_t zoneId = -1;
+    int32_t zoneId = 0;
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
