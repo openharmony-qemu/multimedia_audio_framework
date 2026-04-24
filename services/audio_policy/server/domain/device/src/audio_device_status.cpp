@@ -1503,13 +1503,14 @@ void AudioDeviceStatus::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelectDeviceMapInit()
 {
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
     shared_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice =
         strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
     shared_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice =
         strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
-    shared_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPreferredCallCaptureDevice();
-    shared_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPreferredRecordCaptureDevice();
+    shared_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice =
+        strategy.GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
+    shared_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice =
+        strategy.GetMediaInputDevice(INVALID_UID, INVALID_STREAM_ID, SOURCE_TYPE_INVALID);
     vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
     userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectMediaRenderDevice));
     userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
@@ -1634,20 +1635,14 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
             selectDesc, SYSTEM_UID, "UpdateAllUserSelectDevice");
     }
     if (userSelectDeviceMap[CALL_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
-        userSelectDeviceMap[CALL_CAPTURE_ID]->macAddress_ == desc.macAddress_) {
-        if (userSelectDeviceMap[CALL_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, selectDesc);
-        } else {
-            audioStateManager_.UpdatePreferredCallCaptureDeviceConnectState(desc.connectState_);
-        }
+        userSelectDeviceMap[CALL_CAPTURE_ID]->macAddress_ == desc.macAddress_ &&
+        userSelectDeviceMap[CALL_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, selectDesc);
     }
     if (userSelectDeviceMap[RECORD_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
-        userSelectDeviceMap[RECORD_CAPTURE_ID]->macAddress_ == desc.macAddress_) {
-        if (userSelectDeviceMap[RECORD_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectDesc);
-        } else {
-            audioStateManager_.UpdatePreferredRecordCaptureDeviceConnectState(desc.connectState_);
-        }
+        userSelectDeviceMap[RECORD_CAPTURE_ID]->macAddress_ == desc.macAddress_ &&
+        userSelectDeviceMap[RECORD_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectDesc);
     }
 }
 

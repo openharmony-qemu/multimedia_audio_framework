@@ -101,7 +101,6 @@ public:
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetRunningStreamUsageNoUltrasonic();
     SourceType GetRunningSourceTypeNoUltrasonic();
-    StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
     std::vector<std::pair<int32_t, AudioStreamType>> GetActiveStreams();

@@ -102,42 +102,16 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void SetPreferredCallCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    AudioStateManager::GetAudioStateManager().SetPreferredCallCaptureDevice(desc);
-}
-
 void SetPreferredRingRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredRingRenderDevice(desc);
 }
 
-void SetPreferredRecordCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    AudioStateManager::GetAudioStateManager().SetPreferredRecordCaptureDevice(desc);
-}
-
 void SetPreferredToneRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredToneRenderDevice(desc);
-}
-
-void UpdatePreferredCallCaptureDeviceConnectStateFuzzTest(FuzzedDataProvider& fdp)
-{
-    int32_t stateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
-    ConnectState state = static_cast<ConnectState>(GetData<uint8_t>() % stateCount);
-    AudioStateManager::GetAudioStateManager().UpdatePreferredCallCaptureDeviceConnectState(state);
-}
-
-void UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest(FuzzedDataProvider& fdp)
-{
-    int32_t stateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
-    ConnectState state = static_cast<ConnectState>(GetData<uint8_t>() % stateCount);
-    AudioStateManager::GetAudioStateManager().UpdatePreferredRecordCaptureDeviceConnectState(state);
 }
 
 void SetAndGetPreferredRingRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -180,12 +154,8 @@ void CheckVKBInfoFuzzTest(FuzzedDataProvider& fdp)
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
-    SetPreferredCallCaptureDeviceFuzzTest,
     SetPreferredRingRenderDeviceFuzzTest,
-    SetPreferredRecordCaptureDeviceFuzzTest,
     SetPreferredToneRenderDeviceFuzzTest,
-    UpdatePreferredCallCaptureDeviceConnectStateFuzzTest,
-    UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest,
     SetAndGetPreferredRingRenderDeviceFuzzTest,
     SetAndGetPreferredToneRenderDeviceFuzzTest,
     SetAndGetPreferredRecognitionCaptureDeviceFuzzTest,

@@ -66,6 +66,29 @@ bool WirelessConflictHandler::IsScoDevice(const std::shared_ptr<AudioDeviceDescr
     return device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
 }
 
+bool WirelessConflictHandler::IsNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    CHECK_AND_RETURN_RET(device != nullptr, false);
+    return device->deviceType_ == DEVICE_TYPE_NEARLINK || device->deviceType_ == DEVICE_TYPE_NEARLINK_IN;
+}
+
+bool WirelessConflictHandler::IsWirelessDevice(const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    CHECK_AND_RETURN_RET(device != nullptr, false);
+    return IsScoDevice(device) || IsNearlinkDevice(device) ||
+           device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+           device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+}
+
+bool WirelessConflictHandler::IsSameWirelessDevicePair(const std::shared_ptr<AudioDeviceDescriptor> &device1,
+    const std::shared_ptr<AudioDeviceDescriptor> &device2)
+{
+    if (device1 == nullptr || device2 == nullptr) {
+        return false;
+    }
+    return device1->macAddress_ == device2->macAddress_;
+}
+
 bool WirelessConflictHandler::HasNonPairScoSelected()
 {
     for (auto &info : outputStreamDevices_) {
@@ -81,6 +104,47 @@ bool WirelessConflictHandler::HasNonPairScoSelected()
     return false;
 }
 
+bool WirelessConflictHandler::CheckWirelessDeviceConflict(
+    const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType, bool isOutput)
+{
+    if (IsScoDevice(device) && routerType == ROUTER_TYPE_PAIR_DEVICE && !HasNonPairScoSelected()) {
+        return true;
+    }
+    
+    auto &targetDevices = isOutput ? inputStreamDevices_ : outputStreamDevices_;
+    for (auto &info : targetDevices) {
+        if (info.device != nullptr && IsWirelessDevice(info.device) &&
+            !IsSameWirelessDevicePair(device, info.device)) {
+            AUDIO_INFO_LOG("Wireless device conflict: deviceId %{public}d vs %{public}d",
+                device->deviceId_, info.device->deviceId_);
+            return true;
+        }
+    }
+    return false;
+}
+
+int WirelessConflictHandler::FindHighestPriorityDevice(std::string &highestPriorityMac)
+{
+    int highestPriority = 0;
+    for (auto &info : outputStreamDevices_) {
+        if (info.device == nullptr || info.device->macAddress_.empty()) continue;
+        int priority = GetPriority(info.streamUsage, SOURCE_TYPE_INVALID, info.routerType, true);
+        if (priority > highestPriority) {
+            highestPriority = priority;
+            highestPriorityMac = info.device->macAddress_;
+        }
+    }
+    for (auto &info : inputStreamDevices_) {
+        if (info.device == nullptr || info.device->macAddress_.empty()) continue;
+        int priority = GetPriority(STREAM_USAGE_UNKNOWN, info.sourceType, info.routerType, false);
+        if (priority > highestPriority) {
+            highestPriority = priority;
+            highestPriorityMac = info.device->macAddress_;
+        }
+    }
+    return highestPriority;
+}
+
 bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
     StreamUsage streamUsage, SourceType sourceType, bool isOutput)
 {
@@ -88,41 +152,15 @@ bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor
         return false;
     }
     
-    if (IsScoDevice(device) && routerType == ROUTER_TYPE_PAIR_DEVICE && !HasNonPairScoSelected()) {
+    if (IsWirelessDevice(device) && CheckWirelessDeviceConflict(device, routerType, isOutput)) {
         return true;
     }
     
     int currentPriority = GetPriority(streamUsage, sourceType, routerType, isOutput);
-    int highestPriority = 0;
     std::string highestPriorityMac;
+    int highestPriority = FindHighestPriorityDevice(highestPriorityMac);
     
-    for (auto &info : outputStreamDevices_) {
-        if (info.device == nullptr || info.device->macAddress_.empty()) {
-            continue;
-        }
-        int priority = GetPriority(info.streamUsage, SOURCE_TYPE_INVALID, info.routerType, true);
-        if (priority > highestPriority) {
-            highestPriority = priority;
-            highestPriorityMac = info.device->macAddress_;
-        }
-    }
-    
-    for (auto &info : inputStreamDevices_) {
-        if (info.device == nullptr || info.device->macAddress_.empty()) {
-            continue;
-        }
-        int priority = GetPriority(STREAM_USAGE_UNKNOWN, info.sourceType, info.routerType, false);
-        if (priority > highestPriority) {
-            highestPriority = priority;
-            highestPriorityMac = info.device->macAddress_;
-        }
-    }
-    
-    if (highestPriority > currentPriority && highestPriorityMac != device->macAddress_) {
-        return true;
-    }
-    
-    return false;
+    return highestPriority > currentPriority && highestPriorityMac != device->macAddress_;
 }
 
 void WirelessConflictHandler::SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
