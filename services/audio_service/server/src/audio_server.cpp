@@ -1345,9 +1345,9 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     
-    std::string result = HdiAdapterManager::GetInstance().GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, key);
-    if (!result.empty()) {
-        return result;
+    auto result = HdiAdapterManager::GetInstance().GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, key);
+    if (result.has_value()) {
+        return result.value();
     }
 
     if (AudioServer::audioParameters.count(key)) {

@@ -1339,7 +1339,7 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    desc.deviceRole_ == INPUT_DEVICE;
+    desc.deviceRole_ = INPUT_DEVICE;
     auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
     EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
     ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
