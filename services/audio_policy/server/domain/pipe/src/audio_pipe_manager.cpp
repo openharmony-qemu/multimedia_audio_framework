@@ -498,7 +498,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
         for (auto desc : it->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             std::shared_ptr<AudioStreamDescriptor> tmp = std::make_shared<AudioStreamDescriptor>();
-            tmp->newDeviceDescs_ = desc->newDeviceDescs_;
+            tmp->newDeviceDescs_ = desc->GetNewDeviceDescs();
             tmp->rendererInfo_.streamUsage = desc->rendererInfo_.streamUsage;
             tmp->appInfo_ = desc->appInfo_;
             tmp->sessionId_ = desc->sessionId_;
@@ -813,11 +813,10 @@ void AudioPipeManager::UpdateModemStreamStatus(AudioStreamStatus streamStatus)
 
 void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
     for (auto &entry : modemCommunicationIdMap_) {
         CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
-        entry.second->oldDeviceDescs_ = entry.second->newDeviceDescs_;
-        entry.second->newDeviceDescs_ = deviceDescs;
+        entry.second->SwapAndUpdateNewDeviceDescs(deviceDescs);
     }
 }
 
@@ -859,11 +858,8 @@ void AudioPipeManager::UpdateRingAndVoipStreamDevice(
 
     CHECK_AND_RETURN(ringAndVoipDescMap_[RING_SESSIONID] != nullptr && ringAndVoipDescMap_[VOIP_SESSIONID] != nullptr);
 
-    ringAndVoipDescMap_[RING_SESSIONID]->oldDeviceDescs_ = ringAndVoipDescMap_[RING_SESSIONID]->newDeviceDescs_;
-    ringAndVoipDescMap_[RING_SESSIONID]->newDeviceDescs_ = ringDeviceDescs;
-
-    ringAndVoipDescMap_[VOIP_SESSIONID]->oldDeviceDescs_ = ringAndVoipDescMap_[VOIP_SESSIONID]->newDeviceDescs_;
-    ringAndVoipDescMap_[VOIP_SESSIONID]->newDeviceDescs_ = voipDeviceDescs;
+    ringAndVoipDescMap_[RING_SESSIONID]->SwapAndUpdateNewDeviceDescs(ringDeviceDescs);
+    ringAndVoipDescMap_[VOIP_SESSIONID]->SwapAndUpdateNewDeviceDescs(voipDeviceDescs);
 }
 
 bool AudioPipeManager::CheckRingAndVoipStreamRunning()
