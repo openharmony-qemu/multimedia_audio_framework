@@ -31,6 +31,7 @@
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
 #include "parameters.h"
+#include "util/id_handler.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
@@ -1722,7 +1723,9 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     auto &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     struct VolumeValues volumes;
     auto audioVolume = AudioVolume::GetInstance();
-    float curVolume = audioVolume->GetVolume(sessionId, nodeInfo.streamType, sinkInfo_.sinkId, &volumes);
+    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(sinkInfo_.deviceClass,
+        sinkInfo_.deviceNetId);
+    float curVolume = audioVolume->GetVolume(sessionId, nodeInfo.streamType, rendererId, &volumes);
     auto isZeroVolume = audioVolume->IsSameVolume(0.0f, curVolume);
     AUDIO_INFO_LOG("session %{public}u, stream %{public}d, is zero volume %{public}d",
         sessionId, nodeInfo.streamType, isZeroVolume);

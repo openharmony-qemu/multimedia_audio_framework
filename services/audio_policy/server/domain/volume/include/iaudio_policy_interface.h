@@ -29,23 +29,18 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace OHOS {
 namespace AudioStandard {
 
-struct PipeDeviceVolumeInfo {
-    AudioIOHandle ioHandle_;
+struct PipeDeviceVolumeGroup {
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc_;
-    std::set<AudioVolumeType> volumeTypes_;
-    PipeDeviceVolumeInfo() {}
-    PipeDeviceVolumeInfo(AudioIOHandle ioHandle, std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
-        : ioHandle_(ioHandle),
-        deviceDesc_(deviceDesc) {}
-    PipeDeviceVolumeInfo(AudioIOHandle ioHandle, std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
-        std::set<AudioVolumeType> volumeTypes)
-        : ioHandle_(ioHandle),
-        deviceDesc_(deviceDesc),
-        volumeTypes_(volumeTypes) {}
+    std::unordered_map<AudioVolumeType, std::unordered_set<AudioIOHandle>> volumeTypeIoHandles_;
+    PipeDeviceVolumeGroup() {}
+    explicit PipeDeviceVolumeGroup(std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
+        : deviceDesc_(deviceDesc) {}
 };
 
 enum LoudVolumeHoldType {
@@ -347,7 +342,7 @@ public:
     virtual int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs) = 0;
     virtual void TriggerAudioZoneVolumeSync(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc = nullptr) = 0;
-    virtual void UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo) = 0;
+    virtual void UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeGroup> pipeDeviceVolumeGroups) = 0;
     virtual void RemoveAudioPipeVolume(uint32_t IoHandle) = 0;
     virtual void UpdateVolumeForAllPipes() = 0;
     virtual void UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType) = 0;

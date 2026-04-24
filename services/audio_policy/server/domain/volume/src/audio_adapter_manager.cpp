@@ -826,20 +826,20 @@ void AudioAdapterManager::SetAppAudioVolume(int32_t appUid, float volumeDb)
 void AudioAdapterManager::SendOffloadVolume(const std::string &networkId)
 {
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
+    std::lock_guard<std::mutex> lock(offloadSessionMutex_);
     for (auto &pair : ioHandleSessionMap_) {
         uint32_t ioHandle = pair.first;
         uint32_t sessionId = pair.second;
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_MUSIC, ioHandle, &volumes);
-        if (volumes.volumeHistory == volume) {
-            AUDIO_INFO_LOG("volume not change, no need to send, sessionId[%{public}d] ioHandle[%{public}d]",
-                sessionId, ioHandle);
+        if (IsSameVolume(ioHandleVolumeMap_[ioHandle], volume)) {
+            AUDIO_INFO_LOG("volume not change, no need to send, sessionId[%{public}d] volume[%{public}f]",
+                sessionId, volume);
             continue;
         }
-        std::string routeDeviceClass = OFFLOAD_IN_REMOTE == offloadSessionID_[ioHandleSessionMap_[ioHandle]] ?
-            "remote_offload" : "offload";
+        ioHandleVolumeMap_[ioHandle] = volume;
         std::string identity = IPCSkeleton::ResetCallingIdentity();
-        audioServerProxy_->OffloadSetVolume(volume, routeDeviceClass, networkId);  //todo
+        audioServerProxy_->OffloadSetVolume(volume, ioHandle, networkId);  //todo
         AudioVolume::GetInstance()->Monitor(ioHandleSessionMap_[ioHandle], true);
         IPCSkeleton::SetCallingIdentity(identity);
         AUDIO_INFO_LOG("SendOffloadVolume for ioHandle[%{public}d] sessionId[%{public}d] volume[%{public}f]",
@@ -849,27 +849,29 @@ void AudioAdapterManager::SendOffloadVolume(const std::string &networkId)
 
 void AudioAdapterManager::SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter, uint32_t ioHandle)
 {
+    std::lock_guard<std::mutex> lock(offloadSessionMutex_);
     if (sessionId < MIN_STREAMID || sessionId > MAX_STREAMID) {
         AUDIO_PRERELEASE_LOGE("set sessionId[%{public}d] error", sessionId);
     } else {
         AUDIO_PRERELEASE_LOGI("set sessionId[%{public}d]", sessionId);
     }
-    offloadSessionID_[sessionId] = offloadAdapter;
     ioHandleSessionMap_[ioHandle] = sessionId;
+    // initialize volume to invalid value to ensure volume is sent when session is set
+    ioHandleVolumeMap_[ioHandle] = -1.0f;
 }
 
 void AudioAdapterManager::ResetOffloadSessionId(uint32_t sessionId)
 {
-    if (offloadSessionID_.find(sessionId) != offloadSessionID_.end()) {
-        AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_[sessionId]);
-        offloadSessionID_.erase(sessionId);
-        auto it = std::find_if(ioHandleSessionMap_.begin(), ioHandleSessionMap_.end(),
-            [&sessionId](const auto& pair) {
-                return pair.second == sessionId;
-        });
-        if (it != ioHandleSessionMap_.end()) {
-            ioHandleSessionMap_.erase(it);
-        }
+    std::lock_guard<std::mutex> lock(offloadSessionMutex_);
+    auto it = std::find_if(ioHandleSessionMap_.begin(), ioHandleSessionMap_.end(),
+        [&sessionId](const auto& pair) {
+            return pair.second == sessionId;
+    });
+    if (it != ioHandleSessionMap_.end()) {
+        AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", sessionId);
+        int key = it->first;
+        ioHandleSessionMap_.erase(it);
+        ioHandleVolumeMap_.erase(key);
     }
 }
 
@@ -1419,11 +1421,11 @@ float AudioAdapterManager::GetVolumeReductionRatio(AudioStreamType streamType)
 
 void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
 {
-    auto pipeDeviceVolumeInfo = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
-    for (auto &info : pipeDeviceVolumeInfo) {
-        for (auto volumeType : info.volumeTypes_) {
-            CHECK_AND_CONTINUE(volumeType != streamType);
-            UpdateTypeVolumeForPipe(info.ioHandle_, volumeType, info.deviceDesc_);
+    auto pipeDeviceVolumeGroups = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
+    for (auto &group : pipeDeviceVolumeGroups) {
+        for (auto &entry : group.volumeTypeIoHandles_) {
+            CHECK_AND_CONTINUE(entry.first != streamType);
+            UpdateTypeVolumeForPipe(entry.first, group.deviceDesc_, entry.second);
         }
     }
 }
@@ -4163,41 +4165,46 @@ void AudioAdapterManager::RemoveAudioPipeVolume(uint32_t IoHandle)
     }
 }
 
-void AudioAdapterManager::UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo)
+void AudioAdapterManager::UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeGroup> pipeDeviceVolumeGroups)
 {
-    for (auto &info : pipeDeviceVolumeInfo) {
-        for (auto volumeType : info.volumeTypes_) {
-            UpdateTypeVolumeForPipe(info.ioHandle_, volumeType, info.deviceDesc_);
+    for (auto &group : pipeDeviceVolumeGroups) {
+        for (auto &entry : group.volumeTypeIoHandles_) {
+            UpdateTypeVolumeForPipe(entry.first, group.deviceDesc_, entry.second);
+            UpdateVolumeForLowLatency(group.deviceDesc_, entry.first);
         }
     }
 }
 
 void AudioAdapterManager::UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType)
 {
-    auto pipeDeviceVolumeInfo = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
-    for (auto &info : pipeDeviceVolumeInfo) {
-        CHECK_AND_CONTINUE(info.volumeTypes_.count(volumeType) > 0);
-        UpdateTypeVolumeForPipe(info.ioHandle_, volumeType, info.deviceDesc_);
+    auto pipeDeviceVolumeGroups = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
+    for (auto &group : pipeDeviceVolumeGroups) {
+        auto it = group.volumeTypeIoHandles_.find(volumeType);
+        CHECK_AND_CONTINUE(it != group.volumeTypeIoHandles_.end());
+        UpdateTypeVolumeForPipe(volumeType, group.deviceDesc_, it->second);
+        UpdateVolumeForLowLatency(group.deviceDesc_, volumeType);
     }
 }
 
 void AudioAdapterManager::UpdateVolumeForAllPipes()
 {
-    auto pipeDeviceVolumeInfo = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
-    for (auto &info : pipeDeviceVolumeInfo) {
-        for (auto volumeType : info.volumeTypes_) {
-            UpdateTypeVolumeForPipe(info.ioHandle_, volumeType, info.deviceDesc_);
+    auto pipeDeviceVolumeGroups = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
+    for (auto &group : pipeDeviceVolumeGroups) {
+        for (auto &entry : group.volumeTypeIoHandles_) {
+            UpdateTypeVolumeForPipe(entry.first, group.deviceDesc_, entry.second);
+            UpdateVolumeForLowLatency(group.deviceDesc_, entry.first);
         }
     }
 }
 
 void AudioAdapterManager::UpdatePipeVolumeWhenVgsStatusChanged()
 {
-    auto pipeDeviceVolumeInfo = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
-    for (auto &info : pipeDeviceVolumeInfo) {
-        std::shared_ptr<AudioDeviceDescriptor> device = info.deviceDesc_;
-        CHECK_AND_CONTINUE(device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
-        UpdateTypeVolumeForPipe(info.ioHandle_, STREAM_VOICE_CALL, device);
+    auto pipeDeviceVolumeGroups = AudioPipeManager::GetPipeManager()->GetAllPipeDeviceVolumeInfo();
+    for (auto &group : pipeDeviceVolumeGroups) {
+        CHECK_AND_CONTINUE(group.deviceDesc_->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+        auto it = group.volumeTypeIoHandles_.find(STREAM_VOICE_CALL);
+        CHECK_AND_CONTINUE(it != group.volumeTypeIoHandles_.end());
+        UpdateTypeVolumeForPipe(STREAM_VOICE_CALL, group.deviceDesc_, it->second);
     }
 }
 
@@ -4213,21 +4220,24 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_HEARING_AID);
         bool result = AudioIOHandleMap::GetInstance().GetModuleIdByKey(sinkName, ioHandle);
         CHECK_AND_RETURN_RET_LOG(result, ERROR, "GetModuleIdByKey failed for hearing aid");
-        UpdateTypeVolumeForPipe(ioHandle, volumeType, desc);
+        std::unordered_set<AudioIOHandle> pipeIds = {ioHandle};
+        UpdateTypeVolumeForPipe(volumeType, desc, pipeIds);
         return SUCCESS;
     }
-    auto pipeDeviceVolumeInfo = AudioPipeManager::GetPipeManager()->GetPipeDeviceVolumeInfoForDevice(desc);
-    AUDIO_INFO_LOG("pipe size: %{public}zu", pipeDeviceVolumeInfo.size());
-    for (auto &info : pipeDeviceVolumeInfo) {
-        AUDIO_INFO_LOG("device: %{public}d, networkId: %{public}s, pipeId: %{public}d",
-            desc->deviceType_, desc->networkId_.c_str(), info.ioHandle_);
-        UpdateTypeVolumeForPipe(info.ioHandle_, volumeType, info.deviceDesc_);
+    auto pipeDeviceVolumeGroups = AudioPipeManager::GetPipeManager()->GetPipeDeviceVolumeInfoForDevice(desc);
+    AUDIO_INFO_LOG("pipe size: %{public}zu", pipeDeviceVolumeGroups.size());
+    for (auto &group : pipeDeviceVolumeGroups) {
+        auto it = group.volumeTypeIoHandles_.find(volumeType);
+        CHECK_AND_CONTINUE(it != group.volumeTypeIoHandles_.end());
+        AUDIO_INFO_LOG("device: %{public}d, networkId: %{private}s, pipeIds size: %{public}zu",
+            desc->deviceType_, desc->networkId_.c_str(), it->second.size());
+        UpdateTypeVolumeForPipe(volumeType, group.deviceDesc_, it->second);
     }
     return SUCCESS;
 }
 
-void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeType volumeType,
-    std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
+void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
+    std::shared_ptr<AudioDeviceDescriptor> device, const std::unordered_set<AudioIOHandle>& pipeIds, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock1(activeDeviceMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
@@ -4258,13 +4268,14 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeTy
     std::lock_guard<std::mutex> lock2(audioVolumeMutex_);
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-
-    PipeVolume pipeVolume(pipeId, volumeType, volumeDb, volumeLevel, isMuted);
-    audioVolume->SetPipeVolume(pipeVolume);
-
-    AUDIO_INFO_LOG("pipeId:%{public}d volumeType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
-        volumeDegree:%{public}d device:%{public}s",
-        pipeId, volumeType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
+    
+    for (auto pipeId : pipeIds) {
+        PipeVolume pipeVolume(pipeId, volumeType, volumeDb, volumeLevel, isMuted);
+        audioVolume->SetPipeVolume(pipeVolume);
+        AUDIO_INFO_LOG("pipeId:%{public}d volumeType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
+            volumeDegree:%{public}d device:%{public}s",
+            pipeId, volumeType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
+    }
 
     SendOffloadVolume(device->networkId_);
 }

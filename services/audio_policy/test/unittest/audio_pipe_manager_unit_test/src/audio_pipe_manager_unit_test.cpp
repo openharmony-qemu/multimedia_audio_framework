@@ -2364,40 +2364,40 @@ HWTEST_F(AudioPipeManagerUnitTest, GetVolumeTypeFromStreamDesc_002, TestSize.Lev
 }
 
 /**
- * @tc.name: AddOrUpdateVolumeInfo_001
- * @tc.desc: Test AddOrUpdateVolumeInfo when existing item matches, insert volumeType.
+ * @tc.name: AddOrUpdatePipeDeviceVolumeGroup_001
+ * @tc.desc: Test AddOrUpdatePipeDeviceVolumeGroup when existing item matches, insert volumeType.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, AddOrUpdateVolumeInfo_001, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, AddOrUpdatePipeDeviceVolumeGroup_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_NE(nullptr, audioPipeManager);
     
-    std::vector<PipeDeviceVolumeInfo> result;
+    std::vector<PipeDeviceVolumeGroup> result;
     AudioIOHandle ioHandle = 100;
     std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
     device->macAddress_ = "00:11:22:33:44:55";
     
-    audioPipeManager->AddOrUpdateVolumeInfo(result, ioHandle, device, STREAM_MUSIC);
+    audioPipeManager->AddOrUpdatePipeDeviceVolumeGroup(result, ioHandle, device, STREAM_MUSIC);
     EXPECT_EQ(result.size(), 1);
     
-    audioPipeManager->AddOrUpdateVolumeInfo(result, ioHandle, device, STREAM_VOICE_CALL);
+    audioPipeManager->AddOrUpdatePipeDeviceVolumeGroup(result, ioHandle, device, STREAM_VOICE_CALL);
     EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].volumeTypes_.size(), 2);
+    EXPECT_EQ(result[0].volumeTypeIoHandles_.size(), 2);
 }
 
 /**
- * @tc.name: AddOrUpdateVolumeInfo_002
- * @tc.desc: Test AddOrUpdateVolumeInfo when no match, creates new PipeDeviceVolumeInfo.
+ * @tc.name: AddOrUpdatePipeDeviceVolumeGroup_002
+ * @tc.desc: Test AddOrUpdatePipeDeviceVolumeGroup when no match, creates new PipeDeviceVolumeGroup.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, AddOrUpdateVolumeInfo_002, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, AddOrUpdatePipeDeviceVolumeGroup_002, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_NE(nullptr, audioPipeManager);
     
-    std::vector<PipeDeviceVolumeInfo> result;
+    std::vector<PipeDeviceVolumeGroup> result;
     AudioIOHandle ioHandle1 = 100;
     AudioIOHandle ioHandle2 = 200;
     std::shared_ptr<AudioDeviceDescriptor> device1 = std::make_shared<AudioDeviceDescriptor>();
@@ -2405,14 +2405,15 @@ HWTEST_F(AudioPipeManagerUnitTest, AddOrUpdateVolumeInfo_002, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> device2 = std::make_shared<AudioDeviceDescriptor>();
     device2->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     
-    audioPipeManager->AddOrUpdateVolumeInfo(result, ioHandle1, device1, STREAM_MUSIC);
+    audioPipeManager->AddOrUpdatePipeDeviceVolumeGroup(result, ioHandle1, device1, STREAM_MUSIC);
     EXPECT_EQ(result.size(), 1);
 
-    audioPipeManager->AddOrUpdateVolumeInfo(result, ioHandle2, device1, STREAM_MUSIC);
-    EXPECT_EQ(result.size(), 2);
+    audioPipeManager->AddOrUpdatePipeDeviceVolumeGroup(result, ioHandle2, device1, STREAM_MUSIC);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].volumeTypeIoHandles_[STREAM_MUSIC].size(), 2);
     
-    audioPipeManager->AddOrUpdateVolumeInfo(result, ioHandle2, device2, STREAM_VOICE_CALL);
-    EXPECT_EQ(result.size(), 3);
+    audioPipeManager->AddOrUpdatePipeDeviceVolumeGroup(result, ioHandle2, device2, STREAM_VOICE_CALL);
+    EXPECT_EQ(result.size(), 2);
 }
 
 /**
@@ -2426,7 +2427,8 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_001, TestSize.Level1
     ASSERT_NE(nullptr, audioPipeManager);
     
     std::shared_ptr<AudioPipeInfo> pipeInfo = nullptr;
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_TRUE(result.empty());
 }
 
@@ -2443,7 +2445,8 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_002, TestSize.Level1
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->streamDescriptors_.clear();
     
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_TRUE(result.empty());
 }
 
@@ -2460,7 +2463,8 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_003, TestSize.Level1
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->streamDescriptors_.push_back(nullptr);
     
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_TRUE(result.empty());
 }
 
@@ -2479,7 +2483,8 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_004, TestSize.Level1
     streamDesc->newDeviceDescs_.clear();
     pipeInfo->streamDescriptors_.push_back(streamDesc);
     
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_TRUE(result.empty());
 }
 
@@ -2498,7 +2503,8 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_005, TestSize.Level1
     streamDesc->newDeviceDescs_.push_back(nullptr);
     pipeInfo->streamDescriptors_.push_back(streamDesc);
     
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_TRUE(result.empty());
 }
 
@@ -2526,10 +2532,15 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_006, TestSize.Level1
     
     pipeInfo->streamDescriptors_.push_back(streamDesc);
     
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].ioHandle_, 100);
-    EXPECT_TRUE(result[0].volumeTypes_.count(STREAM_MUSIC) > 0);
+    EXPECT_NE(result[0].deviceDesc_, nullptr);
+    EXPECT_EQ(result[0].volumeTypeIoHandles_.size(), 1);
+    auto it = result[0].volumeTypeIoHandles_.find(STREAM_MUSIC);
+    EXPECT_NE(it, result[0].volumeTypeIoHandles_.end());
+    EXPECT_EQ(it->second.size(), 1);
+    EXPECT_EQ(*it->second.begin(), 100);
 }
 
 /**
@@ -2555,7 +2566,8 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_007, TestSize.Level1
     
     pipeInfo->streamDescriptors_.push_back(streamDesc);
     
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_EQ(result.size(), 1);
 }
 
@@ -2586,9 +2598,10 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_008, TestSize.Level1
     pipeInfo->streamDescriptors_.push_back(streamDesc1);
     pipeInfo->streamDescriptors_.push_back(streamDesc2);
     
-    auto result = audioPipeManager->ProcessPipeForVolumeInfo(pipeInfo);
+    std::vector<PipeDeviceVolumeGroup> result;
+    audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
     EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].volumeTypes_.size(), 2);
+    EXPECT_EQ(result[0].volumeTypeIoHandles_.size(), 2);
 }
 
 /**
@@ -2744,7 +2757,12 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeDeviceVolumeInfoForPipe_004, TestSize.
     AudioIOHandle targetId = 100;
     auto result = audioPipeManager->GetPipeDeviceVolumeInfoForPipe(targetId);
     EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].ioHandle_, 100);
+    EXPECT_NE(result[0].deviceDesc_, nullptr);
+    EXPECT_EQ(result[0].volumeTypeIoHandles_.size(), 1);
+    auto it = result[0].volumeTypeIoHandles_.find(STREAM_MUSIC);
+    EXPECT_NE(it, result[0].volumeTypeIoHandles_.end());
+    EXPECT_EQ(it->second.size(), 1);
+    EXPECT_EQ(*it->second.begin(), 100);
 }
 
 /**
@@ -2940,7 +2958,12 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeDeviceVolumeInfoForDevice_008, TestSiz
     
     auto result = audioPipeManager->GetPipeDeviceVolumeInfoForDevice(queryDevice);
     EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].ioHandle_, 100);
+    EXPECT_NE(result[0].deviceDesc_, nullptr);
+    EXPECT_EQ(result[0].volumeTypeIoHandles_.size(), 1);
+    auto it = result[0].volumeTypeIoHandles_.find(STREAM_MUSIC);
+    EXPECT_NE(it, result[0].volumeTypeIoHandles_.end());
+    EXPECT_EQ(it->second.size(), 1);
+    EXPECT_EQ(*it->second.begin(), 100);
 }
 
 /**
