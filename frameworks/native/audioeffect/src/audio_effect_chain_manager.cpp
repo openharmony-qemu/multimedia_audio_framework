@@ -1466,7 +1466,7 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     return;
 }
 
-int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     int32_t ret = AUDIO_OK;
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -1508,7 +1508,7 @@ void AudioEffectChainManager::LoadEffectProperties()
 }
 // LCOV_EXCL_STOP
 
-int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     propertyArray.property.clear();
@@ -1516,7 +1516,7 @@ int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray
         if (!prop.empty()) {
             AUDIO_DEBUG_LOG("effect->name %{public}s prop->category %{public}s",
                 effect.c_str(), prop.c_str());
-            propertyArray.property.emplace_back(AudioEffectPropertyV3{effect, prop, RENDER_EFFECT_FLAG});
+            propertyArray.property.emplace_back(AudioEffectProperty{effect, prop, RENDER_EFFECT_FLAG});
         }
     }
     return AUDIO_OK;

@@ -236,17 +236,17 @@ void MoveSourceOutputByIndexOrNameFuzzTest()
     impl_->MoveSourceOutputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
-void GetAudioEffectPropertyV3FuzzTest()
+void GetAudioEffectPropertyFuzzTest()
 {
     SetUp();
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     impl_->GetAudioEffectProperty(propertyArray);
 }
 
-void GetAudioEnhancePropertyV3FuzzTest()
+void GetAudioEnhancePropertyFuzzTest()
 {
     SetUp();
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     impl_->GetAudioEnhanceProperty(propertyArray);
 }
 
@@ -317,25 +317,11 @@ void OnMoveSourceOutputByIndexOrNameCbFuzzTest()
     impl_->OnMoveSourceOutputByIndexOrNameCb(result);
 }
 
-void OnGetAudioEffectPropertyCbV3FuzzTest()
-{
-    SetUp();
-    int32_t result = GetData<int32_t>();
-    impl_->OnGetAudioEffectPropertyCbV3(result);
-}
-
 void OnGetAudioEffectPropertyCbFuzzTest()
 {
     SetUp();
     int32_t result = GetData<int32_t>();
     impl_->OnGetAudioEffectPropertyCb(result);
-}
-
-void OnGetAudioEnhancePropertyCbV3FuzzTest()
-{
-    SetUp();
-    int32_t result = GetData<int32_t>();
-    impl_->OnGetAudioEnhancePropertyCbV3(result);
 }
 
 void OnGetAudioEnhancePropertyCbFuzzTest()
@@ -383,8 +369,8 @@ TestFuncs g_testFuncs = {
     SetLocalDefaultSinkFuzzTest,
     MoveSinkInputByIndexOrNameFuzzTest,
     MoveSourceOutputByIndexOrNameFuzzTest,
-    GetAudioEffectPropertyV3FuzzTest,
-    GetAudioEnhancePropertyV3FuzzTest,
+    GetAudioEffectPropertyFuzzTest,
+    GetAudioEnhancePropertyFuzzTest,
     OnOpenAudioPortCbFuzzTest,
     OnCloseAudioPortCbFuzzTest,
     OnSetSinkMuteCbFuzzTest,
@@ -394,9 +380,7 @@ TestFuncs g_testFuncs = {
     OnGetAllSinksCbFuzzTest,
     OnMoveSinkInputByIndexOrNameCbFuzzTest,
     OnMoveSourceOutputByIndexOrNameCbFuzzTest,
-    OnGetAudioEffectPropertyCbV3FuzzTest,
     OnGetAudioEffectPropertyCbFuzzTest,
-    OnGetAudioEnhancePropertyCbV3FuzzTest,
     OnGetAudioEnhancePropertyCbFuzzTest,
     HandleSourceAudioStreamRemovedFuzzTest,
     OnGetCollaborativeUpdateCbFuzzTest,

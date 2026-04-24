@@ -4827,7 +4827,7 @@ void AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration()
 }
 
 // LCOV_EXCL_START
-int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
@@ -4842,7 +4842,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
     return AUDIO_OK;
 }
 
-int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     size_t size = propertyArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
@@ -4856,7 +4856,7 @@ int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArray
     return audioPolicyService_.SetAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");

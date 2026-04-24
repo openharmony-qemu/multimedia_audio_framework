@@ -53,7 +53,7 @@ HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001, TestSize.Level0)
     ret = HpaePolicyManager::GetInstance().SetEffectSystemVolume(0, 1.f);
     EXPECT_EQ(ret, 0);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     ret = HpaePolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, 0);
 
@@ -76,12 +76,12 @@ HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001, TestSize.Level0)
 
 HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002, TestSize.Level0)
 {
-    AudioEffectPropertyArrayV3 propertyArray2;
+    AudioEffectPropertyArray propertyArray2;
     propertyArray2.property.push_back({"invalidEffect", "property1"});
     int32_t ret = HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray2, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
-    AudioEffectPropertyArrayV3 propertyArray3;
+    AudioEffectPropertyArray propertyArray3;
     ret = HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray3, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 

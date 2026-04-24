@@ -114,19 +114,19 @@ void GetInputDeviceTypeForReloadFuzzTest(FuzzedDataProvider& fdp)
     session.GetInputDeviceTypeForReload();
 }
 
-void GetEnhancePropByNameV3FuzzTest(FuzzedDataProvider& fdp)
+void GetEnhancePropByNameFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     std::string propName = "propName";
-    session.GetEnhancePropByNameV3(propertyArray, propName);
+    session.GetEnhancePropByName(propertyArray, propName);
 }
 
 void ReloadSourceForEffectFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectPropertyArray newPropertyArray;
     session.ReloadSourceForEffect(propertyArray, newPropertyArray);
 }
 
@@ -298,7 +298,7 @@ void Test(FuzzedDataProvider& fdp)
     IsVoipDeviceChangedFuzzTest,
     SetInputDeviceTypeForReloadFuzzTest,
     GetInputDeviceTypeForReloadFuzzTest,
-    GetEnhancePropByNameV3FuzzTest,
+    GetEnhancePropByNameFuzzTest,
     ReloadSourceForEffectFuzzTest,
     GetTargetSessionForEcFuzzTest,
     HandleIndependentInputpipeFuzzTest,

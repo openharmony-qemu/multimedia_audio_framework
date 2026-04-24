@@ -873,15 +873,15 @@ void AudioPolicyService::LoadHdiEffectModel()
     return AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
 }
 
-int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    AudioEffectPropertyArray effectPropertyArray = {};
     GetSupportedEffectProperty(effectPropertyArray);
     for (auto &effectItem : effectPropertyArray.property) {
         effectItem.flag = RENDER_EFFECT_FLAG;
         propertyArray.property.push_back(effectItem);
     }
-    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     GetSupportedEnhanceProperty(enhancePropertyArray);
     for (auto &enhanceItem : enhancePropertyArray.property) {
         enhanceItem.flag = CAPTURE_EFFECT_FLAG;
@@ -890,7 +890,7 @@ int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyA
     return AUDIO_OK;
 }
 
-void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
     audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
@@ -901,12 +901,12 @@ void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
         [](const std::pair<std::string, std::string>& p) {
-            return AudioEffectPropertyV3{p.first, p.second, RENDER_EFFECT_FLAG};
+            return AudioEffectProperty{p.first, p.second, RENDER_EFFECT_FLAG};
         });
     return;
 }
 
-void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
+void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
     audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
@@ -917,15 +917,15 @@ void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
         [](const std::pair<std::string, std::string>& p) {
-            return AudioEffectPropertyV3{p.first, p.second, CAPTURE_EFFECT_FLAG};
+            return AudioEffectProperty{p.first, p.second, CAPTURE_EFFECT_FLAG};
         });
     return;
 }
 
-int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectPropertyArray &propertyArray,
     const EffectFlag& flag)
 {
-    AudioEffectPropertyArrayV3 supportPropertyArray;
+    AudioEffectPropertyArray supportPropertyArray;
     if (flag == CAPTURE_EFFECT_FLAG) {
         GetSupportedEnhanceProperty(supportPropertyArray);
     } else {
@@ -940,11 +940,11 @@ int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectP
     return AUDIO_OK;
 }
 
-int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     int32_t ret = AUDIO_OK;
-    AudioEffectPropertyArrayV3 effectPropertyArray = {};
-    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    AudioEffectPropertyArray effectPropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     for (auto &item : propertyArray.property) {
         if (item.flag == CAPTURE_EFFECT_FLAG) {
             enhancePropertyArray.property.push_back(item);
@@ -957,13 +957,13 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
     CHECK_AND_RETURN_RET_LOG(CheckSupportedAudioEffectProperty(effectPropertyArray, RENDER_EFFECT_FLAG) == AUDIO_OK,
         ERR_INVALID_PARAM, "check Audio Effect property failed");
     if (enhancePropertyArray.property.size() > 0) {
-        AudioEffectPropertyArrayV3 oldPropertyArray = {};
+        AudioEffectPropertyArray oldPropertyArray = {};
         ret = GetAudioEnhanceProperty(oldPropertyArray);
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
             audioActiveDevice_.GetCurrentInputDeviceType());
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
-        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffectV3(
+        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffect(
             oldPropertyArray, enhancePropertyArray);
     }
     if (effectPropertyArray.property.size() > 0) {
@@ -973,7 +973,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
     return ret;
 }
 
-int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray)
 {
     int32_t ret = AUDIO_OK;
     int32_t engineFlag = GetEngineFlag();
@@ -994,7 +994,7 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &
     return ret;
 }
 
-int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
@@ -1115,7 +1115,7 @@ int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
     return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
 }
 
-bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property)
+bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectProperty> &property)
 {
     bool ret = false;
     for (const auto &item : property) {
@@ -1149,7 +1149,7 @@ bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
     }
 
     if (ecEnableState_) { // is configed according to the product
-        AudioEffectPropertyArrayV3 propertyArray = {};
+        AudioEffectPropertyArray propertyArray = {};
         int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
         CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");
         ret = CheckVoipAnrOn(propertyArray.property);

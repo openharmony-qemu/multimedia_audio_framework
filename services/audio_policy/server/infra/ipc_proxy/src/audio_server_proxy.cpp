@@ -440,7 +440,7 @@ void AudioServerProxy::SetParameterCallbackProxy(const sptr<IRemoteObject>& obje
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray,
     const DeviceType& deviceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -451,7 +451,7 @@ int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyA
     return ret;
 }
 
-int32_t AudioServerProxy::GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray,
+int32_t AudioServerProxy::GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray,
     const DeviceType& deviceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

@@ -246,11 +246,11 @@ void HpaeManagerFuzzTest::Fisrt()
     hpaeManager_->GetAllSourceOutputs();
     hpaeManager_->DumpSourceOutputsInfo();
     hpaeManager_->DumpSinkInputsInfo();
-    AudioEffectPropertyArrayV3 propertyV3;
-    hpaeManager_->GetAudioEffectProperty(propertyV3);
-    hpaeManager_->SetAudioEffectProperty(propertyV3);
-    hpaeManager_->GetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
-    hpaeManager_->SetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
+    AudioEffectPropertyArray property;
+    hpaeManager_->GetAudioEffectProperty(property);
+    hpaeManager_->SetAudioEffectProperty(property);
+    hpaeManager_->GetAudioEnhanceProperty(property, DEVICE_TYPE_SPEAKER);
+    hpaeManager_->SetAudioEnhanceProperty(property, DEVICE_TYPE_SPEAKER);
     hpaeManager_->UpdateExtraSceneType("123", "456", "789");
     hpaeManager_->UpdateSpatialDeviceType(EARPHONE_TYPE_INEAR);
     hpaeManager_->SetOutputDevice(TEST_STREAM_SESSION_ID, DEVICE_TYPE_SPEAKER);

@@ -2054,7 +2054,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_001, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"record", "NROFF"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2070,7 +2070,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_002, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"voip_up", "NROFF"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2086,7 +2086,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_003, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"record", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2102,7 +2102,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"voip_up", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, true);

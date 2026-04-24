@@ -333,9 +333,9 @@ void AudioEnhanceChainManagerPropertyFuzzTest(AudioEnhanceChainManager *manager)
     uint32_t temp = GetData<uint32_t>();
     DeviceType deviceType = static_cast<DeviceType>(temp);
 
-    AudioEffectPropertyArrayV3 propV3Array = {};
-    manager->SetAudioEnhanceProperty(propV3Array, deviceType);
-    manager->GetAudioEnhanceProperty(propV3Array, deviceType);
+    AudioEffectPropertyArray propArray = {};
+    manager->SetAudioEnhanceProperty(propArray, deviceType);
+    manager->GetAudioEnhanceProperty(propArray, deviceType);
 }
 
 void AudioEnhanceChainFuzzTest()
@@ -450,7 +450,7 @@ void AudioEffectChainGetAudioEffectPropertyFuzzTest()
         return;
     }
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
     audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     const char *sceneType = "SCENE_MUSIC";
@@ -461,7 +461,7 @@ void AudioEffectChainGetAudioEffectPropertyFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({sceneTypeAndDeviceKey, audioEffectChain});
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType);
     audioEffectChainManager->effectPropertyMap_.insert(std::make_pair("SCENE_MUSIC", "property"));
-    audioEffectChainManager->GetAudioEffectProperty(audioEffectPropertyArrayV3);
+    audioEffectChainManager->GetAudioEffectProperty(audioEffectPropertyArray);
 }
 
 void AudioEffectChainWaitAndReleaseEffectChainFuzzTest()
@@ -971,7 +971,7 @@ void AudioEnhanceChainAddAudioEnhanceChainHandlesFuzzTest()
 void AudioEnhanceChainSetAudioEnhancePropertyToChainsFuzzTest()
 {
     AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
-    AudioEffectPropertyV3 property;
+    AudioEffectProperty property;
     audioEnhanceChainManagerImpl.SetAudioEnhancePropertyToChains(property);
 }
 

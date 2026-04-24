@@ -1562,12 +1562,12 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_027, TestSize.Level1)
 * @tc.name  : Test HandleThirdPartCode API
 * @tc.type  : FUNC
 * @tc.number: HandleThirdPartCode_019
-* @tc.desc  : Test HandleThirdPartCode interface. Set code value to GET_AUDIO_EFFECT_PROPERTY_V3
+* @tc.desc  : Test HandleThirdPartCode interface. Set code value to GET_AUDIO_EFFECT_PROPERTY
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_019, TestSize.Level1)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY);
     MessageParcel data;
     data.WriteInt32(0);
     MessageParcel reply;
@@ -1580,12 +1580,12 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_019, TestSize.Level1)
 * @tc.name  : Test HandleThirdPartCode API
 * @tc.type  : FUNC
 * @tc.number: HandleThirdPartCode_020
-* @tc.desc  : Test HandleThirdPartCode interface. Set code value to SET_AUDIO_EFFECT_PROPERTY_V3
+* @tc.desc  : Test HandleThirdPartCode interface. Set code value to SET_AUDIO_EFFECT_PROPERTY
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_020, TestSize.Level1)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY);
     MessageParcel data;
     data.WriteInt32(0);
     MessageParcel reply;

@@ -1028,24 +1028,24 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+    AudioEffectProperty  audioEffectProperty1 = {
         .name = "testName1",
         .category = "testCategory1",
         .flag = RENDER_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+    AudioEffectProperty  audioEffectProperty2 = {
         .name = "testName2",
         .category = "testCategory2",
         .flag = RENDER_EFFECT_FLAG,
     };
 
     int32_t ret = 0;
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
+    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
+    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
 
-    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 #endif
@@ -1058,24 +1058,24 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Le
 HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+    AudioEffectProperty  audioEffectProperty1 = {
         .name = "testName1",
         .category = "testCategory1",
         .flag = CAPTURE_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+    AudioEffectProperty  audioEffectProperty2 = {
         .name = "testName2",
         .category = "testCategory2",
         .flag = CAPTURE_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
+    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
+    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
 
     int32_t ret = 0;
-    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1088,24 +1088,24 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_002, TestSize.Le
 HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_003, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+    AudioEffectProperty  audioEffectProperty1 = {
         .name = "testName1",
         .category = "testCategory1",
         .flag = RENDER_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+    AudioEffectProperty  audioEffectProperty2 = {
         .name = "testName2",
         .category = "testCategory2",
         .flag = CAPTURE_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
+    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
+    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
 
     int32_t ret = 0;
-    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1120,10 +1120,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_001, TestSize.Le
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
 
     int32_t ret = 0;
-    audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->GetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 #endif
@@ -1138,9 +1138,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_002, TestSize.Le
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
 
-    int32_t ret = audioServer->GetAudioEnhancePropertyArray(audioEffectPropertyArrayV3, DEVICE_TYPE_EARPIECE);
+    int32_t ret = audioServer->GetAudioEnhancePropertyArray(audioEffectPropertyArray, DEVICE_TYPE_EARPIECE);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1154,9 +1154,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_003, TestSize.Le
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
 
-    int32_t ret = audioServer->GetAudioEffectPropertyArray(audioEffectPropertyArrayV3);
+    int32_t ret = audioServer->GetAudioEffectPropertyArray(audioEffectPropertyArray);
     EXPECT_EQ(SUCCESS, ret);
 }
 

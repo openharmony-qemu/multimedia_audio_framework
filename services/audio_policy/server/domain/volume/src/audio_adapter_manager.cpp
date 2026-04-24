@@ -1858,16 +1858,16 @@ int32_t AudioAdapterManager::GetCurActivateCount() const
     return curActiveCount_ > 0 ? curActiveCount_ : 0;
 }
 
-int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const
+int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     int32_t ret = 0;
-    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    AudioEffectPropertyArray effectPropertyArray = {};
     ret = audioServiceAdapter_->GetAudioEffectProperty(effectPropertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEffectProperty failed");
     propertyArray.property.insert(propertyArray.property.end(),
         effectPropertyArray.property.begin(), effectPropertyArray.property.end());
-    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     ret = audioServiceAdapter_->GetAudioEnhanceProperty(enhancePropertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEnhanceProperty failed");
     propertyArray.property.insert(propertyArray.property.end(),

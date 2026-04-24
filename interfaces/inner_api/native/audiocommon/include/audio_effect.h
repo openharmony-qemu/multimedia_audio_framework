@@ -507,15 +507,15 @@ struct AudioSceneEffectInfo {
 
 enum EffectFlag { RENDER_EFFECT_FLAG = 0, CAPTURE_EFFECT_FLAG = 1};
 
-struct AudioEffectPropertyV3 {
+struct AudioEffectProperty {
     std::string name;
     std::string category;
     EffectFlag flag;
-    friend bool operator==(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    friend bool operator==(const AudioEffectProperty &lhs, const AudioEffectProperty &rhs)
     {
         return (lhs.category == rhs.category && lhs.name == rhs.name && lhs.flag == rhs.flag);
     };
-    friend bool operator<(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    friend bool operator<(const AudioEffectProperty &lhs, const AudioEffectProperty &rhs)
     {
         return ((lhs.name == rhs.name) || (lhs.name == rhs.name && lhs.category < rhs.category)
             || (lhs.name == rhs.name && lhs.category == rhs.category && lhs.flag < rhs.flag));
@@ -534,8 +534,8 @@ struct AudioEffectPropertyV3 {
     };
 };
 
-struct AudioEffectPropertyArrayV3 : public Parcelable {
-    std::vector<AudioEffectPropertyV3> property;
+struct AudioEffectPropertyArray : public Parcelable {
+    std::vector<AudioEffectProperty> property;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -549,9 +549,9 @@ struct AudioEffectPropertyArrayV3 : public Parcelable {
         return true;
     }
 
-    static AudioEffectPropertyArrayV3 *Unmarshalling(Parcel &parcel)
+    static AudioEffectPropertyArray *Unmarshalling(Parcel &parcel)
     {
-        auto propertyArray = new(std::nothrow) AudioEffectPropertyArrayV3();
+        auto propertyArray = new(std::nothrow) AudioEffectPropertyArray();
         if (propertyArray == nullptr) {
             return nullptr;
         }
@@ -562,7 +562,7 @@ struct AudioEffectPropertyArrayV3 : public Parcelable {
             return nullptr;
         }
         for (int32_t i = 0; i < size; i++) {
-            AudioEffectPropertyV3 property;
+            AudioEffectProperty property;
             property.UnmarshallingSelf(parcel);
             propertyArray->property.push_back(property);
         }

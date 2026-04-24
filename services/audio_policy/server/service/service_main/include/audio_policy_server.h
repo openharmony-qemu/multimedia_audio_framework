@@ -364,9 +364,9 @@ public:
 
     int32_t GetVolumeGroupInfos(const std::string &networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;

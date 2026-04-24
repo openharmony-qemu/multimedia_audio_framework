@@ -1846,7 +1846,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_065, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     auto ret = server->GetSupportedAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, AUDIO_OK);
 }
@@ -1861,7 +1861,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_066, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     auto ret = server->SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, AUDIO_OK);
 }
@@ -1877,7 +1877,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_067, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     server->GetAudioEffectProperty(propertyArray);
 }
 

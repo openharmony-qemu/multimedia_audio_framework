@@ -659,9 +659,9 @@ public:
     int32_t SetQueryDeviceVolumeBehaviorCallback(
         const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);

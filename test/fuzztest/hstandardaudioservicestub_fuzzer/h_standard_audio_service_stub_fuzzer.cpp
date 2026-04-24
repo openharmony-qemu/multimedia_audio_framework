@@ -401,18 +401,18 @@ void GetEffectOffloadEnabled(FuzzedDataProvider &provider)
     audioServer->GetEffectOffloadEnabled(isEffectOffloadEnabled);
 }
 
-void GetAudioEffectPropertyV3(FuzzedDataProvider &provider)
+void GetAudioEffectProperty(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     int32_t deviceType = provider.ConsumeIntegral<int32_t>();
     audioServer->GetAudioEffectProperty(propertyArray, deviceType);
 }
 
-void SetAudioEffectPropertyV3(FuzzedDataProvider &provider)
+void SetAudioEffectProperty(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     int32_t deviceType = provider.ConsumeIntegral<int32_t>();
     audioServer->SetAudioEffectProperty(propertyArray, deviceType);
 }
@@ -887,8 +887,8 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     SetAsrVoiceMuteMode,
     IsWhispering,
     GetEffectOffloadEnabled,
-    GetAudioEffectPropertyV3,
-    SetAudioEffectPropertyV3,
+    GetAudioEffectProperty,
+    SetAudioEffectProperty,
     SuspendRenderSink,
     RestoreRenderSink,
     LoadHdiEffectModel,

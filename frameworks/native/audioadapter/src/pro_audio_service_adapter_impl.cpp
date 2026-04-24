@@ -383,15 +383,15 @@ void ProAudioServiceAdapterImpl::Disconnect()
     AUDIO_INFO_LOG("Disconnect not support");
 }
 
-int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    isFinishGetAudioEffectPropertyV3_ = false;
+    isFinishGetAudioEffectProperty_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEffectProperty(propertyArray);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishGetAudioEffectPropertyV3_;
+        return isFinishGetAudioEffectProperty_;
     });
     if (!stopWaiting) {
         AUDIO_WARNING_LOG("wait for notify timeout");
@@ -399,16 +399,16 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyAr
     return SUCCESS;
 }
 
-int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
     DeviceType deviceType)
 {
     AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    isFinishGetAudioEnhancePropertyV3_ = false;
+    isFinishGetAudioEnhanceProperty_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEnhanceProperty(propertyArray);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishGetAudioEnhancePropertyV3_;
+        return isFinishGetAudioEnhanceProperty_;
     });
     if (!stopWaiting) {
         AUDIO_WARNING_LOG("wait for notify timeout");
@@ -513,27 +513,11 @@ void ProAudioServiceAdapterImpl::OnMoveSourceOutputByIndexOrNameCb(int32_t resul
     callbackCV_.notify_all();
 }
 
-void ProAudioServiceAdapterImpl::OnGetAudioEffectPropertyCbV3(int32_t result)
-{
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("Result: %{public}d", result);
-    isFinishGetAudioEffectPropertyV3_ = true;
-    callbackCV_.notify_all();
-}
-
 void ProAudioServiceAdapterImpl::OnGetAudioEffectPropertyCb(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("Result: %{public}d", result);
     isFinishGetAudioEffectProperty_ = true;
-    callbackCV_.notify_all();
-}
-
-void ProAudioServiceAdapterImpl::OnGetAudioEnhancePropertyCbV3(int32_t result)
-{
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("Result: %{public}d", result);
-    isFinishGetAudioEnhancePropertyV3_ = true;
     callbackCV_.notify_all();
 }
 

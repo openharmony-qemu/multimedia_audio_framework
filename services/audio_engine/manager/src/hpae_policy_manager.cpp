@@ -89,12 +89,12 @@ int32_t HpaePolicyManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
     return AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
 }
 
-int32_t HpaePolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+int32_t HpaePolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     return AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(propertyArray);
 }
 
-int32_t HpaePolicyManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t HpaePolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     return AudioEffectChainManager::GetInstance()->GetAudioEffectProperty(propertyArray);
 }
@@ -149,13 +149,13 @@ int32_t HpaePolicyManager::SetStreamVolumeInfo(const uint32_t &sessionId, const 
     return AudioEnhanceChainManager::GetInstance()->SetStreamVolumeInfo(sessionId, streamVol);
 }
 
-int32_t HpaePolicyManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+int32_t HpaePolicyManager::SetAudioEnhanceProperty(const AudioEffectPropertyArray &propertyArray,
     DeviceType deviceType)
 {
     return AudioEnhanceChainManager::GetInstance()->SetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
-int32_t HpaePolicyManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+int32_t HpaePolicyManager::GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
     DeviceType deviceType)
 {
     return AudioEnhanceChainManager::GetInstance()->GetAudioEnhanceProperty(propertyArray, deviceType);

@@ -226,9 +226,8 @@ public:
         void NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
-
-        void ReloadSourceForEffectV3(
-            AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
+        void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
+            const AudioEffectPropertyArray newPropertyArray);
         void OnVehiclePriorityChanged(bool enable);
     private:
         int32_t WaitForServiceReady();
@@ -460,8 +459,8 @@ public:
     int32_t ReloadCaptureSessionSoftLink();
     bool ReloadCheckForStart(bool findRunningSessionRet, std::shared_ptr<AudioStreamDescriptor> newStream,
         AudioStreamDescriptor &runningStream);
-    void ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
-        const AudioEffectPropertyArrayV3 &newPropertyArray);
+    void ReloadSourceForEffect(const AudioEffectPropertyArray &oldPropertyArray,
+        const AudioEffectPropertyArray &newPropertyArray);
     void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
@@ -757,7 +756,7 @@ private:
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
     int32_t ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
-    std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
+    std::string GetEnhancePropByName(const AudioEffectPropertyArray &oldPropertyArray, const std::string &propName);
 
     void CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void OnVehiclePriorityChanged(bool enable);

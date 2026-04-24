@@ -1511,11 +1511,11 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->UpdateSpatialDeviceType(EARPHONE_TYPE_INEAR), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     
-    AudioEffectPropertyArrayV3 propertyV3;
-    EXPECT_EQ(hpaeManager_->GetAudioEffectProperty(propertyV3), SUCCESS);
+    AudioEffectPropertyArray property;
+    EXPECT_EQ(hpaeManager_->GetAudioEffectProperty(property), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->SetAudioEffectProperty(propertyV3), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetAudioEffectProperty(property), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
     hpaeManager_->UpdateEffectBtOffloadSupported(true);
@@ -1525,10 +1525,10 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->SetMicrophoneMuteInfo(false), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->GetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER), SUCCESS);
+    EXPECT_EQ(hpaeManager_->GetAudioEnhanceProperty(property, DEVICE_TYPE_SPEAKER), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(property, DEVICE_TYPE_SPEAKER), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 }
 

@@ -30,8 +30,8 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_010, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
-    AudioEffectPropertyArrayV3 oldPropertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray oldPropertyArray;
+    AudioEffectPropertyArray newPropertyArray;
 
     oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
     newPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
@@ -52,8 +52,8 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_011, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
-    AudioEffectPropertyArrayV3 oldPropertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray oldPropertyArray;
+    AudioEffectPropertyArray newPropertyArray;
 
     oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
     newPropertyArray.property = {{"record", "ABC"}, {"voip_up", "PNR"}};
@@ -74,8 +74,8 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_012, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
-    AudioEffectPropertyArrayV3 oldPropertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray oldPropertyArray;
+    AudioEffectPropertyArray newPropertyArray;
 
     oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
     newPropertyArray.property = {{"record", "ABC"}, {"voip_up", "ABC"}};

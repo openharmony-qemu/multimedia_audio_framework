@@ -194,8 +194,8 @@ void AudioServerProxySetAudioEffectPropertyProxyFuzzTest()
     }
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
     DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    AudioEffectPropertyArrayV3 propertyArrayV3;
-    audioServerProxy.SetAudioEffectPropertyProxy(propertyArrayV3, deviceType);
+    AudioEffectPropertyArray propertyArray;
+    audioServerProxy.SetAudioEffectPropertyProxy(propertyArray, deviceType);
 }
 
 void AudioServerProxySetRotationToEffectProxyFuzzTest()
@@ -269,8 +269,8 @@ void AudioServerProxySetLatestMuteStateFuzzTest()
 void AudioServerProxyGetAudioEffectPropertyProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    AudioEffectPropertyArrayV3 propertyArrayV3;
-    audioServerProxy.GetAudioEffectPropertyProxy(propertyArrayV3);
+    AudioEffectPropertyArray propertyArray;
+    audioServerProxy.GetAudioEffectPropertyProxy(propertyArray);
 }
  
 void AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest()

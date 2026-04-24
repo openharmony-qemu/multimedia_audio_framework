@@ -1501,7 +1501,7 @@ napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
     return napi_ok;
 }
 
-int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArray &propertyArray)
 {
     int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
     std::set<std::string> classSet;
@@ -1514,19 +1514,19 @@ int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArrayV3 &pro
 }
 
 napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env,
-    AudioEffectPropertyArrayV3 &propertyArray, napi_value in)
+    AudioEffectPropertyArray &propertyArray, napi_value in)
 {
     uint32_t arrayLen = 0;
     napi_status status = napi_get_array_length(env, in, &arrayLen);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && arrayLen > 0, status, "get array length invalid");
 
-    AudioEffectPropertyArrayV3 effectArray;
-    AudioEffectPropertyArrayV3 enhanceArray;
+    AudioEffectPropertyArray effectArray;
+    AudioEffectPropertyArray enhanceArray;
     for (uint32_t i = 0; i < arrayLen; i++) {
         napi_value element = nullptr;
         napi_get_element(env, in, i, &element);
 
-        AudioEffectPropertyV3 prop;
+        AudioEffectProperty prop;
         napi_value propValue = nullptr;
 
         status = napi_get_named_property(env, element, "name", &propValue);
@@ -1566,7 +1566,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env,
 }
 
 napi_status NapiParamUtils::SetEffectProperty(const napi_env &env,
-    const AudioEffectPropertyArrayV3 &propertyArray, napi_value &result)
+    const AudioEffectPropertyArray &propertyArray, napi_value &result)
 {
     int32_t position = 0;
     napi_value jsEffectInfoObj = nullptr;

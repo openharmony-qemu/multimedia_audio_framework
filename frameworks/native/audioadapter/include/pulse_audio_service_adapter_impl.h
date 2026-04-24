@@ -51,8 +51,8 @@ public:
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
         uint32_t sourceIndex, std::string sourceName) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override { return 0; }
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override { return 0; }
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override { return 0; }
     void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) override;

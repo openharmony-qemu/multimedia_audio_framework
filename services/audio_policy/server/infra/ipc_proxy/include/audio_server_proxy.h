@@ -85,9 +85,9 @@ public:
     int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
     int32_t RegistCoreServiceProviderProxy(const sptr<IRemoteObject> &object);
     void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
-    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray,
         const DeviceType& deviceType = DEVICE_TYPE_NONE);
-    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray,
         const DeviceType& deviceType = DEVICE_TYPE_NONE);
     void SetRotationToEffectProxy(const uint32_t rotate);
     void SetAudioMonoStateProxy(bool audioMono);

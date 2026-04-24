@@ -767,20 +767,20 @@ HWTEST(AudioIpcSerializationUnitTest, SupportedEffectConfig_004, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test AudioEffectPropertyArrayV3.
- * @tc.number: AudioEffectPropertyArrayV3_001
- * @tc.desc  : Test AudioEffectPropertyArrayV3 Serialization.
+ * @tc.name  : Test AudioEffectPropertyArray.
+ * @tc.number: AudioEffectPropertyArray_001
+ * @tc.desc  : Test AudioEffectPropertyArray Serialization.
  */
-HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArrayV3_001, TestSize.Level1)
+HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArray_001, TestSize.Level1)
 {
     Parcel parcel;
-    AudioEffectPropertyArrayV3 propertyArray = {};
-    AudioEffectPropertyV3 property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2, CAPTURE_EFFECT_FLAG };
+    AudioEffectPropertyArray propertyArray = {};
+    AudioEffectProperty property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2, CAPTURE_EFFECT_FLAG };
     propertyArray.property.push_back(property);
 
     EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArrayV3>(
-        AudioEffectPropertyArrayV3::Unmarshalling(parcel));
+    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArray>(
+        AudioEffectPropertyArray::Unmarshalling(parcel));
     ASSERT_NE(newPropertyArray, nullptr);
     EXPECT_EQ(newPropertyArray->property.size(), propertyArray.property.size());
     if (newPropertyArray->property.size() == propertyArray.property.size()) {
@@ -791,20 +791,20 @@ HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArrayV3_001, TestSize.L
 }
 
 /**
- * @tc.name  : Test AudioEffectPropertyArrayV3.
- * @tc.number: AudioEffectPropertyArrayV3_002
- * @tc.desc  : Test AudioEffectPropertyArrayV3 Deserialization.
+ * @tc.name  : Test AudioEffectPropertyArray.
+ * @tc.number: AudioEffectPropertyArray_002
+ * @tc.desc  : Test AudioEffectPropertyArray Deserialization.
  */
-HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArrayV3_002, TestSize.Level1)
+HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArray_002, TestSize.Level1)
 {
     Parcel parcel;
-    AudioEffectPropertyArrayV3 propertyArray = {};
-    AudioEffectPropertyV3 property = {};
+    AudioEffectPropertyArray propertyArray = {};
+    AudioEffectProperty property = {};
 
     propertyArray.property.assign(AUDIO_EFFECT_COUNT_UPPER_LIMIT + 1, property);
     EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArrayV3>(
-        AudioEffectPropertyArrayV3::Unmarshalling(parcel));
+    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArray>(
+        AudioEffectPropertyArray::Unmarshalling(parcel));
     EXPECT_EQ(newPropertyArray, nullptr);
 }
 

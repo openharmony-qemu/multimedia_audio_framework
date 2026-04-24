@@ -44,8 +44,8 @@ public:
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume);
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value);
@@ -60,9 +60,9 @@ public:
     int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol);
     int32_t SetMicrophoneMuteInfo(const bool &isMute);
     int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol);
-    int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);

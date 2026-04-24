@@ -2927,7 +2927,7 @@ void AudioPolicyManager::RemoveClientTrackerStub(int32_t sessionId)
     }
 }
 
-int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
@@ -2940,14 +2940,14 @@ int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyA
     return result;
 }
 
-int32_t AudioPolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
     return gsp->SetAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
