@@ -939,12 +939,12 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION && usg != STREAM_USAGE_VOICE_MESSAGE) {
             continue;
         }
 
         if (!PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, processConfig_.appInfo.appTokenId)) {
-            AUDIO_ERR_LOG("downlink capturer permission check failed");
+            AUDIO_ERR_LOG("voice downlink/message capturer permission check failed");
             return ERR_PERMISSION_DENIED;
         }
     }
