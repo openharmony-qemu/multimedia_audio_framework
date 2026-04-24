@@ -21,6 +21,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <memory>
+#include <optional>
 #include "common/hdi_adapter_info.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
@@ -66,7 +67,7 @@ public:
         const std::string &condition, const std::string &value);
     std::string GetAudioParameter(HdiDeviceManagerType type, const std::string &adapterName, AudioParamKey key,
         const std::string &condition);
-    std::string GetAudioParameterByKey(HdiDeviceManagerType type, const std::string &key);
+    std::optional<std::string> GetAudioParameterByKey(HdiDeviceManagerType type, const std::string &key);
     void UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force = false);
     int32_t SetExtraParameters(HdiDeviceManagerType type, const std::string &adapterName,
         const std::string &condition, const std::string &value);

@@ -393,7 +393,7 @@ HWTEST_F(ManagerUnitTest, GetAudioParameterByKey_001, TestSize.Level1)
     EXPECT_CALL(*mockDeviceManager, GetAudioParameter("primary", AudioParamKey::PERF_INFO, "perf_info"))
         .WillOnce(testing::Return("perf_value"));
 
-    std::string value = manager.GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, "perf_info");
+    auto value = manager.GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, "perf_info");
     EXPECT_EQ(value, "perf_value");
 }
 
@@ -411,8 +411,23 @@ HWTEST_F(ManagerUnitTest, GetAudioParameterByKey_002, TestSize.Level1)
     EXPECT_CALL(*mockDeviceManager, GetAudioParameter("primary", AudioParamKey::MMI, "speaker"))
         .WillOnce(testing::Return("mmi_value"));
 
-    std::string value = manager.GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, "mmi_speaker");
+    auto value = manager.GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, "mmi_speaker");
     EXPECT_EQ(value, "mmi_value");
+}
+
+/**
+ * @tc.name   : GetAudioParameterByKey_003
+ * @tc.number : GetAudioParameterByKey_003
+ * @tc.desc   : Verify GetAudioParameterByKey return nullopt when deviceManager is nullptr.
+ */
+HWTEST_F(ManagerUnitTest, GetAudioParameterByKey_003, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = nullptr;
+
+    auto result = manager.GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, "test_key");
+    EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(result, std::nullopt);
 }
 
 /**
