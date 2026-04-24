@@ -31,6 +31,7 @@ constexpr float TEST_VOLUME_DB = 0.5f;
 constexpr float ABS_VOLUME_DB_VALUE = 0.63957f;
 constexpr float MAX_VOLUME_DB_VALUE = 1.0f;
 constexpr int32_t TEST_ZONE_ID = 0;
+constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 100;
 
 static AudioAdapterManager *audioAdapterManager_;
 
@@ -1351,6 +1352,66 @@ HWTEST_F(AudioAdapterManagerUnitTest, ApplySystemVolumeProxy_001, TestSize.Level
     audioAdapterManager->ApplySystemVolumeProxy(TEST_ZONE_ID, device, isMuted, volumeDb);
     EXPECT_EQ(isMuted, true);
     EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+}
+
+/**
+ * @tc.name: GetSystemAppVolumeLevel_NotSet
+ * @tc.number: GetSystemAppVolumeLevel_001
+ * @tc.type: FUNC
+ * @tc.desc: When app volume not set, returns APP_DEFAULT_VOLUME_LEVEL (100)
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSystemAppVolumeLevel_NotSet, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 1001;
+    int32_t volumeLevel = 0;
+
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, false);
+
+    int32_t ret = audioAdapterManager->GetSystemAppVolumeLevel(appUid, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, APP_DEFAULT_VOLUME_LEVEL);
+}
+
+/**
+ * @tc.name: GetSystemAppVolumeLevel_Muted
+ * @tc.number: GetSystemAppVolumeLevel_002
+ * @tc.type: FUNC
+ * @tc.desc: When app volume is muted, returns 0
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSystemAppVolumeLevel_Muted, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 1001;
+    int32_t volumeLevel = -1;
+
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolume(appUid, 5);
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, true);
+
+    int32_t ret = audioAdapterManager->GetSystemAppVolumeLevel(appUid, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, 0);
+}
+
+/**
+ * @tc.name: GetSystemAppVolumeLevel_Normal
+ * @tc.number: GetSystemAppVolumeLevel_003
+ * @tc.type: FUNC
+ * @tc.desc: When app volume is set and not muted, returns stored volume
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSystemAppVolumeLevel_Normal, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 1001;
+    int32_t volumeLevel = -1;
+    int32_t expectedVolume = 7;
+
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolume(appUid, expectedVolume);
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, false);
+
+    int32_t ret = audioAdapterManager->GetSystemAppVolumeLevel(appUid, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, expectedVolume);
 }
 } // namespace AudioStandard
 } // namespace OHOS

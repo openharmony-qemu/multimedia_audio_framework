@@ -36,7 +36,6 @@ public:
     int32_t LoadDefaultAppVolumeConfig(StreamVolumeInfoMap &streamVolumeInfoMap);
     LowerVolumeInfoMap GetLowerVolumeInfoCfg();
 private:
-    int32_t ParseAppVolumeConfig(std::shared_ptr<AudioXmlNode> curNode, StreamVolumeInfoMap &streamVolumeInfoMap);
     #ifdef USE_CONFIG_POLICY
     static constexpr char AUDIO_VOLUME_CONFIG_FILE[] = "etc/audio/audio_volume_config.xml";
     #else
@@ -57,6 +56,7 @@ private:
     void WriteVolumeConfigErrorEvent();
     int32_t UseVoiceAssistantFixedVolumeConfig(StreamVolumeInfoMap &streamVolumeInfoMap);
     void ParseLowerVolumeInfo(const std::shared_ptr<AudioXmlNode> &curNode);
+    int32_t ParseAppVolumeConfig(std::shared_ptr<AudioXmlNode> curNode, StreamVolumeInfoMap &streamVolumeInfoMap);
 };
 } // namespace AudioStandard
 } // namespace OHOS

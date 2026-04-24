@@ -1418,5 +1418,70 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_Test_001, TestS
     audioPolicyServerHandler_->HandleOtherServiceSecondEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
+
+/**
+ * @tc.name  : HandleSystemAppVolumeChangeEvent_Normal
+ * @tc.number: HandleSystemAppVolumeChangeEvent_001
+ * @tc.desc  : Test HandleSystemAppVolumeChangeEvent when callback is enabled and client registered
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleSystemAppVolumeChangeEvent_Normal, TestSize.Level2)
+{
+    // Arrange: Setup test conditions
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->appUid = 1001;
+    eventContextObj->volumeEvent.volumeType = STREAM_MUSIC;
+    eventContextObj->volumeEvent.volume = 5;
+    eventContextObj->volumeEvent.updateUi = true;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT, eventContextObj);
+
+    auto volumeChangeCb = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_APP_VOLUME_CHANGE, true);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, volumeChangeCb);
+
+    // Act: Call the function under test
+    audioPolicyServerHandler_->HandleSystemAppVolumeChangeEvent(event);
+
+    // Assert: Verify client registered successfully
+    EXPECT_EQ(1, static_cast<int32_t>(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size()));
+
+    // Cleanup
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
+
+/**
+ * @tc.name  : HandleSystemAppVolumeChangeEvent_CallbackDisabled
+ * @tc.number: HandleSystemAppVolumeChangeEvent_002
+ * @tc.desc  : Test HandleSystemAppVolumeChangeEvent when callback is disabled
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleSystemAppVolumeChangeEvent_CallbackDisabled, TestSize.Level2)
+{
+    // Arrange: Setup test conditions
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->appUid = 1001;
+    eventContextObj->volumeEvent.volumeType = STREAM_MUSIC;
+    eventContextObj->volumeEvent.volume = 5;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT, eventContextObj);
+
+    auto volumeChangeCb = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_APP_VOLUME_CHANGE, false);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, volumeChangeCb);
+
+    // Act: Call the function under test
+    audioPolicyServerHandler_->HandleSystemAppVolumeChangeEvent(event);
+
+    // Assert: Verify client registered but callback is disabled
+    EXPECT_EQ(1, static_cast<int32_t>(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size()));
+
+    // Cleanup
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
 } // namespace AudioStandard
 } // namespace OHOS
