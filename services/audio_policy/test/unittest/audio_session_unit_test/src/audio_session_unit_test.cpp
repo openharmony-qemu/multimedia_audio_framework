@@ -43,7 +43,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_001, TestSize.Level1)
 
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 1;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
     EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
@@ -62,7 +62,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_002, TestSize.Level1)
 
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 1;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->RemoveStreamInfo(0);
     EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
@@ -81,7 +81,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_003, TestSize.Level1)
 
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 10;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
     EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 }
@@ -99,7 +99,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_004, TestSize.Level1)
 
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 0;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
     EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 }
@@ -118,11 +118,11 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_005, TestSize.Level1)
     uint32_t i = 1;
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = i;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
 
     AudioInterrupt audioInterrupt2;
     audioInterrupt2.streamId = i + 1;
-    audioSession->AddStreamInfo(audioInterrupt2);
+    audioSession->AddStreamInfo({audioInterrupt2, ACTIVE});
 
     audioSession->RemoveStreamInfo(audioInterrupt2.streamId);
     EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
@@ -144,7 +144,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_006, TestSize.Level1)
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = i;
 
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
 }
@@ -165,7 +165,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_007, TestSize.Level1)
     audioInterrupt.streamId = streamId;
     audioInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
 
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     EXPECT_TRUE(audioSession->IsAudioRendererEmpty());
     audioSession->RemoveStreamInfo(streamId);
 }
@@ -186,7 +186,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_008, TestSize.Level1)
     audioInterrupt.streamId = streamId;
     audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
 
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     EXPECT_FALSE(audioSession->IsAudioRendererEmpty());
 }
 
@@ -245,12 +245,12 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_012, TestSize.Level1)
     AudioSessionStrategy strategy;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
 
-    audioSession->streamsInSession_.clear();
+    audioSession->interruptMap_.clear();
     EXPECT_FALSE(audioSession->IsStreamContainedInCurrentSession(0));
 
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.streamId = 0;
-    audioSession->streamsInSession_.push_back(incomingInterrupt);
+    audioSession->interruptMap_[incomingInterrupt.streamId] = {incomingInterrupt, ACTIVE};
     EXPECT_TRUE(audioSession->IsStreamContainedInCurrentSession(0));
 }
 
@@ -281,7 +281,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_014, TestSize.Level1)
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 1;
     audioInterrupt.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
-    audioSession->streamsInSession_.push_back(audioInterrupt);
+    audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, ACTIVE};
     audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA);
     int32_t ret = audioSession->Activate(strategy);
     EXPECT_EQ(ret, SUCCESS);
@@ -323,12 +323,12 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_016, TestSize.Level1)
 
     incomingInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
     EXPECT_NO_THROW(
-        audioSession->AddStreamInfo(incomingInterrupt);
+        audioSession->AddStreamInfo({incomingInterrupt, ACTIVE});
     );
 
     incomingInterrupt.isAudioSessionInterrupt = true;
     EXPECT_NO_THROW(
-        audioSession->AddStreamInfo(incomingInterrupt);
+        audioSession->AddStreamInfo({incomingInterrupt, ACTIVE});
     );
 }
 
@@ -368,7 +368,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_018, TestSize.Level1)
     AudioInterrupt interrupt = {};
     interrupt.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
     interrupt.streamId = 2;
-    audioSession->AddStreamInfo(interrupt);
+    audioSession->AddStreamInfo({interrupt, ACTIVE});
     int32_t ret = audioSession->EnableVoipStreamsDefaultOutputDevice();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -411,7 +411,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_020, TestSize.Level1)
     interrupt.pid = callerPid;
     interrupt.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
     interrupt.audioFocusType.streamType = STREAM_RING;
-    audioSession->streamsInSession_.push_back(interrupt);
+    audioSession->interruptMap_[interrupt.streamId] = {interrupt, ACTIVE};
     ret = audioSession->GetAudioSessionStreamUsageForDevice();
     EXPECT_EQ(ret, StreamUsage::STREAM_USAGE_RINGTONE);
 }

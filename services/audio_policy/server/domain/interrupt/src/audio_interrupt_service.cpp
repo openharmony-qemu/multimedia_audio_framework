@@ -397,7 +397,7 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
         audioFocusInfoList = itZone->second->audioFocusInfoList;
         for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
             CHECK_AND_CONTINUE((iterActive->first).pid == callerPid);
-            sessionService_.AddStreamInfo(iterActive->first);
+            sessionService_.AddStreamInfo(*iterActive);
         }
     }
 }
@@ -1248,7 +1248,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     if (ShouldBypassAudioSessionFocus(zoneId, audioInterrupt)) {
         TryHandleStreamCallbackInSession(zoneId, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
-        sessionService_.AddStreamInfo(audioInterrupt);
+        sessionService_.AddStreamInfo({audioInterrupt, ACTIVE});
         AddInterruptErrorEvent(zoneId, currAudioInterrupt);
         updateScene = true;
         HILOG_COMM_INFO("[ActivateAudioInterruptInternal]Bypass Audio session focus, pid = %{public}d",
@@ -2143,7 +2143,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
             zonesMap_[zoneId] = itZone->second;
         }
         if (sessionService_.IsAudioSessionActivated(pid)) {
-            sessionService_.AddStreamInfo(audioInterrupt);
+            sessionService_.AddStreamInfo({audioInterrupt, ACTIVE});
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
@@ -2507,7 +2507,7 @@ void AudioInterruptService::AddToAudioFocusInfoList(std::shared_ptr<AudioInterru
     SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, incomingInterrupt);
     SendActiveVolumeTypeChangeEvent(zoneId);
     if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
-        sessionService_.AddStreamInfo(incomingInterrupt);
+        sessionService_.AddStreamInfo({incomingInterrupt, incomingState});
     }
 }
 

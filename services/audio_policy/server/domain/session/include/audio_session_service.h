@@ -66,7 +66,7 @@ public:
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
-    void AddStreamInfo(const AudioInterrupt &audioInterrupt);
+    void AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
     void RemoveStreamInfo(const int32_t callerPid, const uint32_t streamId);
     void ClearStreamInfo(const int32_t callerPid);
     bool IsStreamInfoEmpty(const int32_t callerPid);
