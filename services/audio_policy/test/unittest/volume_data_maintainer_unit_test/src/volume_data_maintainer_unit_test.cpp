@@ -752,6 +752,8 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceVolumeMapFromDb, TestSize.Level4)
     int32_t zoneId = 0;
 
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    VolumeUtils::SetPCVolumeEnable(true);
+
     vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_EQ(vd->volumeList_.size(), 0);
     
@@ -774,6 +776,7 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceVolumeMapFromDb, TestSize.Level4)
     vd->SetVolumeList({STREAM_MUSIC});
     vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_NE(vd->volumeDegreeMap_.size(), 0);
+    VolumeUtils::SetPCVolumeEnable(false);
 }
 
 /**
