@@ -32,6 +32,7 @@ namespace AudioStandard {
 
 struct AudioRendererDebugInfo;
 class AudioRendererDebugCallback;
+class AudioRendererPrivate;
 /**
  * @brief Defines information about audio renderer parameters.
  * @since 8
@@ -1319,6 +1320,15 @@ private:
         const int32_t &errorCode);
     static bool CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
     static bool CheckUltrasonicPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
+    static std::shared_ptr<AudioRendererPrivate> CreateAndInitRendererObject(
+        const AudioRendererOptions &rendererOptions, const AppInfo &appInfo, AudioStreamType audioStreamType);
+    static bool InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate> audioRenderer,
+        const AudioRendererOptions &rendererOptions, std::shared_ptr<AudioSharedMemory> sharedMemory,
+        const AppInfo &appInfo);
+    static std::shared_ptr<AudioRenderer> SetupStaticRendererFinal(
+        std::shared_ptr<AudioRendererPrivate> audioRenderer,
+        const AudioRendererOptions &rendererOptions,
+        std::shared_ptr<StaticBufferEventCallback> callback);
     static std::mutex createRendererMutex_;
 };
 }  // namespace AudioStandard

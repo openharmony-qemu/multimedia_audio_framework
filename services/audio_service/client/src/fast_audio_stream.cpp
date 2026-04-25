@@ -25,6 +25,7 @@
 
 #include "fast_audio_stream.h"
 #include "app_bundle_manager.h"
+#include "stream_dfx_manager.h"
 
 using namespace std;
 
@@ -179,15 +180,22 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     }
     AudioProcessConfig config;
     int32_t ret = InitializeAudioProcessConfig(config, info);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Initialize failed.");
-    CHECK_AND_CALL_FUNC_RETURN_RET(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "InitializeAudioProcessConfig failed", true),
+        "Initialize failed.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "Stream is not supported", true),
         HILOG_COMM_ERROR("[SetAudioStreamInfo]Stream is not supported."));
     processconfig_ = config;
     // OS_AudioPlayCb/RecordCb should lock weak_ptr of FastAudioStream before calling OnWriteData to
     // avoid using FastAudioStream after free in callback.
     auto weakStream = weak_from_this();
     processClient_ = AudioProcessInClient::Create(config, weakStream);
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_NULL_POINTER, "creat process client fails", true),
         "%{public}s: creat process client fails", logTag_.c_str());
     uint32_t frameCount = 0;
     processClient_->GetFrameCount(frameCount);
@@ -771,10 +779,14 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
-    CHECK_AND_CALL_FUNC_RETURN_RET((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED), false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_ILLEGAL_STATE, "Illegal state:" + std::to_string(state_), true),
         HILOG_COMM_ERROR("[StartAudioStream]%{public}s: Illegal state:%{public}u", logTag_.c_str(), state_));
 
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_NULL_POINTER, "Start failed, process is null", true),
         "%{public}s: Start failed, process is null.", logTag_.c_str());
     if (spkProcClientCb_ != nullptr) {
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state before starting", logTag_.c_str());
@@ -787,7 +799,9 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     } else {
         ret = processClient_->Start();
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_OPERATION_FAILED, "Start process client failed, ret:" + std::to_string(ret), true),
         "%{public}s: Client test stop fail, ret %{public}d.", logTag_.c_str(), ret);
     state_ = RUNNING;
 
@@ -807,16 +821,22 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
-    CHECK_AND_CALL_FUNC_RETURN_RET(state_ == RUNNING, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(state_ == RUNNING, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_PAUSE_ILLEGAL_STATE, "state is not RUNNING. Illegal state:" + std::to_string(state_), true),
         HILOG_COMM_ERROR("[PauseAudioStream]%{public}s: state is not RUNNING. Illegal state:%{public}u",
             logTag_.c_str(), state_));
     State oldState = state_;
 
     state_ = PAUSED;
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_PAUSE_NULL_POINTER, "Pause failed, process is null", true),
         "%{public}s: Pause failed, process is null.", logTag_.c_str());
     int32_t ret = processClient_->Pause();
     if (ret != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_PAUSE_OPERATION_FAILED, "StreamPause fail,ret:" + std::to_string(ret), true);
         AUDIO_ERR_LOG("%{public}s: StreamPause fail,ret:%{public}d", logTag_.c_str(), ret);
         state_ = oldState;
         return false;
@@ -834,16 +854,22 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
 bool FastAudioStream::StopAudioStream()
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET((state_ == RUNNING) || (state_ == PAUSED), false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT((state_ == RUNNING) || (state_ == PAUSED), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_STOP_ILLEGAL_STATE, "State is not RUNNING. Illegal state:" + std::to_string(state_), true),
         HILOG_COMM_ERROR("[StopAudioStream]%{public}s: State is not RUNNING. Illegal state:%{public}u",
             logTag_.c_str(), state_));
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
 
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_STOP_NULL_POINTER, "Stop failed, process is null", true),
         "%{public}s: Stop failed, process is null.", logTag_.c_str());
     int32_t ret = processClient_->Stop();
     if (ret != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_STOP_OPERATION_FAILED, "Stop fail,ret:" + std::to_string(ret), true);
         AUDIO_ERR_LOG("%{public}s: Stop fail,ret:%{public}d", logTag_.c_str(), ret);
         state_ = oldState;
         return false;
@@ -873,7 +899,9 @@ bool FastAudioStream::DrainAudioStream(bool stopFlag)
 
 bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET(state_ != RELEASED && state_ != NEW, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(state_ != RELEASED && state_ != NEW, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_RELEASE_OPERATION_FAILED, "Illegal state: state=" + std::to_string(state_), true),
         HILOG_COMM_ERROR("[ReleaseAudioStream]%{public}s: Illegal state: state = %{public}u",
             logTag_.c_str(), state_));
     // If state_ is RUNNING try to Stop it first and Release
@@ -881,7 +909,9 @@ bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream
         StopAudioStream();
     }
 
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_RELEASE_NULL_POINTER, "Release failed, process is null", true),
         "%{public}s: Release failed, process is null.", logTag_.c_str());
     processClient_->Release(isSwitchStream);
     state_ = RELEASED;

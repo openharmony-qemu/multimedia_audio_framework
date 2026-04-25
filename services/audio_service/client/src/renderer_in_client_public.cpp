@@ -47,6 +47,7 @@
 #include "audio_manager_util.h"
 #include "audio_effect_map.h"
 #include "audio_common_utils.h"
+#include "stream_dfx_manager.h"
 
 #include "media_monitor_manager.h"
 #include "parameters.h"
@@ -1126,19 +1127,28 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     needNotifyStreamSilentChange_.store(true);
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_START_ILLEGAL_STATE, "Illegal state", true),
+        "Start failed");
 
     hasFirstFrameWrited_ = false;
-    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_START_NULL_POINTER, "ipcStream is not inited", true),
         HILOG_COMM_ERROR("[StartAudioStream]ipcStream is not inited!"));
     int32_t ret = ipcStream_->Start();
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_START_OPERATION_FAILED, "Start call server failed", true),
         HILOG_COMM_ERROR("[StartAudioStream]Start call server failed:%{public}u", ret));
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return state_ == RUNNING; // will be false when got notified.
     });
     if (!stopWaiting) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_START_TIMEOUT, "Start timeout", true);
         AUDIO_ERR_LOG("Start failed: timeout");
         ipcStream_->Stop();
         return false;
@@ -1186,13 +1196,20 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_ILLEGAL_STATE, "Illegal state", true);
         AUDIO_ERR_LOG("State is not RUNNING. Illegal state:%{public}u", state_.load());
         return false;
     }
 
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_NULL_POINTER, "ipcStream is not inited", true),
+        "ipcStream is not inited!");
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_OPERATION_FAILED, "Pause call server failed", true);
         AUDIO_ERR_LOG("call server failed:%{public}u", ret);
         return false;
     }
@@ -1201,6 +1218,8 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
         return state_ == PAUSED; // will be false when got notified.
     });
     if (!stopWaiting) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_TIMEOUT, "Pause timeout", true);
         AUDIO_ERR_LOG("Pause failed: timeout");
         return false;
     }
@@ -1235,6 +1254,18 @@ void RendererInClientInner::ReportExceptionForInterval()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void RendererInClientInner::HandleStopSuccess()
+{
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
+    HILOG_COMM_INFO("[StopAudioStream]Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, "
+        "volume data counts: %{public}" PRId64, sessionId_, clientUid_, volumeDataCount_);
+    UpdateTracker("STOPPED");
+    if (logStopCallCount_) {
+        ReportExceptionForInterval();
+        logStopCallCount_ = false;
+    }
+}
+
 bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
@@ -1251,45 +1282,38 @@ bool RendererInClientInner::StopAudioStream()
         AUDIO_INFO_LOG("Renderer in client is already stopped");
         return true;
     }
-    if ((state_ != RUNNING) && (state_ != PAUSED)) {
-        AUDIO_ERR_LOG("Stop failed. Illegal state:%{public}u", state_.load());
-        return false;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ == RUNNING || state_ == PAUSED, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_STOP_ILLEGAL_STATE, "Illegal state", true),
+        "Stop failed. Illegal state:%{public}u", state_.load());
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     UpdateStopState();
-
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_STOP_NULL_POINTER, "ipcStream is not inited", true),
+        "ipcStream is not inited!");
     int32_t ret = ipcStream_->Stop();
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
-        return false;
-    }
-
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_STOP_OPERATION_FAILED, "Stop call server failed", true),
+        "Stop call server failed:%{public}u", ret);
+    
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return state_ == STOPPED; // will be false when got notified.
     });
     if (!stopWaiting) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_STOP_TIMEOUT, "Stop timeout", true);
         AUDIO_ERR_LOG("Stop failed: timeout");
         state_ = INVALID;
         return false;
     }
 
     waitLock.unlock();
-
     FutexTool::FutexWake(clientBuffer_->GetFutex());
     statusLock.unlock();
-
-    // in plan: call HiSysEventWrite
-    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
-
-    HILOG_COMM_INFO("[StopAudioStream]Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, "
-        "volume data counts: %{public}" PRId64, sessionId_, clientUid_, volumeDataCount_);
-    UpdateTracker("STOPPED");
-    if (logStopCallCount_) {
-        ReportExceptionForInterval();
-        logStopCallCount_ = false;
-    }
+    HandleStopSuccess();
     return true;
 }
 
@@ -1357,17 +1381,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     return true;
 }
 
-bool RendererInClientInner::FlushAudioStream()
+void RendererInClientInner::ClearCbBufferQueue()
 {
-    Trace trace("RendererInClientInner::FlushAudioStream " + std::to_string(sessionId_));
-    std::unique_lock<std::mutex> statusLock(statusMutex_);
-    std::lock_guard<std::mutex>lock(writeMutex_);
-    if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
-        AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
-        return false;
-    }
-
-    // clear cbBufferQueue
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbBufferQueue_.Clear();
         int chToFill = (clientConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
@@ -1375,17 +1390,31 @@ bool RendererInClientInner::FlushAudioStream()
             AUDIO_ERR_LOG("memset_s buffer failed");
         }
     }
+}
 
+bool RendererInClientInner::FlushAudioStream()
+{
+    Trace trace("RendererInClientInner::FlushAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    std::lock_guard<std::mutex>lock(writeMutex_);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ == RUNNING || state_ == PAUSED || state_ == STOPPED, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_FLUSH_ILLEGAL_STATE, "Illegal state", true),
+        "Flush failed. Illegal state:%{public}u", state_.load());
+
+    ClearCbBufferQueue();
     FlushSpeedBuffer();
 
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_FLUSH_NULL_POINTER, "ipcStream is not inited", true),
+        "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Flush call server failed:%{public}u", ret);
-        return false;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_FLUSH_OPERATION_FAILED, "Flush call server failed", true),
+        "Flush call server failed:%{public}u", ret);
 
-    // clear multichannel render buffer
     if (converter_) {
         ret = converter_->Flush();
         if (ret != SUCCESS) {
@@ -1394,7 +1423,7 @@ bool RendererInClientInner::FlushAudioStream()
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
+        return notifiedOperation_ == FLUSH_STREAM;
     });
 
     if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {

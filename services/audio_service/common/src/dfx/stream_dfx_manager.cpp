@@ -89,6 +89,8 @@ void StreamDfxManager::ReportStreamOccupancyTimeout(uint32_t sessionId, int64_t 
 void StreamDfxManager::SendAudioErrorEvent(int32_t uid, int32_t errorCode, const std::string &erroDesc,
     bool isClient)
 {
+    AUDIO_INFO_LOG("SendAudioErrorEvent: errorCode=0x%{public}08X, erroDesc=%{public}s",
+        errorCode, erroDesc.c_str());
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO,
         Media::MediaMonitor::EventId::UNIFIED_FAULT_CODE,
