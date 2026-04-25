@@ -416,5 +416,64 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_020, TestSize.Level1)
     EXPECT_EQ(ret, StreamUsage::STREAM_USAGE_RINGTONE);
 }
 
+/**
+* @tc.name  : Test GetAudioFocuStateByStreamId
+* @tc.number: AudioSessionUnitTest_021
+* @tc.desc  : Test GetAudioFocuStateByStreamId function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_021, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.streamId = 100;
+    audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
+
+    AudioFocuState state = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId);
+    EXPECT_EQ(state, AudioFocuState::ACTIVE);
+
+    state = audioSession->GetAudioFocuStateByStreamId(999);
+    EXPECT_EQ(state, AudioFocuState::PLACEHOLDER);
+}
+
+/**
+* @tc.name  : Test UpdateStreamFocusState
+* @tc.number: AudioSessionUnitTest_022
+* @tc.desc  : Test UpdateStreamFocusState function success case
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_022, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.streamId = 100;
+    audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
+
+    int32_t ret = audioSession->UpdateStreamFocusState(audioInterrupt.streamId, AudioFocuState::STANDBY);
+    EXPECT_EQ(ret, SUCCESS);
+
+    AudioFocuState state = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId);
+    EXPECT_EQ(state, AudioFocuState::STANDBY);
+}
+
+/**
+* @tc.name  : Test UpdateStreamFocusState
+* @tc.number: AudioSessionUnitTest_023
+* @tc.desc  : Test UpdateStreamFocusState function failure case
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_023, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+
+    int32_t ret = audioSession->UpdateStreamFocusState(999, AudioFocuState::STANDBY);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

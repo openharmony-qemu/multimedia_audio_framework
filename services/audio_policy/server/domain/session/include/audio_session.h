@@ -61,6 +61,7 @@ public:
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     AudioFocuState GetAudioFocuStateByStreamId(uint32_t streamId);
+    int32_t UpdateStreamFocusState(uint32_t streamId, AudioFocuState focuState);
     bool GetAndClearNeedToFetchFlag();
     bool IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
         const std::shared_ptr<AudioDeviceDescriptor> desc);

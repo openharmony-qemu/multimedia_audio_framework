@@ -69,6 +69,7 @@ public:
     void AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
     void RemoveStreamInfo(const int32_t callerPid, const uint32_t streamId);
     void ClearStreamInfo(const int32_t callerPid);
+    int32_t UpdateStreamFocusState(const int32_t callerPid, uint32_t streamId, AudioFocuState focuState);
     bool IsStreamInfoEmpty(const int32_t callerPid);
     bool IsAudioRendererEmpty(const int32_t callerPid);
     AudioConcurrencyMode GetSessionStrategy(int32_t callerPid);

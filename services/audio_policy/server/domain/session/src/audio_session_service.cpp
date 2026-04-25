@@ -444,6 +444,18 @@ void AudioSessionService::ClearStreamInfo(const int32_t callerPid)
     }
 }
 
+int32_t AudioSessionService::UpdateStreamFocusState(const int32_t callerPid, uint32_t streamId,
+    AudioFocuState focuState)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session == sessionMap_.end()) {
+        AUDIO_ERR_LOG("session not found for pid %d", callerPid);
+        return ERR_INVALID_PARAM;
+    }
+    return session->second->UpdateStreamFocusState(streamId, focuState);
+}
+
 bool AudioSessionService::IsStreamInfoEmpty(const int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);

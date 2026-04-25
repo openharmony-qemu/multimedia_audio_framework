@@ -777,5 +777,56 @@ HWTEST_F(AudioSessionServiceUnitTest, IsMuteSuggestionWhenMixEnabledTest_001, Te
     EXPECT_TRUE(ret);
 }
 
+/**
+* @tc.name  : Test UpdateStreamFocusState
+* @tc.number: AudioSessionServiceUnitTest_028
+* @tc.desc  : Test UpdateStreamFocusState function success case
+*/
+HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_028, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.streamId = 100;
+    audioInterrupt.pid = callerPid;
+    audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+
+    int32_t ret = audioSessionService_.UpdateStreamFocusState(callerPid, audioInterrupt.streamId, AudioFocuState::STANDBY);
+    EXPECT_EQ(ret, SUCCESS);
+
+    AudioFocuState state = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId);
+    EXPECT_EQ(state, AudioFocuState::STANDBY);
+}
+
+/**
+* @tc.name  : Test UpdateStreamFocusState
+* @tc.number: AudioSessionServiceUnitTest_029
+* @tc.desc  : Test UpdateStreamFocusState function failure case - session not found
+*/
+HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_029, TestSize.Level1)
+{
+    int32_t callerPid = 999;
+    int32_t ret = audioSessionService_.UpdateStreamFocusState(callerPid, 100, AudioFocuState::STANDBY);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test UpdateStreamFocusState
+* @tc.number: AudioSessionServiceUnitTest_030
+* @tc.desc  : Test UpdateStreamFocusState function failure case - stream not found
+*/
+HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_030, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+
+    int32_t ret = audioSessionService_.UpdateStreamFocusState(callerPid, 999, AudioFocuState::STANDBY);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

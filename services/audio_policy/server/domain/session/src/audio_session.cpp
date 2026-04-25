@@ -418,6 +418,17 @@ AudioFocuState AudioSession::GetAudioFocuStateByStreamId(uint32_t streamId)
     return AudioFocuState::PLACEHOLDER;
 }
 
+int32_t AudioSession::UpdateStreamFocusState(uint32_t streamId, AudioFocuState focuState)
+{
+    auto it = interruptMap_.find(streamId);
+    if (it == interruptMap_.end()) {
+        AUDIO_ERR_LOG("streamId %u not found in interruptMap", streamId);
+        return ERR_INVALID_PARAM;
+    }
+    it->second.second = focuState;
+    return SUCCESS;
+}
+
 bool AudioSession::IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
     const std::shared_ptr<AudioDeviceDescriptor> desc)
 {

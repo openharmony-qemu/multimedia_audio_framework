@@ -41,6 +41,7 @@ enum AudioFocuState {
     STOP,
     PLACEHOLDER,
     PAUSEDBYREMOTE,
+    STANDBY, // Audio stream has no data
 };
 
 enum InterruptMode {
