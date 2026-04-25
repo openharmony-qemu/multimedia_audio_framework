@@ -927,6 +927,7 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
     moduleInfo.deviceType = std::to_string(deviceDesc->deviceType_);
     moduleInfo.networkId = deviceDesc->networkId_;
     moduleInfo.macAddress = deviceDesc->macAddress_;
+    moduleInfo.hdPlayBackMode = std::to_string(static_cast<int32_t>(deviceDesc->hdPlaybackMode_));
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
         const DeviceStreamInfo deviceAudioStreamInfo = deviceDesc->GetAudioStreamInfo().back();
@@ -1147,9 +1148,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         }
         MatchUltraFastPipe(pipeInfo, streamDesc);
 
-        pipeInfo->streamDescriptors_.push_back(streamDesc);
-        pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-        pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
+        pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
             pipeInfo->ToString().c_str(), streamDesc->sessionId_, pipeInfo->pipeAction_);
         return true;

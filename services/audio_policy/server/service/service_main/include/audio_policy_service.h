@@ -232,18 +232,10 @@ public:
 
     void MuteMediaWhenAccountsChanged();
 
-    // for effect V3
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     // for effect
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    // for enhance
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
@@ -300,10 +292,10 @@ private:
 
     ~AudioPolicyService();
 
-    void GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    void GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    void GetSupportedEffectProperty(AudioEffectPropertyArray &propertyArray);
+    void GetSupportedEnhanceProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArray &propertyArray, const EffectFlag& flag);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray);
 
     void RegisterNameMonitorHelper();
 
@@ -332,7 +324,7 @@ private:
 
     BluetoothOffloadState GetA2dpOffloadFlag();
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
-    bool CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property);
+    bool CheckVoipAnrOn(std::vector<AudioEffectProperty> &property);
 private:
 
     static bool isBtListenerRegistered;

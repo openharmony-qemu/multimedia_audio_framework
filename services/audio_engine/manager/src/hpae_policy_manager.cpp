@@ -89,16 +89,6 @@ int32_t HpaePolicyManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
     return AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
 }
 
-int32_t HpaePolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
-{
-    return AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(propertyArray);
-}
-
-int32_t HpaePolicyManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    return AudioEffectChainManager::GetInstance()->GetAudioEffectProperty(propertyArray);
-}
-
 int32_t HpaePolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     return AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(propertyArray);
@@ -159,26 +149,13 @@ int32_t HpaePolicyManager::SetStreamVolumeInfo(const uint32_t &sessionId, const 
     return AudioEnhanceChainManager::GetInstance()->SetStreamVolumeInfo(sessionId, streamVol);
 }
 
-int32_t HpaePolicyManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+int32_t HpaePolicyManager::SetAudioEnhanceProperty(const AudioEffectPropertyArray &propertyArray,
     DeviceType deviceType)
 {
     return AudioEnhanceChainManager::GetInstance()->SetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
-int32_t HpaePolicyManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-    DeviceType deviceType)
-{
-    return AudioEnhanceChainManager::GetInstance()->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-int32_t HpaePolicyManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
-{
-    return AudioEnhanceChainManager::GetInstance()->SetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-// todo: change to callback mode
-int32_t HpaePolicyManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+int32_t HpaePolicyManager::GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
     DeviceType deviceType)
 {
     return AudioEnhanceChainManager::GetInstance()->GetAudioEnhanceProperty(propertyArray, deviceType);

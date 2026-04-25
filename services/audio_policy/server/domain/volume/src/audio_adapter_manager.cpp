@@ -1037,6 +1037,7 @@ bool AudioAdapterManager::GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceD
     AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
+    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
     if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
         AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
         return false;
@@ -1719,34 +1720,21 @@ int32_t AudioAdapterManager::GetCurActivateCount() const
     return curActiveCount_ > 0 ? curActiveCount_ : 0;
 }
 
-int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const
+int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     int32_t ret = 0;
-    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    AudioEffectPropertyArray effectPropertyArray = {};
     ret = audioServiceAdapter_->GetAudioEffectProperty(effectPropertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEffectProperty failed");
     propertyArray.property.insert(propertyArray.property.end(),
         effectPropertyArray.property.begin(), effectPropertyArray.property.end());
-    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     ret = audioServiceAdapter_->GetAudioEnhanceProperty(enhancePropertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEnhanceProperty failed");
     propertyArray.property.insert(propertyArray.property.end(),
         enhancePropertyArray.property.begin(), enhancePropertyArray.property.end());
     return ret;
-}
-
-int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->GetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType) const
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
 int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnabled)
@@ -2109,6 +2097,9 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
     }
     attr.address = audioModuleInfo.macAddress;
+    if (!audioModuleInfo.hdPlayBackMode.empty()) {
+        attr.hdPlayBackMode = static_cast<int32_t>(std::stoul(audioModuleInfo.hdPlayBackMode));
+    }
     return attr;
 }
 

@@ -1413,5 +1413,37 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSystemAppVolumeLevel_Normal, TestSize.L
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(volumeLevel, expectedVolume);
 }
+
+/**
+ * @tc.name: Test GetAudioSinkAttr HdPlaybackMode
+ * @tc.number: GetAudioSinkAttr_HdPlaybackMode_001
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with empty hdPlayBackMode string
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_HdPlaybackMode_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.hdPlayBackMode = "";
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+    EXPECT_EQ(attr.hdPlayBackMode, 0);
+}
+
+/**
+ * @tc.name: Test GetAudioSinkAttr HdPlaybackMode
+ * @tc.number: GetAudioSinkAttr_HdPlaybackMode_002
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with hdPlayBackMode "0" (HD_NOT_SUPPORTED)
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_HdPlaybackMode_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.hdPlayBackMode = "0";
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+    EXPECT_EQ(attr.hdPlayBackMode, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

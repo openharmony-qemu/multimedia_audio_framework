@@ -149,7 +149,7 @@ private:
     std::string adapterNameCase_ = "";
     struct IAudioRender *audioRender_ = nullptr;
     bool audioMonoState_ = false;
-    bool audioBalanceState_ = false;
+    std::atomic<bool> audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
     // for signal detect

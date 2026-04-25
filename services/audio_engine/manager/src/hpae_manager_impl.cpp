@@ -444,18 +444,6 @@ int32_t HpaeManagerImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->SetAbsVolumeStateToEffect(absVolumeState);
 }
-int32_t HpaeManagerImpl::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->SetAudioEffectProperty(propertyArray);
-}
-
-int32_t HpaeManagerImpl::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->GetAudioEffectProperty(propertyArray);
-}
-
 int32_t HpaeManagerImpl::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
@@ -526,28 +514,14 @@ int32_t HpaeManagerImpl::SetStreamVolumeInfo(const uint32_t &sessionId, const fl
 }
 
 int32_t HpaeManagerImpl::SetAudioEnhanceProperty(
-    const AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
+    const AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->SetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
 int32_t HpaeManagerImpl::GetAudioEnhanceProperty(
-    AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-int32_t HpaeManagerImpl::SetAudioEnhanceProperty(
-    const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->SetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-int32_t HpaeManagerImpl::GetAudioEnhanceProperty(
-    AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
+    AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->GetAudioEnhanceProperty(propertyArray, deviceType);

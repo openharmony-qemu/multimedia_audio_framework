@@ -2949,58 +2949,12 @@ void AudioPolicyManager::RemoveClientTrackerStub(int32_t sessionId)
     }
 }
 
-int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetSupportedAudioEffectProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Supported Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
-int32_t AudioPolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    return gsp->SetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetAudioEffectProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
 int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
     int32_t result = gsp->GetSupportedAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Supported Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
-int32_t AudioPolicyManager::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetSupportedAudioEnhanceProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Supported Audio Enhance Property, error: %d", result);
 
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
@@ -3021,26 +2975,6 @@ int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &pro
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
     int32_t result = gsp->GetAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
-int32_t AudioPolicyManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    return gsp->SetAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioPolicyManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetAudioEnhanceProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Audio Enhance Property, error: %d", result);
 
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,

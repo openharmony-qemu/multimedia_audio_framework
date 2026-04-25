@@ -35,7 +35,6 @@ static const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
     STREAM_VOICE_CALL,
     STREAM_ACCESSIBILITY,
     STREAM_RING,
-    STREAM_NOTIFICATION,
     STREAM_ALARM,
     STREAM_ULTRASONIC,
     // adjust the type of music from the head of list to end, make sure music is updated last.

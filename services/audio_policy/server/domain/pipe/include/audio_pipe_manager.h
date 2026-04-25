@@ -95,6 +95,10 @@ public:
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
 
+    void AddStreamToPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeAction action);
+    void ClearPipeStreams(std::shared_ptr<AudioPipeInfo> pipeInfo);
+
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();

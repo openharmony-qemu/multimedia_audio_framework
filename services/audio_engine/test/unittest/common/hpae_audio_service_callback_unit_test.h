@@ -42,11 +42,7 @@ public:
  
     void OnSetSourceOutputMuteCb(int32_t result) override;
  
-    void OnGetAudioEffectPropertyCbV3(int32_t result) override;
- 
     void OnGetAudioEffectPropertyCb(int32_t result) override;
- 
-    void OnGetAudioEnhancePropertyCbV3(int32_t result) override;
  
     void OnGetAudioEnhancePropertyCb(int32_t result) override;
 

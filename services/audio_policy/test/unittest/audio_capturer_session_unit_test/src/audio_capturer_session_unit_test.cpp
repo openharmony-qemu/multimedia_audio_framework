@@ -22,184 +22,6 @@ namespace AudioStandard {
 
 /**
  * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_001
- * @tc.desc  : Test AudioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_001, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = false;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_002
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_002, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_003
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_003, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_WAKEUP;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_004
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_004, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_005
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_005, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_006
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_006, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_COMMUNICATION;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_007
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_007, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
-    newPropertyArray.property = {{"record", "ABC"}, {"voip_up", "ABC"}};
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_COMMUNICATION;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_008
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_008, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
-    newPropertyArray.property = {{"record", "ABC"}, {"voip_up", "PNR"}};
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_COMMUNICATION;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_009
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_009, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-
-    oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
-    newPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
-
-    audioCapturerSession->audioEcManager_.isMicRefFeatureEnable_ = true;
-    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_COMMUNICATION;
-
-    audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_010
  * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
  */
@@ -208,8 +30,8 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_010, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
-    AudioEffectPropertyArrayV3 oldPropertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray oldPropertyArray;
+    AudioEffectPropertyArray newPropertyArray;
 
     oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
     newPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
@@ -230,8 +52,8 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_011, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
-    AudioEffectPropertyArrayV3 oldPropertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray oldPropertyArray;
+    AudioEffectPropertyArray newPropertyArray;
 
     oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
     newPropertyArray.property = {{"record", "ABC"}, {"voip_up", "PNR"}};
@@ -252,8 +74,8 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_012, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
-    AudioEffectPropertyArrayV3 oldPropertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray oldPropertyArray;
+    AudioEffectPropertyArray newPropertyArray;
 
     oldPropertyArray.property = {{"record", "PNR"}, {"voip_up", "PNR"}};
     newPropertyArray.property = {{"record", "ABC"}, {"voip_up", "ABC"}};

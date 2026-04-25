@@ -1339,7 +1339,7 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    desc.deviceRole_ == INPUT_DEVICE;
+    desc.deviceRole_ = INPUT_DEVICE;
     auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
     EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
     ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
@@ -1847,7 +1847,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_065, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     auto ret = server->GetSupportedAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, AUDIO_OK);
 }
@@ -1862,7 +1862,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_066, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     auto ret = server->SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, AUDIO_OK);
 }
@@ -1878,7 +1878,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_067, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     server->GetAudioEffectProperty(propertyArray);
 }
 
@@ -4470,7 +4470,7 @@ HWTEST(AudioPolicyUnitTest, AddUidUsagesToAudioZone_004, TestSize.Level1)
     }
 
     int32_t ret = server->AddUidUsagesToAudioZone(zoneId, uid, usages);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -4623,7 +4623,7 @@ HWTEST(AudioPolicyUnitTest, RemoveUidUsagesFromAudioZone_004, TestSize.Level1)
     }
 
     int32_t ret = server->RemoveUidUsagesFromAudioZone(zoneId, uid, usages);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

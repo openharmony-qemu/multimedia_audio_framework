@@ -268,7 +268,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
-    if (audioBalanceState_) {
+    if (audioBalanceState_.load()) {
         AdjustAudioBalance(&data, len);
     }
     CheckUpdateState(&data, len);
@@ -433,10 +433,10 @@ void AudioRenderSink::SetAudioBalanceValue(float audioBalance)
 
     if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
         // audioBalance is equal to 0.0f
-        audioBalanceState_ = false;
+        audioBalanceState_.store(false);
     } else {
         // audioBalance is not equal to 0.0f
-        audioBalanceState_ = true;
+        audioBalanceState_.store(true);
         // calculate the balance coefficient
         if (audioBalance > 0.0f) {
             leftBalanceCoef_ -= audioBalance;

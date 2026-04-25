@@ -168,17 +168,6 @@ const std::map<AudioEffectMode, std::string> AUDIO_EFFECT_MODE_MAP = {
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
 };
 
-const std::map<AudioLoopbackStatus, std::string> AUDIO_LOOPBACK_STATUS_MAP = {
-    {LOOPBACK_UNAVAILABLE_DEVICE, "LOOPBACK_UNAVAILABLE_DEVICE"},
-    {LOOPBACK_UNAVAILABLE_SCENE, "LOOPBACK_UNAVAILABLE_SCENE"},
-    {LOOPBACK_AVAILABLE_IDLE, "LOOPBACK_AVAILABLE_IDLE"},
-    {LOOPBACK_AVAILABLE_RUNNING, "LOOPBACK_AVAILABLE_RUNNING"},
-};
-
-const std::map<AudioLoopbackMode, std::string> AUDIO_LOOPBACK_MODE_MAP = {
-    {LOOPBACK_HARDWARE, "LOOPBACK_HARDWARE"},
-};
-
 template<typename T>
 std::string EnumToString(const std::map<T, std::string> &enumMap, T key)
 {
@@ -234,14 +223,79 @@ std::string AudioEffectModeToString(AudioEffectMode mode)
     return EnumToString(AUDIO_EFFECT_MODE_MAP, mode);
 }
 
-std::string AudioLoopbackStatusToString(AudioLoopbackStatus status)
+const std::map<AudioLoopbackState, std::string> AUDIO_LOOPBACK_STATE_MAP = {
+    {LOOPBACK_STATE_IDLE, "LOOPBACK_STATE_IDLE"},
+    {LOOPBACK_STATE_PREPARED, "LOOPBACK_STATE_PREPARED"},
+    {LOOPBACK_STATE_RUNNING, "LOOPBACK_STATE_RUNNING"},
+    {LOOPBACK_STATE_DESTROYING, "LOOPBACK_STATE_DESTROYING"},
+    {LOOPBACK_STATE_DESTROYED, "LOOPBACK_STATE_DESTROYED"},
+};
+
+const std::map<AudioLoopbackMode, std::string> AUDIO_LOOPBACK_MODE_MAP = {
+    {LOOPBACK_HARDWARE, "LOOPBACK_HARDWARE"},
+};
+
+std::string AudioLoopbackStateToString(AudioLoopbackState state)
 {
-    return EnumToString(AUDIO_LOOPBACK_STATUS_MAP, status);
+    return EnumToString(AUDIO_LOOPBACK_STATE_MAP, state);
 }
 
 std::string AudioLoopbackModeToString(AudioLoopbackMode mode)
 {
     return EnumToString(AUDIO_LOOPBACK_MODE_MAP, mode);
+}
+
+const std::map<RendererState, std::string> RENDERER_STATE_MAP = {
+    {RENDERER_INVALID, "RENDERER_INVALID"},
+    {RENDERER_NEW, "RENDERER_NEW"},
+    {RENDERER_PREPARED, "RENDERER_PREPARED"},
+    {RENDERER_RUNNING, "RENDERER_RUNNING"},
+    {RENDERER_STOPPED, "RENDERER_STOPPED"},
+    {RENDERER_RELEASED, "RENDERER_RELEASED"},
+    {RENDERER_PAUSED, "RENDERER_PAUSED"},
+};
+
+const std::map<CapturerState, std::string> CAPTURER_STATE_MAP = {
+    {CAPTURER_INVALID, "CAPTURER_INVALID"},
+    {CAPTURER_NEW, "CAPTURER_NEW"},
+    {CAPTURER_PREPARED, "CAPTURER_PREPARED"},
+    {CAPTURER_RUNNING, "CAPTURER_RUNNING"},
+    {CAPTURER_STOPPED, "CAPTURER_STOPPED"},
+    {CAPTURER_RELEASED, "CAPTURER_RELEASED"},
+    {CAPTURER_PAUSED, "CAPTURER_PAUSED"},
+};
+
+const std::map<AudioLoopbackReverbPreset, std::string> REVERB_PRESET_MAP = {
+    {REVERB_PRESET_ORIGINAL, "REVERB_PRESET_ORIGINAL"},
+    {REVERB_PRESET_KTV, "REVERB_PRESET_KTV"},
+    {REVERB_PRESET_THEATER, "REVERB_PRESET_THEATER"},
+    {REVERB_PRESET_CONCERT, "REVERB_PRESET_CONCERT"},
+};
+
+const std::map<AudioLoopbackEqualizerPreset, std::string> EQUALIZER_PRESET_MAP = {
+    {EQUALIZER_PRESET_FLAT, "EQUALIZER_PRESET_FLAT"},
+    {EQUALIZER_PRESET_FULL, "EQUALIZER_PRESET_FULL"},
+    {EQUALIZER_PRESET_BRIGHT, "EQUALIZER_PRESET_BRIGHT"},
+};
+
+std::string RendererStateToString(RendererState state)
+{
+    return EnumToString(RENDERER_STATE_MAP, state);
+}
+
+std::string CapturerStateToString(CapturerState state)
+{
+    return EnumToString(CAPTURER_STATE_MAP, state);
+}
+
+std::string ReverbPresetToString(AudioLoopbackReverbPreset preset)
+{
+    return EnumToString(REVERB_PRESET_MAP, preset);
+}
+
+std::string EqualizerPresetToString(AudioLoopbackEqualizerPreset preset)
+{
+    return EnumToString(EQUALIZER_PRESET_MAP, preset);
 }
 } // namespace
 
@@ -563,16 +617,26 @@ std::string AudioDebugManagerPrivate::ParserAudioLoopbackDebugInfo(
 {
     std::stringstream ss;
     ss << "audioLoopback {\n"
-       << "  streamInfo: {\n"
-       << "    streamId: " << debugInfo.sessionId << "\n"
+       << "  appInfo: {\n"
+       << "    appUid: " << debugInfo.appUid << ",\n"
+       << "    appName: " << debugInfo.appName << "\n"
        << "  },\n"
        << "  statusInfo: {\n"
-       << "    status: " << AudioLoopbackStatusToString(debugInfo.status) << ",\n"
-       << "    mode: " << AudioLoopbackModeToString(debugInfo.mode) << "\n"
+       << "    mode: " << AudioLoopbackModeToString(debugInfo.mode) << ",\n"
+       << "    currentState: " << AudioLoopbackStateToString(debugInfo.currentState) << "\n"
        << "  },\n"
        << "  deviceInfo: {\n"
-       << "    outputDeviceType: " << DeviceTypeToString(debugInfo.outputDeviceType) << ",\n"
-       << "    inputDeviceType: " << DeviceTypeToString(debugInfo.inputDeviceType) << "\n"
+       << "    activeOutputDevice: " << DeviceTypeToString(debugInfo.activeOutputDevice) << ",\n"
+       << "    activeInputDevice: " << DeviceTypeToString(debugInfo.activeInputDevice) << "\n"
+       << "  },\n"
+       << "  effectInfo: {\n"
+       << "    reverbPreset: " << ReverbPresetToString(debugInfo.reverbPreset) << ",\n"
+       << "    equalizerPreset: " << EqualizerPresetToString(debugInfo.equalizerPreset) << ",\n"
+       << "    volume: " << debugInfo.volume << "\n"
+       << "  },\n"
+       << "  streamInfo: {\n"
+       << "    uplinkStreamState: " << RendererStateToString(debugInfo.uplinkStreamState) << ",\n"
+       << "    downlinkStreamState: " << CapturerStateToString(debugInfo.downlinkStreamState) << "\n"
        << "  }\n"
        << "}";
     return ss.str();

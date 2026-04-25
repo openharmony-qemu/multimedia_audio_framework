@@ -454,6 +454,9 @@ interface AudioRoutingManager {
   @gen_promise("unexcludeOutputDevices")
   UnexcludeOutputDevicesWithUsage(usage: DeviceUsage): void;
 
+  @gen_promise("getActiveOutputDeviceDescriptors")
+  GetActiveOutputDeviceDescriptorsSync(): Array<AudioDeviceDescriptor>;
+
   OnPreferredInputDeviceChangeForCapturerInfo(capturerInfo: AudioCapturerInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
   OnMicBlockStatusChanged(callback: (data: DeviceBlockStatusInfo) => void): void;
   OnDeviceChange(deviceFlag: DeviceFlag, callback: (data: DeviceChangeAction) => void): void;
