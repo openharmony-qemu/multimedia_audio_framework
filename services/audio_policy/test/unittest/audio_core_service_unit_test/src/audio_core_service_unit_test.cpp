@@ -7778,5 +7778,222 @@ HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_NonRunningState, T
 
     streamCollector.audioRendererChangeInfos_.clear();
 }
+
+/**
+ * @tc.name  : HandleNormalInputPipes_VoipPriorityLowered_001
+ * @tc.number: HandleNormalInputPipes_VoipPriorityLowered_001
+ * @tc.desc  : Test lowered VoIP stream is skipped during priority comparison.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleNormalInputPipes_VoipPriorityLowered_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 700001;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(true);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = { pipeInfo };
+    AudioStreamDescriptor runningSessionInfo = {};
+    runningSessionInfo.capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    bool hasSession = false;
+
+    bool result = audioCoreService->HandleNormalInputPipes(pipeList, TEST_SESSION_ID,
+        runningSessionInfo, hasSession);
+
+    EXPECT_FALSE(result);
+    EXPECT_FALSE(hasSession);
+    EXPECT_NE(runningSessionInfo.sessionId_, streamDesc->sessionId_);
+}
+
+/**
+ * @tc.name  : HandleNormalInputPipes_VoipPriorityLowered_002
+ * @tc.number: HandleNormalInputPipes_VoipPriorityLowered_002
+ * @tc.desc  : Test non-lowered VoIP stream still participates in priority comparison.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleNormalInputPipes_VoipPriorityLowered_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 700002;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(false);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = { pipeInfo };
+    AudioStreamDescriptor runningSessionInfo = {};
+    runningSessionInfo.capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    bool hasSession = false;
+
+    bool result = audioCoreService->HandleNormalInputPipes(pipeList, TEST_SESSION_ID,
+        runningSessionInfo, hasSession);
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(hasSession);
+    EXPECT_EQ(runningSessionInfo.sessionId_, streamDesc->sessionId_);
+    EXPECT_EQ(runningSessionInfo.capturerInfo_.sourceType, SOURCE_TYPE_VOICE_COMMUNICATION);
+}
+
+/**
+ * @tc.name  : NotifyVoipPriorityLoweredByMute_001
+ * @tc.number: NotifyVoipPriorityLoweredByMute_001
+ * @tc.desc  : Test NotifyVoipPriorityLoweredByMute sets lowered flag to true.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 700101;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(false);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    audioCoreService->NotifyVoipPriorityLoweredByMute(streamDesc->GetSessionId(), true);
+
+    auto streamDescAfter = pipeManager->GetStreamDescById(streamDesc->GetSessionId());
+    ASSERT_NE(streamDescAfter, nullptr);
+    EXPECT_TRUE(streamDescAfter->voipPriorityLowered_.load());
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : NotifyVoipPriorityLoweredByMute_002
+ * @tc.number: NotifyVoipPriorityLoweredByMute_002
+ * @tc.desc  : Test NotifyVoipPriorityLoweredByMute clears lowered flag to false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 700102;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(true);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    audioCoreService->NotifyVoipPriorityLoweredByMute(streamDesc->GetSessionId(), false);
+
+    auto streamDescAfter = pipeManager->GetStreamDescById(streamDesc->GetSessionId());
+    ASSERT_NE(streamDescAfter, nullptr);
+    EXPECT_FALSE(streamDescAfter->voipPriorityLowered_.load());
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : NotifyVoipPriorityLoweredByMute_003
+ * @tc.number: NotifyVoipPriorityLoweredByMute_003
+ * @tc.desc  : Test NotifyVoipPriorityLoweredByMute skips reload when stream is not started.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    constexpr uint32_t sentinelSessionId = 700200;
+    audioCoreService->SetOpenedNormalSourceSessionId(sentinelSessionId);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 700103;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(false);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    audioCoreService->NotifyVoipPriorityLoweredByMute(streamDesc->GetSessionId(), true);
+
+    auto streamDescAfter = pipeManager->GetStreamDescById(streamDesc->GetSessionId());
+    ASSERT_NE(streamDescAfter, nullptr);
+    EXPECT_TRUE(streamDescAfter->voipPriorityLowered_.load());
+    EXPECT_EQ(audioCoreService->GetOpenedNormalSourceSessionId(), sentinelSessionId);
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : NotifyVoipPriorityLoweredByMute_004
+ * @tc.number: NotifyVoipPriorityLoweredByMute_004
+ * @tc.desc  : Test NotifyVoipPriorityLoweredByMute skips reload when stream is released.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    constexpr uint32_t sentinelSessionId = 700201;
+    audioCoreService->SetOpenedNormalSourceSessionId(sentinelSessionId);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 700104;
+    streamDesc->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(false);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    audioCoreService->NotifyVoipPriorityLoweredByMute(streamDesc->GetSessionId(), true);
+
+    auto streamDescAfter = pipeManager->GetStreamDescById(streamDesc->GetSessionId());
+    ASSERT_NE(streamDescAfter, nullptr);
+    EXPECT_TRUE(streamDescAfter->voipPriorityLowered_.load());
+    EXPECT_EQ(audioCoreService->GetOpenedNormalSourceSessionId(), sentinelSessionId);
+
+    pipeManager->curPipeList_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS

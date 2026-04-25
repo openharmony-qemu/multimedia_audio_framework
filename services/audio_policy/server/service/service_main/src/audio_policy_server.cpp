@@ -5465,6 +5465,14 @@ int32_t AudioPolicyServer::SetSourceOutputStreamMuteByStreamId(int32_t sessionId
     return audioPolicyService_.SetSourceOutputStreamMuteByStreamId(sessionId, mute);
 }
 
+void AudioPolicyServer::NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered)
+{
+    AUDIO_INFO_LOG("NotifyVoipPriorityLoweredByMute: streamId %{public}u, lowered %{public}d",
+        streamId, lowered);
+    CHECK_AND_RETURN_LOG(eventEntry_ != nullptr, "eventEntry_ is nullptr");
+    eventEntry_->TriggerVoipPriorityReload(streamId, lowered);
+}
+
 int32_t AudioPolicyServer::SetSourceOutputStreamMute(int32_t uid, bool mute)
 {
     return audioPolicyService_.SetSourceOutputStreamMute(uid, mute);

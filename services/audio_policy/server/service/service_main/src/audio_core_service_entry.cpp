@@ -782,5 +782,12 @@ void AudioCoreService::EventEntry::ReloadSourceForEffectV3(
     coreService_->ReloadSourceForEffect(oldPropertyArray, propertyArray);
 }
 
+void AudioCoreService::EventEntry::TriggerVoipPriorityReload(uint32_t sessionId, bool lowered)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyVoipPriorityLoweredByMute(sessionId, lowered);
+}
+
 }
 }

@@ -231,6 +231,8 @@ public:
 
     int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool mute);
 
+    void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
+
     int32_t SetSourceOutputStreamMute(int32_t uid, bool mute);
 
 #ifdef FEATURE_DTMF_TONE
