@@ -484,11 +484,13 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, DestroyStream_003, TestSize.Lev
  */
 HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Start_001, TestSize.Level0)
 {
-    testNode_->SetState(HPAE_SESSION_PREPARED);
-    int32_t ret = manager_->Start(TEST_SESSION_ID);
+    // Use a non-curNode_ node to avoid ConnectInputSession (needs sinkOutputNode_)
+    auto secondNode = CreateTestNode(201, HPAE_SESSION_PREPARED);
+    manager_->sinkInputNodeMap_[201] = secondNode;
+    int32_t ret = manager_->Start(201);
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
-    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_RUNNING);
+    EXPECT_EQ(secondNode->GetState(), HPAE_SESSION_RUNNING);
 }
 
 /**
@@ -542,7 +544,10 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Stop_001, TestSize.Level0)
  */
 HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Flush_001, TestSize.Level0)
 {
-    int32_t ret = manager_->Flush(TEST_SESSION_ID);
+    // Use a non-curNode_ node to avoid sinkOutputNode_->FlushStream()
+    auto secondNode = CreateTestNode(202, HPAE_SESSION_RUNNING);
+    manager_->sinkInputNodeMap_[202] = secondNode;
+    int32_t ret = manager_->Flush(202);
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
 }
@@ -629,6 +634,8 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, MoveAllStream_002, TestSize.Lev
  */
 HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, SuspendStreamManager_001, TestSize.Level0)
 {
+    // Test early-return path: isSuspend_ == isSuspend → no sinkOutputNode_ access
+    manager_->isSuspend_.store(true);
     int32_t ret = manager_->SuspendStreamManager(true);
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
