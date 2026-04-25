@@ -91,11 +91,26 @@ struct AudioCapturerDebugInfo {
 };
 
 struct AudioLoopbackDebugInfo {
-    uint32_t sessionId = 0;
-    AudioLoopbackStatus status = LOOPBACK_UNAVAILABLE_DEVICE;
+    // Application information
+    int32_t appUid = -1;
+    std::string appName;
+
+    // Loopback status
     AudioLoopbackMode mode = LOOPBACK_HARDWARE;
-    DeviceType outputDeviceType = DEVICE_TYPE_NONE;
-    DeviceType inputDeviceType = DEVICE_TYPE_NONE;
+    AudioLoopbackState currentState = LOOPBACK_STATE_IDLE;
+
+    // Device information
+    DeviceType activeOutputDevice = DEVICE_TYPE_NONE;
+    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
+
+    // Audio effect information
+    AudioLoopbackReverbPreset reverbPreset = REVERB_PRESET_THEATER;
+    AudioLoopbackEqualizerPreset equalizerPreset = EQUALIZER_PRESET_FULL;
+    int32_t volume = 0;
+
+    // Stream states
+    RendererState uplinkStreamState = RENDERER_INVALID;
+    CapturerState downlinkStreamState = CAPTURER_INVALID;
 };
 
 struct AudioDebugInfo : public Parcelable {
