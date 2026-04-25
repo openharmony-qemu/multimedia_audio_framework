@@ -301,6 +301,21 @@ public:
         return newDeviceDescs_[0];
     }
 
+    bool HasNewDeviceDescs()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        return !newDeviceDescs_.empty() && newDeviceDescs_.front() != nullptr;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetFirstNewDeviceDesc()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.empty() || newDeviceDescs_.front() == nullptr) {
+            return nullptr;
+        }
+        return newDeviceDescs_.front();
+    }
+
     bool IsA2dpOffloadStream()
     {
         std::lock_guard<std::mutex> lock(lock_);
@@ -340,6 +355,19 @@ public:
     {
         std::lock_guard<std::mutex> lock(lock_);
         oldDeviceDescs_ = devices;
+    }
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetNewDeviceDescs()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        return newDeviceDescs_;
+    }
+
+    void SwapAndUpdateNewDeviceDescs(std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDevices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        oldDeviceDescs_ = newDeviceDescs_;
+        newDeviceDescs_ = std::move(newDevices);
     }
 
     bool IsDeviceRemote()
@@ -412,6 +440,16 @@ public:
         return forcedNormalFlag_.exchange(false);
     }
 
+    void SetRouteSelectRejectedFlag(bool isRejected)
+    {
+        routeSelectRejectedFlag_ = isRejected;
+    }
+
+    bool GetRouteSelectRejectedFlag() const
+    {
+        return routeSelectRejectedFlag_.load();
+    }
+
     int32_t GetRealUid() const;
 
 private:
@@ -428,6 +466,7 @@ private:
     std::shared_mutex ultraFastFlagLock_;
     uint32_t ultraFastFlag_ = ULTRA_NONE;
     std::atomic<bool> forcedNormalFlag_ = false;
+    std::atomic<bool> routeSelectRejectedFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -165,6 +165,7 @@ public:
 
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
+    std::shared_ptr<AudioPolicyClientHolder> GetAudioPolicyClientHolder(int32_t clientId);
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const std::shared_ptr<AudioPolicyClientHolder> &cb);
     void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
@@ -226,8 +227,8 @@ public:
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
-    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID);
+    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID);
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
@@ -314,7 +315,7 @@ private:
     void HandleDeviceConfigChangedEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
-    std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
+    std::vector<AudioCapturerFilter> GetCallbackCapturerInfoList(int32_t clientPid);
 
     bool IsForceGetDevByVolumeType(int32_t uid);
     bool IsForceGetZoneDevice(int32_t uid);
@@ -328,7 +329,7 @@ private:
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
     std::mutex clientCbRendererInfoMapMutex_;
-    std::mutex clientCbCapturerInfoMapMutex_;
+    std::mutex clientCbCapturerFilterMapMutex_;
     std::mutex clientCbStreamUsageMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
@@ -343,7 +344,7 @@ private:
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     int32_t pidOfRss_ = -1;
     std::unordered_map<int32_t, std::vector<AudioRendererFilter>> clientCbRendererInfoMap_;
-    std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
+    std::unordered_map<int32_t, std::vector<AudioCapturerFilter>> clientCbCapturerFilterMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
 

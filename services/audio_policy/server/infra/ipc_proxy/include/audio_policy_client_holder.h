@@ -18,6 +18,7 @@
 
 #include "audio_policy_client.h"
 #include "iaudio_policy_client.h"
+#include "audio_route_select_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,6 +79,8 @@ public:
     void OnSpatializationEnabledChangeForBTDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled, const bool &headTrackingEnabled);
     void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode);
+    int32_t OnAudioRouteSelectRefined(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
+        int32_t &selectResult);
 private:
     bool CheckDeviceSupported(DeviceType devicetype);
 public:

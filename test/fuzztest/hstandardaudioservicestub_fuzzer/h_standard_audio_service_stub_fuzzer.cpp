@@ -401,50 +401,20 @@ void GetEffectOffloadEnabled(FuzzedDataProvider &provider)
     audioServer->GetEffectOffloadEnabled(isEffectOffloadEnabled);
 }
 
-void GetAudioEffectPropertyV3(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEffectPropertyArrayV3 propertyArray;
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->GetAudioEffectProperty(propertyArray, deviceType);
-}
-
-void SetAudioEffectPropertyV3(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEffectPropertyArrayV3 propertyArray;
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->SetAudioEffectProperty(propertyArray, deviceType);
-}
-
-void GetAudioEnhanceProperty(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEnhancePropertyArray propertyArray;
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
 void GetAudioEffectProperty(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioEffectPropertyArray propertyArray;
-    audioServer->GetAudioEffectProperty(propertyArray);
-}
-
-void SetAudioEnhanceProperty(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEnhancePropertyArray propertyArray;
     int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->SetAudioEnhanceProperty(propertyArray, deviceType);
+    audioServer->GetAudioEffectProperty(propertyArray, deviceType);
 }
 
 void SetAudioEffectProperty(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioEffectPropertyArray propertyArray;
-    audioServer->SetAudioEffectProperty(propertyArray);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetAudioEffectProperty(propertyArray, deviceType);
 }
 
 void SuspendRenderSink(FuzzedDataProvider &provider)
@@ -917,11 +887,7 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     SetAsrVoiceMuteMode,
     IsWhispering,
     GetEffectOffloadEnabled,
-    GetAudioEffectPropertyV3,
-    SetAudioEffectPropertyV3,
-    GetAudioEnhanceProperty,
     GetAudioEffectProperty,
-    SetAudioEnhanceProperty,
     SetAudioEffectProperty,
     SuspendRenderSink,
     RestoreRenderSink,

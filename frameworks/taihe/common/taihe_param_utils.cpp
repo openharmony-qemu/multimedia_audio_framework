@@ -407,7 +407,7 @@ int32_t TaiheParamUtils::GetAudioSessionStrategy(OHOS::AudioStandard::AudioSessi
     return AUDIO_OK;
 }
 
-int32_t TaiheParamUtils::UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray)
+int32_t TaiheParamUtils::UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray)
 {
     CHECK_AND_RETURN_RET_LOG(!propertyArray.property.empty(), 0, "propertyArray.property is empty");
     int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
@@ -420,13 +420,13 @@ int32_t TaiheParamUtils::UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffe
     return static_cast<int32_t>(classSet.size());
 }
 
-int32_t TaiheParamUtils::GetEffectPropertyArray(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray,
+int32_t TaiheParamUtils::GetEffectPropertyArray(OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray,
     array_view<AudioEffectProperty> in)
 {
-    OHOS::AudioStandard::AudioEffectPropertyArrayV3 effectArray;
-    OHOS::AudioStandard::AudioEffectPropertyArrayV3 enhanceArray;
+    OHOS::AudioStandard::AudioEffectPropertyArray effectArray;
+    OHOS::AudioStandard::AudioEffectPropertyArray enhanceArray;
     for (const auto &inProperty : in) {
-        OHOS::AudioStandard::AudioEffectPropertyV3 prop = {
+        OHOS::AudioStandard::AudioEffectProperty prop = {
             .name = std::string(inProperty.name),
             .category = std::string(inProperty.category),
             .flag = static_cast<OHOS::AudioStandard::EffectFlag>(inProperty.flag.get_value()),
@@ -585,7 +585,7 @@ string TaiheParamUtils::ToTaiheString(const std::string &src)
 }
 
 taihe::array<AudioEffectProperty> TaiheParamUtils::ToTaiheEffectPropertyArray(
-    const OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray)
+    const OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray)
 {
     std::vector<AudioEffectProperty> resultVec;
     for (const auto &property : propertyArray.property) {

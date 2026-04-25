@@ -251,6 +251,9 @@ const int32_t ERR_PRIVACY_AUTH_FAILED = BASE_AUDIO_ERR_OFFSET - 61;
 /** session unavailable */
 const int32_t ERR_SESSION_UNAVAILABLE = BASE_AUDIO_ERR_OFFSET - 62;
 
+/** Buffer too small */
+const int32_t ERR_BUFFER_TOO_SMALL = BASE_AUDIO_ERR_OFFSET - 63;
+
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
 
@@ -294,7 +297,7 @@ enum class OperationType : uint8_t {
     RECORD = 0x02,
     CONTROL = 0x03,
     EDIT = 0x04,
-    HIPLAY = 0x05,
+    HDPLAY = 0x05,
 };
 
 enum class BusinessScenario : uint8_t {
@@ -322,7 +325,7 @@ constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operati
         ((BASE_AUDIO_ERR_OFFSET - detail) & 0xFF));
 }
 
-// PLAY_CREATE场景错误码
+// PLAY_CREATE
 constexpr int32_t PLAY_CREATE_MEMORY_ALLOC_FAILED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
     OperationType::PLAY, BusinessScenario::CREATE, ERR_MEMORY_ALLOC_FAILED);
 constexpr int32_t PLAY_CREATE_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
@@ -342,7 +345,7 @@ constexpr int32_t PLAY_CREATE_EXCEED_MAX_STREAM_CNT = BuildErrorCode(ProblemCate
 constexpr int32_t PLAY_CREATE_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
     OperationType::PLAY, BusinessScenario::CREATE, ERR_NULL_POINTER);
 
-// PLAY_START场景错误码
+// PLAY_START
 constexpr int32_t PLAY_START_PERMISSION_DENIED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
     OperationType::PLAY, BusinessScenario::START, ERR_PERMISSION_DENIED);
 constexpr int32_t PLAY_START_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
@@ -354,11 +357,11 @@ constexpr int32_t PLAY_START_OPERATION_FAILED = BuildErrorCode(ProblemCategory::
 constexpr int32_t PLAY_START_TIMEOUT = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
     OperationType::PLAY, BusinessScenario::START, ERR_TIMEOUT);
 
-// PLAY_SEND_DATA场景错误码
+// PLAY_SEND_DATA
 constexpr int32_t PLAY_SEND_DATA_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
     OperationType::PLAY, BusinessScenario::SEND_DATA, ERR_NULL_POINTER);
 
-// PLAY_PAUSE场景错误码
+// PLAY_PAUSE
 constexpr int32_t PLAY_PAUSE_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
     OperationType::PLAY, BusinessScenario::PAUSE, ERR_ILLEGAL_STATE);
 constexpr int32_t PLAY_PAUSE_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
@@ -368,7 +371,7 @@ constexpr int32_t PLAY_PAUSE_NULL_POINTER = BuildErrorCode(ProblemCategory::FAUL
 constexpr int32_t PLAY_PAUSE_TIMEOUT = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
     OperationType::PLAY, BusinessScenario::PAUSE, ERR_TIMEOUT);
 
-// PLAY_STOP场景错误码
+// PLAY_STOP
 constexpr int32_t PLAY_STOP_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
     OperationType::PLAY, BusinessScenario::STOP, ERR_ILLEGAL_STATE);
 constexpr int32_t PLAY_STOP_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
@@ -378,7 +381,7 @@ constexpr int32_t PLAY_STOP_OPERATION_FAILED = BuildErrorCode(ProblemCategory::F
 constexpr int32_t PLAY_STOP_TIMEOUT = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
     OperationType::PLAY, BusinessScenario::STOP, ERR_TIMEOUT);
 
-// PLAY_FLUSH场景错误码
+// PLAY_FLUSH
 constexpr int32_t PLAY_FLUSH_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
     OperationType::PLAY, BusinessScenario::FLUSH, ERR_ILLEGAL_STATE);
 constexpr int32_t PLAY_FLUSH_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
@@ -386,25 +389,71 @@ constexpr int32_t PLAY_FLUSH_NULL_POINTER = BuildErrorCode(ProblemCategory::FAUL
 constexpr int32_t PLAY_FLUSH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
     OperationType::PLAY, BusinessScenario::FLUSH, ERR_OPERATION_FAILED);
 
-// PLAY_RELEASE场景错误码
+// PLAY_RELEASE
 constexpr int32_t PLAY_RELEASE_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
     OperationType::PLAY, BusinessScenario::RELEASE, ERR_NULL_POINTER);
 constexpr int32_t PLAY_RELEASE_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
     OperationType::PLAY, BusinessScenario::RELEASE, ERR_OPERATION_FAILED);
 
-// PLAY_QUERY场景错误码
+// PLAY_QUERY
 constexpr int32_t PLAY_QUERY_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
     OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
 
-// PLAY_DEVICE_SWITCH场景错误码
+// PLAY_DEVICE_SWITCH
 constexpr int32_t PLAY_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWUTCG_FAIL,
     OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
 
-// PLAY_CONFING场景错误码
+// PLAY_CONFING
 constexpr int32_t PLAY_CONFING_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
     OperationType::PLAY, BusinessScenario::CONFING, ERR_NULL_POINTER);
 constexpr int32_t PLAY_CONFING_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
     OperationType::PLAY, BusinessScenario::CONFING, ERR_ILLEGAL_STATE);
+
+// HDPLAY Error Codes
+// CREATE scenario
+constexpr int32_t HDPLAY_CREATE_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::CREATE, ERR_INVALID_HANDLE);
+
+constexpr int32_t HDPLAY_CREATE_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::CREATE, ERR_NOT_STARTED);
+
+// START scenario
+constexpr int32_t HDPLAY_START_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::START, ERR_NOT_STARTED);
+
+// SEND_DATA scenario
+constexpr int32_t HDPLAY_SEND_DATA_WRITE_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::SEND_DATA, ERR_WRITE_FAILED);
+
+// PAUSE scenario
+constexpr int32_t HDPLAY_PAUSE_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::PAUSE, ERR_NOT_STARTED);
+
+// STOP scenario
+constexpr int32_t HDPLAY_STOP_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::STOP, ERR_NOT_STARTED);
+
+// FLUSH scenario
+constexpr int32_t HDPLAY_FLUSH_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::FLUSH, ERR_OPERATION_FAILED);
+
+// QUERY scenario
+constexpr int32_t HDPLAY_QUERY_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+
+// CALLBACK scenario
+constexpr int32_t HDPLAY_CALLBACK_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+
+// CONFING scenario
+constexpr int32_t HDPLAY_CONFING_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+
+constexpr int32_t HDPLAY_CONFING_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_INVALID_HANDLE);
+
+constexpr int32_t HDPLAY_CONFING_VOLUME_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
 
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -271,13 +271,17 @@ public:
 
     static void AudioSessionManagerCallback();
 
-    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy, const bool stateChangeCallbackFlag = false);
 
     int32_t DeactivateAudioSession();
 
     bool IsAudioSessionActivated();
 
     bool IsOtherMediaPlaying();
+
+    int32_t SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag);
+
+    int32_t SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag);
 
     int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
 
@@ -376,10 +380,10 @@ public:
     int32_t SetDeclaredDeviceTypes(const std::vector<DeviceType> &deviceTypes);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = -1);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = INVALID_UID);
 
     int32_t SetPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
-        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback, const int32_t uid = INVALID_UID);
 
     int32_t UnsetPreferredOutputDeviceChangeCallback(
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
@@ -626,6 +630,10 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback();
 
+    int32_t SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback);
+
+    int32_t UnsetAudioRouteSelectorCallback();
+
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
 
     int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
@@ -659,16 +667,10 @@ public:
     int32_t SetQueryDeviceVolumeBehaviorCallback(
         const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     std::vector<AudioDevicePair> GetLoopbackSupportedDevicePairs();
@@ -783,8 +785,8 @@ private:
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
-    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID);
+    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID);
     int32_t CheckAudioPolicyClientRegisted();
 
     std::mutex listenerStubMutex_;

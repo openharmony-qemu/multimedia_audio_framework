@@ -1,22 +1,24 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 #include <sstream>
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
+#include <thread>
+#include <chrono>
 #include "audio_info.h"
 #include "id_handler.h"
 #include "hdi_adapter_manager.h"
@@ -36,6 +38,7 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 std::mutex lock_;
 
@@ -71,7 +74,7 @@ public:
     {
         return;
     }
-    void OnSetVolumeDbCb() override
+    void OnSetVolumeDbCb()
     {
         return;
     }
@@ -121,6 +124,16 @@ static AudioModuleInfo InitSourceAudioModeInfo()
     return audioModuleInfo;
 }
 
+static void WaitForMsgProcessing(HPAE::IHpaeManager &mgr)
+{
+    int retry = 0;
+    while (mgr.IsMsgProcessing() && retry < MAX_MSG_PROCESSING_RETRY_COUNT) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20 for sleep
+        retry++;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));  // 40 for sleep
+}
+
 void SetUp()
 {
     lock_guard<mutex> lock(lock_);
@@ -134,6 +147,7 @@ void SetUp()
         OHOS::AudioStandard::AudioServiceAdapter::CreateAudioAdapter(std::move(cb), true));
     impl_->Connect();
     HPAE::IHpaeManager::GetHpaeManager().Init();
+    WaitForMsgProcessing(HPAE::IHpaeManager::GetHpaeManager());
 }
 
 void OpenAudioPortFuzzTest()
@@ -236,13 +250,6 @@ void MoveSourceOutputByIndexOrNameFuzzTest()
     impl_->MoveSourceOutputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
-void GetAudioEffectPropertyV3FuzzTest()
-{
-    SetUp();
-    AudioEffectPropertyArrayV3 propertyArray;
-    impl_->GetAudioEffectProperty(propertyArray);
-}
-
 void GetAudioEffectPropertyFuzzTest()
 {
     SetUp();
@@ -250,17 +257,10 @@ void GetAudioEffectPropertyFuzzTest()
     impl_->GetAudioEffectProperty(propertyArray);
 }
 
-void GetAudioEnhancePropertyV3FuzzTest()
-{
-    SetUp();
-    AudioEffectPropertyArrayV3 propertyArray;
-    impl_->GetAudioEnhanceProperty(propertyArray);
-}
-
 void GetAudioEnhancePropertyFuzzTest()
 {
     SetUp();
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     impl_->GetAudioEnhanceProperty(propertyArray);
 }
 
@@ -331,25 +331,11 @@ void OnMoveSourceOutputByIndexOrNameCbFuzzTest()
     impl_->OnMoveSourceOutputByIndexOrNameCb(result);
 }
 
-void OnGetAudioEffectPropertyCbV3FuzzTest()
-{
-    SetUp();
-    int32_t result = GetData<int32_t>();
-    impl_->OnGetAudioEffectPropertyCbV3(result);
-}
-
 void OnGetAudioEffectPropertyCbFuzzTest()
 {
     SetUp();
     int32_t result = GetData<int32_t>();
     impl_->OnGetAudioEffectPropertyCb(result);
-}
-
-void OnGetAudioEnhancePropertyCbV3FuzzTest()
-{
-    SetUp();
-    int32_t result = GetData<int32_t>();
-    impl_->OnGetAudioEnhancePropertyCbV3(result);
 }
 
 void OnGetAudioEnhancePropertyCbFuzzTest()
@@ -380,7 +366,42 @@ void OnUpdateSpatializationStateCbFuzzTest()
     impl_->OnUpdateSpatializationStateCb(result);
 }
 
-typedef void (*TestFuncs[33])();
+void OpenCloseAudioPortFuzzTest()
+{
+    SetUp();
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    impl_->CloseAudioPort(portId);
+}
+
+void ReloadAudioPortWithOpenPortFuzzTest()
+{
+    SetUp();
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    impl_->ReloadAudioPort(moduleInfo.name, moduleInfo);
+}
+
+void SetDefaultSinkWithActivePortFuzzTest()
+{
+    SetUp();
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    std::string sinkName = moduleInfo.name;
+    impl_->SetDefaultSink(sinkName);
+}
+
+void SuspendStopAudioPortFuzzTest()
+{
+    SetUp();
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    bool isSuspend = GetData<bool>();
+    impl_->SuspendAudioDevice(moduleInfo.name, isSuspend);
+    impl_->StopAudioPort(moduleInfo.name);
+}
+
+typedef void (*TestFuncs[37])();
 
 TestFuncs g_testFuncs = {
     OpenAudioPortFuzzTest,
@@ -397,9 +418,7 @@ TestFuncs g_testFuncs = {
     SetLocalDefaultSinkFuzzTest,
     MoveSinkInputByIndexOrNameFuzzTest,
     MoveSourceOutputByIndexOrNameFuzzTest,
-    GetAudioEffectPropertyV3FuzzTest,
     GetAudioEffectPropertyFuzzTest,
-    GetAudioEnhancePropertyV3FuzzTest,
     GetAudioEnhancePropertyFuzzTest,
     OnOpenAudioPortCbFuzzTest,
     OnCloseAudioPortCbFuzzTest,
@@ -410,12 +429,14 @@ TestFuncs g_testFuncs = {
     OnGetAllSinksCbFuzzTest,
     OnMoveSinkInputByIndexOrNameCbFuzzTest,
     OnMoveSourceOutputByIndexOrNameCbFuzzTest,
-    OnGetAudioEffectPropertyCbV3FuzzTest,
     OnGetAudioEffectPropertyCbFuzzTest,
-    OnGetAudioEnhancePropertyCbV3FuzzTest,
     OnGetAudioEnhancePropertyCbFuzzTest,
     HandleSourceAudioStreamRemovedFuzzTest,
     OnGetCollaborativeUpdateCbFuzzTest,
+    OpenCloseAudioPortFuzzTest,
+    ReloadAudioPortWithOpenPortFuzzTest,
+    SetDefaultSinkWithActivePortFuzzTest,
+    SuspendStopAudioPortFuzzTest,
 };
 
 bool FuzzTest(const uint8_t *rawData, size_t size)

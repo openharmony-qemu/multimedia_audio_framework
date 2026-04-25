@@ -401,12 +401,6 @@ void IsSameDeviceFuzzTest()
     OnStop();
 }
 
-void ClientDiedDisconnectScoNormalFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.ClientDiedDisconnectScoNormal();
-}
-
 void ClientDiedDisconnectScoRecognitionFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -567,7 +561,6 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     OHOS::AudioStandard::IsDeviceConnectedFuzzTest();
     OHOS::AudioStandard::GetSourceOutputsFuzzTest();
     OHOS::AudioStandard::SetFirstScreenOnFuzzTest();
-    OHOS::AudioStandard::ClientDiedDisconnectScoNormalFuzzTest();
     OHOS::AudioStandard::ClientDiedDisconnectScoRecognitionFuzzTest();
     OHOS::AudioStandard::OnStop();
     return 0;

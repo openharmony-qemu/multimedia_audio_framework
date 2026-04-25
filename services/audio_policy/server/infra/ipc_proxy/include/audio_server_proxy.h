@@ -66,10 +66,6 @@ public:
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
     void CheckHibernateStateProxy(bool hibernate);
     void RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo RestoreInfo);
-    int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE);
-    int32_t SetAudioEnhancePropertyProxy(const AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE);
     void SetSinkMuteForSwitchDeviceProxy(const std::string &devceClass, int32_t durationUs, bool mute);
     int32_t SetMicrophoneMuteProxy(bool isMute);
     void SuspendRenderSinkProxy(const std::string &sinkName);
@@ -89,11 +85,10 @@ public:
     int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
     int32_t RegistCoreServiceProviderProxy(const sptr<IRemoteObject> &object);
     void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
-    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray,
         const DeviceType& deviceType = DEVICE_TYPE_NONE);
-    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray);
-    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE);
     void SetRotationToEffectProxy(const uint32_t rotate);
     void SetAudioMonoStateProxy(bool audioMono);
     void SetAudioBalanceValueProxy(float audioBalance);

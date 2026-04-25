@@ -28,6 +28,7 @@ inline const std::string PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME = "preferredOutpu
 inline const std::string PREFER_OUTPUT_DEVICE_CALLBACK_NAME = "preferOutputDeviceChangeForRendererInfo";
 inline const std::string PREFER_OUTPUT_DEVICE_BY_FILTER_CALLBACK_NAME = "preferredOutputDeviceChangeByFilter";
 inline const std::string PREFERRED_INPUT_DEVICE_CALLBACK_NAME  = "preferredInputDeviceChangeForCapturerInfo";
+inline const std::string PREFER_INPUT_DEVICE_BY_FILTER_CALLBACK_NAME  = "preferredInputDeviceChangeByFilter";
 
 class NapiAudioPreferredOutputDeviceChangeCallback : public AudioPreferredOutputDeviceChangeCallback {
 public:

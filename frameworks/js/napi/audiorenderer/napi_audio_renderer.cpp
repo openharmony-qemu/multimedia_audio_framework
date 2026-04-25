@@ -2094,6 +2094,7 @@ napi_value NapiAudioRenderer::RegisterRendererCallback(napi_env env, napi_value 
         if (!cb->GetArInterruptTsfnFlag()) {
             cb->CreateArInterrupt(env);
         }
+        napiRenderer->audioRenderer_->SetRegisterInterruptCallbackFlag(true);
     } else if (cbName == STATE_CHANGE_CALLBACK_NAME) {
         if (!cb->GetArStateChangeTsfnFlag()) {
             cb->CreateArStateChange(env);

@@ -260,7 +260,7 @@ public:
 
     int32_t GetAudioScene(int32_t &scene) override;
 
-    int32_t ActivateAudioSession(int32_t strategy) override;
+    int32_t ActivateAudioSession(int32_t strategy, bool stateChangeCallbackFlag = false) override;
 
     int32_t DeactivateAudioSession() override;
 
@@ -269,6 +269,10 @@ public:
     int32_t IsAudioSessionActivated(bool &active) override;
 
     int32_t IsOtherMediaPlaying(bool &existence) override;
+
+    int32_t SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag) override;
+
+    int32_t SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag) override;
 
     int32_t SetAudioSessionScene(int32_t audioSessionScene) override;
 
@@ -364,16 +368,9 @@ public:
 
     int32_t GetVolumeGroupInfos(const std::string &networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
-
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;
@@ -404,9 +401,9 @@ public:
 
     int32_t SetClientCallbacksEnable(int32_t callbackchange, bool enable) override;
 
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1) override;
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID) override;
 
-    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
+    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID) override;
 
     int32_t GetAudioFocusInfoList(std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList,
         int32_t zoneId) override;
@@ -809,6 +806,7 @@ private:
     };
 
     void Init();
+    int32_t HandleRouteSelectorCallbackEnable(bool enable);
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     // offload session
@@ -893,7 +891,8 @@ private:
         bool isUpdatedAudioStrategy);
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
-        const AudioSessionStrategy &strategy, const bool isStandalone, int32_t callerUid);
+        const AudioSessionStrategy &strategy, const bool isStandalone, const bool stateChangeCallbackFlag = false,
+        int32_t callerUid = INVALID_UID);
     bool IsScreenOnAdjustVolume();
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);

@@ -28,8 +28,6 @@ public:
     }
     void OnAudioStreamRemoved(const uint64_t sessionId)
     {}
-    void OnSetVolumeDbCb()
-    {}
 };
 
 class ProAudioServiceAdapterUnitTest : public testing::Test {

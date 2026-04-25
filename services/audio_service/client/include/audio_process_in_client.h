@@ -90,7 +90,7 @@ public:
     // methods for support IAudioStream
     virtual int32_t GetSessionID(uint32_t &sessionID) = 0;
 
-    virtual bool GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec) = 0;
+    virtual bool GetAudioTime(int64_t &framePos, int64_t &sec, int64_t &nanoSec) = 0;
 
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
 

@@ -895,7 +895,6 @@ void AudioServerSetExtraParametersTest()
     std::string key = g_testKeys[id];
     std::pair<std::string, std::string> kvpair = std::make_pair(g_testKeys[id], g_testKeys[id]);
     kvpairs.push_back(kvpair);
-    audioServerPtr->CacheExtraParameters(key, kvpairs);
     audioServerPtr->ParseAudioParameter();
 }
 

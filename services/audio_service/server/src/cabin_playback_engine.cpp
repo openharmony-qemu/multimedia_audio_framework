@@ -30,6 +30,7 @@
 #include "audio_service.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_sink_latency_fetcher.h"
+#include "util/id_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -231,8 +232,9 @@ void CabinPlayBackEngine::AdjustVolume()
     uint32_t streamIndx = stream_->GetStreamIndex();
     AudioProcessConfig config = stream_->GetAudioProcessConfig();
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0u};
-    float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType,
-        std::string(PRIMARY_ADAPTER_TYPE), &volumes);
+    const std::string deviceClass = "audio_vivid_3da_direct";
+    uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, AV_SINK_NAME);
+    float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType, renderId, &volumes);
     float volumeBg = volumes.volumeHistory;
     if ((!firstSetVolume_ && abs(volumeBg - volumeEd) > FLOAT_EPS) || firstSetVolume_) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndx, volumeEd);

@@ -372,10 +372,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     }
 
     std::string portId;
-    std::string deviceName;
     ParseDeviceNameAndAddress(info, desc.deviceName_, portId);
-
-    desc.deviceName_ = deviceName;
     desc.deviceType_ = GetInternalDeviceType(pnpDeviceType);
     if (desc.deviceType_ == DEVICE_TYPE_NONE) {
         AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
@@ -462,6 +459,10 @@ bool DeviceStatusListener::ParseDeviceNameAndAddress(const std::string &info, st
         if (addressEnd > addressBegin + addrLen) {
             portId = info.substr(addressBegin + addrLen, addressEnd - addressBegin - addrLen);
         }
+    }
+    if (!deviceName.empty() && deviceName == "h2w_micin") {
+        deviceName = "MIC";
+        AUDIO_INFO_LOG("Device name 'h2w_micin' replaced with 'MIC' for routing");
     }
     
     return true;

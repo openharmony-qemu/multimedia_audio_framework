@@ -758,6 +758,7 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream count: %{public}zu",
             activateDeviceIOHandle, curPaIndex, streamDescs.size());
         pipeManager->RemoveAudioPipeInfo(activateDeviceIOHandle);
+        audioPolicyManager_.RemoveAudioPipeVolume(activateDeviceIOHandle);
         int32_t engineFlag = GetEngineFlag();
         if (engineFlag != 1) {
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);

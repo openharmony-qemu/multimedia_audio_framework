@@ -59,6 +59,9 @@ HpaeCapturerManager::~HpaeCapturerManager()
 int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &processorType,
     const AudioEnhanceScene &sceneType)
 {
+    // DEVICE_TYPE_ACCESSORY effect move to HAL
+    CHECK_AND_RETURN_RET_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
+        "captureId_ %{public}d needn't create effect", captureId_);
     const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
         GetEnhanceSupportedSceneType();
     auto item = audioEnhanceSupportedSceneTypes.find(sceneType);
@@ -67,8 +70,11 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     uint64_t sceneCode = static_cast<uint64_t>(sceneType);
     uint64_t sceneKeyCode = 0;
     sceneKeyCode = (sceneCode << SCENE_TYPE_OFFSET) + (captureId_ << CAPTURER_ID_OFFSET) + renderId_;
-    AUDIO_INFO_LOG("sceneCode:%{public}" PRIu64 "sceneKeyCode:%{public}" PRIu64, sceneCode, sceneKeyCode);
+    AUDIO_INFO_LOG("sceneCode:%{public}" PRIu64 " captureId_ %{public}d sceneKeyCode:%{public}" PRIu64,
+        sceneCode, captureId_, sceneKeyCode);
     CaptureEffectAttr attr = {};
+    attr.needEc = sourceInfo_.ecType != HPAE_EC_TYPE_NONE;
+    attr.needMicRef = sourceInfo_.micRef == HPAE_REF_ON;
     attr.micChannels = static_cast<uint32_t>(sourceInfo_.channels);
     attr.ecChannels = static_cast<uint32_t>(sourceInfo_.ecChannels);
     attr.micRefChannels = static_cast<uint32_t>(sourceInfo_.micRefChannels);
@@ -437,7 +443,8 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Pause");
-        AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
+        AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s",
+            sessionId, sourceInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
@@ -445,9 +452,21 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_PAUSED);
+        
+        StopInterphoneSourceIfNeeded();
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeCapturerManager::StopInterphoneSourceIfNeeded()
+{
+    if (sourceInfo_.deviceName.find("interphone") != std::string::npos) {
+        AUDIO_INFO_LOG("Interphone capturer paused, stopping source cluster immediately");
+        if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
+            sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
+        }
+    }
 }
 
 int32_t HpaeCapturerManager::Flush(uint32_t sessionId)

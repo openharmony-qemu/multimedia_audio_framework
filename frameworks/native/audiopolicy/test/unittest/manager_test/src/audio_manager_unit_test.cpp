@@ -2312,30 +2312,6 @@ HWTEST(AudioManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetVolumeDegree API
- * @tc.number: SetVolumeDegree_001
- * @tc.desc  : SetVolumeDegree
- * @tc.require:
- */
-HWTEST(AudioManagerUnitTest, SetVolumeDegree_001, TestSize.Level0)
-{
-    auto manager = AudioSystemManager::GetInstance();
-
-    int32_t degree = 44;
-    AudioStreamType streamType = STREAM_MUSIC;
-    int32_t ret = manager->SetVolumeDegree(streamType, degree);
-    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
-
-    AudioStreamType streamType2 = STREAM_ULTRASONIC;
-    ret = manager->SetVolumeDegree(streamType2, degree);
-    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
-
-    AudioStreamType streamType3 = STREAM_APP;
-    ret = manager->SetVolumeDegree(streamType3, degree);
-    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
-}
-
-/**
  * @tc.name  : Test GetVolumeDegree API
  * @tc.number: GetVolumeDegree_001
  * @tc.desc  : GetVolumeDegree

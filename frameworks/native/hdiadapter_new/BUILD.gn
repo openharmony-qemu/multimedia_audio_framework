@@ -71,6 +71,7 @@ ohos_shared_library("hdiadapter_new") {
     "source/file_audio_capture_source.cpp",
     "source/wakeup_audio_capture_source.cpp",
     "source/va_capture_source.cpp",
+    "util/audio_playing_app_manager.cpp",
     "util/callback_wrapper.cpp",
     "util/hdi_dfx_utils.cpp",
     "util/id_handler.cpp",
@@ -197,6 +198,8 @@ ohos_unittest("hdiadapter_unit_test") {
 
   sources = [
     "test/unittest/adapter_unit_test.cpp",
+    "test/unittest/local_device_manager_unit_test.cpp",
+    "test/unittest/bluetooth_device_manager_unit_test.cpp",
     "test/unittest/manager_unit_test.cpp",
     "test/unittest/sink/audio_render_sink_unit_test.cpp",
     "test/unittest/sink/bluetooth_audio_render_sink_unit_test.cpp",
@@ -212,6 +215,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/source/fast_audio_capture_source_unit_test.cpp",
     "test/unittest/source/file_audio_capture_source_unit_test.cpp",
     "test/unittest/source/wakeup_audio_capture_source_unit_test.cpp",
+    "test/unittest/audio_playing_app_manager_unit_test.cpp",
     "test/unittest/util_unit_test.cpp",
   ]
 
@@ -224,6 +228,8 @@ ohos_unittest("hdiadapter_unit_test") {
   external_deps = [
     "init:libbegetutil",
     "c_utils:utils",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "drivers_interface_audio:libaudio_proxy_6.0",
     "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "googletest:gmock",
@@ -242,6 +248,7 @@ ohos_unittest("hdiadapter_unit_test") {
   
   if (audio_framework_feature_distributed_audio) {
     sources += [
+      "test/unittest/remote_device_manager_unit_test.cpp",
       "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
       "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
       "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",

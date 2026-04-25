@@ -174,6 +174,7 @@ public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
+    static bool IsHap();
     static bool VerifyBluetoothPermission();
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool VerifyGeneralPermission(
@@ -634,6 +635,10 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_HEARING_AID = 15,
     HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
     HDI_RENDER_OFFSET_INTERPHONE = 17,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC = 18,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED = 19,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS = 20, // include bt_sco, a2dp_offload and nearlink
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

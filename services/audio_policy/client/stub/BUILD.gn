@@ -121,9 +121,11 @@ ohos_unittest("audio_zone_client_unit_test") {
     "../stub/src/audio_zone_client.cpp",
     "../../../audio_policy/server/domain/zone/src/audio_zone_service.cpp",
     "../service/src/audio_policy_manager.cpp",
+    "../service/src/audio_routing_manager_listener.cpp",
     "../service/src/audio_policy_manager_zone.cpp",
     "./src/audio_policy_client_stub_impl.cpp",
     "../../../audio_policy/server/src/audio_client_tracker_callback_service.cpp",
+    "../../../audio_policy/server/src/audio_spatialization_state_change_listener.cpp",
     "../../../audio_policy/client/service/src/audio_zone_manager.cpp",
   ]
 
@@ -310,8 +312,11 @@ ohos_unittest("sle_audio_operation_callback_stub_impl_unit_test") {
     "../stub/src/sle_audio_operation_callback_stub_impl.cpp",
     "../../../audio_policy/server/domain/zone/src/audio_zone_service.cpp",
     "../service/src/audio_policy_manager.cpp",
+    "../service/src/audio_routing_manager_listener.cpp",
     "../service/src/audio_policy_manager_zone.cpp",
     "./src/audio_policy_client_stub_impl.cpp",
+    "../../../audio_policy/server/src/audio_client_tracker_callback_service.cpp",
+    "../../../audio_policy/server/src/audio_spatialization_state_change_listener.cpp",
   ]
 
   deps = [

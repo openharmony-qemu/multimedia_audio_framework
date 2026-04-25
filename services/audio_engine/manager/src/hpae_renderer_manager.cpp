@@ -857,9 +857,21 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
+        
+        StopInterphoneSinkIfNeeded();
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeRendererManager::StopInterphoneSinkIfNeeded()
+{
+    if (sinkInfo_.deviceName.find("Interphone") != std::string::npos) {
+        AUDIO_INFO_LOG("Interphone stream paused, stopping output cluster immediately");
+        if (outputCluster_ != nullptr) {
+            outputCluster_->Stop();
+        }
+    }
 }
 
 int32_t HpaeRendererManager::Flush(uint32_t sessionId)
@@ -1278,8 +1290,13 @@ void HpaeRendererManager::Process()
     Trace trace("HpaeRendererManager::Process");
     if (outputCluster_ != nullptr && IsRunning()) {
         UpdateAppsUid();
-        // no stream running & over 3s need stop
+        // no stream running need stop
         if (appsUid_.empty() && !coBufferNodeIsConnected_) {
+            // For interphone stream, stop immediately without waiting 3s timeout
+            if (sinkInfo_.deviceName.find("Interphone") != std::string::npos) {
+                outputCluster_->Stop();
+                return;
+            }
             int64_t now = ClockTime::GetCurNano();
             noneStreamTime_ = noneStreamTime_ == 0 ? now : noneStreamTime_;
             if (now - noneStreamTime_ > SUSPEND_TIME_OUT_S * AUDIO_NS_PER_SECOND) {
@@ -1576,7 +1593,7 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     auto &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     struct VolumeValues volumes;
     auto audioVolume = AudioVolume::GetInstance();
-    float curVolume = audioVolume->GetVolume(sessionId, nodeInfo.streamType, sinkInfo_.deviceClass, &volumes);
+    float curVolume = audioVolume->GetVolume(sessionId, nodeInfo.streamType, sinkInfo_.sinkId, &volumes);
     auto isZeroVolume = audioVolume->IsSameVolume(0.0f, curVolume);
     AUDIO_INFO_LOG("session %{public}u, stream %{public}d, is zero volume %{public}d",
         sessionId, nodeInfo.streamType, isZeroVolume);

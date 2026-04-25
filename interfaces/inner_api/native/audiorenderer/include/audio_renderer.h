@@ -1303,6 +1303,7 @@ public:
         return 0;
     };
 
+    virtual void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) { return; }
 private:
     virtual int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
 

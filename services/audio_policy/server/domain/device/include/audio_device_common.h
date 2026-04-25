@@ -95,7 +95,6 @@ public:
         ConnectState connectState, bool isVrSupported = true);
     std::vector<SourceOutput> GetSourceOutputs();
     void SetFirstScreenOn();
-    void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
     bool GetVirtualCall(pid_t uid);

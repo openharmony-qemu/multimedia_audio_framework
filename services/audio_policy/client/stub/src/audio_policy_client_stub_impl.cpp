@@ -1407,6 +1407,7 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingEnabledChangeCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     headTrackingEnabledChangeCallbackList_.clear();
+    headTrackingEnabledChangeCallbackListFromNearlink_.clear();
     return SUCCESS;
 }
 
@@ -1442,6 +1443,7 @@ int32_t AudioPolicyClientStubImpl::OnAdaptiveSpatialRenderingEnabledChangeForAny
 {
     std::lock_guard<std::mutex> lockCbMap(adaptiveSpatialRenderingEnabledChangeMutex_);
     for (const auto &callback : adaptiveSpatialRenderingEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;
@@ -1450,17 +1452,23 @@ int32_t AudioPolicyClientStubImpl::OnAdaptiveSpatialRenderingEnabledChangeForAny
 int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled, bool headTrackingEnabled)
 {
-    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
-    AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice %{public}d %{public}d",
-        int(spatializationEnabledChangeCallbackList_ForBT.size()),
-        int(headTrackingEnabledChangeCallbackListFromNearlink_.size()));
-    for (const auto &callback : spatializationEnabledChangeCallbackList_ForBT) {
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice");
-        callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    {
+        std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
+        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice %{public}d",
+            int(spatializationEnabledChangeCallbackList_ForBT.size()));
+        for (const auto &callback : spatializationEnabledChangeCallbackList_ForBT) {
+            CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+            callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+        }
     }
-    for (const auto &callback : headTrackingEnabledChangeCallbackListFromNearlink_) {
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForBTDevice");
-        callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, headTrackingEnabled);
+    {
+        std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
+        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForBTDevice %{public}d",
+            int(headTrackingEnabledChangeCallbackListFromNearlink_.size()));
+        for (const auto &callback : headTrackingEnabledChangeCallbackListFromNearlink_) {
+            CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+            callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, headTrackingEnabled);
+        }
     }
     return SUCCESS;
 }
@@ -1469,6 +1477,7 @@ int32_t AudioPolicyClientStubImpl::OnSpatialAudioSourceTypeChange(int32_t mode)
 {
     std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
     for (const auto &callback : spatialAudioSourceTypeChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnSpatialAudioSourceTypeChange(SpatialAudioSourceType(mode));
     }
     return SUCCESS;
@@ -1661,6 +1670,38 @@ size_t AudioPolicyClientStubImpl::GetCurrentSpatialAudioSourceTypeChangeCallback
 {
     std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
     return spatialAudioSourceTypeChangeCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &cb)
+{
+    std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+    audioRouteSelectorCallback_ = cb;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::UnsetAudioRouteSelectorCallback()
+{
+    std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+    audioRouteSelectorCallback_ = nullptr;
+    return SUCCESS;
+}
+
+bool AudioPolicyClientStubImpl::HasAudioRouteSelectorCallback() const
+{
+    std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+    return audioRouteSelectorCallback_ != nullptr;
+}
+
+int32_t AudioPolicyClientStubImpl::OnAudioRouteSelectRefined(
+    const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult)
+{
+    std::shared_ptr<AudioRouteSelector> callback;
+    {
+        std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+        callback = audioRouteSelectorCallback_;
+    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "audioRouteSelectorCallback_ is nullptr");
+    return callback->OnAudioRouteSelect(routeSelectInfo, selectResult);
 }
 } // namespace AudioStandard
 } // namespace OHOS

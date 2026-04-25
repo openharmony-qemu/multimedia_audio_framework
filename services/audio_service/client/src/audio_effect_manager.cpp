@@ -31,17 +31,17 @@ AudioEffectManager *AudioEffectManager::GetInstance()
     return &audioEffectManager;
 }
 
-int32_t AudioEffectManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioEffectManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     return AudioPolicyManager::GetInstance().GetSupportedAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioEffectManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioEffectManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     return AudioPolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioEffectManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioEffectManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     return AudioPolicyManager::GetInstance().GetAudioEffectProperty(propertyArray);
 }

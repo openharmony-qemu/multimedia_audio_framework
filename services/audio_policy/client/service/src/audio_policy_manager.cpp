@@ -241,11 +241,11 @@ int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callback
     int32_t ret = SUCCESS;
     if (callbackChange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
         for (auto &rendererInfo : rendererInfos_) {
-            ret = gsp->SetCallbackRendererInfo(rendererInfo, -1);
+            ret = gsp->SetCallbackRendererInfo(rendererInfo, INVALID_UID);
         }
     } else if (callbackChange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
         for (auto &capturerInfo : capturerInfos_) {
-            ret = gsp->SetCallbackCapturerInfo(capturerInfo);
+            ret = gsp->SetCallbackCapturerInfo(capturerInfo, INVALID_UID);
         }
     }
     return ret;
@@ -665,11 +665,11 @@ int32_t AudioPolicyManager::SetCallbackRendererInfo(const AudioRendererInfo &ren
     return gsp->SetCallbackRendererInfo(rendererInfo, uid);
 }
 
-int32_t AudioPolicyManager::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
+int32_t AudioPolicyManager::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetCallbackCapturerInfo(capturerInfo);
+    return gsp->SetCallbackCapturerInfo(capturerInfo, uid);
 }
 
 int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t clientId,
@@ -1186,6 +1186,13 @@ int32_t AudioPolicyManager::ActivateAudioInterrupt(
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
+}
+
+int32_t AudioPolicyManager::SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetRegisterInterruptCallbackFlag(streamId, interruptCallbackFlag);
 }
 
 int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
@@ -1842,7 +1849,7 @@ int32_t AudioPolicyManager::SetDistributedRoutingRoleCallback(
         return ERR_INVALID_PARAM;
     }
 
-    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+    std::lock_guard<std::mutex> lock(listenerStubMutex_);
     auto activeDistributedRoutingRoleCb = new(std::nothrow) AudioRoutingManagerListener();
     if (activeDistributedRoutingRoleCb == nullptr) {
         AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: object is nullptr");
@@ -2348,7 +2355,8 @@ void AudioPolicyManager::AudioSessionManagerCallback()
     cbSharedPtr->OnAudioPolicyServiceDied();
 }
 
-int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
+int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &strategy,
+    const bool stateChangeCallbackFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -2359,7 +2367,7 @@ int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &str
             return result;
         }
     }
-    return gsp->ActivateAudioSession(static_cast<int32_t>(strategy.concurrencyMode));
+    return gsp->ActivateAudioSession(static_cast<int32_t>(strategy.concurrencyMode), stateChangeCallbackFlag);
 }
 
 int32_t AudioPolicyManager::DeactivateAudioSession()
@@ -2485,6 +2493,20 @@ int32_t AudioPolicyManager::SetAudioSessionScene(const AudioSessionScene audioSe
         }
     }
     return gsp->SetAudioSessionScene(static_cast<int32_t>(audioSessionScene));
+}
+
+int32_t AudioPolicyManager::SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback client");
+            return result;
+        }
+    }
+    return gsp->SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
 }
 
 int32_t AudioPolicyManager::SetAudioSessionStateChangeCallback(
@@ -2825,7 +2847,7 @@ int32_t AudioPolicyManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<
         return ERR_INVALID_PARAM;
     };
 
-    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+    std::lock_guard<std::mutex> lock(listenerStubMutex_);
     auto activeDistributedRoutingRoleCb = new (std::nothrow) AudioRoutingManagerListener();
     if (activeDistributedRoutingRoleCb == nullptr) {
         AUDIO_ERR_LOG("object is nullptr");
@@ -2847,6 +2869,40 @@ int32_t AudioPolicyManager::UnsetAudioDeviceRefinerCallback()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->UnsetAudioDeviceRefinerCallback();
+}
+
+int32_t AudioPolicyManager::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].mutex);
+    audioPolicyClientStubCB_->SetAudioRouteSelectorCallback(callback);
+    if (audioPolicyClientStubCB_->HasAudioRouteSelectorCallback()) {
+        callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_ROUTE_SELECTOR, true);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetAudioRouteSelectorCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->UnsetAudioRouteSelectorCallback();
+        callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_ROUTE_SELECTOR, false, false);
+    }
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::SetAudioClientInfoMgrCallback(
@@ -2927,58 +2983,12 @@ void AudioPolicyManager::RemoveClientTrackerStub(int32_t sessionId)
     }
 }
 
-int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetSupportedAudioEffectProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Supported Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
-int32_t AudioPolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    return gsp->SetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetAudioEffectProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
 int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
     int32_t result = gsp->GetSupportedAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Supported Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
-int32_t AudioPolicyManager::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetSupportedAudioEnhanceProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Supported Audio Enhance Property, error: %d", result);
 
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
@@ -2999,26 +3009,6 @@ int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &pro
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
     int32_t result = gsp->GetAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Audio Effect Property, error: %d", result);
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "size invalid");
-    return result;
-}
-
-int32_t AudioPolicyManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    return gsp->SetAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioPolicyManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    int32_t result = gsp->GetAudioEnhanceProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Audio Enhance Property, error: %d", result);
 
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,

@@ -13,6 +13,7 @@
 * limitations under the License.
 */
 #include "audio_policy_utils.h"
+#include "audio_common_utils.h"
 #include "audio_adapter_manager_unit_test.h"
 #include "audio_stream_descriptor.h"
 #include "audio_interrupt_service.h"
@@ -23,6 +24,14 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr uint32_t TEST_PIPE_ID = 100;
+constexpr int32_t TEST_VOLUME_LEVEL = 5;
+constexpr float TEST_VOLUME_DB = 0.5f;
+constexpr float ABS_VOLUME_DB_VALUE = 0.63957f;
+constexpr float MAX_VOLUME_DB_VALUE = 1.0f;
+constexpr int32_t TEST_ZONE_ID = 0;
+constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 100;
 
 static AudioAdapterManager *audioAdapterManager_;
 
@@ -126,22 +135,25 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
 
 /**
  * @tc.name: SetOffloadSessionId_001
- * @tc.desc: Test SetOffloadSessionId.
+ * @tc.desc: Test SetOffloadSessionId with new signature.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
 HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
 {
     uint32_t sessionId = MIN_STREAMID - 1;
+    uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter, ioHandle);
 
     sessionId = MAX_STREAMID + 1;
+    ioHandle = 200;
     adapter = OFFLOAD_IN_REMOTE;
-    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter, ioHandle);
 
     sessionId = MIN_STREAMID + 1;
-    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
+    ioHandle = 300;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter, ioHandle);
 }
 
 /**
@@ -588,7 +600,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeLimit_001, TestSize.Level1)
 
     auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
     ASSERT_NE(desc, nullptr);
-    EXPECT_EQ(audioAdapterManager->SetVolumeDb(STREAM_MUSIC), SUCCESS);
     audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_VOICE_CALL_ASSISTANT, desc);
     audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_ULTRASONIC, desc);
     audioAdapterManager->UpdateOtherStreamVolume(STREAM_VOICE_CALL);
@@ -664,53 +675,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_New, TestSize.Level1)
 }
 
 /**
- * @tc.name: Test SetAudioVolume
- * @tc.number: SetAudioVolume
- * @tc.type: FUNC
- * @tc.desc: SetAudioVolume
- */
-HWTEST_F(AudioAdapterManagerUnitTest, SetAudioVolume, TestSize.Level1)
-{
-    auto ad = std::make_shared<AudioAdapterManager>();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    AudioStreamType type = STREAM_MUSIC;
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    ad->isAbsVolumeScene_ = true;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
-
-    type = STREAM_APP;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
-    
-    ad->isAbsVolumeScene_ = false;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
-
-    type = STREAM_MUSIC;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
-
-    desc->deviceType_ = DEVICE_TYPE_NEARLINK;
-
-    ad->isAbsVolumeScene_ = true;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
-
-    type = STREAM_APP;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
-    
-    ad->isAbsVolumeScene_ = false;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
-
-    type = STREAM_MUSIC;
-    ad->SetAudioVolume(desc, type, 0);
-    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
-}
-
-/**
  * @tc.name: GetDeviceVolume_001
  * @tc.desc: Test GetDeviceVolume
  * @tc.type: FUNC
@@ -748,8 +712,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_001, TestSize.Level1)
     defaultOutputDevice_->deviceType_ = DEVICE_TYPE_SPEAKER;
     defaultOutputDevice_->networkId_ = "RemoteDevice";
     uint32_t sessionId = 100001;
+    uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
     int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
     EXPECT_EQ(res, SUCCESS);
@@ -772,8 +737,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_002, TestSize.Level1)
     defaultOutputDevice_->deviceType_ = DEVICE_TYPE_INVALID;
     defaultOutputDevice_->networkId_ = "RemoteDevice";
     uint32_t sessionId = 100001;
+    uint32_t ioHandle = 200;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
     int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
     EXPECT_EQ(res, SUCCESS);
@@ -797,8 +763,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMutedDB_001, TestSize.Level1)
     defaultOutputDevice_->deviceType_ = DEVICE_TYPE_SPEAKER;
     defaultOutputDevice_->networkId_ = "RemoteDevice";
     uint32_t sessionId = 100001;
+    uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
     int32_t res = audioAdapterManager->SetAppVolumeMutedDB(appUid, muted);
     EXPECT_EQ(res, SUCCESS);
@@ -822,8 +789,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMutedDB_002, TestSize.Level1)
     defaultOutputDevice_->deviceType_ = DEVICE_TYPE_INVALID;
     defaultOutputDevice_->networkId_ = "RemoteDevice";
     uint32_t sessionId = 100001;
+    uint32_t ioHandle = 200;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
     int32_t res = audioAdapterManager->SetAppVolumeMutedDB(appUid, muted);
     EXPECT_EQ(res, SUCCESS);
@@ -950,24 +918,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_006, TestSize.Lev
 }
 
 /**
- * @tc.name: Test SetOffloadVolumeForStreamVolumeChange
- * @tc.number: SetOffloadVolumeForStreamVolumeChange_001
- * @tc.type: FUNC
- * @tc.desc: when successful execution, return equ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolumeForStreamVolumeChange_001, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    ASSERT_NE(audioAdapterManager, nullptr);
-    int32_t sessionId = 1;
-    int32_t isMute = 1;
-    audioAdapterManager->SetStreamMute(STREAM_MUSIC, false);
-    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
-    isMute = audioAdapterManager->GetStreamMute(STREAM_MUSIC);
-    EXPECT_EQ(isMute, 0);
-}
-
-/**
  * @tc.name: Test GetSourceIdInfoAndIdType
  * @tc.number: GetSourceIdInfoAndIdType_007
  * @tc.type: FUNC
@@ -985,6 +935,96 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_007, TestSize.Lev
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
     EXPECT_EQ(idInfo, HDI_ID_INFO_ULTRASONIC);
+}
+
+/**
+ * @tc.name: Test UpdateAudioPipeVolume_001
+ * @tc.desc: Test UpdateAudioPipeVolume with empty vector
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateAudioPipeVolume_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    
+    std::vector<PipeDeviceVolumeInfo> emptyList;
+    audioAdapterManager->UpdateAudioPipeVolume(emptyList);
+}
+
+/**
+ * @tc.name: Test UpdateAudioPipeVolume_002
+ * @tc.desc: Test UpdateAudioPipeVolume with valid data
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateAudioPipeVolume_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    
+    std::vector<PipeDeviceVolumeInfo> infoList;
+    PipeDeviceVolumeInfo info;
+    info.ioHandle_ = 100;
+    info.deviceDesc_ = std::make_shared<AudioDeviceDescriptor>();
+    info.deviceDesc_->deviceType_ = DEVICE_TYPE_SPEAKER;
+    info.volumeTypes_.insert(STREAM_MUSIC);
+    infoList.push_back(info);
+    
+    audioAdapterManager->UpdateAudioPipeVolume(infoList);
+}
+
+/**
+ * @tc.name: Test RemoveAudioPipeVolume_001
+ * @tc.desc: Test RemoveAudioPipeVolume
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, RemoveAudioPipeVolume_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    
+    uint32_t ioHandle = 100;
+    audioAdapterManager->RemoveAudioPipeVolume(ioHandle);
+}
+
+/**
+ * @tc.name: Test UpdateVolumeForAllPipes_001
+ * @tc.desc: Test UpdateVolumeForAllPipes
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateVolumeForAllPipes_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    
+    audioAdapterManager->UpdateVolumeForAllPipes();
+}
+
+/**
+ * @tc.name: Test UpdateTypeVolumeForAllPipes_001
+ * @tc.desc: Test UpdateTypeVolumeForAllPipes with STREAM_MUSIC
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateTypeVolumeForAllPipes_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    audioAdapterManager->UpdateTypeVolumeForAllPipes(volumeType);
+}
+
+/**
+ * @tc.name: Test UpdateTypeVolumeForAllPipes_002
+ * @tc.desc: Test UpdateTypeVolumeForAllPipes with STREAM_VOICE_CALL
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateTypeVolumeForAllPipes_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    
+    AudioVolumeType volumeType = STREAM_VOICE_CALL;
+    audioAdapterManager->UpdateTypeVolumeForAllPipes(volumeType);
 }
 
 /**
@@ -1125,6 +1165,285 @@ HWTEST_F(AudioAdapterManagerUnitTest, RedirectVolumeType, TestSize.Level1)
     streamDescriptor->callerUid_ = 1003;
     audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
     EXPECT_EQ(volumeType, STREAM_VOICE_ASSISTANT);
+}
+
+/**
+ * @tc.name: Test UpdateVolumeForLowLatency
+ * @tc.number: UpdateVolumeForLowLatency
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateVolumeForLowLatency, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ == DEVICE_TYPE_NEARLINK;
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, volumeType);
+
+    desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    volumeType = STREAM_MUSIC;
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, volumeType);
+
+    desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    volumeType = STREAM_RING;
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, volumeType);
+}
+
+/**
+ * @tc.name: Test SetVolumeDbForDeviceInPipe_001
+ * @tc.desc: Test SetVolumeDbForDeviceInPipe with null device descriptor returns ERROR
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeDbForDeviceInPipe_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    int32_t result = audioAdapterManager->SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name: Test SetVolumeDbForDeviceInPipe_002
+ * @tc.desc: Test SetVolumeDbForDeviceInPipe with SPEAKER device returns SUCCESS
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeDbForDeviceInPipe_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    int32_t result = audioAdapterManager->SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: Test SetVolumeDbForDeviceInPipe_003
+ * @tc.desc: Test SetVolumeDbForDeviceInPipe with HEARING_AID device returns ERROR
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeDbForDeviceInPipe_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    int32_t result = audioAdapterManager->SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_001
+ * @tc.desc: Test AdjustVolumeForSpecialDevice with VolumeFixEnable - unmute
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool isMuted = true;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    VolumeUtils::SetVolumeFixEnable(true);
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(isMuted, false);
+    VolumeUtils::SetVolumeFixEnable(false);
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_002
+ * @tc.desc: Test AdjustVolumeForSpecialDevice with A2DP and AbsVolumeScene
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    bool isMuted = false;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    audioAdapterManager->isAbsVolumeScene_ = false;
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+
+    audioAdapterManager->isAbsVolumeScene_ = true;
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+
+    audioAdapterManager->isAbsVolumeScene_ = true;
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, ABS_VOLUME_DB_VALUE);
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_003
+ * @tc.desc: Test AdjustVolumeForSpecialDevice with NEARLINK and SleVoice disabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    bool isMuted = false;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    audioAdapterManager->isSleVoiceStatus_.store(true);
+    audioAdapterManager->isAbsVolumeMuteNearlink_.store(false);
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+
+    audioAdapterManager->isSleVoiceStatus_.store(false);
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_004
+ * @tc.desc: Test AdjustVolumeForSpecialDevice with NEARLINK and VOICE_CALL - max volume
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_004, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    bool isMuted = false;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_VOICE_CALL, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, MAX_VOLUME_DB_VALUE);
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_005
+ * @tc.desc: Test AdjustVolumeForSpecialDevice with BLUETOOTH_SCO and VgsVolumeSupported
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_005, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    bool isMuted = false;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_VOICE_CALL, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+}
+
+/**
+ * @tc.name: Test ApplySystemVolumeProxy_001
+ * @tc.desc: Test ApplySystemVolumeProxy with enabled - unmute and max volume
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ApplySystemVolumeProxy_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool isMuted = true;
+    float volumeDb = TEST_VOLUME_DB;
+    audioAdapterManager->ApplySystemVolumeProxy(TEST_ZONE_ID, device, isMuted, volumeDb);
+    EXPECT_EQ(isMuted, true);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+}
+
+/**
+ * @tc.name: GetSystemAppVolumeLevel_NotSet
+ * @tc.number: GetSystemAppVolumeLevel_001
+ * @tc.type: FUNC
+ * @tc.desc: When app volume not set, returns APP_DEFAULT_VOLUME_LEVEL (100)
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSystemAppVolumeLevel_NotSet, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 1001;
+    int32_t volumeLevel = 0;
+
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, false);
+
+    int32_t ret = audioAdapterManager->GetSystemAppVolumeLevel(appUid, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, APP_DEFAULT_VOLUME_LEVEL);
+}
+
+/**
+ * @tc.name: GetSystemAppVolumeLevel_Muted
+ * @tc.number: GetSystemAppVolumeLevel_002
+ * @tc.type: FUNC
+ * @tc.desc: When app volume is muted, returns 0
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSystemAppVolumeLevel_Muted, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 1001;
+    int32_t volumeLevel = -1;
+
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolume(appUid, 5);
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, true);
+
+    int32_t ret = audioAdapterManager->GetSystemAppVolumeLevel(appUid, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, 0);
+}
+
+/**
+ * @tc.name: GetSystemAppVolumeLevel_Normal
+ * @tc.number: GetSystemAppVolumeLevel_003
+ * @tc.type: FUNC
+ * @tc.desc: When app volume is set and not muted, returns stored volume
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSystemAppVolumeLevel_Normal, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 1001;
+    int32_t volumeLevel = -1;
+    int32_t expectedVolume = 7;
+
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolume(appUid, expectedVolume);
+    audioAdapterManager->volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, false);
+
+    int32_t ret = audioAdapterManager->GetSystemAppVolumeLevel(appUid, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, expectedVolume);
+}
+
+/**
+ * @tc.name: Test GetAudioSinkAttr HdPlaybackMode
+ * @tc.number: GetAudioSinkAttr_HdPlaybackMode_001
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with empty hdPlayBackMode string
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_HdPlaybackMode_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.hdPlayBackMode = "";
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+    EXPECT_EQ(attr.hdPlayBackMode, 0);
+}
+
+/**
+ * @tc.name: Test GetAudioSinkAttr HdPlaybackMode
+ * @tc.number: GetAudioSinkAttr_HdPlaybackMode_002
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with hdPlayBackMode "0" (HD_NOT_SUPPORTED)
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_HdPlaybackMode_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.hdPlayBackMode = "0";
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+    EXPECT_EQ(attr.hdPlayBackMode, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

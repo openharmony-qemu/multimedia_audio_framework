@@ -131,7 +131,6 @@ public:
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<StringPair> &result) override;
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
-    std::string HandleSpecificKey(const std::string &key, const std::shared_ptr<IDeviceManager> &deviceManager);
     int32_t GetAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
@@ -153,18 +152,10 @@ public:
     int32_t SetAsrVoiceControlMode(int32_t asrVoiceControlMode, bool on) override;
     int32_t SetAsrVoiceMuteMode(int32_t asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering(int32_t& whisperRes) override;
-    // for effect V3
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
-        int32_t deviceType) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        int32_t deviceType) override;
     // for effect
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    // for enhance
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray,
         int32_t deviceType) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray,
         int32_t deviceType) override;
 
     int32_t NotifyDeviceInfo(const std::string &networkId, bool connected) override;
@@ -393,11 +384,11 @@ private:
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
 #endif
-    int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArray &propertyArray,
         const DeviceType& deviceType);
-    int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectChainProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEnhanceChainProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEffectChainProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEnhanceChainProperty(const AudioEffectPropertyArray &propertyArray,
         const DeviceType& deviceType);
 
     void SetA2dpAudioParameter(const std::string &renderValue);
@@ -447,7 +438,13 @@ private:
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
     void ParseAudioParameter();
-    bool CacheExtraParameters(const std::string &key,
+    void NotifyAudioParameterParsed();
+    bool WaitAudioParameterParsed();
+    int32_t SetHomeMusicExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetEffectLiveExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetPcmDumpExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetCockpitDirectExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetCommonExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
@@ -543,9 +540,8 @@ private:
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     std::atomic<bool> isAudioParameterParsed_ = false;
+    std::condition_variable isAudioParameterParsedCv_;
     std::mutex audioParameterCacheMutex_;
-    std::vector<std::pair<std::string,
-        std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
 
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};

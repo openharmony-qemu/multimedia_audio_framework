@@ -24,10 +24,12 @@ using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t DEFAULT_PIPE_ID = 0;
 
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
 static const uint32_t TEST_STREAM_2_SESSION_ID = 100002;
+static const uint32_t TEST_IO_HANDLE = 1234;
 inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
 inline static const std::string NULL_ADDRESS{""};
 
@@ -317,83 +319,9 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_010, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_011
- * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_011, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_RELEASED;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_012
- * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_012, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_STOPPED;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_013
- * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_013, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_NEW;
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_014
- * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_014, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_NEW;
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_027
- * @tc.desc  : Test AudioCoreService::IsSameDevice()
+* @tc.name  : Test AudioCoreService.
+* @tc.number: AudioCoreServicePrivate_027
+* @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
 HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_027, TestSize.Level1)
 {
@@ -709,99 +637,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Leve
 
     audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
-}
-
-/**
- * @tc.name : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_044
- * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_044, TestSize.Level1)
-{
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_RELEASED;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-
-    auto audioCoreService = AudioCoreService::GetCoreService();
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_045
- * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_045, TestSize.Level1)
-{
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_RELEASED;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-
-    auto audioCoreService = AudioCoreService::GetCoreService();
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_046
- * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_046, TestSize.Level1)
-{
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_STOPPED;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-
-    auto audioCoreService = AudioCoreService::GetCoreService();
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_047
- * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_047, TestSize.Level1)
-{
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_INVALID;
-
-    auto audioCoreService = AudioCoreService::GetCoreService();
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-
-    EXPECT_NE(audioCoreService, nullptr);
-}
-
-/**
- * @tc.name : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_048
- * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_048, TestSize.Level1)
-{
-    AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_STOPPED;
-
-    auto audioCoreService = AudioCoreService::GetCoreService();
-
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-
-    EXPECT_NE(audioCoreService, nullptr);
 }
 
 /**
@@ -3728,7 +3563,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_001, 
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, stream, TEST_IO_HANDLE);
     EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3742,7 +3577,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_002, 
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream, TEST_IO_HANDLE);
     EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3756,7 +3591,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_003, 
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_2_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_2_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3771,7 +3606,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_004, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3786,7 +3621,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_005, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3801,7 +3636,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_006, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3816,7 +3651,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -4273,7 +4108,8 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_001, TestSize.Level1)
     pipeInfo->AddStream(streamDesc);
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
 
-    audioCoreService->UpdateOutputRoute(streamDesc);
+    uint32_t pipeId = DEFAULT_PIPE_ID;
+    audioCoreService->UpdateOutputRoute(streamDesc, pipeId);
     EXPECT_EQ(1, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
 
     audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();

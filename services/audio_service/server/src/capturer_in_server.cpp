@@ -27,6 +27,7 @@
 #include "audio_service.h"
 #include "audio_process_config.h"
 #include "i_stream_manager.h"
+#include "audio_policy_manager.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
 #endif
@@ -92,6 +93,9 @@ CapturerInServer::~CapturerInServer()
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     TurnOffRemoteMicIndicator();
+    if (processConfig_.capturerInfo.loopBackEffectEnabled) {
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+    }
 }
 
 int32_t CapturerInServer::ConfigServerBuffer()
@@ -935,7 +939,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION && usg != STREAM_USAGE_VOICE_MESSAGE) {
             continue;
         }
 

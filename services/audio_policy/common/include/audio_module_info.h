@@ -78,6 +78,7 @@ static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
 static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
 static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
 static const char* PRIMARY_INTERPHON_MIC = "Built_in_interphone";
+static const char* PRIMARY_SPEAKER_PIPENAME = "primary_output";
 }
 
 enum NodeName {
@@ -129,13 +130,17 @@ struct AudioModuleInfo {
     std::string renderInIdleState;
     std::string OpenMicSpeaker;
     std::string fileName;
+
+    // in multistream, it means secondary classification for primary_extra class
     std::string networkId;
+    
     std::string macAddress;
     std::string busAddress;
     std::string deviceType;
     std::string sceneName;
     std::string sourceType;
     std::string offloadEnable;
+    std::string hdPlayBackMode;
 
     std::string ecType;
     std::string ecAdapter;

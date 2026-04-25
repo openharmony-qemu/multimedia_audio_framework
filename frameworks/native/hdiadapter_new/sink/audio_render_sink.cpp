@@ -39,9 +39,27 @@ namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
 static constexpr uint32_t AUDIO_D2D = 12;
+
+const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
+    {HDI_ID_INFO_USB, HDI_RENDER_OFFSET_USB},
+    {HDI_ID_INFO_DP, HDI_RENDER_OFFSET_DP},
+    {HDI_ID_INFO_VOIP, HDI_RENDER_OFFSET_VOIP},
+    {HDI_ID_INFO_DIRECT, HDI_RENDER_OFFSET_DIRECT},
+    {HDI_ID_INFO_INTERPHONE, HDI_RENDER_OFFSET_INTERPHONE},
+    {HDI_ID_INFO_PRIMARY_EXTRA_TYPEC, HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC},
+    {HDI_ID_INFO_PRIMARY_EXTRA_WIRED, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED},
+    {HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS},
+    {HDI_ID_INFO_PRIMARY_EXTRA_HDMI, HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI},
+};
 }
+
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
+#ifdef MULTI_BUS_ENABLE
+    : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP),
+      playingAppManager_([this](const std::string &param) { return SetPlayingAppNameParam(param); })
+#else
     : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP)
+#endif
 {
     if (halName_ == HDI_ID_INFO_DIRECT || halName_ == HDI_ID_INFO_VOIP) {
         sinkType_ = ADAPTER_TYPE_DIRECT;
@@ -154,6 +172,9 @@ int32_t AudioRenderSink::Start(void)
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Start();
+#endif
     return SUCCESS;
 }
 
@@ -185,6 +206,9 @@ int32_t AudioRenderSink::Stop(void)
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Stop();
+#endif
     started_ = false;
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
@@ -255,7 +279,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
-    if (audioBalanceState_) {
+    if (audioBalanceState_.load()) {
         AdjustAudioBalance(&data, len);
     }
     CheckUpdateState(&data, len);
@@ -320,6 +344,18 @@ void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::stri
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
     }
+}
+
+bool AudioRenderSink::SetPlayingAppNameParam(const std::string &param)
+{
+    AUDIO_INFO_LOG("param: %{public}s", param.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, false, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set playing app name param fail, error code: %{public}d", ret);
+        return false;
+    }
+    return true;
 }
 
 std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -420,10 +456,10 @@ void AudioRenderSink::SetAudioBalanceValue(float audioBalance)
 
     if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
         // audioBalance is equal to 0.0f
-        audioBalanceState_ = false;
+        audioBalanceState_.store(false);
     } else {
         // audioBalance is not equal to 0.0f
-        audioBalanceState_ = true;
+        audioBalanceState_.store(true);
         // calculate the balance coefficient
         if (audioBalance > 0.0f) {
             leftBalanceCoef_ -= audioBalance;
@@ -655,6 +691,10 @@ int32_t AudioRenderSink::SetPriPaPower(void)
 
 int32_t AudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid, appsUid + size);
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid, appsUid + size);
@@ -664,6 +704,10 @@ int32_t AudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], 
 
 int32_t AudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
@@ -828,16 +872,9 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
 
 uint32_t AudioRenderSink::GetUniqueId(void) const
 {
-    if (halName_ == HDI_ID_INFO_USB) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_USB);
-    } else if (halName_ == HDI_ID_INFO_DP) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DP);
-    } else if (halName_ == HDI_ID_INFO_VOIP) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
-    } else if (halName_ == HDI_ID_INFO_DIRECT) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
-    } else if (halName_ == HDI_ID_INFO_INTERPHONE) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_INTERPHONE);
+    auto it = HALNAME_TO_HDI_OFFSET.find(halName_);
+    if (it != HALNAME_TO_HDI_OFFSET.end()) {
+        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, it->second);
     }
     return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
 }
@@ -847,7 +884,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.sampleRate = AUDIO_SAMPLE_RATE_48K;
     param.interleaved = true;
-    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+    param.streamId = static_cast<int32_t>(GetUniqueId());
     param.type = AUDIO_IN_MEDIA;
     if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
         param.type = static_cast<AudioCategory>(AUDIO_D2D);
@@ -962,8 +999,7 @@ int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    int32_t ret = deviceManager->SetOutputRoute(adapterNameCase_, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+    int32_t ret = deviceManager->SetOutputRoute(adapterNameCase_, outputDevices, GetUniqueId());
     return ret;
 }
 
