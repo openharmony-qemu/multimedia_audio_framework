@@ -231,6 +231,33 @@ int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitAr
     return coreService_->LoadSplitModule(splitArgs, networkId);
 }
 
+int32_t AudioCoreService::EventEntry::SetAudioRouteSelectorCallback(
+    const AudioPipeSelector::AudioRouteSelectorCallback &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return HandleSetAudioRouteSelectorCallback(callback);
+}
+
+int32_t AudioCoreService::EventEntry::UnsetAudioRouteSelectorCallback()
+{
+    return HandleUnsetAudioRouteSelectorCallback();
+}
+
+int32_t AudioCoreService::EventEntry::HandleSetAudioRouteSelectorCallback(
+    const AudioPipeSelector::AudioRouteSelectorCallback &callback)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    return coreService_->SetAudioRouteSelectorCallback(callback);
+}
+
+int32_t AudioCoreService::EventEntry::HandleUnsetAudioRouteSelectorCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    return coreService_->UnsetAudioRouteSelectorCallback();
+}
+
 // device status listener
 void AudioCoreService::EventEntry::OnDeviceStatusUpdated(
     DeviceType devType, bool isConnected, const std::string& macAddress,

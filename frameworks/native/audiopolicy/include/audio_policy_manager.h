@@ -630,6 +630,10 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback();
 
+    int32_t SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback);
+
+    int32_t UnsetAudioRouteSelectorCallback();
+
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
 
     int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);

@@ -165,6 +165,7 @@ public:
 
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
+    std::shared_ptr<AudioPolicyClientHolder> GetAudioPolicyClientHolder(int32_t clientId);
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const std::shared_ptr<AudioPolicyClientHolder> &cb);
     void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);

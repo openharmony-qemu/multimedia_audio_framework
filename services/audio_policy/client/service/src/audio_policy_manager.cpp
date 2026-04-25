@@ -1849,7 +1849,7 @@ int32_t AudioPolicyManager::SetDistributedRoutingRoleCallback(
         return ERR_INVALID_PARAM;
     }
 
-    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+    std::lock_guard<std::mutex> lock(listenerStubMutex_);
     auto activeDistributedRoutingRoleCb = new(std::nothrow) AudioRoutingManagerListener();
     if (activeDistributedRoutingRoleCb == nullptr) {
         AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: object is nullptr");
@@ -2847,7 +2847,7 @@ int32_t AudioPolicyManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<
         return ERR_INVALID_PARAM;
     };
 
-    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+    std::lock_guard<std::mutex> lock(listenerStubMutex_);
     auto activeDistributedRoutingRoleCb = new (std::nothrow) AudioRoutingManagerListener();
     if (activeDistributedRoutingRoleCb == nullptr) {
         AUDIO_ERR_LOG("object is nullptr");
@@ -2869,6 +2869,40 @@ int32_t AudioPolicyManager::UnsetAudioDeviceRefinerCallback()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->UnsetAudioDeviceRefinerCallback();
+}
+
+int32_t AudioPolicyManager::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].mutex);
+    audioPolicyClientStubCB_->SetAudioRouteSelectorCallback(callback);
+    if (audioPolicyClientStubCB_->HasAudioRouteSelectorCallback()) {
+        callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_ROUTE_SELECTOR, true);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetAudioRouteSelectorCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->UnsetAudioRouteSelectorCallback();
+        callbackChangeInfos_[CALLBACK_ROUTE_SELECTOR].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_ROUTE_SELECTOR, false, false);
+    }
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::SetAudioClientInfoMgrCallback(

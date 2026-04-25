@@ -1671,5 +1671,37 @@ size_t AudioPolicyClientStubImpl::GetCurrentSpatialAudioSourceTypeChangeCallback
     std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
     return spatialAudioSourceTypeChangeCallbackList_.size();
 }
+
+int32_t AudioPolicyClientStubImpl::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &cb)
+{
+    std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+    audioRouteSelectorCallback_ = cb;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::UnsetAudioRouteSelectorCallback()
+{
+    std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+    audioRouteSelectorCallback_ = nullptr;
+    return SUCCESS;
+}
+
+bool AudioPolicyClientStubImpl::HasAudioRouteSelectorCallback() const
+{
+    std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+    return audioRouteSelectorCallback_ != nullptr;
+}
+
+int32_t AudioPolicyClientStubImpl::OnAudioRouteSelectRefined(
+    const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult)
+{
+    std::shared_ptr<AudioRouteSelector> callback;
+    {
+        std::lock_guard<std::mutex> lock(audioRouteSelectorMutex_);
+        callback = audioRouteSelectorCallback_;
+    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "audioRouteSelectorCallback_ is nullptr");
+    return callback->OnAudioRouteSelect(routeSelectInfo, selectResult);
+}
 } // namespace AudioStandard
 } // namespace OHOS

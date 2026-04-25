@@ -35,6 +35,8 @@
 #include "config_policy_utils.h"
 #include "audio_utils.h"
 #include "record_privacy_manager.h"
+#include "audio_pipe_selector.h"
+#include "audio_route_select_info.h"
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
@@ -2029,9 +2031,39 @@ int32_t AudioPolicyServer::SetDeclaredDeviceTypes(const std::set<int32_t> &devic
     return audioPolicyUtils_.SetDeclaredDeviceTypes(AudioBundleManager::GetBundleName(), deviceTypeVector);
 }
 
+int32_t AudioPolicyServer::HandleRouteSelectorCallbackEnable(bool enable)
+{
+    int32_t clientId = IPCSkeleton::GetCallingPid();
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_COCKPIT_SA && callerUid != ROOT_UID) {
+        AUDIO_ERR_LOG("HandleRouteSelectorCallbackEnable permission denied");
+        return ERROR;
+    }
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, AUDIO_ERR, "audioPolicyServerHandler_ is nullptr");
+    auto clientHolder = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientId);
+    CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERROR, "client not registered");
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
+    
+    AudioPipeSelector::AudioRouteSelectorCallback callback =
+        [clientHolder](const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult) -> int32_t {
+            CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERR_OPERATION_FAILED, "clientHolder is nullptr");
+            return clientHolder->OnAudioRouteSelectRefined(routeSelectInfo, selectResult);
+        };
+    
+    if (enable) {
+        return eventEntry_->SetAudioRouteSelectorCallback(callback);
+    } else {
+        return eventEntry_->UnsetAudioRouteSelectorCallback();
+    }
+}
+
 int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bool enable)
 {
     CallbackChange callbackchange = static_cast<CallbackChange>(callbackchangeIn);
+    if (callbackchange == CALLBACK_ROUTE_SELECTOR) {
+        return HandleRouteSelectorCallbackEnable(enable);
+    }
+    
     if (audioPolicyServerHandler_ != nullptr) {
         return audioPolicyServerHandler_->SetClientCallbacksEnable(callbackchange, enable);
     } else {
