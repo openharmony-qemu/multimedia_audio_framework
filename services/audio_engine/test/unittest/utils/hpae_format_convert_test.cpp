@@ -37,20 +37,22 @@ static constexpr int BIT_32 = 32;
 
 static uint32_t Read24Bit(const uint8_t *p)
 {
-    return ((uint32_t)p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t)p[1] << BIT_8) | ((uint32_t)p[0]);
+    return (static_cast<uint32_t>(p[BIT_DEPTH_TWO]) << BIT_16) |
+           (static_cast<uint32_t>(p[1]) << BIT_8) |
+           static_cast<uint32_t>(p[0]);
 }
 
 static void Write24Bit(uint8_t *p, uint32_t u)
 {
-    p[BIT_DEPTH_TWO] = (uint8_t)(u >> BIT_16);
-    p[1] = (uint8_t)(u >> BIT_8);
-    p[0] = (uint8_t)u;
+    p[BIT_DEPTH_TWO] = static_cast<uint8_t>(u >> BIT_16);
+    p[1] = static_cast<uint8_t>(u >> BIT_8);
+    p[0] = static_cast<uint8_t>(u);
 }
 
 static void ConvertFromU8ToFloat(unsigned n, const uint8_t *a, float *b)
 {
     for (; n > 0; n--, a++, b++) {
-        *b = (float)(*a - (uint8_t)0x80U) * (1.0 / 0x80U);
+        *b = static_cast<float>(*a - static_cast<uint8_t>(0x80U)) * (1.0 / 0x80U);
     }
 }
 
