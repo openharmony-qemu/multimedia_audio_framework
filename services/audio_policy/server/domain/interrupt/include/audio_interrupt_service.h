@@ -327,7 +327,7 @@ private:
     void RemoveAllPlaceholderInterrupt(std::list<int32_t> &removeFocusInfoPidList);
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
-    void SetLatestMuteState(const uint32_t &streamId, bool muteFlag);
+    void SetLatestMuteState(const AudioInterrupt &audioInterrupt, bool muteFlag);
 
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
@@ -335,7 +335,7 @@ private:
         const AudioInterrupt &activeInterrupt);
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
-    void HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag);
+    void HandleMuteInterruptEvent(const AudioInterrupt &audioInterrupt, bool muteFlag);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId, bool returnDefault = false);
 

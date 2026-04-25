@@ -55,6 +55,8 @@ private:
         AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
     void UpdateFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
+    void UpdateAIBaseFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
+        AudioFocusEntry &focusEntry);
     bool IsMicSource(SourceType sourceType);
 };
 

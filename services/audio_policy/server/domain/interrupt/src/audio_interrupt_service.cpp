@@ -3007,12 +3007,20 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     }
 
     if ((interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {
+        bool isMuted = false;
         bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
         if (audioInterrupt.behaviorFlags_.muteWhenInterruptFlag) {
-            HandleMuteSessionBehavior(audioInterrupt, muteFlag);
+            HandleMuteInterruptEvent(audioInterrupt, muteFlag);
+            isMuted = true;
         }
         if (audioInterrupt.strategy == InterruptStrategy::MUTE) {
-            SetLatestMuteState(streamId, muteFlag);
+            SetLatestMuteState(audioInterrupt, muteFlag);
+            isMuted = true;
+        }
+        if (!isMuted) {
+            HandleMuteInterruptEvent(audioInterrupt, muteFlag);
+            AUDIO_INFO_LOG("Handle the mute interrupt without sending a callback.");
+            return;
         }
     }
 
