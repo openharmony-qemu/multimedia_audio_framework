@@ -225,8 +225,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
     auto pipeInfoInput = pipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
     if (pipeInfoInput != nullptr && pipeInfoInput->softLinkFlag_) {
-        pipeInfoInput->streamDescMap_.clear();
-        pipeInfoInput->streamDescriptors_.clear();
+        pipeManager->ClearPipeStreams(pipeInfoInput);
         pipeManager->UpdateAudioPipeInfo(pipeInfoInput);
     }
     AudioIOHandle ioHandle;
