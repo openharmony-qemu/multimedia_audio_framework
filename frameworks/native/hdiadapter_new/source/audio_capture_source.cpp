@@ -143,7 +143,15 @@ AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::stri
 
 AudioCaptureSource::~AudioCaptureSource()
 {
-    isCaptureThreadRunning_ = false;
+    isCaptureThreadRunning_.store(false);
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
+    if (captureThread_ != nullptr && captureThread_->joinable()) {
+        captureThread_->join();
+        captureThread_ = nullptr;
+    }
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
@@ -318,13 +326,16 @@ int32_t AudioCaptureSource::Stop(void)
     Trace trace("AudioCaptureSource::Stop");
     std::promise<void> promiseEnsureLock;
     auto futurePromiseEnsureLock = promiseEnsureLock.get_future();
-    std::thread stopThread([&promiseEnsureLock, this] {
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
+    stopThread_ = std::make_unique<std::thread>([&promiseEnsureLock, this] {
         std::lock_guard<std::mutex> lock(statusMutex_);
         promiseEnsureLock.set_value();
         DoStop();
     });
     futurePromiseEnsureLock.get();
-    stopThread.detach();
 
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
         SetAccessoryDeviceState(false);
@@ -1361,7 +1372,7 @@ int32_t AudioCaptureSource::NonblockingStart(void)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     started_.store(true);
 
-    isCaptureThreadRunning_ = true;
+    isCaptureThreadRunning_.store(true);
     captureThread_ = std::make_unique<std::thread>(&AudioCaptureSource::CaptureThreadLoop, this);
     std::string threadName = "OS_Capture";
     threadName += (attr_.sourceType == SOURCE_TYPE_EC) ? "Ec" : "MicRef";
@@ -1371,9 +1382,10 @@ int32_t AudioCaptureSource::NonblockingStart(void)
 
 int32_t AudioCaptureSource::NonblockingStop(void)
 {
-    isCaptureThreadRunning_ = false;
+    isCaptureThreadRunning_.store(false);
     if (captureThread_ != nullptr && captureThread_->joinable()) {
         captureThread_->join();
+        captureThread_ = nullptr;
     }
 
     if (!started_.load()) {
