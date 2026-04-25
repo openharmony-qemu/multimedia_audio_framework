@@ -429,6 +429,19 @@ int32_t AudioSession::UpdateStreamFocusState(uint32_t streamId, AudioFocuState f
     return SUCCESS;
 }
 
+bool AudioSession::IsAllStreamsInState(AudioFocuState state)
+{
+    if (interruptMap_.empty()) {
+        return false;
+    }
+    for (const auto &iter : interruptMap_) {
+        if (iter.second.second != state) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool AudioSession::IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
     const std::shared_ptr<AudioDeviceDescriptor> desc)
 {

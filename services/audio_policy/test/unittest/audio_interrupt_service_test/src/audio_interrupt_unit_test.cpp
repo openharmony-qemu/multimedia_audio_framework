@@ -5356,5 +5356,60 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_ResumeAudioFocusList_Audi
     EXPECT_EQ(audioInterruptZone->audioFocusInfoList.size(), 0);
 }
 
+/**
+ * @tc.name  : Test UpdateStreamFocusState
+ * @tc.number: UpdateStreamFocusStateTest_001
+ * @tc.desc  : Test UpdateStreamFocusState success case
+ */
+HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateTest_001, TestSize.Level1)
+{
+    int32_t zoneId = 0;
+    int32_t callerPid = 1;
+    uint32_t streamId = 100;
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+
+    interruptServiceTest->zonesMap_[zoneId] = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt testInterrupt;
+    testInterrupt.pid = callerPid;
+    testInterrupt.streamId = streamId;
+    interruptServiceTest->zonesMap_[zoneId]->audioFocusInfoList.push_back({testInterrupt, AudioFocuState::ACTIVE});
+
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    audioSession->interruptMap_[streamId] = {testInterrupt, AudioFocuState::ACTIVE};
+    interruptServiceTest->sessionService_.sessionMap_[callerPid] = audioSession;
+
+    int32_t ret = interruptServiceTest->UpdateStreamFocusStateToStandby(callerPid, streamId);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto &focusList = interruptServiceTest->zonesMap_[zoneId]->audioFocusInfoList;
+    for (auto &iter : focusList) {
+        if (iter.first.streamId == streamId) {
+            EXPECT_EQ(iter.second, AudioFocuState::STANDBY);
+        }
+    }
+
+    AudioFocuState state = audioSession->GetAudioFocuStateByStreamId(streamId);
+    EXPECT_EQ(state, AudioFocuState::STANDBY);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamFocusState
+ * @tc.number: UpdateStreamFocusStateTest_002
+ * @tc.desc  : Test UpdateStreamFocusState stream not found
+ */
+HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateTest_002, TestSize.Level1)
+{
+    uint32_t streamId = 999;
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+
+    int32_t ret = interruptServiceTest->UpdateStreamFocusStateToStandby(-1, streamId);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

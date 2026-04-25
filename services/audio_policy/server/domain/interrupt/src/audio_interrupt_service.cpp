@@ -1675,6 +1675,91 @@ int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterr
     return SUCCESS;
 }
 
+bool AudioInterruptService::FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState)
+{
+    for (auto &zonePair : zonesMap_) {
+        if (zonePair.second == nullptr) {
+            continue;
+        }
+        for (auto &iter : zonePair.second->audioFocusInfoList) {
+            if (iter.first.streamId == streamId) {
+                iter.second = focuState;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int32_t AudioInterruptService::UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (FindAndUpdateFocusState(streamId, AudioFocuState::STANDBY)) {
+        AUDIO_INFO_LOG("streamId %u found in zone, state updated to STANDBY", streamId);
+        return SUCCESS;
+    }
+
+    int32_t ret = sessionService_.UpdateStreamFocusState(pid, streamId, AudioFocuState::STANDBY);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("UpdateStreamFocusState failed for streamId %u, pid %d", streamId, pid);
+        return ret;
+    }
+
+    if (!sessionService_.IsAllStreamsInState(pid, AudioFocuState::STANDBY)) {
+        AUDIO_INFO_LOG("streamId %u state updated to STANDBY in session", streamId);
+        return SUCCESS;
+    }
+
+    for (auto &zonePair : zonesMap_) {
+        if (zonePair.second == nullptr) {
+            continue;
+        }
+        for (auto &iter : zonePair.second->audioFocusInfoList) {
+            if (iter.first.pid == pid && iter.first.isAudioSessionInterrupt) {
+                iter.second = AudioFocuState::STANDBY;
+                AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to STANDBY for pid %d", pid);
+                return SUCCESS;
+            }
+        }
+    }
+
+    AUDIO_INFO_LOG("streamId %u state updated to STANDBY in session", streamId);
+    return SUCCESS;
+}
+
+int32_t AudioInterruptService::UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (FindAndUpdateFocusState(streamId, AudioFocuState::ACTIVE)) {
+        AUDIO_INFO_LOG("streamId %u found in zone, state updated to ACTIVE", streamId);
+        return SUCCESS;
+    }
+
+    int32_t ret = sessionService_.UpdateStreamFocusState(pid, streamId, AudioFocuState::ACTIVE);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("UpdateStreamFocusState failed for streamId %u, pid %d", streamId, pid);
+        return ret;
+    }
+
+    for (auto &zonePair : zonesMap_) {
+        if (zonePair.second == nullptr) {
+            continue;
+        }
+        for (auto &iter : zonePair.second->audioFocusInfoList) {
+            if (iter.first.pid == pid && iter.first.isAudioSessionInterrupt) {
+                if (iter.second == AudioFocuState::STANDBY) {
+                    iter.second = AudioFocuState::ACTIVE;
+                    AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to ACTIVE for pid %d", pid);
+                }
+                return SUCCESS;
+            }
+        }
+    }
+
+    AUDIO_INFO_LOG("streamId %u state updated to ACTIVE in session", streamId);
+    return SUCCESS;
+}
+
 void AudioInterruptService::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);

@@ -456,6 +456,16 @@ int32_t AudioSessionService::UpdateStreamFocusState(const int32_t callerPid, uin
     return session->second->UpdateStreamFocusState(streamId, focuState);
 }
 
+bool AudioSessionService::IsAllStreamsInState(const int32_t callerPid, AudioFocuState state)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session == sessionMap_.end()) {
+        return false;
+    }
+    return session->second->IsAllStreamsInState(state);
+}
+
 bool AudioSessionService::IsStreamInfoEmpty(const int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
@@ -503,12 +513,7 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
     for (auto iterAudioSession = sessionMap_.begin(); iterAudioSession != sessionMap_.end(); ++iterAudioSession) {
         dumpString += "\n";
         int32_t pid = iterAudioSession->first;
-        std::shared_ptr<AudioSession> audioSession = iterAudioSession->second;
-        if (audioSession == nullptr) {
-            AppendFormat(dumpString, "    - pid: %d, AudioSession is null.\n", pid);
-            continue;
-        }
-        audioSession->Dump(dumpString);
+        iterAudioSession->second->Dump(dumpString);
     }
     dumpString += "\n";
 }
@@ -546,7 +551,7 @@ bool AudioSessionService::IsStreamAllowedToSetDevice(const uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     for (const auto& pair : sessionMap_) {
-        if ((pair.second != nullptr) && (pair.second->IsStreamContainedInCurrentSession(streamId))) {
+        if (pair.second->IsStreamContainedInCurrentSession(streamId)) {
             // for inactivate session, its default device cannot be used, so set it to DEVICE_TYPE_INVALID
             if (!pair.second->IsActivated()) {
                 return true;
@@ -679,7 +684,7 @@ int32_t AudioSessionService::EnableMuteSuggestionWhenMixWithOthers(int32_t calle
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
 
     auto session = sessionMap_.find(callerPid);
-    CHECK_AND_RETURN_RET_LOG(session != sessionMap_.end() && session->second != nullptr, ERROR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_LOG(session != sessionMap_.end(), ERROR_ILLEGAL_STATE,
         "The audio session of pid %{public}d has not been created", callerPid);
 
     std::shared_ptr<AudioSession> audioSession = session->second;

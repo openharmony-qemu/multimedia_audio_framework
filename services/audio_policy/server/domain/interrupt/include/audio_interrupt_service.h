@@ -131,6 +131,13 @@ public:
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
+    int32_t UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId);
+    int32_t UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId);
+
+private:
+    bool FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState);
+
+public:
     void ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id, const int32_t &oldId);
     int32_t ClearAudioFocusInfoList();
     void AudioInterruptZoneDump(std::string &dumpString);

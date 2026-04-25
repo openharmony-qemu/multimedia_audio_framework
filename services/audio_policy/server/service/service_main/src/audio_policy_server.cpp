@@ -2883,6 +2883,22 @@ int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt,
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::NotifyStreamStandby(int32_t pid, uint32_t streamId)
+{
+    if (interruptService_ != nullptr) {
+        return interruptService_->UpdateStreamFocusStateToStandby(pid, streamId);
+    }
+    return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
+{
+    if (interruptService_ != nullptr) {
+        return interruptService_->UpdateStreamFocusStateToActive(pid, streamId);
+    }
+    return ERR_UNKNOWN;
+}
+
 int32_t AudioPolicyServer::GetAudioFocusInfoList(std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList,
     int32_t zoneID)
 {
