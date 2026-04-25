@@ -2698,5 +2698,61 @@ HWTEST(AudioProcessInClientUnitTest, IsRestoreNeeded_001, TestSize.Level1)
     EXPECT_EQ(ptrAudioProcessInClientInner->CheckAndWaitBufferReadyForPlayback(), true);
     EXPECT_EQ(ptrAudioProcessInClientInner->IsRestoreNeeded(), true);
 }
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_001
+ * @tc.desc  : Test UpdateUnderrunInfo when stamp + ONE_MILLISECOND_DURATION > LIMIT_FAST_COUNT * limit is true
+ */
+HWTEST(AudioProcessInClientUnitTest, UpdateUnderrunInfo_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = false;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    auto mockIAudioProcess = sptr<MockIAudioProcess>::MakeSptr();
+    ptrAudioProcessInClientInner->processProxy_ = mockIAudioProcess;
+
+    // Test UpdateUnderrunInfo when UNDERRUN_TYPE_ISTIMEOUT is true
+    EXPECT_CALL(*mockIAudioProcess, UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true))
+        .Times(1)
+        .WillOnce(Return(SUCCESS));
+    
+    int32_t ret = ptrAudioProcessInClientInner->processProxy_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_002
+ * @tc.desc  : Test UpdateUnderrunInfo when stamp + ONE_MILLISECOND_DURATION > LIMIT_FAST_COUNT * limit is false
+ */
+HWTEST(AudioProcessInClientUnitTest, UpdateUnderrunInfo_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = false;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    auto mockIAudioProcess = sptr<MockIAudioProcess>::MakeSptr();
+    ptrAudioProcessInClientInner->processProxy_ = mockIAudioProcess;
+
+    // Test UpdateUnderrunInfo when UNDERRUN_TYPE_ISTIMEOUT is false
+    EXPECT_CALL(*mockIAudioProcess, UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, false))
+        .Times(1)
+        .WillOnce(Return(SUCCESS));
+    
+    int32_t ret = ptrAudioProcessInClientInner->processProxy_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

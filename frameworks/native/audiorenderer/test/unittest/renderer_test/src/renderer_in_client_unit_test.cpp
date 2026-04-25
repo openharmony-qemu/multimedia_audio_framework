@@ -3518,5 +3518,47 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_SetRendererInfo_003,
     ptrRendererInClientInner->SetRendererInfo(rendererInfo);
     EXPECT_TRUE(ipcStreamTest->setVoipNoPrivacyFlagCalled);
 }
+
+/**
+ * @tc.name  : Test CheckAndReportTimestamp API
+ * @tc.type  : FUNC
+ * @tc.number: CheckAndReportTimestamp_001
+ * @tc.desc  : Test CheckAndReportTimestamp when duration <= MIN_INTERVAL_IN_NS is true
+ */
+HWTEST(RendererInClientInnerUnitTest, CheckAndReportTimestamp_001, TestSize.Level3)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    // Set lastTriggerTime_ to a recent time to make duration small
+    ptrRendererInClientInner->lastTriggerTime_ = ClockTime::GetCurNano() - 100000000; // 100ms ago
+
+    // Call CheckAndReportTimestamp - duration should be <= MIN_INTERVAL_IN_NS
+    ptrRendererInClientInner->CheckAndReportTimestamp();
+
+    // logStopCallCount_ should be set to true
+    EXPECT_TRUE(ptrRendererInClientInner->logStopCallCount_);
+}
+
+/**
+ * @tc.name  : Test CheckAndReportTimestamp API
+ * @tc.type  : FUNC
+ * @tc.number: CheckAndReportTimestamp_002
+ * @tc.desc  : Test CheckAndReportTimestamp when duration <= MIN_INTERVAL_IN_NS is false
+ */
+HWTEST(RendererInClientInnerUnitTest, CheckAndReportTimestamp_002, TestSize.Level3)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    // Set lastTriggerTime_ to a very old time to make duration large
+    ptrRendererInClientInner->lastTriggerTime_ = ClockTime::GetCurNano() - 200000000; // 200ms ago
+
+    // Call CheckAndReportTimestamp - duration should be > MIN_INTERVAL_IN_NS
+    ptrRendererInClientInner->CheckAndReportTimestamp();
+
+    // logStopCallCount_ should remain false
+    EXPECT_FALSE(ptrRendererInClientInner->logStopCallCount_);
+}
 } // namespace AudioStandard
 } // namespace OHOS
