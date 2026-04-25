@@ -4347,6 +4347,7 @@ int32_t AudioPolicyServer::UpdateContextForAudioZone(int32_t zoneId, const Audio
 
 int32_t AudioPolicyServer::GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     descs = AudioZoneService::GetInstance().GetAllAudioZone();
     return SUCCESS;
 }
@@ -4354,6 +4355,7 @@ int32_t AudioPolicyServer::GetAllAudioZone(std::vector<std::shared_ptr<AudioZone
 int32_t AudioPolicyServer::GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor> &desc)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     desc = AudioZoneService::GetInstance().GetAudioZone(zoneId);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "desc is nullptr");
     return SUCCESS;
@@ -4498,6 +4500,7 @@ int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId,
     std::vector<std::map<AudioInterrupt, int32_t>> &retList)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId));
     return SUCCESS;
 }
@@ -4506,6 +4509,7 @@ int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId, const std::s
     std::vector<std::map<AudioInterrupt, int32_t>> &retList)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceTag));
     return SUCCESS;
 }
