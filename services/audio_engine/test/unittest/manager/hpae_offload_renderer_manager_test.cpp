@@ -35,6 +35,7 @@ constexpr float TEST_VOLUME = 0.5f;
 constexpr int32_t TEST_RATE = 1;
 constexpr int32_t TEST_EFFECT_MODE = 0;
 constexpr int32_t TEST_PRIVACY_TYPE = 0;
+constexpr int32_t FRAME_SIZE = 960;
 } // namespace
 
 class HpaeOffloadRendererManagerTest : public testing::Test {
@@ -50,7 +51,7 @@ void HpaeOffloadRendererManagerTest::SetUp()
     sinkInfo_.deviceName = TEST_DEVICE_NAME;
     sinkInfo_.deviceClass = TEST_DEVICE_CLASS;
     sinkInfo_.adapterName = TEST_SINK_NAME;
-    sinkInfo_.frameLen = 960;
+    sinkInfo_.frameLen = FRAME_SIZE;
     sinkInfo_.samplingRate = SAMPLE_RATE_48000;
     sinkInfo_.format = SAMPLE_F32LE;
     sinkInfo_.channels = STEREO;
@@ -334,7 +335,7 @@ std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManagerWhiteBoxTest::Creat
     nodeinfo.channels = STEREO;
     nodeinfo.samplingRate = SAMPLE_RATE_48000;
     nodeinfo.format = SAMPLE_F32LE;
-    nodeinfo.frameLen = 960;
+    nodeinfo.frameLen = FRAME_SIZE;
     auto node = std::make_shared<HpaeSinkInputNode>(nodeinfo);
     node->SetState(state);
     return node;
@@ -345,7 +346,7 @@ void HpaeOffloadRendererManagerWhiteBoxTest::SetUp()
     sinkInfo_.deviceName = TEST_DEVICE_NAME;
     sinkInfo_.deviceClass = TEST_DEVICE_CLASS;
     sinkInfo_.adapterName = TEST_SINK_NAME;
-    sinkInfo_.frameLen = 960;
+    sinkInfo_.frameLen = FRAME_SIZE;
     sinkInfo_.samplingRate = SAMPLE_RATE_48000;
     sinkInfo_.format = SAMPLE_F32LE;
     sinkInfo_.channels = STEREO;
@@ -376,7 +377,7 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, CreateStream_001, TestSize.Leve
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = 960;
+    streamInfo.frameLen = FRAME_SIZE;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.uid = 1000;
     int32_t ret = manager_->CreateStream(streamInfo);
@@ -399,7 +400,7 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, CreateStream_002, TestSize.Leve
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = 960;
+    streamInfo.frameLen = FRAME_SIZE;
     streamInfo.streamType = STREAM_MUSIC;
     int32_t ret = manager_->CreateStream(streamInfo);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);

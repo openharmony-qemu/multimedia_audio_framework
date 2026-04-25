@@ -20,7 +20,6 @@
 #include <cstring>
 
 #include "hpae_format_convert.h"
-#include "hpae_format_convert.cpp"
 
 using namespace testing::ext;
 using namespace testing;
@@ -28,6 +27,57 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
+// Internal constants and helpers from hpae_format_convert.cpp needed for testing
+static constexpr float FLOAT_EPS = 1e-6f;
+static constexpr int BIT_DEPTH_TWO = 2;
+static constexpr int BIT_8 = 8;
+static constexpr int BIT_16 = 16;
+static constexpr int BIT_32 = 32;
+
+static uint32_t Read24Bit(const uint8_t *p)
+{
+    return ((uint32_t)p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t)p[1] << BIT_8) | ((uint32_t)p[0]);
+}
+
+static void Write24Bit(uint8_t *p, uint32_t u)
+{
+    p[BIT_DEPTH_TWO] = (uint8_t)(u >> BIT_16);
+    p[1] = (uint8_t)(u >> BIT_8);
+    p[0] = (uint8_t)u;
+}
+
+static void ConvertFromU8ToFloat(unsigned n, const uint8_t *a, float *b)
+{
+    for (; n > 0; n--, a++, b++) {
+        *b = (float)(*a - (uint8_t)0x80U) * (1.0 / 0x80U);
+    }
+}
+
+static void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1 << (BIT_16 - 1)));
+    }
+}
+
+static void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
+{
+    constexpr int OFFSET_BIT_24 = 3;
+    for (; n > 0; n--) {
+        int32_t s = Read24Bit(a) << BIT_8;
+        *b = s * (1.0f / (1U << (BIT_32 - 1)));
+        a += OFFSET_BIT_24;
+        b++;
+    }
+}
+
+static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
+    }
+}
 
 static constexpr uint32_t TEST_FRAMES = 4;
 static constexpr uint32_t NUM_TWO = 2;

@@ -1211,12 +1211,12 @@ ohos_unittest("hpae_format_convert_test") {
   module_out_path = module_output_path
   sources = [
     "utils/hpae_format_convert_test.cpp",
+    "../../utils/hpae_format_convert.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:audio_engine_utils",
   ]
 
   sanitize = {

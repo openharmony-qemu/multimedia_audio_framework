@@ -116,9 +116,9 @@ HWTEST_F(HpaePcmDumperTest, CheckAndReopenHandle_001, TestSize.Level0)
 {
     HpaePcmDumper dumper(TEST_DUMP_FILENAME);
     bool result = dumper.CheckAndReopenHandle();
-    // Verify the return type is bool; the actual value depends on whether
-    // OpenDumpFile succeeded in the test environment.
-    EXPECT_TRUE(result == true || result == false);
+    // dumpFile_ is nullptr after construction, so CheckAndReopenHandle returns false
+    // after attempting (and failing) to reopen in the test environment.
+    EXPECT_FALSE(result);
 }
 
 /**

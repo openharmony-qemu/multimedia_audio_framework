@@ -129,7 +129,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:offline_stream_in_server_unit_test",
     "../services/audio_service/test/unittest/hpae_adapter_manager_unit_test:hpae_adapter_manager_unit_test",
     "../services/audio_service/test/unittest:audio_ring_cache_unit_test",
-
+    "../services/audio_service/test/unittest:audio_volume_unit_test",
     "../services/audio_service/test/unittest:policy_handler_unit_test",
     "../services/audio_service/test/unittest:resource_manager_adapter_unit_test",
     "../services/audio_service/test/unittest:volume_tools_unit_test",
@@ -359,6 +359,7 @@ group("audio_fuzz_test") {
     # "fuzztest/hpaesourceoutputnode_fuzzer:fuzztest",
     # "fuzztest/hpaestreammanager_fuzzer:fuzztest",
     # "fuzztest/hpaevirtualprocesscluster_fuzzer:fuzztest",
+    "fuzztest/hpaevirtualcapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanageradd_fuzzer:fuzztest",
     "fuzztest/ipcstreaminserver_fuzzer:fuzztest",
