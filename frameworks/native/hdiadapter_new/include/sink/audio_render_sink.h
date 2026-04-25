@@ -24,6 +24,9 @@
 #include "audio_utils.h"
 #include "audio_performance_monitor.h"
 #include "adapter/i_device_manager.h"
+#ifdef MULTI_BUS_ENABLE
+#include "util/audio_playing_app_manager.h"
+#endif
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -114,6 +117,7 @@ private:
     int32_t HandleSwitchDeviceMuteState(bool mute, bool &applyVolume);
     int32_t SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute);
     int32_t SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute);
+    bool SetPlayingAppNameParam(const std::string &param);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -186,6 +190,9 @@ private:
 
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;
+#ifdef MULTI_BUS_ENABLE
+    AudioPlayingAppManager playingAppManager_;
+#endif
 
     std::function<void(bool)> deviceCallback_ = nullptr;
 
