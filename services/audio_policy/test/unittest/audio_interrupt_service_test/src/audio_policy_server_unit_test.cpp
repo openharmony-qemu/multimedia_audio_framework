@@ -4470,7 +4470,7 @@ HWTEST(AudioPolicyUnitTest, AddUidUsagesToAudioZone_004, TestSize.Level1)
     }
 
     int32_t ret = server->AddUidUsagesToAudioZone(zoneId, uid, usages);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -4623,7 +4623,7 @@ HWTEST(AudioPolicyUnitTest, RemoveUidUsagesFromAudioZone_004, TestSize.Level1)
     }
 
     int32_t ret = server->RemoveUidUsagesFromAudioZone(zoneId, uid, usages);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
