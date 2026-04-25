@@ -6018,5 +6018,52 @@ HWTEST(AudioPolicyUnitTest, VerifyUidAndPid_001, TestSize.Level1)
     int ret = server->VerifyUidAndPid(uid, pid);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable for CALLBACK_ROUTE_SELECTOR.
+ * @tc.number: SetClientCallbacksEnable_RouteSelector_001
+ * @tc.desc  : Test SetClientCallbacksEnable with CALLBACK_ROUTE_SELECTOR enable.
+ */
+HWTEST(AudioPolicyUnitTest, SetClientCallbacksEnable_RouteSelector_001, TestSize.Level1)
+{
+    auto policyServer = GetPolicyServerUnitTest();
+    EXPECT_NE(policyServer, nullptr);
+
+    int32_t callbackChange = static_cast<int32_t>(CallbackChange::CALLBACK_ROUTE_SELECTOR);
+    int32_t result = policyServer->SetClientCallbacksEnable(callbackChange, true);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable for CALLBACK_ROUTE_SELECTOR.
+ * @tc.number: SetClientCallbacksEnable_RouteSelector_002
+ * @tc.desc  : Test SetClientCallbacksEnable with CALLBACK_ROUTE_SELECTOR disable.
+ */
+HWTEST(AudioPolicyUnitTest, SetClientCallbacksEnable_RouteSelector_002, TestSize.Level1)
+{
+    auto policyServer = GetPolicyServerUnitTest();
+    EXPECT_NE(policyServer, nullptr);
+
+    int32_t callbackChange = static_cast<int32_t>(CallbackChange::CALLBACK_ROUTE_SELECTOR);
+    int32_t result = policyServer->SetClientCallbacksEnable(callbackChange, false);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable for CALLBACK_ROUTE_SELECTOR with uninitialized server.
+ * @tc.number: SetClientCallbacksEnable_RouteSelector_003
+ * @tc.desc  : Test SetClientCallbacksEnable with CALLBACK_ROUTE_SELECTOR when server is not fully initialized.
+ */
+HWTEST(AudioPolicyUnitTest, SetClientCallbacksEnable_RouteSelector_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(server, nullptr);
+
+    int32_t callbackChange = static_cast<int32_t>(CallbackChange::CALLBACK_ROUTE_SELECTOR);
+    int32_t result = server->SetClientCallbacksEnable(callbackChange, true);
+    EXPECT_NE(result, SUCCESS);
+}
 } // AudioStandard
 } // OHOS

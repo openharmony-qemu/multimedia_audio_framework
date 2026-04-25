@@ -2050,11 +2050,8 @@ int32_t AudioPolicyServer::HandleRouteSelectorCallbackEnable(bool enable)
             return clientHolder->OnAudioRouteSelectRefined(routeSelectInfo, selectResult);
         };
     
-    if (enable) {
-        return eventEntry_->SetAudioRouteSelectorCallback(callback);
-    } else {
-        return eventEntry_->UnsetAudioRouteSelectorCallback();
-    }
+    return enable ? eventEntry_->SetAudioRouteSelectorCallback(callback) :
+        eventEntry_->UnsetAudioRouteSelectorCallback();
 }
 
 int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bool enable)

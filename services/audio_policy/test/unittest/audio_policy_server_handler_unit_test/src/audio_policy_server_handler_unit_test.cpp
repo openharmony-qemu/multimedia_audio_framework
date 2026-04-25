@@ -1483,5 +1483,58 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleSystemAppVolumeChangeEvent_Callba
     // Cleanup
     audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
 }
+
+/**
+ * @tc.name  : GetAudioPolicyClientHolder_001
+ * @tc.number: GetAudioPolicyClientHolder_001
+ * @tc.desc  : Test GetAudioPolicyClientHolder when client exists in map.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, GetAudioPolicyClientHolder_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    int32_t clientPid = 100;
+    auto clientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, clientHolder);
+
+    auto result = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientPid);
+    EXPECT_NE(result, nullptr);
+
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
+
+/**
+ * @tc.name  : GetAudioPolicyClientHolder_002
+ * @tc.number: GetAudioPolicyClientHolder_002
+ * @tc.desc  : Test GetAudioPolicyClientHolder when client does not exist in map.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, GetAudioPolicyClientHolder_002, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    int32_t clientPid = 100;
+
+    auto result = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientPid);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : GetAudioPolicyClientHolder_003
+ * @tc.number: GetAudioPolicyClientHolder_003
+ * @tc.desc  : Test GetAudioPolicyClientHolder after client is removed.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, GetAudioPolicyClientHolder_003, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    int32_t clientPid = 100;
+    auto clientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, clientHolder);
+
+    auto result = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientPid);
+    EXPECT_NE(result, nullptr);
+
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+
+    result = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientPid);
+    EXPECT_EQ(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
