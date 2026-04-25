@@ -2332,5 +2332,15 @@ void AudioPolicyServerHandler::PublishCtrlCmdEvent(int32_t hintType, int32_t uid
     AUDIO_INFO_LOG("publish ret:%{public}d hintType:%{public}d uid:%{public}d streamId:%{public}d",
         ret, hintType, uid, streamId);
 }
+
+std::shared_ptr<AudioPolicyClientHolder> AudioPolicyServerHandler::GetAudioPolicyClientHolder(int32_t clientId)
+{
+    lock_guard<mutex> lock(handleMapMutex_);
+    auto it = audioPolicyClientProxyAPSCbsMap_.find(clientId);
+    if (it != audioPolicyClientProxyAPSCbsMap_.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS

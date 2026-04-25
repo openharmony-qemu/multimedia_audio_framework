@@ -333,5 +333,18 @@ bool AudioStreamManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
 {
     return AudioPolicyManager::GetInstance().IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
 }
+
+int32_t AudioStreamManager::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetAudioRouteSelectorCallback(callback);
+}
+
+int32_t AudioStreamManager::UnsetAudioRouteSelectorCallback()
+{
+    AUDIO_INFO_LOG("In");
+    return AudioPolicyManager::GetInstance().UnsetAudioRouteSelectorCallback();
+}
 } // namespace AudioStandard
 } // namespace OHOS
