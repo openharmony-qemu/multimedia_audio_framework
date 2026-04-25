@@ -63,8 +63,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_002, TestSize.
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyV3 effectProperty;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectProperty effectProperty;
     effectProperty.flag = CAPTURE_EFFECT_FLAG;
     propertyArray.property.push_back(effectProperty);
     
@@ -82,8 +82,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_003, TestSize.
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyV3 effectProperty;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectProperty effectProperty;
     effectProperty.flag = RENDER_EFFECT_FLAG;
     propertyArray.property.push_back(effectProperty);
     
@@ -1633,7 +1633,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetSupportedAudioEffectProperty_001, T
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     int32_t ret = server->audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, AUDIO_OK);
 }
@@ -1648,7 +1648,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetSupportedEffectProperty_001, TestSi
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     server->audioPolicyService_.GetSupportedEffectProperty(propertyArray);
     EXPECT_NE(server, nullptr);
 }
@@ -1663,7 +1663,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetSupportedEnhanceProperty_001, TestS
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     server->audioPolicyService_.GetSupportedEnhanceProperty(propertyArray);
     EXPECT_NE(server, nullptr);
 }
@@ -1678,7 +1678,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckSupportedAudioEffectProperty_001,
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     EffectFlag flag = CAPTURE_EFFECT_FLAG;
     int32_t ret = server->audioPolicyService_.CheckSupportedAudioEffectProperty(propertyArray, flag);
     EXPECT_EQ(ret, AUDIO_OK);
@@ -1698,8 +1698,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetAudioEffectProperty_001, TestSize.L
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyV3 effectProperty;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectProperty effectProperty;
     effectProperty.flag = CAPTURE_EFFECT_FLAG;
     propertyArray.property.push_back(effectProperty);
     int32_t ret = server->audioPolicyService_.SetAudioEffectProperty(propertyArray);
@@ -1723,8 +1723,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_001, TestSize.
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyV3 effectProperty;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectProperty effectProperty;
     effectProperty.flag = CAPTURE_EFFECT_FLAG;
     propertyArray.property.push_back(effectProperty);
     int32_t ret = server->audioPolicyService_.SetAudioEffectProperty(propertyArray);
@@ -1742,8 +1742,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEffectProperty_001, TestSize.L
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyV3 effectProperty;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectProperty effectProperty;
     effectProperty.flag = CAPTURE_EFFECT_FLAG;
     propertyArray.property.push_back(effectProperty);
     int32_t ret = server->audioPolicyService_.GetAudioEffectProperty(propertyArray);

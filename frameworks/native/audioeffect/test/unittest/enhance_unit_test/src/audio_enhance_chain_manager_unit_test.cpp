@@ -264,34 +264,6 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetMicrophoneMuteInfoSucc, TestSize.L
     EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
 }
 
-HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAndGetAudioEnhancePropertySucc, TestSize.Level1)
-{
-    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
-    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
-    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
-    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
-
-    AudioEnhancePropertyArray setPropertyArray = {};
-    setPropertyArray.property = {
-        { "voip_up_test", "AINR" },
-        { "record_test", "NRON" },
-        { "voice_message_test", "NRON" },
-    };
-    EXPECT_EQ(manager_->SetAudioEnhanceProperty(setPropertyArray, DEVICE_TYPE_MIC), SUCCESS);
-
-    AudioEnhancePropertyArray getPropertyArray = {};
-    EXPECT_EQ(manager_->GetAudioEnhanceProperty(getPropertyArray, DEVICE_TYPE_MIC), SUCCESS);
-    EXPECT_EQ(getPropertyArray.property.size(), setPropertyArray.property.size());
-    for (const auto &[setName, setProp] : setPropertyArray.property) {
-        auto iter = std::find_if(getPropertyArray.property.begin(), getPropertyArray.property.end(),
-            [targetClass = setName](const AudioEnhanceProperty &elem){ return elem.enhanceClass == targetClass; });
-        EXPECT_NE(iter, getPropertyArray.property.end());
-        EXPECT_EQ(iter->enhanceProp, setProp);
-    }
-
-    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
-}
-
 HWTEST_F(AudioEnhanceChainManagerUnitTest, NotifyChainToStopStreamSucc, TestSize.Level1)
 {
     auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);

@@ -53,14 +53,9 @@ HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001, TestSize.Level0)
     ret = HpaePolicyManager::GetInstance().SetEffectSystemVolume(0, 1.f);
     EXPECT_EQ(ret, 0);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     ret = HpaePolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, 0);
-
-    AudioEffectPropertyArray propertyArray1;
-    ret = HpaePolicyManager::GetInstance().GetAudioEffectProperty(propertyArray1);
-    EXPECT_EQ(ret, 0);
-    EXPECT_EQ(propertyArray1.property.size(), 0);
 
     ret = HpaePolicyManager::GetInstance().SetInputDevice(0, DEVICE_TYPE_MIC, "Built_in_mic");
     EXPECT_EQ(ret, 0);
@@ -81,21 +76,13 @@ HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001, TestSize.Level0)
 
 HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002, TestSize.Level0)
 {
-    AudioEffectPropertyArrayV3 propertyArray2;
+    AudioEffectPropertyArray propertyArray2;
     propertyArray2.property.push_back({"invalidEffect", "property1"});
     int32_t ret = HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray2, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
-    AudioEffectPropertyArrayV3 propertyArray3;
+    AudioEffectPropertyArray propertyArray3;
     ret = HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray3, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(ret, 0);
-
-    AudioEnhancePropertyArray propertyArray4;
-    ret = HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray4, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(ret, 0);
-
-    AudioEnhancePropertyArray propertyArray5;
-    ret = HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray5, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
     HpaePolicyManager::GetInstance().NotifyAlgoToStopStream();

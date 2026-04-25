@@ -210,20 +210,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyServiceTest_Prepare001, Te
 }
 
 /**
-* @tc.name  : Test GetSupportedAudioEffectProperty.
-* @tc.number: GetSupportedAudioEffectProperty_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSupportedAudioEffectProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetSupportedAudioEffectProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEffectPropertyArray propertyArray;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
-}
-
-/**
 * @tc.name  : Test LoadHdiEffectModel.
 * @tc.number: LoadHdiEffectModel_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -478,76 +464,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_008, TestSi
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
     EXPECT_NE(A2DP_STOPPED, playingState);
     EXPECT_NE(A2DP_PLAYING, playingState);
-}
-#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
-/**
-* @tc.name  : Test GetSupportedAudioEnhanceProperty.
-* @tc.number: GetSupportedAudioEnhanceProperty_001
-* @tc.desc  : Test GetSupportedAudioEnhanceProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSupportedAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetSupportedAudioEnhanceProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEnhancePropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->GetSupportedAudioEnhanceProperty(propertyArrayTest);
-}
-#endif
-/**
-* @tc.name  : Test SetAudioEffectProperty.
-* @tc.number: SetAudioEffectProperty_001
-* @tc.desc  : Test SetAudioEffectProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetAudioEffectProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetAudioEffectProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEffectPropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->SetAudioEffectProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test GetAudioEffectProperty.
-* @tc.number: GetAudioEffectProperty_001
-* @tc.desc  : Test GetAudioEffectProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEffectProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetAudioEffectProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEffectPropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->GetAudioEffectProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test SetAudioEnhanceProperty.
-* @tc.number: SetAudioEnhanceProperty_001
-* @tc.desc  : Test SetAudioEnhanceProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetAudioEnhanceProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEnhancePropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->SetAudioEnhanceProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test GetAudioEnhanceProperty.
-* @tc.number: GetAudioEnhanceProperty_001
-* @tc.desc  : Test GetAudioEnhanceProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetAudioEnhanceProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEnhancePropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->GetAudioEnhanceProperty(propertyArrayTest);
 }
 
 /**
@@ -2254,7 +2170,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_001, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"record", "NROFF"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2270,7 +2186,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_002, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"voip_up", "NROFF"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2286,7 +2202,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_003, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"record", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2302,7 +2218,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"voip_up", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, true);

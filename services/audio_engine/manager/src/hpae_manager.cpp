@@ -2281,27 +2281,6 @@ int32_t HpaeManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
     return SUCCESS;
 }
 
-int32_t HpaeManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
-{
-    auto request = [propertyArray]() {
-        HpaePolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t HpaeManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    auto request = [this, &propertyArray]() {
-        HpaePolicyManager::GetInstance().GetAudioEffectProperty(propertyArray);
-        if (auto serviceCallback = serviceCallback_.lock()) {
-            serviceCallback->OnGetAudioEffectPropertyCbV3(SUCCESS);
-        }
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
 int32_t HpaeManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     auto request = [propertyArray]() {
@@ -2424,7 +2403,7 @@ int32_t HpaeManager::SetStreamVolumeInfo(const uint32_t &sessionId, const float 
     return SUCCESS;
 }
 
-int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
+int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
 {
     auto request = [propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray, deviceType);
@@ -2433,28 +2412,7 @@ int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &p
     return SUCCESS;
 }
 
-int32_t HpaeManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
-{
-    auto request = [this, &propertyArray, deviceType]() {
-        HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);
-        auto serviceCallback = serviceCallback_.lock();
-        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
-        serviceCallback->OnGetAudioEnhancePropertyCbV3(SUCCESS);
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
-{
-    auto request = [propertyArray, deviceType]() {
-        HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray, deviceType);
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t HpaeManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
+int32_t HpaeManager::GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
 {
     auto request = [this, &propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);

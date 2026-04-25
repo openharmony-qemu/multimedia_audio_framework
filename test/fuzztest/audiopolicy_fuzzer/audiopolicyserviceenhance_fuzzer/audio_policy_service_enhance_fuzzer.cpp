@@ -272,28 +272,6 @@ void AudioPolicyServiceEnhanceFiveFuzzTest(FuzzedDataProvider& fdp)
         inputDevice, outputDevice, "test");
 }
 
-void AudioPolicyServiceEnhanceSixFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
-
-    std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    descs.push_back(fuzzAudioDeviceDescriptorSptr);
-    AudioDeviceUsage usage = GetData<AudioDeviceUsage>();
-    GetServerPtr()->audioPolicyService_.DeviceFilterByUsageInner(usage, descs);
-
-    uint32_t delayValue = GetData<uint32_t>();
-    uint64_t sendDataSize = GetData<uint64_t>();
-    uint32_t timeStamp = GetData<uint32_t>();
-    GetServerPtr()->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
-
-    uint32_t uid = GetData<uint32_t>();
-    std::string bundleName = "";
-    GetServerPtr()->audioPolicyService_.GetAndSaveClientType(uid, bundleName);
-}
-
 void AudioPolicyServiceEnhanceSevenFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioDeviceDescriptor desc;
@@ -353,30 +331,6 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
 }
 
-void AudioPolicyServiceEnhanceTenFuzzTest(FuzzedDataProvider& fdp)
-{
-    OHOS::AudioStandard::AudioPolicyServiceEnhanceNineFuzzTest(FuzzedDataProvider& fdp);
-    int32_t notificationId = GetData<int32_t>();
-    GetServerPtr()->audioPolicyService_.audioVolumeManager_.CancelSafeVolumeNotification(notificationId);
-
-    std::string dumpString = "";
-    GetServerPtr()->audioPolicyDump_.DevicesInfoDump(dumpString);
-    GetServerPtr()->audioPolicyDump_.GetMicrophoneDescriptorsDump(dumpString);
-    GetServerPtr()->audioPolicyDump_.AudioPolicyParserDump(dumpString);
-    GetServerPtr()->audioPolicyDump_.XmlParsedDataMapDump(dumpString);
-    GetServerPtr()->audioPolicyDump_.EffectManagerInfoDump(dumpString);
-    GetServerPtr()->audioPolicyDump_.MicrophoneMuteInfoDump(dumpString);
-
-    AudioEffectPropertyArray effectPropertyArray;
-    GetServerPtr()->audioPolicyService_.GetSupportedAudioEffectProperty(effectPropertyArray);
-    GetServerPtr()->audioPolicyService_.GetAudioEffectProperty(effectPropertyArray);
-    GetServerPtr()->audioPolicyService_.SetAudioEffectProperty(effectPropertyArray);
-
-    AudioEnhancePropertyArray enhancePropertyArray;
-    GetServerPtr()->audioPolicyService_.GetAudioEnhanceProperty(enhancePropertyArray);
-    GetServerPtr()->audioPolicyService_.SetAudioEnhanceProperty(enhancePropertyArray);
-}
-
 void AudioPolicyServiceEnhanceElevenFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceAddress = "deviceAddress";
@@ -406,11 +360,9 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyServiceEnhanceThreeFuzzTest,
     AudioPolicyServiceEnhanceFourFuzzTest,
     AudioPolicyServiceEnhanceFiveFuzzTest,
-    AudioPolicyServiceEnhanceSixFuzzTest,
     AudioPolicyServiceEnhanceSevenFuzzTest,
     AudioPolicyServiceEnhanceEightFuzzTest,
     AudioPolicyServiceEnhanceNineFuzzTest,
-    AudioPolicyServiceEnhanceTenFuzzTest,
     AudioPolicyServiceEnhanceElevenFuzzTest,
     });
     func(fdp);

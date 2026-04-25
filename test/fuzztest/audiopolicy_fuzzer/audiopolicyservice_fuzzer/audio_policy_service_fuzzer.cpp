@@ -779,7 +779,7 @@ void AudioPolicyServiceGetSupportedAudioEffectPropertyFuzztest(const uint8_t *ra
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
 }
 
@@ -787,7 +787,7 @@ void AudioPolicyServiceGetSupportedEffectPropertyFuzztest(const uint8_t *rawData
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetSupportedEffectProperty(propertyArray);
 }
 
@@ -795,7 +795,7 @@ void AudioPolicyServiceGetSupportedEnhancePropertyFuzztest(const uint8_t *rawDat
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetSupportedEnhanceProperty(propertyArray);
 }
 
@@ -803,7 +803,7 @@ void AudioPolicyServiceCheckSupportedAudioEffectPropertyFuzztest(const uint8_t *
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     EffectFlag flag = CAPTURE_EFFECT_FLAG;
     GetServerPtr()->audioPolicyService_.CheckSupportedAudioEffectProperty(propertyArray, flag);
 }
@@ -812,7 +812,7 @@ void AudioPolicyServiceSetAudioEffectPropertyFuzztest(const uint8_t *rawData, si
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.SetAudioEffectProperty(propertyArray);
 }
 
@@ -820,36 +820,16 @@ void AudioPolicyServiceGetAudioEnhancePropertyFuzztest(const uint8_t *rawData, s
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArrayv3;
-    GetServerPtr()->audioPolicyService_.GetAudioEnhanceProperty(propertyArrayv3);
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-}
-
-void AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    AudioEnhancePropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
 }
 
 void AudioPolicyServiceGetAudioEffectPropertyFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArrayv3;
-    GetServerPtr()->audioPolicyService_.GetAudioEffectProperty(propertyArrayv3);
     AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetAudioEffectProperty(propertyArray);
-}
-
-void AudioPolicyServiceSetAudioEnhancePropertyFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    AudioEnhancePropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.SetAudioEnhanceProperty(propertyArray);
 }
 
 void AudioPolicyServiceGetA2dpOffloadFlagFuzztest(const uint8_t *rawData, size_t size)
@@ -1037,8 +1017,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceSetAudioEffectPropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetAudioEnhancePropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetAudioEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetAudioEnhancePropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetA2dpOffloadFlagFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceSetSleAudioOperationCallbackFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerRemovedFuzztest,

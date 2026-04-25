@@ -250,13 +250,6 @@ void MoveSourceOutputByIndexOrNameFuzzTest()
     impl_->MoveSourceOutputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
-void GetAudioEffectPropertyV3FuzzTest()
-{
-    SetUp();
-    AudioEffectPropertyArrayV3 propertyArray;
-    impl_->GetAudioEffectProperty(propertyArray);
-}
-
 void GetAudioEffectPropertyFuzzTest()
 {
     SetUp();
@@ -264,17 +257,10 @@ void GetAudioEffectPropertyFuzzTest()
     impl_->GetAudioEffectProperty(propertyArray);
 }
 
-void GetAudioEnhancePropertyV3FuzzTest()
-{
-    SetUp();
-    AudioEffectPropertyArrayV3 propertyArray;
-    impl_->GetAudioEnhanceProperty(propertyArray);
-}
-
 void GetAudioEnhancePropertyFuzzTest()
 {
     SetUp();
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     impl_->GetAudioEnhanceProperty(propertyArray);
 }
 
@@ -345,25 +331,11 @@ void OnMoveSourceOutputByIndexOrNameCbFuzzTest()
     impl_->OnMoveSourceOutputByIndexOrNameCb(result);
 }
 
-void OnGetAudioEffectPropertyCbV3FuzzTest()
-{
-    SetUp();
-    int32_t result = GetData<int32_t>();
-    impl_->OnGetAudioEffectPropertyCbV3(result);
-}
-
 void OnGetAudioEffectPropertyCbFuzzTest()
 {
     SetUp();
     int32_t result = GetData<int32_t>();
     impl_->OnGetAudioEffectPropertyCb(result);
-}
-
-void OnGetAudioEnhancePropertyCbV3FuzzTest()
-{
-    SetUp();
-    int32_t result = GetData<int32_t>();
-    impl_->OnGetAudioEnhancePropertyCbV3(result);
 }
 
 void OnGetAudioEnhancePropertyCbFuzzTest()
@@ -446,9 +418,7 @@ TestFuncs g_testFuncs = {
     SetLocalDefaultSinkFuzzTest,
     MoveSinkInputByIndexOrNameFuzzTest,
     MoveSourceOutputByIndexOrNameFuzzTest,
-    GetAudioEffectPropertyV3FuzzTest,
     GetAudioEffectPropertyFuzzTest,
-    GetAudioEnhancePropertyV3FuzzTest,
     GetAudioEnhancePropertyFuzzTest,
     OnOpenAudioPortCbFuzzTest,
     OnCloseAudioPortCbFuzzTest,
@@ -459,9 +429,7 @@ TestFuncs g_testFuncs = {
     OnGetAllSinksCbFuzzTest,
     OnMoveSinkInputByIndexOrNameCbFuzzTest,
     OnMoveSourceOutputByIndexOrNameCbFuzzTest,
-    OnGetAudioEffectPropertyCbV3FuzzTest,
     OnGetAudioEffectPropertyCbFuzzTest,
-    OnGetAudioEnhancePropertyCbV3FuzzTest,
     OnGetAudioEnhancePropertyCbFuzzTest,
     HandleSourceAudioStreamRemovedFuzzTest,
     OnGetCollaborativeUpdateCbFuzzTest,

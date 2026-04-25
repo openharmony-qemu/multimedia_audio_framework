@@ -3397,22 +3397,22 @@ void AudioCoreService::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &
     SetOpenedNormalSourceSessionId(targetSessionInfo.second);
 }
 
-std::string AudioCoreService::GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray,
+std::string AudioCoreService::GetEnhancePropByName(const AudioEffectPropertyArray &propertyArray,
     const std::string &propName)
 {
     std::string propValue = "";
     auto iter = std::find_if(propertyArray.property.begin(), propertyArray.property.end(),
-        [&propName](const AudioEnhanceProperty &prop) {
-            return prop.enhanceClass == propName;
+        [&propName](const AudioEffectProperty &prop) {
+            return prop.name == propName;
         });
     if (iter != propertyArray.property.end()) {
-        propValue = iter->enhanceProp;
+        propValue = iter->category;
     }
     return propValue;
 }
 
-void AudioCoreService::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
-    const AudioEnhancePropertyArray &newPropertyArray)
+void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArray &oldPropertyArray,
+    const AudioEffectPropertyArray &newPropertyArray)
 {
     if (!isMicRefFeatureEnable_) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
@@ -3426,50 +3426,6 @@ void AudioCoreService::ReloadSourceForEffect(const AudioEnhancePropertyArray &ol
     std::string oldVoipUpProp = GetEnhancePropByName(oldPropertyArray, "voip_up");
     std::string newRecordProp = GetEnhancePropByName(newPropertyArray, "record");
     std::string newVoipUpProp = GetEnhancePropByName(newPropertyArray, "voip_up");
-    if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
-        (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
-        CHECK_AND_RETURN_LOG(specialSourceTypeSet_.count(targetSessionInfo.first) == 0,
-            "target sessionId:%{public}u not found", targetSessionInfo.second);
-        AUDIO_INFO_LOG("start reload sessionId: %{public}u for effect change", targetSessionInfo.second);
-        std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(targetSessionInfo.second);
-        if (streamDesc == nullptr) {
-            return;
-        }
-        SessionInfo targetSession = ConstructSessionByStream(streamDesc);
-        ReloadSourceForSession(targetSession, targetSessionInfo.second);
-        SetOpenedNormalSourceSessionId(targetSessionInfo.second);
-    }
-}
-
-std::string AudioCoreService::GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &propertyArray,
-    const std::string &propName)
-{
-    std::string propValue = "";
-    auto iter = std::find_if(propertyArray.property.begin(), propertyArray.property.end(),
-        [&propName](const AudioEffectPropertyV3 &prop) {
-            return prop.name == propName;
-        });
-    if (iter != propertyArray.property.end()) {
-        propValue = iter->category;
-    }
-    return propValue;
-}
-
-void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
-    const AudioEffectPropertyArrayV3 &newPropertyArray)
-{
-    if (!isMicRefFeatureEnable_) {
-        AUDIO_INFO_LOG("reload ignore for feature not enable");
-        return;
-    }
-    std::pair<SourceType, uint32_t> targetSessionInfo = GetTargetSessionForEc();
-    CHECK_AND_RETURN_LOG(IsSourceTypeValidForEc(targetSessionInfo.first),
-        "reload ignore for source not voip or mic");
-
-    std::string oldRecordProp = GetEnhancePropByNameV3(oldPropertyArray, "record");
-    std::string oldVoipUpProp = GetEnhancePropByNameV3(oldPropertyArray, "voip_up");
-    std::string newRecordProp = GetEnhancePropByNameV3(newPropertyArray, "record");
-    std::string newVoipUpProp = GetEnhancePropByNameV3(newPropertyArray, "voip_up");
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
         CHECK_AND_RETURN_LOG(specialSourceTypeSet_.count(targetSessionInfo.first) == 0,
@@ -3487,11 +3443,11 @@ void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &o
 
 void AudioCoreService::UpdateEnhanceEffectState(SourceType source)
 {
-    AudioEnhancePropertyArray enhancePropertyArray = {};
+    AudioEffectPropertyArray effectPropertyArray = {};
     RouterType routerType = ROUTER_TYPE_NONE;
     std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1, routerType);
     CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
-    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
+    int32_t ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(effectPropertyArray,
         inputDesc->deviceType_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
@@ -3499,12 +3455,12 @@ void AudioCoreService::UpdateEnhanceEffectState(SourceType source)
     }
     std::string recordProp = "";
     std::string voipUpProp = "";
-    for (const AudioEnhanceProperty &prop : enhancePropertyArray.property) {
-        if (prop.enhanceClass == "record") {
-            recordProp = prop.enhanceProp;
+    for (const auto &prop : effectPropertyArray.property) {
+        if (prop.name == "record") {
+            recordProp = prop.category;
         }
-        if (prop.enhanceClass == "voip_up") {
-            voipUpProp = prop.enhanceProp;
+        if (prop.name == "voip_up") {
+            voipUpProp = prop.category ;
         }
     }
     isMicRefRecordOn_ = (recordProp == "NRON");

@@ -306,12 +306,7 @@ public:
 
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
 
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const;
-
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const;
-
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) const;
 
     int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
 
