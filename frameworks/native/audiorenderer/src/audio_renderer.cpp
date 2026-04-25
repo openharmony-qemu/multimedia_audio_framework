@@ -233,11 +233,12 @@ int32_t AudioRenderer::CheckMaxRendererInstances()
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     }
 
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances),
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances),
         ERR_OVERFLOW,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_EXCEED_MAX_STREAM_CNT, "Renderer streams exceed max", true),
         HILOG_COMM_ERROR("[CheckMaxRendererInstances]The current number of audio renderer streams is "
             "greater than the maximum number of configured instances"));
-
     return SUCCESS;
 }
 
@@ -339,7 +340,10 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
     }
 
     auto sharedRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, true);
-    CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_MEMORY_ALLOC_FAILED, "renderer is null", true),
+        "renderer is null");
     RegisterAudioRendererDebugManager(sharedRenderer);
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
@@ -367,7 +371,10 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     const AudioRendererOptions &rendererOptions, const AppInfo &appInfo)
 {
     auto sharedRenderer = CreateRenderer(rendererOptions, appInfo);
-    CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "renderer is null", true),
+        "renderer is null");
 
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
@@ -379,8 +386,7 @@ bool AudioRenderer::CheckUltrasonicPermission(AudioStreamType audioStreamType, S
     }
     AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_INVALID_PARAM), "ULTRASONIC can only create by MSDP", false);
+        PLAY_CREATE_INVALID_PARAM, "ULTRASONIC can only create by MSDP", false);
     AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
     return false;
 }
@@ -389,12 +395,21 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
     std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
     const AppInfo &appInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr, nullptr, "sharedMemory is null");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, nullptr, "callback param is null");
-        Trace trace("KeyAction AudioRenderer::StaticCreate");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sharedMemory != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "sharedMemory is null", true),
+        "sharedMemory is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "callback param is null", true),
+        "callback param is null");
+    Trace trace("KeyAction AudioRenderer::StaticCreate");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
-        nullptr, "sa not start");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
+        nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_SERVICE_UNAVAILABLE, "sa not start", true),
+        "sa not start");
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     CHECK_AND_RETURN_RET_LOG(CheckUltrasonicPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage),
@@ -404,41 +419,15 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
     if (audioRenderer == nullptr) {
         AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
     }
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_MEMORY_ALLOC_FAILED, "Failed to create renderer object", true),
+        "Failed to create renderer object");
 
-    audioRenderer->rendererInfo_.isStatic = true;
-    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
-    int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
-    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
-    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
-    CHECK_AND_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
-        nullptr, "rendererFlags not support!");
-
-    HILOG_COMM_INFO("[Create]StreamClientState for Renderer::StaticCreate. content: %{public}d, usage: %{public}d, "\
-        "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
-        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
-        "F", rendererFlags, appInfo.appUid, rendererOptions.rendererInfo.toneFlag ? "T" : "F");
-    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
-
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
-    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
-    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
-    // cannot set offload when in static mode.
-    audioRenderer->rendererInfo_.isOffloadAllowed = false;
-    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
-    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
-    if (audioRenderer->SetParams(params) != SUCCESS) {
-        audioRenderer = nullptr;
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
+    if (!InitStaticRendererInfo(audioRenderer, rendererOptions, sharedMemory, appInfo)) {
+        return nullptr;
     }
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "SetParams failed in renderer!");
-    audioRenderer->SetRenderMode(RENDER_MODE_STATIC);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer->SetStaticBufferCallback(callback) == SUCCESS,
-        nullptr, "SetStaticBufferCallback fail");
-    RegisterAudioRendererDebugManager(audioRenderer);
-    return audioRenderer;
+    return SetupStaticRendererFinal(audioRenderer, rendererOptions, callback);
 }
 
 void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
@@ -478,28 +467,17 @@ bool AudioRendererPrivate::GetFinalOffloadAllowed(bool originalAllowed)
     return originalAllowed;
 }
 
-std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
-    const AppInfo &appInfo)
+std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject(
+    const AudioRendererOptions &rendererOptions, const AppInfo &appInfo, AudioStreamType audioStreamType)
 {
-    Trace trace("KeyAction AudioRenderer::Create");
-    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CREATE_RENDERER_BEGIN);
-    std::lock_guard<std::mutex> lock(createRendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
-        nullptr, "sa not start");
-    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CHECK_POLICY_SERVICE_AVAILABLE);
-    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage);
-    if (!CheckStreamTypeAndPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage)) {
-        return nullptr;
-    }
-    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::VERIFY_PERMISSION_IN_CREATE);
-
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
     if (audioRenderer == nullptr) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_OPERATION_FAILED);
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
     }
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_MEMORY_ALLOC_FAILED, "Failed to create renderer object", true),
+        "Failed to create renderer object");
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
     bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
@@ -522,24 +500,50 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
-    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
+    return audioRenderer;
+}
+
+std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    Trace trace("KeyAction AudioRenderer::Create");
+    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CREATE_RENDERER_BEGIN);
+    std::lock_guard<std::mutex> lock(createRendererMutex_);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
+        nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_SERVICE_UNAVAILABLE, "sa not start", true),
+        "sa not start");
+    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CHECK_POLICY_SERVICE_AVAILABLE);
+    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
+        rendererOptions.rendererInfo.streamUsage);
+    if (!CheckStreamTypeAndPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage)) {
+        return nullptr;
+    }
+    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::VERIFY_PERMISSION_IN_CREATE);
+
+    auto audioRenderer = CreateAndInitRendererObject(rendererOptions, appInfo, audioStreamType);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "CreateAndInitRendererObject failed");
+
+AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "SetParams failed in renderer", false);
         HILOG_COMM_ERROR("[CreateRenderer]SetParams failed in renderer");
         audioRenderer = nullptr;
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_OPERATION_FAILED);
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
     }
     RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CREATE_RENDERER_END);
-
     RegisterAudioRendererDebugManager(audioRenderer);
-
     return audioRenderer;
 }
 
 bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage)
 {
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
+AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        PLAY_CREATE_INVALID_PARAM, "ULTRASONIC can only create by MSDP", false);
         AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
         return false;
     }
@@ -550,13 +554,68 @@ bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType
             AudioRenderer::SendRendererCreateError(streamUsage, ERR_PERMISSION_DENIED);
             AUDIO_ERR_LOG("ANNOUNCEMENT or EMERGENCY can only create by system app");
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                    BusinessScenario::CREATE, ERR_PERMISSION_DENIED), "ULTRASONIC can only create by MSDP", false);
+                PLAY_CREATE_PERMISSION_DENIED,
+                "ANNOUNCEMENT or EMERGENCY can only create by system app", false);
             return false;
         }
     }
 #endif
     return true;
+}
+
+bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate> audioRenderer,
+    const AudioRendererOptions &rendererOptions, std::shared_ptr<AudioSharedMemory> sharedMemory,
+    const AppInfo &appInfo)
+{
+    audioRenderer->rendererInfo_.isStatic = true;
+    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
+    int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
+    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
+        false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "rendererFlags not support!", true),
+        "rendererFlags not support!");
+
+    HILOG_COMM_INFO("[Create]StreamClientState for Renderer::StaticCreate. content: %{public}d, usage: %{public}d, "\
+        "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
+        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
+        "F", rendererFlags, appInfo.appUid, rendererOptions.rendererInfo.toneFlag ? "T" : "F");
+    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
+
+    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
+    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
+    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
+    audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
+    audioRenderer->rendererInfo_.isOffloadAllowed = false;
+    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
+    return true;
+}
+
+std::shared_ptr<AudioRenderer> AudioRenderer::SetupStaticRendererFinal(
+    std::shared_ptr<AudioRendererPrivate> audioRenderer,
+    const AudioRendererOptions &rendererOptions,
+    std::shared_ptr<StaticBufferEventCallback> callback)
+{
+    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
+    if (audioRenderer->SetParams(params) != SUCCESS) {
+        audioRenderer = nullptr;
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "SetParams failed in renderer!", false);
+        AUDIO_ERR_LOG("SetParams failed in renderer!");
+        return nullptr;
+    }
+    audioRenderer->SetRenderMode(RENDER_MODE_STATIC);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer->SetStaticBufferCallback(callback) == SUCCESS,
+        nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_CALLBACK_REGISTER_FAILED, "SetStaticBufferCallback fail", true),
+        "SetStaticBufferCallback fail");
+    RegisterAudioRendererDebugManager(audioRenderer);
+    return audioRenderer;
 }
 
 void AudioRenderer::SendRendererCreateError(const StreamUsage &sreamUsage,
@@ -626,9 +685,15 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
         (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.streamId);
     }
 
-    CHECK_AND_RETURN_RET_LOG(audioInterrupt_.mode == SHARE_MODE || audioInterrupt_.mode == INDEPENDENT_MODE,
-        ERR_INVALID_PARAM, "Invalid interrupt mode!");
-    CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(audioInterrupt_.streamId) == 0, ERR_INVALID_INDEX,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioInterrupt_.mode == SHARE_MODE || audioInterrupt_.mode == INDEPENDENT_MODE,
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "Invalid interrupt mode!", true),
+        "Invalid interrupt mode!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_->GetAudioSessionID(audioInterrupt_.streamId) == 0,
+        ERR_INVALID_INDEX,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_INDEX, "GetAudioSessionID failed", true),
         "GetAudioSessionID failed");
     sessionID_ = audioInterrupt_.streamId;
     audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
@@ -646,7 +711,10 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
 
     if (audioInterruptCallback_ == nullptr) {
         audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt_);
-        CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_CREATE_MEMORY_ALLOC_FAILED,
+                "Failed to allocate memory for audioInterruptCallback_", true),
             "Failed to allocate memory for audioInterruptCallback_");
     }
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_,
@@ -657,19 +725,28 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
 {
     if (!outputDeviceChangeCallback_) {
         outputDeviceChangeCallback_ = std::make_shared<OutputDeviceChangeWithInfoCallbackImpl>();
-        CHECK_AND_RETURN_RET_LOG(outputDeviceChangeCallback_ != nullptr, ERROR, "Memory allocation failed");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(outputDeviceChangeCallback_ != nullptr, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_CREATE_MEMORY_ALLOC_FAILED, "Memory allocation failed", true),
+            "Memory allocation failed");
     }
 
     outputDeviceChangeCallback_->SetAudioRendererObj(weak_from_this());
 
     uint32_t sessionId;
     int32_t ret = GetAudioStreamIdInner(sessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get sessionId failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_INDEX, "Get sessionId failed", true),
+        "Get sessionId failed");
 
     usedSessionId_.push_back(sessionId);
     ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionId,
         outputDeviceChangeCallback_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_CALLBACK_REGISTER_FAILED, "Register failed", true),
+        "Register failed");
 
     return SUCCESS;
 }
@@ -698,11 +775,17 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
         audioStream_->SetStaticBufferInfo(staticBufferInfo_);
     }
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "SetAudioStreamInfo failed", true),
+        HILOG_COMM_ERROR("[InitAudioStream]SetParams SetAudioStreamInfo Failed"));
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::SET_AUDIO_STREAM_INFO);
-    CHECK_AND_CALL_FUNC_RETURN_RET(!ret, ret, HILOG_COMM_ERROR("[InitAudioStream]SetParams SetAudioStreamInfo Failed"));
 
     ret = GetAudioStreamIdInner(sessionID_);
-    CHECK_AND_CALL_FUNC_RETURN_RET(!ret, ret, HILOG_COMM_ERROR("[InitAudioStream]GetAudioStreamId err"));
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_INDEX, "GetAudioStreamId failed", true),
+        HILOG_COMM_ERROR("[InitAudioStream]GetAudioStreamId err"));
     InitLatencyMeasurement(audioStreamParams);
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::INIT_AUDIO_STREAM);
     return SUCCESS;
@@ -798,22 +881,33 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 #endif
 
     int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(audioStreamParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "CheckRendererAudioStreamInfo fail!", true),
+        "CheckRendererAudioStreamInfo fail!");
 
     isHWDecodingType_ = IsHWDecodingType(params.encodingType);
     rendererInfo_.audioFlag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : AUDIO_OUTPUT_FLAG_NORMAL;
 
     ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "PrepareAudioStream failed", true),
+        "PrepareAudioStream failed");
 
     ret = InitAudioStream(audioStreamParams);
     if (ret != SUCCESS) {
         // if the normal stream creation fails, return fail, other try create normal stream
-        CHECK_AND_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret, "Normal Stream Init Failed");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_CREATE_OPERATION_FAILED, "Normal Stream Init Failed", true),
+            "Normal Stream Init Failed");
         ret = HandleCreateFastStreamError(audioStreamParams, audioStreamType);
     }
 
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "SetAudioStreamInfo Failed", true),
         HILOG_COMM_ERROR("[SetParams]SetAudioStreamInfo Failed"));
     AUDIO_INFO_LOG("SetAudioStreamInfo Succeeded");
 
@@ -826,11 +920,15 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitOutputDeviceChangeCallback();
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "InitOutputDeviceChangeCallback Failed", true),
         HILOG_COMM_ERROR("[SetParams]InitOutputDeviceChangeCallback Failed"));
 
     ret = InitFormatUnsupportedErrorCallback();
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "InitFormatUnsupportedErrorCallback Failed", true),
         HILOG_COMM_ERROR("[SetParams]InitFormatUnsupportedErrorCallback Failed"));
 
     InitAudioRouteCallback();
@@ -866,7 +964,9 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, audioStreamParams.originalSessionId, networkId);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "CreateRendererClient failed", true),
         HILOG_COMM_ERROR("[PrepareAudioStream]CreateRendererClient failed"));
     HILOG_COMM_INFO("[PrepareAudioStream]StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
@@ -880,7 +980,10 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
             appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_CREATE_INVALID_PARAM, "GetPlayBackStream failed", true),
+            "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
         audioStream_->NotifyRouteUpdate(flag, networkId);
@@ -1119,6 +1222,8 @@ bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
     bool result = audioStream_->StartAudioStream(cmdType);
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_AUDIO_STREAM);
     if (!result) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_OPERATION_FAILED, "Start audio stream failed", true);
         HILOG_COMM_ERROR("[GetStartStreamResult]Start audio stream failed");
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
         if (!audioStream_->GetSilentModeAndMixWithOthers()) {
@@ -1234,7 +1339,9 @@ bool AudioRendererPrivate::IsRestoreOrStopNeeded()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioStream_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(audioStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_QUERY_NULL_POINTER, "audio stream is null", true),
         HILOG_COMM_ERROR("[IsRestoreOrStopNeeded]audio stream is null"));
     return audioStream_->IsRestoreNeeded() || audioStream_->GetStopFlag();
 }
@@ -1308,9 +1415,46 @@ int32_t AudioRendererPrivate::ActivateAudioInterruptInStart(const bool isMute)
         audioInterrupt_.state = audioInterruptState_.load();
         HandleAudioInterruptInfo();
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == 0, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_START_OPERATION_FAILED, "ActivateAudioInterrupt Failed", true),
+            HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
     }
     return SUCCESS;
+}
+
+bool AudioRendererPrivate::ValidateStartState()
+{
+    RendererState state = GetStatusInner();
+    if (state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED) {
+        return true;
+    }
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        PLAY_START_ILLEGAL_STATE, "Illegal state", true);
+    HILOG_COMM_ERROR("[Start]Start failed. Illegal state:%{public}u", state);
+    return false;
+}
+
+bool AudioRendererPrivate::ValidateNotSwitching()
+{
+    if (!isSwitching_) {
+        return true;
+    }
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        PLAY_START_ILLEGAL_STATE, "Switching state", true);
+    HILOG_COMM_ERROR("[Start]Start failed. Switching state: %{public}d", isSwitching_);
+    return false;
+}
+
+bool AudioRendererPrivate::ValidateAudioStream()
+{
+    if (audioStream_ != nullptr) {
+        return true;
+    }
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        PLAY_START_NULL_POINTER, "audio stream is null", true);
+    HILOG_COMM_ERROR("[Start]audio stream is null");
+    return false;
 }
 
 int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
@@ -1322,7 +1466,7 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     std::unique_lock<std::shared_mutex> lock;
-    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+    if (callbackLoopTid_ != gettid()) {
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     HILOG_COMM_INFO("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
@@ -1330,28 +1474,30 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
         sessionID_, audioInterrupt_.audioFocusType.streamType, GetVolumeInner(), audioInterrupt_.mode);
     AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
     bool silentControl = false;
-    CHECK_AND_CALL_FUNC_RETURN_RET(IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
-        ERROR, HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
-    RendererState state = GetStatusInner();
-    CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED,
-        ERR_ILLEGAL_STATE, HILOG_COMM_ERROR("[Start]Start failed. Illegal state:%{public}u", state));
-
-    CHECK_AND_CALL_FUNC_RETURN_RET(!isSwitching_, ERR_ILLEGAL_STATE,
-        HILOG_COMM_ERROR("[Start]Start failed. Switching state: %{public}d", isSwitching_));
-
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(
+        IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
+        ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_PERMISSION_DENIED, "IsAllowedStartBackground is false", true),
+        HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
+    CHECK_AND_RETURN_RET_LOG(ValidateStartState(), ERR_ILLEGAL_STATE, "ValidateStartState failed");
+    CHECK_AND_RETURN_RET_LOG(ValidateNotSwitching(), ERR_ILLEGAL_STATE, "ValidateNotSwitching failed");
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
         audioInterrupt_.streamId == INVALID_STREAM_ID) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_ILLEGAL_STATE, "Invalid streamType or streamId", false);
         return ERR_ILLEGAL_STATE;
     }
-
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioStream_ != nullptr, ERROR, HILOG_COMM_ERROR("[Start]audio stream is null"));
+    CHECK_AND_RETURN_RET_LOG(ValidateAudioStream(), ERROR, "ValidateAudioStream failed");
 
     float duckVolume = audioStream_->GetDuckVolume();
     bool isMute = audioStream_->GetMute() || silentControl;
     AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d", duckVolume, isMute);
 
     int32_t ret = ActivateAudioInterruptInStart(isMute);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_OPERATION_FAILED, "ActivateAudioInterrupt Failed", false));
     ret = GetStartStreamResult(cmdType) ? SUCCESS : ERROR;
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_END);
     AudioPolicyManager::GetInstance().RecordBootAnimationClientStateTime(g_bootAnimationInfo);
@@ -1384,7 +1530,10 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
     });
     MockPcmData(buffer, bufferSize);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_SEND_DATA_NULL_POINTER, "audioStream_ is nullptr", true),
+        "audioStream_ is nullptr");
     int32_t size = currentStream->Write(buffer, bufferSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
@@ -1402,7 +1551,10 @@ int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t 
         return inSwitchingFlag_ == false;
     });
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_SEND_DATA_NULL_POINTER, "audioStream_ is nullptr", true),
+        "audioStream_ is nullptr");
     int32_t size = currentStream->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(pcmBuffer), size);
@@ -1522,13 +1674,17 @@ int32_t AudioRendererPrivate::PauseImpl(StateChangeCmdType cmdType)
     }
     HILOG_COMM_INFO("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE, "Pause failed. Switching state: %{public}d",
-        isSwitching_);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_PAUSE_ILLEGAL_STATE, "Switching state", true),
+        "Pause failed. Switching state: %{public}d", isSwitching_);
 
     audioInterrupt_.state = audioInterruptState_.load();
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_PAUSE_OPERATION_FAILED, "DeactivateAudioInterrupt Failed", false);
             AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
         }
         state_ = RENDERER_PAUSED;
@@ -1536,7 +1692,9 @@ int32_t AudioRendererPrivate::PauseImpl(StateChangeCmdType cmdType)
     }
 
     RendererState state = GetStatusInner();
-    CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_RUNNING, ERR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(state == RENDERER_RUNNING, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_PAUSE_ILLEGAL_STATE, "State is not running", true),
         HILOG_COMM_ERROR("[Pause]State of stream is not running. Illegal state:%{public}u", state));
     bool result = audioStream_->PauseAudioStream(cmdType);
     if (result) {
@@ -1546,6 +1704,8 @@ int32_t AudioRendererPrivate::PauseImpl(StateChangeCmdType cmdType)
     // When user is intentionally pausing, deactivate to remove from audioFocusInfoList_
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_PAUSE_OPERATION_FAILED, "DeactivateAudioInterrupt Failed", false);
         AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
     }
     (void)audioStream_->SetDuckVolume(1.0f);
@@ -1561,7 +1721,9 @@ int32_t AudioRendererPrivate::StopImpl()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_STOP_ILLEGAL_STATE, "Switching state", true),
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     audioInterrupt_.state = audioInterruptState_.load();
     if (IsNoStreamRenderer()) {
@@ -1615,6 +1777,8 @@ int32_t AudioRendererPrivate::ReleaseImpl()
 
     abortRestore_ = true;
     if (audioStream_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_RELEASE_NULL_POINTER, "audioStream is null", false);
         AUDIO_ERR_LOG("audioStream is null");
         SetReleaseFlagNoLock(false);
         return ERR_ILLEGAL_STATE;
@@ -2139,7 +2303,9 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
         audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
         if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
-            CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            CHECK_AND_CALL_FUNC_RETURN_REPORT(ret == SUCCESS,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    PLAY_PAUSE_OPERATION_FAILED, "ActivateAudioInterrupt Failed", false),
                 HILOG_COMM_ERROR("[SetSilentModeAndMixWithOthers]ActivateAudioInterrupt Failed"));
         }
         audioStream_->SetSilentModeAndMixWithOthers(on);
@@ -2149,7 +2315,9 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
         audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
-            CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            CHECK_AND_CALL_FUNC_RETURN_REPORT(ret == SUCCESS,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    PLAY_PAUSE_OPERATION_FAILED, "ActivateAudioInterrupt Failed", false),
                 HILOG_COMM_ERROR("[SetSilentModeAndMixWithOthers]ActivateAudioInterrupt Failed"));
         }
         return;
@@ -2356,7 +2524,10 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     SetSwitchInfoInner(info, audioStream);
 
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
-    CHECK_AND_CALL_FUNC_RETURN_RET(res == SUCCESS, false, HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"));
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SetAudioStreamInfo failed", true),
+        HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"));
     audioStream->SetDefaultOutputDevice(info.defaultOutputDevice, true);
     audioStream->SetRenderMode(info.renderMode);
     callbackLoopTid_ = audioStream->GetCallbackLoopTid();
@@ -3176,11 +3347,17 @@ int32_t AudioRendererPrivate::InitFormatUnsupportedErrorCallback()
 {
     if (!formatUnsupportedErrorCallback_) {
         formatUnsupportedErrorCallback_ = std::make_shared<FormatUnsupportedErrorCallbackImpl>();
-        CHECK_AND_RETURN_RET_LOG(formatUnsupportedErrorCallback_ != nullptr, ERROR, "Memory allocation failed");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(formatUnsupportedErrorCallback_ != nullptr, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_CREATE_MEMORY_ALLOC_FAILED, "Memory allocation failed", true),
+            "Memory allocation failed");
     }
     int32_t ret = AudioPolicyManager::GetInstance().SetAudioFormatUnsupportedErrorCallback(
         formatUnsupportedErrorCallback_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_CALLBACK_REGISTER_FAILED, "Register failed", true),
+        "Register failed");
     return SUCCESS;
 }
 
@@ -3205,7 +3382,9 @@ int32_t AudioRendererPrivate::StartDataCallback()
 {
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     RendererState state = GetStatusInner();
-    CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_START_ILLEGAL_STATE, "Illegal state", true),
         HILOG_COMM_ERROR("[StartDataCallback]StartDataCallback failed. Illegal state:%{public}u", state));
     return audioStream_->SetOffloadDataCallbackState(0); // 0 hdi state need data
 }
@@ -3227,7 +3406,9 @@ void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
 
-    CHECK_AND_CALL_FUNC_RETURN(audioStream_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_REPORT(audioStream_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CONFING_NULL_POINTER, "audio stream is null", false),
         HILOG_COMM_ERROR("[SetAudioHapticsSyncId]audio stream is null"));
 
     if (audioHapticsSyncId > 0) {
@@ -3244,7 +3425,9 @@ void AudioRendererPrivate::ResetFirstFrameState()
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
 
-    CHECK_AND_CALL_FUNC_RETURN(audioStream_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_REPORT(audioStream_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CONFING_NULL_POINTER, "audio stream is null", false),
         HILOG_COMM_ERROR("[ResetFirstFrameState]audio stream is null"));
 
     audioStream_->ResetFirstFrameState();
@@ -3254,7 +3437,9 @@ int32_t AudioRendererPrivate::StopDataCallback()
 {
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     RendererState state = GetStatusInner();
-    CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_STOP_ILLEGAL_STATE, "Illegal state", true),
         HILOG_COMM_ERROR("[StopDataCallback]StopDataCallback failed. Illegal state:%{public}u", state));
     return audioStream_->SetOffloadDataCallbackState(3); // 3 hdi state full
 }
@@ -3316,16 +3501,22 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     streamDesc->rendererInfo_.forceToNormal = true;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
         audioStreamParams.originalSessionId, networkId);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "CreateRendererClient failed", true),
         HILOG_COMM_ERROR("[HandleCreateFastStreamError]CreateRendererClient failed"));
     AUDIO_INFO_LOG("Create normal renderer, id: %{public}u", audioStreamParams.originalSessionId);
     UpdateAudioStreamParamsByStreamDescriptor(audioStreamParams, streamDesc);
 
     audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType, appInfo_.appUid);
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioStream_ != nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(audioStream_ != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "Re-create normal stream failed", true),
         HILOG_COMM_ERROR("[HandleCreateFastStreamError]Re-create normal stream failed."));
     ret = InitAudioStream(audioStreamParams);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_OPERATION_FAILED, "InitAudioStream failed", true),
         HILOG_COMM_ERROR("[HandleCreateFastStreamError]InitAudioStream failed"));
     audioStream_->SetRenderMode(rendererInfo_.isStatic ? RENDER_MODE_STATIC : RENDER_MODE_CALLBACK);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
