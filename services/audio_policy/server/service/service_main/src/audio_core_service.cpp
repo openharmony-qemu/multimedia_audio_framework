@@ -3129,7 +3129,7 @@ int32_t AudioCoreService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
         return SUCCESS;
     }
-    sessionSourceTypeMap_[sessionID] = sessionInfo.sourceType;
+
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = pipeManager_->GetPipeList();
     std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->FindPipeBySessionId(pipeList, sessionID);
     if (pipeInfo != nullptr && IsPipeInSourceStrategyMap(pipeInfo, sessionID)) {
@@ -3138,7 +3138,7 @@ int32_t AudioCoreService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo
             sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;
             return SUCCESS;
     }
-
+    sessionSourceTypeMap_[sessionID] = sessionInfo.sourceType;
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         if (GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before -- it should not be happen!!
@@ -3190,16 +3190,19 @@ int32_t AudioCoreService::ReloadCaptureSessionSoftLink()
 bool AudioCoreService::HasNormalTypeCapturerSession(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList)
 {
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    if (sourceStrategyMap == nullptr) {
+        sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    }
     for (const auto &pipe : pipeList) {
         if (pipe == nullptr) {
             continue;
         }
 
         for (const auto &stream : pipe->streamDescriptors_) {
-            CHECK_AND_RETURN_RET_LOG(stream == nullptr || !stream->IsRecording() ||
-                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0, true,
-                "stream not valid for normal capture");
-            return true;
+            CHECK_AND_RETURN_RET(stream == nullptr || !stream->IsRecording() ||
+                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0 ||
+                sourceStrategyMap->count(stream->capturerInfo_.sourceType) > 0, true);
         }
     }
     return false;
@@ -3214,8 +3217,9 @@ void AudioCoreService::OnCapturerSessionRemoved(uint64_t sessionID)
         SourceType sourceType = it->second;
         sessionSourceTypeMap_.erase(it);
         if (specialSourceTypeSet_.count(sourceType) > 0) {
-            CHECK_AND_RETURN_LOG(sourceType != SOURCE_TYPE_REMOTE_CAST, "Special source type");
-            HandleRemoteCastDevice(false);
+            if (sourceType == SOURCE_TYPE_REMOTE_CAST) {
+                HandleRemoteCastDevice(false);
+            }
             return;
         } else {
             if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
