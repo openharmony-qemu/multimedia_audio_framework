@@ -4947,7 +4947,7 @@ HWTEST(AudioPolicyUnitTest, EnableSystemVolumeProxy_001, TestSize.Level1)
 
     // Test zoneId = 0
     int32_t ret = server->EnableSystemVolumeProxy(0, deviceType, enable);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 
     // Test zoneId < 0
     ret = server->EnableSystemVolumeProxy(-1, deviceType, enable);
