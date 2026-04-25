@@ -140,6 +140,7 @@ struct AudioModuleInfo {
     std::string sceneName;
     std::string sourceType;
     std::string offloadEnable;
+    std::string hdPlayBackMode;
 
     std::string ecType;
     std::string ecAdapter;
