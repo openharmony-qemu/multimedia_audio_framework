@@ -2769,7 +2769,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         AUDIO_INFO_LOG("SetSwitchInfo fail, try again, audioFlag: %{public}u", flag);
         switchResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
-            "Init ipc stream failed");
     }
     std::shared_ptr<IAudioStream> oldAudioStream = audioStream_;
     // Update audioStream_ to newAudioStream in both AudioRendererPrivate and AudioInterruptCallbackImpl.
