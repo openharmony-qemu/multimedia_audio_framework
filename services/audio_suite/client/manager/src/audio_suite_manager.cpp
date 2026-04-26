@@ -72,7 +72,7 @@ int32_t AudioSuiteManager::Init()
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
                            ERR_ILLEGAL_STATE),
             "suite engine already inited", true),
-        "suite engine already inited111");
+        "suite engine already inited");
 
     suiteEngine_ = std::make_shared<AudioSuiteEngine>(*this);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
