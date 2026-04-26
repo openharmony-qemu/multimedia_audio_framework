@@ -289,6 +289,7 @@ enum class ProblemCategory : uint8_t {
     FAULT_CONTROL_ABNORMAL = 0x08,
     FAULT_DEVICE_SWUTCG_FAIL = 0x09,
     FAULT_STATE_INCONSISTENT = 0x0A,
+    FAULT_WRONG_AUDIO_EFFECT = 0x0B,
 };
 
 enum class OperationType : uint8_t {
@@ -314,6 +315,7 @@ enum class BusinessScenario : uint8_t {
     QUERY = 0x0A,
     CALLBACK = 0x0B,
     CONFING = 0x0C,
+    RENDER = 0x0D,
 };
 
 constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operationType,
