@@ -912,8 +912,8 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::FOCUS_EVENT, ERR_NOT_SUPPORTED),
-            "DisConnectNodes failed, node type error.", true);
+                           BusinessScenario::CONFING, ERR_NOT_SUPPORTED),
+            "destNode not midx node.", true);
         return ERR_NOT_SUPPORTED;
     }
 
@@ -921,8 +921,8 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::FOCUS_EVENT, ERR_ILLEGAL_STATE),
-            "node to be connected is invalid.", true);
+                           BusinessScenario::CONFING, ERR_ILLEGAL_STATE),
+            "srcNode not connet destNode", true);
         return ERR_ILLEGAL_STATE;
     }
 
@@ -930,8 +930,8 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::FOCUS_EVENT, ERR_NOT_SUPPORTED),
-            "node to be connected is invalid.", true);
+                           BusinessScenario::CONFING, ERR_NOT_SUPPORTED),
+            "midx node only one connected", true);
         return ERR_NOT_SUPPORTED;
     }
 
@@ -1012,7 +1012,7 @@ int32_t AudioSuitePipeline::RenderFrame(
         if (pipelineState_ != PIPELINE_RUNNING) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::GENERAL,
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
                            ERR_ILLEGAL_STATE),
             "RenderFrame failed, pipelineState state is not running.", true);
             AUDIO_ERR_LOG("RenderFrame failed, pipelineState state is not running.");
@@ -1024,9 +1024,9 @@ int32_t AudioSuitePipeline::RenderFrame(
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::GENERAL, ERR_ILLEGAL_STATE),
-                "RenderFrame failed, outputNode_ is nullptr.", true);
-            AUDIO_ERR_LOG("RenderFrame failed, outputNode_ is nullptr.");
+                               BusinessScenario::RENDER, ERR_ILLEGAL_STATE),
+                "RenderFrame failed, outputNode is nullptr.", true);
+            AUDIO_ERR_LOG("RenderFrame failed, outputNode is nullptr.");
             TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
