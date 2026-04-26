@@ -816,22 +816,12 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
 
     auto request = [this, srcNodeId, destNodeId]() {
         if (srcNodeId == destNodeId) {
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_NOT_SUPPORTED),
-                "DisConnectNodes failed, srcNodeId same destNodeId.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, srcNodeId same destNodeId.");
             TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_AUDIO_SUITE_NODE_NOT_EXIST),
-                "DisConnectNodes failed, node id is invailed.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, node id is invailed.");
             TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
@@ -840,22 +830,12 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
         auto srcNode = nodeMap_[srcNodeId];
         auto destNode = nodeMap_[destNodeId];
         if ((srcNode == nullptr) || (destNode == nullptr)) {
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_AUDIO_SUITE_NODE_NOT_EXIST),
-                "DisConnectNodes failed, node ptr is nullptr.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, node ptr is nullptr.");
             TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) {
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_NOT_SUPPORTED),
-                "DisConnectNodes failed, node type error.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, node type error.");
             TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
