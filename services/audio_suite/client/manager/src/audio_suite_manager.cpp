@@ -1260,7 +1260,7 @@ void AudioSuiteManager::OnDisConnectNodes(int32_t result)
             static_cast<int32_t>(getuid()),
             BuildErrorCode(
                 ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING, result),
-            "DisConnectNodes fail.", true),
+            "DisConnectNodes fail.", true);
     }
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
