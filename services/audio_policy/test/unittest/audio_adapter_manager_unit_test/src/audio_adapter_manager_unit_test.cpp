@@ -411,7 +411,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
     ret = audioAdapterManager->GetZoneVolumeLevel(zoneId1_, streamType);
     EXPECT_EQ(ret, 0);
 
-    audioAdapterManager->SetSystemVolumeLevel(streamType, 5, volDeviceDesc);
+    VolumeScale volumeTest{5, 5};
+    audioAdapterManager->SetSystemVolumeLevel(streamType, volumeTest, volDeviceDesc);
     int32_t volumeLevel = audioAdapterManager->GetSystemVolumeLevel(streamType, zoneId1_);
     EXPECT_EQ(volumeLevel, 5);
 
