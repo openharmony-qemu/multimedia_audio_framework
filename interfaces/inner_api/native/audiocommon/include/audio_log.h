@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.1
+ * limitations under the License.
  */
 
 #ifndef OHOS_AUDIO_LOG_H
@@ -58,12 +58,12 @@
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_REPORT(cond, func1, func2) \
-    do {                                               \
-        if (!(cond)) {                                 \
-            func1;                                     \
-            func2;                                     \
-            return;                                    \
-        }                                              \
+    do {                                                      \
+        if (!(cond)) {                                        \
+            func1;                                            \
+            func2;                                            \
+            return;                                           \
+        }                                                     \
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_RET(cond, ret, func) \
@@ -75,12 +75,12 @@
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(cond, ret, func1, func2) \
-    do {                                               \
-        if (!(cond)) {                                 \
-            func1;                                     \
-            func2;                                     \
-            return ret;                              \
-        }                                              \
+    do {                                                               \
+        if (!(cond)) {                                                 \
+            func1;                                                     \
+            func2;                                                     \
+            return ret;                                                \
+        }                                                              \
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_LOG(cond, func, fmt, ...) \
@@ -89,15 +89,6 @@
             AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
             func;                                      \
             return;                                    \
-        }                                              \
-    } while (0)
-
-#define CHECK_AND_CALL_FUNC_RETURN_RET_LOG(cond, ret, func, fmt, ...) \
-    do {                                               \
-        if (!(cond)) {                                 \
-            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
-            func;                                      \
-            return ret;                                \
         }                                              \
     } while (0)
 
@@ -110,12 +101,12 @@
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_RET_LOG(cond, ret, func, fmt, ...) \
-    do {                                               \
-        if (!(cond)) {                                 \
-            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
-            func;                                      \
-            return ret;                                \
-        }                                              \
+    do {                                                              \
+        if (!(cond)) {                                                \
+            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);                        \
+            func;                                                     \
+            return ret;                                               \
+        }                                                             \
     } while (0)
 
 #define CHECK_AND_RETURN_LOG(cond, fmt, ...)           \
