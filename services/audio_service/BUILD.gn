@@ -197,6 +197,7 @@ config("audio_client_public_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../interfaces/inner_api/native/audiorenderer/include",
+    "../../services/audio_service/common/include/dfx",
     "../../frameworks/native/audioqosmanager/include",
     "${audio_framework_root}/services/audio_policy/server/include",
   ]

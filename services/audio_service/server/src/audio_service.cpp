@@ -19,6 +19,7 @@
 #include "audio_service.h"
 #include "audio_stream_common.h"
 
+#include <unistd.h>
 #include <algorithm>
 #include <thread>
 
@@ -29,6 +30,7 @@
 #include "policy_handler.h"
 #include "core_service_handler.h"
 #include "ipc_stream_in_server.h"
+#include "stream_dfx_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "source/i_audio_capture_source.h"
@@ -496,6 +498,8 @@ void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
     std::unique_lock<std::mutex> lock(capturerMapMutex_);
     AUDIO_INFO_LOG("Capturer: %{public}u will be removed.", sessionId);
     if (!allCapturerMap_.count(sessionId)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Capturer in not in map", false);
         AUDIO_WARNING_LOG("Capturer in not in map!");
         return;
     }
@@ -1336,6 +1340,8 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
     if (allCapturerMap_.count(sessionId)) {
         std::shared_ptr<CapturerInServer> capturer = allCapturerMap_[sessionId].lock();
         if (capturer == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CALLBACK_ILLEGAL_STATE, "capturerinserver is null", false);
             AUDIO_ERR_LOG("capturerinserver is null");
             capturerLock.unlock();
             return;
@@ -1658,8 +1664,8 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
         if (allCapturerMap_.find(sessionId) != allCapturerMap_.end()) {
             std::shared_ptr<CapturerInServer> capturerInServer = allCapturerMap_[sessionId].lock();
             CHECK_AND_CALL_FUNC_RETURN_RET_LOG(capturerInServer != nullptr, RESTORE_ERROR,
-                StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
-                    PLAY_CREATE_OPERATION_FAILED, "RestoreSession capturerInServer is null", false),
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    RECORD_CREATE_ILLEGAL_STATE, "Session could be released, restore failed", false),
                 "Session could be released, restore failed");
             return capturerInServer->RestoreSession(restoreInfo);
         }
@@ -2030,7 +2036,10 @@ int32_t AudioService::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool c
         capturerInServer = allCapturerMap_[sessionId].lock();
     }
     lock.unlock();
-    CHECK_AND_RETURN_RET_LOG(capturerInServer != nullptr, ERROR, "sessionid not in allCapturerMap");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(capturerInServer != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "sessionid not in allCapturerMap", false),
+        "sessionid not in allCapturerMap");
     return capturerInServer->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }
 

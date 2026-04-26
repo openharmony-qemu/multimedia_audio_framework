@@ -40,6 +40,7 @@ config("audio_external_library_config") {
     "../../../frameworks/native/audiodefinitions/include",
     "../../../frameworks/native/audiostream/include",
     "../../../services/audio_service/client/include",
+    "../../../services/audio_service/common/include/dfx",
     "../../../interfaces/kits/c/common",
   ]
 }

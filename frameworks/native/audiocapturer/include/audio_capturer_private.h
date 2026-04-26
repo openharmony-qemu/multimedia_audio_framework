@@ -209,6 +209,13 @@ private:
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
         CapturerState previousState);
     void CheckStartResultAndReport(bool result);
+    int32_t InitAndReportErrorEvent(AudioStreamParams audioStreamParams,
+        IAudioStream::StreamClass streamClass, const AudioCapturerParams params);
+    int32_t CheckStateAndReportErrorEvent(CapturerState state);
+    int32_t CheckDegradeFallback(AudioStreamParams audioStreamParams, bool degradeFallback, size_t validDataLength,
+        const size_t processFrameSize, size_t &processBufSize, size_t &micInBufSize, size_t &ecBufSize);
+    bool CheckForGenerateNewStream();
+    int32_t CheckForStartImpl(CapturerState state);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
@@ -267,6 +274,9 @@ public:
     void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
+    int32_t InterruptHintResumeHandle(State currentState);
+    int32_t InterruptHintPauseHandle(State currentState);
+    void WaitForSwitchTimeout(bool result);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;
     bool isForcePaused_ = false;

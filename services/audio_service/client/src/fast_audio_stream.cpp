@@ -16,12 +16,14 @@
 #define LOG_TAG "FastAudioStream"
 #endif
 
+#include <unistd.h>
 #include <chrono>
 #include <thread>
 #include <vector>
 
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
+#include "stream_dfx_manager.h"
 
 #include "fast_audio_stream.h"
 #include "app_bundle_manager.h"
@@ -464,9 +466,13 @@ bool FastAudioStream::GetMute()
 int32_t FastAudioStream::SetMuteHint(bool mute)
 {
     AUDIO_INFO_LOG("FastAudioStream: SetMuteHint %{public}s", mute ? "true" : "false");
-    CHECK_AND_RETURN_RET_LOG(eMode_ == AUDIO_MODE_RECORD, ERR_NOT_SUPPORTED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(eMode_ == AUDIO_MODE_RECORD, ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_NOT_SUPPORTED, "SetMuteHint not supported in playback mode", true),
         "FastAudioStream: SetMuteHint not supported in playback mode");
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "null process", true),
         "FastAudioStream: failed: null process");
     return processClient_->SetMuteHint(mute);
 }
@@ -589,8 +595,11 @@ int32_t FastAudioStream::SetRendererFirstFrameWritingCallback(
 
 int32_t FastAudioStream::SetCaptureMode(AudioCaptureMode captureMode)
 {
-    CHECK_AND_RETURN_RET_LOG(captureMode == CAPTURE_MODE_CALLBACK && eMode_ == AUDIO_MODE_RECORD,
-        ERR_INVALID_OPERATION, "%{public}s: not supported.", logTag_.c_str());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureMode == CAPTURE_MODE_CALLBACK && eMode_ == AUDIO_MODE_RECORD,
+        ERR_INVALID_OPERATION,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_NOT_SUPPORTED, "not supported", true),
+        "%{public}s: not supported.", logTag_.c_str());
     return SUCCESS;
 }
 
@@ -602,12 +611,17 @@ AudioCaptureMode FastAudioStream::GetCaptureMode()
 int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
 {
     AUDIO_INFO_LOG("%{public}s enter.", logTag_.c_str());
-    CHECK_AND_RETURN_RET_LOG(callback && processClient_ && eMode_ == AUDIO_MODE_RECORD,
-        ERR_INVALID_PARAM, "%{public}s: callback or client is nullptr or mode is not record.",
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback && processClient_ && eMode_ == AUDIO_MODE_RECORD,
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_INVALID_PARAM, "callback or client is nullptr or mode is not record", true),
+        "%{public}s: callback or client is nullptr or mode is not record.",
         logTag_.c_str());
     micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(callback);
     int32_t ret = processClient_->SaveDataCallback(micProcClientCb_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_OPERATION_FAILED, "Client save data callback fail", true),
         "%{public}s: Client save data callback fail, ret %{public}d.", logTag_.c_str(), ret);
     return SUCCESS;
 }
@@ -717,7 +731,9 @@ int64_t FastAudioStream::GetFramesWritten()
 int64_t FastAudioStream::GetFramesRead()
 {
     int64_t result = -1; // -1 invalid frame
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, result,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, result,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "null process", true),
         "%{public}s: failed,null process", logTag_.c_str());
     result = processClient_->GetFramesRead();
     return result;
