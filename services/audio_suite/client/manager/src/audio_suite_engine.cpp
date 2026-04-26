@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.1
+ * limitations under the License.
  */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioSuiteEngine"
@@ -24,6 +24,7 @@
 #include "audio_suite_log.h"
 #include "audio_suite_engine.h"
 #include "audio_suite_pipeline.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,6 +137,11 @@ int32_t AudioSuiteEngine::CreatePipeline(PipelineWorkMode workMode)
 
         if (pipelineMap_.size() >= engineCfg_.maxPipelineNum_ ||
             (isExistRealtime_ == true && workMode == PIPELINE_REALTIME_MODE)) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                               ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS),
+                "engine create pipeline failed, more than max pipeline num.", true);
             AUDIO_ERR_LOG("engine create pipeline failed, more than max pipeline num.");
             managerCallback_.OnCreatePipeline(ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS, INVALID_PIPELINE_ID);
             return;
@@ -143,6 +149,11 @@ int32_t AudioSuiteEngine::CreatePipeline(PipelineWorkMode workMode)
 
         std::shared_ptr<AudioSuitePipeline> pipeline = std::make_shared<AudioSuitePipeline>(workMode);
         if (pipeline == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                               ERR_MEMORY_ALLOC_FAILED),
+                "engine create pipeline failed, malloc error.", true);
             AUDIO_ERR_LOG("engine create pipeline failed, malloc error.");
             managerCallback_.OnCreatePipeline(ERR_MEMORY_ALLOC_FAILED, INVALID_PIPELINE_ID);
             return;
@@ -176,6 +187,11 @@ int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
         AUDIO_DEBUG_LOG("DestroyPipeline enter");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::RELEASE, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
+                "engine destroy pipeline failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine destroy pipeline failed, pipeline id is invailed.");
             managerCallback_.OnDestroyPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
@@ -210,6 +226,11 @@ int32_t AudioSuiteEngine::StartPipeline(uint32_t pipelineId)
         AUDIO_DEBUG_LOG("StartPipeline enter");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::START,
+                               ERR_ILLEGAL_STATE),
+                "engine start pipeline failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine start pipeline failed, pipeline id is invailed.");
             managerCallback_.OnStartPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
@@ -237,6 +258,11 @@ int32_t AudioSuiteEngine::StopPipeline(uint32_t pipelineId)
         AUDIO_DEBUG_LOG("StopPipeline enter");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::STOP,
+                               ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
+                "engine stop pipeline failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine stop pipeline failed, pipeline id is invailed.");
             managerCallback_.OnStopPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
@@ -512,8 +538,13 @@ int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
     auto request = [this, srcNodeId, destNodeId]() {
         AUDIO_DEBUG_LOG("ConnectNodes enter");
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
-            AUDIO_ERR_LOG("ConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.",
-                srcNodeId, destNodeId);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::SEND_DATA,
+                               ERR_INVALID_PARAM),
+                "The node does not exist.", true);
+            AUDIO_ERR_LOG("ConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.", srcNodeId,
+                          destNodeId);
             managerCallback_.OnConnectNodes(ERR_INVALID_PARAM);
             return;
         }
@@ -601,6 +632,11 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not RenderFrame.");
     auto request = [this, pipelineId, audioData, requestFrameSize, responseSize, finishedFlag]() {
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::GENERAL, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
+                "engine RenderFrame failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine RenderFrame failed, pipeline id is invailed.");
             managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
