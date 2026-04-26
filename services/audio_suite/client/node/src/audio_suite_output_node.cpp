@@ -134,7 +134,7 @@ int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int32_t arraySize,
     if (GetAudioNodeDataFinishedFlag() && CacheBufferEmpty()) {
         streamDfxMannager::GetIntance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCatagory::FAULT_WRONG_EFFECT, Operation::EDIT, BusinessScenario::GENERAL,
+            BuildErrorCode(ProblemCatagory::FAULT_WRONG_EFFECT, Operation::EDIT, BusinessScenario::RENDER,
                            ERR_NOT_SUPPORTED),
             "SetEqualizerFrequencyBandGains failed", true);
         AUDIO_ERR_LOG("multi output finished completed.");
