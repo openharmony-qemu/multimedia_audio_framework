@@ -315,6 +315,7 @@ enum class BusinessScenario : uint8_t {
     QUERY = 0x0A,
     CALLBACK = 0x0B,
     CONFING = 0x0C,
+    RENDER = 0x0D,
 };
 
 constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operationType,
