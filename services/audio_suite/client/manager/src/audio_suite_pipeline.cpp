@@ -524,7 +524,7 @@ int32_t AudioSuitePipeline::DestroyNodeForRun(uint32_t nodeId, std::shared_ptr<A
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
                            ERR_ILLEGAL_STATE),
-            "DestroyNode node failed, node id is invailed.", true);
+            "DestroyNode failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("DestroyNode failed, pipeline running, can not find output node, nodeId = %{public}d.", nodeId);
         return ERR_ILLEGAL_STATE;
     }
@@ -687,7 +687,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::SEND_DATA, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
+                               BusinessScenario::CONFING, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
                 "ConnectNodes failed, srcNodeId can not same destNodeId.", true);
             AUDIO_ERR_LOG("ConnectNodes failed, srcNodeId can not same destNodeId.");
             TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
@@ -698,7 +698,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+                               BusinessScenario::CONFING, ERR_INVALID_PARAM),
                 "ConnectNodes failed, node id is invailed.", true);
             AUDIO_ERR_LOG("ConnectNodes failed, node id is invailed.");
             TriggerCallback(CONNECT_NODES, ERR_INVALID_PARAM);
