@@ -36,6 +36,9 @@ public:
         Trace trace("AudioPlayingAppManager::UpdateAppsUid");
         std::lock_guard<std::mutex> lock(mutex_);
         std::vector<int32_t> appsUid(itBegin, itEnd);
+        if (currentAppsUid_ == appsUid) {
+            return;
+        }
         currentAppsUid_ = NormalizeAppsUid(appsUid);
     }
 
