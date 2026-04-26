@@ -354,7 +354,7 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
                            ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS),
-            "node create node failed", true);
+            "The number of nodes created exceeds the system limit", true);
         AUDIO_ERR_LOG("node create node failed, current type node max num is %{public}u.",
             nodeCounts_[static_cast<std::size_t>(builder.nodeType)]);
         return ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS;
@@ -369,7 +369,7 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
                            ERR_NOT_SUPPORTED),
-            "node to be created is invalid.", true),
+            "node type is not supported.", true),
         "node type: %{public}d is not supported.", builder.nodeType);
     return SUCCESS;
 }
@@ -1117,8 +1117,8 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_INVALID_PARAM),
-                "SetOptions", true);
+                               BusinessScenario::CONFING, ret),
+                "The SetOptions node interface reports an error.", true);
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
             TriggerCallback(SET_OPTIONS, ret);
             return;
