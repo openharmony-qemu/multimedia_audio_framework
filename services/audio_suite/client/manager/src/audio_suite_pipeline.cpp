@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.1
+ * limitations under the License.
  */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioSuitePipeline"
@@ -40,6 +40,7 @@
 #include "audio_suite_pure_voice_change_node.h"
 #include "audio_suite_tempo_pitch_node.h"
 #include "audio_suite_space_render_node.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -153,12 +154,22 @@ int32_t AudioSuitePipeline::Start()
 
     auto request = [this]() {
         if (pipelineState_ == PIPELINE_RUNNING) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::START, ERR_ILLEGAL_STATE),
+                "Current pipeline already running", true);
             AUDIO_INFO_LOG("Current pipeline already running, id is %{public}d", id_);
             TriggerCallback(START_PIPELINE, ERR_ILLEGAL_STATE);
             return;
         }
 
         if (outputNode_ == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::START,
+                               ERR_ILLEGAL_STATE),
+                "Current pipeline not have output node", true);
             AUDIO_INFO_LOG("Current pipeline not have output node");
             TriggerCallback(START_PIPELINE, ERR_ILLEGAL_STATE);
             return;
@@ -167,6 +178,11 @@ int32_t AudioSuitePipeline::Start()
         SetMixerNodeSampleRate();
 
         if (!CheckPipelineNode(outputNode_->GetAudioNodeId())) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::START,
+                               ERR_ILLEGAL_STATE),
+                "Current pipeline node connet status error", true);
             AUDIO_INFO_LOG("Current pipeline node connet status error, id is %{public}d", id_);
             TriggerCallback(START_PIPELINE, ERR_ILLEGAL_STATE);
             return;
@@ -190,12 +206,22 @@ int32_t AudioSuitePipeline::Stop()
         AUDIO_INFO_LOG("Stop pipeline, id is %{public}d", id_);
 
         if (pipelineState_ == PIPELINE_STOPPED) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::STOP,
+                           ERR_ILLEGAL_STATE),
+            "Current pipeline already stop", true);
             AUDIO_INFO_LOG("Current pipeline already stop, id is %{public}d", id_);
             TriggerCallback(STOP_PIPELINE, ERR_ILLEGAL_STATE);
             return;
         }
 
         if (outputNode_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::STOP,
+                           ERR_ILLEGAL_STATE),
+            "Current pipeline not output node", true);
             AUDIO_INFO_LOG("Current pipeline not output node, id is %{public}d", id_);
             TriggerCallback(STOP_PIPELINE, ERR_ILLEGAL_STATE);
             return;
@@ -292,6 +318,11 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
 
         node = CreateNodeForType(builder);
         if (node == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                               ERR_MEMORY_ALLOC_FAILED),
+                "create node failed, malloc error.", true);
             AUDIO_ERR_LOG("create node failed, malloc error.");
             TriggerCallback(CREATE_NODE, ERR_MEMORY_ALLOC_FAILED, INVALID_NODE_ID, id_);
             return;
@@ -319,6 +350,11 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
 int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
 {
     if (nodeCounts_[static_cast<std::size_t>(builder.nodeType)] >= GetMaxNodeNumsForType(builder.nodeType)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                           ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS),
+            "node create node failed", true);
         AUDIO_ERR_LOG("node create node failed, current type node max num is %{public}u.",
             nodeCounts_[static_cast<std::size_t>(builder.nodeType)]);
         return ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS;
@@ -327,7 +363,13 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
     bool isSupported;
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
     int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, &isSupported);
-    CHECK_AND_RETURN_RET_LOG((error == SUCCESS && isSupported), ERR_NOT_SUPPORTED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        (error == SUCCESS && isSupported), ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                           ERR_NOT_SUPPORTED),
+            "node to be created is invalid.", true),
         "node type: %{public}d is not supported.", builder.nodeType);
     return SUCCESS;
 }
@@ -408,10 +450,22 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
 
 int32_t AudioSuitePipeline::DestroyNode(uint32_t nodeId)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not DestroyNode.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        IsInit(), ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
+                           ERR_ILLEGAL_STATE),
+            "pipeline not init, can not DestroyNode.", true),
+        "pipeline not init, can not DestroyNode.");
 
     auto request = [this, nodeId]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::RELEASE, ERR_INVALID_PARAM),
+                "DestroyNode node failed, node id is invailed.", true);
             AUDIO_ERR_LOG("DestroyNode node failed, node id is invailed.");
             TriggerCallback(DESTROY_NODE, ERR_INVALID_PARAM, id_);
             return;
@@ -419,6 +473,11 @@ int32_t AudioSuitePipeline::DestroyNode(uint32_t nodeId)
 
         auto node = nodeMap_[nodeId];
         if (node == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::RELEASE, ERR_AUDIO_SUITE_NODE_NOT_EXIST),
+                "DestroyNode failed, node ptr nullptr.", true);
             AUDIO_ERR_LOG("DestroyNode failed, node ptr nullptr.");
             TriggerCallback(DESTROY_NODE, ERR_AUDIO_SUITE_NODE_NOT_EXIST, id_);
             return;
@@ -461,12 +520,22 @@ int32_t AudioSuitePipeline::DestroyNodeForStop(uint32_t nodeId, std::shared_ptr<
 int32_t AudioSuitePipeline::DestroyNodeForRun(uint32_t nodeId, std::shared_ptr<AudioNode> node)
 {
     if (outputNode_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
+                           ERR_ILLEGAL_STATE),
+            "DestroyNode node failed, node id is invailed.", true);
         AUDIO_ERR_LOG("DestroyNode failed, pipeline running, can not find output node, nodeId = %{public}d.", nodeId);
         return ERR_ILLEGAL_STATE;
     }
 
     // In the running state, the node is connected to the output node and cannot be deleted.
     if (IsConnected(outputNode_->GetAudioNodeId(), nodeId)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
+                           ERR_ILLEGAL_STATE),
+            "DestroyNode failed, pipeline running, can not destroy used node.", true);
         AUDIO_ERR_LOG("DestroyNode failed, pipeline running, can not destroy used node, nodeId = %{public}d.", nodeId);
         return ERR_ILLEGAL_STATE;
     }
@@ -615,12 +684,22 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
 {
     auto request = [this, srcNodeId, destNodeId]() {
         if (srcNodeId == destNodeId) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::SEND_DATA, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
+                "ConnectNodes failed, srcNodeId can not same destNodeId.", true);
             AUDIO_ERR_LOG("ConnectNodes failed, srcNodeId can not same destNodeId.");
             TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
             return;
         }
 
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+                "ConnectNodes failed, node id is invailed.", true);
             AUDIO_ERR_LOG("ConnectNodes failed, node id is invailed.");
             TriggerCallback(CONNECT_NODES, ERR_INVALID_PARAM);
             return;
@@ -636,6 +715,11 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
 
         if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT) ||
             ((srcNode->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) && (destNode->GetNodeType() != NODE_TYPE_OUTPUT))) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::SEND_DATA, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
+                "The node to be connected is invalid.", true);
             AUDIO_ERR_LOG("ConnectNodes src: %{public}d,dest: %{public}d error.",
                 srcNode->GetNodeType(), destNode->GetNodeType());
             TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
@@ -689,12 +773,22 @@ int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t dest
     std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode)
 {
     if (outputNode_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::SEND_DATA,
+                           ERR_ILLEGAL_STATE),
+            "ConnectNodes failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("ConnectNodes failed, pipeline running, can not find output node.");
         return ERR_ILLEGAL_STATE;
     }
 
     // srcNodeId in pipline running nodes
     if (IsConnected(outputNode_->GetAudioNodeId(), srcNodeId)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::SEND_DATA,
+                           ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
+            "ConnectNodes failed", true);
         AUDIO_ERR_LOG("ConnectNodes failed, pipeline running srcNode = %{public}d can not is used node.", srcNodeId);
         return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
     }
@@ -725,16 +819,33 @@ int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t dest
 
 int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not DisConnectNodes.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        IsInit(), ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::FOCUS_EVENT,
+                           ERR_ILLEGAL_STATE),
+            "pipeline not init, can not DisConnectNodes.", true),
+        "pipeline not init, can not DisConnectNodes.");
 
     auto request = [this, srcNodeId, destNodeId]() {
         if (srcNodeId == destNodeId) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::FOCUS_EVENT, ERR_NOT_SUPPORTED),
+                "DisConnectNodes failed, srcNodeId same destNodeId.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, srcNodeId same destNodeId.");
             TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::FOCUS_EVENT, ERR_AUDIO_SUITE_NODE_NOT_EXIST),
+                "DisConnectNodes failed, node id is invailed.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, node id is invailed.");
             TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
@@ -743,12 +854,22 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
         auto srcNode = nodeMap_[srcNodeId];
         auto destNode = nodeMap_[destNodeId];
         if ((srcNode == nullptr) || (destNode == nullptr)) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::FOCUS_EVENT, ERR_AUDIO_SUITE_NODE_NOT_EXIST),
+                "DisConnectNodes failed, node ptr is nullptr.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, node ptr is nullptr.");
             TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::FOCUS_EVENT, ERR_NOT_SUPPORTED),
+                "DisConnectNodes failed, node type error.", true);
             AUDIO_ERR_LOG("DisConnectNodes failed, node type error.");
             TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
@@ -787,6 +908,11 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode)
 {
     if (outputNode_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                           BusinessScenario::FOCUS_EVENT, ERR_ILLEGAL_STATE),
+            "DisConnectNodes failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("DisConnectNodes failed, pipeline running, can not find output node.");
         return ERR_ILLEGAL_STATE;
     }
@@ -797,14 +923,29 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     }
 
     if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                           BusinessScenario::FOCUS_EVENT, ERR_NOT_SUPPORTED),
+            "DisConnectNodes failed, node type error.", true);
         return ERR_NOT_SUPPORTED;
     }
 
     if (reverseConnections_.find(destNodeId) == reverseConnections_.end()) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                           BusinessScenario::FOCUS_EVENT, ERR_ILLEGAL_STATE),
+            "node to be connected is invalid.", true);
         return ERR_ILLEGAL_STATE;
     }
 
     if (reverseConnections_[destNodeId].size() <= 1) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                           BusinessScenario::FOCUS_EVENT, ERR_NOT_SUPPORTED),
+            "node to be connected is invalid.", true);
         return ERR_NOT_SUPPORTED;
     }
 
@@ -883,12 +1024,22 @@ int32_t AudioSuitePipeline::RenderFrame(
 
     auto request = [this, audioData, requestFrameSize, responseSize, finishedFlag]() {
         if (pipelineState_ != PIPELINE_RUNNING) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::GENERAL,
+                           ERR_ILLEGAL_STATE),
+            "RenderFrame failed, pipelineState state is not running.", true);
             AUDIO_ERR_LOG("RenderFrame failed, pipelineState state is not running.");
             TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
 
         if (outputNode_ == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::GENERAL, ERR_ILLEGAL_STATE),
+                "RenderFrame failed, outputNode_ is nullptr.", true);
             AUDIO_ERR_LOG("RenderFrame failed, outputNode_ is nullptr.");
             TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
@@ -963,6 +1114,11 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
 
     auto request = [this, nodeId, name, value]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::CONFING, ERR_INVALID_PARAM),
+                "SetOptions failed, node id is invailed.", true);
             AUDIO_ERR_LOG("SetOptions failed, node id is invailed.");
             TriggerCallback(SET_OPTIONS, ERR_INVALID_PARAM);
             return;
@@ -972,6 +1128,11 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         CHECK_AND_RETURN_LOG(node != nullptr, "SetOptions failed, node is nullptr.");
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::CONFING, ERR_INVALID_PARAM),
+                "SetOptions", true);
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
             TriggerCallback(SET_OPTIONS, ret);
             return;
