@@ -15,7 +15,6 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -34,16 +33,14 @@ const std::string TEST_SECOND_BUNDLE_NAME = "test.bundle.second";
 
 void SetTestBundleName(int32_t uid, const std::string &bundleName)
 {
-    std::lock_guard<std::mutex> lock(AudioBundleManager::bundleNameMapMutex_);
-    AudioBundleManager::bundleNameMap_[uid] = bundleName;
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
 }
 
 void ClearTestBundleNames()
 {
-    std::lock_guard<std::mutex> lock(AudioBundleManager::bundleNameMapMutex_);
-    AudioBundleManager::bundleNameMap_.erase(TEST_FIRST_APP_UID);
-    AudioBundleManager::bundleNameMap_.erase(TEST_SECOND_APP_UID);
-    AudioBundleManager::bundleNameMap_.erase(TEST_UNKNOWN_APP_UID);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(TEST_FIRST_APP_UID);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(TEST_SECOND_APP_UID);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(TEST_UNKNOWN_APP_UID);
 }
 
 class AudioPlayingAppManagerUnitTest : public testing::Test {

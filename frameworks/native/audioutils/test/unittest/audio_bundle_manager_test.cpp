@@ -63,7 +63,7 @@ HWTEST(AudioBundleManagerTest, GetBundleNameFromUidCached_001, TestSize.Level1)
 HWTEST(AudioBundleManagerTest, FindBundleNameFromMap_001, TestSize.Level1)
 {
     int32_t uid = 9998;
-    std::string result = AudioBundleManager::FindBundleNameFromMap(uid);
+    std::string result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
     EXPECT_EQ(result, "");
 }
 
@@ -78,12 +78,12 @@ HWTEST(AudioBundleManagerTest, InsertBundleNameToMap_001, TestSize.Level1)
     int32_t uid = 1001;
     std::string bundleName = "com.test.app1";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
     
-    std::string result = AudioBundleManager::FindBundleNameFromMap(uid);
+    std::string result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
     EXPECT_EQ(result, bundleName);
     
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
 }
 
 /**
@@ -97,10 +97,10 @@ HWTEST(AudioBundleManagerTest, EraseBundleNameFromMap_001, TestSize.Level1)
     int32_t uid = 1002;
     std::string bundleName = "com.test.app2";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName);
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
     
-    std::string result = AudioBundleManager::FindBundleNameFromMap(uid);
+    std::string result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
     EXPECT_EQ(result, "");
 }
 
@@ -115,12 +115,12 @@ HWTEST(AudioBundleManagerTest, GetBundleNameFromUidCached_002, TestSize.Level1)
     int32_t uid = 1003;
     std::string bundleName = "com.test.app3";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
     
     std::string result = AudioBundleManager::GetBundleNameFromUidCached(uid);
     EXPECT_EQ(result, bundleName);
     
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
 }
 
 /**
@@ -134,14 +134,14 @@ HWTEST(AudioBundleManagerTest, FindBundleNameFromMap_Concurrent_001, TestSize.Le
     const int32_t uid = 2001;
     const std::string bundleName = "com.test.concurrent";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
     
     std::vector<std::thread> threads;
     std::vector<std::string> results(10);
     
     for (int i = 0; i < 10; i++) {
         threads.emplace_back([&results, i, uid]() {
-            results[i] = AudioBundleManager::FindBundleNameFromMap(uid);
+            results[i] = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
         });
     }
     
@@ -153,7 +153,7 @@ HWTEST(AudioBundleManagerTest, FindBundleNameFromMap_Concurrent_001, TestSize.Le
         EXPECT_EQ(results[i], bundleName);
     }
     
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
 }
 
 /**
@@ -167,7 +167,7 @@ HWTEST(AudioBundleManagerTest, GetBundleNameFromUidCached_Concurrent_001, TestSi
     const int32_t uid = 2002;
     const std::string bundleName = "com.test.concurrent2";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
     
     std::vector<std::thread> threads;
     std::vector<std::string> results(10);
@@ -186,7 +186,7 @@ HWTEST(AudioBundleManagerTest, GetBundleNameFromUidCached_Concurrent_001, TestSi
         EXPECT_EQ(results[i], bundleName);
     }
     
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
 }
 
 /**
@@ -200,7 +200,7 @@ HWTEST(AudioBundleManagerTest, RemoveBundleNameByUid_001, TestSize.Level1)
     int32_t uid = 3001;
     std::string bundleName = "com.test.remove";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
     
     std::string result = AudioBundleManager::GetBundleNameFromUidCached(uid);
     EXPECT_EQ(result, bundleName);
@@ -223,16 +223,16 @@ HWTEST(AudioBundleManagerTest, MultipleInserts_001, TestSize.Level1)
     std::vector<std::string> bundleNames = {"com.test.app4", "com.test.app5", "com.test.app6"};
     
     for (size_t i = 0; i < uids.size(); i++) {
-        AudioBundleManager::InsertBundleNameToMap(uids[i], bundleNames[i]);
+        AudioBundleManager::GetInstance().InsertBundleNameToMap(uids[i], bundleNames[i]);
     }
     
     for (size_t i = 0; i < uids.size(); i++) {
-        std::string result = AudioBundleManager::FindBundleNameFromMap(uids[i]);
+        std::string result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uids[i]);
         EXPECT_EQ(result, bundleNames[i]);
     }
     
     for (int32_t uid : uids) {
-        AudioBundleManager::EraseBundleNameFromMap(uid);
+        AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
     }
 }
 
@@ -248,15 +248,15 @@ HWTEST(AudioBundleManagerTest, InsertOverwrite_001, TestSize.Level1)
     std::string bundleName1 = "com.test.old";
     std::string bundleName2 = "com.test.new";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName1);
-    std::string result = AudioBundleManager::FindBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName1);
+    std::string result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
     EXPECT_EQ(result, bundleName1);
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName2);
-    result = AudioBundleManager::FindBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName2);
+    result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
     EXPECT_EQ(result, bundleName2);
     
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
 }
 
 /**
@@ -268,9 +268,9 @@ HWTEST(AudioBundleManagerTest, InsertOverwrite_001, TestSize.Level1)
 HWTEST(AudioBundleManagerTest, EraseNonExistent_001, TestSize.Level1)
 {
     int32_t uid = 6001;
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
     
-    std::string result = AudioBundleManager::FindBundleNameFromMap(uid);
+    std::string result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
     EXPECT_EQ(result, "");
 }
 
@@ -285,12 +285,12 @@ HWTEST(AudioBundleManagerTest, EmptyBundleName_001, TestSize.Level1)
     int32_t uid = 7001;
     std::string bundleName = "";
     
-    AudioBundleManager::InsertBundleNameToMap(uid, bundleName);
+    AudioBundleManager::GetInstance().InsertBundleNameToMap(uid, bundleName);
     
-    std::string result = AudioBundleManager::FindBundleNameFromMap(uid);
+    std::string result = AudioBundleManager::GetInstance().FindBundleNameFromMap(uid);
     EXPECT_EQ(result, "");
     
-    AudioBundleManager::EraseBundleNameFromMap(uid);
+    AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
 }
 
 } // namespace AudioStandard
