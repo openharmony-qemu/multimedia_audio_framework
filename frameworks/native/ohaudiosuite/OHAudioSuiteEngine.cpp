@@ -938,7 +938,7 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
                 StreamDfxManager::GetInstance().SendAudioErrorEvent(
                     static_cast<int32_t>(getuid()),
                     BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                                   BusinessScenario::RELEASE, ERR_INVALID_PARAM),
+                                   BusinessScenario::CONFING, ERR_INVALID_PARAM),
                     "SetEqualizerFrequencyBandGains failed", true),
                 "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
         }
