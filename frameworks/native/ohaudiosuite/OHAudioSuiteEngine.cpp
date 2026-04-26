@@ -939,7 +939,7 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
                     static_cast<int32_t>(getuid()),
                     BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
                                    BusinessScenario::CONFING, ERR_INVALID_PARAM),
-                    "SetEqualizerFrequencyBandGains failed", true),
+                    "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
                 "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
         }
         return IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, audioGains);
