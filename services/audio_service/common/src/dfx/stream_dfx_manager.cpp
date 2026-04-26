@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.1
+ * limitations under the License.
  */
 
 #ifndef LOG_TAG
@@ -89,6 +89,8 @@ void StreamDfxManager::ReportStreamOccupancyTimeout(uint32_t sessionId, int64_t 
 void StreamDfxManager::SendAudioErrorEvent(int32_t uid, int32_t errorCode, const std::string &erroDesc,
     bool isClient)
 {
+    AUDIO_INFO_LOG("SendAudioErrorEvent: uid=%{private}d, errorCode=0x%{public}08X, erroDesc=%{public}s, "
+    "isClient=%{public}d", uid, errorCode, erroDesc.c_str(), isClient);    
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO,
         Media::MediaMonitor::EventId::UNIFIED_FAULT_CODE,
