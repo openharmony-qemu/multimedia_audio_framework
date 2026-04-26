@@ -765,6 +765,41 @@ ohos_executable("audio_policy_test") {
   subsystem_name = "multimedia"
 }
 
+ohos_executable("audio_route_selector_test") {
+  install_enable = false
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  sources = [ "test/example/audio_route_selector_test.cpp" ]
+
+  configs = [ ":audio_policy_client_config" ]
+
+  deps = [
+    "../audio_policy:audio_policy_client",
+    "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 config("audio_foundation_public_config") {
   include_dirs = [
     "util/include",

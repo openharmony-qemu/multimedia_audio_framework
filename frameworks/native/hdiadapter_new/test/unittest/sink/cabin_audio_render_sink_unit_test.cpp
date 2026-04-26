@@ -251,6 +251,32 @@ HWTEST_F(CabinAudioRenderSinkUnitTest, UpdateAppsUid_001, TestSize.Level1)
 }
 
 /**
+* @tc.name   : UpdateAppsUid_002
+* @tc.type   : FUNC
+* @tc.desc   : Test UpdateAppsUid with empty inputs
+*/
+HWTEST_F(CabinAudioRenderSinkUnitTest, UpdateAppsUid_002, TestSize.Level1)
+{
+    int32_t appsUid[1] = {0};
+    size_t size = 1;
+
+    int32_t retArray = sink_->UpdateAppsUid(appsUid, size);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(retArray, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(retArray, SUCCESS);
+#endif
+
+    std::vector<int32_t> appsUidVec = {};
+    int32_t retVec = sink_->UpdateAppsUid(appsUidVec);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(retVec, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(retVec, SUCCESS);
+#endif
+}
+
+/**
 * @tc.name   : DumpInfo_001
 * @tc.type   : FUNC
 * @tc.desc   : Test DumpInfo to ensure string formatting is correct

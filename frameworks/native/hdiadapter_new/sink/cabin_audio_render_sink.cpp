@@ -37,6 +37,13 @@ namespace {
     static const int64_t SLEEP_MS = 20000;
 }
 
+CabinAudioRenderSink::CabinAudioRenderSink()
+#ifdef MULTI_BUS_ENABLE
+    : playingAppManager_([this](const std::string &param) { return SetPlayingAppNameParam(param); })
+#endif
+{
+}
+
 CabinAudioRenderSink::~CabinAudioRenderSink()
 {
     std::unique_lock<std::mutex> lock(sinkMutex_);
@@ -96,12 +103,18 @@ int32_t CabinAudioRenderSink::Start(void)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     if (direct3DATestFlag) {
         started_ = true;
+#ifdef MULTI_BUS_ENABLE
+        playingAppManager_.Start();
+#endif
         lock.unlock();
         return SUCCESS;
     }
     AudioXCollie audioXCollie("CabinAudioRenderSink::Start", TIMEOUT_SECONDS_10,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     started_ = true;
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Start();
+#endif
     return SUCCESS;
 }
 
@@ -118,6 +131,9 @@ int32_t CabinAudioRenderSink::Stop(void)
         AudioXCollie audioXCollie("CabinAudioRenderSink::Stop", TIMEOUT_SECONDS_10,
             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     }
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Stop();
+#endif
     started_ = false;
     return SUCCESS;
 }
@@ -218,6 +234,18 @@ void CabinAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     return;
 }
 
+bool CabinAudioRenderSink::SetPlayingAppNameParam(const std::string &param)
+{
+    AUDIO_INFO_LOG("param: %{public}s", param.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, false, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set playing app name param fail, error code: %{public}d", ret);
+        return false;
+    }
+    return true;
+}
+
 int32_t CabinAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
     AUDIO_INFO_LOG("not support");
@@ -226,6 +254,10 @@ int32_t CabinAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 
 int32_t CabinAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid, appsUid + size);
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid, appsUid + size);
@@ -235,6 +267,10 @@ int32_t CabinAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNE
 
 int32_t CabinAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());

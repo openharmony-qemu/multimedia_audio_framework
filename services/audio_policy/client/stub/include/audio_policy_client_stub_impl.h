@@ -27,6 +27,7 @@
 #include "audio_policy_interface.h"
 #include "audio_stream_types.h"
 #include "audio_collaborative_manager.h"
+#include "audio_route_select_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -167,6 +168,9 @@ public:
         const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &cb);
     int32_t RemoveSpatialAudioSourceTypeChangeCallback();
     size_t GetCurrentSpatialAudioSourceTypeChangeCallbackSize() const;
+    int32_t SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &cb);
+    int32_t UnsetAudioRouteSelectorCallback();
+    bool HasAudioRouteSelectorCallback() const;
 
     int32_t OnRecreateRendererStreamEvent(uint32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt &reason) override;
@@ -223,6 +227,8 @@ public:
         bool enabled,
         bool headTrackingEnabled) override;
     int32_t OnSpatialAudioSourceTypeChange(int32_t mode) override;
+    int32_t OnAudioRouteSelectRefined(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
+        int32_t &selectResult) override;
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);
@@ -312,6 +318,8 @@ private:
     mutable std::mutex preferredDeviceSetMutex_;
     mutable std::mutex adaptiveSpatialRenderingEnabledChangeMutex_;
     mutable std::mutex spatialAudioSourceTypeChangeMutex_;
+    std::shared_ptr<AudioRouteSelector> audioRouteSelectorCallback_;
+    mutable std::mutex audioRouteSelectorMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

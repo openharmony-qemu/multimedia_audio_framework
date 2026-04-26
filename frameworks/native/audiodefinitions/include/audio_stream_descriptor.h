@@ -440,6 +440,16 @@ public:
         return forcedNormalFlag_.exchange(false);
     }
 
+    void SetRouteSelectRejectedFlag(bool isRejected)
+    {
+        routeSelectRejectedFlag_ = isRejected;
+    }
+
+    bool GetRouteSelectRejectedFlag() const
+    {
+        return routeSelectRejectedFlag_.load();
+    }
+
     int32_t GetRealUid() const;
 
 private:
@@ -456,6 +466,7 @@ private:
     std::shared_mutex ultraFastFlagLock_;
     uint32_t ultraFastFlag_ = ULTRA_NONE;
     std::atomic<bool> forcedNormalFlag_ = false;
+    std::atomic<bool> routeSelectRejectedFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -286,6 +286,9 @@ private:
     std::string &GetBundleNameByAppUid(int32_t uid);
     int32_t ActivateAudioInterruptInStart(const bool isMute);
     void HandleAudioInterruptInfo();
+    bool ValidateStartState();
+    bool ValidateNotSwitching();
+    bool ValidateAudioStream();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

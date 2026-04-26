@@ -806,6 +806,7 @@ private:
     };
 
     void Init();
+    int32_t HandleRouteSelectorCallbackEnable(bool enable);
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     // offload session

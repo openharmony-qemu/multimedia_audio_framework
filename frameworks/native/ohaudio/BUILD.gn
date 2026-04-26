@@ -50,6 +50,7 @@ ohos_shared_library("ohaudio") {
     "../../../interfaces/kits/c/audio_renderer/",
     "../../../interfaces/kits/c/audio_capturer/",
     "../../../interfaces/kits/c/audio_manager/",
+    "../../../services/audio_service/common/include/dfx",
     "../../native/audiopolicy/include/",
   ]
 
@@ -73,6 +74,7 @@ ohos_shared_library("ohaudio") {
   ]
 
   deps = [
+    "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_engine_manager",
     "../../../services/audio_service:audio_policy_manager",

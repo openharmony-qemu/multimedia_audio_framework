@@ -180,6 +180,7 @@ config("audio_client_public_config") {
   include_dirs = [
     "client/include",
     "common/include",
+    "common/include/dfx",
     "server/include",
     "../audio_policy/common/include",
     "../audio_policy/client/interface",

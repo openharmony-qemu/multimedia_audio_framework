@@ -96,6 +96,8 @@ public:
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();
+    void HandleDupStreamPause();
+    void HandleDualTonePause();
     int32_t Flush();
     int32_t Drain(bool stopFlag = false);
     int32_t Stop();
@@ -212,6 +214,9 @@ private:
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
     int32_t StartInner();
+    int32_t ValidateStartState();
+    int32_t ValidateAndSetupBufferForStart();
+    void UpdateStartTimeInfo();
     int32_t StopInner();
     int32_t Standby(bool isStandbyOn);
     int64_t GetLastAudioDuration();
@@ -271,6 +276,7 @@ private:
     void HandleIsWriteFirst(bool isWriteFirst);
     void HandleStreamUnderrun();
     bool CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame);
+    void ReleasePostProcess();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

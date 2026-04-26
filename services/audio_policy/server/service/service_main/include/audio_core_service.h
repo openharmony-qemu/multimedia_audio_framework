@@ -131,6 +131,8 @@ public:
             AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false) override;
         int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
         uint32_t GenerateSessionId() override;
+        int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
+        int32_t UnsetAudioRouteSelectorCallback();
         int32_t SetSplitModeReady();
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
@@ -230,6 +232,8 @@ public:
             const AudioEffectPropertyArray newPropertyArray);
         void OnVehiclePriorityChanged(bool enable);
     private:
+        int32_t HandleSetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
+        int32_t HandleUnsetAudioRouteSelectorCallback();
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
 
@@ -253,6 +257,7 @@ public:
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+    std::shared_ptr<AsyncActionHandler> GetAsyncActionHandler() const;
     void SetConfigParserFlag();
     // Pipe capability pass-through interfaces. Synchronization is managed in pipe/domain modules.
     void SetEcEnableState(bool ecEnableState);
@@ -327,6 +332,8 @@ public:
         AudioStreamInfo &streamInfo, bool &isUltraFast);
     int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
     uint32_t GenerateSessionId();
+    int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
+    int32_t UnsetAudioRouteSelectorCallback();
     int32_t SetSplitModeReady();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnCheckActiveMusicTime(const std::string &reason);
