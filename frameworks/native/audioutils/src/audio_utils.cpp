@@ -2256,7 +2256,7 @@ VolumeScale VolumeScale::Adjust(const VolumeScale &volume)
 {
     if (volume.volumeLevel_ == volumeLevel_) {
         int32_t oldVal = volumeDegree_;
-        if (valueType_ == VolumeKeyType::VOLUME_KEY_TYPE_LEVEL) {
+        if (valueType_ == VolumeKeyType::LEVEL) {
             volumeDegree_ = volume.volumeDegree_;
         }
 
