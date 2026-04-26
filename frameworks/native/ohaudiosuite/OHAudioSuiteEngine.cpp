@@ -766,7 +766,7 @@ int32_t OHAudioSuiteEngine::CreateNode(
 int32_t OHAudioSuiteEngine::DestroyNode(OHAudioNode *node)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "DestroyNode failed, node is nullptr.");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
