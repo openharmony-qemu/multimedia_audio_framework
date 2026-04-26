@@ -132,9 +132,9 @@ int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int32_t arraySize,
         audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag) == SUCCESS, ERR_INVALID_PARAM);
 
     if (GetAudioNodeDataFinishedFlag() && CacheBufferEmpty()) {
-        streamDfxMannager::GetIntance().SendAudioErrorEvent(
+        StreamDfxMannager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCatagory::FAULT_WRONG_EFFECT, Operation::EDIT, BusinessScenario::RENDER,
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, Operation::EDIT, BusinessScenario::RENDER,
                            ERR_NOT_SUPPORTED),
             "SetEqualizerFrequencyBandGains failed", true);
         AUDIO_ERR_LOG("multi output finished completed.");
