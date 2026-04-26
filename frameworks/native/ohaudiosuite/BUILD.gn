@@ -63,8 +63,8 @@ ohos_shared_library("ohaudiosuite") {
     "../../../services/audio_suite:audio_suite",
     "../../../services/audio_engine:audio_engine_plugins",
     "../../../services/audio_engine:audio_engine_utils",
-    "../audioutils:audio_utils",
     "../../../services/audio_service:audio_common",
+    "../audioutils:audio_utils",
   ]
   cflags = [ "-Werror" ]
 
