@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License.1
  */
 
 #ifndef LOG_TAG
@@ -26,6 +26,7 @@
 #include "audio_suite_manager.h"
 #include "OHAudioSuiteNodeBuilder.h"
 #include "audio_suite_capabilities.h"
+#include "stream_dfx_manager.h"
 
 using OHOS::AudioStandard::OHAudioSuiteEngine;
 using OHOS::AudioStandard::OHAudioSuitePipeline;

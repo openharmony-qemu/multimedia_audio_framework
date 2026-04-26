@@ -44,6 +44,7 @@ ohos_shared_library("ohaudiosuite") {
     "../../../services/audio_suite/client/utils/include",
     "../../../services/audio_suite/client/converter/include",
     "../../../services/audio_engine/plugin/resample/include",
+    "../../../serivces/audio_service/common/include/dfx",
   ]
 
   configs = [ ":audio_config" ]
@@ -63,6 +64,7 @@ ohos_shared_library("ohaudiosuite") {
     "../../../services/audio_engine:audio_engine_plugins",
     "../../../services/audio_engine:audio_engine_utils",
     "../audioutils:audio_utils",
+    "../../../services/audio_service:audio_common",
   ]
   cflags = [ "-Werror" ]
 
