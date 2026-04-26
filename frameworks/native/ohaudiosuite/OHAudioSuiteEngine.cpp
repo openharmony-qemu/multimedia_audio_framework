@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.1
+ * limitations under the License.
  */
 
 #ifndef LOG_TAG
@@ -766,8 +766,14 @@ int32_t OHAudioSuiteEngine::CreateNode(
 int32_t OHAudioSuiteEngine::DestroyNode(OHAudioNode *node)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "DestroyNode failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
+                           ERR_AUDIO_SUITE_NODE_NOT_EXIST),
+            "OHAudioSuiteEngine::The node does not exist.", true),
+        "OHAudioSuiteEngine::The node does not exist.");
     uint32_t nodeId = node->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyNode failed, ret = %{public}d.", ret);
@@ -868,9 +874,22 @@ int32_t OHAudioSuiteEngine::DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *d
 int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "%{public}s failed, node is nullptr.", funcName);
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING,
+                           ERR_AUDIO_SUITE_NODE_NOT_EXIST),
+            "node does not exist.", true),
         "%{public}s failed, node does not exist.", funcName);
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == expectedType, ERR_NOT_SUPPORTED,
+
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        (node->GetNodeType() == expectedType), ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING,
+                           ERR_NOT_SUPPORTED),
+            "Node type does not match the parameters.", true),
         "%{public}s failed, node type = %{public}d must be %{public}d type.", funcName,
         static_cast<int32_t>(node->GetNodeType()), static_cast<int32_t>(expectedType));
     return SUCCESS;
@@ -912,10 +931,16 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
         size_t gainsNum = sizeof(audioGains.gains) / sizeof(audioGains.gains[0]);
         for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
             audioGains.gains[idx] = value.gains[idx];
-            CHECK_AND_RETURN_RET_LOG((audioGains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) &&
-                                         (audioGains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
-                ERR_INVALID_PARAM, "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.",
-                audioGains.gains[idx]);
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+                (audioGains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) &&
+                    (audioGains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
+                ERR_INVALID_PARAM,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                    static_cast<int32_t>(getuid()),
+                    BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                                   BusinessScenario::RELEASE, ERR_INVALID_PARAM),
+                    "SetEqualizerFrequencyBandGains failed", true),
+                "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
         }
         return IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, audioGains);
     };
