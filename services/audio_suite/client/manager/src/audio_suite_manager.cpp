@@ -1254,6 +1254,15 @@ void AudioSuiteManager::OnDisConnectNodes(int32_t result)
         errorDescription << "engine DisConnectNodes failed, ret = " << result;
         WriteSuiteEngineExceptionEvent(NODE_SCENE, DISCONNECT_NODE_ERROR, errorDescription.str());
     }
+
+    if (result != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(
+                ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING, result),
+            "DisConnectNodes fail.", true),
+    }
+
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_DEBUG_LOG("OnDisConnectNodes enter");
     isFinishDisConnectNodes_ = true;
