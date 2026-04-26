@@ -289,7 +289,7 @@ enum class ProblemCategory : uint8_t {
     FAULT_CONTROL_ABNORMAL = 0x08,
     FAULT_DEVICE_SWUTCG_FAIL = 0x09,
     FAULT_STATE_INCONSISTENT = 0x0A,
-    FAULT_STATE_AUDIO_EFFECT = 0x0B,
+    FAULT_WRONG_AUDIO_EFFECT = 0x0B,
 };
 
 enum class OperationType : uint8_t {
