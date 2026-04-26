@@ -18,6 +18,7 @@
 #include "audio_utils.h"
 #include "mock_audio_arm_device_behavior.h"
 #include "audio_device_factory.h"
+#include "sco_audio_scene_manager.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -4498,5 +4499,119 @@ HWTEST_F(AudioCoreServicePrivateTest, ReEvaluateVoipBypassByAppMuteHint_001, Tes
     audioCoreService->ReEvaluateVoipBypassByAppMuteHint();
     EXPECT_FALSE(audioCoreService->audioEffectService_.GetEffectiveAppMuteHint(7010));
 }
+
+/**
+ * @tc.name  : AudioCoreService_CalculatePipeAudioScene_001
+ * @tc.desc  : Test CalculatePipeAudioScene with empty pipe
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CalculatePipeAudioScene_001, TestSize.Level1)
+{
+    AudioScene scene = testCoreService_->CalculatePipeAudioScene(DEFAULT_PIPE_ID);
+    EXPECT_EQ(scene, AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_001
+ * @tc.desc  : Test TrackScoStreamAudioScene with cellular call
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    
+    streamDesc->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->callerUid_ = 1001;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, true);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, false);
+    EXPECT_FALSE(ScoAudioSceneManager::GetInstance().HasScoStream());
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_002
+ * @tc.desc  : Test TrackScoStreamAudioScene with voip
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    
+    streamDesc->sessionId_ = TEST_STREAM_2_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->callerUid_ = 1002;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, true);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    
+    AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
+    EXPECT_EQ(highestScene, AUDIO_SCENE_PHONE_CHAT);
+    
+    ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_003
+ * @tc.desc  : Test TrackScoStreamAudioScene with recognition
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    
+    streamDesc->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->callerUid_ = 1003;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, true);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    
+    ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_004
+ * @tc.desc  : Test TrackScoStreamAudioScene priority ordering
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> voipStream = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(voipStream, nullptr);
+    voipStream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    voipStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    voipStream->streamStatus_ = STREAM_STATUS_STARTED;
+    voipStream->callerUid_ = 1001;
+    voipStream->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    
+    std::shared_ptr<AudioStreamDescriptor> cellularStream = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(cellularStream, nullptr);
+    cellularStream->sessionId_ = TEST_STREAM_2_SESSION_ID;
+    cellularStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    cellularStream->streamStatus_ = STREAM_STATUS_STARTED;
+    cellularStream->callerUid_ = 1002;
+    cellularStream->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    
+    testCoreService_->TrackScoStreamAudioScene(voipStream, true);
+    testCoreService_->TrackScoStreamAudioScene(cellularStream, true);
+    
+    AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
+    EXPECT_EQ(highestScene, AUDIO_SCENE_PHONE_CALL);
+    
+    ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

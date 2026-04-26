@@ -15,9 +15,10 @@
 #include "audio_policy_utils.h"
 #include "audio_pipe_manager_unit_test.h"
 #include "audio_stream_descriptor.h"
-#include "audio_stream_descriptor.h"
+#include "audio_pipe_info.h"
 
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {

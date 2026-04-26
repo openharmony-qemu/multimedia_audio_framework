@@ -62,6 +62,16 @@ int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, BluetoothOff
     return result;
 }
 
+int32_t AudioServerProxy::SetAudioSceneForPipeProxy(uint32_t pipeId, AudioScene audioScene, bool scoExcludeFlag)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t result = gsp->SetAudioSceneForPipe(pipeId, audioScene, scoExcludeFlag);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return result;
+}
+
 float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
