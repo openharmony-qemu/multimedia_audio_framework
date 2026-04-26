@@ -684,7 +684,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCreateNodeTest, Test
     EXPECT_EQ(result, SUCCESS);
 
     audioNodeBuilder.nodeType = NODE_TYPE_EMPTY;
-    result = audioSuitePipeline.Create(audioNodeBuilder);
+    result = audioSuitePipeline.CreateNode(audioNodeBuilder);
     EXPECT_EQ(result, SUCCESS);
 }
 
