@@ -28,6 +28,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
 #include "audio_bundle_manager.h"
+#include "parameters.h"
 
 #include <algorithm>
 #include "hisysevent.h"
