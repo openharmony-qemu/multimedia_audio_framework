@@ -382,7 +382,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
     StreamUsage callStreamUsage =
-                AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+                AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
     AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d, isVoipStream:%{public}d.",
         info.streamUsage, audioScene, isVoipStream);

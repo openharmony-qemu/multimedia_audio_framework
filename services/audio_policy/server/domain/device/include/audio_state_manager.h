@@ -34,26 +34,14 @@ public:
         return audioStateManager;
     }
 
-    // Set call capture device selected by the user
-    void SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-
     // Set ring render device selected by the user
     void SetPreferredRingRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-
-    // Set record capture device selected by the user
-    void SetPreferredRecordCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set tone render device selected by the user
     void SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
-    // Get call capture device selected by the user
-    shared_ptr<AudioDeviceDescriptor> GetPreferredCallCaptureDevice();
-
     // Get ring render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredRingRenderDevice();
-
-    // Get record capture device selected by the user
-    shared_ptr<AudioDeviceDescriptor> GetPreferredRecordCaptureDevice();
 
     // Get tone render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredToneRenderDevice();
@@ -61,18 +49,13 @@ public:
     void SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc);
     shared_ptr<AudioDeviceDescriptor> GetPreferredRecognitionCaptureDevice();
 
-    void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
-    void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
-
     int32_t SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
 
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};
-    std::shared_ptr<AudioDeviceDescriptor> preferredCallCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecognitionCaptureDevice_{make_shared<AudioDeviceDescriptor>()};
 

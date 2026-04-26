@@ -928,13 +928,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, ClearPreferredDevices_001, TestSize.Level1)
     dev->deviceName_ = "--";
     dev->deviceRole_ = OUTPUT_DEVICE;
     dev->macAddress_ = "card=2;device=0";
-    comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
     strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
     strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
-    comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
+    strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
+    strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);
-    EXPECT_NE(comm.audioStateManager_.GetPreferredCallCaptureDevice()->deviceId_, 9998);
+    auto callInputDev = strategy.GetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID);
+    EXPECT_TRUE(callInputDev == nullptr || callInputDev->deviceType_ == DEVICE_TYPE_NONE);
 }
 
 /**

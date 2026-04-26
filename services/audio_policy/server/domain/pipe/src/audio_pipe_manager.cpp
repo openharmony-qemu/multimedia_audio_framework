@@ -1379,8 +1379,6 @@ StreamUsage AudioPipeManager::GetLastestRunningCallStreamUsage()
     for (auto &entry : modemCommunicationIdMap_) {
         CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "streamDesc is nullptr");
         if (entry.second->streamStatus_ == STREAM_STATUS_STARTED) {
-            AUDIO_INFO_LOG("GetLastestRunningCallStreamUsage from modem: %{public}d",
-                entry.second->rendererInfo_.streamUsage);
             return entry.second->rendererInfo_.streamUsage;
         }
     }
@@ -1392,8 +1390,6 @@ StreamUsage AudioPipeManager::GetLastestRunningCallStreamUsage()
             if (desc->streamStatus_ == STREAM_STATUS_STARTED &&
                 (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
                 desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)) {
-                AUDIO_INFO_LOG("GetLastestRunningCallStreamUsage: %{public}d",
-                    desc->rendererInfo_.streamUsage);
                 return desc->rendererInfo_.streamUsage;
             }
         }

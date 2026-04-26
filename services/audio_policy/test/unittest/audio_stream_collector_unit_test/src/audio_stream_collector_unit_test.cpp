@@ -59,7 +59,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_001, TestSize.Leve
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = 1001;
@@ -94,7 +93,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_002, TestSize.Leve
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = nullptr;
     collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
 
@@ -657,37 +655,15 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_013, TestSize.Level1
 }
 
 /**
-* @tc.name  : Test AudioStreamCollector.
-* @tc.number: AudioStreamCollector_014
-* @tc.desc  : Test GetLastestRunningCallStreamUsage.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_014, TestSize.Level1)
-{
-    AudioStreamCollector collector;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
-    EXPECT_EQ(STREAM_USAGE_UNKNOWN, callStreamUsage);
-
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    rendererChangeInfo->rendererState = RENDERER_PREPARED;
-    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-
-    callStreamUsage = collector.GetLastestRunningCallStreamUsage();
-    EXPECT_EQ(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, callStreamUsage);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
-* @tc.number: AudioStreamCollector_015
-* @tc.desc  : Test RegisteredTrackerClientDied.
-*/
+ * @tc.name  : Test AudioStreamCollector.
+ * @tc.number: AudioStreamCollector_015
+ * @tc.desc  : Test RegisteredTrackerClientDied.
+ */
 HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_015, TestSize.Level1)
 {
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = 1001;
@@ -1388,7 +1364,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_046, TestSize.Level1
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = 1001;

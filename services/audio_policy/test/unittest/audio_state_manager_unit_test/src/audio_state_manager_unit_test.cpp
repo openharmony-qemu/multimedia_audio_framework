@@ -106,38 +106,14 @@ public:
 
 /**
 * @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_003
-* @tc.desc  : Test SetPreferredCallCaptureDevice interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_003, TestSize.Level1)
-{
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    AudioStateManager::GetAudioStateManager().SetPreferredCallCaptureDevice(desc);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice(), nullptr);
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
 * @tc.number: AudioStateManagerUnitTest_004
-* @tc.desc  : Test SetPreferredCallCaptureDevice interface.
+* @tc.desc  : Test SetPreferredRingRenderDevice interface.
 */
 HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_004, TestSize.Level1)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredRingRenderDevice(desc);
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRingRenderDevice(), nullptr);
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_005
-* @tc.desc  : Test SetPreferredRecordCaptureDevice interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_005, TestSize.Level1)
-{
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    AudioStateManager::GetAudioStateManager().SetPreferredRecordCaptureDevice(desc);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice(), nullptr);
 }
 
 /**
@@ -150,32 +126,6 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_006, TestSize.Leve
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredToneRenderDevice(desc);
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice(), nullptr);
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_009
-* @tc.desc  : Test UpdatePreferredCallCaptureDeviceConnectState interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_009, TestSize.Level1)
-{
-    AudioStateManager::GetAudioStateManager().UpdatePreferredCallCaptureDeviceConnectState(
-        ConnectState::CONNECTED);
-    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice()->connectState_,
-        ConnectState::CONNECTED);
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_010
-* @tc.desc  : Test UpdatePreferredRecordCaptureDeviceConnectState interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Level1)
-{
-    AudioStateManager::GetAudioStateManager().UpdatePreferredRecordCaptureDeviceConnectState(
-        ConnectState::CONNECTED);
-    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
-        ConnectState::CONNECTED);
 }
 
 /**

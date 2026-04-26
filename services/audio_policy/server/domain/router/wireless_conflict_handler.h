@@ -45,6 +45,13 @@ private:
     int GetPriority(StreamUsage streamUsage, SourceType sourceType,
         RouterType routerType, bool isOutput);
     bool IsScoDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    bool IsNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    bool IsWirelessDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    bool IsSameWirelessDevicePair(const std::shared_ptr<AudioDeviceDescriptor> &device1,
+        const std::shared_ptr<AudioDeviceDescriptor> &device2);
+    bool CheckWirelessDeviceConflict(const std::shared_ptr<AudioDeviceDescriptor> &device,
+        RouterType routerType, bool isOutput);
+    int FindHighestPriorityDevice(std::string &highestPriorityMac);
     
     std::vector<StreamDeviceInfo> outputStreamDevices_;
     std::vector<StreamDeviceInfo> inputStreamDevices_;
