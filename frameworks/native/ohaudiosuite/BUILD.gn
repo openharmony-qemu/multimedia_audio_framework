@@ -44,7 +44,7 @@ ohos_shared_library("ohaudiosuite") {
     "../../../services/audio_suite/client/utils/include",
     "../../../services/audio_suite/client/converter/include",
     "../../../services/audio_engine/plugin/resample/include",
-    "../../../serivces/audio_service/common/include/dfx",
+    "../../../services/audio_service/common/include/dfx",
   ]
 
   configs = [ ":audio_config" ]
