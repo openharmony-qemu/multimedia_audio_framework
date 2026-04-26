@@ -131,7 +131,7 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId, PipelineWorkMode
         suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
                            ERR_AUDIO_SUITE_ENGINE_NOT_EXIST),
             "suite engine not inited", true),
         "suite engine not inited");
