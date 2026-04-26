@@ -20,6 +20,7 @@ group("unit_test_group") {
 
   deps = [
     ":async_action_handler_test",
+    ":audio_bundle_manager_test",
     ":audio_speed_unit_test",
     ":audio_utils_plus_unit_test",
     ":audio_utils_pro_unit_test",
@@ -211,6 +212,30 @@ ohos_unittest("async_action_handler_test") {
   external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",
+    "googletest:gtest",
+  ]
+}
+
+ohos_unittest("audio_bundle_manager_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sources = [ "audio_bundle_manager_test.cpp" ]
+
+  deps = [ "../../../audioutils:audio_utils" ]
+
+  external_deps = [
+    "c_utils:utils",
     "googletest:gtest",
   ]
 }

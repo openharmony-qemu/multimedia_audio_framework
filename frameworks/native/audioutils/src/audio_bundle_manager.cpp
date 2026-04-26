@@ -36,10 +36,33 @@ constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
 namespace OHOS {
 namespace AudioStandard {
-std::mutex AudioBundleManager::bundleNameMapMutex_;
+std::shared_mutex AudioBundleManager::mapMutex_;
+std::mutex AudioBundleManager::processMutex_;
 std::mutex AudioBundleManager::bundleInfoMapMutex_;
 std::unordered_map<int32_t, std::string> AudioBundleManager::bundleNameMap_;
 std::unordered_map<int32_t, AppExecFwk::BundleInfo> AudioBundleManager::bundleInfoMap_;
+
+std::string AudioBundleManager::FindBundleNameFromMap(int32_t uid)
+{
+    std::shared_lock<std::shared_mutex> lock(mapMutex_);
+    auto it = bundleNameMap_.find(uid);
+    if (it != bundleNameMap_.end()) {
+        return it->second;
+    }
+    return "";
+}
+
+void AudioBundleManager::InsertBundleNameToMap(int32_t uid, const std::string &name)
+{
+    std::lock_guard<std::shared_mutex> lock(mapMutex_);
+    bundleNameMap_[uid] = name;
+}
+
+void AudioBundleManager::EraseBundleNameFromMap(int32_t uid)
+{
+    std::lock_guard<std::shared_mutex> lock(mapMutex_);
+    bundleNameMap_.erase(uid);
+}
 
 int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userId)
 {
@@ -71,15 +94,15 @@ std::string AudioBundleManager::GetBundleName()
 
 std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
 {
-    std::lock_guard<std::mutex> lock(bundleNameMapMutex_);
-    auto it = bundleNameMap_.find(callingUid);
-    if (it != bundleNameMap_.end()) {
-        return it->second;
+    std::lock_guard<std::mutex> processLock(processMutex_);
+
+    std::string bundleName = FindBundleNameFromMap(callingUid);
+    if (!bundleName.empty()) {
+        return bundleName;
     }
 
     AudioXCollie audioXCollie("AudioBundleManager::GetBundleNameFromUid",
         GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::string bundleName = "";
     WatchTimeout guard("AudioBundleManager:GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
@@ -94,14 +117,20 @@ std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
     WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetBundleNameFromUid");
     bundleMgrProxy->GetBundleNameForUid(callingUid, bundleName);
     reguard.CheckCurrTimeout();
-    bundleNameMap_[callingUid] = bundleName;
+
+    InsertBundleNameToMap(callingUid, bundleName);
     return bundleName;
+}
+
+std::string AudioBundleManager::GetBundleNameFromUidCached(int32_t callingUid)
+{
+    return FindBundleNameFromMap(callingUid);
 }
 
 void AudioBundleManager::RemoveBundleNameByUid(int32_t callingUid)
 {
-    std::lock_guard<std::mutex> lock(bundleNameMapMutex_);
-    bundleNameMap_.erase(callingUid);
+    std::lock_guard<std::mutex> processLock(processMutex_);
+    EraseBundleNameFromMap(callingUid);
 }
 
 AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfo()
