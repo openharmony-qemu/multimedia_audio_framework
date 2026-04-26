@@ -229,7 +229,7 @@ int32_t AudioSuiteEngine::StartPipeline(uint32_t pipelineId)
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::START,
-                               ERR_ILLEGAL_STATE),
+                               ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
                 "engine start pipeline failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine start pipeline failed, pipeline id is invailed.");
             managerCallback_.OnStartPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
