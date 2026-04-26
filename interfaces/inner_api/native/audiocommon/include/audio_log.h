@@ -57,14 +57,14 @@
         }                                              \
     } while (0)
 
-#define CHECK_AND_CALL_FUNC_RETURN_REPORT(cond, func1, func2) \
-    do {                                                      \
-        if (!(cond)) {                                        \
-            func1;                                            \
-            func2;                                            \
-            return;                                           \
-        }                                                     \
-    } while (0)
+ #define CHECK_AND_CALL_FUNC_RETURN_REPORT(cond, func1, func2) \	 
+     do {                                               \	 
+         if (!(cond)) {                                 \	 
+             func1;                                     \	 
+             func2;                                     \	 
+             return;                                    \	 
+         }                                              \	 
+     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_RET(cond, ret, func) \
     do {                                               \
@@ -75,12 +75,12 @@
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(cond, ret, func1, func2) \
-    do {                                                               \
-        if (!(cond)) {                                                 \
-            func1;                                                     \
-            func2;                                                     \
-            return ret;                                                \
-        }                                                              \
+     do {                                               \	 
+         if (!(cond)) {                                 \	 
+             func1;                                     \	 
+             func2;                                     \	 
+             return ret;                              \	 
+         }                                              \                                                \
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_LOG(cond, func, fmt, ...) \
@@ -92,6 +92,15 @@
         }                                              \
     } while (0)
 
+ #define CHECK_AND_CALL_FUNC_RETURN_RET_LOG(cond, ret, func, fmt, ...) \ 
+     do {                                               \ 
+         if (!(cond)) {                                 \ 
+             AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \ 
+             func;                                      \ 
+             return ret;                                \ 
+         }                                              \ 
+     } while (0) 
+ 
 #define CHECK_AND_RETURN_RET_LOG(cond, ret, fmt, ...)  \
     do {                                               \
         if (!(cond)) {                                 \
@@ -101,12 +110,12 @@
     } while (0)
 
 #define CHECK_AND_CALL_FUNC_RETURN_RET_LOG(cond, ret, func, fmt, ...) \
-    do {                                                              \
-        if (!(cond)) {                                                \
-            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);                        \
-            func;                                                     \
-            return ret;                                               \
-        }                                                             \
+     do {                                               \	 
+         if (!(cond)) {                                 \	 
+             AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \	 
+             func;                                      \	 
+             return ret;                                \	 
+         }                                              \                                                       \
     } while (0)
 
 #define CHECK_AND_RETURN_LOG(cond, fmt, ...)           \
