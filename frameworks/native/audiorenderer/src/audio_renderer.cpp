@@ -72,6 +72,7 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
 static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
+constexpr int32_t DEFAULT_ZONE_ID = 0;
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -1787,7 +1788,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
 
     // If Stop call was skipped, Release to take care of Deactivation
     audioInterrupt_.state = audioInterruptState_.load();
-    (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_, DEFAULT_ZONE_ID, true);
 
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
@@ -3232,8 +3233,6 @@ int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debug
     debugInfo.systemVolume = audioDebugInfo.systemVolume;
     debugInfo.volume = audioDebugInfo.volume;
 
-    debugInfo.hintType = audioDebugInfo.hintType;
-    debugInfo.historyHintType = audioDebugInfo.historyHintType;
     return SUCCESS;
 }
 

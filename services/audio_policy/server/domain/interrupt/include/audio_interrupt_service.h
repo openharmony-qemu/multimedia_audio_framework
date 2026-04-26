@@ -40,6 +40,7 @@
 #include "audio_stream_collector.h"
 #include "audio_interrupt_dfx.h"
 #include "audio_interrupt_strategy.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -103,7 +104,8 @@ public:
     bool AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingStreamId);
     AudioInterruptResult ActivateAudioInterrupt(
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
-    AudioInterruptResult DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    AudioInterruptResult DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isRemoveFocusHis = false);
     bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerInfo &capturerInfo);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 
@@ -163,6 +165,8 @@ public:
         int32_t callerUid = INVALID_UID);
     void RefreshAudioSceneAfterDelay(const int32_t zoneId);
     int32_t GetAudioSessionZoneidByPid(const int32_t pid);
+    void GetFocusDebugInfoByStreamId(uint32_t streamId, AudioDebugInfo &audioDebugInfo);
+    int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -403,6 +407,9 @@ private:
         const InterruptErrorCode interruptErrorCode);
     int32_t FindAudioInterruptByPid(const int32_t zoneId, const int32_t callerPid, AudioInterrupt &audioInterrupt);
     void MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt);
+    void RecordFocusHistory(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
+        const InterruptEventInternal &interruptEvent);
+    void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -448,6 +455,7 @@ private:
     std::unique_ptr<AudioInterruptStrategy> interruptStrategy_;
 
     AudioStreamCollector& streamCollector_;
+    std::map<uint32_t, std::vector<AudioFocusBehavior>> audioFocusHisMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

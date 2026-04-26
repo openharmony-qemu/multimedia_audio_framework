@@ -45,6 +45,7 @@ sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneMix;
 sequenceable audio_system_manager..OHOS.AudioStandard.ActiveStreamVolumeInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneVolumeConfig;
 sequenceable audio_debug_info..OHOS.AudioStandard.AudioDebugInfo;
+sequenceable audio_debug_info..OHOS.AudioStandard.AudioSessionDebugInfo;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -101,7 +102,7 @@ interface IAudioPolicy {
     void CheckVKBInfo([in] String bundleName, [out] boolean isValid);
     void SetQueryBundleNameListCallback([in] IRemoteObject object);
     void ActivateAudioInterrupt([in] AudioInterrupt audioInterrupt, [in] int zoneID, [in] boolean isUpdatedAudioStrategy);
-    void DeactivateAudioInterrupt([in] AudioInterrupt audioInterrupt, [in] int zoneId); /* zoneID default value: 0 -- local device */
+    void DeactivateAudioInterrupt([in] AudioInterrupt audioInterrupt, [in] int zoneId, [in] boolean isRemoveFocusHis); /* zoneID default value: 0 -- local device */
     void SetAudioManagerInterruptCallback([in] int clientId, [in] IRemoteObject object);
     void UnsetAudioManagerInterruptCallback([in] int clientId);
     void RequestAudioFocus([in] int clientId, [in] AudioInterrupt audioInterrupt);
@@ -341,4 +342,5 @@ interface IAudioPolicy {
     void SetMediaOutputDevice([in] int deviceType /* deviceType */);
     void SetRegisterInterruptCallbackFlag([in] unsigned int streamId, [in] boolean interruptCallbackFlag);
     void SetRegisterStateChangeCallbackFlag([in] boolean stateChangeCallbackFlag);
+    void GetSessionDebugInfo([out] sharedptr<AudioSessionDebugInfo> sessionDebugInfo);
 }

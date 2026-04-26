@@ -517,5 +517,22 @@ AudioSessionActiveBehaviors AudioSession::GetSessionBehaviors()
 {
     return behaviorFlags_;
 }
+
+void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+{
+    sessionDebugInfo.strategy = strategy_;
+    sessionDebugInfo.audioSessionScene = audioSessionScene_;
+    sessionDebugInfo.defaultDeviceType = defaultDeviceType_;
+    sessionDebugInfo.state = state_;
+    sessionDebugInfo.streamUsage = GetSessionStreamUsage();
+    sessionDebugInfo.streamInfos.clear();
+    for (const auto &stream : streamsInSession_) {
+        AudioStreamDebugInfo streamDebugInfo;
+        streamDebugInfo.streamId = stream.streamId;
+        streamDebugInfo.streamType = stream.audioFocusType.streamType;
+        streamDebugInfo.sourceType = stream.audioFocusType.sourceType;
+        sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

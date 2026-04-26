@@ -240,7 +240,8 @@ public:
 
     int32_t SetAppSilentOnDisplay(const int32_t displayId = -1);
 
-    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
+        bool isRemoveFocusHis = false);
 
     int32_t ActivatePreemptMode(void);
 
@@ -437,6 +438,8 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
     int32_t GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
+
+    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 

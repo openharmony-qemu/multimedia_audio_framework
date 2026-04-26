@@ -759,5 +759,13 @@ AudioSessionActiveBehaviors AudioSessionService::GetSessionBehaviors(const int32
     return session->second->GetSessionBehaviors();
 }
 
+void AudioSessionService::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(sessionDebugInfo.pid);
+    if (session != sessionMap_.end()) {
+        session->second->GetSessionDebugInfo(sessionDebugInfo);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
