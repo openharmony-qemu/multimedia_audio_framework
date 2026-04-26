@@ -450,14 +450,7 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
 
 int32_t AudioSuitePipeline::DestroyNode(uint32_t nodeId)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-        IsInit(), ERR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
-                           ERR_ILLEGAL_STATE),
-            "pipeline not init, can not DestroyNode.", true),
-        "pipeline not init, can not DestroyNode.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not DestroyNode.");
 
     auto request = [this, nodeId]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
