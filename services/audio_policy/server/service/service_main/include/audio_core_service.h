@@ -231,6 +231,9 @@ public:
         void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
             const AudioEffectPropertyArray newPropertyArray);
         void OnVehiclePriorityChanged(bool enable);
+        // Trigger reload for VoIP priority change due to mute callback
+        void TriggerVoipPriorityReload(uint32_t sessionId, bool lowered);
+
     private:
         int32_t HandleSetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
         int32_t HandleUnsetAudioRouteSelectorCallback();
@@ -462,7 +465,9 @@ public:
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
+    void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
+    void TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered);
     int32_t ReloadCaptureSessionSoftLink();
     bool ReloadCheckForStart(bool findRunningSessionRet, std::shared_ptr<AudioStreamDescriptor> newStream,
         AudioStreamDescriptor &runningStream);

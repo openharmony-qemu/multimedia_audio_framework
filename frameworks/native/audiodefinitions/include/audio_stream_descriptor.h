@@ -64,6 +64,8 @@ public:
     AudioStreamInfo micInStreamInfo_ = {};
     AudioStreamInfo ecStreamInfo_ = {};
     volatile bool isStandby_{false};
+    // Flag to indicate VoIP stream should be excluded from priority comparison during mute callback
+    std::atomic<bool> voipPriorityLowered_{false};
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
@@ -98,6 +100,11 @@ public:
     uint32_t GetSessionId() const
     {
         return sessionId_;
+    }
+
+    SourceType GetSourceType() const
+    {
+        return capturerInfo_.sourceType;
     }
 
     bool IsRunning() const

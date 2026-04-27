@@ -3151,6 +3151,15 @@ bool AudioCoreService::HandleNormalInputPipes(const std::vector<std::shared_ptr<
                 continue;
             }
 
+            // Check voipPriorityLowered flag: if true, treat VoIP stream as non-running
+            // so it won't be counted in priority comparison
+            if (stream->voipPriorityLowered_.load() &&
+                stream->GetSourceType() == SOURCE_TYPE_VOICE_COMMUNICATION) {
+                AUDIO_INFO_LOG("VoIP stream %{public}u is excluded from priority comparison due to mute callback",
+                    stream->GetSessionId());
+                continue;
+            }
+
             if (IsHigherPrioritySourceType(
                 stream->capturerInfo_.sourceType,
                 runningSessionInfo.capturerInfo_.sourceType)) {
@@ -3255,6 +3264,33 @@ int32_t AudioCoreService::ReloadCaptureSessionSoftLink()
     ReloadSourceForSession(targetSession, targetStream.sessionId_);
     SetOpenedNormalSourceSessionId(targetStream.sessionId_);
     return SUCCESS;
+}
+
+void AudioCoreService::NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered)
+{
+    AUDIO_INFO_LOG("NotifyVoipPriorityLoweredByMute: streamId %{public}u, lowered %{public}d",
+        streamId, lowered);
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+
+    auto streamDesc = pipeManager_->GetStreamDescById(streamId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "stream descriptor is nullptr for streamId %{public}u", streamId);
+
+    streamDesc->voipPriorityLowered_.store(lowered);
+    TriggerVoipPriorityReload(streamDesc, lowered);
+}
+
+void AudioCoreService::TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    AUDIO_INFO_LOG("TriggerVoipPriorityReload: sessionId %{public}u, lowered %{public}d",
+        streamDesc->GetSessionId(), lowered);
+    if (!streamDesc->IsRunning()) {
+        AUDIO_INFO_LOG("streamId %{public}u is not started, skip reload", streamDesc->GetSessionId());
+        return;
+    }
+
+    SessionOperation operation = lowered ? SESSION_OPERATION_PAUSE : SESSION_OPERATION_START;
+    (void)ReloadCaptureSession(streamDesc->GetSessionId(), operation);
 }
 
 bool AudioCoreService::HasNormalTypeCapturerSession(
