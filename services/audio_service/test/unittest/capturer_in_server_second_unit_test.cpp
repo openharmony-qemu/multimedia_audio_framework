@@ -750,7 +750,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorFail_001, 
     processConfig.capturerInfo.isLoopback = false;
     processConfig.appInfo.appTokenId = 0;
     std::weak_ptr<IStreamListener> streamListener;
-    auto capturerInServer_ = std::make_shared(processConfig, streamListener);
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     ASSERT_TRUE(capturerInServer_ != nullptr);
 
     auto &manager = RecordPrivacyManager::GetInstance();
