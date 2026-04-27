@@ -88,4 +88,94 @@ HWTEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode, TestSize.Level0)
     EXPECT_FLOAT_EQ(hpaeLoudnessGainNode->GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
 }
 
+/**
+ * @tc.name  : FaultCode_ReleaseHandle_NullHandle
+ * @tc.type  : FUNC
+ * @tc.desc  : Test ReleaseHandle returns ERROR when handle_ is nullptr,
+ *             covering PLAY_CREATE_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeLoudnessGainNodeTest, FaultCode_ReleaseHandle_NullHandle, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeLoudnessGainNode = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    // handle_ is nullptr by default (no dl handle loaded in UT)
+    int32_t result = hpaeLoudnessGainNode->ReleaseHandle(0.0f);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_SetLoudnessGain_SameGain
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetLoudnessGain returns SUCCESS when setting same gain value,
+ *             covering PLAY_CREATE_INVALID_PARAM fault code path for same-value skip.
+ */
+HWTEST_F(HpaeLoudnessGainNodeTest, FaultCode_SetLoudnessGain_SameGain, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeLoudnessGainNode = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    // Initial gain is 0.0f, setting same value should return SUCCESS
+    EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(0.0f), SUCCESS);
+}
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_EmptyInputs
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SignalProcess returns &silenceData_ when inputs is empty,
+ *             covering PLAY_SEND_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeLoudnessGainNodeTest, FaultCode_SignalProcess_EmptyInputs, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeLoudnessGainNode = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    // Set gain to non-zero to avoid early return at gain==0 check
+    hpaeLoudnessGainNode->SetLoudnessGain(LOUDNESS_GAIN_VALUE);
+
+    // Empty inputs vector should return &silenceData_
+    std::vector<HpaePcmBuffer*> emptyInputs;
+    HpaePcmBuffer* result = hpaeLoudnessGainNode->SignalProcess(emptyInputs);
+    EXPECT_EQ(result, &hpaeLoudnessGainNode->silenceData_);
+}
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_NullFirstInput
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SignalProcess returns &silenceData_ when first input is nullptr,
+ *             covering PLAY_SEND_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeLoudnessGainNodeTest, FaultCode_SignalProcess_NullFirstInput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeLoudnessGainNode = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    // Set gain to non-zero
+    hpaeLoudnessGainNode->SetLoudnessGain(LOUDNESS_GAIN_VALUE);
+
+    // First input is nullptr
+    std::vector<HpaePcmBuffer*> inputs = {nullptr};
+    HpaePcmBuffer* result = hpaeLoudnessGainNode->SignalProcess(inputs);
+    EXPECT_EQ(result, &hpaeLoudnessGainNode->silenceData_);
+}
 }

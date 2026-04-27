@@ -987,6 +987,59 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_062, TestSize.Level0)
     invalidSourceInfo2.frameLen = 38401;
     EXPECT_EQ(CheckSourceInfoFramelen(invalidSourceInfo2), ERROR);
 }
+
+/**
+ * @tc.name: FaultCode_TransModuleInfoToHpaeSinkInfo_InvalidFormat
+ * @tc.type: FUNC
+ * @tc.number: FaultCode_TransModuleInfoToHpaeSinkInfo_InvalidFormat
+ * @tc.desc: Test TransModuleInfoToHpaeSinkInfo with invalid format,
+ *           should report FAULT_NO_SOUND/PLAY/CREATE/ERR_INVALID_PARAM
+ *           or return ERROR.
+ */
+HWTEST_F(HpaeNodeCommonTest,
+    FaultCode_TransModuleInfoToHpaeSinkInfo_InvalidFormat, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "invalid_format";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "3";
+    moduleInfo.deviceType = "1";
+
+    HpaeSinkInfo sinkInfo;
+    int32_t ret = TransModuleInfoToHpaeSinkInfo(moduleInfo, sinkInfo);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name: FaultCode_TransModuleInfoToHpaeSinkInfo_InvalidChannels
+ * @tc.type: FUNC
+ * @tc.number: FaultCode_TransModuleInfoToHpaeSinkInfo_InvalidChannels
+ * @tc.desc: Test TransModuleInfoToHpaeSinkInfo with invalid channels,
+ *           should report FAULT_NO_SOUND/PLAY/SEND/ERR_INVALID_PARAM
+ *           fault code.
+ */
+HWTEST_F(HpaeNodeCommonTest,
+    FaultCode_TransModuleInfoToHpaeSinkInfo_InvalidChannels, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "0";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "0";
+    moduleInfo.deviceType = "1";
+
+    HpaeSinkInfo sinkInfo;
+    int32_t ret = TransModuleInfoToHpaeSinkInfo(moduleInfo, sinkInfo);
+    EXPECT_EQ(ret, ERROR);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

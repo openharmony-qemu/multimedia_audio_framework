@@ -671,6 +671,68 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_108, TestSize.Leve
     EXPECT_EQ(nodeInfo3.channels, audioBufferConfig3.channels);
     EXPECT_EQ(nodeInfo3.format, SAMPLE_F32LE);
 }
+
+// FaultCode test constants
+static constexpr uint64_t TEST_SCENE_KEY_CODE = 12345;
+
+/**
+ * @tc.name  : Test CaptureEffectCreate fault code
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_CaptureEffectCreate_001
+ * @tc.desc  : Test CaptureEffectCreate returns ERR_ILLEGAL_STATE when no enhance chain manager
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, FaultCode_CaptureEffectCreate_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode =
+        std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    CaptureEffectAttr attr = {
+        .micChannels = STEREO,
+        .ecChannels = STEREO,
+        .micRefChannels = STEREO,
+    };
+    int32_t ret = hpaeCaptureEffectNode->CaptureEffectCreate(TEST_SCENE_KEY_CODE, attr);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test GetCapturerEffectConfig fault code
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_GetCapturerEffectConfig_001
+ * @tc.desc  : Test GetCapturerEffectConfig returns false when config not found
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, FaultCode_GetCapturerEffectConfig_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode =
+        std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    HpaeNodeInfo outNodeInfo;
+    bool ret = hpaeCaptureEffectNode->GetCapturerEffectConfig(outNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test SignalProcess fault code
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_SignalProcess_001
+ * @tc.desc  : Test SignalProcess returns outPcmBuffer_ when processLength is 0
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, FaultCode_SignalProcess_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode =
+        std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+    std::vector<HpaePcmBuffer *> inputs;
+    HpaePcmBuffer ecBuffer(pcmBufferInfo);
+    ecBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_EC);
+    inputs.emplace_back(&ecBuffer);
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

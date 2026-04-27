@@ -26,10 +26,12 @@
 #include "audio_effect_map.h"
 #include "audio_utils.h"
 #include "audio_effect_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
 HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
@@ -90,7 +92,10 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
 #endif
             auto ret = memcpy_s(micCache_.data(), micCache_.size(),
                 inputs[i]->GetPcmDataBuffer(), micBufferLength_);
-            CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "mic memcpy error");
+            CHECK_AND_RETURN_RET(ret == EOK,
+                (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                        ERR_INVALID_PARAM), "mic memcpy error", false), nullptr));
             transBuf.micData = static_cast<void *>(micCache_.data());
             transBuf.micDataLen = micCache_.size();
             processLength = micBufferLength_;
@@ -101,20 +106,32 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
 #endif
             auto ret = memcpy_s(micRefCache_.data(), micRefCache_.size(),
                 inputs[i]->GetPcmDataBuffer(), micrefBufferLength_);
-            CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "collab mic memcpy error");
+            CHECK_AND_RETURN_RET(ret == EOK,
+                (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                        ERR_INVALID_PARAM), "collab mic memcpy error", false), nullptr));
             transBuf.micRefData = static_cast<void *>(micRefCache_.data());
             transBuf.micRefDataLen = micRefCache_.size();
             AUDIO_DEBUG_LOG("collaborative ref size:%{public}u", micrefBufferLength_);
         }
     }
     outPcmBuffer_->SetBufferValid(processLength != 0);
-    CHECK_AND_RETURN_RET_LOG(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
+    CHECK_AND_RETURN_RET(processLength != 0,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD, BusinessScenario::QUERY,
+                ERR_INVALID_PARAM), "main mic data is null", false), outPcmBuffer_.get()));
     int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_OPERATION_FAILED), "effect apply failed", false), outPcmBuffer_.get()));
     audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
         static_cast<size_t>(processLength));
     ret = memcpy_s(outPcmBuffer_->GetPcmDataBuffer(), processLength, cacheDataOut_.data(), processLength);
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "effect out cpy error");
+    CHECK_AND_RETURN_RET(ret == EOK,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_INVALID_PARAM), "effect out cpy error", false), nullptr));
 #ifdef ENABLE_HOOK_PCM
     outputDumper_->Dump((int8_t *)cacheDataOut_.data(), micBufferLength_);
 #endif
@@ -161,10 +178,16 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     }
 
     outPcmBuffer_->SetBufferValid(processLength != 0);
-    CHECK_AND_RETURN_RET_LOG(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
+    CHECK_AND_RETURN_RET(processLength != 0,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD, BusinessScenario::QUERY,
+                ERR_INVALID_PARAM), "main mic data is null", false), outPcmBuffer_.get()));
 
     int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_OPERATION_FAILED), "effect apply failed", false), outPcmBuffer_.get()));
     audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
         static_cast<size_t>(processLength));
     ConvertToFloat(SAMPLE_S16LE, micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
@@ -202,8 +225,11 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
 
 bool HpaeCaptureEffectNode::GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo, HpaeSourceBufferType type)
 {
-    CHECK_AND_RETURN_RET_LOG(capturerEffectConfigMap_.find(type) != capturerEffectConfigMap_.end(),
-        false, "not need resample node, type:%{public}u", type);
+    CHECK_AND_RETURN_RET(capturerEffectConfigMap_.find(type) != capturerEffectConfigMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "config not found", false), false));
     nodeInfo = capturerEffectConfigMap_[type];
     return true;
 }
@@ -257,7 +283,10 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
 {
     sceneKeyCode_ = sceneKeyCode;
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
+    CHECK_AND_RETURN_RET(audioEnhanceChainManager,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_NULL_POINTER), "audioEnhanceChainManager is nullptr", false), ERR_ILLEGAL_STATE));
     AudioEnhanceDeviceAttr enhanceAttr = {};
     enhanceAttr.needEc = attr.needEc;
     enhanceAttr.needMicRef = attr.needMicRef;
@@ -265,14 +294,19 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     enhanceAttr.ecChannels = attr.ecChannels;
     enhanceAttr.micRefChannels = attr.micRefChannels;
     int32_t ret = audioEnhanceChainManager->CreateAudioEnhanceChainDynamic(sceneKeyCode, enhanceAttr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_OPERATION_FAILED), "create chain failed", false), ERROR));
 
     AudioBufferConfig micConfig = {};
     AudioBufferConfig ecConfig = {};
     AudioBufferConfig micrefConfig = {};
     ret = audioEnhanceChainManager->AudioEnhanceChainGetAlgoConfig(sceneKeyCode, micConfig, ecConfig, micrefConfig);
-    CHECK_AND_RETURN_RET_LOG(ret == 0 && micConfig.samplingRate != 0, ERROR,
-        "get algo config failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == 0 && micConfig.samplingRate != 0,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::CREATE, ERR_INVALID_PARAM), "get algo config failed", false), ERROR));
     SetCapturerEffectConfig(micConfig, ecConfig, micrefConfig);
     micBufferLength_ = FRAME_LEN_20MS * micConfig.channels * (micConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (micConfig.format / BITLENGTH);
@@ -305,7 +339,11 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
 int32_t HpaeCaptureEffectNode::CaptureEffectRelease(uint64_t sceneKeyCode)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
+    CHECK_AND_RETURN_RET(audioEnhanceChainManager,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "audioEnhanceChainManager is nullptr", false), ERR_ILLEGAL_STATE));
     return audioEnhanceChainManager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
 }
 
@@ -317,7 +355,11 @@ uint64_t HpaeCaptureEffectNode::GetLatency(uint32_t sessionId)
 int32_t HpaeCaptureEffectNode::SetAppsEnhanceMuteState(bool isMute)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERROR, "audioEnhanceChainManager is nullptr");
+    CHECK_AND_RETURN_RET(audioEnhanceChainManager,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "audioEnhanceChainManager is nullptr", false), ERROR));
     return audioEnhanceChainManager->SetAppsMuteStateToChainById(sceneKeyCode_, isMute);
 }
 }  // namespace HPAE

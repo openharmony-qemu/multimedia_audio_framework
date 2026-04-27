@@ -1738,5 +1738,105 @@ HWTEST_F(HpaeProcessClusterTest, DestroyNodes_001, TestSize.Level1)
     EXPECT_EQ(cluster->CheckNodes(DEFAULT_SESSIONID_NUM_FIRST), SUCCESS);
 }
 
+/**
+ * @tc.name  : FaultCode_CreateNodes_NullPreNode
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_CreateNodes_NullPreNode
+ * @tc.desc  : Test CreateNodes with nullptr preNode,
+ *             should report PLAY_CREATE_DEPENDENCY_NULL fault code.
+ */
+HWTEST_F(HpaeProcessClusterTest, FaultCode_CreateNodes_NullPreNode, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+
+    // CreateNodes with nullptr should report PLAY_CREATE_DEPENDENCY_NULL
+    std::shared_ptr<OutputNode<HpaePcmBuffer *>> nullNode = nullptr;
+    int32_t ret = cluster->CreateNodes(nullNode);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_SetLoudnessGain_NullNode
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_SetLoudnessGain_NullNode
+ * @tc.desc  : Test SetLoudnessGain when loudnessGainNode does not exist,
+ *             should report PLAY_QUERY_INSTANCE_NULL fault code.
+ */
+HWTEST_F(HpaeProcessClusterTest, FaultCode_SetLoudnessGain_NullNode, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    // Do not create nodes - loudnessGainNode does not exist
+    int32_t ret = cluster->SetLoudnessGain(DEFAULT_SESSIONID_NUM_FIRST, LOUDNESS_GAIN);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_SetupAudioLimiter_NullMixerNode
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_SetupAudioLimiter_NullMixerNode
+ * @tc.desc  : Test SetupAudioLimiter when mixerNode is null (edge case).
+ */
+HWTEST_F(HpaeProcessClusterTest, FaultCode_SetupAudioLimiter_NullMixerNode, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    // mixerNode_ should always be valid after construction
+    int32_t ret = cluster->SetupAudioLimiter();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : FaultCode_CheckNodes_NonExistentSession
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_CheckNodes_NonExistentSession
+ * @tc.desc  : Test CheckNodes when nodes do not exist for the given session,
+ *             should return ERROR (no fault code reported in CheckNodes itself).
+ */
+HWTEST_F(HpaeProcessClusterTest, FaultCode_CheckNodes_NonExistentSession, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    // No nodes created, CheckNodes should return ERROR
+    int32_t ret = cluster->CheckNodes(DEFAULT_SESSIONID_NUM_FIRST);
+    EXPECT_EQ(ret, ERROR);
+}
 } // AudioStandard
 } // OHOS

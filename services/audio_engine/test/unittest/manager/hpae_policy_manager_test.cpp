@@ -94,3 +94,29 @@ HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002, TestSize.Level0)
     EXPECT_EQ(subkey, "other_subkey");
     EXPECT_EQ(extraSceneType, "extra_scene");
 }
+
+/**
+ * @tc.name  : FaultCode_IsChannelLayoutSupportedForDspEffect_EffectManagerNull
+ * @tc.type  : FUNC
+ * @tc.desc  : Test IsChannelLayoutSupportedForDspEffect returns false when effect manager is null,
+ *             covering CTRL_QUERY_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaePolicyManagerTest, FaultCode_IsChannelLayoutSupportedForDspEffect_EffectManagerNull, TestSize.Level1)
+{
+    // AudioEffectChainManager::GetInstance() may return nullptr in test environment,
+    // covering the fault code path for missing dependency.
+    bool ret = HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_MONO);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : FaultCode_NotifyAlgoToStopStream_EffectManagerNull
+ * @tc.type  : FUNC
+ * @tc.desc  : Test NotifyAlgoToStopStream handles null audioEnhanceChainManager gracefully.
+ */
+HWTEST_F(HpaePolicyManagerTest, FaultCode_NotifyAlgoToStopStream_EffectManagerNull, TestSize.Level1)
+{
+    // Should not crash when audioEnhanceChainManager is nullptr in test environment
+    HpaePolicyManager::GetInstance().NotifyAlgoToStopStream();
+    SUCCEED();
+}

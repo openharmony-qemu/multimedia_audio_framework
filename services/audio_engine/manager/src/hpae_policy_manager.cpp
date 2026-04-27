@@ -25,6 +25,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "audio_engine_log.h"
 #include "audio_collaboration_manager.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -177,7 +178,11 @@ std::string HpaePolicyManager::GetAudioParameter(const std::string &adapterName,
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "false", "local device manager is nullptr");
+    CHECK_AND_RETURN_RET(deviceManager != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+        BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
+        "local device manager is nullptr", false), "false"));
     return deviceManager->GetAudioParameter(adapterName, key, condition);
 }
 
@@ -214,14 +219,22 @@ void HpaePolicyManager::DeleteStreamVolumeToEffect(const std::string stringSessi
 bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
+    CHECK_AND_RETURN_RET(audioEffectChainManager != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+        BusinessScenario::QUERY, ERR_NULL_POINTER),
+        "null audioEffectChainManager", false), false));
     return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
 int32_t HpaePolicyManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioCollaborationManager != nullptr, ERR_ILLEGAL_STATE, "null audioCollaborationManager");
+    CHECK_AND_RETURN_RET(audioCollaborationManager != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+        BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
+        "null audioCollaborationManager", false), ERR_ILLEGAL_STATE));
     return audioCollaborationManager->UpdateCollaborativeProductId(productId);
 }
 

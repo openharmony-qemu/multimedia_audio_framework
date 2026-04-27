@@ -25,6 +25,7 @@
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -158,8 +159,11 @@ int32_t HpaeInjectorRendererManager::Release(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Release");
     AUDIO_INFO_LOG("Release sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), ERROR,
-        "Release not find sessionId %{public}u", sessionId);
+    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "Release not find sessionId", false), ERROR));
     return DestroyStream(sessionId);
 }
 
@@ -623,10 +627,17 @@ int32_t HpaeInjectorRendererManager::ConnectInputSession(const uint32_t &session
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::ConnectInputSession");
     AUDIO_INFO_LOG("connect input session:%{public}d", sessionId);
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), ERR_INVALID_PARAM,
-        "connect fail, session %{public}u not found", sessionId);
+    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "connect fail, session not found", false), ERR_INVALID_PARAM));
     CHECK_AND_RETURN_RET(sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_RUNNING, SUCCESS);
-    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_ != nullptr && sceneCluster_ != nullptr, ERROR, "manager maybe not init");
+    CHECK_AND_RETURN_RET(sinkOutputNode_ != nullptr && sceneCluster_ != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "manager maybe not init", false), ERROR));
     sinkOutputNode_->Connect(sceneCluster_);
     sceneCluster_->Connect(sinkInputNodeMap_[sessionId]);
     if (sinkOutputNode_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
@@ -639,8 +650,11 @@ int32_t HpaeInjectorRendererManager::DisConnectInputSession(const uint32_t &sess
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::DisConnectInputSession");
     AUDIO_INFO_LOG("disconnect input session:%{public}d", sessionId);
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), ERR_INVALID_PARAM,
-        "disconnect fail, session %{public}u not found", sessionId);
+    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "disconnect fail, session not found", false), ERR_INVALID_PARAM));
     CHECK_AND_RETURN_RET(sinkOutputNode_ != nullptr && sceneCluster_ != nullptr, SUCCESS);
     sceneCluster_->DisConnect(sinkInputNodeMap_[sessionId]);
 
@@ -709,8 +723,11 @@ void HpaeInjectorRendererManager::MoveAllStreamToNewSink(const std::string &sink
 
 bool HpaeInjectorRendererManager::SetSessionFade(uint32_t sessionId, IOperation operation)
 {
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
-        "SetSessionFade not find session %{public}u", sessionId);
+    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
+            "SetSessionFade not find session", false), false));
     std::shared_ptr<HpaeGainNode> sessionGainNode = sceneCluster_->GetGainNodeById(sessionId);
     if (sessionGainNode == nullptr) {
         AUDIO_ERR_LOG("SetSessionFade not find gain node for session %{public}u", sessionId);

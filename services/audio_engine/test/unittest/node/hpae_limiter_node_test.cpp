@@ -751,3 +751,93 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithSplitStream002, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
     EXPECT_FALSE(hpaeLimiterNode->IsLimiterInited());
 }
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_EmptyInputs
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SignalProcess with empty inputs vector,
+ *             should report PLAY_QUERY_INSTANCE_NULL fault code and return limiterOutput_.
+ */
+HWTEST_F(HpaeLimiterNodeTest, FaultCode_SignalProcess_EmptyInputs, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    nodeInfo.channels = DEFAULT_CHANNELS;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto limiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
+    std::vector<HpaePcmBuffer *> inputs;
+    HpaePcmBuffer *result = limiterNode->SignalProcess(inputs);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_NullFirstInput
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SignalProcess with nullptr as first input,
+ *             should report PLAY_QUERY_INSTANCE_NULL fault code.
+ */
+HWTEST_F(HpaeLimiterNodeTest, FaultCode_SignalProcess_NullFirstInput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    nodeInfo.channels = DEFAULT_CHANNELS;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto limiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
+    std::vector<HpaePcmBuffer *> inputs = {nullptr};
+    HpaePcmBuffer *result = limiterNode->SignalProcess(inputs);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : FaultCode_GetLatency_WithoutLimiter
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetLatency when limiter handle is null,
+ *             should return 0 (limiter_ null path).
+ */
+HWTEST_F(HpaeLimiterNodeTest, FaultCode_GetLatency_WithoutLimiter, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    nodeInfo.channels = DEFAULT_CHANNELS;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto limiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
+    // limiter_ is nullptr by default (not initialized)
+    uint64_t latency = limiterNode->GetLatency(0);
+    EXPECT_EQ(latency, 0);
+}
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_InvalidInputBuffer
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SignalProcess with invalid input buffer,
+ *             should return input buffer directly when not valid.
+ */
+HWTEST_F(HpaeLimiterNodeTest, FaultCode_SignalProcess_InvalidInputBuffer, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    nodeInfo.channels = DEFAULT_CHANNELS;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto limiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
+
+    PcmBufferInfo bufferInfo(DEFAULT_CHANNELS, DEFAULT_FRAME_LEN, DEFAULT_SAMPLE_RATE);
+    HpaePcmBuffer inputBuffer(bufferInfo);
+    // Do not call GetPcmDataBuffer, buffer is not valid
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuffer};
+    HpaePcmBuffer *result = limiterNode->SignalProcess(inputs);
+    EXPECT_NE(result, nullptr);
+    // Should return input buffer directly since it's not valid
+    EXPECT_EQ(result, &inputBuffer);
+}
