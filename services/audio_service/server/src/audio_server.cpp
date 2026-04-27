@@ -1565,6 +1565,8 @@ int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, 
 
 int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "SetAudioSceneForPipe refused, only internal call allowed");
     AUDIO_INFO_LOG("SetAudioSceneForPipe pipeId: %{public}u, audioScene: %{public}d, scoExcludeFlag: %{public}d",
         pipeId, audioScene, scoExcludeFlag);
     AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
