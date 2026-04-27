@@ -273,6 +273,7 @@ private:
 
     void FillCapturerClientOnlyInfo(AudioDebugInfo &debugInfo);
     void FillCapturerDeviceInfo(AudioDebugInfo &debugInfo, uint32_t sessionId);
+    int32_t CheckForSetAudioStreamInfo(const AudioStreamParams info);
 
 private:
     AudioStreamType eStreamType_;

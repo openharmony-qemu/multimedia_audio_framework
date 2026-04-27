@@ -17,11 +17,13 @@
 #endif
 
 #include "i_audio_stream.h"
+#include <unistd.h>
 #include <map>
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "stream_dfx_manager.h"
 #include "audio_policy_manager.h"
 #include "capturer_in_client.h"
 #include "renderer_in_client.h"
@@ -162,9 +164,14 @@ int32_t IAudioStream::CheckCapturerAudioStreamInfo(const AudioStreamParams info)
     if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
         !IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("Unsupported audio capturer parameter");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_INVALID_PARAM, "Unsupported audio capturer parameter", true);
         return ERR_NOT_SUPPORTED;
     }
-    CHECK_AND_RETURN_RET(IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout), ERR_NOT_SUPPORTED);
+    CHECK_AND_CALL_FUNC_RETURN_RET(IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout),
+        ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_INVALID_PARAM, "Invalid record channel info", true));
     return SUCCESS;
 }
 

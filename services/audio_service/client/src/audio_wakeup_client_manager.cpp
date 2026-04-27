@@ -16,9 +16,11 @@
 #include "audio_wakeup_client_manager.h"
 #include "audio_service_proxy.h"
 
+#include <unistd.h>
 #include <memory>
 #include "audio_common_log.h"
 #include "audio_errors.h"
+#include "stream_dfx_manager.h"
 #include "audio_manager_listener_stub_impl.h"
 
 namespace OHOS {
@@ -50,14 +52,23 @@ int32_t AudioWakeupClientManager::RegisterWakeupSourceCallback()
     remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>();
 
     sptr<AudioManagerListenerStubImpl> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStubImpl();
-    CHECK_AND_RETURN_RET_LOG(wakeupCloseCbStub != nullptr, ERROR, "wakeupCloseCbStub is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(wakeupCloseCbStub != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_NULL_POINTER, "wakeupCloseCbStub is null", true),
+        "wakeupCloseCbStub is null");
     wakeupCloseCbStub->SetWakeupSourceCallback(remoteWakeUpCallback_);
 
     const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERROR, "GetAudioParameter::Audio service unavailable.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(gasp != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_ILLEGAL_STATE, "Audio service unavailable", true),
+        "GetAudioParameter::Audio service unavailable.");
 
     sptr<IRemoteObject> object = wakeupCloseCbStub->AsObject();
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "SetWakeupCloseCallback listenerStub object is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(object != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_NULL_POINTER, "listenerStub object is nullptr", true),
+        "SetWakeupCloseCallback listenerStub object is nullptr");
 
     return gasp->SetWakeupSourceCallback(object);
 }

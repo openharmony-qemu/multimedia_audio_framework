@@ -18,6 +18,7 @@
 
 #include "audio_server.h"
 
+#include <unistd.h>
 #include <cinttypes>
 #include <codecvt>
 #include <csignal>
@@ -45,6 +46,7 @@
 #include "audio_info.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
+#include "stream_dfx_manager.h"
 #include "async_action_handler.h"
 #include "audio_asr.h"
 #include "audio_stream_enum.h"
@@ -339,6 +341,8 @@ static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
 static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
 {
     if (source == nullptr || !source->IsInited()) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "Capturer is not initialized", false);
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
         source->UpdateActiveDevice(type);
@@ -1624,7 +1628,10 @@ int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceType type, const Dev
     }
 
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
-        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "Capturer is not initialized", false),
+            "Capturer is not initialized");
         source->UpdateActiveDevice(type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
