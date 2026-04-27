@@ -285,8 +285,8 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET(audioEnhanceChainManager,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,BusinessScenario::CREATE,
-                ERR_NULL_POINTER), "audioEnhanceChainManager is nullptr",false), ERR_ILLEGAL_STATE));
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_NULL_POINTER), "audioEnhanceChainManager is nullptr", false), ERR_ILLEGAL_STATE));
     AudioEnhanceDeviceAttr enhanceAttr = {};
     enhanceAttr.needEc = attr.needEc;
     enhanceAttr.needMicRef = attr.needMicRef;
