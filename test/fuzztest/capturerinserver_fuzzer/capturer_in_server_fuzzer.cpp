@@ -734,6 +734,15 @@ void MicIndicatorFuzzTest()
     capturerInServer_->isMicIndicatorOn_ = g_fuzzUtils.GetData<bool>();
     (void)capturerInServer_->TurnOnMicIndicator();
     (void)capturerInServer_->TurnOffMicIndicator(CAPTURER_STOPPED);
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    capturerInServer_->processConfig_.appInfo.appTokenId = 0;
+    capturerInServer_->isMicIndicatorOn_ = true;
+    manager.tokenIdRecordMap_[0] = {capturerInServer_->streamIndex_};
+    (void)capturerInServer_->TurnOffMicIndicator(CAPTURER_PAUSED);
+    (void)capturerInServer_->TurnOnMicIndicator();
+    manager.tokenIdRecordMap_.clear();
 }
 
 vector<TestFuncs> g_testFuncs = {

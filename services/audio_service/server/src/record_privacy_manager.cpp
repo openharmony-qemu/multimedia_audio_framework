@@ -96,22 +96,18 @@ bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t se
         return true;
     }
 
-    std::set<uint32_t> remainedSessions = tokenIter->second;
-    if (remainedSessions.count(sessionId)) {
-        remainedSessions.erase(sessionId);
-    }
+    tokenIter->second.erase(sessionId);
     AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
-        remainedSessions.size());
-    if (!remainedSessions.empty()) {
-        tokenIter->second = std::move(remainedSessions);
+        tokenIter->second.size());
+    if (!tokenIter->second.empty()) {
         return true;
     }
+    tokenIdRecordMap_.erase(tokenIter);
 
     AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
         "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
     CHECK_AND_RETURN_RET_LOG(StopUsingMicrophone(targetTokenId), false,
         "StopUsingMicrophone failed for tokenId:%{public}u sessionId:%{public}u", targetTokenId, sessionId);
-    tokenIdRecordMap_.erase(tokenIter);
     return true;
 }
  
