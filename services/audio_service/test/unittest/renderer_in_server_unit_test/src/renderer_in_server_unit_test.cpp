@@ -3964,5 +3964,77 @@ HWTEST_F(RendererInServerUnitTest, NotifyStandbyActionExec_002, TestSize.Level1)
     
     action->Exec();
 }
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_001
+ * @tc.desc  : Test UpdateUnderrunInfo when infoType == UNDERRUN_TYPE_ISTIMEOUT is true
+ */
+HWTEST_F(RendererInServerUnitTest, UpdateUnderrunInfo_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Test when infoType == UNDERRUN_TYPE_ISTIMEOUT
+    uint32_t underrunInfoKey = UNDERRUN_TYPE_ISTIMEOUT;
+    int32_t underrunInfoVal = 1; // true
+    ret = rendererInServer->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_002
+ * @tc.desc  : Test UpdateUnderrunInfo when infoType == UNDERRUN_TYPE_ISUSEARK is true
+ */
+HWTEST_F(RendererInServerUnitTest, UpdateUnderrunInfo_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Test when infoType == UNDERRUN_TYPE_ISUSEARK
+    uint32_t underrunInfoKey = UNDERRUN_TYPE_ISUSEARK;
+    int32_t underrunInfoVal = 1; // true
+    ret = rendererInServer->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_003
+ * @tc.desc  : Test UpdateUnderrunInfo when infoType is unknown
+ */
+HWTEST_F(RendererInServerUnitTest, UpdateUnderrunInfo_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Test when infoType is unknown
+    uint32_t underrunInfoKey = UNDERRUN_TYPE_MAX; // invalid type
+    int32_t underrunInfoVal = 1;
+    ret = rendererInServer->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

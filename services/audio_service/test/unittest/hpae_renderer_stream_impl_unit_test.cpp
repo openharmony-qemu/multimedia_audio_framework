@@ -1240,5 +1240,53 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_042, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_TRUE(unit->preBufDone_);
 }
+
+/**
+ * @tc.name  : Test SetOffloadMode with statusCallback
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadMode_001
+ * @tc.desc  : Test SetOffloadMode when statusCallback != nullptr
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, SetOffloadMode_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+
+    // Create a mock status callback
+    class MockStatusCallback : public IStatusCallback {
+    public:
+        MOCK_METHOD(void, OnStatusUpdate, (IOperation operation), (override));
+        virtual ~MockStatusCallback() = default;
+    };
+    auto mockCallback = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCallback;
+
+    // Set offload mode with isAppBack = true
+    EXPECT_CALL(*mockCallback, OnStatusUpdate(::testing::_))
+        .Times(::testing::AtLeast(1));
+    int32_t ret = unit->SetOffloadMode(1, true); // state = 1, isAppBack = true
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode without statusCallback
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadMode_002
+ * @tc.desc  : Test SetOffloadMode when statusCallback is nullptr
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, SetOffloadMode_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+
+    // Set statusCallback to empty weak_ptr
+    unit->statusCallback_.reset();
+
+    // Set offload mode - should not crash
+    int32_t ret = unit->SetOffloadMode(1, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
 }
 }
