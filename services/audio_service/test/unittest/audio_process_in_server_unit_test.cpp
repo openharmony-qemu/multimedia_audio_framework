@@ -2809,6 +2809,35 @@ HWTEST(AudioProcessInServerUnitTest, CheckBgRecordPermission_001, TestSize.Level
 }
 
 /**
+ * @tc.name  : Test CheckBgRecordPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckBgRecordPermission_002
+ * @tc.desc  : Test CheckBgRecordPermission interface with switch stream record.
+ */
+HWTEST(AudioProcessInServerUnitTest, CheckBgRecordPermission_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.callerUid = DEFAULT_STREAM_ID;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    SwitchStreamInfo info = {
+        audioProcessInServerRet.GetSessionId(),
+        configRet.callerUid,
+        configRet.appInfo.appUid,
+        configRet.appInfo.appPid,
+        configRet.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    info.nextState = CAPTURER_PREPARED;
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_TRUE(audioProcessInServerRet.CheckBgRecordPermission(CAPTURER_RUNNING));
+    EXPECT_TRUE(audioProcessInServerRet.TurnOffMicIndicator(CAPTURER_RELEASED));
+}
+
+/**
  * @tc.name  : Test NeedTurnOnMicIndicator API
  * @tc.type  : FUNC
  * @tc.number: NeedTurnOnMicIndicator_001
@@ -2872,6 +2901,96 @@ HWTEST(AudioProcessInServerUnitTest, AudioPrivacyManagerInServer_001, TestSize.L
     EXPECT_FALSE(privacyManager.StopUsingMicrophone(0));
     EXPECT_TRUE(privacyManager.StartUsingMicrophone(1));
     EXPECT_TRUE(privacyManager.StartUsingMicrophone(1));
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_RecordStartInner_001
+ * @tc.desc  : Test StartInner with remote cast source.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_RecordStartInner_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STAND_BY);
+
+    EXPECT_NE(audioProcessInServerRet.Start(), SUCCESS);
+    EXPECT_FALSE(audioProcessInServerRet.isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_RecordStartInner_002
+ * @tc.desc  : Test StartInner when loopback stream should not turn on mic indicator.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_RecordStartInner_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    configRet.capturerInfo.isLoopback = true;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STAND_BY);
+    SwitchStreamInfo info = {
+        audioProcessInServerRet.GetSessionId(),
+        configRet.callerUid,
+        configRet.appInfo.appUid,
+        configRet.appInfo.appPid,
+        configRet.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    info.nextState = CAPTURER_PREPARED;
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_NE(audioProcessInServerRet.Start(), SUCCESS);
+    EXPECT_FALSE(audioProcessInServerRet.isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_RecordResume_001
+ * @tc.desc  : Test Resume when turn on mic indicator branch is entered.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_RecordResume_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STARTING);
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+    SwitchStreamInfo info = {
+        audioProcessInServerRet.GetSessionId(),
+        configRet.callerUid,
+        configRet.appInfo.appUid,
+        configRet.appInfo.appPid,
+        configRet.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    info.nextState = CAPTURER_PREPARED;
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_EQ(audioProcessInServerRet.Resume(), SUCCESS);
+    EXPECT_TRUE(audioProcessInServerRet.isMicIndicatorOn_);
 }
 
 /**
