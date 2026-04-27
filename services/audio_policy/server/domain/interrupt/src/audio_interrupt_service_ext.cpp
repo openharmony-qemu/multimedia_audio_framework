@@ -138,6 +138,7 @@ void AudioInterruptService::SetLatestMuteState(const uint32_t &streamId, bool mu
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
     streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
     policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
+    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::SetLatestMuteState");
 }
 
 int32_t AudioInterruptService::ProcessActiveStreamFocus(
@@ -508,6 +509,7 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
     SendInterruptEventCallback(forceUnmute, sessionId, audioInterrupt);
     AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
     streamCollector_.CapturerMutedFlagChange(sessionId, 0);
+    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::ResetInterruptMuteState");
 }
 
 int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
