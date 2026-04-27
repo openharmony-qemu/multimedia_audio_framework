@@ -176,6 +176,7 @@ audio_ohos_library("audio_policy_service") {
   }
   install_enable = true
   sources = [
+    "server/domain/device/src/sco_audio_scene_manager.cpp",
     "server/domain/interrupt/src/standalone_mode_manager.cpp",
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/audio_manager_listener_stub_impl.cpp",

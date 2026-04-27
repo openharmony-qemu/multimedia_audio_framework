@@ -1563,6 +1563,44 @@ int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, 
     return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), scoExcludeFlag);
 }
 
+int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag)
+{
+    AUDIO_INFO_LOG("SetAudioSceneForPipe pipeId: %{public}u, audioScene: %{public}d, scoExcludeFlag: %{public}d",
+        pipeId, audioScene, scoExcludeFlag);
+    AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
+    CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
+        ERR_INVALID_PARAM, "param is invalid");
+    
+    std::shared_ptr<IAudioRenderSink> sink = nullptr;
+    std::shared_ptr<IAudioCaptureSource> source = nullptr;
+    
+    if (pipeId == DEFAULT_PIPE_ID) {
+        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, false);
+    } else {
+        sink = HdiAdapterManager::GetInstance().GetRenderSink(pipeId, true);
+        source = HdiAdapterManager::GetInstance().GetCaptureSource(pipeId, false);
+    }
+    
+    int32_t ret = SUCCESS;
+    if (sink != nullptr) {
+        ret = sink->SetAudioScene(audioSceneIn, scoExcludeFlag);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("SetAudioScene for sink %{public}u failed: %{public}d", pipeId, ret);
+        }
+    }
+    
+    if (source != nullptr) {
+        ret = source->SetAudioScene(audioSceneIn, scoExcludeFlag);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("SetAudioScene for source %{public}u failed: %{public}d", pipeId, ret);
+        }
+    }
+    
+    AUDIO_INFO_LOG("SetAudioSceneForPipe %{public}u completed with ret %{public}d", pipeId, ret);
+    return ret;
+}
+
 int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
     bool scoExcludeFlag)
 {

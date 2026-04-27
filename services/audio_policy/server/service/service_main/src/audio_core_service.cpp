@@ -28,6 +28,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
 #include "audio_bundle_manager.h"
+#include "parameters.h"
 
 #include <algorithm>
 #include "hisysevent.h"
@@ -38,6 +39,7 @@
 #include "audio_router_select_strategy.h"
 #include "audio_router_infra.h"
 #include "audio_route_select_info.h"
+#include "sco_audio_scene_manager.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -52,6 +54,8 @@ static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+static const bool IS_DEVICE_ENHANCED_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const std::string CHECK_VIDEO_COMM_SELECTION = "audio_video_comm_fast_blocklist";
@@ -1083,7 +1087,16 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     bool isScoDevice = !streamDesc->newDeviceDescs_.empty() &&
         streamDesc->newDeviceDescs_[0] != nullptr &&
         streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
-    if (isScoDevice) {
+    if (isScoDevice && IS_DEVICE_ENHANCED_SUPPORTED) {
+        TrackScoStreamAudioScene(streamDesc, true);
+        bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+        bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
+        bool isScoSelected = hasScoPlay || hasScoRecord;
+        if (isScoSelected) {
+            AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
+            Bluetooth::AudioHfpManager::UpdateAudioScene(highestScene, true);
+        }
+    } else if (isScoDevice) {
         bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
         bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
         bool isScoSelected = hasScoPlay || hasScoRecord;
@@ -1098,6 +1111,43 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
+    }
+}
+
+void AudioCoreService::TrackScoStreamAudioScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isAdd)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    
+    uint32_t streamId = streamDesc->sessionId_;
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+    bool isRecognition = false;
+    
+    if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+        if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            audioScene = AUDIO_SCENE_PHONE_CALL;
+        } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                   streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+            audioScene = AUDIO_SCENE_PHONE_CHAT;
+        } else if (streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+            audioScene = AUDIO_SCENE_VOICE_RINGING;
+        } else if (streamUsage == STREAM_USAGE_RINGTONE) {
+            audioScene = AUDIO_SCENE_RINGING;
+        }
+    } else if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+        SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+        isRecognition = (sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+                         sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION);
+    }
+    
+    if (isAdd) {
+        ScoAudioSceneManager::GetInstance().AddScoStream(streamId, audioScene,
+            streamDesc->callerUid_, isRecognition);
+        AUDIO_INFO_LOG("Track SCO stream %{public}u, audioScene %{public}d, isRecognition %{public}d",
+            streamId, audioScene, isRecognition);
+    } else {
+        ScoAudioSceneManager::GetInstance().RemoveScoStream(streamId);
+        AUDIO_INFO_LOG("Untrack SCO stream %{public}u", streamId);
     }
 }
 
