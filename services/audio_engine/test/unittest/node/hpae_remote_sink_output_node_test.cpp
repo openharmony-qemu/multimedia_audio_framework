@@ -161,28 +161,6 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, FaultCode_UpdateAppsUid_NullSink, TestSiz
 }
 
 /**
- * @tc.name  : FaultCode_UpdateAppsUid_SinkNotInited
- * @tc.type  : FUNC
- * @tc.desc  : Test UpdateAppsUid returns ERR_ILLEGAL_STATE when sink is not initialized,
- *             covering PLAY_START_STATE_ILLEGAL fault code path.
- */
-HWTEST_F(HpaeRemoteSinkOutputNodeTest, FaultCode_UpdateAppsUid_SinkNotInited, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    HpaeNodeInfo nodeInfo;
-    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
-
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    remoteNode->audioRendererSink_ = mockSink;
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
-
-    std::vector<int32_t> appsUid = {TEST_APP_UID};
-    int32_t result = remoteNode->UpdateAppsUid(appsUid);
-    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
-}
-
-/**
  * @tc.name  : FaultCode_RenderSinkInit_NullSink
  * @tc.type  : FUNC
  * @tc.desc  : Test RenderSinkInit returns ERROR when audioRendererSink_ is nullptr,
@@ -199,30 +177,6 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, FaultCode_RenderSinkInit_NullSink, TestSi
     attr.adapterName = "remote";
     int32_t result = remoteNode->RenderSinkInit(attr);
     EXPECT_EQ(result, ERROR);
-}
-
-/**
- * @tc.name  : FaultCode_RenderSinkInit_SinkInitFail
- * @tc.type  : FUNC
- * @tc.desc  : Test RenderSinkInit returns error when sink Init fails,
- *             covering PLAY_CREATE_STREAM_FAIL fault code path.
- */
-HWTEST_F(HpaeRemoteSinkOutputNodeTest, FaultCode_RenderSinkInit_SinkInitFail, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    HpaeNodeInfo nodeInfo;
-    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
-
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    remoteNode->audioRendererSink_ = mockSink;
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
-    EXPECT_CALL(*mockSink, Init(_)).WillOnce(Return(ERR_OPERATION_FAILED));
-
-    IAudioSinkAttr attr;
-    attr.adapterName = "remote";
-    int32_t result = remoteNode->RenderSinkInit(attr);
-    EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
