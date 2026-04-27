@@ -3004,6 +3004,29 @@ HWTEST_F(HpaeCapturerManagerTest, Pause_NonInterphone_001, TestSize.Level1)
     EXPECT_EQ(capturerManager->IsInit(), false);
 }
 
+/**
+ * @tc.name  : FaultCode_CaptureEffectCreate_InvalidSceneType
+ * @tc.type  : FUNC
+ * @tc.desc  : Test CaptureEffectCreate returns ERROR when sceneType is not supported,
+ *             covering FAULT_NO_SOUND/RECORD/CREATE/ERR_INVALID_PARAM fault code path.
+ */
+HWTEST_F(HpaeCapturerManagerTest, FaultCode_CaptureEffectCreate_InvalidSceneType,
+    TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+
+    static constexpr AudioEnhanceScene INVALID_ENHANCE_SCENE = static_cast<AudioEnhanceScene>(9999);
+    int32_t ret = capturerManager->CaptureEffectCreate(
+        HPAE_SCENE_DEFAULT, INVALID_ENHANCE_SCENE);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

@@ -888,4 +888,65 @@ HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_006, TestSiz
     EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_->IsRunning(), true);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
 }
+
+/**
+ * @tc.name  : FaultCode_Release_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Release returns ERROR when sessionId not found,
+ *             covering PLAY_RELEASE_INSTANCE_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_Release_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    int32_t ret = hpaeRendererManager->Release(INVALID_STREAM_ID);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_ConnectInputSession_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test ConnectInputSession returns ERR_INVALID_PARAM when session not found,
+ *             covering PLAY_START_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_ConnectInputSession_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    int32_t ret = hpaeRendererManager->ConnectInputSession(INVALID_STREAM_ID);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+
+/**
+ * @tc.name  : FaultCode_SetSessionFade_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetSessionFade returns false when session not found in sinkInputNodeMap_,
+ *             covering PLAY_SEND_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_SetSessionFade_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    bool ret = hpaeRendererManager->SetSessionFade(INVALID_STREAM_ID, OPERATION_STARTED);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : FaultCode_DisConnectInputSession_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test DisConnectInputSession returns ERR_INVALID_PARAM when session not found,
+ *             covering PLAY_STOP_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_DisConnectInputSession_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    int32_t ret = hpaeRendererManager->DisConnectInputSession(INVALID_STREAM_ID);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
 }  // namespace

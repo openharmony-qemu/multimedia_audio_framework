@@ -474,6 +474,55 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataFalse, TestSize.Lev
     int32_t result = node_->OnStreamInfoChange(false);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+ * @tc.name  : FaultCode_OnStreamInfoChange_WriteCallbackNull
+ * @tc.type  : FUNC
+ * @tc.desc  : Test OnStreamInfoChange when writeCallback is null,
+ *             should report PLAY_QUERY_INSTANCE_NULL fault code and return ERROR.
+ */
+HWTEST_F(HpaeSinkInputNodeTest, FaultCode_OnStreamInfoChange_WriteCallbackNull, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto sinkInputNode = std::make_unique<HpaeSinkInputNode>(nodeInfo);
+    // writeCallback_ is default (empty weak_ptr), not set
+    int32_t result = sinkInputNode->OnStreamInfoChange(true);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_QueryUnderrun_WriteCallbackNull
+ * @tc.type  : FUNC
+ * @tc.desc  : Test QueryUnderrun when writeCallback is null,
+ *             should report PLAY_QUERY_INSTANCE_NULL fault code and return false.
+ */
+HWTEST_F(HpaeSinkInputNodeTest, FaultCode_QueryUnderrun_WriteCallbackNull, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto sinkInputNode = std::make_unique<HpaeSinkInputNode>(nodeInfo);
+    // writeCallback_ is default (empty weak_ptr)
+    bool result = sinkInputNode->QueryUnderrun();
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : FaultCode_OnStreamInfoChange_WithValidCallback
+ * @tc.type  : FUNC
+ * @tc.desc  : Test OnStreamInfoChange with valid writeCallback succeeds
+ *             without PLAY_QUERY_INSTANCE_NULL fault code.
+ */
+HWTEST_F(HpaeSinkInputNodeTest, FaultCode_OnStreamInfoChange_WithValidCallback, TestSize.Level1)
+{
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(0));
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .WillOnce([&](AudioCallBackStreamInfo& info) {
+            return SUCCESS;
+        });
+    int32_t result = node_->OnStreamInfoChange(true);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

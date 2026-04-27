@@ -27,6 +27,7 @@
 #include "audio_stream_enum.h"
 #include "capturer_clock_manager.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 #define BYTE_SIZE_SAMPLE_U8 1
 #define BYTE_SIZE_SAMPLE_S16 2
@@ -38,6 +39,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
 static std::string TransSourceBufferTypeToString(const HpaeSourceBufferType &type)
 {
     if (type == HPAE_SOURCE_BUFFER_TYPE_MIC) {
@@ -385,24 +387,33 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputNode::GetOutputPort()
     } else {
         it = outputStreamMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC);
     }
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), nullptr, "outStreamMap_ is empty.");
+    CHECK_AND_RETURN_RET(it != outputStreamMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "outStreamMap_ is empty", false), nullptr));
     return &(it->second);
 }
 
 OutputPort<HpaePcmBuffer *> *HpaeSourceInputNode::GetOutputPort(HpaeNodeInfo &nodeInfo, bool isDisConnect)
 {
     auto it = outputStreamMap_.find(nodeInfo.sourceBufferType);
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), nullptr,
-        "can't find nodeKey in outStreamMap_, sourceBufferType = %{public}d.\n",
-        nodeInfo.sourceBufferType);
+    CHECK_AND_RETURN_RET(it != outputStreamMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "can't find nodeKey in outStreamMap_", false), nullptr));
     return &(it->second);
 }
 
 HpaeSourceBufferType HpaeSourceInputNode::GetOutputPortBufferType(HpaeNodeInfo &nodeInfo)
 {
     auto it = outputStreamMap_.find(nodeInfo.sourceBufferType);
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), HPAE_SOURCE_BUFFER_TYPE_DEFAULT,
-        "can't find nodeKey in outStreamMap_, sourceBufferType = %{public}d.\n", nodeInfo.sourceBufferType);
+    CHECK_AND_RETURN_RET(it != outputStreamMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "can't find nodeKey in outStreamMap_", false), HPAE_SOURCE_BUFFER_TYPE_DEFAULT));
     // todo: rewrite this function
     if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_MIC_EC) {
         if (nodeInfo.sourceBufferType == HPAE_SOURCE_BUFFER_TYPE_MIC) {
@@ -450,8 +461,11 @@ int32_t HpaeSourceInputNode::GetCapturerSourceInstance(const std::string &device
 
 int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
     Trace trace("HpaeSourceInputNode::CapturerSourceInit");
     if (audioCapturerSource_->IsInited()) {
         SetSourceState(STREAM_MANAGER_IDLE);
@@ -466,7 +480,11 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
     }
 
     audioSourceAttr_ = attr;
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Init(attr) == SUCCESS, ERROR, "Source init fail");
+    CHECK_AND_RETURN_RET(audioCapturerSource_->Init(attr) == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+            "Source init fail", false), ERROR));
     SetSourceState(STREAM_MANAGER_IDLE);
 #ifdef IS_EMULATOR
     // Due to the peculiar implementation of the emulator's HDI,
@@ -482,9 +500,16 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 
 int32_t HpaeSourceInputNode::CapturerSourceDeInit()
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->IsInited(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
+            "invalid source state", false), ERROR));
     Trace trace("HpaeSourceInputNode::CapturerSourceDeInit");
     audioCapturerSource_->DeInit();
     audioCapturerSource_ = nullptr;
@@ -494,34 +519,62 @@ int32_t HpaeSourceInputNode::CapturerSourceDeInit()
 
 int32_t HpaeSourceInputNode::CapturerSourceFlush(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::FLUSH, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->IsInited(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::FLUSH, ERR_ILLEGAL_STATE),
+            "invalid source state", false), ERROR));
     return audioCapturerSource_->Flush();
 }
 
 int32_t HpaeSourceInputNode::CapturerSourcePause(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Pause() == SUCCESS, ERROR, "Source pause fail");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::PAUSE, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->IsInited(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::PAUSE, ERR_ILLEGAL_STATE),
+            "invalid source state", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->Pause() == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::PAUSE, ERR_OPERATION_FAILED),
+            "Source pause fail", false), ERROR));
     SetSourceState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
 int32_t HpaeSourceInputNode::CapturerSourceReset(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::CONTROL, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
     return audioCapturerSource_->Reset();
 }
 
 int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Resume() == SUCCESS, ERROR, "Source resume fail");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->Resume() == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::START, ERR_OPERATION_FAILED),
+            "Source resume fail", false), ERROR));
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
 }
@@ -529,10 +582,21 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 {
     Trace trace("HpaeSourceInputNode::CapturerSourceStart");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->IsInited(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::START, ERR_ILLEGAL_STATE),
+            "invalid source state", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->Start() == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::START, ERR_OPERATION_FAILED),
+            "Source start fail", false), ERROR));
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
 }
@@ -541,9 +605,16 @@ int32_t HpaeSourceInputNode::CapturerSourceStop(void)
 {
     Trace trace("HpaeSourceInputNode::CapturerSourceStop");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
-        ERROR, "invalid audioCapturerSource");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "invalid audioCapturerSource", false), ERROR));
+    CHECK_AND_RETURN_RET(audioCapturerSource_->IsInited(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::STOP, ERR_ILLEGAL_STATE),
+            "invalid source state", false), ERROR));
     if (audioCapturerSource_->Stop() != SUCCESS) {
         AUDIO_ERR_LOG("stop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
     }
@@ -572,14 +643,22 @@ size_t HpaeSourceInputNode::GetOutputPortNum()
     } else {
         it = outputStreamMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC);
     }
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), 0, "outStreamMap_ is empty.");
+    CHECK_AND_RETURN_RET(it != outputStreamMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "outStreamMap_ is empty", false), 0));
     return it->second.GetInputNum();
 }
 
 size_t HpaeSourceInputNode::GetOutputPortNum(HpaeNodeInfo &nodeInfo)
 {
     auto it = outputStreamMap_.find(nodeInfo.sourceBufferType);
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), 0, "can't find nodeKey in outStreamMap_.");
+    CHECK_AND_RETURN_RET(it != outputStreamMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "can't find nodeKey in outStreamMap_", false), 0));
     return it->second.GetInputNum();
 }
 
@@ -596,8 +675,11 @@ void HpaeSourceInputNode::SetSourceInputNodeType(HpaeSourceInputNodeType type)
 HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &type)
 {
     auto it = nodeInfoMap_.find(type);
-    CHECK_AND_RETURN_RET_LOG(it != nodeInfoMap_.end(), nodeInfoMap_.begin()->second,
-        "can't find nodeKey in nodeInfoMap_.");
+    CHECK_AND_RETURN_RET(it != nodeInfoMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "can't find nodeKey in nodeInfoMap_", false), nodeInfoMap_.begin()->second));
     return it->second;
 }
 

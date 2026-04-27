@@ -26,6 +26,7 @@
 #include "audio_utils.h"
 #include "audio_performance_monitor.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -323,7 +324,11 @@ uint64_t HpaeSinkInputNode::GetLatency()
 int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    CHECK_AND_RETURN_RET(writeCallback,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "writeCallback is null, fatal err", false), ERROR));
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload enable, never force data
     bool forceData = offloadEnable_ ? false : true;
@@ -357,7 +362,11 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 bool HpaeSinkInputNode::QueryUnderrun()
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(writeCallback, false, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    CHECK_AND_RETURN_RET(writeCallback,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "writeCallback is null, fatal err", false), false));
     return writeCallback->OnQueryUnderrun();
 }
 

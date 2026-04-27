@@ -660,6 +660,87 @@ HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTransStreamInfoTest_003, TestSize.Level1)
     EXPECT_EQ(streamInfo.streamType, STREAM_SOURCE_VOICE_CALL);
     EXPECT_EQ(streamInfo.fadeType, NONE_FADE);
 }
+
+/**
+ * @tc.name  : FaultCode_Init_AlreadyInited
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Init returns SUCCESS when state is already PREPARED,
+ *             covering FAULT_NO_SOUND/PLAY/CREATE/ERR_OPERATION_FAILED fault code path for duplicate init.
+ */
+HWTEST_F(HpaeSoftLinkTest, FaultCode_Init_AlreadyInited, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    // Init again when already PREPARED
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    EXPECT_EQ(softLink->Release(), SUCCESS);
+}
+
+/**
+ * @tc.name  : FaultCode_SetVolume_NotPrepared
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetVolume returns ERR_ILLEGAL_STATE when softlink is in NEW state,
+ *             covering PLAY_SEND_STATE_ILLEGAL fault code path.
+ */
+HWTEST_F(HpaeSoftLinkTest, FaultCode_SetVolume_NotPrepared, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    int32_t ret = softLink->SetVolume(0.5f);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : FaultCode_SetVolumeDuckFactor_NotPrepared
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetVolumeDuckFactor returns ERR_ILLEGAL_STATE when softlink is in NEW state,
+ *             covering PLAY_SEND_STATE_ILLEGAL fault code path.
+ */
+HWTEST_F(HpaeSoftLinkTest, FaultCode_SetVolumeDuckFactor_NotPrepared, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    int32_t ret = softLink->SetVolumeDuckFactor(1.0f);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : FaultCode_SetVolumeMute_NotPrepared
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetVolumeMute returns ERR_ILLEGAL_STATE when softlink is in NEW state,
+ *             covering PLAY_SEND_STATE_ILLEGAL fault code path.
+ */
+HWTEST_F(HpaeSoftLinkTest, FaultCode_SetVolumeMute_NotPrepared, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    int32_t ret = softLink->SetVolumeMute(true);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : FaultCode_SetVolumeLowPowerFactor_NotPrepared
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetVolumeLowPowerFactor returns ERR_ILLEGAL_STATE when softlink is in NEW state,
+ *             covering PLAY_SEND_STATE_ILLEGAL fault code path.
+ */
+HWTEST_F(HpaeSoftLinkTest, FaultCode_SetVolumeLowPowerFactor_NotPrepared, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    int32_t ret = softLink->SetVolumeLowPowerFactor(1.0f);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

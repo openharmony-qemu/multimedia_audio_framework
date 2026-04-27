@@ -24,12 +24,11 @@
 #include "audio_utils.h"
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-namespace {
-}
 HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo),
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
@@ -229,8 +228,11 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+            __FUNCTION__, false), ret));
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -381,8 +383,16 @@ size_t HpaeRemoteSinkOutputNode::GetPreOutNum()
 
 int32_t HpaeRemoteSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERROR));
+    CHECK_AND_RETURN_RET(audioRendererSink_->IsInited(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::START, ERR_ILLEGAL_STATE),
+            "audioRendererSink_ not init", false), ERR_ILLEGAL_STATE));
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 }  // namespace HPAE
