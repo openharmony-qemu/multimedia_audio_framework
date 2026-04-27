@@ -5910,15 +5910,21 @@ int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
 int32_t AudioPolicyServer::CreateLoopback(int32_t mode, int32_t type,
     const sptr<IRemoteObject> &cbObject, sptr<IRemoteObject> &loopback, int32_t &ret)
 {
-    CHECK_AND_RETURN_RET_LOG(loopbackManager_ != nullptr, ERR_NULL_POINTER, "loopbackManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(cbObject != nullptr, ERR_NULL_POINTER, "cbObject is nullptr");
+    ret = ERR_INVALID_PARAM;
+    CHECK_AND_RETURN_RET_LOG(loopbackManager_ != nullptr, SUCCESS, "loopbackManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(cbObject != nullptr, SUCCESS, "cbObject is nullptr");
 
     sptr<ILoopbackCallback> callbackProxy = iface_cast<ILoopbackCallback>(cbObject);
-    CHECK_AND_RETURN_RET_LOG(callbackProxy != nullptr, ERR_NULL_POINTER, "iface_cast ILoopbackCallback failed");
+    CHECK_AND_RETURN_RET_LOG(callbackProxy != nullptr, SUCCESS, "iface_cast ILoopbackCallback failed");
 
+    LoopbackType loopbackType = static_cast<LoopbackType>(type);
+    if (loopbackType != LOOPBACK_TYPE_NORMAL) {
+        ret = ERR_SYSTEM_PERMISSION_DENIED;
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), SUCCESS, "no system permission");
+    }
     int32_t pid = IPCSkeleton::GetCallingPid();
     ret = loopbackManager_->CreateLoopback(static_cast<AudioLoopbackMode>(mode),
-        static_cast<LoopbackType>(type), callbackProxy, loopback, pid);
+        loopbackType, callbackProxy, loopback, pid);
     return SUCCESS;
 }
 

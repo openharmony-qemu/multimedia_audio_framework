@@ -258,28 +258,12 @@ AudioLoopbackEqualizerPreset AudioLoopbackWrapper::GetEqualizerPreset()
 
 std::vector<AudioDevicePair> AudioLoopbackWrapper::GetSupportedDevicePairs()
 {
-    if (type_ == LOOPBACK_TYPE_GLOBAL_CONTROL) {
-        AUDIO_ERR_LOG("GetSupportedDevicePairs not supported for CONTROL type");
-        return {};
-    }
-
-    if (private_ != nullptr) {
-        return private_->GetSupportedDevicePairs();
-    }
-    return {};
+    return AudioPolicyManager::GetInstance().GetLoopbackSupportedDevicePairs();
 }
 
 AudioDevicePair AudioLoopbackWrapper::GetPreferredDevicePair()
 {
-    if (type_ == LOOPBACK_TYPE_GLOBAL_CONTROL) {
-        AUDIO_ERR_LOG("GetPreferredDevicePair not supported for CONTROL type");
-        return {};
-    }
-
-    if (private_ != nullptr) {
-        return private_->GetPreferredDevicePair();
-    }
-    return {};
+    return AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
 }
 
 void AudioLoopbackWrapper::OnCommandResult(int command, bool success, int errorCode)

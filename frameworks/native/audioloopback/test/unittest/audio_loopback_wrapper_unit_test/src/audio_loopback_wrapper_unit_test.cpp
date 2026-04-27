@@ -582,6 +582,8 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, RemoveAudioLoopbackCallback_NoPrivate_001
 HWTEST_F(AudioLoopbackWrapperUnitTest, OnCommandResult_Enable_001, TestSize.Level1)
 {
     auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, appInfo_);
+    wrapper->OnCommandResult(LOOPBACK_CMD_ENABLE, true, SUCCESS);
+
     wrapper->SetPrivate(mockPrivate_);
 
     EXPECT_CALL(*mockPrivate_, Enable(true)).WillOnce(Return(true));
@@ -599,16 +601,16 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, OnCommandResult_Disable_001, TestSize.Lev
     wrapper->OnCommandResult(LOOPBACK_CMD_DISABLE, true, SUCCESS);
 }
 
-HWTEST_F(AudioLoopbackWrapperUnitTest, OnCommandResult_NoPrivate_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, appInfo_);
-
-    wrapper->OnCommandResult(LOOPBACK_CMD_ENABLE, true, SUCCESS);
-}
-
 HWTEST_F(AudioLoopbackWrapperUnitTest, OnStatusChange_Control_001, TestSize.Level1)
 {
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, appInfo_);
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
+    wrapper->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM); // no callback
+
+    auto callbackTest = std::make_shared<MockAudioLoopbackCallback>();
+    wrapper->SetAudioLoopbackCallback(callbackTest);
+    wrapper->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM); // normal with callback
+
+    wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, appInfo_);
     auto callback = std::make_shared<MockAudioLoopbackCallback>();
     wrapper->SetAudioLoopbackCallback(callback);
 
@@ -616,22 +618,5 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, OnStatusChange_Control_001, TestSize.Leve
 
     wrapper->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
 }
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, OnStatusChange_Normal_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
-    auto callback = std::make_shared<MockAudioLoopbackCallback>();
-    wrapper->SetAudioLoopbackCallback(callback);
-
-    wrapper->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
-}
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, OnStatusChange_NoCallback_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, appInfo_);
-
-    wrapper->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
-}
-
 }
 }
