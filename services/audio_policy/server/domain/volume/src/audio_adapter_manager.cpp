@@ -425,7 +425,7 @@ void AudioAdapterManager::SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldTyp
         IPCSkeleton::SetCallingIdentity(identity);
         return;
     }
- 
+
     audioServerProxy_->SetAudioParameter(key, value);
     IPCSkeleton::SetCallingIdentity(identity);
     AUDIO_INFO_LOG("update LoudVolume [%{public}s]", value.c_str());
@@ -3255,11 +3255,6 @@ void AudioAdapterManager::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolu
     streamVolumeInfos = streamVolumeInfos_;
 }
 
-AudioDeviceDescriptor AudioAdapterManager::GetActiveDeviceDescriptor()
-{
-    return audioActiveDevice_.GetCurrentOutputDevice();
-}
-
 DeviceCategory AudioAdapterManager::GetCurrentOutputDeviceCategory()
 {
     return audioActiveDevice_.GetCurrentOutputDeviceCategory();
@@ -4145,11 +4140,11 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeTy
     CHECK_AND_RETURN_LOG(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE,
         "device is in pass-through mode");
     CHECK_AND_RETURN_LOG(device->volumeBehavior_.controlMode != HILINK_MODE, "device is in hi-link mode");
-    
+
     bool isMuted = GetStreamMuteInternal(device, volumeType);
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
     SaveSystemVolumeForSwitchDevice(device, volumeType, volumeLevel);
-    
+
     bool useSpeaker = Util::IsDualToneStreamType(volumeType);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, volumeType) * (isMuted ? 0 : 1);
@@ -4160,7 +4155,7 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeTy
     AjustVolumeForSpecialType(volumeType, volumeDb);
     DepressVolume(volumeDb, volumeLevel, volumeType, device);
     SetSystemVolumeToEffect(device, volumeType);
-    
+
     AdjustVolumeForSpecialDevice(device, volumeType, isMuted, volumeLevel, volumeDb);
 #ifdef FEATURE_AUDIO_ZONE
     ApplySystemVolumeProxy(zoneId, device, isMuted, volumeDb);
@@ -4168,14 +4163,14 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeTy
     std::lock_guard<std::mutex> lock2(audioVolumeMutex_);
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-    
+
     PipeVolume pipeVolume(pipeId, volumeType, volumeDb, volumeLevel, isMuted);
     audioVolume->SetPipeVolume(pipeVolume);
-    
+
     AUDIO_INFO_LOG("pipeId:%{public}d volumeType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
         volumeDegree:%{public}d device:%{public}s",
         pipeId, volumeType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
-    
+
     SendOffloadVolume(device->networkId_);
 }
 

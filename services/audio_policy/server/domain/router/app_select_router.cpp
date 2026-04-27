@@ -70,16 +70,5 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetToneRenderDevice(StreamUsa
     return make_shared<AudioDeviceDescriptor>();
 }
 
-bool AppSelectRouter::IsCurrentOutPutDevicePublic()
-{
-    std::shared_ptr<AudioDeviceDescriptor> activeOutPutDevice =
-        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
-    CHECK_AND_RETURN_RET_LOG(activeOutPutDevice != nullptr, false, "activeOutPutDevice is nullptr");
-    AUDIO_INFO_LOG("activeOutPutDevice deviceType_: %{public}d", activeOutPutDevice->deviceType_);
-
-    auto devicePrivacyType = AudioDeviceManager::GetAudioDeviceManager().GetDevicePrivacyType(activeOutPutDevice);
-    AUDIO_INFO_LOG("current output device devicePrivacyType: %{public}d", devicePrivacyType);
-    return devicePrivacyType == AudioDevicePrivacyType::TYPE_PUBLIC;
-}
 } // namespace AudioStandard
 } // namespace OHOS

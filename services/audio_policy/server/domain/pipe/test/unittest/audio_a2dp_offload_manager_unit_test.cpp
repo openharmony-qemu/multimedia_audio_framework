@@ -14,6 +14,7 @@
  */
 
 #include "audio_a2dp_offload_manager_unit_test.h"
+#include "audio_router_select_strategy.h"
 
 using namespace testing::ext;
 
@@ -199,9 +200,10 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, OffloadStopPlaying_001, TestSize.Level
  */
 HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, TestSize.Level1)
 {
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    testManager_->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    auto deviceDescriptor = make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDescriptor->deviceId_ = 1001;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDescriptor});
     testManager_->GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_NE(testManager_, nullptr);
 }
@@ -214,9 +216,10 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, T
  */
 HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_002, TestSize.Level1)
 {
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    testManager_->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    auto deviceDescriptor = make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDescriptor->deviceId_ = 1001;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDescriptor});
     testManager_->GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_NE(testManager_, nullptr);
 }
@@ -543,6 +546,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_001, TestSize.Lev
     EXPECT_NE(A2DP_OFFLOAD, flag);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
 /**
  * @tc.name   : AudioA2dpOffloadManagerUnitTest_JudgeA2dpOffloadFlag_002
  * @tc.number : JudgeA2dpOffloadFlag_002
@@ -557,9 +561,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_002, TestSize.Lev
     streamInfo.isSpatialAudio = false;
     allRunningA2dpInfos.push_back(streamInfo);
 
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    testManager_->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
 
     auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_NONE, allRunningA2dpInfos);
     EXPECT_NE(A2DP_OFFLOAD, flag);
@@ -574,9 +578,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_003, TestSize.Lev
 {
     std::vector<Bluetooth::A2dpStreamInfo> allRunningA2dpInfos;
 
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    testManager_->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
 
     auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_NONE, allRunningA2dpInfos);
     EXPECT_EQ(NO_A2DP_DEVICE, flag);

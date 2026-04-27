@@ -112,6 +112,20 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_002, TestSize.Level4)
     EXPECT_TRUE(audioPolicyServer_->interruptService_ == nullptr);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_003
@@ -122,7 +136,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_003, TestSize.Level4)
     bool isEnable = true;
     AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable, 0);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
-    audioPolicyServer_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
 
@@ -132,7 +146,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_003, TestSize.Level4)
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_VOICE_ASSISTANT);
 
-    audioPolicyServer_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
 

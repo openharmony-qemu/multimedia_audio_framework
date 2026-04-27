@@ -141,7 +141,8 @@ void AudioPolicyServiceEnhanceOneFuzzTest(FuzzedDataProvider& fdp)
 
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = GetData<DeviceType>();
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(-1,
+        {make_shared<AudioDeviceDescriptor>(deviceDescriptor)});
 }
 
 void AudioPolicyServiceEnhanceTwoFuzzTest(FuzzedDataProvider& fdp)
@@ -303,6 +304,20 @@ void AudioPolicyServiceEnhanceSevenFuzzTest(FuzzedDataProvider& fdp)
     GetServerPtr()->audioPolicyService_.OnReceiveEvent(eventData);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 void AudioPolicyServiceEnhanceNineFuzzTest()
 {
     DStatusInfo statusInfo;
@@ -328,7 +343,7 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     AudioDeviceUsage usage = GetData<AudioDeviceUsage>();
     GetServerPtr()->audioPolicyService_.SetAvailableDeviceChangeCallback(clientId, usage, object, true);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_FILE_SINK;
 }
 
 void AudioPolicyServiceEnhanceElevenFuzzTest(FuzzedDataProvider& fdp)

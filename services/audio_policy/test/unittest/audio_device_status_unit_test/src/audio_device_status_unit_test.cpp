@@ -69,6 +69,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_001, TestSize.Level1)
     EXPECT_NE(ret, 0);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
 /**
 * @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_002
@@ -82,9 +83,10 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_002, TestSize.Level1)
     int32_t ret = 0;
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    audioDeviceStatus.audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    auto deviceDesc = make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    deviceDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDesc});
     ret = audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
     EXPECT_EQ(ret, 0);
 }
@@ -1073,9 +1075,10 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_038, TestSize.Level1)
     std::string address = "00:11:22:33:44:55";
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    audioDeviceStatus.audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    auto deviceDesc = make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    deviceDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDesc});
 
     result = audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
     EXPECT_EQ(result, SUCCESS);

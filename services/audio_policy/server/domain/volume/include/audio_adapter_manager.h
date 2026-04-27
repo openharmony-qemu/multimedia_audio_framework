@@ -213,8 +213,6 @@ public:
 
     DeviceCategory GetCurrentOutputDeviceCategory();
 
-    AudioDeviceDescriptor GetActiveDeviceDescriptor();
-
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
     bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
@@ -385,7 +383,7 @@ public:
     class RemoteVolumeCallback : public AudioParameterCallback {
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
             const std::string& condition, const std::string& value) override;
-        
+
         void OnHdiRouteStateChange(const std::string& networkId, bool enable) override {};
     };
 

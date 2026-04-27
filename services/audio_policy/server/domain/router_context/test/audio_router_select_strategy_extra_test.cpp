@@ -225,6 +225,78 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, SetRecognitionInputDevice_003, Test
     EXPECT_EQ(result2, nullptr);
 }
 
+HWTEST_F(AudioRouterSelectStrategyExtraTest, Get1stCurrentInputDevice_001, TestSize.Level1)
+{
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = TEST_APP_UID_10001;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    strategy.UpdateCurrentInputDevice(SYSTEM_UID, {desc});
+    auto curr = strategy.Get1stCurrentInputDevice(SYSTEM_UID);
+    EXPECT_EQ(curr.deviceId_, TEST_APP_UID_10001);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, Get1stCurrentOutputDevice_001, TestSize.Level1)
+{
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = TEST_APP_UID_10001;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    strategy.UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    auto curr = strategy.Get1stCurrentOutputDevice(SYSTEM_UID);
+    EXPECT_EQ(curr.deviceId_, TEST_APP_UID_10001);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, IsCurrentInputDevice_001, TestSize.Level1)
+{
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = TEST_APP_UID_10001;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    strategy.UpdateCurrentInputDevice(SYSTEM_UID, {desc});
+    bool ret = strategy.IsCurrentInputDevice(TEST_APP_UID_10001, SYSTEM_UID);
+    EXPECT_EQ(ret, true);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, IsCurrentOutputDevice_001, TestSize.Level1)
+{
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = TEST_APP_UID_10001;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    strategy.UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    auto ret = strategy.IsCurrentOutputDevice(TEST_APP_UID_10001, SYSTEM_UID);
+    EXPECT_EQ(ret, true);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, FindCurrentInputDevice_001, TestSize.Level1)
+{
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = TEST_APP_UID_10001;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    strategy.UpdateCurrentInputDevice(SYSTEM_UID, {desc});
+    auto descs = strategy.FindCurrentInputDevice({DEVICE_TYPE_BLUETOOTH_A2DP_IN});
+    EXPECT_EQ(descs.size(), 1);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, FindCurrentOutputDevice_001, TestSize.Level1)
+{
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = TEST_APP_UID_10001;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    strategy.UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    auto descs = strategy.FindCurrentOutputDevice({DEVICE_TYPE_BLUETOOTH_A2DP});
+    EXPECT_EQ(descs.size(), 1);
+}
+
 HWTEST_F(AudioRouterSelectStrategyExtraTest, GetRecognitionInputDevice_001, TestSize.Level1)
 {
     AudioRouterFollowStrategy strategy;

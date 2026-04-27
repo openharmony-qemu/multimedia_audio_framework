@@ -156,7 +156,7 @@ public:
     virtual AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex) = 0;
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
-    
+
     virtual AudioIOHandle ReloadA2dpAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
 
     virtual void ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
@@ -241,8 +241,6 @@ public:
 
     virtual DeviceCategory GetCurrentOutputDeviceCategory() = 0;
 
-    virtual AudioDeviceDescriptor GetActiveDeviceDescriptor() = 0;
-
     virtual void NotifyAccountsChanged(const int &id) = 0;
 
     virtual void MuteMediaWhenAccountsChanged() = 0;
@@ -308,7 +306,7 @@ public:
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
         int32_t volumeLevel) = 0;
-    
+
     virtual void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
     virtual void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,

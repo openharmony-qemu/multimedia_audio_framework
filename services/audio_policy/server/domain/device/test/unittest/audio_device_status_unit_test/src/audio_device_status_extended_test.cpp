@@ -31,6 +31,20 @@ void AudioDeviceStatusExtendedTest::TearDown(void)
     audioDeviceStatus_ = nullptr;
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 /**
  * @tc.name  : Test AudioDeviceStatus.
  * @tc.number: AudioDeviceStatus_001
@@ -67,7 +81,7 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_003, TestSize.Level4)
 {
     DeviceType deviceType = DEVICE_TYPE_INVALID;
     std::string address = "00:11:22:33:44:55";
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_DP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_DP;
     EXPECT_EQ(audioDeviceStatus_->HandleDpDevice(deviceType, address), SUCCESS);
 }
 
@@ -380,15 +394,15 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_022, TestSize.Level4)
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     DeviceInfoUpdateCommand command = ENABLE_UPDATE;
     audioDeviceStatus_->audioA2dpOffloadManager_.reset();
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.macAddress_ = desc.macAddress_;
+    CurrentActiveDevice().macAddress_ = desc.macAddress_;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.macAddress_ = "";
+    CurrentActiveDevice().macAddress_ = "";
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
     desc.deviceType_ = DEVICE_TYPE_EARPIECE;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
     desc.isEnable_ = true;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.macAddress_ = desc.macAddress_;
+    CurrentActiveDevice().macAddress_ = desc.macAddress_;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
@@ -397,14 +411,14 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_022, TestSize.Level4)
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
     desc.isEnable_ = true;
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.macAddress_ = "";
+    CurrentActiveDevice().macAddress_ = "";
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
 
     command = USAGE_UPDATE;
     audioDeviceStatus_->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     desc.deviceType_ = DEVICE_TYPE_EARPIECE;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.macAddress_ = desc.macAddress_;
+    CurrentActiveDevice().macAddress_ = desc.macAddress_;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
@@ -412,7 +426,7 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_022, TestSize.Level4)
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
     desc.deviceType_ = DEVICE_TYPE_EARPIECE;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.macAddress_ = "";
+    CurrentActiveDevice().macAddress_ = "";
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     EXPECT_NO_THROW(audioDeviceStatus_->OnDeviceInfoUpdated(desc, command));

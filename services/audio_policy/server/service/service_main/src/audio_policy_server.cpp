@@ -3242,9 +3242,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     AudioRouterInfra::GetInstance().OnAppDied(uid);
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    audioActiveDevice_.DelCurrentInputDevice(uid);
-#endif
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
@@ -3291,9 +3288,6 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     eventEntry_->ClearSelectedInputDeviceByUid(uid);
     eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    audioActiveDevice_.DelCurrentInputDevice(uid);
-#endif
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()

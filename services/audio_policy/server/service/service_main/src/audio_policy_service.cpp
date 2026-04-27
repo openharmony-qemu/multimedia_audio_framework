@@ -283,11 +283,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetInput
         LOCAL_NETWORK_ID, audioCapturerFilter->uid, audioCapturerFilter->streamId);
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveOutputDeviceDescriptor()
-{
-    return make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
-}
-
 void AudioPolicyService::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
@@ -578,7 +573,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
             deviceInfo.deviceRole_ = OUTPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
-        AudioDeviceDescriptor curOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
+        AudioDeviceDescriptor curOutputDeviceDesc = AudioRouterSelectStrategy::GetInstance()
+            .Get1stCurrentOutputDevice(config.appInfo.appUid);
         deviceInfo.deviceId_ = curOutputDeviceDesc.deviceId_;
         deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
@@ -600,8 +596,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
             deviceInfo.deviceRole_ = INPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
-        deviceInfo.deviceId_ = audioActiveDevice_.GetCurrentInputDevice(uid).deviceId_;
-        deviceInfo.networkId_ = audioActiveDevice_.GetCurrentInputDevice(uid).networkId_;
+        deviceInfo.deviceId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).deviceId_;
+        deviceInfo.networkId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).networkId_;
         deviceInfo.deviceRole_ = INPUT_DEVICE;
         deviceInfo.deviceType_ = audioActiveDevice_.GetCurrentInputDeviceType(uid);
     }
@@ -831,7 +827,9 @@ int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint6
 int32_t AudioPolicyService::NearlinkGetRenderPosition(uint32_t &delayValue)
 {
     Trace trace("AudioPolicyService::NearlinkGetRenderPosition");
-    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice({DEVICE_TYPE_NEARLINK});
+    AudioDeviceDescriptor curOutputDevice = !descs.empty() && *descs.begin() ?
+        *(*descs.begin()) : AudioDeviceDescriptor();
     AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d", curOutputDevice.deviceType_);
     int32_t ret = SUCCESS;
     delayValue = 0;

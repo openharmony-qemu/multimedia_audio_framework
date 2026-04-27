@@ -439,14 +439,6 @@ void AudioPolicyServiceGetInputDeviceFuzztest(const uint8_t *rawData, size_t siz
     GetServerPtr()->audioPolicyService_.GetInputDevice(audioCapturerFilter);
 }
 
-void AudioPolicyServiceGetActiveOutputDeviceDescriptorFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    GetServerPtr()->audioPolicyService_.GetActiveOutputDeviceDescriptor();
-}
-
 void AudioPolicyServiceOnUpdateAnahsSupportFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -976,7 +968,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetOutputDeviceFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetInputDeviceFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetActiveOutputDeviceDescriptorFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOnUpdateAnahsSupportFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOnPnpDeviceStatusUpdatedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOnDeviceStatusUpdatedFuzztest,

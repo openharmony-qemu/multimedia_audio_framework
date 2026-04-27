@@ -43,6 +43,20 @@ void AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeManager.SetVoiceRingtoneMute(isMute);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 void AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string macAddress = "11:22:33:44:55:66";
@@ -50,7 +64,7 @@ void AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest(FuzzedDataProvider& fdp)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.isBtFirstBoot_ = g_fuzzUtils.GetData<bool>();
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = g_fuzzUtils.GetData<DeviceCategory>();
+    CurrentActiveDevice().deviceCategory_ = g_fuzzUtils.GetData<DeviceCategory>();
     audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel);
 }
 
@@ -142,8 +156,8 @@ void AudioVolumeManagerDealWithEventVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t notificationId = g_fuzzUtils.GetData<int32_t>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = g_fuzzUtils.GetData<DeviceCategory>();
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
+    CurrentActiveDevice().deviceCategory_ = g_fuzzUtils.GetData<DeviceCategory>();
+    CurrentActiveDevice().deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioVolumeManager.DealWithEventVolume(notificationId);
 }
 
@@ -270,7 +284,7 @@ void AudioVolumeManagerCheckToCloseNotificationFuzzTest(FuzzedDataProvider& fdp)
     int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
     audioVolumeManager.increaseNIsShowing_ = g_fuzzUtils.GetData<bool>();
     audioVolumeManager.restoreNIsShowing_ = g_fuzzUtils.GetData<bool>();
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
+    CurrentActiveDevice().deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioVolumeManager.CheckToCloseNotification(streamType, volumeLevel);
 }
 
@@ -299,10 +313,10 @@ void AudioVolumeManagerHandleNearlinkDeviceAbsVolumeFuzzTest(FuzzedDataProvider&
     int32_t volumeDegree = g_fuzzUtils.GetData<int32_t>();
     VolumeScale volume = {volumeLevel, volumeDegree};
     DeviceType curOutputDeviceType = g_fuzzUtils.GetData<DeviceType>();
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.macAddress_ = "11:22:33:44:55:66";
+    CurrentActiveDevice().macAddress_ = "11:22:33:44:55:66";
     bool isClear = g_fuzzUtils.GetData<bool>();
     if (isClear) {
-        audioVolumeManager.audioActiveDevice_.currentActiveDevice_.macAddress_.clear();
+        CurrentActiveDevice().macAddress_.clear();
     }
     audioVolumeManager.HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
 }
@@ -366,7 +380,7 @@ void AudioVolumeManagerSetDeviceSafeVolumeStatusFuzzTest(FuzzedDataProvider& fdp
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     audioVolumeManager.userSelect_ = g_fuzzUtils.GetData<bool>();
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
+    CurrentActiveDevice().deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioVolumeManager.SetDeviceSafeVolumeStatus();
 }
 

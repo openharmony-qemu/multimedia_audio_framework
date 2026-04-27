@@ -110,7 +110,8 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConfigManager_(AudioCoreConfigManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
-        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
+        audioRouterSelectStrategy_(AudioRouterSelectStrategy::GetInstance()) {}
     ~AudioDeviceStatus() {}
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
@@ -207,6 +208,7 @@ private:
     AudioCoreConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;
     AudioUsrSelectManager& audioUsrSelectManager_;
+    AudioRouterSelectStrategy& audioRouterSelectStrategy_;
 
     bool remoteCapturerSwitch_ = false;
     std::vector<std::pair<AudioDeviceDescriptor, bool>> pnpDeviceList_;

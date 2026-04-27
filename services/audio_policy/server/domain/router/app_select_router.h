@@ -47,8 +47,6 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
         const uint32_t sessionID = INVALID_STREAM_ID) override;
     std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
-private:
-    bool IsCurrentOutPutDevicePublic();
 };
 } // namespace AudioStandard
 } // namespace OHOS
