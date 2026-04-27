@@ -36,12 +36,87 @@ constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
 namespace OHOS {
 namespace AudioStandard {
-std::mutex AudioBundleManager::bundleNameMapMutex_;
-std::mutex AudioBundleManager::bundleInfoMapMutex_;
-std::unordered_map<int32_t, std::string> AudioBundleManager::bundleNameMap_;
-std::unordered_map<int32_t, AppExecFwk::BundleInfo> AudioBundleManager::bundleInfoMap_;
+
+AudioBundleManager& AudioBundleManager::GetInstance()
+{
+    static AudioBundleManager instance;
+    return instance;
+}
+
+std::string AudioBundleManager::FindBundleNameFromMap(int32_t uid)
+{
+    std::shared_lock<std::shared_mutex> lock(mapMutex_);
+    auto it = bundleNameMap_.find(uid);
+    if (it != bundleNameMap_.end()) {
+        return it->second;
+    }
+    return "";
+}
+
+void AudioBundleManager::InsertBundleNameToMap(int32_t uid, const std::string &name)
+{
+    std::lock_guard<std::shared_mutex> lock(mapMutex_);
+    bundleNameMap_[uid] = name;
+}
+
+void AudioBundleManager::EraseBundleNameFromMap(int32_t uid)
+{
+    std::lock_guard<std::shared_mutex> lock(mapMutex_);
+    bundleNameMap_.erase(uid);
+}
 
 int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userId)
+{
+    return GetInstance().GetUidByBundleNameImpl(bundleName, userId);
+}
+
+std::string AudioBundleManager::GetBundleName()
+{
+    return GetInstance().GetBundleNameImpl();
+}
+
+std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
+{
+    return GetInstance().GetBundleNameFromUidImpl(callingUid);
+}
+
+std::string AudioBundleManager::GetBundleNameFromUidCached(int32_t callingUid)
+{
+    return GetInstance().GetBundleNameFromUidCachedImpl(callingUid);
+}
+
+void AudioBundleManager::RemoveBundleNameByUid(int32_t callingUid)
+{
+    GetInstance().RemoveBundleNameByUidImpl(callingUid);
+}
+
+AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfo()
+{
+    return GetInstance().GetBundleInfoImpl();
+}
+
+AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUid(int32_t callingUid)
+{
+    return GetInstance().GetBundleInfoFromUidImpl(callingUid);
+}
+
+void AudioBundleManager::RemoveBundleInfoByUid(int32_t callingUid)
+{
+    GetInstance().RemoveBundleInfoByUidImpl(callingUid);
+}
+
+std::string AudioBundleManager::GetBundleNameByToken(const uint32_t tokenIdNum)
+{
+    return GetInstance().GetBundleNameByTokenImpl(tokenIdNum);
+}
+
+int32_t AudioBundleManager::IsBundleInstalled(
+    const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled)
+{
+    return GetInstance().IsBundleInstalledImpl(bundleName, userId, appIndex, isInstalled);
+}
+
+int32_t AudioBundleManager::GetUidByBundleNameImpl(std::string bundleName, int userId)
 {
     AudioXCollie audioXCollie("AudioBundleManager::GetUidByBundleName",
         GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -63,23 +138,23 @@ int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userI
     return iUid;
 }
 
-std::string AudioBundleManager::GetBundleName()
+std::string AudioBundleManager::GetBundleNameImpl()
 {
     std::string bundleName = GetBundleNameFromUid(IPCSkeleton::GetCallingUid());
     return bundleName;
 }
 
-std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
+std::string AudioBundleManager::GetBundleNameFromUidImpl(int32_t callingUid)
 {
-    std::lock_guard<std::mutex> lock(bundleNameMapMutex_);
-    auto it = bundleNameMap_.find(callingUid);
-    if (it != bundleNameMap_.end()) {
-        return it->second;
+    std::lock_guard<std::mutex> processLock(processMutex_);
+
+    std::string bundleName = FindBundleNameFromMap(callingUid);
+    if (!bundleName.empty()) {
+        return bundleName;
     }
 
     AudioXCollie audioXCollie("AudioBundleManager::GetBundleNameFromUid",
         GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::string bundleName = "";
     WatchTimeout guard("AudioBundleManager:GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
@@ -94,22 +169,28 @@ std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
     WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetBundleNameFromUid");
     bundleMgrProxy->GetBundleNameForUid(callingUid, bundleName);
     reguard.CheckCurrTimeout();
-    bundleNameMap_[callingUid] = bundleName;
+
+    InsertBundleNameToMap(callingUid, bundleName);
     return bundleName;
 }
 
-void AudioBundleManager::RemoveBundleNameByUid(int32_t callingUid)
+std::string AudioBundleManager::GetBundleNameFromUidCachedImpl(int32_t callingUid)
 {
-    std::lock_guard<std::mutex> lock(bundleNameMapMutex_);
-    bundleNameMap_.erase(callingUid);
+    return FindBundleNameFromMap(callingUid);
 }
 
-AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfo()
+void AudioBundleManager::RemoveBundleNameByUidImpl(int32_t callingUid)
+{
+    std::lock_guard<std::mutex> processLock(processMutex_);
+    EraseBundleNameFromMap(callingUid);
+}
+
+AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoImpl()
 {
     return GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
 }
 
-AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUid(int32_t callingUid)
+AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUidImpl(int32_t callingUid)
 {
     std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
     auto it = bundleInfoMap_.find(callingUid);
@@ -147,13 +228,13 @@ AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUid(int32_t callingU
     return bundleInfo;
 }
 
-void AudioBundleManager::RemoveBundleInfoByUid(int32_t callingUid)
+void AudioBundleManager::RemoveBundleInfoByUidImpl(int32_t callingUid)
 {
     std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
     bundleInfoMap_.erase(callingUid);
 }
 
-std::string AudioBundleManager::GetBundleNameByToken(const uint32_t tokenIdNum)
+std::string AudioBundleManager::GetBundleNameByTokenImpl(const uint32_t tokenIdNum)
 {
     using namespace Security::AccessToken;
     AUDIO_INFO_LOG("GetBundlNameByToken id %{public}u", tokenIdNum);
@@ -174,7 +255,7 @@ std::string AudioBundleManager::GetBundleNameByToken(const uint32_t tokenIdNum)
     }
 }
 
-int32_t AudioBundleManager::IsBundleInstalled(
+int32_t AudioBundleManager::IsBundleInstalledImpl(
     const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled)
 {
     AudioXCollie audioXCollie("AudioBundleManager::IsBundleInstalled",

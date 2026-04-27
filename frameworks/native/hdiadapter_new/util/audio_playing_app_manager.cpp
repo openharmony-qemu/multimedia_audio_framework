@@ -74,7 +74,7 @@ std::string AudioPlayingAppManager::BuildPlayingAppNameParam(const std::vector<i
     std::string param = std::string(PLAYING_APP_NAME_KEY) + "=[";
     bool first = true;
     for (int32_t appUid : appsUid) {
-        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(appUid);
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUidCached(appUid);
         if (bundleName.empty()) {
             continue;
         }
