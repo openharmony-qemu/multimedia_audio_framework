@@ -234,8 +234,8 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
         AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("SelectInputDevice_1");
         AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
-            audioActiveDevice_.GetCurrentInputDevice(),
-            audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
+            AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(),
+            AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(), "SelectInputDevice fast");
         return SUCCESS;
     }
     auto ret = RefreshVirtualDevice(selectedDesc[0]);
@@ -247,8 +247,8 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
 
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
     AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
-        audioActiveDevice_.GetCurrentInputDevice(),
-        audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice");
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(),
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(), "SelectInputDevice");
     return SUCCESS;
 }
 

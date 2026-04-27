@@ -225,8 +225,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
     auto pipeInfoInput = pipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
     if (pipeInfoInput != nullptr && pipeInfoInput->softLinkFlag_) {
-        pipeInfoInput->streamDescMap_.clear();
-        pipeInfoInput->streamDescriptors_.clear();
+        pipeManager->ClearPipeStreams(pipeInfoInput);
         pipeManager->UpdateAudioPipeInfo(pipeInfoInput);
     }
     AudioIOHandle ioHandle;
@@ -236,6 +235,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
 
     uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
     pipeManager->RemoveAudioPipeInfo(ioHandle);
+    AudioAdapterManager::GetInstance().RemoveAudioPipeVolume(ioHandle);
 
     int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, paIndex);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);

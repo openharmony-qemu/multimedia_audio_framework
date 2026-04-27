@@ -16,13 +16,11 @@
 #ifndef AUDIO_LOOPBACK_H
 #define AUDIO_LOOPBACK_H
 
+#include "audio_debug_info.h"
 #include "audio_stream_change_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-struct AudioLoopbackDebugInfo;
-class AudioLoopbackDebugCallback;
 
 class AudioLoopbackCallback {
 public:
@@ -75,15 +73,22 @@ public:
 
     virtual AudioLoopbackEqualizerPreset GetEqualizerPreset() = 0;
 
+    virtual std::vector<AudioDevicePair> GetSupportedDevicePairs() = 0;
+
+    virtual AudioDevicePair GetPreferredDevicePair() = 0;
+
+    /**
+     * @brief Get debug information for AudioLoopback.
+     *
+     * @param debugInfo Reference to AudioLoopbackDebugInfo structure to be filled.
+     * @return Returns SUCCESS if successful, otherwise returns error code.
+     * @since 20
+     */
     virtual int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
     {
         (void)debugInfo;
         return 0;
     }
-
-    virtual std::vector<AudioDevicePair> GetSupportedDevicePairs() = 0;
-
-    virtual AudioDevicePair GetPreferredDevicePair() = 0;
 
     virtual ~AudioLoopback();
 };

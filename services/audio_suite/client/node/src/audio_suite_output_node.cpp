@@ -25,6 +25,7 @@
 #include "audio_suite_common.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_output_node.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -131,7 +132,12 @@ int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int32_t arraySize,
         audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag) == SUCCESS, ERR_INVALID_PARAM);
 
     if (GetAudioNodeDataFinishedFlag() && CacheBufferEmpty()) {
-        AUDIO_ERR_LOG("multi ouput finished completed.");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
+                           ERR_NOT_SUPPORTED),
+            "SetEqualizerFrequencyBandGains failed", true);
+        AUDIO_ERR_LOG("multi output finished completed.");
         return ERR_NOT_SUPPORTED;
     }
 

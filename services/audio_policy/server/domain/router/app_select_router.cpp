@@ -62,82 +62,12 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(Source
     auto device = AudioRouterSelectStrategy::GetInstance().GetMediaInputDevice(clientUID, sessionID, sourceType);
     CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
         RouterBase::GetPairDevice(device, allDevices, MEDIA_INPUT_DEVICES));
-    if (IsInSpecialScenario(sourceType)) {
-        ConfigureDeviceForSpecialScenario(sourceType, device);
-    }
-    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
-        RouterBase::GetPairDevice(device, allDevices, MEDIA_INPUT_DEVICES));
-    return RouterBase::GetPairDevice(device, allDevices, MEDIA_INPUT_DEVICES);
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     return make_shared<AudioDeviceDescriptor>();
-}
-
-bool AppSelectRouter::IsInSpecialScenario(SourceType sourceType)
-{
-    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION && IsCurrentOutPutDevicePublic();
-}
-
-bool AppSelectRouter::IsCurrentOutPutDevicePublic()
-{
-    std::shared_ptr<AudioDeviceDescriptor> activeOutPutDevice =
-        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
-    CHECK_AND_RETURN_RET_LOG(activeOutPutDevice != nullptr, false, "activeOutPutDevice is nullptr");
-    AUDIO_INFO_LOG("activeOutPutDevice deviceType_: %{public}d", activeOutPutDevice->deviceType_);
-
-    auto devicePrivacyType = AudioDeviceManager::GetAudioDeviceManager().GetDevicePrivacyType(activeOutPutDevice);
-    AUDIO_INFO_LOG("current output device devicePrivacyType: %{public}d", devicePrivacyType);
-    return devicePrivacyType == AudioDevicePrivacyType::TYPE_PUBLIC;
-}
-
-void AppSelectRouter::ConfigureDeviceForSpecialScenario(
-    SourceType sourceType, shared_ptr<AudioDeviceDescriptor> &device)
-{
-    CHECK_AND_RETURN(device != nullptr && device->deviceType_ == DEVICE_TYPE_BT_SPP);
-    AUDIO_INFO_LOG("configure input device for special scenario");
-    DeviceType beforeType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_NONE;
-
-    auto activeOutPutDevice = AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
-    CHECK_AND_RETURN_LOG(activeOutPutDevice != nullptr, "activeOutPutDevice is nullptr");
-
-    auto pairDevice = activeOutPutDevice->pairDeviceDescriptor_;
-    auto scoDevice = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(
-        activeOutPutDevice->macAddress_, DeviceRole::INPUT_DEVICE);
-
-    if (pairDevice != nullptr) {
-        AUDIO_INFO_LOG("find pairDevice deviceType_: %{public}d", pairDevice->deviceType_);
-        device = pairDevice;
-    } else if (scoDevice != nullptr) {
-        AUDIO_INFO_LOG("find scoDevice deviceType_: %{public}d", scoDevice->deviceType_);
-        device = scoDevice;
-    }
-
-    if (device != nullptr && device->isVrSupported_ == false) {
-        AUDIO_INFO_LOG("Device is not vr supported.");
-        device = nullptr;
-    }
-
-    DeviceType afterType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_NONE;
-    WriteModifyCaptureDeviceSpecially(sourceType, beforeType, afterType);
-}
-
-void AppSelectRouter::WriteModifyCaptureDeviceSpecially(
-    SourceType sourceType, DeviceType deviceBefore, DeviceType deviceAfter)
-{
-    CHECK_AND_RETURN_LOG(deviceBefore != deviceAfter, "device type unchanged");
-    std::string appName = AudioBundleManager::GetBundleName();
-    AUDIO_INFO_LOG("WriteModifyCaptureDeviceSpecially appName = %{public}s, sourceType = %{public}d, deviceBefore = "
-        "%{public}d, deviceAfter = %{public}d", appName.c_str(), sourceType, deviceBefore, deviceAfter);
-
-    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "MODIFY_CAPTURE_DEVICE_SPECIALLY", HiviewDFX::HiSysEvent::EventType::STATISTIC,
-        "APP_NAME", appName.c_str(),
-        "STREAM_TYPE", sourceType,
-        "DEVICE_TYPE_BEFORE_CHANGE", deviceBefore,
-        "DEVICE_TYPE_AFTER_CHANGE", deviceAfter);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "write event fail: MODIFY_CAPTURE_DEVICE_SPECIALLY, ret = %{public}d", ret);
 }
 
 } // namespace AudioStandard

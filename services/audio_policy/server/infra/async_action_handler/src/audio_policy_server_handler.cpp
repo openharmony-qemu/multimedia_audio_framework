@@ -1489,8 +1489,8 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
             CurrentOutputDeviceChangedEvent deviceChangedEvent;
             AudioRendererInfo rendererInfo;
             rendererInfo.streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
-            deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetEventEntry()->
-                GetPreferredOutputDeviceDescriptors(rendererInfo, eventContextObj->uid_);
+            deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetPreferredOutputDeviceDescInner(
+                rendererInfo, eventContextObj->uid_, LOCAL_NETWORK_ID);
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
@@ -2331,6 +2331,16 @@ void AudioPolicyServerHandler::PublishCtrlCmdEvent(int32_t hintType, int32_t uid
     int32_t ret = EventFwk::CommonEventManager::NewPublishCommonEvent(data, publishInfo);
     AUDIO_INFO_LOG("publish ret:%{public}d hintType:%{public}d uid:%{public}d streamId:%{public}d",
         ret, hintType, uid, streamId);
+}
+
+std::shared_ptr<AudioPolicyClientHolder> AudioPolicyServerHandler::GetAudioPolicyClientHolder(int32_t clientId)
+{
+    lock_guard<mutex> lock(handleMapMutex_);
+    auto it = audioPolicyClientProxyAPSCbsMap_.find(clientId);
+    if (it != audioPolicyClientProxyAPSCbsMap_.end()) {
+        return it->second;
+    }
+    return nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

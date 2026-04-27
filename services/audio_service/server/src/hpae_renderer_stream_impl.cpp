@@ -39,6 +39,7 @@
 #include "volume_tools.h"
 #include "audio_sink_latency_fetcher.h"
 #include "boot_animation_state_info.h"
+#include "util/id_handler.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 
@@ -57,9 +58,6 @@ static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_A2DP = "a2dp";
-static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
-static constexpr uint32_t DUCK_UNDUCK_STEP_TIME = 20;
-static constexpr uint32_t DUCK_UNDUCK_STEP_TIME_US = 20000;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode,
@@ -94,9 +92,6 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_INFO_LOG("destructor %{public}u", streamIndex_);
-    if (offloadVolumeRmap_.valid()) {
-        offloadVolumeRmap_.wait();
-    }
     if (dumpEnqueueIn_ != nullptr) {
     DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
@@ -778,42 +773,6 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
     return 0;
 }
 
-void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
-    std::string volumeDeviceClass)
-{
-    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float lastVolume = AudioVolume::GetInstance()->GetVolume(sessionId, streamType, volumeDeviceClass, &volumes);
-    float volumeHistory = volumes.volumeHistory;
-    float lastEventVolume = 0.0f;
-    float volume = 0.0f;
-
-    uint32_t step = static_cast<uint32_t>((volumes.durationMs + DUCK_UNDUCK_STEP_TIME - 1) / DUCK_UNDUCK_STEP_TIME);
-    if (step == 0) {
-        AUDIO_ERR_LOG("step error.");
-    }
-    float volumeStep = (volumeHistory - lastVolume) / step;
-    for (uint32_t i = 0; i < step; i++) {
-        usleep(DUCK_UNDUCK_STEP_TIME_US);
-        if (lastVolume != AudioVolume::GetInstance()->GetVolume(sessionId, streamType, volumeDeviceClass, &volumes)) {
-            return;
-        }
-        lastEventVolume = AudioVolume::GetInstance()->GetHistoryVolume(sessionId);
-        volume = lastEventVolume - volumeStep;
-        if (volumeStep > 0) {
-            volume = std::max(std::min(volume, volumeHistory), lastVolume);
-        } else {
-            volume = std::max(std::min(volume, lastVolume), volumeHistory);
-        }
-        if (IsVolumeSame(lastEventVolume, volume, AUDIO_VOLUME_EPSILON)) {
-            AUDIO_INFO_LOG("sessionId: %{public}d, stop set same volume: %{public}f", sessionId, volume);
-            return;
-        }
-        AUDIO_DEBUG_LOG("sessionId: %{public}d, volume: %{public}f", sessionId, volume);
-        AudioVolume::GetInstance()->SetHistoryVolume(sessionId, volume);
-    }
-    return;
-}
-
 int32_t HpaeRendererStreamImpl::OffloadSetVolume()
 {
     if (!offloadEnable_) {
@@ -829,22 +788,12 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
     }
     AudioStreamType streamType = processConfig_.streamType;
     std::string volumeDeviceClass = deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, streamType, volumeDeviceClass, &volumes);
-    AUDIO_INFO_LOG("sessionID %{public}u, deviceClass %{public}s, volume: %{public}f, durationMs: %{public}u",
-        streamIndex_, volumeDeviceClass.c_str(), volume, volumes.durationMs);
-    uint32_t sessionId = streamIndex_;
-    if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLUME_EPSILON)) {
-        if (volumes.durationMs != 0) {
-            AUDIO_INFO_LOG("volumes.durationMs != 0!");
-            offloadVolumeRmap_ = std::async(std::launch::async,
-                [this, sessionId, streamType, volumeDeviceClass] {
-                OffloadVolumeRmap(sessionId, streamType, volumeDeviceClass);
-            });
-        } else {
-            AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
-        }
-        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
-    }
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(volumeDeviceClass, deviceNetId);
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, streamType, renderId, &volumes);
+    AUDIO_INFO_LOG("sessionID %{public}u, renderId %{public}d, volume: %{public}f, durationMs: %{public}u",
+        streamIndex_, renderId, volume, volumes.durationMs);
+    AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
+    AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass, deviceNetId);
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");

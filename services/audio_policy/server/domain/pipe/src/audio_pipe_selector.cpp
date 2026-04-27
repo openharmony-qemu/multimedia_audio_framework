@@ -22,6 +22,8 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_policy_utils.h"
 #include <algorithm>
+#include "audio_errors.h"
+#include "audio_policy_interface.h"
 #include "audio_service_enum.h"
 #include "audio_injector_policy.h"
 #include "audio_bus_selector.h"
@@ -154,11 +156,100 @@ AudioPipeSelector::AudioPipeSelector() : pipeManager_(AudioPipeManager::GetPipeM
 {
 }
 
-
 std::shared_ptr<AudioPipeSelector> AudioPipeSelector::GetPipeSelector()
 {
     static std::shared_ptr<AudioPipeSelector> instance = std::make_shared<AudioPipeSelector>();
     return instance;
+}
+
+int32_t AudioPipeSelector::SetAudioRouteSelectorCallback(
+    const AudioRouteSelectorCallback &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    {
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        audioRouteSelectorCallback_ = callback;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPipeSelector::UnsetAudioRouteSelectorCallback()
+{
+    AudioRouteSelectorCallback callback;
+    {
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        std::swap(callback, audioRouteSelectorCallback_);
+    }
+    return SUCCESS;
+}
+
+std::shared_ptr<AudioRouteSelectInfo> AudioPipeSelector::BuildRouteSelectInfo(
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, nullptr, "streamDesc is nullptr");
+    auto routeSelectInfo = std::make_shared<AudioRouteSelectInfo>();
+    CHECK_AND_RETURN_RET_LOG(routeSelectInfo != nullptr, nullptr, "routeSelectInfo is nullptr");
+
+    routeSelectInfo->audioMode = streamDesc->audioMode_;
+    routeSelectInfo->streamInfo = streamDesc->streamInfo_;
+    routeSelectInfo->streamUsage = streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK ?
+        streamDesc->rendererInfo_.streamUsage : STREAM_USAGE_UNKNOWN;
+    routeSelectInfo->sourceType = streamDesc->audioMode_ == AUDIO_MODE_RECORD ?
+        streamDesc->capturerInfo_.sourceType : SOURCE_TYPE_INVALID;
+    routeSelectInfo->appInfo = streamDesc->appInfo_;
+    routeSelectInfo->bundleName = streamDesc->bundleName_;
+    routeSelectInfo->routeFlag = static_cast<AudioFlag>(streamDesc->routeFlag_);
+    return routeSelectInfo;
+}
+
+int32_t AudioPipeSelector::NotifyAudioRouteSelect(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    int32_t &selectResult)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
+    AudioRouteSelectorCallback callback;
+    {
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        callback = audioRouteSelectorCallback_;
+    }
+    if (!callback) {
+        return ERR_CALLBACK_NOT_REGISTERED;
+    }
+    auto routeSelectInfo = BuildRouteSelectInfo(streamDesc);
+    CHECK_AND_RETURN_RET_LOG(routeSelectInfo != nullptr, ERR_OPERATION_FAILED, "routeSelectInfo is nullptr");
+    int32_t ret = callback(routeSelectInfo, selectResult);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "route select callback failed");
+    return ret;
+}
+
+bool AudioPipeSelector::ApplyRouteSelectDecision(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    bool allowRejectCreate)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "streamDesc is nullptr");
+    streamDesc->SetRouteSelectRejectedFlag(false);
+    streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
+    const uint32_t normalRouteFlag = streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK ?
+        AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
+
+    int32_t selectResult = AudioRouteSelector::ROUTE_SELECT_RESULT_SUCCESS;
+    int32_t ret = NotifyAudioRouteSelect(streamDesc, selectResult);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, true);
+
+    if (selectResult == AudioRouteSelector::ROUTE_SELECT_RESULT_FALLBACK_NORMAL) {
+        streamDesc->routeFlag_ = normalRouteFlag;
+        AUDIO_INFO_LOG("route select fallback to normal for stream %{public}u", streamDesc->sessionId_);
+        return true;
+    }
+    if (selectResult == AudioRouteSelector::ROUTE_SELECT_RESULT_REJECT_CREATE) {
+        if (allowRejectCreate) {
+            streamDesc->SetRouteSelectRejectedFlag(true);
+            AUDIO_INFO_LOG("route select reject create for stream %{public}u", streamDesc->sessionId_);
+            return false;
+        }
+        streamDesc->routeFlag_ = normalRouteFlag;
+        AUDIO_WARNING_LOG("route select reject fallback to normal for existing stream %{public}u",
+            streamDesc->sessionId_);
+    }
+    return true;
 }
 
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecute(
@@ -166,7 +257,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
 {
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
 
-    ScanPipeListForStreamDesc(pipeInfoList, streamDesc);
+    CHECK_AND_RETURN_RET(ScanPipeListForStreamDesc(pipeInfoList, streamDesc), {});
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
 
@@ -279,7 +370,15 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
 {
     CHECK_AND_RETURN_LOG(streamDescs.size() != 0, "streamDescs is empty!");
     SortStreamDescsByStartTime(streamDescs);
-    streamDescs[0]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[0]);
+    streamDescs.erase(std::remove_if(streamDescs.begin(), streamDescs.end(),
+        [this](const std::shared_ptr<AudioStreamDescriptor> &streamDesc) {
+            if (streamDesc == nullptr) {
+                AUDIO_ERR_LOG("streamDesc is nullptr");
+                return true;
+            }
+            return !ApplyRouteSelectDecision(streamDesc, false);
+        }), streamDescs.end());
+    CHECK_AND_RETURN_LOG(!streamDescs.empty(), "all streams rejected before concurrency");
 
     std::unordered_set<uint32_t> originalStreamSessionIds;
     for (auto &streamDesc : streamDescs) {
@@ -298,7 +397,6 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     }
 
     for (size_t cmpStreamIdx = 1; cmpStreamIdx < streamDescs.size(); ++cmpStreamIdx) {
-        streamDescs[cmpStreamIdx]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[cmpStreamIdx]);
         // calculate concurrency in time order
         for (size_t curStreamDescIdx = 0; curStreamDescIdx < cmpStreamIdx; ++curStreamDescIdx) {
             ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx], streamsMoveToNormal);
@@ -511,6 +609,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
     }
 
     DecideFinalRouteFlag(streamDescs);
+    CHECK_AND_RETURN_RET(!streamDescs.empty(), {});
     ProcessNewPipeList(newPipeInfoList, streamDescToPipeInfo, streamDescs);
     DecidePipesAndStreamAction(newPipeInfoList, streamDescToPipeInfo);
 
@@ -551,11 +650,11 @@ void AudioPipeSelector::SortStreamByStatus(std::vector<std::pair<std::shared_ptr
     });
 }
 
-void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
+bool AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
     std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-    streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "streamDesc is nullptr");
+    CHECK_AND_RETURN_RET(ApplyRouteSelectDecision(streamDesc, true), false);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
 
@@ -585,6 +684,7 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 
     HILOG_COMM_INFO("[ScanPipeListForStreamDesc]Route flag after concurrency: %{public}u  sessionId: %{public}u",
         streamDesc->routeFlag_, streamDesc->sessionId_);
+    return true;
 }
 
 AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
@@ -927,6 +1027,7 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
     moduleInfo.deviceType = std::to_string(deviceDesc->deviceType_);
     moduleInfo.networkId = deviceDesc->networkId_;
     moduleInfo.macAddress = deviceDesc->macAddress_;
+    moduleInfo.hdPlayBackMode = std::to_string(static_cast<int32_t>(deviceDesc->hdPlaybackMode_));
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
         const DeviceStreamInfo deviceAudioStreamInfo = deviceDesc->GetAudioStreamInfo().back();
@@ -1007,7 +1108,8 @@ AudioStreamAction AudioPipeSelector::JudgeStreamAction(
 {
     CHECK_AND_RETURN_RET(!IsRemoteOffloadNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
     CHECK_AND_RETURN_RET(!IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
-    if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
+
+    if (AudioPipeManager::GetPipeManager()->IsSamePipe(newPipe, oldPipe)) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }
     if (oldPipe->IsRouteFast() || newPipe->IsRouteFast() || oldPipe->IsRouteDirect() || newPipe->IsRouteDirect()) {
@@ -1146,9 +1248,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         }
         MatchUltraFastPipe(pipeInfo, streamDesc);
 
-        pipeInfo->streamDescriptors_.push_back(streamDesc);
-        pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-        pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
+        pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
             pipeInfo->ToString().c_str(), streamDesc->sessionId_, pipeInfo->pipeAction_);
         return true;

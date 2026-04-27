@@ -72,4 +72,3 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_ROUTING_MANAGER_H
-

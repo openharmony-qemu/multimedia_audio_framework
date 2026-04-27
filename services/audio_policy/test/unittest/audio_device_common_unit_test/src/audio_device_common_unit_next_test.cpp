@@ -170,12 +170,13 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
     descForCb.push_back(desc);
 
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> preferredCallCaptureDevice = std::make_shared<AudioDeviceDescriptor>();
     preferredCallCaptureDevice->deviceType_ = desc->deviceType_;
     preferredCallCaptureDevice->macAddress_ = desc->macAddress_;
     preferredCallCaptureDevice->deviceRole_ = desc->deviceRole_;
     preferredCallCaptureDevice->networkId_ = desc->networkId_;
-    audioDeviceCommon.audioStateManager_.SetPreferredCallCaptureDevice(preferredCallCaptureDevice);
+    strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, preferredCallCaptureDevice);
 
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_USB_HEADSET);
@@ -197,12 +198,13 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
     descForCb.push_back(desc);
 
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice = std::make_shared<AudioDeviceDescriptor>();
     preferredRecordCaptureDevice->deviceType_ = desc->deviceType_;
     preferredRecordCaptureDevice->macAddress_ = desc->macAddress_;
     preferredRecordCaptureDevice->deviceRole_ = desc->deviceRole_;
     preferredRecordCaptureDevice->networkId_ = desc->networkId_;
-    audioDeviceCommon.audioStateManager_.SetPreferredRecordCaptureDevice(preferredRecordCaptureDevice);
+    strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, preferredRecordCaptureDevice);
 
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_USB_ARM_HEADSET);
@@ -380,8 +382,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_002, 
 
     AudioDeviceDescriptor inputDevice;
     inputDevice.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(inputDevice);
-
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID,
+        {make_shared<AudioDeviceDescriptor>(inputDevice)});
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.clear();
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
     EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentInputDeviceType(), DEVICE_TYPE_MIC);

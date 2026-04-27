@@ -152,18 +152,10 @@ public:
     int32_t SetAsrVoiceControlMode(int32_t asrVoiceControlMode, bool on) override;
     int32_t SetAsrVoiceMuteMode(int32_t asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering(int32_t& whisperRes) override;
-    // for effect V3
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
-        int32_t deviceType) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        int32_t deviceType) override;
     // for effect
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    // for enhance
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray,
         int32_t deviceType) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray,
         int32_t deviceType) override;
 
     int32_t NotifyDeviceInfo(const std::string &networkId, bool connected) override;
@@ -392,11 +384,11 @@ private:
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
 #endif
-    int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArray &propertyArray,
         const DeviceType& deviceType);
-    int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectChainProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEnhanceChainProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEffectChainProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEnhanceChainProperty(const AudioEffectPropertyArray &propertyArray,
         const DeviceType& deviceType);
 
     void SetA2dpAudioParameter(const std::string &renderValue);

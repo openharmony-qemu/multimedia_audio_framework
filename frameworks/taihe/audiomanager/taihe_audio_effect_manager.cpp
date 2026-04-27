@@ -57,7 +57,7 @@ array<AudioEffectProperty> AudioEffectManagerImpl::GetSupportedAudioEffectProper
         return array<AudioEffectProperty>(emptyResult);
     }
 
-    OHOS::AudioStandard::AudioEffectPropertyArrayV3 propertyArray = {};
+    OHOS::AudioStandard::AudioEffectPropertyArray propertyArray = {};
     int32_t result = audioEffectMngr_->GetSupportedAudioEffectProperty(propertyArray);
     if (result != AUDIO_OK) {
         AUDIO_ERR_LOG("get audio enhance property failure! %{public}d", result);
@@ -76,7 +76,7 @@ void AudioEffectManagerImpl::SetAudioEffectProperty(array_view<AudioEffectProper
         return;
     }
 
-    OHOS::AudioStandard::AudioEffectPropertyArrayV3 innerPropertyArray = {};
+    OHOS::AudioStandard::AudioEffectPropertyArray innerPropertyArray = {};
     int32_t result = TaiheParamUtils::GetEffectPropertyArray(innerPropertyArray, propertyArray);
     if (result != AUDIO_OK || innerPropertyArray.property.size() <= 0) {
         AUDIO_ERR_LOG("GetEffectPropertyArray failed or arguments error");
@@ -102,7 +102,7 @@ array<AudioEffectProperty> AudioEffectManagerImpl::GetAudioEffectProperty()
         return array<AudioEffectProperty>(emptyResult);
     }
 
-    OHOS::AudioStandard::AudioEffectPropertyArrayV3 propertyArray = {};
+    OHOS::AudioStandard::AudioEffectPropertyArray propertyArray = {};
     int32_t result = audioEffectMngr_->GetAudioEffectProperty(propertyArray);
     if (result != AUDIO_OK) {
         AUDIO_ERR_LOG("get audio enhance property failure! %{public}d", result);

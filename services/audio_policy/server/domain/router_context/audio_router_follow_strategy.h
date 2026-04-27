@@ -49,6 +49,12 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice(int32_t uid,
         uint32_t streamId) override;
 
+    void UpdateCurrentOutputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentOutputDevice(int32_t uid) override;
+    void UpdateCurrentInputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentInputDevice(int32_t uid) override;
 private:
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceWhenHasRunningStream(
         SourceType &effectiveSourceType, BluetoothAndNearlinkPreferredRecordCategory &category);

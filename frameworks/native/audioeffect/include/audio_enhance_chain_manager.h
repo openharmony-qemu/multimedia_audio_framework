@@ -54,16 +54,10 @@ public:
 
     virtual int32_t SetStreamVolumeInfo(uint32_t sessionId, float streamVol) = 0;
 
-    virtual int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    virtual int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
-    virtual int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-
-    virtual int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-
-    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    virtual int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual void ResetInfo() = 0;

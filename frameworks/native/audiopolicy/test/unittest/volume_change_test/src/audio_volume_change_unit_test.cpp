@@ -17,6 +17,7 @@
 #endif
 
 #include <sys/stat.h>
+#include <thread>
 
 #include "audio_errors.h"
 #include "audio_info.h"
@@ -41,6 +42,7 @@ namespace {
     int32_t g_volumeGroupId(0);
     std::string g_networkId(LOCAL_NETWORK_ID);
     bool g_isCallbackReceived(false);
+    constexpr int32_t WAIT_TIME = 5;
 
     std::string g_callbackName("");
     std::mutex g_mutex;
@@ -150,15 +152,19 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
     MockNative::Mock();
     int result;
     int callBackSetResult;
+    int volume = 1;
     std::string testCaseName("volumeChange_test_002");
     g_isCallbackReceived = false;
     AudioStreamType streamType = AudioStreamType::STREAM_RING;
     AudioVolumeType volumeType
         = static_cast<AudioVolumeType>(streamType);
-    int volume = 10;
+    g_audioManagerInstance->SetVolume(volumeType, volume);
+    std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
+    
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
     auto appCallback = make_shared<ApplicationCallback>(testCaseName);
+    volume = 10;
     callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
     result = g_audioManagerInstance->SetVolume(volumeType, volume);
     EXPECT_EQ(result, SUCCESS);

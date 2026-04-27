@@ -197,7 +197,9 @@ int32_t HdiAdapterManager::SetAudioParameter(HdiDeviceManagerType type, const st
 {
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "device manager is nullptr");
-    return deviceManager->SetAudioParameter(adapterName, key, condition, value);
+    // Keep historical AudioServer behavior: ignore HDI set failures and always report success upstream.
+    deviceManager->SetAudioParameter(adapterName, key, condition, value);
+    return SUCCESS;
 }
 
 std::string HdiAdapterManager::GetAudioParameter(HdiDeviceManagerType type, const std::string &adapterName,
@@ -208,11 +210,12 @@ std::string HdiAdapterManager::GetAudioParameter(HdiDeviceManagerType type, cons
     return deviceManager->GetAudioParameter(adapterName, key, condition);
 }
 
-std::string HdiAdapterManager::GetAudioParameterByKey(HdiDeviceManagerType type, const std::string &key)
+std::optional<std::string> HdiAdapterManager::GetAudioParameterByKey(HdiDeviceManagerType type, const std::string &key)
 {
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "", "device manager is nullptr");
-
+    if (deviceManager == nullptr) {
+        return std::nullopt;
+    }
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::PARAM_KEY_LOWPOWER, "");
     }
@@ -239,7 +242,7 @@ std::string HdiAdapterManager::GetAudioParameterByKey(HdiDeviceManagerType type,
         return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::MMI,
             key.substr(strlen(MMI_PREFIX), key.size() - strlen(MMI_PREFIX)));
     }
-    return "";
+    return std::nullopt;
 }
 
 int32_t HdiAdapterManager::SetExtraParameters(HdiDeviceManagerType type, const std::string &adapterName,

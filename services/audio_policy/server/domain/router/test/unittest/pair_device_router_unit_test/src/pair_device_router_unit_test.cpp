@@ -464,6 +464,20 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_012, TestSize.Level4)
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 /**
  * @tc.name  : Test PairDeviceRouter.
  * @tc.number: DecideRingRenderDevices_013
@@ -476,7 +490,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_013, TestSize.Level4)
     pairDev->pairDeviceDescriptor_ = nullptr;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 10;
+    CurrentActiveDevice().deviceId_ = 10;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -502,7 +516,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_014, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = true;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -528,7 +542,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_015, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = true;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -554,7 +568,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_016, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = true;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -580,7 +594,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_017, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = false;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -606,7 +620,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_018, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = false;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -632,7 +646,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_019, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = true;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -658,7 +672,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_020, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = false;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
@@ -684,7 +698,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_021, TestSize.Level4)
     pairDev->pairDeviceDescriptor_->isEnable_ = true;
 
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioActiveDevice::GetInstance().currentActiveDevice_.deviceId_ = 1;
+    CurrentActiveDevice().deviceId_ = 1;
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
 
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);

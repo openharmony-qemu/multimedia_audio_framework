@@ -81,6 +81,7 @@ public:
         std::string networkId = LOCAL_NETWORK_ID);
     std::unordered_set<DeviceType> GetAllOutputDeviceTypes();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices();
+
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}

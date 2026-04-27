@@ -797,6 +797,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_069, TestSize.Level1)
     EXPECT_EQ(true, ret);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_070
@@ -807,27 +808,28 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_070, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_NONE;
-    AudioDeviceDescriptor deviceDesc;
-    deviceDesc.deviceType_ = DEVICE_TYPE_EARPIECE;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDevice(deviceDesc);
+    auto deviceDesc = make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    deviceDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDesc});
     bool ret = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
     EXPECT_EQ(false, ret);
 
     desc->networkId_ = "";
-    deviceDesc.networkId_ = "";
+    deviceDesc->networkId_ = "";
     desc->macAddress_ = "";
-    deviceDesc.macAddress_ = "";
+    deviceDesc->macAddress_ = "";
     desc->connectState_ = CONNECTED;
-    deviceDesc.connectState_ = CONNECTED;
+    deviceDesc->connectState_ = CONNECTED;
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceDesc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     ret = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
     EXPECT_EQ(true, ret);
 
     desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    deviceDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     desc->deviceRole_ = DEVICE_ROLE_NONE;
-    deviceDesc.deviceRole_ = DEVICE_ROLE_NONE;
+    deviceDesc->deviceRole_ = DEVICE_ROLE_NONE;
     ret = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
     EXPECT_EQ(true, ret);
 }
@@ -928,13 +930,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, ClearPreferredDevices_001, TestSize.Level1)
     dev->deviceName_ = "--";
     dev->deviceRole_ = OUTPUT_DEVICE;
     dev->macAddress_ = "card=2;device=0";
-    comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
     strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
     strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
-    comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
+    strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
+    strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);
-    EXPECT_NE(comm.audioStateManager_.GetPreferredCallCaptureDevice()->deviceId_, 9998);
+    auto callInputDev = strategy.GetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID);
+    EXPECT_TRUE(callInputDev == nullptr || callInputDev->deviceType_ == DEVICE_TYPE_NONE);
 }
 
 /**
@@ -1045,7 +1048,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_Unavailabl
     desc->exceptionFlag_ = true; // Device has exception
     desc->isEnable_ = true;
     desc->connectState_ = CONNECTED;
-    
+
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -1074,7 +1077,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_ScoSuspend
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = SUSPEND_CONNECTED; // SCO device in suspend state
-    
+
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -1102,7 +1105,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_VirtualCon
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = VIRTUAL_CONNECTED; // Virtual connected device
-    
+
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -1130,7 +1133,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_AvailableD
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = CONNECTED; // Normal connected device
-    
+
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -1160,7 +1163,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_A2dpSuspen
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = SUSPEND_CONNECTED; // A2DP device in suspend state (should be allowed)
-    
+
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     std::string networkId = LOCAL_NETWORK_ID;

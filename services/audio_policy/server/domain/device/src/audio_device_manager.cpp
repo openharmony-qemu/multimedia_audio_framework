@@ -27,7 +27,6 @@
 #include "audio_device_status.h"
 #include "audio_pipe_manager.h"
 #include "audio_zone_service.h"
-#include "audio_active_device.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -1609,10 +1608,6 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
 
 int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
-    if (AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId() != 0 &&
-        AudioZoneService::GetInstance().CheckDeviceInAudioZone(*desc)) {
-        return PRIORITY_APP;
-    }
     if (desc->deviceType_ == DEVICE_TYPE_DP && AudioZoneService::GetInstance().CheckDeviceInAudioZone(*desc)) {
         return PRIORITY_DISTRIBUTED;
     }

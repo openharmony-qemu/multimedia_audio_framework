@@ -18,6 +18,7 @@
 
 #include "audio_server.h"
 
+#include <unistd.h>
 #include <cinttypes>
 #include <codecvt>
 #include <csignal>
@@ -45,6 +46,7 @@
 #include "audio_info.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
+#include "stream_dfx_manager.h"
 #include "async_action_handler.h"
 #include "audio_asr.h"
 #include "audio_stream_enum.h"
@@ -339,6 +341,8 @@ static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
 static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
 {
     if (source == nullptr || !source->IsInited()) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "Capturer is not initialized", false);
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
         source->UpdateActiveDevice(type);
@@ -1345,9 +1349,9 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     
-    std::string result = HdiAdapterManager::GetInstance().GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, key);
-    if (!result.empty()) {
-        return result;
+    auto result = HdiAdapterManager::GetInstance().GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, key);
+    if (result.has_value()) {
+        return result.value();
     }
 
     if (AudioServer::audioParameters.count(key)) {
@@ -1624,18 +1628,21 @@ int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceType type, const Dev
     }
 
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
-        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "Capturer is not initialized", false),
+            "Capturer is not initialized");
         source->UpdateActiveDevice(type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
-        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
         sink->UpdateActiveDevice(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
-        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
-        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
-        source->UpdateActiveDevice(type);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
         sink->UpdateActiveDevice(deviceTypes);
+        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
+        source->UpdateActiveDevice(type);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;

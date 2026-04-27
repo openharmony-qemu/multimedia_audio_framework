@@ -35,6 +35,8 @@
 #include "config_policy_utils.h"
 #include "audio_utils.h"
 #include "record_privacy_manager.h"
+#include "audio_pipe_selector.h"
+#include "audio_route_select_info.h"
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
@@ -2029,9 +2031,36 @@ int32_t AudioPolicyServer::SetDeclaredDeviceTypes(const std::set<int32_t> &devic
     return audioPolicyUtils_.SetDeclaredDeviceTypes(AudioBundleManager::GetBundleName(), deviceTypeVector);
 }
 
+int32_t AudioPolicyServer::HandleRouteSelectorCallbackEnable(bool enable)
+{
+    int32_t clientId = IPCSkeleton::GetCallingPid();
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_COCKPIT_SA && callerUid != ROOT_UID) {
+        AUDIO_ERR_LOG("HandleRouteSelectorCallbackEnable permission denied");
+        return ERROR;
+    }
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, AUDIO_ERR, "audioPolicyServerHandler_ is nullptr");
+    auto clientHolder = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientId);
+    CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERROR, "client not registered");
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
+    
+    AudioPipeSelector::AudioRouteSelectorCallback callback =
+        [clientHolder](const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult) -> int32_t {
+            CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERR_OPERATION_FAILED, "clientHolder is nullptr");
+            return clientHolder->OnAudioRouteSelectRefined(routeSelectInfo, selectResult);
+        };
+    
+    return enable ? eventEntry_->SetAudioRouteSelectorCallback(callback) :
+        eventEntry_->UnsetAudioRouteSelectorCallback();
+}
+
 int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bool enable)
 {
     CallbackChange callbackchange = static_cast<CallbackChange>(callbackchangeIn);
+    if (callbackchange == CALLBACK_ROUTE_SELECTOR) {
+        return HandleRouteSelectorCallbackEnable(enable);
+    }
+    
     if (audioPolicyServerHandler_ != nullptr) {
         return audioPolicyServerHandler_->SetClientCallbacksEnable(callbackchange, enable);
     } else {
@@ -3213,9 +3242,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     AudioRouterInfra::GetInstance().OnAppDied(uid);
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    audioActiveDevice_.DelCurrentInputDevice(uid);
-#endif
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
@@ -3250,7 +3276,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
         StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(pid);
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(uid, streamUsage);
         AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", pid, zoneId);
-        interruptService_->DeactivateAudioSession(zoneId, pid);
+        AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, pid);
     }
 
     if (audioPolicyServerHandler_ != nullptr) {
@@ -3262,9 +3288,6 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     eventEntry_->ClearSelectedInputDeviceByUid(uid);
     eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    audioActiveDevice_.DelCurrentInputDevice(uid);
-#endif
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -4347,6 +4370,7 @@ int32_t AudioPolicyServer::UpdateContextForAudioZone(int32_t zoneId, const Audio
 
 int32_t AudioPolicyServer::GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     descs = AudioZoneService::GetInstance().GetAllAudioZone();
     return SUCCESS;
 }
@@ -4354,6 +4378,7 @@ int32_t AudioPolicyServer::GetAllAudioZone(std::vector<std::shared_ptr<AudioZone
 int32_t AudioPolicyServer::GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor> &desc)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     desc = AudioZoneService::GetInstance().GetAudioZone(zoneId);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "desc is nullptr");
     return SUCCESS;
@@ -4498,6 +4523,7 @@ int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId,
     std::vector<std::map<AudioInterrupt, int32_t>> &retList)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId));
     return SUCCESS;
 }
@@ -4506,6 +4532,7 @@ int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId, const std::s
     std::vector<std::map<AudioInterrupt, int32_t>> &retList)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceTag));
     return SUCCESS;
 }
@@ -4827,7 +4854,7 @@ void AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration()
 }
 
 // LCOV_EXCL_START
-int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
@@ -4840,90 +4867,6 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
     CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
         "get supported audio effect property size invalid.");
     return AUDIO_OK;
-}
-
-int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
-{
-    size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "set audio effect property array size invalid");
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    return audioPolicyService_.SetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    int32_t res = audioPolicyService_.GetAudioEffectProperty(propertyArray);
-    size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
-    return res;
-}
-
-int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    int32_t res = audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
-    size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
-        "get supported audio effect property size invalid.");
-    return res;
-}
-// LCOV_EXCL_STOP
-
-int32_t AudioPolicyServer::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    int32_t res = audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
-    size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
-        "get supported audio effect property size invalid.");
-    return res;
-}
-
-int32_t AudioPolicyServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    return audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioPolicyServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "set audio enhance property array size invalid");
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    return audioPolicyService_.SetAudioEnhanceProperty(propertyArray);
 }
 
 int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
@@ -4953,6 +4896,7 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &prop
     CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
     return res;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::InjectInterruption(const std::string &networkId, const InterruptEvent &event)
 {
@@ -5040,8 +4984,8 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateSession(const int32_t zo
     int32_t callerUid)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone,
-        stateChangeCallbackFlag, callerUid);
+    AudioInterruptResult result = AudioZoneService::GetInstance().ActivateAudioSession(zoneId,
+        callerPid, strategy, isStandalone, stateChangeCallbackFlag, callerUid);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -5059,7 +5003,7 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
         callerPid, zoneId, streamUsage);
-    return interruptService_->DeactivateAudioSession(zoneId, callerPid);
+    return AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, callerPid);
 }
 
 int32_t AudioPolicyServer::IsAudioSessionActivated(bool &isActive)

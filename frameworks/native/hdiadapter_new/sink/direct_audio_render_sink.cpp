@@ -31,6 +31,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
+DirectAudioRenderSink::DirectAudioRenderSink()
+#ifdef MULTI_BUS_ENABLE
+    : playingAppManager_([this](const std::string &param) { return SetPlayingAppNameParam(param); })
+#endif
+{
+}
+
 DirectAudioRenderSink::~DirectAudioRenderSink()
 {
     std::unique_lock<std::mutex> lock(sinkMutex_);
@@ -94,6 +101,9 @@ int32_t DirectAudioRenderSink::Start(void)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     if (testFlag_) {
         started_ = true;
+#ifdef MULTI_BUS_ENABLE
+        playingAppManager_.Start();
+#endif
         lock.unlock();
         return SUCCESS;
     }
@@ -103,6 +113,9 @@ int32_t DirectAudioRenderSink::Start(void)
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     started_ = true;
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Start();
+#endif
     return SUCCESS;
 }
 
@@ -143,6 +156,9 @@ int32_t DirectAudioRenderSink::Stop(void)
         int32_t ret = audioRender_->Stop(audioRender_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
     }
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Stop();
+#endif
     started_ = false;
     return SUCCESS;
 }
@@ -314,6 +330,18 @@ void DirectAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     }
 }
 
+bool DirectAudioRenderSink::SetPlayingAppNameParam(const std::string &param)
+{
+    AUDIO_INFO_LOG("param: %{public}s", param.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, false, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set playing app name param fail, error code: %{public}d", ret);
+        return false;
+    }
+    return true;
+}
+
 int32_t DirectAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
     AUDIO_INFO_LOG("not support");
@@ -322,6 +350,10 @@ int32_t DirectAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 
 int32_t DirectAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid, appsUid + size);
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid, appsUid + size);
@@ -331,6 +363,10 @@ int32_t DirectAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANN
 
 int32_t DirectAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());

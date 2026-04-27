@@ -96,6 +96,9 @@ public:
         AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(const AudioEndpointConfig &endpointConfig,
         bool isVoipStream);
+    AudioEndpointConfig BuildEndpointConfig(const AudioProcessConfig &config,
+        const AudioDeviceDescriptor &deviceInfo, const AudioStreamInfo &audioStreamInfo,
+        const std::string &adapterName, bool isUltraFast);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);

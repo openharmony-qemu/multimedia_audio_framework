@@ -210,20 +210,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyServiceTest_Prepare001, Te
 }
 
 /**
-* @tc.name  : Test GetSupportedAudioEffectProperty.
-* @tc.number: GetSupportedAudioEffectProperty_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSupportedAudioEffectProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetSupportedAudioEffectProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEffectPropertyArray propertyArray;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
-}
-
-/**
 * @tc.name  : Test LoadHdiEffectModel.
 * @tc.number: LoadHdiEffectModel_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -478,76 +464,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_008, TestSi
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
     EXPECT_NE(A2DP_STOPPED, playingState);
     EXPECT_NE(A2DP_PLAYING, playingState);
-}
-#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
-/**
-* @tc.name  : Test GetSupportedAudioEnhanceProperty.
-* @tc.number: GetSupportedAudioEnhanceProperty_001
-* @tc.desc  : Test GetSupportedAudioEnhanceProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSupportedAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetSupportedAudioEnhanceProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEnhancePropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->GetSupportedAudioEnhanceProperty(propertyArrayTest);
-}
-#endif
-/**
-* @tc.name  : Test SetAudioEffectProperty.
-* @tc.number: SetAudioEffectProperty_001
-* @tc.desc  : Test SetAudioEffectProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetAudioEffectProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetAudioEffectProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEffectPropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->SetAudioEffectProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test GetAudioEffectProperty.
-* @tc.number: GetAudioEffectProperty_001
-* @tc.desc  : Test GetAudioEffectProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEffectProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetAudioEffectProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEffectPropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->GetAudioEffectProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test SetAudioEnhanceProperty.
-* @tc.number: SetAudioEnhanceProperty_001
-* @tc.desc  : Test SetAudioEnhanceProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetAudioEnhanceProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEnhancePropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->SetAudioEnhanceProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test GetAudioEnhanceProperty.
-* @tc.number: GetAudioEnhanceProperty_001
-* @tc.desc  : Test GetAudioEnhanceProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetAudioEnhanceProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEnhancePropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->GetAudioEnhanceProperty(propertyArrayTest);
 }
 
 /**
@@ -1628,6 +1544,122 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_003, TestSize.Level
 }
 
 /**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_001
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns matched stream prop.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_001, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    auto usbStreamProp = std::make_shared<PipeStreamPropInfo>();
+    usbStreamProp->channels_ = STEREO;
+    usbStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_USB_HEADSET, std::make_shared<AdapterDeviceInfo>()});
+    auto micStreamProp = std::make_shared<PipeStreamPropInfo>();
+    micStreamProp->channels_ = CHANNEL_3;
+    micStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_MIC, std::make_shared<AdapterDeviceInfo>()});
+    streamPropInfos.push_back(usbStreamProp);
+    streamPropInfos.push_back(micStreamProp);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, micStreamProp);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_002
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice skips nullptr items and finds matched stream prop.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_002, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    streamPropInfos.push_back(nullptr);
+    auto micStreamProp = std::make_shared<PipeStreamPropInfo>();
+    micStreamProp->channels_ = CHANNEL_3;
+    micStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_MIC, std::make_shared<AdapterDeviceInfo>()});
+    streamPropInfos.push_back(micStreamProp);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, micStreamProp);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_003
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice falls back to front when no device matches.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_003, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    auto frontStreamProp = std::make_shared<PipeStreamPropInfo>();
+    frontStreamProp->channels_ = STEREO;
+    streamPropInfos.push_back(frontStreamProp);
+    streamPropInfos.push_back(nullptr);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, frontStreamProp);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_004
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns nullptr for empty stream prop list.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_004, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_005
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns nullptr when front item is nullptr and no match exists.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_005, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    streamPropInfos.push_back(nullptr);
+    auto usbStreamProp = std::make_shared<PipeStreamPropInfo>();
+    usbStreamProp->channels_ = STEREO;
+    usbStreamProp->supportDeviceMap_.insert({DEVICE_TYPE_USB_HEADSET, std::make_shared<AdapterDeviceInfo>()});
+    streamPropInfos.push_back(usbStreamProp);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCoreConfigManager.
+ * @tc.number: GetAvailableStreamPropInfoForDevice_006
+ * @tc.desc  : Test GetAvailableStreamPropInfoForDevice returns nullptr when all items are nullptr.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAvailableStreamPropInfoForDevice_006, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos;
+
+    streamPropInfos.push_back(nullptr);
+    streamPropInfos.push_back(nullptr);
+
+    auto result = manager.GetAvailableStreamPropInfoForDevice(streamPropInfos, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
 * @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: UpdateBasicStreamInfo_001
 * @tc.desc  : Test UpdateBasicStreamInfo
@@ -2138,7 +2170,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_001, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"record", "NROFF"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2154,7 +2186,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_002, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"voip_up", "NROFF"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2170,7 +2202,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_003, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"record", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
@@ -2186,7 +2218,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     propertyArray.property.push_back({"voip_up", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, true);

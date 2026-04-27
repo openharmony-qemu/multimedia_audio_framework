@@ -161,8 +161,6 @@ public:
     int32_t EffectRotationUpdate(const uint32_t rotationState) override;
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     void InitHdiState() override;
@@ -177,13 +175,9 @@ public:
     int32_t SetMicrophoneMuteInfo(const bool &isMute) override;
     int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol) override;
     int32_t SetAudioEnhanceProperty(
-        const AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
+        const AudioEffectPropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t GetAudioEnhanceProperty(
-        AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
-    int32_t SetAudioEnhanceProperty(
-        const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
-    int32_t GetAudioEnhanceProperty(
-        AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
+        AudioEffectPropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
     void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
     void NotifySettingsDataReady() override;

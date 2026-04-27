@@ -308,36 +308,6 @@ int32_t AudioStreamManager::UnsetAudioFormatUnsupportedErrorCallback()
     return ret;
 }
 
-int32_t AudioStreamManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    return AudioPolicyManager::GetInstance().GetSupportedAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioStreamManager::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    return AudioPolicyManager::GetInstance().GetSupportedAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioStreamManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
-{
-    return AudioPolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioStreamManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    return AudioPolicyManager::GetInstance().GetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioStreamManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    return AudioPolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioStreamManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    return AudioPolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray);
-}
-
 bool AudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return AudioPolicyManager::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
@@ -362,6 +332,19 @@ bool AudioStreamManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
 bool AudioStreamManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
 {
     return AudioPolicyManager::GetInstance().IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
+}
+
+int32_t AudioStreamManager::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetAudioRouteSelectorCallback(callback);
+}
+
+int32_t AudioStreamManager::UnsetAudioRouteSelectorCallback()
+{
+    AUDIO_INFO_LOG("In");
+    return AudioPolicyManager::GetInstance().UnsetAudioRouteSelectorCallback();
 }
 } // namespace AudioStandard
 } // namespace OHOS

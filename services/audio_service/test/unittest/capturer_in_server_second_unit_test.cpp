@@ -649,7 +649,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_037, Tes
     CapturerState capturerState = CAPTURER_NEW;
     capturerInServer_->processConfig_.appInfo.appFullTokenId = (static_cast<uint64_t>(1) << 32);
     auto ret = capturerInServer_->CheckBgRecordPermission(capturerState);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 
     capturerInServer_->isMicIndicatorOn_ = true;
     ret = capturerInServer_->TurnOnMicIndicator();
@@ -740,6 +740,40 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_042, Tes
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
     auto ret = capturerInServer_->RestoreSession(restoreInfo);
     EXPECT_EQ(NEED_RESTORE, ret);
+}
+
+HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorFail_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    processConfig.capturerInfo.isLoopback = false;
+    processConfig.appInfo.appTokenId = 0;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 202;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    info.nextState = CAPTURER_PREPARED;
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    auto ret = capturerInServer_->StartInner();
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+    manager.tokenIdRecordMap_.clear();
 }
 
 /**

@@ -175,7 +175,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
     preferredCallCaptureDevice->macAddress_ = desc->macAddress_;
     preferredCallCaptureDevice->deviceRole_ = desc->deviceRole_;
     preferredCallCaptureDevice->networkId_ = desc->networkId_;
-    audioDeviceCommon.audioStateManager_.SetPreferredCallCaptureDevice(preferredCallCaptureDevice);
+    AudioRouterSelectStrategy::GetInstance().SetCallInputDevice(
+        SYSTEM_UID, INVALID_STREAM_ID, preferredCallCaptureDevice);
 
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_USB_HEADSET);
@@ -202,7 +203,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
     preferredRecordCaptureDevice->macAddress_ = desc->macAddress_;
     preferredRecordCaptureDevice->deviceRole_ = desc->deviceRole_;
     preferredRecordCaptureDevice->networkId_ = desc->networkId_;
-    audioDeviceCommon.audioStateManager_.SetPreferredRecordCaptureDevice(preferredRecordCaptureDevice);
+    AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(
+        SYSTEM_UID, INVALID_STREAM_ID, preferredRecordCaptureDevice);
 
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_USB_ARM_HEADSET);
@@ -380,7 +382,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_002, 
 
     AudioDeviceDescriptor inputDevice;
     inputDevice.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(inputDevice);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID,
+        {make_shared<AudioDeviceDescriptor>(inputDevice)});
 
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.clear();
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();

@@ -39,11 +39,7 @@ public:
 
     bool operator==(const AudioDeviceSimpleDescriptor& other) const
     {
-        return deviceType_ == other.deviceType_ &&
-               deviceRole_ == other.deviceRole_ &&
-               deviceId_ == other.deviceId_ &&
-               networkId_ == other.networkId_ &&
-               macAddress_ == other.macAddress_;
+        return deviceId_ == other.deviceId_;
     }
 
     bool operator!=(const AudioDeviceSimpleDescriptor& other) const
@@ -53,11 +49,7 @@ public:
 
     bool operator==(const AudioDeviceDescriptor& other) const
     {
-        return deviceType_ == other.deviceType_ &&
-               deviceRole_ == other.deviceRole_ &&
-               deviceId_ == other.deviceId_ &&
-               networkId_ == other.networkId_ &&
-               macAddress_ == other.macAddress_;
+        return deviceId_ == other.deviceId_;
     }
 
     bool operator!=(const AudioDeviceDescriptor& other) const

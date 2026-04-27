@@ -63,6 +63,7 @@ ohos_shared_library("audio_common") {
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../audio_engine/plugin/resample/include",
+    "../audio_policy/server/domain/volume/include",
   ]
 
   sources = [
@@ -166,6 +167,7 @@ ohos_shared_library("audio_common") {
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
   if (is_ohos && is_clang && target_cpu == "arm64"  && defined(build_ext_path)) {
+    version_script = "libaudio_common.versionscript"
     ldflags = [ 
         "-Wl,--emit-relocs", 
         "-Wl,--no-relax", 
@@ -178,6 +180,7 @@ config("audio_client_public_config") {
   include_dirs = [
     "client/include",
     "common/include",
+    "common/include/dfx",
     "server/include",
     "../audio_policy/common/include",
     "../audio_policy/client/interface",
@@ -194,6 +197,7 @@ config("audio_client_public_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../interfaces/inner_api/native/audiorenderer/include",
+    "../../services/audio_service/common/include/dfx",
     "../../frameworks/native/audioqosmanager/include",
     "${audio_framework_root}/services/audio_policy/server/include",
   ]
@@ -642,6 +646,10 @@ audio_ohos_library("audio_process_service") {
     "../audio_engine/simd",
     "../audio_policy/client/service/include",
     "../audio_policy/server/infra/ipc_proxy/include",
+    "../audio_policy/server/common/include",
+    "../audio_policy/server/domain/pipe/include",
+    "../audio_policy/server/domain/device/src/a2dp",
+    "../audio_policy/server/domain/volume/include",
   ]
 
   deps = [

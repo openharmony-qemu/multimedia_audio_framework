@@ -29,6 +29,7 @@
 #include "audio_suite_manager_callback.h"
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,11 +65,24 @@ int32_t AudioSuiteManager::Init()
     AUDIO_DEBUG_LOG("Init enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ == nullptr, ERR_ILLEGAL_STATE, "suite engine already inited");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        suiteEngine_ == nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                           ERR_ILLEGAL_STATE),
+            "suite engine already inited", true),
+        "suite engine already inited");
 
     suiteEngine_ = std::make_shared<AudioSuiteEngine>(*this);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
-        ERR_MEMORY_ALLOC_FAILED, "Create suite engine failed, malloc error.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        suiteEngine_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                           ERR_MEMORY_ALLOC_FAILED),
+            "Create suite engine failed, malloc error.", true),
+        "Create suite engine failed, malloc error.");
 
     int32_t ret = suiteEngine_->Init();
     if (ret != SUCCESS) {
@@ -86,7 +100,15 @@ int32_t AudioSuiteManager::DeInit()
     AUDIO_DEBUG_LOG("DeInit enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_ILLEGAL_STATE, "suite engine not inited");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        suiteEngine_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
+                           ERR_ILLEGAL_STATE),
+            "suite engine not inited", true),
+        "suite engine not inited");
+
     std::vector<std::unique_lock<std::mutex>> pipelineLocks;
     for (auto& [id, lock] : pipelineLockMap_) {
         pipelineLocks.emplace_back(*lock);
@@ -105,7 +127,14 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId, PipelineWorkMode
     AUDIO_DEBUG_LOG("CreatePipeline enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                           ERR_AUDIO_SUITE_ENGINE_NOT_EXIST),
+            "suite engine not inited", true),
+        "suite engine not inited");
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishCreatePipeline_ = false;
@@ -1228,6 +1257,15 @@ void AudioSuiteManager::OnDisConnectNodes(int32_t result)
         errorDescription << "engine DisConnectNodes failed, ret = " << result;
         WriteSuiteEngineExceptionEvent(NODE_SCENE, DISCONNECT_NODE_ERROR, errorDescription.str());
     }
+
+    if (result != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()),
+            BuildErrorCode(
+                ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING, result),
+            "DisConnectNodes fail.", true);
+    }
+
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_DEBUG_LOG("OnDisConnectNodes enter");
     isFinishDisConnectNodes_ = true;

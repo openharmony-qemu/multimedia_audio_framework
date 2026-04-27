@@ -951,7 +951,6 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
         case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
             if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_NEW) {
                 AUDIO_INFO_LOG("PA_SUBSCRIPTION_EVENT_NEW");
-                g_audioServiceAdapterCallback->OnSetVolumeDbCb();
             } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
                 AUDIO_INFO_LOG("PA_SUBSCRIPTION_EVENT_REMOVE");
             }

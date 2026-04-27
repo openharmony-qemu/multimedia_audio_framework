@@ -69,6 +69,7 @@ audio_ohos_library("audio_suite") {
       "../audio_engine/plugin/resample/include",
       "../audio_service/common/include/limiter",
       "../../interfaces/inner_api/native/audiocommon/include/",
+      "../audio_service/common/include/dfx",
     ]
 
     sources = [

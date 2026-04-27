@@ -123,9 +123,9 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
             return AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL;
         case ERR_ILLEGAL_STATE:
             return AUDIOCONVERTER_ERROR_NOT_INITIALIZED;
-        case ERR_CALLBACK_INVALID:
+        case ERR_INVALID_WRITE:
             return AUDIOCONVERTER_ERROR_CALLBACK_INVALID;
-        case ERR_CALLBACK_NOT_SET:
+        case ERR_CALLBACK_NOT_FOUND:
             return AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET;
         default:
             return AUDIOCONVERTER_ERROR_SYSTEM;
@@ -134,7 +134,7 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
 
 static OHAudioConverter *ConvertAudioSuiteConverter(OH_AudioConverter *audioSuiteConverter)
 {
-    return (OHAudioConverter *)audioSuiteConverter;
+    return reinterpret_cast<OHAudioConverter *>(audioSuiteConverter);
 }
 
 OH_AudioConverter_Result OH_AudioConverter_Create(
@@ -267,7 +267,6 @@ OH_AudioConverter_Result OHAudioConverter::Create(
         AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT,
         "Create failed: unsupported audio encoding");
 
-    // Format conversion: OH_AudioConverter_Format -> PcmBufferFormat
     ConvertToPcmFormat(inputFormat, outputFormat);
 
     AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
@@ -276,8 +275,7 @@ OH_AudioConverter_Result OHAudioConverter::Create(
         outputFormat->samplingRate,
         MAP_LAYOUT_TO_CHANNEL[outputFormat->channelLayout]);
 
-    // Create an InnerAPI instance (no-argument constructor)
-    impl_ = IAudioFormatConverter::Create(inputFormat_, outputFormat_);
+    impl_ = AudioFormatConverter::Create(inputFormat_, outputFormat_);
     CHECK_AND_RETURN_RET_LOG(
         impl_ != nullptr, AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT, "Create failed: memory alloc failed");
  
@@ -306,7 +304,6 @@ OH_AudioConverter_Result OHAudioConverter::SetRequestDataCallback(
 
     std::lock_guard<std::mutex> lock(mutex_);
     int32_t ret = 0;
-    // Create a callback implementation class object and pass it via shared_ptr.
     CHECK_AND_RETURN_RET_LOG(
         impl_ != nullptr, AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "The audio format converter pointer is empty.");
     auto callbackImpl = std::make_shared<ConverterDataCallbackImpl>(callback, userData);

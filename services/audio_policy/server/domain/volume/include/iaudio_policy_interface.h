@@ -33,6 +33,21 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct PipeDeviceVolumeInfo {
+    AudioIOHandle ioHandle_;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc_;
+    std::set<AudioVolumeType> volumeTypes_;
+    PipeDeviceVolumeInfo() {}
+    PipeDeviceVolumeInfo(AudioIOHandle ioHandle, std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
+        : ioHandle_(ioHandle),
+        deviceDesc_(deviceDesc) {}
+    PipeDeviceVolumeInfo(AudioIOHandle ioHandle, std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+        std::set<AudioVolumeType> volumeTypes)
+        : ioHandle_(ioHandle),
+        deviceDesc_(deviceDesc),
+        volumeTypes_(volumeTypes) {}
+};
+
 enum LoudVolumeHoldType {
     LOUD_VOLUME_MODE_INVALID = -1,
     LOUD_VOLUME_MODE_MUSIC,
@@ -141,7 +156,7 @@ public:
     virtual AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex) = 0;
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
-    
+
     virtual AudioIOHandle ReloadA2dpAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
 
     virtual void ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
@@ -165,8 +180,6 @@ public:
     virtual int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback) = 0;
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
-
-    virtual void UpdateVolumeForStreams() = 0;
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
@@ -224,13 +237,9 @@ public:
 
     virtual void SafeVolumeDump(std::string &dumpString) = 0;
 
-    virtual void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor) = 0;
-
     virtual DeviceType GetActiveDevice() = 0;
 
     virtual DeviceCategory GetCurrentOutputDeviceCategory() = 0;
-
-    virtual AudioDeviceDescriptor GetActiveDeviceDescriptor() = 0;
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
 
@@ -255,18 +264,13 @@ public:
 
     virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
 
-    virtual void SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter) = 0;
+    virtual void SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter, uint32_t ioHandle) = 0;
 
-    virtual void ResetOffloadSessionId(OffloadAdapter offloadAdapter) = 0;
+    virtual void ResetOffloadSessionId(uint32_t sessionId) = 0;
 
     virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 
-    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const = 0;
-
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const = 0;
-
-    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) const = 0;
 
     virtual int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType) = 0;
 
@@ -302,7 +306,7 @@ public:
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
         int32_t volumeLevel) = 0;
-    
+
     virtual void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
     virtual void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
@@ -331,7 +335,6 @@ public:
     virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
     virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
         AudioStreamType streamType, int32_t volumeDegree) = 0;
-    virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
     virtual void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute) = 0;
@@ -343,6 +346,10 @@ public:
     virtual int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs) = 0;
     virtual void TriggerAudioZoneVolumeSync(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc = nullptr) = 0;
+    virtual void UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo) = 0;
+    virtual void RemoveAudioPipeVolume(uint32_t IoHandle) = 0;
+    virtual void UpdateVolumeForAllPipes() = 0;
+    virtual void UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

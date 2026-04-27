@@ -53,11 +53,9 @@ struct CachedFocusInfo {
 
 class AudioPolicyServerHandler;
 class AudioPolicyServer;
-class SessionTimeOutCallback;
 
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,
-                              public IAudioInterruptEventDispatcher,
-                              public SessionTimeOutCallback {
+                              public IAudioInterruptEventDispatcher {
 public:
     AudioInterruptService();
     virtual ~AudioInterruptService();
@@ -74,13 +72,14 @@ public:
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
 
     // interfaces of SessionTimeOutCallback
-    void OnSessionTimeout(const int32_t pid) override;
+    void OnSessionTimeout(const int32_t pid);
 
     // interfaces for AudioSessionService
     AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone = false,
         const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID);
-    int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
+    int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+        std::function<void()> onFakeInterruptDeactivate = nullptr);
     bool IsAudioSessionActivated(const int32_t callerPid);
 
     bool IsOtherMediaPlaying();
@@ -163,6 +162,7 @@ public:
     int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
         int32_t callerUid = INVALID_UID);
     void RefreshAudioSceneAfterDelay(const int32_t zoneId);
+    int32_t GetAudioSessionZoneidByPid(const int32_t pid);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -306,7 +306,6 @@ private:
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
-    int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
@@ -372,7 +371,8 @@ private:
     AudioScene GetHighestPriorityAudioSceneFromAudioSession(
         const AudioInterrupt &audioInterrupt, const AudioScene &audioScene) const;
     void DelayToDeactivateStreamsInAudioSession(
-        const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
+        const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession,
+        std::function<void()> onFakeInterruptDeactivate = nullptr);
     int32_t DeactivateStreamsInAudioSession(
         const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
     int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,

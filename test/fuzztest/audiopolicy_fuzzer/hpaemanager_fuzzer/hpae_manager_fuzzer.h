@@ -77,19 +77,9 @@ public:
         setSourceOutputMuteResult_ = result;
     }
 
-    void OnGetAudioEffectPropertyCbV3(int32_t result) override
-    {
-        getAudioEffectPropertyResult_ = result;
-    }
-
     void OnGetAudioEffectPropertyCb(int32_t result) override
     {
         getAudioEffectPropertyResult_ = result;
-    }
-
-    void OnGetAudioEnhancePropertyCbV3(int32_t result) override
-    {
-        getAudioEnhancePropertyResult_ = result;
     }
 
     void OnGetAudioEnhancePropertyCb(int32_t result) override

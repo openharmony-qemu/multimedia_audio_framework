@@ -226,10 +226,10 @@ void ClearPreferredDevicesFuzzTest()
     dev->deviceRole_ = GetData<DeviceRole>();
     dev->deviceName_ = "--";
     dev->macAddress_ = "card=2;device=0";
-    comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
     strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
     strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
-    comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
+    strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
+    strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);
     OnStop();

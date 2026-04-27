@@ -50,6 +50,7 @@
 #include "audio_utils_c.h"
 #include "policy_handler.h"
 #include "volume_tools.h"
+#include "stream_dfx_manager.h"
 
 #include "media_monitor_manager.h"
 #include "istandard_audio_service.h"
@@ -274,7 +275,9 @@ int32_t RendererInClientInner::InitIpcStream()
     AudioProcessConfig config = ConstructConfig();
     bool resetSilentMode = (gServerProxy_ == nullptr) ? true : false;
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
-    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(gasp != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_SERVICE_UNAVAILABLE, "Can not get service", true),
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     int32_t errorCode = 0;
     ipcProxy_ = nullptr;
@@ -285,23 +288,38 @@ int32_t RendererInClientInner::InitIpcStream()
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
         gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
     }
-    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_NULL_POINTER, "ipcProxy is null", true),
+        "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IIpcStream>(ipcProxy_);
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_NULL_POINTER, "iface_cast failed", true),
+        "failed when iface_cast.");
 
     // in plan next: old listener_ is destoried here, will server receive dieth notify?
     listener_ = sptr<IpcStreamListenerImpl>::MakeSptr(shared_from_this());
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterStreamListener failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_OPERATION_FAILED, "RegisterStreamListener failed", true),
+        "RegisterStreamListener failed:%{public}d", ret);
 
     if (resetSilentMode && gServerProxy_ != nullptr && silentModeAndMixWithOthers_) {
         ipcStream_->SetSilentModeAndMixWithOthers(silentModeAndMixWithOthers_);
     }
     ret = InitSharedBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_OPERATION_FAILED, "InitSharedBuffer failed", true),
+        "InitSharedBuffer failed:%{public}d", ret);
 
     ret = ipcStream_->GetAudioSessionID(sessionId_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_INVALID_INDEX, "GetAudioSessionID failed", true),
+        "GetAudioSessionID failed:%{public}d", ret);
     traceTag_ = "[" + std::to_string(sessionId_) + "]RendererInClient"; // [100001]RendererInClient
     InitCallbackHandler();
     return SUCCESS;

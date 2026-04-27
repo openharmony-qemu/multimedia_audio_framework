@@ -19,6 +19,7 @@
 #include "audio_service.h"
 #include "audio_stream_common.h"
 
+#include <unistd.h>
 #include <algorithm>
 #include <thread>
 
@@ -29,6 +30,7 @@
 #include "policy_handler.h"
 #include "core_service_handler.h"
 #include "ipc_stream_in_server.h"
+#include "stream_dfx_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "source/i_audio_capture_source.h"
@@ -40,6 +42,7 @@
 #include "playback_capturer_manager.h"
 #endif
 #include "audio_resource_service.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -246,6 +249,11 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
     // in plan: GetDeviceInfoForProcess(config) and stream limit check
     // in plan: call GetProcessDeviceInfo to load inner-cap-sink
     sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
+    if (ipcStreamInServer == nullptr && config.audioMode == AUDIO_MODE_PLAYBACK) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(config.appInfo.appUid),
+            PLAY_CREATE_OPERATION_FAILED, "IpcStreamInServer create failed", false);
+        AUDIO_ERR_LOG("IpcStreamInServer::Create failed, ret: %{public}d", ret);
+    }
 
     // in plan: Put playback into list, check if EnableInnerCap is need.
     if (ipcStreamInServer != nullptr && config.audioMode == AUDIO_MODE_PLAYBACK) {
@@ -490,6 +498,8 @@ void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
     std::unique_lock<std::mutex> lock(capturerMapMutex_);
     AUDIO_INFO_LOG("Capturer: %{public}u will be removed.", sessionId);
     if (!allCapturerMap_.count(sessionId)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Capturer in not in map", false);
         AUDIO_WARNING_LOG("Capturer in not in map!");
         return;
     }
@@ -785,11 +795,17 @@ int32_t AudioService::EnableDualStreamForNormalStream(const uint32_t sessionId, 
     AUDIO_INFO_LOG("sessionId is %{public}d", sessionId);
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
 
-    CHECK_AND_RETURN_RET(allRendererMap_.count(sessionId) > 0, ERR_OPERATION_FAILED);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(allRendererMap_.count(sessionId) > 0, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_INVALID_INDEX, "EnableDualStreamForNormalStream sessionId not in map", false),
+        "sessionId %{public}u not in map", sessionId);
     auto weakRenderer = allRendererMap_[sessionId];
     auto renderer = weakRenderer.lock();
 
-    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, ERR_OPERATION_FAILED, "renderer is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(renderer != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_NULL_POINTER, "EnableDualStreamForNormalStream renderer is null", false),
+        "renderer is null");
     CHECK_AND_RETURN_RET(ShouldBeDualTone(renderer->processConfig_, dupSinkName), SUCCESS);
 
     renderer->EnableDualTone(dupSinkName);
@@ -801,11 +817,17 @@ int32_t AudioService::DisableDualStreamForNormalStream(const uint32_t sessionId)
     AUDIO_INFO_LOG("disable dual tone, sessionId is %{public}d", sessionId);
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
 
-    CHECK_AND_RETURN_RET(allRendererMap_.count(sessionId) > 0, ERR_OPERATION_FAILED);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(allRendererMap_.count(sessionId) > 0, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_INVALID_INDEX, "DisableDualStreamForNormalStream sessionId not in map", false),
+        "sessionId %{public}u not in map", sessionId);
     auto weakRenderer = allRendererMap_[sessionId];
     auto renderer = weakRenderer.lock();
 
-    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, ERR_OPERATION_FAILED, "renderer is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(renderer != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_NULL_POINTER, "DisableDualStreamForNormalStream renderer is null", false),
+        "renderer is null");
     renderer->DisableDualTone();
     return SUCCESS;
 }
@@ -906,15 +928,10 @@ bool AudioService::GetRemoteDeviceName(const std::string &deviceId, std::string 
 }
 
 #ifdef SUPPORT_LOW_LATENCY
-sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
+AudioEndpointConfig AudioService::BuildEndpointConfig(const AudioProcessConfig &config,
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamInfo &audioStreamInfo,
+    const std::string &adapterName, bool isUltraFast)
 {
-    Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
-    AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
-    AudioStreamInfo audioStreamInfo;
-    bool isUltraFast = false;
-    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo, isUltraFast);
-    std::string adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(config.originalSessionId);
-    std::lock_guard<std::mutex> lock(processListMutex_);
     AudioEndpointConfig endpointConfig = {
         .deviceInfo = deviceInfo,
         .streamInfo = audioStreamInfo,
@@ -924,33 +941,57 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
         .isUltraFast = isUltraFast,
         .isLoopback = config.rendererInfo.isLoopback
     };
+    return endpointConfig;
+}
+
+sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
+{
+    Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
+    AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
+    AudioStreamInfo audioStreamInfo;
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo, isUltraFast);
+    std::string adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(config.originalSessionId);
+    AudioEndpointConfig endpointConfig = BuildEndpointConfig(config, deviceInfo, audioStreamInfo,
+        adapterName, isUltraFast);
+    
+    std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         GetAudioEndpointForDevice(endpointConfig, IsEndpointTypeVoip(config, deviceInfo));
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioEndpoint != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(audioEndpoint != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(config.appInfo.appUid),
+            PLAY_CREATE_OPERATION_FAILED, "GetAudioEndpointForDevice failed", false),
         HILOG_COMM_ERROR("[GetAudioProcess]no endpoint found for the process"));
-    // if reuse endpoint should keep samplerate same
     audioStreamInfo.samplingRate = audioEndpoint->GetAudioStreamInfo().samplingRate;
 
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioStreamInfo.samplingRate > 0, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(audioStreamInfo.samplingRate > 0, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(config.appInfo.appUid),
+            PLAY_CREATE_INVALID_PARAM, "Sample rate in server is invalid", false),
         HILOG_COMM_ERROR("[GetAudioProcess]Sample rate in server is invalid."));
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
-    CHECK_AND_CALL_FUNC_RETURN_RET(process != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(process != nullptr, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(config.appInfo.appUid),
+            PLAY_CREATE_OPERATION_FAILED, "AudioProcessInServer create failed", false),
         HILOG_COMM_ERROR("[GetAudioProcess]AudioProcessInServer create failed."));
     process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
     int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(config.appInfo.appUid),
+            PLAY_CREATE_OPERATION_FAILED, "ConfigProcessBuffer failed", false),
         HILOG_COMM_ERROR("[GetAudioProcess]ConfigProcessBuffer failed"));
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(config.appInfo.appUid),
+            PLAY_CREATE_OPERATION_FAILED, "LinkProcessToEndpoint failed", false),
         HILOG_COMM_ERROR("[GetAudioProcess]LinkProcessToEndpoint failed"));
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
     allProcessInServer_[sessionId] = process;
@@ -980,15 +1021,24 @@ int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
         endpointList_.count(endpoint->GetEndpointName())) {
         std::string endpointToErase = endpoint->GetEndpointName();
         endpointList_.erase(endpoint->GetEndpointName());
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(process->processConfig_.appInfo.appUid),
+            PLAY_CREATE_OPERATION_FAILED, "LinkProcessStream failed, erase endpoint", false);
         AUDIO_ERR_LOG("LinkProcessStream failed, erase endpoint %{public}s", endpointToErase.c_str());
         return ERR_OPERATION_FAILED;
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(process->processConfig_.appInfo.appUid),
+            PLAY_CREATE_OPERATION_FAILED, "LinkProcessStream to endpoint failed", false),
         HILOG_COMM_ERROR("[LinkProcessToEndpoint]LinkProcessStream to endpoint %{public}s failed",
         endpoint->GetEndpointName().c_str()));
 
     ret = process->AddProcessStatusListener(endpoint);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(process->processConfig_.appInfo.appUid),
+            PLAY_CREATE_CALLBACK_REGISTER_FAILED, "AddProcessStatusListener failed", false),
         HILOG_COMM_ERROR("[LinkProcessToEndpoint]AddProcessStatusListener failed"));
 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
@@ -1133,12 +1183,17 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(const Aud
         case ReuseEndpointType::CREATE_ENDPOINT: {
             CheckBeforeVoipEndpointCreate(isVoipStream, endpointConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
             endpoint = AudioEndpoint::CreateEndpoint(isVoipStream, endpointConfig);
-            CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(endpoint != nullptr, nullptr,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+                    PLAY_CREATE_OPERATION_FAILED, "Create mmap AudioEndpoint failed", false),
+                "Create mmap AudioEndpoint failed.");
             AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
             endpointList_[deviceKey] = endpoint;
             break;
         }
         default:
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+                PLAY_CREATE_OPERATION_FAILED, "Create mmap AudioEndpoint failed default case", false);
             HILOG_COMM_ERROR("[GetAudioEndpointForDevice]Create mmap AudioEndpoint failed.");
             break;
     }
@@ -1285,6 +1340,8 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
     if (allCapturerMap_.count(sessionId)) {
         std::shared_ptr<CapturerInServer> capturer = allCapturerMap_[sessionId].lock();
         if (capturer == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CALLBACK_ILLEGAL_STATE, "capturerinserver is null", false);
             AUDIO_ERR_LOG("capturerinserver is null");
             capturerLock.unlock();
             return;
@@ -1346,12 +1403,16 @@ int32_t AudioService::SetOffloadMode(uint32_t sessionId, int32_t state, bool isA
 {
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     if (!allRendererMap_.count(sessionId)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_INVALID_INDEX, "SetOffloadMode renderer not in map", false);
         AUDIO_WARNING_LOG("Renderer %{public}u is not in map", sessionId);
         return ERR_INVALID_INDEX;
     }
     AUDIO_INFO_LOG("Set offload mode for renderer %{public}u", sessionId);
     std::shared_ptr<RendererInServer> renderer = allRendererMap_[sessionId].lock();
     if (renderer == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_NULL_POINTER, "SetOffloadMode RendererInServer is nullptr", false);
         AUDIO_WARNING_LOG("RendererInServer is nullptr");
         lock.unlock();
         return ERROR;
@@ -1365,12 +1426,16 @@ int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
 {
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     if (!allRendererMap_.count(sessionId)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_INVALID_INDEX, "UnsetOffloadMode renderer not in map", false);
         AUDIO_WARNING_LOG("Renderer %{public}u is not in map", sessionId);
         return ERR_INVALID_INDEX;
     }
     AUDIO_INFO_LOG("Set offload mode for renderer %{public}u", sessionId);
     std::shared_ptr<RendererInServer> renderer = allRendererMap_[sessionId].lock();
     if (renderer == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_NULL_POINTER, "UnsetOffloadMode RendererInServer is nullptr", false);
         AUDIO_WARNING_LOG("RendererInServer is nullptr");
         lock.unlock();
         return ERROR;
@@ -1587,7 +1652,9 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
         std::lock_guard<std::mutex> lock(rendererMapMutex_);
         if (allRendererMap_.find(sessionId) != allRendererMap_.end()) {
             std::shared_ptr<RendererInServer> rendererInServer = allRendererMap_[sessionId].lock();
-            CHECK_AND_RETURN_RET_LOG(rendererInServer != nullptr, RESTORE_ERROR,
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererInServer != nullptr, RESTORE_ERROR,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+                    PLAY_CREATE_OPERATION_FAILED, "RestoreSession rendererInServer is null", false),
                 "Session could be released, restore failed");
             return rendererInServer->RestoreSession(restoreInfo);
         }
@@ -1596,7 +1663,9 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
         std::lock_guard<std::mutex> lock(capturerMapMutex_);
         if (allCapturerMap_.find(sessionId) != allCapturerMap_.end()) {
             std::shared_ptr<CapturerInServer> capturerInServer = allCapturerMap_[sessionId].lock();
-            CHECK_AND_RETURN_RET_LOG(capturerInServer != nullptr, RESTORE_ERROR,
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(capturerInServer != nullptr, RESTORE_ERROR,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    RECORD_CREATE_ILLEGAL_STATE, "Session could be released, restore failed", false),
                 "Session could be released, restore failed");
             return capturerInServer->RestoreSession(restoreInfo);
         }
@@ -1609,12 +1678,16 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
                 continue;
             }
             auto audioProcessInServer = processEndpointPair.first;
-            CHECK_AND_RETURN_RET_LOG(audioProcessInServer != nullptr, RESTORE_ERROR,
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioProcessInServer != nullptr, RESTORE_ERROR,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+                    PLAY_CREATE_OPERATION_FAILED, "RestoreSession audioProcessInServer is null", false),
                 "Session could be released, restore failed");
             return audioProcessInServer->RestoreSession(restoreInfo);
         }
     }
 #endif
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+        PLAY_CREATE_OPERATION_FAILED, "RestoreSession session not exists", false);
     AUDIO_WARNING_LOG("Session not exists, restore failed");
     return RESTORE_ERROR;
 }
@@ -1831,6 +1904,8 @@ int32_t AudioService::GetPrivacyType(const uint32_t sessionId, AudioPrivacyType 
     CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
 #endif
 
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+        PLAY_CREATE_INVALID_INDEX, "GetPrivacyType sessionId not found", false);
     AUDIO_ERR_LOG("%{public}u not found", sessionId);
     return ERROR;
 }
@@ -1867,7 +1942,10 @@ int32_t AudioService::EnableDualStreamForFastStream(const uint32_t sessionId, co
 {
     std::lock_guard<std::mutex> lock(processListMutex_);
     auto linkedPairs = GetLinkedPairInner(sessionId);
-    CHECK_AND_RETURN_RET_LOG(!linkedPairs.empty(), ERR_OPERATION_FAILED, "%{public}u not found", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!linkedPairs.empty(), ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_INVALID_INDEX, "EnableDualStreamForFastStream sessionId not found", false),
+        "%{public}u not found", sessionId);
 
     for (const auto &[processInServer, endpoint] : linkedPairs) {
         processInServer->SetInnerCapState(true, FAST_DUAL_CAP_ID);
@@ -1881,7 +1959,10 @@ int32_t AudioService::DisableDualStreamForFastStream(const uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(processListMutex_);
     auto linkedPairs = GetLinkedPairInner(sessionId);
-    CHECK_AND_RETURN_RET_LOG(!linkedPairs.empty(), ERR_OPERATION_FAILED, "%{public}u not found", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!linkedPairs.empty(), ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(INVALID_APP_UID,
+            PLAY_CREATE_INVALID_INDEX, "DisableDualStreamForFastStream sessionId not found", false),
+        "%{public}u not found", sessionId);
 
     for (const auto &[processInServer, endpoint] : linkedPairs) {
         processInServer->SetInnerCapState(false, FAST_DUAL_CAP_ID);
@@ -1955,7 +2036,10 @@ int32_t AudioService::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool c
         capturerInServer = allCapturerMap_[sessionId].lock();
     }
     lock.unlock();
-    CHECK_AND_RETURN_RET_LOG(capturerInServer != nullptr, ERROR, "sessionid not in allCapturerMap");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(capturerInServer != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "sessionid not in allCapturerMap", false),
+        "sessionid not in allCapturerMap");
     return capturerInServer->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }
 

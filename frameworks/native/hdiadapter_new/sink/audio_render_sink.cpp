@@ -54,7 +54,12 @@ const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
 }
 
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
+#ifdef MULTI_BUS_ENABLE
+    : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP),
+      playingAppManager_([this](const std::string &param) { return SetPlayingAppNameParam(param); })
+#else
     : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP)
+#endif
 {
     if (halName_ == HDI_ID_INFO_DIRECT || halName_ == HDI_ID_INFO_VOIP) {
         sinkType_ = ADAPTER_TYPE_DIRECT;
@@ -167,6 +172,9 @@ int32_t AudioRenderSink::Start(void)
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Start();
+#endif
     return SUCCESS;
 }
 
@@ -198,6 +206,9 @@ int32_t AudioRenderSink::Stop(void)
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Stop();
+#endif
     started_ = false;
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
@@ -268,7 +279,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
-    if (audioBalanceState_) {
+    if (audioBalanceState_.load()) {
         AdjustAudioBalance(&data, len);
     }
     CheckUpdateState(&data, len);
@@ -333,6 +344,18 @@ void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::stri
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
     }
+}
+
+bool AudioRenderSink::SetPlayingAppNameParam(const std::string &param)
+{
+    AUDIO_INFO_LOG("param: %{public}s", param.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, false, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set playing app name param fail, error code: %{public}d", ret);
+        return false;
+    }
+    return true;
 }
 
 std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -433,10 +456,10 @@ void AudioRenderSink::SetAudioBalanceValue(float audioBalance)
 
     if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
         // audioBalance is equal to 0.0f
-        audioBalanceState_ = false;
+        audioBalanceState_.store(false);
     } else {
         // audioBalance is not equal to 0.0f
-        audioBalanceState_ = true;
+        audioBalanceState_.store(true);
         // calculate the balance coefficient
         if (audioBalance > 0.0f) {
             leftBalanceCoef_ -= audioBalance;
@@ -668,6 +691,10 @@ int32_t AudioRenderSink::SetPriPaPower(void)
 
 int32_t AudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid, appsUid + size);
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid, appsUid + size);
@@ -677,6 +704,10 @@ int32_t AudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], 
 
 int32_t AudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());

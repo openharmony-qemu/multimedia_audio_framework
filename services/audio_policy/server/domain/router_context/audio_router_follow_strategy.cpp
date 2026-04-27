@@ -191,9 +191,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputD
 {
     AudioRouterInfra::GetInstance().Lock();
     auto& routerInfra = AudioRouterInfra::GetInstance();
-    
+
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
-    
+
     if (uid == INVALID_UID) {
         if (AudioSceneManager::GetInstance().IsInAudioCallScene()) {
             auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
@@ -205,7 +205,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputD
     } else {
         simpleDesc = GetCallOutputDeviceByUid(uid);
     }
-    
+
     auto result = ConvertSimpleToDevice(simpleDesc);
     AudioRouterInfra::GetInstance().Unlock();
     CHECK_AND_RETURN_RET(result != nullptr, std::make_shared<AudioDeviceDescriptor>());
@@ -245,6 +245,40 @@ void AudioRouterFollowStrategy::SetCallOutputDevice(int32_t uid,
         RefreshCallOutputDevice(uid, streamId, device);
     }
     AudioRouterInfra::GetInstance().Unlock();
+}
+
+void AudioRouterFollowStrategy::UpdateCurrentOutputDevice(int32_t uid,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+{
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
+        !devices.empty() && devices[0] ? devices[0]->deviceId_ : 0);
+    auto simpleDevices = ConvertDeviceToSimple(devices);
+    AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, simpleDevices);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterFollowStrategy::GetCurrentOutputDevice(int32_t uid)
+{
+    auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
+        !simpleDescs.empty() && simpleDescs[0] ? simpleDescs[0]->deviceId_ : 0);
+    return ConvertSimpleToDevice(simpleDescs);
+}
+
+void AudioRouterFollowStrategy::UpdateCurrentInputDevice(int32_t uid,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+{
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
+        !devices.empty() && devices[0] ? devices[0]->deviceId_ : 0);
+    auto simpleDevices = ConvertDeviceToSimple(devices);
+    AudioRouterInfra::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, simpleDevices);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterFollowStrategy::GetCurrentInputDevice(int32_t uid)
+{
+    auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(SYSTEM_UID);
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
+        !simpleDescs.empty() && simpleDescs[0] ? simpleDescs[0]->deviceId_ : 0);
+    return ConvertSimpleToDevice(simpleDescs);
 }
 
 void AudioRouterFollowStrategy::ClearCallOutputDevice(int32_t uid, uint32_t streamId)
@@ -303,7 +337,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallDefault
     AudioRouterInfra::GetInstance().Lock();
     auto &routerInfra = AudioRouterInfra::GetInstance();
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
-    
+
     if (AudioSceneManager::GetInstance().IsInAudioCallScene()) {
         auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
         simpleDesc = routerInfra.GetFirstRunningStreamDefaultDevice(callOwnerUid,
@@ -311,7 +345,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallDefault
     } else {
         simpleDesc = routerInfra.GetStreamDefaultDevice(uid, streamId, SelectDeviceType::CALL_OUTPUT);
     }
-    
+
     AudioRouterInfra::GetInstance().Unlock();
     return ConvertSimpleToDevice(simpleDesc);
 }

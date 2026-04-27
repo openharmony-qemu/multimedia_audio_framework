@@ -129,66 +129,6 @@ public:
     int32_t GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage);
 
     /**
-     * @brief Get Audio render Effect param.
-     *
-     * @param AudioSceneEffectInfo  AudioSceneEffectInfo
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 13
-     */
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-
-    /**
-     * @brief Get Audio Capture Effect param.
-     *
-     * @param AudioSceneEffectInfo  AudioSceneEffectInfo
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 13
-     */
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-
-    /**
-     * @brief Sets the audio effect Param.
-     *
-     * * @param effectParam The audio effect Param at which the stream needs to be rendered.
-     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 13
-     */
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
-
-    /**
-     * @brief Gets the audio effect Param.
-     *
-     * * @param effectParam The audio effect moParamde at which the stream needs to be rendered.
-     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 13
-     */
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-
-    /**
-     * @brief Sets the audio effect Param.
-     *
-     * * @param effectParam The audio effect Param at which the stream needs to be rendered.
-     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 13
-     */
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-
-    /**
-     * @brief Gets the audio effect Param.
-     *
-     * * @param effectParam The audio effect moParamde at which the stream needs to be rendered.
-     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 13
-     */
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-
-    /**
      * @brief Is stream active.
      *
      * @param volumeType audio volume type.
@@ -340,6 +280,28 @@ public:
      * @since 21
      */
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
+
+    /**
+     * @brief Sets the audio route selector callback.
+     * Note: This callback will be invoked while holding CoreService's main lock.
+     * Callers must ensure not to call any AudioPolicy interfaces within the callback
+     * to avoid potential deadlock.
+     *
+     * @param callback The audio route selector callback.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback);
+
+    /**
+     * @brief Unsets the audio route selector callback.
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t UnsetAudioRouteSelectorCallback();
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

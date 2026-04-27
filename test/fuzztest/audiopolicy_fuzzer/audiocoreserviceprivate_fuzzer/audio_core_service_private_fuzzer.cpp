@@ -572,7 +572,8 @@ void AudioCoreServicePrivateUpdateOutputRouteFuzzTest()
     }
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioCoreService->UpdateOutputRoute(streamDesc);
+    uint32_t pipeId = GetData<uint32_t>();
+    audioCoreService->UpdateOutputRoute(streamDesc, pipeId);
 }
 
 void AudioCoreServicePrivateOnPreferredInputDeviceUpdatedFuzzTest()
@@ -938,9 +939,10 @@ void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
     if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
         return;
     }
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor);
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
+    uint32_t ioHandle = GetData<uint32_t>();
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor, ioHandle);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor, ioHandle);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor, ioHandle);
 }
 
 void AudioCoreServicePrivateNotifyRouteUpdate()

@@ -69,16 +69,10 @@ public:
 
     int32_t SetStreamVolumeInfo(uint32_t sessionId, float streamVol) override;
 
-    int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
 
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
-
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
-
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
 
     void ResetInfo() override;
@@ -107,7 +101,7 @@ private:
     int32_t UpdatePropertyAndSendToAlgo(DeviceType inputDevice);
     void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
     int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);
-    int32_t SetAudioEnhancePropertyToChains(const AudioEffectPropertyV3 &property);
+    int32_t SetAudioEnhancePropertyToChains(const AudioEffectProperty &property);
     void GetDeviceTypeName(DeviceType deviceType, std::string &deviceName);
     void SetRelateWithDevicePropForEnhance();
     std::shared_ptr<ThreadHandler> GetThreadHandlerByScene(AudioEnhanceScene scene);

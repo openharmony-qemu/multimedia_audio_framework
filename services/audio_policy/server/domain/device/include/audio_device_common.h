@@ -117,7 +117,8 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         pipeManager_(AudioPipeManager::GetPipeManager()),
-        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
+        audioRouterSelectStrategy_(AudioRouterSelectStrategy::GetInstance()) {}
     ~AudioDeviceCommon() {}
 
     void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &updatedDesc,
@@ -186,6 +187,7 @@ private:
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
     AudioUsrSelectManager& audioUsrSelectManager_;
+    AudioRouterSelectStrategy& audioRouterSelectStrategy_;
 };
 
 }

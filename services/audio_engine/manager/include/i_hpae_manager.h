@@ -111,8 +111,6 @@ public:
     virtual int32_t EffectRotationUpdate(const uint32_t rotationState) = 0;
     virtual int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) = 0;
     virtual int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) = 0;
-    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) = 0;
-    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
     virtual void InitHdiState() = 0;
@@ -128,13 +126,9 @@ public:
     virtual int32_t SetMicrophoneMuteInfo(const bool &isMute) = 0;
     virtual int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol) = 0;
     virtual int32_t SetAudioEnhanceProperty(
-        const AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
+        const AudioEffectPropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
     virtual int32_t GetAudioEnhanceProperty(
-        AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-    virtual int32_t SetAudioEnhanceProperty(
-        const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-    virtual int32_t GetAudioEnhanceProperty(
-        AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
+        AudioEffectPropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
     virtual void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) = 0;
     virtual void NotifySettingsDataReady() = 0;

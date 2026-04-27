@@ -59,7 +59,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_001, TestSize.Leve
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = 1001;
@@ -94,7 +93,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_002, TestSize.Leve
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = nullptr;
     collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
 
@@ -657,37 +655,15 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_013, TestSize.Level1
 }
 
 /**
-* @tc.name  : Test AudioStreamCollector.
-* @tc.number: AudioStreamCollector_014
-* @tc.desc  : Test GetLastestRunningCallStreamUsage.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_014, TestSize.Level1)
-{
-    AudioStreamCollector collector;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
-    EXPECT_EQ(STREAM_USAGE_UNKNOWN, callStreamUsage);
-
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    rendererChangeInfo->rendererState = RENDERER_PREPARED;
-    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-
-    callStreamUsage = collector.GetLastestRunningCallStreamUsage();
-    EXPECT_EQ(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, callStreamUsage);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
-* @tc.number: AudioStreamCollector_015
-* @tc.desc  : Test RegisteredTrackerClientDied.
-*/
+ * @tc.name  : Test AudioStreamCollector.
+ * @tc.number: AudioStreamCollector_015
+ * @tc.desc  : Test RegisteredTrackerClientDied.
+ */
 HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_015, TestSize.Level1)
 {
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = 1001;
@@ -1388,7 +1364,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_046, TestSize.Level1
     AudioStreamCollector collector;
     int32_t uid = 1001;
     int32_t pid = 3001;
-    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = 1001;
@@ -2215,6 +2190,139 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_104, TestSize.Level1
     state = static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_TERMINATED);
     appStateListener.HandleBackgroundAppStateChange(111111, 222222, state);
     EXPECT_EQ(state, static_cast<int32_t>(AppExecFwk::ApplicationState::APP_STATE_TERMINATED));
+}
+
+/**
+ * @tc.name  : GetActiveStreams_Empty
+ * @tc.number: GetActiveStreams_001
+ * @tc.desc  : Test GetActiveStreams returns empty when no active streams exist
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_Empty, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto result = collector.GetActiveStreams();
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name  : GetActiveStreams_SingleRunningStream
+ * @tc.number: GetActiveStreams_002
+ * @tc.desc  : Test GetActiveStreams returns single running stream
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_SingleRunningStream, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->clientUID = 1001;
+    changeInfo->rendererState = RENDERER_RUNNING;
+    changeInfo->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+
+    auto result = collector.GetActiveStreams();
+    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(1001, result[0].first);
+    EXPECT_EQ(STREAM_MUSIC, result[0].second);
+}
+
+/**
+ * @tc.name  : GetActiveStreams_MultipleDifferentStreams
+ * @tc.number: GetActiveStreams_003
+ * @tc.desc  : Test GetActiveStreams returns multiple different streams
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_MultipleDifferentStreams, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
+    info1->clientUID = 1001;
+    info1->rendererState = RENDERER_RUNNING;
+    info1->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info1->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(info1));
+
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
+    info2->clientUID = 1002;
+    info2->rendererState = RENDERER_RUNNING;
+    info2->rendererInfo.contentType = CONTENT_TYPE_SPEECH;
+    info2->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    collector.audioRendererChangeInfos_.push_back(std::move(info2));
+
+    auto info3 = std::make_shared<AudioRendererChangeInfo>();
+    info3->clientUID = 1003;
+    info3->rendererState = RENDERER_RUNNING;
+    info3->rendererInfo.contentType = CONTENT_TYPE_MOVIE;
+    info3->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(info3));
+
+    auto result = collector.GetActiveStreams();
+    EXPECT_EQ(3, result.size());
+}
+
+/**
+ * @tc.name  : GetActiveStreams_DuplicateStreams
+ * @tc.number: GetActiveStreams_004
+ * @tc.desc  : Test GetActiveStreams deduplicates same uid and streamType
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_DuplicateStreams, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
+    info1->clientUID = 1001;
+    info1->sessionId = 1;
+    info1->rendererState = RENDERER_RUNNING;
+    info1->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info1->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(info1));
+
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
+    info2->clientUID = 1001;
+    info2->sessionId = 2;
+    info2->rendererState = RENDERER_RUNNING;
+    info2->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info2->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(info2));
+
+    auto result = collector.GetActiveStreams();
+    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(1001, result[0].first);
+    EXPECT_EQ(STREAM_MUSIC, result[0].second);
+}
+
+/**
+ * @tc.name  : GetActiveStreams_NonRunningState
+ * @tc.number: GetActiveStreams_005
+ * @tc.desc  : Test GetActiveStreams excludes non-RUNNING streams
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_NonRunningState, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
+    info1->clientUID = 1001;
+    info1->rendererState = RENDERER_RUNNING;
+    info1->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info1->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(info1));
+
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
+    info2->clientUID = 1002;
+    info2->rendererState = RENDERER_PAUSED;
+    info2->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info2->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(info2));
+
+    auto info3 = std::make_shared<AudioRendererChangeInfo>();
+    info3->clientUID = 1003;
+    info3->rendererState = RENDERER_STOPPED;
+    info3->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info3->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.push_back(std::move(info3));
+
+    auto result = collector.GetActiveStreams();
+    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(1001, result[0].first);
 }
 } // namespace AudioStandard
 } // namespace OHOS

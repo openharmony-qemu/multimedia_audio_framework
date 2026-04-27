@@ -681,7 +681,10 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCreateNodeTest, Test
     audioSuitePipeline.nodeCounts_[static_cast<std::size_t>(audioNodeBuilder.nodeType)] =
         audioSuitePipeline.GetMaxNodeNumsForType(audioNodeBuilder.nodeType) - 2;
     result = audioSuitePipeline.CreateNode(audioNodeBuilder);
+    EXPECT_EQ(result, SUCCESS);
 
+    audioNodeBuilder.nodeType = NODE_TYPE_EMPTY;
+    result = audioSuitePipeline.CreateNode(audioNodeBuilder);
     EXPECT_EQ(result, SUCCESS);
 }
 

@@ -131,6 +131,8 @@ public:
             AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false) override;
         int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
         uint32_t GenerateSessionId() override;
+        int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
+        int32_t UnsetAudioRouteSelectorCallback();
         int32_t SetSplitModeReady();
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
@@ -226,13 +228,12 @@ public:
         void NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
-
-        void ReloadSourceForEffect(
-            AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray);
-        void ReloadSourceForEffectV3(
-            AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
+        void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
+            const AudioEffectPropertyArray newPropertyArray);
         void OnVehiclePriorityChanged(bool enable);
     private:
+        int32_t HandleSetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
+        int32_t HandleUnsetAudioRouteSelectorCallback();
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
 
@@ -256,6 +257,7 @@ public:
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+    std::shared_ptr<AsyncActionHandler> GetAsyncActionHandler() const;
     void SetConfigParserFlag();
     // Pipe capability pass-through interfaces. Synchronization is managed in pipe/domain modules.
     void SetEcEnableState(bool ecEnableState);
@@ -330,6 +332,8 @@ public:
         AudioStreamInfo &streamInfo, bool &isUltraFast);
     int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
     uint32_t GenerateSessionId();
+    int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
+    int32_t UnsetAudioRouteSelectorCallback();
     int32_t SetSplitModeReady();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnCheckActiveMusicTime(const std::string &reason);
@@ -462,10 +466,8 @@ public:
     int32_t ReloadCaptureSessionSoftLink();
     bool ReloadCheckForStart(bool findRunningSessionRet, std::shared_ptr<AudioStreamDescriptor> newStream,
         AudioStreamDescriptor &runningStream);
-    void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
-        const AudioEnhancePropertyArray &newPropertyArray);
-    void ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
-        const AudioEffectPropertyArrayV3 &newPropertyArray);
+    void ReloadSourceForEffect(const AudioEffectPropertyArray &oldPropertyArray,
+        const AudioEffectPropertyArray &newPropertyArray);
     void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
@@ -486,6 +488,7 @@ private:
     void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    std::shared_ptr<PipeStreamPropInfo> GetMicStreamPropInfoForMicRef();
     void ClearModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo);
     std::string ShouldOpenMicRef(SourceType source);
@@ -597,13 +600,12 @@ private:
     AudioFlag GetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     bool CheckStaticModeAndSelectFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void SetVolumeForSwitchDeviceIfNeed(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isNeed);
     void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId,
         const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void FetchDeviceForSessionUseDefault(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
@@ -696,7 +698,7 @@ private:
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(
-        OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+        OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t ioHandle);
     int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
 
     void WriteCapturerConcurrentEvent(const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
@@ -761,8 +763,7 @@ private:
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
     int32_t ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
-    std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
-    std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
+    std::string GetEnhancePropByName(const AudioEffectPropertyArray &oldPropertyArray, const std::string &propName);
 
     void CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void OnVehiclePriorityChanged(bool enable);
@@ -792,6 +793,7 @@ private:
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
     AudioSessionService &audioSessionService_;
+    AudioRouterSelectStrategy& audioRouterSelectStrategy_;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;

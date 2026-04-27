@@ -158,28 +158,26 @@ void GetActiveA2dpDeviceStreamInfoFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void UpdateDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    auto desc = std::make_shared<AudioDeviceDescriptor>(deviceType);
-    int32_t reasonCount = static_cast<int32_t>(AudioStreamDeviceChangeReason::OVERRODE) + 1;
-    auto reason_ = static_cast<AudioStreamDeviceChangeReason>(GetData<uint8_t>() % reasonCount);
-    AudioStreamDeviceChangeReasonExt reason(reason_);
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->clientUID = GetData<int32_t>();
-    rendererChangeInfo->createrUID = GetData<int32_t>();
-    rendererChangeInfo->sessionId = GetData<int32_t>();
-    audioActiveDevice->UpdateDevice(desc, reason, rendererChangeInfo);
-    OnStop();
-}
-
 void GetMaxAmplitudeFuzzTest(FuzzedDataProvider& fdp)
 {
-    int32_t deviceId = AudioActiveDevice::GetInstance().GetCurrentInputDevice().deviceId_;
+    int32_t deviceId = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice().deviceId_;
     AudioInterrupt audioInterrupt;
     audioActiveDevice->GetMaxAmplitude(deviceId, audioInterrupt);
     OnStop();
+}
+
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static void PutCurrentOutputDevice(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceId_ < 1) {
+        desc.deviceId_ = TEST_DEVICE_ID;
+    }
+    auto dev = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc.deviceId_);
+    if (!dev) {
+        dev = make_shared<AudioDeviceDescriptor>(desc);
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(dev);
+    }
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {dev});
 }
 
 void IsDirectSupportedDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -189,7 +187,7 @@ void IsDirectSupportedDeviceFuzzTest(FuzzedDataProvider& fdp)
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     DeviceRole role = DeviceRoleVec[roleCount];
     AudioDeviceDescriptor audioDeviceDescriptor(deviceType, role);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
+    PutCurrentOutputDevice(audioDeviceDescriptor);
     audioActiveDevice->IsDirectSupportedDevice();
     OnStop();
 }
@@ -201,11 +199,26 @@ void IsDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     DeviceRole role = DeviceRoleVec[roleCount];
     AudioDeviceDescriptor audioDeviceDescriptor(deviceType, role);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
+    PutCurrentOutputDevice(audioDeviceDescriptor);
     deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     deviceType = DeviceTypeVec[deviceTypeCount];
     audioActiveDevice->IsDeviceActive(deviceType);
     OnStop();
+}
+
+static AudioDeviceDescriptor& CurrentInputDevice(int32_t uid = SYSTEM_UID)
+{
+    auto desc = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid);
+    if (desc.deviceId_ < 1) {
+        desc.deviceId_ = TEST_DEVICE_ID;
+    }
+    auto dev = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc.deviceId_);
+    if (!dev) {
+        dev = make_shared<AudioDeviceDescriptor>(desc);
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(dev);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(uid, {dev});
+    }
+    return *dev;
 }
 
 void AudioActiveDeviceNotifyUserSelectionEventToBtFuzzTest(FuzzedDataProvider& fdp)
@@ -215,7 +228,7 @@ void AudioActiveDeviceNotifyUserSelectionEventToBtFuzzTest(FuzzedDataProvider& f
         return;
     }
     audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceType_ =
+    CurrentInputDevice().deviceType_ =
         DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     StreamUsage streamUsage = STREAM_USAGE_ALARM;
     audioActiveDevice->NotifyUserSelectionEventToBt(audioDeviceDescriptor, streamUsage);
@@ -239,7 +252,7 @@ void AudioActiveDeviceNotifyUserDisSelectionEventToBtFuzzTest(FuzzedDataProvider
         return;
     }
     audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceType_ =
+    CurrentInputDevice().deviceType_ =
         DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     audioActiveDevice->NotifyUserDisSelectionEventToBt(audioDeviceDescriptor);
     OnStop();
@@ -253,7 +266,7 @@ void AudioActiveDeviceNotifyUserSelectionEventForInputFuzzTest(FuzzedDataProvide
         return;
     }
     audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceType_ =
+    CurrentInputDevice().deviceType_ =
         DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
     audioActiveDevice->NotifyUserSelectionEventForInput(audioDeviceDescriptor, sourceType);
@@ -427,7 +440,6 @@ void Test(FuzzedDataProvider& fdp)
     auto func = fdp.PickValueInArray({
     GetActiveA2dpDeviceStreamInfoFuzzTest,
     GetMaxAmplitudeFuzzTest,
-    UpdateDeviceFuzzTest,
     IsDirectSupportedDeviceFuzzTest,
     IsDeviceActiveFuzzTest,
     AudioActiveDeviceGetCurrentOutputDeviceCategoryFuzzTest,
