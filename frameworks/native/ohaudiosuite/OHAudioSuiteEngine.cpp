@@ -375,7 +375,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type n
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(
         suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "isNodeTypeSupported suiteEngine is nullptr");
-    int32_t error = suiteEngine->IsNodeTypeSupported(nodeType, isSupported);
+    int32_t error = suiteEngine->IsNodeTypeSupported(nodeType, *isSupported);
     AUDIO_DEBUG_LOG("IsNodeTypeSupported leave with code: %{public}d.", error);
     return ConvertError(error);
 }

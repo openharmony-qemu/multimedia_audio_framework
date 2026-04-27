@@ -174,7 +174,7 @@ bool AllNodeTypesSupported()
         }
         AudioNodeType nodeType = nodeTypeEntry.first;
         bool isCurrentSupported = false;
-        int32_t ret = capabilities.IsNodeTypeSupported(nodeType, &isCurrentSupported);
+        int32_t ret = capabilities.IsNodeTypeSupported(nodeType, isCurrentSupported);
         if (ret != SUCCESS || !isCurrentSupported) {
             return false;
         }

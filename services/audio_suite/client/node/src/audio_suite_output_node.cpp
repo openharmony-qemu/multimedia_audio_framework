@@ -242,7 +242,7 @@ int32_t AudioOutputNode::GetCacheBufferDataLen()
 
 uint8_t *AudioOutputNode::GetCacheBufferData(size_t idx)
 {
-    if (outputs_.size() < idx) {
+    if (outputs_.size() <= idx) {
         return nullptr;
     }
 

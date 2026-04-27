@@ -78,17 +78,15 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
 
 int32_t AudioSuitePureVoiceChangeNode::DeInit()
 {
-    if (isInit_) {
-        isInit_ = false;
-        AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::DeInit end");
-        return SUCCESS;
+    if (!isInit_) {
+        return ERROR;
     }
-
     if (algoInterface_ != nullptr) {
         algoInterface_->Deinit();
         algoInterface_ = nullptr;
     }
-    return ERROR;
+    isInit_ = false;
+    return SUCCESS;
 }
 
 }  // namespace AudioSuite
