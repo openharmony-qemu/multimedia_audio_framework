@@ -677,17 +677,24 @@ void AudioPolicyServer::TriggerMuteCheck()
 
 void AudioPolicyServer::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType)
 {
-    if (zoneId != 0) {
-        streamType = GetCurrentStreamInFocus(zoneId);
-        return;
+    if (zoneId == 0) {
+        AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
+        if (!AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone()) { // zone has not device
+            zoneId = 0;
+        }
+    } else {
+        int32_t tmpStreamType = STREAM_DEFAULT;
+        GetStreamInFocus(zoneId, tmpStreamType);
+        streamType = static_cast<AudioStreamType>(tmpStreamType);
     }
-    AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
-    if (!AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone()) { // zone has not device
+    
+    CHECK_AND_RETURN(audioVolumeManager_.IsNeedForceControlVolumeType());
+    auto forceControlVolumeType = audioVolumeManager_.GetForceControlVolumeType();
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) != forceControlVolumeType) {
         zoneId = 0;
     }
-    CHECK_AND_RETURN(audioVolumeManager_.IsNeedForceControlVolumeType());
-    AUDIO_INFO_LOG("force volume type, type:%{public}d", audioVolumeManager_.GetForceControlVolumeType());
-    streamType = audioVolumeManager_.GetForceControlVolumeType();
+    AUDIO_INFO_LOG("force volume type, type:%{public}d", forceControlVolumeType);
+    streamType = forceControlVolumeType;
 }
 
 int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
