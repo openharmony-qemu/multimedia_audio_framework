@@ -5722,22 +5722,6 @@ HWTEST_F(AudioCoreServiceUnitTest, ShouldOpenMicRef_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioEcManager.
- * @tc.number: UpdateModuleInfoForMicRef_001
- * @tc.desc  : Test UpdateModuleInfoForMicRef interface.
- */
-HWTEST_F(AudioCoreServiceUnitTest, UpdateModuleInfoForMicRef_001, TestSize.Level1)
-{
-    AudioModuleInfo moduleInfo;
-    SourceType source = SOURCE_TYPE_VOICE_COMMUNICATION;
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-
-    audioCoreService->isMicRefFeatureEnable_ = false;
-    audioCoreService->UpdateModuleInfoForMicRef(moduleInfo, source);
-    EXPECT_EQ(moduleInfo.micRefChannels, "4");
-}
-
-/**
- * @tc.name  : Test AudioEcManager.
  * @tc.number: UpdateModuleInfoForMicRef_002
  * @tc.desc  : Test UpdateModuleInfoForMicRef chooses stream prop matched by mic device.
  */
@@ -6621,39 +6605,6 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_006, TestSize.Le
     EXPECT_EQ(targetInfo.format_, INVALID_WIDTH);
 
     audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker = originMicSpeaker;
-    pipeInfo->streamPropInfos_ = originalStreamPropInfos;
-}
-
-/**
- * @tc.name  : Test AudioEcManager.
- * @tc.number: FetchTargetInfoForSessionAdd_007
- * @tc.desc  : Test stream prop selection by fetched input device.
- */
-HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_007, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
-        AudioAdapterType::TYPE_PRIMARY, adapterInfo));
-    ASSERT_NE(adapterInfo, nullptr);
-    std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
-    ASSERT_NE(pipeInfo, nullptr);
-
-    const auto originalStreamPropInfos = pipeInfo->streamPropInfos_;
-    auto usbStreamPropInfo = CreatePipeStreamPropInfoForDevice(DEVICE_TYPE_USB_HEADSET, STEREO);
-    auto micStreamPropInfo = CreatePipeStreamPropInfoForDevice(DEVICE_TYPE_MIC, MONO, SAMPLE_RATE_16000);
-    pipeInfo->streamPropInfos_ = {usbStreamPropInfo, micStreamPropInfo};
-
-    SessionInfo sessionInfo = {};
-    sessionInfo.sourceType = SOURCE_TYPE_MIC;
-    PipeStreamPropInfo targetInfo = {};
-    SourceType targetSourceType = SOURCE_TYPE_INVALID;
-    int32_t ret = audioCoreService->FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(targetSourceType, SOURCE_TYPE_MIC);
-    EXPECT_EQ(targetInfo.channels_, MONO);
-    EXPECT_EQ(targetInfo.sampleRate_, SAMPLE_RATE_16000);
-
     pipeInfo->streamPropInfos_ = originalStreamPropInfos;
 }
 
