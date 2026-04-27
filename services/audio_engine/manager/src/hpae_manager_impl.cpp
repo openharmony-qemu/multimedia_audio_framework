@@ -740,41 +740,16 @@ int32_t HpaeManagerImpl::SetStreamVolumeInfo(const uint32_t &sessionId, const fl
 int32_t HpaeManagerImpl::SetAudioEnhanceProperty(
     const AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
 {
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    CHECK_AND_RETURN_RET(manager_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
+        "manager is nullptr", false), ERR_ILLEGAL_STATE));
     return manager_->SetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
 int32_t HpaeManagerImpl::GetAudioEnhanceProperty(
     AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-int32_t HpaeManagerImpl::GetAudioEnhanceProperty(
-    AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
-{
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
-    return manager_->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-int32_t HpaeManagerImpl::SetAudioEnhanceProperty(
-    const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
-{
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
-    return manager_->SetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
-int32_t HpaeManagerImpl::GetAudioEnhanceProperty(
-    AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET(manager_,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
