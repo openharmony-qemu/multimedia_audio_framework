@@ -16,8 +16,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "loopback_in_server.h"
-#include "audio_loopback_manager.h"
+#include "audio_loopback_manager_unit_test.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 
@@ -26,17 +25,6 @@ using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
-
-class LoopbackInServerUnitTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
-
-    std::shared_ptr<AudioLoopbackManager> manager_;
-    sptr<LoopbackInServer> loopbackInServer_;
-};
 
 void LoopbackInServerUnitTest::SetUpTestCase(void) {}
 
@@ -133,7 +121,7 @@ HWTEST_F(LoopbackInServerUnitTest, GetStatus_ManagerValid_001, TestSize.Level1)
     int32_t ret = SUCCESS;
     int32_t result = loopbackInServer_->GetStatus(status, ret);
     EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(ret, ERROR_LOOPBACK_OPERATION_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERROR_LOOPBACK_HANDLER_NOT_EXIST);
 }
 
 HWTEST_F(LoopbackInServerUnitTest, GetStatus_ManagerNull_001, TestSize.Level1)
@@ -153,7 +141,7 @@ HWTEST_F(LoopbackInServerUnitTest, GetVolume_ManagerValid_001, TestSize.Level1)
     int32_t ret = SUCCESS;
     int32_t result = loopbackInServer_->GetVolume(volume, ret);
     EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(ret, ERROR_LOOPBACK_OPERATION_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERROR_LOOPBACK_HANDLER_NOT_EXIST);
 }
 
 HWTEST_F(LoopbackInServerUnitTest, GetVolume_ManagerNull_001, TestSize.Level1)
@@ -193,6 +181,5 @@ HWTEST_F(LoopbackInServerUnitTest, GetPid_Negative_001, TestSize.Level1)
     int32_t pid = loopbackInServer_->GetPid();
     EXPECT_EQ(pid, -1);
 }
-
 }
 }

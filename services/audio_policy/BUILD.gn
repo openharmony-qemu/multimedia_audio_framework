@@ -693,7 +693,6 @@ group("audio_policy_test_packages") {
     "server/domain/session/test:audio_policy_session_unit_test",
     "server/domain/volume/test:audio_volume_unittest_packages",
     "server/service/service_main/test:audio_loopback_manager_unit_test",
-    "server/service/service_main/test:loopback_in_server_unit_test",
     "server/service/service_main/test:audio_policy_dump_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
     "server/service/service_main/test:audio_policy_service_ext_unit_test",

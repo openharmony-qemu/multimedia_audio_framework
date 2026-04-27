@@ -16,35 +16,15 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "audio_loopback_manager.h"
-#include "loopback_in_server.h"
+#include "audio_loopback_manager_unit_test.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#include "iloopback_callback.h"
-#include "loopback_callback_stub.h"
 
 using namespace testing::ext;
 using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
-
-class MockILoopbackCallback : public LoopbackCallbackStub {
-public:
-    MOCK_METHOD(int32_t, OnCommandResult, (int32_t command, bool success, int32_t errorCode), (override));
-    MOCK_METHOD(int32_t, OnStatusChange, (int32_t status, int32_t reason), (override));
-};
-
-class AudioLoopbackManagerUnitTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
-
-    std::shared_ptr<AudioLoopbackManager> manager_;
-    sptr<MockILoopbackCallback> mockCallback_;
-};
 
 void AudioLoopbackManagerUnitTest::SetUpTestCase(void) {}
 
@@ -117,7 +97,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, CreateLoopback_GlobalControl_001, TestSiz
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
     
-    
     int32_t result1 = manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER,
         handlerCallback, handlerLoopback, 1001);
     EXPECT_EQ(result1, SUCCESS);
@@ -175,8 +154,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, DestroyLoopback_GlobalControl_001, TestSi
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback, controlLoopback, 1002);
@@ -209,8 +186,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, Enable_GlobalControl_AlreadyEnabled_001, 
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
 
-    
-    
     EXPECT_CALL(*handlerCallback, OnCommandResult(_, _, _)).Times(AnyNumber());
     EXPECT_CALL(*controlCallback, OnStatusChange(_, _)).Times(AnyNumber());
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
@@ -227,8 +202,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, Enable_GlobalControl_AlreadyDisabled_001,
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
 
-    
-    
     EXPECT_CALL(*controlCallback, OnStatusChange(_, _)).Times(AnyNumber());
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback, controlLoopback, 1002);
@@ -242,8 +215,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, Enable_GlobalControl_Enable_001, TestSize
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     EXPECT_CALL(*handlerCallback, OnCommandResult(LOOPBACK_CMD_ENABLE, true, SUCCESS)).Times(1);
     EXPECT_CALL(*controlCallback, OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM)).Times(1);
@@ -259,8 +230,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, Enable_GlobalControl_Disable_001, TestSiz
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     EXPECT_CALL(*handlerCallback, OnCommandResult(_, _, _)).Times(AnyNumber());
     EXPECT_CALL(*controlCallback, OnStatusChange(_, _)).Times(AnyNumber());
@@ -316,8 +285,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, GetStatus_GlobalControl_001, TestSize.Lev
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback, controlLoopback, 1002);
@@ -333,8 +300,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, GetStatus_GlobalControl_Running_001, Test
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     EXPECT_CALL(*handlerCallback, OnCommandResult(_, _, _)).Times(AnyNumber());
     EXPECT_CALL(*controlCallback, OnStatusChange(_, _)).Times(AnyNumber());
@@ -379,8 +344,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, GetVolume_GlobalControl_001, TestSize.Lev
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
 
-    
-    
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback, controlLoopback, 1002);
     float volume = 0.0f;
@@ -402,8 +365,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, OnHandlerDied_001, TestSize.Level1)
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     EXPECT_CALL(*controlCallback, OnStatusChange(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM)).Times(1);
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
@@ -420,8 +381,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, OnControlDied_001, TestSize.Level1)
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback, controlLoopback, 1002);
@@ -458,8 +417,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, BroadcastToControls_Enable_001, TestSize.
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     EXPECT_CALL(*handlerCallback, OnCommandResult(_, _, _)).Times(AnyNumber());
     EXPECT_CALL(*controlCallback, OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM)).Times(1);
@@ -474,8 +431,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, BroadcastToControls_Disable_001, TestSize
     sptr<IRemoteObject> controlLoopback;
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-
-    
     
     EXPECT_CALL(*handlerCallback, OnCommandResult(_, _, _)).Times(AnyNumber());
     EXPECT_CALL(*controlCallback, OnStatusChange(_, _)).Times(AnyNumber());
@@ -506,9 +461,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, MultipleControls_001, TestSize.Level1)
     sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback1 = new MockILoopbackCallback();
     sptr<MockILoopbackCallback> controlCallback2 = new MockILoopbackCallback();
-
-    
-    
     
     EXPECT_CALL(*handlerCallback, OnCommandResult(_, _, _)).Times(AnyNumber());
     EXPECT_CALL(*controlCallback1, OnStatusChange(_, _)).Times(AnyNumber());
@@ -519,6 +471,5 @@ HWTEST_F(AudioLoopbackManagerUnitTest, MultipleControls_001, TestSize.Level1)
     int32_t result = manager_->Enable(LOOPBACK_TYPE_GLOBAL_CONTROL, true, 1002);
     EXPECT_EQ(result, SUCCESS);
 }
-
 }
 }
