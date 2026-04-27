@@ -17,6 +17,7 @@
 #include "audio_active_device_new_unit_test.h"
 #include "audio_zone.h"
 #include "audio_zone_service.h"
+#include "audio_router_select_strategy.h"
 
 using namespace testing::ext;
 
@@ -61,10 +62,12 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, GetActiveA2dpDeviceStreamInfo_001, TestSi
 HWTEST_F(AudioActiveDeviceNewUnitTest, GetMaxAmplitude_001, TestSize.Level4)
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    audioActiveDevice->currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    audioActiveDevice->currentActiveDevice_.deviceId_ = 1;
-    audioActiveDevice->currentActiveInputDeviceMap_[-1] = AudioDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE);
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceId_ = 0;
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->deviceId_ = 1;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    desc->deviceId_ = 0;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
     AudioInterrupt audioInterrupt;
     float result = audioActiveDevice->GetMaxAmplitude(0, audioInterrupt);
     EXPECT_EQ(result, 0);
@@ -92,8 +95,9 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, NotifyUserSelectionEventToBt_001, TestSiz
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     EXPECT_NE(audioActiveDevice, nullptr);
-    audioActiveDevice->currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_SPEAKER, INPUT_DEVICE);
-    audioActiveDevice->currentActiveDevice_.deviceId_ = 1;
+    auto outputDevice = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, INPUT_DEVICE);
+    outputDevice->deviceId_ = 1;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {outputDevice});
     auto nearLinkDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, INPUT_DEVICE, 0, 0,
         "nearlink_net_001"
     );
@@ -111,8 +115,9 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, NotifyUserSelectionEventForInput_001, Tes
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     EXPECT_NE(audioActiveDevice, nullptr);
-    audioActiveDevice->currentActiveInputDeviceMap_[-1] = AudioDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE);
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceId_ = 1;
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    desc->deviceId_ = 1;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
     auto scoDevice = std::make_shared<AudioDeviceDescriptor>(
         DEVICE_TYPE_BLUETOOTH_SCO,
         INPUT_DEVICE,
@@ -132,8 +137,9 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, NotifyUserSelectionEventForInput_002, Tes
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     EXPECT_NE(audioActiveDevice, nullptr);
-    audioActiveDevice->currentActiveInputDeviceMap_[-1] = AudioDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE);
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceId_ = 1;
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    desc->deviceId_ = 1;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
     auto scoDevice = std::make_shared<AudioDeviceDescriptor>(
         DEVICE_TYPE_BLUETOOTH_A2DP_IN,
         INPUT_DEVICE,
@@ -153,8 +159,9 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, NotifyUserSelectionEventForInput_003, Tes
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     EXPECT_NE(audioActiveDevice, nullptr);
-    audioActiveDevice->currentActiveInputDeviceMap_[-1] = AudioDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE);
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceId_ = 1;
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    desc->deviceId_ = 1;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
     auto scoDevice = std::make_shared<AudioDeviceDescriptor>(
         DEVICE_TYPE_NEARLINK_IN,
         INPUT_DEVICE,
@@ -163,27 +170,6 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, NotifyUserSelectionEventForInput_003, Tes
     scoDevice->macAddress_ = "AA:BB:CC:DD:EE:01";
     SourceType sourceType = SOURCE_TYPE_MIC;
     audioActiveDevice->NotifyUserSelectionEventForInput(scoDevice, sourceType);
-}
-
-/**
-* @tc.name  : Test AudioActiveDevice.
-* @tc.number: AudioActiveDeviceNewUnitTest_UpdateDevice_001.
-* @tc.desc  : Test UpdateDevice.
-*/
-HWTEST_F(AudioActiveDeviceNewUnitTest, UpdateDevice_001, TestSize.Level4)
-{
-    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    audioActiveDevice->currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    audioActiveDevice->currentActiveDevice_.deviceId_ = 1;
-    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
-    desc->deviceId_ = 2;
-    desc->macAddress_ = "AA:BB:CC:DD:EE:01";
-    desc->networkId_ = "bt_net_001";
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    auto rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->clientUID = 1001;
-    bool result = audioActiveDevice->UpdateDevice(desc, reason, rendererChangeInfo);
-    EXPECT_TRUE(result);
 }
 
 /**

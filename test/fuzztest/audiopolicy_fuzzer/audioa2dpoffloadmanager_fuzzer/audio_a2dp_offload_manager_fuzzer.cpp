@@ -136,12 +136,26 @@ void OffloadStartPlayingFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static void PutCurrentOutputDevice(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceId_ < 1) {
+        desc.deviceId_ = TEST_DEVICE_ID;
+    }
+    auto dev = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc.deviceId_);
+    if (!dev) {
+        dev = make_shared<AudioDeviceDescriptor>(desc);
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(dev);
+    }
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {dev});
+}
+
 void HandleA2dpDeviceOutOffloadFuzzTest(FuzzedDataProvider& fdp)
 {
     manager->Init();
     AudioDeviceDescriptor descriptor;
     descriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    manager->audioActiveDevice_.SetCurrentOutputDevice(descriptor);
+    PutCurrentOutputDevice(descriptor);
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState a2dpOffloadFlag = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
     AudioDeviceDescriptor deviceDescriptor;
@@ -156,7 +170,7 @@ void GetA2dpOffloadCodecAndSendToDspFuzzTest(FuzzedDataProvider& fdp)
     manager->Init();
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    PutCurrentOutputDevice(deviceDescriptor);
     manager->GetA2dpOffloadCodecAndSendToDsp();
     OnStop();
 }
@@ -184,7 +198,7 @@ void HandleA2dpDeviceInOffloadFuzzTest(FuzzedDataProvider& fdp)
     manager->SetA2dpOffloadFlag(state);
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    PutCurrentOutputDevice(deviceDescriptor);
     constexpr int32_t currentOffloadConnectionStateCount =
         static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
     A2dpOffloadConnectionState currentOffloadConnectionState =

@@ -106,7 +106,7 @@ int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
         auto coreService = AudioCoreService::GetCoreService();
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
         bool isEcFeatureEnable = coreService->GetEcFeatureEnable();
-        auto currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+        auto currentOutputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice();
         if (!(isEcFeatureEnable && role == INPUT_DEVICE) &&
             AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
             AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(currentOutputDevice.networkId_,

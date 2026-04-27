@@ -393,6 +393,34 @@ std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetC
     return appContext->currentInputDevices_;
 }
 
+set<int32_t> AudioRouterInfra::FindCurrentInputDevice(set<DeviceType> &&types)
+{
+    set<int32_t> result;
+    lock_guard lock(mutex_);
+    for (auto& entry : appContexts_) {
+        CHECK_AND_CONTINUE(entry.second);
+        for (auto& item: entry.second->currentInputDevices_) {
+            CHECK_AND_CONTINUE(item && types.contains(item->deviceType_));
+            result.insert(item->deviceId_);
+        }
+    }
+    return result;
+}
+
+set<int32_t> AudioRouterInfra::FindCurrentOutputDevice(set<DeviceType> &&types)
+{
+    set<int32_t> result;
+    lock_guard lock(mutex_);
+    for (auto& entry : appContexts_) {
+        CHECK_AND_CONTINUE(entry.second);
+        for (auto& item: entry.second->currentOutputDevices_) {
+            CHECK_AND_CONTINUE(item && types.contains(item->deviceType_));
+            result.insert(item->deviceId_);
+        }
+    }
+    return result;
+}
+
 void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId,
     SourceType sourceType, CapturerState state)
 {
@@ -827,7 +855,7 @@ void AudioRouterInfra::ClearStreamSelectDevice(const std::shared_ptr<AudioDevice
         auto &streamSelectDevices = context->streamSelectDevices_;
         auto it = streamSelectDevices.begin();
         while (it != streamSelectDevices.end()) {
-            if (it->second != nullptr && it->second->deviceType_ == device->deviceType_ &&
+            if (it->second != nullptr &&
                 it->second->deviceId_ == device->deviceId_) {
                 it = streamSelectDevices.erase(it);
             } else {
@@ -996,8 +1024,7 @@ bool AudioRouterInfra::IsPreferredDevice(const std::shared_ptr<AudioDeviceSimple
         recognitionSelectDevice_.device_
     };
     bool isPreferred = std::any_of(preferredDescs.begin(), preferredDescs.end(), [&desc](const auto &preferred) {
-        return preferred && preferred->deviceType_ == desc->deviceType_ &&
-            preferred->macAddress_ == desc->macAddress_ && preferred->networkId_ == desc->networkId_;
+        return preferred && preferred->deviceId_ == desc->deviceId_;
     });
     CHECK_AND_RETURN_RET(!isPreferred, isPreferred);
     for (const auto& [uid, context] : appContexts_) {

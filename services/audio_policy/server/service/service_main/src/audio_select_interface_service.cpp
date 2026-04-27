@@ -106,7 +106,9 @@ bool AudioSelectInterfaceService::GetEnhancedRoutingSupported() const
 
 void AudioSelectInterfaceService::HandleNegtiveBt(DeviceType deviceType)
 {
-    auto currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+    auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice(
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK});
+    auto currentOutputDevice = !descs.empty() && *descs.begin() ? *(*descs.begin()) : AudioDeviceDescriptor();
     if (currentOutputDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
@@ -122,7 +124,9 @@ void AudioSelectInterfaceService::HandleNegtiveBt(DeviceType deviceType)
 
 void AudioSelectInterfaceService::HandleActiveBt(DeviceType deviceType, std::string macAddress)
 {
-    auto currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+    auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice(
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK});
+    auto currentOutputDevice = !descs.empty() && *descs.begin() ? *(*descs.begin()) : AudioDeviceDescriptor();
     if (currentOutputDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
@@ -197,8 +201,8 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
-    coreService->OnPreferredOutputDeviceUpdated(AudioActiveDevice::GetInstance().GetCurrentOutputDevice(),
-        AudioStreamDeviceChangeReason::OVERRODE);
+    coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
+        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -299,8 +303,8 @@ void AudioSelectInterfaceService::HandleFetchDeviceChange(const AudioStreamDevic
     CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
     coreService->FetchOutputDeviceAndRoute("HandleFetchDeviceChange", reason);
     coreService->FetchInputDeviceAndRoute("HandleFetchDeviceChange");
-    auto currentInputDevice = AudioActiveDevice::GetInstance().GetCurrentInputDevice();
-    auto currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+    auto currentInputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice();
+    auto currentOutputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice();
     coreService->ReloadSourceForDeviceChange(currentInputDevice, currentOutputDevice, caller);
     CHECK_AND_RETURN_LOG(audioA2dpOffloadManager_ != nullptr, "audioA2dpOffloadManager_ is nullptr");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
@@ -367,8 +371,8 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
         coreService->FetchInputDeviceAndRoute("SelectInputDevice_1");
-        coreService->ReloadSourceForDeviceChange(AudioActiveDevice::GetInstance().GetCurrentInputDevice(),
-            AudioActiveDevice::GetInstance().GetCurrentOutputDevice(), "SelectInputDevice fast");
+        coreService->ReloadSourceForDeviceChange(AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(),
+            AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(), "SelectInputDevice fast");
         return SUCCESS;
     }
     auto ret = RefreshVirtualDevice(selectedDesc[0]);
@@ -384,8 +388,8 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
     AudioActiveDevice::GetInstance().NotifyUserSelectionEventForInput(selectedDesc[0], srcType);
     coreService->FetchInputDeviceAndRoute("SelectInputDevice_2");
 
-    coreService->ReloadSourceForDeviceChange(AudioActiveDevice::GetInstance().GetCurrentInputDevice(),
-        AudioActiveDevice::GetInstance().GetCurrentOutputDevice(), "SelectInputDevice");
+    coreService->ReloadSourceForDeviceChange(AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(),
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(), "SelectInputDevice");
     return SUCCESS;
 }
 
@@ -449,8 +453,8 @@ int32_t AudioSelectInterfaceService::ExcludeOutputDevices(AudioDeviceUsage audio
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchInputAndOutputDevice failed");
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
-    AudioDeviceDescriptor currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
-    AudioDeviceDescriptor currentInputDevice = AudioActiveDevice::GetInstance().GetCurrentInputDevice();
+    AudioDeviceDescriptor currentOutputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice();
+    AudioDeviceDescriptor currentInputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice();
     coreService->ReloadSourceForDeviceChange(
         currentInputDevice, currentOutputDevice, "ExcludeOutputDevices");
 
@@ -539,8 +543,8 @@ int32_t AudioSelectInterfaceService::UnexcludeOutputDevices(AudioDeviceUsage aud
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchInputAndOutputDevice failed");
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
-    AudioDeviceDescriptor currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
-    AudioDeviceDescriptor currentInputDevice = AudioActiveDevice::GetInstance().GetCurrentInputDevice();
+    AudioDeviceDescriptor currentOutputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice();
+    AudioDeviceDescriptor currentInputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice();
     coreService->ReloadSourceForDeviceChange(
         currentInputDevice, currentOutputDevice, "UnexcludeOutputDevices");
     if (audioA2dpOffloadManager_ != nullptr) {

@@ -114,8 +114,6 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
-
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);

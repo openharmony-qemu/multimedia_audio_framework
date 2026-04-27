@@ -43,6 +43,12 @@ public:
     void SetCallOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device, const std::string caller = "") override;
 
+    void UpdateCurrentOutputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentOutputDevice(int32_t uid) override;
+    void UpdateCurrentInputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentInputDevice(int32_t uid) override;
 private:
     enum class SelectDeviceSource {
         STREAM,

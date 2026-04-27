@@ -117,8 +117,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
 
     int32_t result = HandleSpecialDeviceType(devType, isConnected, macAddress, role);
-    CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS, reason, devType, role, result,
-        "handle special deviceType failed.");
+    CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS, reason, devType, role, result, "handle type failed.");
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
 
     HILOG_COMM_INFO("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
@@ -172,8 +171,9 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
 
     // update a2dp offload
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
-    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
-        audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 5 param");
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
+        audioRouterSelectStrategy_.Get1stCurrentInputDevice(),
+        audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), "OnDeviceStatusUpdated 5 param");
 }
 
 void AudioDeviceStatus::WriteOutputDeviceChangedSysEvents(
@@ -926,8 +926,9 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
         AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
 
         HandleOfflineDistributedDevice();
-        AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
-            audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2.1 param");
+        AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
+            audioRouterSelectStrategy_.Get1stCurrentInputDevice(),
+            audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), "OnDeviceStatusUpdated 2.1 param");
         return;
     }
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
@@ -958,8 +959,9 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
-    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
-        audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2.2 param");
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
+        audioRouterSelectStrategy_.Get1stCurrentInputDevice(),
+        audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), "OnDeviceStatusUpdated 2.2 param");
 }
 
 int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote)
@@ -1050,7 +1052,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
                 AUDIO_INFO_LOG("Update capability");
                 return SUCCESS_BUT_NOT_CONTINUE;
             }
-            
+
             UpdateDeviceDescriptorByCapability(*connDevDesc);
             audioDeviceManager_.UpdateDeviceDescriptorByCapability(connDevDesc);
             audioDeviceCommon_.OnPreferredOutputDeviceUpdated(connDevDesc, AudioStreamDeviceChangeReason::OVERRODE);
@@ -1063,7 +1065,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
             AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, devType, devRole, ret,
             "DEVICE online but open audio device failed.");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DEVICE online but open audio device failed.");
-        
+
         UpdateDeviceDescriptorByCapability(deviceDesc);
         audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(deviceDesc, descForCb);
 
@@ -1191,7 +1193,7 @@ void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const Ad
         CHECK_AND_CONTINUE(pipe != nullptr);
         if (std::find(deviceInfo.supportPipes_.begin(), deviceInfo.supportPipes_.end(), pipe->name_) ==
             deviceInfo.supportPipes_.end()) { continue; }
-        
+
         for (const auto &spi : pipe->streamPropInfos_) {
             CHECK_AND_CONTINUE(spi != nullptr);
             streamInfos.emplace_back(static_cast<AudioSamplingRate>(spi->sampleRate_), AudioEncodingType::ENCODING_PCM,
@@ -1247,7 +1249,7 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
             }
         }
     }
-    
+
 #ifdef MULTI_BUS_ENABLE
     AddPreloadDevices();
 #endif
@@ -1256,13 +1258,13 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
         AUDIO_INFO_LOG("[module_load]::Setting speaker as active device on bootup");
         hasModulesLoaded = true;
         shared_ptr<AudioDeviceDescriptor> outDevice = audioDeviceManager_.GetRenderDefaultDevice();
-        audioActiveDevice_.SetCurrentOutputDevice(*outDevice);
+        audioRouterSelectStrategy_.UpdateCurrentOutputDevice(SYSTEM_UID, {outDevice});
         shared_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
-        audioActiveDevice_.SetCurrentInputDevice(*inDevice, DEFAULT_UID);
-        AudioDeviceDescriptor curDevice = audioActiveDevice_.GetCurrentOutputDevice();
+        audioRouterSelectStrategy_.UpdateCurrentInputDevice(SYSTEM_UID, {inDevice});
+        AudioDeviceDescriptor curDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(curDevice);
-        OnPreferredDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
-            audioActiveDevice_.GetCurrentInputDeviceType(DEFAULT_UID));
+        OnPreferredDeviceUpdated(audioRouterSelectStrategy_.Get1stCurrentOutputDevice(),
+            audioActiveDevice_.GetCurrentInputDeviceType(SYSTEM_UID));
         AddEarpiece();
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
@@ -1371,8 +1373,9 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
-    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
-        audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2 param");
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
+        audioRouterSelectStrategy_.Get1stCurrentInputDevice(),
+        audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), "OnDeviceStatusUpdated 2 param");
 }
 
 void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
@@ -1472,8 +1475,9 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
-    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
-        audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceInfoUpdated");
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
+        audioRouterSelectStrategy_.Get1stCurrentInputDevice(),
+        audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), "OnDeviceInfoUpdated");
 }
 
 void AudioDeviceStatus::UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc,
@@ -1831,7 +1835,7 @@ bool AudioDeviceStatus::CheckNeedExclude(const AudioDeviceDescriptor &desc, bool
         if (desc.IsSameDeviceDescPtr(strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
-        
+
         AudioDeviceDescriptor sco{DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE};
         sco.macAddress_ = desc.macAddress_;
         sco.networkId_ = desc.networkId_;
@@ -1848,7 +1852,7 @@ bool AudioDeviceStatus::CheckNeedExclude(const AudioDeviceDescriptor &desc, bool
         if (desc.IsSameDeviceDescPtr(strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
-        
+
         AudioDeviceDescriptor a2dp{DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE};
         a2dp.macAddress_ = desc.macAddress_;
         a2dp.networkId_ = desc.networkId_;

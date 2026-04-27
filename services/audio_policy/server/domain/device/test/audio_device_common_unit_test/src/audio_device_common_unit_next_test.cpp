@@ -382,7 +382,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_002, 
 
     AudioDeviceDescriptor inputDevice;
     inputDevice.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(inputDevice);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID,
+        {make_shared<AudioDeviceDescriptor>(inputDevice)});
 
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.clear();
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();

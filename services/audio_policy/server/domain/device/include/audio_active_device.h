@@ -53,28 +53,18 @@ public:
     void NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyUserDisSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
 
-    bool UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
-        const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsDeviceActive(DeviceType deviceType);
     float GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt);
     std::string GetActiveBtDeviceMac();
     void SetActiveBtDeviceMac(const std::string macAddress);
     void SetActiveBtInDeviceMac(const std::string macAddress);
     bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
-
-    void SetCurrentInputDevice(const AudioDeviceDescriptor &desc, const int32_t uid = INVALID_UID);
-    const AudioDeviceDescriptor GetCurrentInputDevice(const int32_t uid = INVALID_UID);
-    DeviceType GetCurrentInputDeviceType(const int32_t uid = INVALID_UID);
-    std::string GetCurrentInputDeviceMacAddr(const int32_t uid = INVALID_UID);
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    void DelCurrentInputDevice(const int32_t uid = INVALID_UID);
-#endif
-    void SetCurrentOutputDevice(const AudioDeviceDescriptor &desc);
-    const AudioDeviceDescriptor GetCurrentOutputDevice();
-    DeviceType GetCurrentOutputDeviceType();
-    DeviceCategory GetCurrentOutputDeviceCategory();
-    std::string GetCurrentOutputDeviceNetworkId();
-    std::string GetCurrentOutputDeviceMacAddr();
+    DeviceType GetCurrentInputDeviceType(const int32_t uid = SYSTEM_UID);
+    std::string GetCurrentInputDeviceMacAddr(const int32_t uid = SYSTEM_UID);
+    DeviceType GetCurrentOutputDeviceType(const int32_t uid = SYSTEM_UID);
+    DeviceCategory GetCurrentOutputDeviceCategory(const int32_t uid = SYSTEM_UID);
+    std::string GetCurrentOutputDeviceNetworkId(const int32_t uid = SYSTEM_UID);
+    std::string GetCurrentOutputDeviceMacAddr(const int32_t uid = SYSTEM_UID);
     // pipeId == renderId == ioHandle
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag, const uint32_t pipeId,
         const std::string &networkId = LOCAL_NETWORK_ID);
@@ -115,10 +105,6 @@ private:
  	    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 
 private:
-    std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_
-    AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
-    std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDeviceMap_
-    std::unordered_map<int32_t, AudioDeviceDescriptor> currentActiveInputDeviceMap_;
     int32_t volumeAdjustZoneId_ = 0;
     std::mutex deviceForVolumeMutex_;
 

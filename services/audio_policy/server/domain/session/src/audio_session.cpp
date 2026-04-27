@@ -207,7 +207,7 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredOutputDevices =
         AudioDeviceCommon::GetInstance().GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID);
     if ((preferredOutputDevices.size() == 0) || (preferredOutputDevices[0] == nullptr)) {
-        deviceDescriptor_ = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+        deviceDescriptor_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(callerUid_);
     } else {
         deviceDescriptor_ = AudioDeviceDescriptor(preferredOutputDevices[0]);
     }

@@ -793,6 +793,7 @@ private:
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
     AudioSessionService &audioSessionService_;
+    AudioRouterSelectStrategy& audioRouterSelectStrategy_;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;

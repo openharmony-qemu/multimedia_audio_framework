@@ -92,6 +92,20 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_003, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_004
@@ -109,7 +123,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_004, TestSize.Level1)
     EXPECT_EQ(ret, 0);
 
     audioVolumeManager.isBtFirstBoot_ = false;
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_CAR;
+    CurrentActiveDevice().deviceCategory_ = BT_CAR;
     ret = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel);
     EXPECT_EQ(ret, 0);
 }
@@ -159,17 +173,17 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_006, TestSize.Level1)
     bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, false);
 
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_CAR;
+    CurrentActiveDevice().deviceCategory_ = BT_CAR;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, false);
 
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
+    CurrentActiveDevice().deviceCategory_ = BT_SOUNDBOX;
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
     bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, false);
 
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = CATEGORY_DEFAULT;
+    CurrentActiveDevice().deviceCategory_ = CATEGORY_DEFAULT;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, true);
@@ -311,8 +325,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
     int32_t ret;
 
     notificationId = RESTORE_VOLUME_NOTIFICATION_ID;
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = CATEGORY_DEFAULT;
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceCategory_ = CATEGORY_DEFAULT;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
 
@@ -324,7 +338,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
 
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     notificationId = RESTORE_VOLUME_NOTIFICATION_ID;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
@@ -337,7 +351,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
 
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NONE;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NONE;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_NE(ret, 0);
 }
@@ -714,7 +728,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_030, TestSize.Level1)
 
     int32_t zoneId = 0;
     AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
     audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 }
 
@@ -730,13 +744,13 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_031, TestSize.Level1)
 
     int32_t zoneId = 0;
     AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 
     streamType = STREAM_ALL;
     audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
     audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 }
 
@@ -751,10 +765,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_032, TestSize.Level1)
     ASSERT_TRUE(audioVolumeManager != nullptr);
 
     int32_t volumeLevel = -1;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
     audioVolumeManager->SetVoiceCallVolume(volumeLevel);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_LINE_DIGITAL;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_LINE_DIGITAL;
     audioVolumeManager->SetVoiceCallVolume(volumeLevel);
 }
 
@@ -772,11 +786,11 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_034, TestSize.Level1)
     VolumeScale volume{volumeLevel, volumeLevel};
     AudioStreamType streamType = STREAM_MUSIC;
     DeviceType curOutputDeviceType = DEVICE_TYPE_SPEAKER;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.macAddress_ = "";
+    CurrentActiveDevice().macAddress_ = "";
     auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
     EXPECT_EQ(ret, ERR_UNKNOWN);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.macAddress_ = "test";
+    CurrentActiveDevice().macAddress_ = "test";
     ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
     EXPECT_EQ(ret, ERROR);
 }
@@ -799,7 +813,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_035, TestSize.Level1)
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     zoneId = 0;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
     audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
 }
 
@@ -817,7 +831,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_036, TestSize.Level1)
     int32_t volumeLevel = 1;
     AudioStreamType streamType = STREAM_MUSIC;
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
 
     streamType = STREAM_VOICE_CALL_ASSISTANT;
@@ -838,7 +852,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_037, TestSize.Level1)
     int32_t volumeLevel = 1;
     AudioStreamType streamType = STREAM_VOICE_CALL_ASSISTANT;
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
     audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
 }
 
@@ -1179,11 +1193,11 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_055, TestSize.Level1)
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_056, TestSize.Level1)
 {
     AudioVolumeManager::GetInstance().userSelect_ = true;
-    AudioVolumeManager::GetInstance().audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     AudioVolumeManager::GetInstance().SetDeviceSafeVolumeStatus();
     EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 
-    AudioVolumeManager::GetInstance().audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     AudioVolumeManager::GetInstance().SetDeviceSafeVolumeStatus();
     EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatus_, SAFE_INACTIVE);
 }
@@ -1318,12 +1332,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Leve
 
     int32_t zoneId = 0;
     volume = volumeLevel;
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioVolumeManager.SetSystemVolumeLevel(streamType, volume, deviceDesc, zoneId);
     ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
     EXPECT_GT(ret, 0);
 
-    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioVolumeManager.SetSystemVolumeLevel(streamType, volume, deviceDesc, zoneId);
     ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
     EXPECT_GT(ret, 0);
@@ -1403,12 +1417,14 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 8;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
-    audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto devDesc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    devDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {devDesc});
     auto ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
-    AudioDeviceDescriptor curDesc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc2);
+    auto devDesc2 = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    devDesc2->deviceId_ = 1002;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {devDesc2});
     ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1804,7 +1820,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_TriggerAudioZoneVolumeSy
     // No return value — test passes if no crash
     EXPECT_TRUE(true);
 }
- 
+
 /**
  * @tc.name  : Test ClearLoudVolumeHoldMapForCall.
  * @tc.number: ClearLoudVolumeHoldMapForCall_001

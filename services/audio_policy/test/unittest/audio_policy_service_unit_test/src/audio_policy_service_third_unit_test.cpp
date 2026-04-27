@@ -67,7 +67,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_002, TestSize.
     AudioEffectProperty effectProperty;
     effectProperty.flag = CAPTURE_EFFECT_FLAG;
     propertyArray.property.push_back(effectProperty);
-    
+
     int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
 }
@@ -86,7 +86,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_003, TestSize.
     AudioEffectProperty effectProperty;
     effectProperty.flag = RENDER_EFFECT_FLAG;
     propertyArray.property.push_back(effectProperty);
-    
+
     int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
 }
@@ -181,6 +181,20 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_001, TestSize.Lev
     EXPECT_NE(dumpString, "666");
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 /**
  * @tc.name  : Test AudioPolicyService.
  * @tc.number: GetOffloadStatusDump_002
@@ -192,7 +206,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_002, TestSize.Lev
     ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_SPEAKER;
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
     EXPECT_NE(dumpString, "666");
 }
@@ -208,7 +222,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_003, TestSize.Lev
     ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_USB_HEADSET;
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
     EXPECT_NE(dumpString, "666");
 }
@@ -224,7 +238,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_004, TestSize.Lev
     ASSERT_NE(nullptr, server);
     std::string dumpString = "666";
 
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
     EXPECT_NE(dumpString, "666");
 }
@@ -450,7 +464,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_003, TestSiz
     ASSERT_NE(nullptr, server);
 
     server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_DP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_DP;
     server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
 }
 
@@ -465,7 +479,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_004, TestSiz
     ASSERT_NE(nullptr, server);
 
     server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WAKEUP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_WAKEUP;
     server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
 }
 
@@ -480,7 +494,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_005, TestSiz
     ASSERT_NE(nullptr, server);
 
     server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
 }
 
@@ -1140,7 +1154,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
 {
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
- 
+
     DStatusInfo statusInfo;
     bool isStop = false;
     statusInfo.dmDeviceInfo = "taskId : 9";
@@ -1158,7 +1172,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
 {
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
- 
+
     DStatusInfo statusInfo;
     bool isStop = false;
     statusInfo.dmDeviceInfo = "9";
@@ -1176,7 +1190,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
 {
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
- 
+
     DStatusInfo statusInfo;
     bool isStop = false;
     statusInfo.dmDeviceInfo = "taskId : 9";
@@ -1194,7 +1208,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
 {
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
- 
+
     DStatusInfo statusInfo;
     bool isStop = false;
     statusInfo.dmDeviceInfo = "9";
