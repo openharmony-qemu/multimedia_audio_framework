@@ -522,7 +522,10 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
             tmp->sessionId_ = desc->sessionId_;
             tmp->callerUid_ = desc->callerUid_;
             tmp->callerPid_ = desc->callerPid_;
+            tmp->streamStatus_ = desc->streamStatus_;
             streamDescs.push_back(tmp);
+            CHECK_AND_CONTINUE(!tmp->newDeviceDescs_.empty() && tmp->newDeviceDescs_.front() != nullptr);
+            tmp->newDeviceDescs_.front()->hasStreamRunning_ = false;
         }
     }
     return streamDescs;

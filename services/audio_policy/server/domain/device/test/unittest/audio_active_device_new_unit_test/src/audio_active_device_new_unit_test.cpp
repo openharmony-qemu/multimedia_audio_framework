@@ -15,6 +15,8 @@
 
 #include "audio_policy_utils.h"
 #include "audio_active_device_new_unit_test.h"
+#include "audio_zone.h"
+#include "audio_zone_service.h"
 
 using namespace testing::ext;
 
@@ -223,6 +225,89 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, SortDevicesByPriority, TestSize.Level4)
 
     audioActiveDevice->SortDevicesByPriority(descs);
     EXPECT_EQ(descs.size(), 2);
+}
+
+/**
+* @tc.name  : Test SortDevicesByPriority2.
+* @tc.number: SortDevicesByPriority2.
+* @tc.desc  : Test SortDevicesByPriority audio zone branch.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, SortDevicesByPriority2, TestSize.Level4)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    ASSERT_NE(audioActiveDevice, nullptr);
+
+    auto runningRemoteCast = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    runningRemoteCast->networkId_ = LOCAL_NETWORK_ID;
+    runningRemoteCast->hasStreamRunning_ = true;
+
+    AudioZoneContext context;
+    auto manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    ASSERT_NE(manager, nullptr);
+    auto zone = std::make_shared<AudioZone>(manager, "testzone", context);
+    ASSERT_NE(zone, nullptr);
+
+    auto zoneDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    zoneDevice->networkId_ = "device1";
+    zoneDevice->hasStreamRunning_ = false;
+
+    auto zoneRunningDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+    zoneRunningDevice->networkId_ = "device2";
+    zoneRunningDevice->hasStreamRunning_ = true;
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(zoneDevice, true));
+    zone->devices_.push_back(std::make_pair(zoneRunningDevice, true));
+
+    auto &zoneService = AudioZoneService::GetInstance();
+    auto backupZoneMaps = std::move(zoneService.zoneMaps_);
+    zoneService.zoneMaps_.clear();
+    zoneService.zoneMaps_.insert({1, zone});
+
+    audioActiveDevice->volumeAdjustZoneId_ = 1;
+
+    auto inZoneDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    inZoneDevice->networkId_ = "device1";
+    inZoneDevice->hasStreamRunning_ = false;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {runningRemoteCast, inZoneDevice};
+    audioActiveDevice->SortDevicesByPriority(descs);
+    EXPECT_EQ(descs.front(), inZoneDevice);
+
+    auto anotherInZoneDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+    anotherInZoneDevice->networkId_ = "device2";
+    anotherInZoneDevice->hasStreamRunning_ = true;
+
+    descs = {inZoneDevice, anotherInZoneDevice};
+    audioActiveDevice->SortDevicesByPriority(descs);
+    EXPECT_EQ(descs.front(), anotherInZoneDevice);
+
+    zoneService.zoneMaps_.clear();
+    zoneService.zoneMaps_ = std::move(backupZoneMaps);
+}
+
+/**
+* @tc.name  : Test SortDevicesByPriority3.
+* @tc.number: SortDevicesByPriority3.
+* @tc.desc  : Test SortDevicesByPriority hasStreamRunning branch.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, SortDevicesByPriority3, TestSize.Level4)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    ASSERT_NE(audioActiveDevice, nullptr);
+
+    auto localSpeaker = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    localSpeaker->networkId_ = LOCAL_NETWORK_ID;
+    localSpeaker->hasStreamRunning_ = false;
+
+    auto runningRemoteCast = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    runningRemoteCast->networkId_ = LOCAL_NETWORK_ID;
+    runningRemoteCast->hasStreamRunning_ = true;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {localSpeaker, runningRemoteCast};
+    audioActiveDevice->volumeAdjustZoneId_ = 0;
+    audioActiveDevice->SortDevicesByPriority(descs);
+    EXPECT_EQ(descs.front(), runningRemoteCast);
 }
 
 /**
