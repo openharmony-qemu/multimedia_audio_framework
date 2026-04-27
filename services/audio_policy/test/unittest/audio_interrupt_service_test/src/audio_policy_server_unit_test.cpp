@@ -29,6 +29,9 @@
 #include "audio_bundle_manager.h"
 #include "audio_zone_info.h"
 #include "audio_unit_test.h"
+#include "audio_zone_service.h"
+#include "audio_connected_device.h"
+#include "audio_policy_server_handler.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -45,6 +48,39 @@ namespace AudioStandard {
 bool g_hasPermission = false;
 bool g_hasServerInit = false;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
+
+void ResetGetActiveAudioInterruptZoneTestEnv()
+{
+    AudioConnectedDevice::GetInstance().DelConnectedDevice("RemoteDevice", DEVICE_TYPE_SPEAKER);
+    AudioZoneService::GetInstance().DeInit();
+}
+
+int32_t PrepareActiveZone(AudioStreamType streamType, bool hasVolumeControllableDevice)
+{
+    auto interruptService = std::make_shared<AudioInterruptService>();
+    ResetGetActiveAudioInterruptZoneTestEnv();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(), interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("GetActiveAudioInterruptZoneTest", context, 0);
+    if (hasVolumeControllableDevice) {
+        auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+        device->networkId_ = "RemoteDevice";
+        device->volumeBehavior_.isVolumeControlDisabled = false;
+        AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
+        AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, {device});
+    }
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = streamType;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    audioInterrupt.audioFocusType.isPlay = true;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, AudioFocuState::ACTIVE);
+    interruptService->zonesMap_[zoneId] = audioInterruptZone;
+    return zoneId;
+}
+
 sptr<AudioPolicyServer> GetPolicyServerUnitTest()
 {
     static int32_t systemAbilityId = 3009;
@@ -3387,6 +3423,77 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_223, TestSize.Level1)
     std::string macAddress = "00:11:22:33:44:55";
     int32_t result = server->GetVADeviceController(macAddress, controller);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test GetActiveAudioInterruptZone.
+* @tc.number: GetActiveAudioInterruptZone_001
+* @tc.desc  : Test AudioPolicyServer::GetActiveAudioInterruptZone when zoneId is zero.
+*/
+HWTEST(AudioPolicyUnitTest, GetActiveAudioInterruptZone_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    int32_t zoneId = 0;
+    AudioStreamType streamType = STREAM_DEFAULT;
+
+    PrepareActiveZone(STREAM_RING, false);
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, 0);
+    EXPECT_EQ(streamType, STREAM_RING);
+
+    int32_t activeZoneId = PrepareActiveZone(STREAM_RING, true);
+    zoneId = 0;
+    streamType = STREAM_DEFAULT;
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, activeZoneId);
+    EXPECT_EQ(streamType, STREAM_RING);
+
+    ResetGetActiveAudioInterruptZoneTestEnv();
+}
+
+/**
+* @tc.name  : Test GetActiveAudioInterruptZone.
+* @tc.number: GetActiveAudioInterruptZone_002
+* @tc.desc  : Test AudioPolicyServer::GetActiveAudioInterruptZone when zoneId is not zero.
+*/
+HWTEST(AudioPolicyUnitTest, GetActiveAudioInterruptZone_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    audioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioPolicyServer->interruptService_, nullptr);
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    audioInterrupt.audioFocusType.isPlay = true;
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, AudioFocuState::ACTIVE);
+    audioPolicyServer->interruptService_->zonesMap_[1] = audioInterruptZone;
+
+    int32_t zoneId = 1;
+    AudioStreamType streamType = STREAM_DEFAULT;
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, 1);
+    EXPECT_EQ(streamType, STREAM_MUSIC);
+
+    audioPolicyServer->audioVolumeManager_.needForceControlVolumeType_ = true;
+    audioPolicyServer->audioVolumeManager_.forceControlVolumeType_ = STREAM_RING;
+
+    zoneId = 1;
+    streamType = STREAM_DEFAULT;
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, 0);
+    EXPECT_EQ(streamType, STREAM_RING);
+
+    audioPolicyServer->audioVolumeManager_.needForceControlVolumeType_ = false;
+    audioPolicyServer->audioVolumeManager_.forceControlVolumeType_ = STREAM_DEFAULT;
 }
 
 /**
