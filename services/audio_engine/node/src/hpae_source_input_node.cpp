@@ -558,7 +558,7 @@ int32_t HpaeSourceInputNode::CapturerSourceReset(void)
     CHECK_AND_RETURN_RET(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::CONTROL, ERR_NULL_POINTER),
+                BusinessScenario::STOP, ERR_NULL_POINTER),
             "invalid audioCapturerSource", false), ERROR));
     return audioCapturerSource_->Reset();
 }

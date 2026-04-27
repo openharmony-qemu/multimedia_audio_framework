@@ -274,7 +274,6 @@ int32_t HpaeRenderEffectNode::AudioOffloadRendererRelease(HpaeNodeInfo &nodeInfo
 bool HpaeRenderEffectNode::OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager->GetOffloadEnabled() == true, false,
         "no effect offload scene");
