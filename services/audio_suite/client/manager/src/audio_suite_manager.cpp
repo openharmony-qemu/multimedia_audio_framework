@@ -975,9 +975,9 @@ int32_t AudioSuiteManager::GetEqualizerFrequencyBandGains(uint32_t nodeId,
     std::vector<int32_t> parseValue;
     parseValue.reserve(EQUALIZER_BAND_NUM);
     ParseValue(value, parseValue);
-    CHECK_AND_RETURN_RET_LOG(parseValue.size() == EQUALIZER_BAND_NUM, ERROR,
+    CHECK_AND_RETURN_RET_LOG(parseValue.size() <= EQUALIZER_BAND_NUM, ERROR,
         "GetEqualizerFrequencyBandGains ParseValue error");
-    for (size_t idx = 0; idx < EQUALIZER_BAND_NUM; idx++) {
+    for (size_t idx = 0; idx < parseValue.size(); idx++) {
         frequencyBandGains.gains[idx] = parseValue[idx];
     }
     return SUCCESS;

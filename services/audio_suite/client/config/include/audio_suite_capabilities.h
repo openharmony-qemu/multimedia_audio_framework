@@ -74,7 +74,8 @@ private:
 class DlHandleGuard {
 public:
     explicit DlHandleGuard(void* handle = nullptr) : handle_(handle) {}
-    ~DlHandleGuard() {
+    ~DlHandleGuard()
+    {
         if (handle_) {
             dlclose(handle_);
         }
@@ -82,10 +83,6 @@ public:
     
     DlHandleGuard(const DlHandleGuard&) = delete;
     DlHandleGuard& operator=(const DlHandleGuard&) = delete;
-    
-    DlHandleGuard(DlHandleGuard&& other) noexcept : handle_(other.handle_) {
-        other.handle_ = nullptr;
-    }
     
     void* get() const { return handle_; }
     operator bool() const { return handle_ != nullptr; }
