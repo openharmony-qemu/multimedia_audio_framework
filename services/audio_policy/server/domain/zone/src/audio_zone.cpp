@@ -40,6 +40,11 @@ AudioZoneBindKey::AudioZoneBindKey(int32_t uid)
 {
 }
 
+AudioZoneBindKey::AudioZoneBindKey(uint32_t streamId)
+    : streamId_(streamId)
+{
+}
+
 AudioZoneBindKey::AudioZoneBindKey(int32_t uid, StreamUsage streamUsage)
     : uid_(uid),
       usage_(streamUsage)
@@ -49,13 +54,6 @@ AudioZoneBindKey::AudioZoneBindKey(int32_t uid, StreamUsage streamUsage)
 AudioZoneBindKey::AudioZoneBindKey(int32_t uid, const std::string &deviceTag)
     : uid_(uid),
       deviceTag_(deviceTag)
-{
-}
-
-AudioZoneBindKey::AudioZoneBindKey(int32_t uid, const std::string &deviceTag, uint32_t streamId)
-    : uid_(uid),
-      deviceTag_(deviceTag),
-      streamId_(streamId)
 {
 }
 
@@ -171,7 +169,10 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
         }
         keys.push_back(temp);
     };
-    pushBack(AudioZoneBindKey(uid, "", streamId));
+    if (streamId != INVALID_STREAM_ID) {
+        pushBack(AudioZoneBindKey(streamId));
+    }
+    pushBack(AudioZoneBindKey(uid, ""));
     pushBack(AudioZoneBindKey(uid, usage));
     pushBack(AudioZoneBindKey(uid));
     pushBack(AudioZoneBindKey(uid, deviceTag));

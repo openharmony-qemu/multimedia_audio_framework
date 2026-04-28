@@ -63,10 +63,6 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
 
-    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) override;
-
-    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
-
     int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) override;
 
     int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) override;
@@ -78,6 +74,10 @@ public:
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) override;
 
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams) override;
+
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) override;
+
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
     void SetZoneDeviceVisible(bool visible) override;
 
@@ -302,28 +302,6 @@ int32_t AudioZoneManagerInner::RemoveUidFromAudioZone(int32_t zoneId, int32_t ui
     return result;
 }
 
-int32_t AudioZoneManagerInner::AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId)
-{
-    AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-
-    int32_t result = AudioPolicyManager::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
-        "AddStreamIdToAudioZone result:%{public}d", result);
-    return result;
-}
-
-int32_t AudioZoneManagerInner::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
-{
-    AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-
-    int32_t result = AudioPolicyManager::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
-        "RemoveStreamIdFromAudioZone result:%{public}d", result);
-    return result;
-}
-
 int32_t AudioZoneManagerInner::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
 {
     AUDIO_INFO_LOG("in");
@@ -369,6 +347,32 @@ int32_t AudioZoneManagerInner::AddStreamsToAudioZone(int32_t zoneId, std::vector
     int32_t result = AudioPolicyManager::GetInstance().AddStreamsToAudioZone(zoneId, streams);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "AddStreamsToAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(streamId >= MIN_STREAMID && streamId <= MAX_STREAMID, ERR_INVALID_PARAM,
+        "streamId is invalid");
+
+    int32_t result = AudioPolicyManager::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "AddStreamIdToAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(streamId >= MIN_STREAMID && streamId <= MAX_STREAMID, ERR_INVALID_PARAM,
+        "streamId is invalid");
+
+    int32_t result = AudioPolicyManager::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "RemoveStreamIdFromAudioZone result:%{public}d", result);
     return result;
 }
 

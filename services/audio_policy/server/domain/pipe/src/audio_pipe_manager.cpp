@@ -1476,6 +1476,16 @@ std::string AudioPipeManager::GetModuleName(std::shared_ptr<AudioPipeInfo> pipeI
     return moduleName;
 }
 
+bool AudioPipeManager::IsValidRenderSessionId(const uint32_t sessionId)
+{
+    auto outputDescs = GetAllOutputStreamDescs();
+    auto it = std::find_if(outputDescs.begin(), outputDescs.end(),
+        [sessionId](const std::shared_ptr<AudioStreamDescriptor> &desc) {
+            return desc != nullptr && desc->sessionId_ == sessionId;
+        });
+    return it != outputDescs.end();
+}
+
 AudioVolumeType AudioPipeManager::GetVolumeTypeFromStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_ASSISTANT &&

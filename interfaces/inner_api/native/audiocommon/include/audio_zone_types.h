@@ -103,10 +103,6 @@ public:
 
     virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
 
-    virtual int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) = 0;
-
-    virtual int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) = 0;
-
     virtual int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) = 0;
 
     virtual int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) = 0;
@@ -118,6 +114,10 @@ public:
     virtual int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
     
     virtual int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams) = 0;
+
+    virtual int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) = 0;
+
+    virtual int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) = 0;
 
     virtual void SetZoneDeviceVisible(bool visible) = 0;
 

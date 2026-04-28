@@ -69,13 +69,13 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_002, TestSize.Level1)
     auto zone = CreateZone("TestZone");
     zone->BindByKey(AudioZoneBindKey(1, "d1"));
     zone->BindByKey(AudioZoneBindKey(1));
-    zone->BindByKey(AudioZoneBindKey(2, "d1", 100));
-    zone->BindByKey(AudioZoneBindKey(2, "", 101));
-    zone->BindByKey(AudioZoneBindKey(2, "", 102));
-    zone->RemoveKey(AudioZoneBindKey(2, "", 102));
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", 102)), false);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", 101)), true);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "d1", 100)), false);
+    zone->BindByKey(AudioZoneBindKey(2, "d1"));
+    zone->BindByKey(AudioZoneBindKey(2, ""));
+    zone->BindByKey(AudioZoneBindKey(2, "d2"));
+    zone->RemoveKey(AudioZoneBindKey(2, "d2"));
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "d2")), false);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "")), true);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "d1")), false);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1)), true);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1, "")), true);
 }
@@ -597,6 +597,98 @@ HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_008, TestSize.Level1)
     std::string networkId = "networkId";
     auto ret = zone->GetDeviceDescriptor(type, networkId);
     EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDescriptor.
+ * @tc.number: GetDescriptorNoLock_001
+ * @tc.desc  : Test GetDescriptor with valid streamId insertion
+ */
+HWTEST_F(AudioZoneUnitTest, GetDescriptorNoLock_001, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    uint32_t streamId1 = 100;
+    uint32_t streamId2 = 200;
+    int32_t uid = 1;
+    zone->BindByKey(AudioZoneBindKey(streamId1));
+    zone->BindByKey(AudioZoneBindKey(uid));
+    zone->BindByKey(AudioZoneBindKey(streamId2));
+
+    auto descriptor = zone->GetDescriptor();
+    EXPECT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->streamIds_.size(), 2);
+    EXPECT_EQ(descriptor->streamIds_.count(streamId1), 1);
+    EXPECT_EQ(descriptor->streamIds_.count(streamId2), 1);
+}
+
+/**
+ * @tc.name  : Test GetDescriptor.
+ * @tc.number: GetDescriptorNoLock_002
+ * @tc.desc  : Test GetDescriptor with INVALID_STREAM_ID skip
+ */
+HWTEST_F(AudioZoneUnitTest, GetDescriptorNoLock_002, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    zone->BindByKey(AudioZoneBindKey(1));
+    zone->BindByKey(AudioZoneBindKey(2, STREAM_USAGE_MUSIC));
+
+    auto descriptor = zone->GetDescriptor();
+    EXPECT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->streamIds_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test GetSupportKeys.
+ * @tc.number: GetSupportKeys_001
+ * @tc.desc  : Test GetSupportKeys with valid streamId
+ */
+HWTEST_F(AudioZoneUnitTest, GetSupportKeys_001, TestSize.Level1)
+{
+    int32_t uid = 1000;
+    std::string deviceTag = "test_device";
+    uint32_t streamId = 100;
+    StreamUsage usage = STREAM_USAGE_MUSIC;
+
+    auto keys = AudioZoneBindKey::GetSupportKeys(uid, deviceTag, streamId, usage);
+    EXPECT_FALSE(keys.empty());
+
+    AudioZoneBindKey targetKey(streamId);
+    bool found = false;
+    for (const auto &key : keys) {
+        if (key == targetKey) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);
+}
+
+/**
+ * @tc.name  : Test GetSupportKeys.
+ * @tc.number: GetSupportKeys_002
+ * @tc.desc  : Test GetSupportKeys with INVALID_STREAM_ID
+ */
+HWTEST_F(AudioZoneUnitTest, GetSupportKeys_002, TestSize.Level1)
+{
+    int32_t uid = 1000;
+    std::string deviceTag = "test_device";
+    uint32_t streamId = INVALID_STREAM_ID;
+    StreamUsage usage = STREAM_USAGE_MUSIC;
+
+    auto keys = AudioZoneBindKey::GetSupportKeys(uid, deviceTag, streamId, usage);
+    EXPECT_FALSE(keys.empty());
+
+    AudioZoneBindKey targetKey(INVALID_STREAM_ID);
+    bool found = false;
+    for (const auto &key : keys) {
+        if (key == targetKey) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_FALSE(found);
 }
 } // namespace AudioStandard
 } // namespace OHOS
