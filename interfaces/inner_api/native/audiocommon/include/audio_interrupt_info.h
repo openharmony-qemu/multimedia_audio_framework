@@ -246,6 +246,16 @@ struct AudioFocusType {
     }
 };
 
+struct AudioFocusBehavior {
+    uint32_t streamId = 0;
+    int32_t pid { -1 };
+    int32_t uid { -1 };
+    AudioStreamType streamType = STREAM_DEFAULT;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
+    int64_t timestamp = 0;
+};
+
 enum InterruptStage {
     INTERRUPT_STAGE_START = 0x10,
     INTERRUPT_STAGE_RESTART = 0x11,

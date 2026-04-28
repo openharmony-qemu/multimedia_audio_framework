@@ -22,13 +22,35 @@
 #include "audio_service_log.h"
 #include "audio_policy_manager.h"
 #include "audio_session_info.h"
+#include "audio_debug_manager.h"
+#include "audio_debug_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
+std::mutex AudioSessionClientManager::callbackRegisteredMutex_;
+bool AudioSessionClientManager::callbackRegistered_ = false;
+
+class AudioSessionDebugCallbackImpl : public AudioSessionDebugCallback {
+public:
+    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &debugInfo) override
+    {
+        return AudioSessionClientManager::GetInstance().GetSessionDebugInfo(debugInfo);
+    }
+};
+
 using namespace std;
 AudioSessionClientManager &AudioSessionClientManager::GetInstance()
 {
     static AudioSessionClientManager audioSessionManager;
+    if (!callbackRegistered_) {
+        std::lock_guard<std::mutex> lock(callbackRegisteredMutex_);
+        if (!callbackRegistered_) {
+            static std::shared_ptr<AudioSessionDebugCallbackImpl> sessionDebugCallback =
+                std::make_shared<AudioSessionDebugCallbackImpl>();
+            AudioDebugManager::GetInstance().SetAudioSessionCallback(sessionDebugCallback);
+            callbackRegistered_ = true;
+        }
+    }
     return audioSessionManager;
 }
 
@@ -544,5 +566,9 @@ bool AudioSessionRestoreParams::RestoreParams()
     return true;
 }
 
+int32_t AudioSessionClientManager::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+{
+    return AudioPolicyManager::GetInstance().GetSessionDebugInfo(sessionDebugInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

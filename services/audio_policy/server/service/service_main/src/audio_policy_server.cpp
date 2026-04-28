@@ -2780,7 +2780,8 @@ int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
     }
     return ERR_UNKNOWN;
 }
-int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID)
+int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID,
+    bool isRemoveFocusHis)
 {
     if (interruptService_ != nullptr) {
         CHECK_AND_RETURN_RET_LOG(VerifyUidAndPid(audioInterrupt.uid, audioInterrupt.pid) == SUCCESS,
@@ -2789,16 +2790,17 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         int32_t zoneId = interruptService_->FindAudioZoneByStreamId(audioInterrupt.streamId);
         StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(audioInterrupt.uid,
             audioInterrupt.streamId);
-        return UpdateAudioSceneAfterDeactivateInterrupt(zoneId, audioInterrupt);
+        return UpdateAudioSceneAfterDeactivateInterrupt(zoneId, audioInterrupt, isRemoveFocusHis);
     }
     return ERR_UNKNOWN;
 }
 
 int32_t AudioPolicyServer::UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId,
-    const AudioInterrupt &audioInterrupt)
+    const AudioInterrupt &audioInterrupt, bool isRemoveFocusHis)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result = AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt);
+    AudioInterruptResult result = AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt,
+        isRemoveFocusHis);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -3707,7 +3709,20 @@ int32_t AudioPolicyServer::GetAudioDebugInfo(uint32_t sessionId,
     int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfoValue);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "GetPipeDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
+    if (interruptService_ != nullptr) {
+        interruptService_->GetFocusDebugInfoByStreamId(sessionId, *audioDebugInfoValue);
+    }
     audioDebugInfo = audioDebugInfoValue;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetSessionDebugInfo(std::shared_ptr<AudioSessionDebugInfo> &sessionDebugInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERR_NULL_POINTER, "interruptService_ is nullptr");
+    auto sessionDebugInfoValue = std::make_shared<AudioSessionDebugInfo>();
+    int32_t ret = interruptService_->GetSessionDebugInfo(IPCSkeleton::GetCallingPid(), *sessionDebugInfoValue);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSessionDebugInfo failed, ret:%{public}d", ret);
+    sessionDebugInfo = sessionDebugInfoValue;
     return SUCCESS;
 }
 

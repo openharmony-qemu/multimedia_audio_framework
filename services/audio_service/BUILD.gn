@@ -362,6 +362,7 @@ ohos_shared_library("audio_policy_manager") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
+    "../../frameworks/native/audio_debug_manager:audio_debug_manager",
     ":audio_engine_manager",
   ]
 
@@ -480,6 +481,7 @@ ohos_shared_library("audio_client") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
+    "../../frameworks/native/audio_debug_manager:audio_debug_manager",
   ]
 
   external_deps = [

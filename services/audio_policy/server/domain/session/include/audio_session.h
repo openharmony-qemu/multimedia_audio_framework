@@ -22,16 +22,10 @@
 #include "audio_session_info.h"
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum class AudioSessionState {
-    SESSION_INVALID = -1,
-    SESSION_NEW = 0,
-    SESSION_ACTIVE = 1,
-    SESSION_DEACTIVE = 2,
-    SESSION_RELEASED = 3,
-};
 
 class AudioSessionStateMonitor;
 class AudioDeviceManager;
@@ -83,6 +77,7 @@ public:
     void SetRegisterStateChangeCallbackFlag(const bool registerCallbackFlag,
         const bool activatedRegisterCallbackFlag = false);
     void GetStateChangeCallbackFlag(bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
+    void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
 
 private:
     StreamUsage GetStreamUsageInner();

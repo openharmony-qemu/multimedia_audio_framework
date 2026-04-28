@@ -1333,7 +1333,7 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
 }
 
 AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId,
-                                                                     const AudioInterrupt &audioInterrupt)
+    const AudioInterrupt &audioInterrupt, bool isRemoveFocusHis)
 {
     AudioXCollie audioXCollie("AudioInterruptService::DeactivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
@@ -1355,6 +1355,10 @@ AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32
     }
     RemoveStreamIdSuggestionRecord(currAudioInterrupt.streamId);
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
+
+    if (isRemoveFocusHis) {
+        audioFocusHisMap_.erase(incomingStreamId);
+    }
 
     if (HasAudioSessionFakeInterrupt(zoneId, currAudioInterrupt.pid)) {
         result.targetAudioScene = GetHighestPriorityAudioScene(zoneId);
@@ -2083,6 +2087,7 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeStream
         }
         HILOG_COMM_INFO("[SendActiveInterruptEvent]OnInterrupt for active streamId:%{public}d, hintType:%{public}d. "
             "By streamId:%{public}d", activeStreamId, interruptEvent.hintType, incomingInterrupt.streamId);
+        RecordFocusHistory(activeInterrupt, incomingInterrupt, interruptEvent);
         SendInterruptEventCallback(interruptEvent, activeStreamId, activeInterrupt);
         // focus remove or state change. When focus stopped, notify remote to abandon focus
         if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
@@ -3490,6 +3495,82 @@ int32_t AudioInterruptService::FindAudioZoneByStreamId(const uint32_t streamId)
 bool AudioInterruptService::IsAudioStreamActive(const AudioFocuState &state)
 {
     return state == ACTIVE || state == DUCK;
+}
+
+void AudioInterruptService::GetFocusDebugInfoByStreamId(uint32_t streamId, AudioDebugInfo &audioDebugInfo)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = audioFocusHisMap_.find(streamId);
+    if (it != audioFocusHisMap_.end()) {
+        audioDebugInfo.focusHistory = it->second;
+    }
+
+    audioDebugInfo.focusState = STOP;
+    for (const auto &zonePair : zonesMap_) {
+        CHECK_AND_CONTINUE(zonePair.second != nullptr);
+        for (const auto &audioFocusPair : zonePair.second->audioFocusInfoList) {
+            if (audioFocusPair.first.streamId == streamId) {
+                audioDebugInfo.focusState = audioFocusPair.second;
+                return;
+            }
+            CHECK_AND_CONTINUE(audioFocusPair.first.isAudioSessionInterrupt);
+            std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(audioFocusPair.first.pid);
+            for (auto &stream : sessionStreams) {
+                CHECK_AND_CONTINUE(stream.streamId == streamId);
+                audioDebugInfo.focusState = audioFocusPair.second;
+                return;
+            }
+        }
+    }
+}
+
+int32_t AudioInterruptService::GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    sessionDebugInfo.streamInfos.clear();
+    for (const auto &zonePair : zonesMap_) {
+        CHECK_AND_CONTINUE(zonePair.second != nullptr);
+        for (const auto &audioFocusPair : zonePair.second->audioFocusInfoList) {
+            if (audioFocusPair.first.pid == pid && audioFocusPair.first.isAudioSessionInterrupt) {
+                sessionDebugInfo.focusState = audioFocusPair.second;
+                sessionDebugInfo.pid = audioFocusPair.first.pid;
+                sessionDebugInfo.uid = audioFocusPair.first.uid;
+                sessionService_.GetSessionDebugInfo(sessionDebugInfo);
+                return SUCCESS;
+            }
+        }
+    }
+    return ERROR;
+}
+
+void AudioInterruptService::RecordFocusHistory(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, const InterruptEventInternal &interruptEvent)
+{
+    AudioFocusBehavior focusBehavior;
+    focusBehavior.streamId = incomingInterrupt.streamId;
+    focusBehavior.pid = incomingInterrupt.pid;
+    focusBehavior.uid = incomingInterrupt.uid;
+    focusBehavior.streamType = incomingInterrupt.audioFocusType.streamType;
+    focusBehavior.sourceType = incomingInterrupt.audioFocusType.sourceType;
+    focusBehavior.hintType = interruptEvent.hintType;
+    focusBehavior.timestamp = ClockTime::GetCurMilli();
+    if (currentInterrupt.isAudioSessionInterrupt) {
+        std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(currentInterrupt.pid);
+        for (auto &stream : sessionStreams) {
+            AddFocusHistory(stream.streamId, focusBehavior);
+        }
+    } else {
+        AddFocusHistory(currentInterrupt.streamId, focusBehavior);
+    }
+}
+
+void AudioInterruptService::AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior)
+{
+    audioFocusHisMap_[streamId].push_back(focusBehavior);
+    constexpr int32_t MAX_HISTORY_SIZE = 20;
+    if (audioFocusHisMap_[streamId].size() > MAX_HISTORY_SIZE) {
+        audioFocusHisMap_[streamId].erase(audioFocusHisMap_[streamId].begin());
+    }
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

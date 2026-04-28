@@ -33,6 +33,14 @@ namespace OHOS {
 namespace AudioStandard {
 #define PIPE_INVALID_ID 0xFFFFFFFF
 
+enum class AudioSessionState {
+    SESSION_INVALID = -1,
+    SESSION_NEW = 0,
+    SESSION_ACTIVE = 1,
+    SESSION_DEACTIVE = 2,
+    SESSION_RELEASED = 3,
+};
+
 struct AudioRendererDebugInfo {
     uint32_t sessionId = 0;
     int32_t samplingRate = 0;
@@ -113,6 +121,90 @@ struct AudioLoopbackDebugInfo {
     CapturerState downlinkStreamState = CAPTURER_INVALID;
 };
 
+struct AudioStreamDebugInfo : public Parcelable {
+    uint32_t streamId = 0;
+    AudioStreamType streamType = STREAM_DEFAULT;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteUint32(streamId) &&
+            parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(sourceType));
+    }
+
+    static AudioStreamDebugInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) AudioStreamDebugInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->streamId = parcel.ReadUint32();
+        info->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        info->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        return info;
+    }
+};
+
+struct AudioSessionDebugInfo : public Parcelable {
+    AudioSessionStrategy strategy {AudioConcurrencyMode::INVALID};
+    AudioSessionScene audioSessionScene {AudioSessionScene::INVALID};
+    DeviceType defaultDeviceType = DEVICE_TYPE_INVALID;
+    AudioSessionState state = AudioSessionState::SESSION_INVALID;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+    AudioFocuState focusState = ACTIVE;
+    int32_t pid { -1 };
+    int32_t uid { -1 };
+    std::vector<AudioStreamDebugInfo> streamInfos;
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(strategy.concurrencyMode)) &&
+            parcel.WriteInt32(static_cast<int32_t>(audioSessionScene)) &&
+            parcel.WriteInt32(static_cast<int32_t>(defaultDeviceType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(state)) &&
+            parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
+            parcel.WriteInt32(static_cast<int32_t>(focusState)) &&
+            parcel.WriteInt32(pid) &&
+            parcel.WriteInt32(uid) &&
+            parcel.WriteUint32(static_cast<uint32_t>(streamInfos.size())) &&
+            [&parcel, this]() -> bool {
+                for (const auto &item : streamInfos) {
+                    if (!item.Marshalling(parcel)) {
+                        return false;
+                    }
+                }
+                return true;
+            }();
+    }
+
+    static AudioSessionDebugInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) AudioSessionDebugInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->strategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
+        info->audioSessionScene = static_cast<AudioSessionScene>(parcel.ReadInt32());
+        info->defaultDeviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        info->state = static_cast<AudioSessionState>(parcel.ReadInt32());
+        info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        info->focusState = static_cast<AudioFocuState>(parcel.ReadInt32());
+        info->pid = parcel.ReadInt32();
+        info->uid = parcel.ReadInt32();
+        uint32_t streamsSize = parcel.ReadUint32();
+        for (uint32_t i = 0; i < streamsSize; i++) {
+            std::unique_ptr<AudioStreamDebugInfo> streamInfo(AudioStreamDebugInfo::Unmarshalling(parcel));
+            if (streamInfo == nullptr) {
+                delete info;
+                return nullptr;
+            }
+            info->streamInfos.push_back(*streamInfo);
+        }
+        return info;
+    }
+};
+
 struct AudioDebugInfo : public Parcelable {
     uint32_t sessionId = 0;
     AudioRendererInfo rendererInfo = AudioRendererInfo {};
@@ -154,8 +246,8 @@ struct AudioDebugInfo : public Parcelable {
     AudioEffectMode effectMode = EFFECT_NONE;
 
     // debug info about Interrupt
-    int32_t hintType = -1;
-    std::string historyHintType = "";
+    AudioFocuState focusState = ACTIVE;
+    std::vector<AudioFocusBehavior> focusHistory;
 
     // debug info about capturer
     std::shared_ptr<AudioCapturerInfo> capturerInfo = std::make_shared<AudioCapturerInfo>();
@@ -231,11 +323,29 @@ struct AudioDebugInfo : public Parcelable {
             parcel.WriteInt32(static_cast<int32_t>(effectMode));
     }
 
+    bool MarshallingInterruptInfo(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(focusState)) &&
+            parcel.WriteUint32(static_cast<uint32_t>(focusHistory.size())) &&
+            [&parcel, this]() -> bool {
+                for (const auto &item : focusHistory) {
+                    if (!parcel.WriteUint32(item.streamId) ||
+                        !parcel.WriteInt32(item.pid) ||
+                        !parcel.WriteInt32(item.uid) ||
+                        !parcel.WriteInt32(static_cast<int32_t>(item.streamType)) ||
+                        !parcel.WriteInt32(static_cast<int32_t>(item.sourceType)) ||
+                        !parcel.WriteInt32(static_cast<int32_t>(item.hintType)) ||
+                        !parcel.WriteInt64(item.timestamp)) {
+                        return false;
+                    }
+                }
+                return true;
+            }();
+    }
+
     bool MarshallingCapturerInfo(Parcel &parcel) const
     {
-        return parcel.WriteInt32(hintType) &&
-            parcel.WriteString(historyHintType) &&
-            capturerInfo->Marshalling(parcel) &&
+        return capturerInfo->Marshalling(parcel) &&
             parcel.WriteInt32(loopbackStatus) &&
             parcel.WriteInt32(loopbackMode) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackOutputDeviceType)) &&
@@ -258,6 +368,7 @@ struct AudioDebugInfo : public Parcelable {
             MarshallingPipeInfo(parcel) &&
             MarshallingDeviceInfo(parcel) &&
             MarshallingVolumeInfo(parcel) &&
+            MarshallingInterruptInfo(parcel) &&
             MarshallingCapturerInfo(parcel);
     }
 
@@ -329,12 +440,27 @@ struct AudioDebugInfo : public Parcelable {
         effectMode = static_cast<AudioEffectMode>(parcel.ReadInt32());
         return true;
     }
+     
+    bool UnmarshallingInterruptInfo(Parcel &parcel)
+    {
+        focusState = static_cast<AudioFocuState>(parcel.ReadInt32());
+        uint32_t focusHistorySize = parcel.ReadUint32();
+        for (uint32_t i = 0; i < focusHistorySize; i++) {
+            AudioFocusBehavior item;
+            item.streamId = parcel.ReadUint32();
+            item.pid = parcel.ReadInt32();
+            item.uid = parcel.ReadInt32();
+            item.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+            item.sourceType = static_cast<SourceType>(parcel.ReadInt32());
+            item.hintType = static_cast<InterruptHint>(parcel.ReadInt32());
+            item.timestamp = parcel.ReadInt64();
+            focusHistory.push_back(item);
+        }
+        return true;
+    }
 
     bool UnmarshallingCapturerInfo(Parcel &parcel)
     {
-        hintType = parcel.ReadInt32();
-        historyHintType = parcel.ReadString();
-
         std::unique_ptr<AudioCapturerInfo> capturerInfoPtr(AudioCapturerInfo::Unmarshalling(parcel));
         if (capturerInfoPtr == nullptr) {
             return false;
@@ -385,6 +511,7 @@ struct AudioDebugInfo : public Parcelable {
         if (!info->UnmarshallingPipeInfo(parcel) ||
             !info->UnmarshallingDeviceInfo(parcel) ||
             !info->UnmarshallingVolumeInfo(parcel) ||
+            !info->UnmarshallingInterruptInfo(parcel) ||
             !info->UnmarshallingCapturerInfo(parcel)) {
             delete info;
             return nullptr;

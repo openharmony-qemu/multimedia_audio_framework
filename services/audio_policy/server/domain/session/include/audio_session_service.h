@@ -23,6 +23,7 @@
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
 #include "audio_session_device_info.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -92,6 +93,7 @@ public:
     AudioSessionActiveBehaviors GetSessionBehaviors(const int32_t callerPid);
     void SetRegisterStateChangeCallbackFlag(int32_t callerPid, const bool stateChangeCallbackFlag);
     void GetStateChangeCallbackFlag(int32_t callerPid, bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
+    void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
