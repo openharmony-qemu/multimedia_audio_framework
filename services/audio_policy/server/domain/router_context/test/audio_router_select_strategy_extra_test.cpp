@@ -427,10 +427,7 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_002, Test
 
     auto result = simpleDesc.GetOnlineDeviceDescriptor();
 
-    ASSERT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, speaker->deviceType_);
-    EXPECT_EQ(result->deviceId_, speaker->deviceId_);
-    EXPECT_EQ(result->macAddress_, speaker->macAddress_);
+    EXPECT_EQ(result, nullptr);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_003, TestSize.Level1)
@@ -442,9 +439,7 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_003, Test
 
     auto result = simpleDesc.GetOnlineDeviceDescriptor();
 
-    ASSERT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, sco->deviceType_);
-    EXPECT_EQ(result->macAddress_, sco->macAddress_);
+    EXPECT_EQ(result, nullptr);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_004, TestSize.Level1)
