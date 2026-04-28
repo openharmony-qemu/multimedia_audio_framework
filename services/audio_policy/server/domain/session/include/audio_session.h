@@ -44,7 +44,7 @@ public:
     bool IsSceneParameterSet();
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
     bool IsActivated();
-    std::vector<AudioInterrupt> GetStreams();
+    std::vector<std::pair<AudioInterrupt, AudioFocuState>> GetStreams();
     AudioStreamType GetFakeStreamType();
     void AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
     void RemoveStreamInfo(uint32_t streamId);
@@ -60,7 +60,6 @@ public:
     int32_t SetSessionDefaultOutputDevice(const DeviceType &deviceType, bool forceFetch = false);
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
-    int32_t GetAudioFocuStateByStreamId(uint32_t streamId, AudioFocuState &state);
     int32_t UpdateStreamFocusState(uint32_t streamId, AudioFocuState focuState);
     bool IsAllStreamsInState(AudioFocuState state);
     bool GetAndClearNeedToFetchFlag();

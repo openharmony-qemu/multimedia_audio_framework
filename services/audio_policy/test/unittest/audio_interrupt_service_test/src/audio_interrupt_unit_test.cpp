@@ -4835,14 +4835,20 @@ HWTEST_F(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level2)
 
     audioInterruptServiceWithSession->sessionService_.sessionMap_[CALLER_PID]->state_ =
         AudioSessionState::SESSION_ACTIVE;
+    const auto &streamsPair1 = audioInterruptServiceWithSession->sessionService_.GetStreams(CALLER_PID);
+    std::vector<AudioInterrupt> streams1;
+    for (const auto &[stream, state] : streamsPair1) {
+        streams1.push_back(stream);
+    }
     audioInterruptServiceWithSession->DelayToDeactivateStreamsInAudioSession(
-        DEFAULT_ZONE_ID, CALLER_PID, audioInterruptServiceWithSession->sessionService_.GetStreams(CALLER_PID));
+        DEFAULT_ZONE_ID, CALLER_PID, streams1);
 
     auto audioInterruptServiceWithoutHandler = std::make_shared<AudioInterruptService>();
     audioInterruptServiceWithoutHandler->SetCallbackHandler(nullptr);
     audioInterruptServiceWithoutHandler->sessionService_.sessionMap_[CALLER_PID] =
         std::make_shared<AudioSession>(CALLER_PID, strategy, audioSessionStateMonitor_);
-    audioInterruptServiceWithoutHandler->sessionService_.sessionMap_[CALLER_PID]->AddStreamInfo({audioInterrupt, ACTIVE});
+    audioInterruptServiceWithoutHandler->sessionService_.sessionMap_[CALLER_PID]->AddStreamInfo(
+        {audioInterrupt, ACTIVE});
 
     bool callbackCalled = false;
     auto callback = [&callbackCalled]() {
@@ -4850,9 +4856,13 @@ HWTEST_F(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level2)
     };
     audioInterruptServiceWithoutHandler->sessionService_.sessionMap_[CALLER_PID]->state_
         = AudioSessionState::SESSION_NEW;
+    const auto &streamsPair2 = audioInterruptServiceWithoutHandler->sessionService_.GetStreams(CALLER_PID);
+    std::vector<AudioInterrupt> streams2;
+    for (const auto &[stream, state] : streamsPair2) {
+        streams2.push_back(stream);
+    }
     audioInterruptServiceWithoutHandler->DelayToDeactivateStreamsInAudioSession(
-        DEFAULT_ZONE_ID, CALLER_PID, audioInterruptServiceWithoutHandler->sessionService_.GetStreams(CALLER_PID),
-        callback);
+        DEFAULT_ZONE_ID, CALLER_PID, streams2, callback);
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
     EXPECT_TRUE(callbackCalled);
@@ -5142,18 +5152,26 @@ HWTEST_F(AudioInterruptUnitTest, DeactivateAudioSessionErrorEventTest, TestSize.
     AudioInterrupt testInterrupt1;
     testInterrupt1.pid = 0;
     interruptServiceTest->sessionService_.AddStreamInfo({testInterrupt1, ACTIVE});
-    std::vector<AudioInterrupt> streamsInSession = interruptServiceTest->sessionService_.GetStreams(callerPid);
+    const auto &streamsInSessionPair1 = interruptServiceTest->sessionService_.GetStreams(callerPid);
+    std::vector<AudioInterrupt> streamsInSession1;
+    for (const auto &[stream, state] : streamsInSessionPair1) {
+        streamsInSession1.push_back(stream);
+    }
     EXPECT_NO_THROW(
-        interruptServiceTest->DeactivateAudioSessionErrorEvent(streamsInSession, callerPid);
+        interruptServiceTest->DeactivateAudioSessionErrorEvent(streamsInSession1, callerPid);
     );
     AudioInterrupt testInterrupt2;
     testInterrupt2.pid = 1;
     testInterrupt2.sessionId = 100000;
     testInterrupt2.audioFocusType.streamType = STREAM_MOVIE;
     interruptServiceTest->sessionService_.AddStreamInfo({testInterrupt2, ACTIVE});
-    streamsInSession = interruptServiceTest->sessionService_.GetStreams(callerPid);
+    const auto &streamsInSessionPair2 = interruptServiceTest->sessionService_.GetStreams(callerPid);
+    std::vector<AudioInterrupt> streamsInSession2;
+    for (const auto &[stream, state] : streamsInSessionPair2) {
+        streamsInSession2.push_back(stream);
+    }
     EXPECT_NO_THROW(
-        interruptServiceTest->DeactivateAudioSessionErrorEvent(streamsInSession, callerPid);
+        interruptServiceTest->DeactivateAudioSessionErrorEvent(streamsInSession2, callerPid);
     );
 }
  
@@ -5390,9 +5408,12 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateTest_001, TestSize.Level1
         }
     }
 
-    AudioFocuState state;
-    audioSession->GetAudioFocuStateByStreamId(streamId, state);
-    EXPECT_EQ(state, AudioFocuState::STANDBY);
+    auto streams = audioSession->GetStreams();
+    for (const auto &[stream, state] : streams) {
+        if (stream.streamId == streamId) {
+            EXPECT_EQ(state, AudioFocuState::STANDBY);
+        }
+    }
 }
 
 /**

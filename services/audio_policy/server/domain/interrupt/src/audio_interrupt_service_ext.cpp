@@ -149,6 +149,9 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
     activeInterrupt = audioFocusInfoList.end();
 
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
+        if (iterActive->second == AudioFocuState::STANDBY) {
+            continue;
+        }
         activeInterrupt = iterActive;
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
         // if peeling is the incomming interrupt while at the momount there are already some existing recordings
@@ -522,8 +525,8 @@ void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audi
     if (audioInterrupt.isAudioSessionInterrupt) {
         AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
             audioInterrupt.pid, muteFlag);
-        const auto &interruptsInSession = sessionService_.GetStreams(audioInterrupt.pid);
-        for (auto &interrupt : interruptsInSession) {
+        const auto &interruptsInSessionPair = sessionService_.GetStreams(audioInterrupt.pid);
+        for (const auto &[interrupt, state] : interruptsInSessionPair) {
             SetNonInterruptMute(interrupt.streamId, muteFlag);
         }
     } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {

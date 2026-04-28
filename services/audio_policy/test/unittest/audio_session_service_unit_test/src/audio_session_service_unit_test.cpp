@@ -793,12 +793,16 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_028, TestSize.
     audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
     audioSessionService_.sessionMap_[callerPid] = audioSession;
 
-    int32_t ret = audioSessionService_.UpdateStreamFocusState(callerPid, audioInterrupt.streamId, AudioFocuState::STANDBY);
+    int32_t ret = audioSessionService_.UpdateStreamFocusState(
+        callerPid, audioInterrupt.streamId, AudioFocuState::STANDBY);
     EXPECT_EQ(ret, SUCCESS);
 
-    AudioFocuState state;
-    audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId, state);
-    EXPECT_EQ(state, AudioFocuState::STANDBY);
+    auto streams = audioSession->GetStreams();
+    for (const auto &[stream, state] : streams) {
+        if (stream.streamId == audioInterrupt.streamId) {
+            EXPECT_EQ(state, AudioFocuState::STANDBY);
+        }
+    }
 }
 
 /**

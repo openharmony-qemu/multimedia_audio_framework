@@ -417,9 +417,9 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_020, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetAudioFocuStateByStreamId
+* @tc.name  : Test GetStreams
 * @tc.number: AudioSessionUnitTest_021
-* @tc.desc  : Test GetAudioFocuStateByStreamId function
+* @tc.desc  : Test GetStreams function returns correct state
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_021, TestSize.Level1)
 {
@@ -431,13 +431,23 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_021, TestSize.Level1)
     audioInterrupt.streamId = 100;
     audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
 
-    AudioFocuState state;
-    int32_t ret = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId, state);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(state, AudioFocuState::ACTIVE);
+    auto streams = audioSession->GetStreams();
+    bool found = false;
+    for (const auto &[stream, state] : streams) {
+        if (stream.streamId == audioInterrupt.streamId) {
+            EXPECT_EQ(state, AudioFocuState::ACTIVE);
+            found = true;
+        }
+    }
+    EXPECT_TRUE(found);
 
-    ret = audioSession->GetAudioFocuStateByStreamId(999, state);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::STANDBY};
+    streams = audioSession->GetStreams();
+    for (const auto &[stream, state] : streams) {
+        if (stream.streamId == audioInterrupt.streamId) {
+            EXPECT_EQ(state, AudioFocuState::STANDBY);
+        }
+    }
 }
 
 /**
@@ -458,9 +468,12 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_022, TestSize.Level1)
     int32_t ret = audioSession->UpdateStreamFocusState(audioInterrupt.streamId, AudioFocuState::STANDBY);
     EXPECT_EQ(ret, SUCCESS);
 
-    AudioFocuState state;
-    audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId, state);
-    EXPECT_EQ(state, AudioFocuState::STANDBY);
+    auto streams = audioSession->GetStreams();
+    for (const auto &[stream, state] : streams) {
+        if (stream.streamId == audioInterrupt.streamId) {
+            EXPECT_EQ(state, AudioFocuState::STANDBY);
+        }
+    }
 }
 
 /**

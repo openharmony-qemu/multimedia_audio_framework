@@ -90,11 +90,11 @@ bool AudioSession::IsActivated()
     return state_ == AudioSessionState::SESSION_ACTIVE;
 }
 
-std::vector<AudioInterrupt> AudioSession::GetStreams()
+std::vector<std::pair<AudioInterrupt, AudioFocuState>> AudioSession::GetStreams()
 {
-    std::vector<AudioInterrupt> streams;
+    std::vector<std::pair<AudioInterrupt, AudioFocuState>> streams;
     for (const auto &it : interruptMap_) {
-        streams.push_back(it.second.first);
+        streams.push_back(it.second);
     }
     return streams;
 }
@@ -409,23 +409,20 @@ bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
     return interruptMap_.count(streamId) != 0;
 }
 
-int32_t AudioSession::GetAudioFocuStateByStreamId(uint32_t streamId, AudioFocuState &state)
-{
-    auto it = interruptMap_.find(streamId);
-    if (it == interruptMap_.end()) {
-        AUDIO_ERR_LOG("streamId %u not found in interruptMap", streamId);
-        return ERR_INVALID_PARAM;
-    }
-    state = it->second.second;
-    return SUCCESS;
-}
-
 int32_t AudioSession::UpdateStreamFocusState(uint32_t streamId, AudioFocuState focuState)
 {
     auto it = interruptMap_.find(streamId);
     if (it == interruptMap_.end()) {
         AUDIO_ERR_LOG("streamId %u not found in interruptMap", streamId);
         return ERR_INVALID_PARAM;
+    }
+    if (focuState == AudioFocuState::STANDBY) {
+        if (it->second.second != AudioFocuState::ACTIVE &&
+            it->second.second != AudioFocuState::DUCK) {
+            AUDIO_INFO_LOG("streamId %u state %d, cannot set to STANDBY",
+                streamId, it->second.second);
+            return SUCCESS;
+        }
     }
     it->second.second = focuState;
     return SUCCESS;

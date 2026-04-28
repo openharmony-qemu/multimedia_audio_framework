@@ -338,7 +338,7 @@ bool AudioSessionService::ShouldAudioStreamProcessHintType(InterruptHint hintTyp
            hintType == INTERRUPT_HINT_UNMUTE;
 }
 
-std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t callerPid)
+std::vector<std::pair<AudioInterrupt, AudioFocuState>> AudioSessionService::GetStreams(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(callerPid);
@@ -388,8 +388,8 @@ bool AudioSessionService::HasStreamForDeviceType(int32_t callerPid, DeviceType d
     std::set<int32_t> streamIds =
         AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
 
-    std::vector<AudioInterrupt> streamsInSession = session->second->GetStreams();
-    for (const auto &stream : streamsInSession) {
+    const auto &streamsInSession = session->second->GetStreams();
+    for (const auto &[stream, state] : streamsInSession) {
         if (streamIds.find(stream.streamId) != streamIds.end()) {
             return true;
         }

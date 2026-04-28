@@ -64,7 +64,7 @@ public:
     bool IsAudioSessionFocusMode(int32_t callerPid);
     bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
-    std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
+    std::vector<std::pair<AudioInterrupt, AudioFocuState>> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
     void AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
     void RemoveStreamInfo(const int32_t callerPid, const uint32_t streamId);
