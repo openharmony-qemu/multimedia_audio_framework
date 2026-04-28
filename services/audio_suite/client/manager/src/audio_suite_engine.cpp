@@ -79,8 +79,8 @@ int32_t AudioSuiteEngine::Init()
 int32_t AudioSuiteEngine::DeInit()
 {
     isInit_.store(false);
-    engineThread_->ReleaseGroup();
     if (engineThread_ != nullptr) {
+        engineThread_->ReleaseGroup();
         engineThread_->DeactivateThread();
         engineThread_ = nullptr;
     }
@@ -535,6 +535,8 @@ int32_t AudioSuiteEngine::SetRequestDataCallback(uint32_t nodeId,
 
 int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not ConnectNodes.");
+
     auto request = [this, srcNodeId, destNodeId]() {
         AUDIO_DEBUG_LOG("ConnectNodes enter");
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {

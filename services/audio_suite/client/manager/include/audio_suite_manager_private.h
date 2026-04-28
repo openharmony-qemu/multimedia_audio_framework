@@ -91,7 +91,7 @@ public:
         AudioEqualizerFrequencyBandGains &frequencyBandGains) override;
     int32_t GetVoiceBeautifierType(uint32_t nodeId,
         VoiceBeautifierType &voiceBeautifierType) override;
-    int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool *isSupported) override;
+    int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported) override;
 
     // callback Member functions
     void OnCreatePipeline(int32_t result, uint32_t pipelineId) override;
@@ -182,7 +182,7 @@ void ParseValue(const std::string valueStr, float &speed, float &pitch);
 
 void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option);
 
-void ParseValue(const std::string &valueStr, int32_t *result);
+void ParseValue(const std::string &valueStr, std::vector<int32_t> &result);
 
 int32_t StringToInt32(std::string &str);
 

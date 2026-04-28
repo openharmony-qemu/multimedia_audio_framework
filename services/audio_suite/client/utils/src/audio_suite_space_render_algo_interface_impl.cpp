@@ -99,7 +99,9 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
 int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Deinit()
 {
     isSpaceRenderAlgoInit_ = false;
-    algoApi_.releaseAlgo(spaceRenderHandle_.data());
+    if (algoApi_.releaseAlgo != nullptr) {
+        algoApi_.releaseAlgo(spaceRenderHandle_.data());
+    }
     if (libHandle_ != nullptr) {
         int32_t ret = dlclose(libHandle_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "dlclose failed: %{public}s", dlerror());

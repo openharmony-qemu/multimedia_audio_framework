@@ -362,7 +362,7 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
 
     bool isSupported;
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, &isSupported);
+    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, isSupported);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         (error == SUCCESS && isSupported), ERR_NOT_SUPPORTED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
