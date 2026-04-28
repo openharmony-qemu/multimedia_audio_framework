@@ -1488,9 +1488,12 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
 
             CurrentOutputDeviceChangedEvent deviceChangedEvent;
             AudioRendererInfo rendererInfo;
-            rendererInfo.streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
+            auto streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
+            rendererInfo.streamUsage = (streamUsage <= STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) ?
+                STREAM_USAGE_MUSIC : streamUsage;
+            auto uid = pidUidMap_.count(it->first) > 0 ? pidUidMap_[it->first] : INVALID_UID;
             deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetPreferredOutputDeviceDescInner(
-                rendererInfo, eventContextObj->uid_, LOCAL_NETWORK_ID);
+                rendererInfo, uid, LOCAL_NETWORK_ID);
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
