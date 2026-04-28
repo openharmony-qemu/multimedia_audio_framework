@@ -1631,11 +1631,11 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
             (iter->first).audioFocusType.streamType = STREAM_MUSIC;
         }
         if (iter->first.isAudioSessionInterrupt) {
-             const auto &sessionStreams = sessionService_.GetStreams(iter->first.pid);
-             for (const auto &[stream, state] : sessionStreams) {
-                 if (state == AudioFocuState::STANDBY) {
-                     continue;
-                 }
+            const auto &sessionStreams = sessionService_.GetStreams(iter->first.pid);
+            for (const auto &[stream, state] : sessionStreams) {
+                if (state == AudioFocuState::STANDBY) {
+                    continue;
+                }
                 int32_t curPriority = GetStreamTypePriority(stream.audioFocusType.streamType);
                 if (curPriority < focusPriority) {
                     focusPriority = curPriority;
@@ -1735,7 +1735,7 @@ int32_t AudioInterruptService::UpdateStreamFocusStateToStandby(int32_t pid, uint
             if (iter.first.pid == pid && iter.first.isAudioSessionInterrupt) {
                 iter.second = AudioFocuState::STANDBY;
                 AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to STANDBY for pid %d", pid);
-                ResumeAudioFocusList(zoneId, false);
+                ResumeAudioFocusList(zonePair.first, false);
                 return SUCCESS;
             }
         }
@@ -1768,16 +1768,17 @@ int32_t AudioInterruptService::UpdateStreamFocusStateToActive(int32_t pid, uint3
             continue;
         }
         for (auto &iter : zonePair.second->audioFocusInfoList) {
-            if (iter.first.pid == pid && iter.first.isAudioSessionInterrupt) {
-                if (iter.second == AudioFocuState::STANDBY) {
-                    iter.second = AudioFocuState::ACTIVE;
-                    SendActiveVolumeTypeChangeEvent(zoneId);
-                    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
-                    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
-                    AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to ACTIVE for pid %d", pid);
-                }
-                return SUCCESS;
+            if (iter.first.pid != pid || !iter.first.isAudioSessionInterrupt) {
+                continue;
             }
+            if (iter.second == AudioFocuState::STANDBY) {
+                iter.second = AudioFocuState::ACTIVE;
+                SendActiveVolumeTypeChangeEvent(zoneId);
+                AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+                UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+                AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to ACTIVE for pid %d", pid);
+            }
+            return SUCCESS;
         }
     }
 
@@ -3630,8 +3631,8 @@ void AudioInterruptService::GetFocusDebugInfoByStreamId(uint32_t streamId, Audio
                 return;
             }
             CHECK_AND_CONTINUE(audioFocusPair.first.isAudioSessionInterrupt);
-            std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(audioFocusPair.first.pid);
-            for (auto &stream : sessionStreams) {
+            const auto &sessionStreamsPair = sessionService_.GetStreams(audioFocusPair.first.pid);
+            for (const auto &[stream, state] : sessionStreamsPair) {
                 CHECK_AND_CONTINUE(stream.streamId == streamId);
                 audioDebugInfo.focusState = audioFocusPair.second;
                 return;
@@ -3671,8 +3672,8 @@ void AudioInterruptService::RecordFocusHistory(const AudioInterrupt &currentInte
     focusBehavior.hintType = interruptEvent.hintType;
     focusBehavior.timestamp = ClockTime::GetCurMilli();
     if (currentInterrupt.isAudioSessionInterrupt) {
-        std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(currentInterrupt.pid);
-        for (auto &stream : sessionStreams) {
+        const auto &sessionStreamsPair = sessionService_.GetStreams(currentInterrupt.pid);
+        for (const auto &[stream, state] : sessionStreamsPair) {
             AddFocusHistory(stream.streamId, focusBehavior);
         }
     } else {

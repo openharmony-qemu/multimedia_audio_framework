@@ -553,11 +553,11 @@ void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
     sessionDebugInfo.state = state_;
     sessionDebugInfo.streamUsage = GetSessionStreamUsage();
     sessionDebugInfo.streamInfos.clear();
-    for (const auto &stream : streamsInSession_) {
+    for (const auto &iter : interruptMap_) {
         AudioStreamDebugInfo streamDebugInfo;
-        streamDebugInfo.streamId = stream.streamId;
-        streamDebugInfo.streamType = stream.audioFocusType.streamType;
-        streamDebugInfo.sourceType = stream.audioFocusType.sourceType;
+        streamDebugInfo.streamId = iter.second.first.streamId;
+        streamDebugInfo.streamType = iter.second.first.audioFocusType.streamType;
+        streamDebugInfo.sourceType = iter.second.first.audioFocusType.sourceType;
         sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
     }
 }
