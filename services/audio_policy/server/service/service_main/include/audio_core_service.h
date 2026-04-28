@@ -16,8 +16,10 @@
 #define AUDIO_CORE_SERVICE_H
 #include <atomic>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <unordered_set>
+#include <vector>
 
 #include "audio_policy_server_handler.h"
 #include "i_core_service_provider.h"
@@ -56,6 +58,7 @@
 #include "async_action_handler.h"
 #include "audio_policy_dump.h"
 #include "boot_animation_state_info.h"
+#include "multi_condition_waiter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,6 +83,11 @@ static const char* PIPE_ACCESSORY_INPUT = "accessory_input";
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_THRESHOLD = 2;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
+static constexpr int64_t READY_CONDITION_WAIT_TIMEOUT_MS = 5000; // 5s
+static constexpr int32_t READY_CONDITION_WAIT_LIMIT = 5;
+static constexpr uint64_t SERVICE_READY_MASK = 1ULL;
+static constexpr uint64_t REQUIRED_PIPE_READY_MASK = 1ULL << 1;
+static constexpr uint64_t READY_CONDITION_MASK = SERVICE_READY_MASK | REQUIRED_PIPE_READY_MASK;
 static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_EARPIECE,
@@ -108,7 +116,8 @@ class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
 public:
     class EventEntry : public ICoreServiceProvider, public IDeviceStatusObserver {
     public:
-        EventEntry(std::shared_ptr<AudioCoreService> coreService);
+        EventEntry(std::shared_ptr<AudioCoreService> coreService,
+            const MultiConditionNotifier &readyConditionNotifier);
         void RegistCoreService();
 
         // Stream operations
@@ -243,15 +252,13 @@ public:
     private:
         int32_t HandleSetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
         int32_t HandleUnsetAudioRouteSelectorCallback();
-        int32_t WaitForServiceReady();
+        int32_t WaitForReadyConditions();
         void NotifyServiceReady();
 
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
-        std::mutex serviceReadyMutex_;
-        std::condition_variable serviceReadyCV_;
-        std::atomic<bool> serviceReady_ = false;
-        int32_t serviceReadyWaitCount_ = 0;
+
+        MultiConditionWaiter readyConditionWaiter_;
         AudioPolicyDump &audioPolicyDump_;
     };
 
@@ -808,6 +815,8 @@ private:
 
     void CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void OnVehiclePriorityChanged(bool enable);
+    void NotifyServiceReady();
+    void NotifyRequiredPipesReady();
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -927,6 +936,8 @@ private:
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     int32_t isSupportUltraFast_ = 0;
+
+    MultiConditionNotifier readyConditionNotifier_;
 };
 
 class RestoreA2dpSinkAction : public AsyncActionHandler::AsyncAction {

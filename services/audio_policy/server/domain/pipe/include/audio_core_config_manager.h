@@ -16,6 +16,7 @@
 #define AUDIO_CORE_CONFIG_MANAGER_H
 
 #include <string>
+#include <vector>
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_info.h"
@@ -27,6 +28,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct RequiredPipeInfo {
+    std::string adapterName;
+    uint32_t routeFlag = AUDIO_FLAG_NONE;
+};
 
 class AudioCoreConfigManager {
 public:
@@ -129,6 +135,9 @@ public:
     AudioPolicyConfigData &GetAudioPolicyConfigData() const { return audioPolicyConfig_; }
     bool IsDeviceSimulated(std::shared_ptr<AudioDeviceDescriptor> desc);
 
+    void AddRequiredPipe(const RequiredPipeInfo &pipeInfo);
+    std::vector<RequiredPipeInfo> GetRequiredPipes();
+
     AudioCoreConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {
@@ -185,6 +194,7 @@ private:
     AudioPolicyConfigData &audioPolicyConfig_;
 
     std::optional<float> isSupportInnerCaptureOffload_ = std::nullopt;
+    std::vector<RequiredPipeInfo> requiredPipes_;
 };
 
 } // namespace AudioStandard

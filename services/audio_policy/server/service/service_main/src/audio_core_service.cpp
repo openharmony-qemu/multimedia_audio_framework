@@ -445,9 +445,8 @@ std::shared_ptr<AudioCoreService> AudioCoreService::GetCoreService()
 void AudioCoreService::Init()
 {
     serviceFlag_.reset();
-    eventEntry_ = std::make_shared<EventEntry>(shared_from_this());
+    eventEntry_ = std::make_shared<EventEntry>(shared_from_this(), readyConditionNotifier_);
     deviceStatusListener_ = std::make_shared<DeviceStatusListener>(*eventEntry_); // shared_ptr.get() -> *
-
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {
         audioA2dpOffloadManager_->Init();
@@ -457,6 +456,9 @@ void AudioCoreService::Init()
     AudioSelectInterfaceService::GetInstance().SetA2dpDeviceOffloadManager(audioA2dpOffloadManager_);
 
     audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
+    pipeManager_->SetRequiredPipesReadyCallback([notifier = readyConditionNotifier_]() mutable {
+        notifier.NotifySuccess(REQUIRED_PIPE_READY_MASK);
+    });
     pipeManager_->Init();
     SetConfigParserFlag();
 
@@ -4573,6 +4575,16 @@ int32_t AudioCoreService::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVol
         }
     }
     return SUCCESS;
+}
+
+void AudioCoreService::NotifyServiceReady()
+{
+    readyConditionNotifier_.NotifySuccess(SERVICE_READY_MASK);
+}
+
+void AudioCoreService::NotifyRequiredPipesReady()
+{
+    readyConditionNotifier_.NotifySuccess(REQUIRED_PIPE_READY_MASK);
 }
 } // namespace AudioStandard
 } // namespace OHOS

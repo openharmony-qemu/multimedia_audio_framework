@@ -15,10 +15,14 @@
 #ifndef AUDIO_PIPE_MANAGER_H
 #define AUDIO_PIPE_MANAGER_H
 
+#include <functional>
+#include <memory>
 #include <string>
 #include <mutex>
 #include <shared_mutex>
 #include <set>
+#include <unordered_set>
+#include <vector>
 
 #include "audio_stream_descriptor.h"
 #include "audio_module_info.h"
@@ -34,6 +38,8 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioPipeManager {
 public:
+    using RequiredPipesReadyCallback = std::function<void()>;
+
     AudioPipeManager();
     virtual ~AudioPipeManager();
 
@@ -73,6 +79,7 @@ public:
     }
 
     void AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info);
+    void SetRequiredPipesReadyCallback(RequiredPipesReadyCallback callback);
     void RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info);
     void RemoveAudioPipeInfo(AudioIOHandle id);
     void UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPipe);
@@ -193,6 +200,17 @@ private:
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void AddOrUpdateVolumeInfo(std::vector<PipeDeviceVolumeInfo>& result,
         AudioIOHandle pipeId, std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType);
+    bool AddAudioPipeInfoInner(std::shared_ptr<AudioPipeInfo> info);
+    bool UpdateRendererPipeInfosInner(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
+    bool UpdateCapturerPipeInfosInner(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
+    void InitRequiredPipes();
+    std::string GetRequiredPipeKey(const std::string &adapterName, uint32_t routeFlag);
+    bool IsRequiredPipesReadyLocked();
+    bool UpdateRequiredPipesReadyStateLocked(const std::shared_ptr<AudioPipeInfo> &pipeInfo);
+    bool UpdateRequiredPipesReadyStateLocked(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
+    bool UpdateRequiredPipeAddedStateLocked(const std::shared_ptr<AudioPipeInfo> &pipeInfo);
+    bool UpdateRequiredPipeAddedStateLocked(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
+    void NotifyRequiredPipesReady();
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};
@@ -202,6 +220,12 @@ private:
     mutable std::shared_mutex switchStreamMapLock_;
     AudioCoreConfigManager& audioConfigManager_;
     AudioConcurrencyManager &audioConcurrencyManager_;
+    bool requiredPipesInited_ = false;
+    bool requiredPipesReady_ = false;
+    std::unordered_set<std::string> requiredPipeKeys_;
+    std::unordered_set<std::string> addedRequiredPipeKeys_;
+    std::mutex requiredPipesReadyCallbackMutex_;
+    RequiredPipesReadyCallback requiredPipesReadyCallback_;
 };
 
 } // namespace AudioStandard
