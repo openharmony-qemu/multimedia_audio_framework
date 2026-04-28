@@ -227,6 +227,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicy_fuzzer/audioroutercenter_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiorouterinfra_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiorouterselectstrategy_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioselectinterface_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioa2dpdevice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioa2dpoffloadmanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioinjectorpolicy_fuzzer:fuzztest",
@@ -390,6 +391,7 @@ group("audio_fuzz_test") {
     "fuzztest/haudioworkgroupcallbackimpl_fuzzer:fuzztest",
     "fuzztest/hipcstreamlistenerimpl_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioroutermap_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioloudvolumemanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiosafevolumenotificationimpl_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioiohandlemap_fuzzer:fuzztest",
   ]
