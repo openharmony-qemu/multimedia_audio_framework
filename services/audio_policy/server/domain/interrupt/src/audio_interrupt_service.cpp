@@ -1682,7 +1682,7 @@ int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterr
     return SUCCESS;
 }
 
-bool AudioInterruptService::FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState)
+int32_t AudioInterruptService::FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState)
 {
     for (auto &zonePair : zonesMap_) {
         if (zonePair.second == nullptr) {
@@ -1697,20 +1697,22 @@ bool AudioInterruptService::FindAndUpdateFocusState(uint32_t streamId, AudioFocu
                 iter.second != AudioFocuState::DUCK) {
                 AUDIO_INFO_LOG("streamId %u state %d in zone, cannot set to STANDBY",
                     streamId, iter.second);
-                return true;
+                return zonePair.first;
             }
             iter.second = focuState;
-            return true;
+            return zonePair.first;
         }
     }
-    return false;
+    return -1;
 }
 
 int32_t AudioInterruptService::UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    if (FindAndUpdateFocusState(streamId, AudioFocuState::STANDBY)) {
-        AUDIO_INFO_LOG("streamId %u found in zone, state updated to STANDBY", streamId);
+    int32_t zoneId = FindAndUpdateFocusState(streamId, AudioFocuState::STANDBY);
+    if (zoneId != -1) {
+        AUDIO_INFO_LOG("streamId %u found in zone %d, state updated to STANDBY", streamId, zoneId);
+        ResumeAudioFocusList(zoneId, false);
         return SUCCESS;
     }
 
@@ -1733,6 +1735,7 @@ int32_t AudioInterruptService::UpdateStreamFocusStateToStandby(int32_t pid, uint
             if (iter.first.pid == pid && iter.first.isAudioSessionInterrupt) {
                 iter.second = AudioFocuState::STANDBY;
                 AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to STANDBY for pid %d", pid);
+                ResumeAudioFocusList(zoneId, false);
                 return SUCCESS;
             }
         }
@@ -1745,8 +1748,12 @@ int32_t AudioInterruptService::UpdateStreamFocusStateToStandby(int32_t pid, uint
 int32_t AudioInterruptService::UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    if (FindAndUpdateFocusState(streamId, AudioFocuState::ACTIVE)) {
-        AUDIO_INFO_LOG("streamId %u found in zone, state updated to ACTIVE", streamId);
+    int32_t zoneId = FindAndUpdateFocusState(streamId, AudioFocuState::ACTIVE);
+    if (zoneId != -1) {
+        SendActiveVolumeTypeChangeEvent(zoneId);
+        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+        AUDIO_INFO_LOG("streamId %u found in zone %d, state updated to ACTIVE", streamId, zoneId);
         return SUCCESS;
     }
 
@@ -1764,6 +1771,9 @@ int32_t AudioInterruptService::UpdateStreamFocusStateToActive(int32_t pid, uint3
             if (iter.first.pid == pid && iter.first.isAudioSessionInterrupt) {
                 if (iter.second == AudioFocuState::STANDBY) {
                     iter.second = AudioFocuState::ACTIVE;
+                    SendActiveVolumeTypeChangeEvent(zoneId);
+                    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+                    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
                     AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to ACTIVE for pid %d", pid);
                 }
                 return SUCCESS;

@@ -135,7 +135,7 @@ public:
     int32_t UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId);
 
 private:
-    bool FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState);
+    int32_t FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState);
 
 public:
     void ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id, const int32_t &oldId);
