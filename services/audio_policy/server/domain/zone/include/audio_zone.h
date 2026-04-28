@@ -34,8 +34,8 @@ public:
     explicit AudioZoneBindKey(int32_t uid);
     AudioZoneBindKey(int32_t uid, StreamUsage streamUsage);
     AudioZoneBindKey(int32_t uid, const std::string &deviceTag);
-    AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag);
-    AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
+    AudioZoneBindKey(int32_t uid, const std::string &deviceTag, uint32_t streamId);
+    AudioZoneBindKey(int32_t uid, const std::string &deviceTag, uint32_t streamId,
         const StreamUsage &usage);
     AudioZoneBindKey(const AudioZoneBindKey &other);
     AudioZoneBindKey(AudioZoneBindKey &&other);
@@ -46,16 +46,17 @@ public:
     bool operator!=(const AudioZoneBindKey &other) const;
 
     int32_t GetUid() const;
+    uint32_t GetStreamId() const;
     const std::string GetString() const;
     bool IsContain(const AudioZoneBindKey &other) const;
     const static std::vector<AudioZoneBindKey> GetSupportKeys(int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage);
+        uint32_t streamId, const StreamUsage &usage);
     const static std::vector<AudioZoneBindKey> GetSupportKeys(const AudioZoneBindKey &key);
 
 private:
     int32_t uid_ = INVALID_UID;
     std::string deviceTag_ = "";
-    std::string streamTag_ = "";
+    uint32_t streamId_ = INVALID_STREAM_ID;
     StreamUsage usage_ = StreamUsage::STREAM_USAGE_INVALID;
 
     void Assign(const AudioZoneBindKey &other);

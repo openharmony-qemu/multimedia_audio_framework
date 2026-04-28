@@ -149,6 +149,22 @@ int32_t AudioPolicyManager::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return gsp->RemoveUidFromAudioZone(zoneId, uid);
 }
 
+int32_t AudioPolicyManager::AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->AddStreamIdToAudioZone(zoneId, streamId);
+}
+
+int32_t AudioPolicyManager::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->RemoveStreamIdFromAudioZone(zoneId, streamId);
+}
+
 int32_t AudioPolicyManager::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
 {
     std::set<int32_t> usageSet;

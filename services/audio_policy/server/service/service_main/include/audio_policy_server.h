@@ -555,6 +555,10 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
 
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) override;
+
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
+
     int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
 
     int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;

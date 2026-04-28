@@ -106,6 +106,7 @@ public:
     int32_t zoneId_ = -1;
     std::string name_;
     std::set<int32_t> uids_;
+    std::set<uint32_t> streamIds_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices_;
     int32_t initMode_;
     int32_t supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_AND_RECORD);
@@ -119,6 +120,7 @@ public:
         result &= parcel.WriteInt32(initMode_);
         result &= parcel.WriteInt32(supportType_);
         result &= MarshallingSetInt32(uids_, parcel);
+        result &= MarshallingSetUInt32(streamIds_, parcel);
         if (!result) {
             return false;
         }
@@ -142,6 +144,7 @@ public:
         initMode_ = parcel.ReadInt32();
         supportType_ = parcel.ReadInt32();
         uids_ = UnmarshallingSetInt32<int32_t>(parcel);
+        streamIds_ = UnmarshallingSetUInt32<uint32_t>(parcel);
 
         size_t size = parcel.ReadUint64();
         if (size > ZONE_MAX_DEVICE_SIZE) {
