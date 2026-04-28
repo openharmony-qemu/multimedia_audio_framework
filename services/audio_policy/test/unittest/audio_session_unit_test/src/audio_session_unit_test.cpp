@@ -431,11 +431,13 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_021, TestSize.Level1)
     audioInterrupt.streamId = 100;
     audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
 
-    AudioFocuState state = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId);
+    AudioFocuState state;
+    int32_t ret = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId, state);
+    EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(state, AudioFocuState::ACTIVE);
 
-    state = audioSession->GetAudioFocuStateByStreamId(999);
-    EXPECT_EQ(state, AudioFocuState::PLACEHOLDER);
+    ret = audioSession->GetAudioFocuStateByStreamId(999, state);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -456,7 +458,8 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_022, TestSize.Level1)
     int32_t ret = audioSession->UpdateStreamFocusState(audioInterrupt.streamId, AudioFocuState::STANDBY);
     EXPECT_EQ(ret, SUCCESS);
 
-    AudioFocuState state = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId);
+    AudioFocuState state;
+    audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId, state);
     EXPECT_EQ(state, AudioFocuState::STANDBY);
 }
 

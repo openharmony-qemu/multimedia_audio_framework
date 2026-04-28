@@ -409,13 +409,15 @@ bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
     return interruptMap_.count(streamId) != 0;
 }
 
-AudioFocuState AudioSession::GetAudioFocuStateByStreamId(uint32_t streamId)
+int32_t AudioSession::GetAudioFocuStateByStreamId(uint32_t streamId, AudioFocuState &state)
 {
     auto it = interruptMap_.find(streamId);
-    if (it != interruptMap_.end()) {
-        return it->second.second;
+    if (it == interruptMap_.end()) {
+        AUDIO_ERR_LOG("streamId %u not found in interruptMap", streamId);
+        return ERR_INVALID_PARAM;
     }
-    return AudioFocuState::PLACEHOLDER;
+    state = it->second.second;
+    return SUCCESS;
 }
 
 int32_t AudioSession::UpdateStreamFocusState(uint32_t streamId, AudioFocuState focuState)

@@ -796,7 +796,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_028, TestSize.
     int32_t ret = audioSessionService_.UpdateStreamFocusState(callerPid, audioInterrupt.streamId, AudioFocuState::STANDBY);
     EXPECT_EQ(ret, SUCCESS);
 
-    AudioFocuState state = audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId);
+    AudioFocuState state;
+    audioSession->GetAudioFocuStateByStreamId(audioInterrupt.streamId, state);
     EXPECT_EQ(state, AudioFocuState::STANDBY);
 }
 
