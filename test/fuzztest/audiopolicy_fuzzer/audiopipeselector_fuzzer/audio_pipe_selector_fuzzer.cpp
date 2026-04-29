@@ -226,28 +226,9 @@ void ProcessRendererAndCapturerConcurrencyFuzzTest(FuzzedDataProvider& fdp)
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc);
-}
-
-void AdjustActionForRendererCapturerConcurrencyFuzzTest(FuzzedDataProvider& fdp)
-{
-    std::shared_ptr<AudioStreamDescriptor> existingStream = std::make_shared<AudioStreamDescriptor>();
-    CHECK_AND_RETURN(existingStream != nullptr);
-    std::shared_ptr<AudioStreamDescriptor> incomingStream = std::make_shared<AudioStreamDescriptor>();
-    CHECK_AND_RETURN(incomingStream != nullptr);
-    existingStream->routeFlag_ = GetData<uint32_t>();
-    incomingStream->routeFlag_ = GetData<uint32_t>();
-
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = GetData<uint32_t>();
-    pipeInfoList.push_back(pipeInfo);
-    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     ConcurrencyAction action = static_cast<ConcurrencyAction>(GetData<uint32_t>() % 4);
-    audioPipeSelector->AdjustActionForRendererCapturerConcurrency(existingStream, incomingStream, action);
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc, action);
 }
 
 void CheckFastStreamOverLimitToNormalFuzzTest(FuzzedDataProvider& fdp)
@@ -455,7 +436,6 @@ void Test(FuzzedDataProvider& fdp)
     FetchPipesAndExecuteFuzzTest,
     ProcessConcurrencyFuzzTest,
     ProcessRendererAndCapturerConcurrencyFuzzTest,
-    AdjustActionForRendererCapturerConcurrencyFuzzTest,
     CheckFastStreamOverLimitToNormalFuzzTest,
     IsSameAdapterFuzzTest,
     AddStreamToPipeAndUpdateActionFuzzTest,
