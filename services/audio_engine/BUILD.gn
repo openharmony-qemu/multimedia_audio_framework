@@ -134,6 +134,7 @@ config("audio_engine_node_config") {
     "../audio_policy/common/include",
     "../audio_policy/util/include",
     "../../frameworks/native/audioeffect/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../frameworks/native/audioclock/include",
     "../../frameworks/native/hdiadapter_new/include",
@@ -175,6 +176,7 @@ ohos_shared_library("audio_engine_node") {
     "node/src/hpae_audio_format_converter_node.cpp",
     "node/src/hpae_capture_effect_node.cpp",
     "node/src/hpae_co_buffer_node.cpp",
+    "node/src/hpae_fast_source_input_node.cpp",
     "node/src/hpae_gain_node.cpp",
     "node/src/hpae_inner_cap_sink_node.cpp",
     "node/src/hpae_loudness_gain_node.cpp",
@@ -242,6 +244,7 @@ ohos_shared_library("hpae_engine_manager") {
 
   sources = [
     "manager/src/hpae_capturer_manager.cpp",
+    "manager/src/hpae_fast_capturer_manager.cpp",
     "manager/src/hpae_inner_capturer_manager.cpp",
     "manager/src/hpae_manager.cpp",
     "manager/src/hpae_manager_impl.cpp",
