@@ -401,14 +401,14 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
     AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, uid, networkId);
+    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId)
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, uid, networkId);
+    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
 }
 
 int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,

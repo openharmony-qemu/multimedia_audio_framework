@@ -387,10 +387,14 @@ public:
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback, const int32_t uid = INVALID_UID);
 
     int32_t UnsetPreferredOutputDeviceChangeCallback(
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr,
+        const AudioRendererInfo &rendererInfo = {},
+        const int32_t uid = INVALID_UID);
 
     int32_t UnsetPreferredInputDeviceChangeCallback(
-        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr);
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr,
+        const AudioCapturerInfo &capturerInfo = {},
+        const int32_t uid = INVALID_UID);
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0);

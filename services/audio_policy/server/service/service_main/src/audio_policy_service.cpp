@@ -251,35 +251,23 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevic
     return audioDeviceLock_.GetDevices(deviceFlag);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
-{
-    return audioDeviceLock_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, uid);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
-{
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescInner(
-    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
-{
-    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
-}
-
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(audioRendererFilter->rendererInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, result, "AudioCoreService is null");
+    return coreService->GetPreferredOutputDeviceDescInner(audioRendererFilter->rendererInfo,
         LOCAL_NETWORK_ID, audioRendererFilter->uid, audioRendererFilter->streamId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
-    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(audioCapturerFilter->capturerInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, result, "AudioCoreService is null");
+    return coreService->GetPreferredInputDeviceDescInner(audioCapturerFilter->capturerInfo,
         LOCAL_NETWORK_ID, audioCapturerFilter->uid, audioCapturerFilter->streamId);
 }
 
@@ -558,59 +546,120 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERROR, "AudioCoreService is null");
+    auto eventEntry = coreService->GetEventEntry();
+    CHECK_AND_RETURN_RET_LOG(eventEntry != nullptr, ERROR, "EventEntry is null");
+
     AudioSamplingRate samplingRate = config.streamInfo.samplingRate;
     AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    int32_t result = SUCCESS;
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-            AudioRendererInfo rendererInfo = config.rendererInfo;
-            std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-                (lockFlag ? audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID)
-                          : audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID));
-            int32_t type = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
-                preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_,
-                samplingRate);
-            deviceInfo.deviceRole_ = OUTPUT_DEVICE;
-            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
-        }
-        AudioDeviceDescriptor curOutputDeviceDesc = AudioRouterSelectStrategy::GetInstance()
-            .Get1stCurrentOutputDevice(config.appInfo.appUid);
-        deviceInfo.deviceId_ = curOutputDeviceDesc.deviceId_;
-        deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
-        deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
-        deviceInfo.deviceRole_ = OUTPUT_DEVICE;
-        targetStreamInfo.format = curOutputDeviceDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ?
-            AudioCoreService::GetCoreService()->GetFastFormat() : SAMPLE_S16LE;
-
-        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
+        result = HandlePlaybackModeDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
     } else {
-        int32_t uid = GetRealUid(config);
-        if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            AudioCapturerInfo capturerInfo = config.capturerInfo;
-            std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-                (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID, uid)
-                : audioDeviceCommon_.GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID, uid));
-            int32_t type = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
-                preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_,
-                samplingRate);
-            deviceInfo.deviceRole_ = INPUT_DEVICE;
-            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
-        }
-        deviceInfo.deviceId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).deviceId_;
-        deviceInfo.networkId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).networkId_;
-        deviceInfo.deviceRole_ = INPUT_DEVICE;
-        deviceInfo.deviceType_ = audioActiveDevice_.GetCurrentInputDeviceType(uid);
+        result = HandleCaptureModeDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
+    }
+    if (result != SUCCESS) {
+        return result;
     }
 
-    // todo
-    // check process in routerMap, return target device for it
-    // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
-    // genarate the unique deviceid?
-    deviceInfo.audioStreamInfo_ = { targetStreamInfo };
+    deviceInfo.audioStreamInfo_ = {targetStreamInfo};
     deviceInfo.deviceName_ = "mmap_device";
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);
     deviceInfo.a2dpOffloadFlag_ = GetA2dpOffloadFlag();
     return SUCCESS;
+}
+
+bool AudioPolicyService::IsVoipStreamUsage(StreamUsage streamUsage)
+{
+    return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION;
+}
+
+void AudioPolicyService::SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
+    const AudioDeviceDescriptor &sourceDesc, DeviceRole role)
+{
+    deviceInfo.deviceId_ = sourceDesc.deviceId_;
+    deviceInfo.networkId_ = sourceDesc.networkId_;
+    deviceInfo.deviceType_ = sourceDesc.deviceType_;
+    deviceInfo.deviceRole_ = role;
+}
+
+int32_t AudioPolicyService::HandlePlaybackModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    if (IsVoipStreamUsage(config.rendererInfo.streamUsage)) {
+        return HandleVoipPlaybackDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
+    }
+
+    auto coreService = AudioCoreService::GetCoreService();
+    AudioDeviceDescriptor curOutputDeviceDesc = AudioRouterSelectStrategy::GetInstance()
+        .Get1stCurrentOutputDevice(config.appInfo.appUid);
+    SetCommonDeviceInfo(deviceInfo, curOutputDeviceDesc, OUTPUT_DEVICE);
+
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    targetStreamInfo.format = curOutputDeviceDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ?
+        coreService->GetFastFormat() : SAMPLE_S16LE;
+    deviceInfo.audioStreamInfo_ = {targetStreamInfo};
+
+    CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        return HandleVoipCaptureDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
+    }
+
+    int32_t uid = GetRealUid(config);
+    deviceInfo.deviceId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).deviceId_;
+    deviceInfo.networkId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).networkId_;
+    deviceInfo.deviceRole_ = INPUT_DEVICE;
+    deviceInfo.deviceType_ = audioActiveDevice_.GetCurrentInputDeviceType(uid);
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    AudioRendererInfo rendererInfo = config.rendererInfo;
+    int32_t uid = GetRealUid(config);
+    auto coreService = AudioCoreService::GetCoreService();
+    auto eventEntry = coreService->GetEventEntry();
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+        (lockFlag ? eventEntry->GetPreferredOutputDeviceDescriptors(rendererInfo, uid, LOCAL_NETWORK_ID)
+                  : coreService->GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID, uid));
+
+    int32_t type = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
+        preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_,
+        samplingRate);
+
+    deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+}
+
+int32_t AudioPolicyService::HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    AudioCapturerInfo capturerInfo = config.capturerInfo;
+    int32_t uid = GetRealUid(config);
+    auto coreService = AudioCoreService::GetCoreService();
+    auto eventEntry = coreService->GetEventEntry();
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+        (lockFlag ? eventEntry->GetPreferredInputDeviceDescriptors(capturerInfo, uid, LOCAL_NETWORK_ID)
+                  : coreService->GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID, uid));
+
+    int32_t type = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+        preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_,
+        samplingRate);
+
+    deviceInfo.deviceRole_ = INPUT_DEVICE;
+    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
 
 int32_t AudioPolicyService::GetRealUid(const AudioProcessConfig &config)

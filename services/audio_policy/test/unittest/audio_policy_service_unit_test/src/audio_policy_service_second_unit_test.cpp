@@ -1061,28 +1061,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnPreferredStateUpdated_001, TestSize.Le
 }
 
 /**
- * @tc.name  : Test CheckAndActiveHfpDevice.
- * @tc.number: CheckAndActiveHfpDevice_001
- * @tc.desc  : Test CheckAndActiveHfpDevice interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAndActiveHfpDevice_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_TRUE(server != nullptr);
-    AudioDeviceDescriptor desc;
-
-    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
-
-    desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
-    desc.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
-    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
-
-    desc.connectState_ = ConnectState::CONNECTED;
-    desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
-}
-
-/**
  * @tc.name  : Test IsDevicePlaybackSupported.
  * @tc.number: IsDevicePlaybackSupported_001
  * @tc.desc  : Test IsDevicePlaybackSupported interfaces.

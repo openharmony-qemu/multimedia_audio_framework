@@ -51,10 +51,10 @@ public:
     MOCK_METHOD(ErrCode, OnMicStateUpdated,
                 (const MicStateChangeEvent& micStateChangeEvent), (override));
     MOCK_METHOD(ErrCode, OnPreferredOutputDeviceUpdated,
-                (const AudioRendererInfo& rendererInfo,
+                (const AudioRendererInfo& rendererInfo, int32_t uid,
                  const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc), (override));
     MOCK_METHOD(ErrCode, OnPreferredInputDeviceUpdated,
-                (const AudioCapturerInfo& capturerInfo,
+                (const AudioCapturerInfo& capturerInfo, int32_t uid,
                  const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc), (override));
     MOCK_METHOD(ErrCode, OnRendererStateChange,
                 (const std::vector<std::shared_ptr<AudioRendererChangeInfo>>& audioRendererChangeInfos), (override));

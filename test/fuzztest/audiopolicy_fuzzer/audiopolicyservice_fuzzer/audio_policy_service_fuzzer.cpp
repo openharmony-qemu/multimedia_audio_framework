@@ -401,26 +401,6 @@ void AudioPolicyServiceGetDevicesFuzztest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
 }
 
-void AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioCapturerInfo captureInfo;
-    std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, -1);
-}
-
-void AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioRendererInfo rendererInfo;
-    std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, -1);
-}
-
 void AudioPolicyServiceGetOutputDeviceFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -865,16 +845,6 @@ void AudioPolicyServiceIsDevicePlaybackSupportedFuzztest(const uint8_t *rawData,
     GetServerPtr()->audioPolicyService_.IsDevicePlaybackSupported(config, deviceInfo);
 }
 
-void GetPreferredInputDeviceDescInnerFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioCapturerInfo captureInfo;
-    std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId, -1);
-}
-
 void AudioPolicyServiceOnPrivacyDeviceSelectedFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -964,8 +934,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceNotifyWakeUpCapturerRemovedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceIsAbsVolumeSupportedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetDevicesFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetOutputDeviceFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetInputDeviceFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOnUpdateAnahsSupportFuzztest,
@@ -1013,7 +981,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerRemovedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceUpdateSpatializationSupportedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceIsDevicePlaybackSupportedFuzztest,
-    OHOS::AudioStandard::GetPreferredInputDeviceDescInnerFuzzTest,
     OHOS::AudioStandard::AudioPolicyServiceOnPrivacyDeviceSelectedFuzztest,
     OHOS::AudioStandard::IsSupportInnerCaptureOffloadFuzzTest,
     OHOS::AudioStandard::LoadModernInnerCapSinkFuzzTest,
