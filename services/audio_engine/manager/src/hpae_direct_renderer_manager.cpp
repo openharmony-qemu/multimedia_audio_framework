@@ -349,7 +349,8 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
     if (curNode_->GetState() != HPAE_SESSION_RUNNING) {
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetSinkState() != STREAM_MANAGER_NEW, ERROR, "sink output node is not init");
+    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetSinkState() != STREAM_MANAGER_NEW, ERROR,
+        "sink output node is not init");
     // Connect nodes: sinkOutputNode <- converterForOutput <- [limiterNode]
     // <- gainNode/volumeSyncNode <- converterForGain <- curNode
     // Note: limiterNode is only present when channels > STEREO
@@ -497,7 +498,8 @@ int32_t HpaeDirectRendererManager::Stop(uint32_t sessionId)
             }
         } else {
             node->SetState(HPAE_SESSION_STOPPED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(),
+                OPERATION_STOPPED);
         }
     };
     SendRequest(request, __func__);
