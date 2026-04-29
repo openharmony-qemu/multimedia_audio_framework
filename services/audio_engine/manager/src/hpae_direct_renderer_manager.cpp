@@ -280,7 +280,7 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
     nodeInfo.sessionId = sessionId;
     nodeInfo.streamType = curNode_->GetStreamType();
-    HpaeNodeInfo preNodeInfo = curNode_->GetNodeInfo(); 
+    HpaeNodeInfo preNodeInfo = curNode_->GetNodeInfo();
     converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, sinkOutputNode_->GetNodeInfo());
     converterForOutput_->SetDownmixNormalization(false);
 
@@ -350,7 +350,7 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetSinkState() != STREAM_MANAGER_NEW, ERROR, "sink output node is not init");
-    // Connect nodes: sinkOutputNode <- converterForOutput <- [limiterNode] 
+    // Connect nodes: sinkOutputNode <- converterForOutput <- [limiterNode]
     // <- gainNode/volumeSyncNode <- converterForGain <- curNode
     // Note: limiterNode is only present when channels > STEREO
     sinkOutputNode_->Connect(converterForOutput_);

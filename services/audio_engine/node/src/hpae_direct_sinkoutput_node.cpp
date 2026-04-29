@@ -184,8 +184,8 @@ void HpaeDirectSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 int32_t HpaeDirectSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
     const std::string &deviceNetworkId)
 {
-     renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, "", true,
-         true, GetNodeInfo().routeFlag);
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, "", true,
+        true, GetNodeInfo().routeFlag);
     std::string sinkName = (deviceClass == "primary_direct_voip") ? HDI_ID_INFO_VOIP : HDI_ID_INFO_DIRECT;
     renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY,
         sinkName, true);
