@@ -92,11 +92,6 @@ void AudioSuiteRawFormatConversion::Reset()
     formatsSame_ = false;
 }
 
-uint32_t AudioSuiteRawFormatConversion::CalculateOutputSampleCount(uint32_t inSampleCount, double ratio)
-{
-    return static_cast<uint32_t>(std::ceil(inSampleCount * ratio));
-}
-
 int32_t AudioSuiteRawFormatConversion::Process11025SpecialCase(
     const float *inputData, uint32_t inFrameSize, float *outputData, uint32_t &outFrameSize, uint32_t channelCount)
 {

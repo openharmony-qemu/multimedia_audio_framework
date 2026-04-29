@@ -45,9 +45,6 @@ public:
     void Reset();
 
 private:
-    // Calculate output sample count based on input and ratio
-    uint32_t CalculateOutputSampleCount(uint32_t inSampleCount, double ratio);
-
     // Handle special processing for 11025Hz sample rate
     int32_t Process11025SpecialCase(const float* inputData, uint32_t inFrameSize,
         float* outputData, uint32_t& outFrameSize, uint32_t channelCount);
