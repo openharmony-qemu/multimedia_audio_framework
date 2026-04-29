@@ -137,7 +137,7 @@ HWTEST_F(HpaeFastSourceInputNodeTest, ConstructAndPortApis, TestSize.Level0)
     std::shared_ptr<OutputNode<HpaePcmBuffer *>> outputNode = fastNode;
     std::shared_ptr<HpaeNode> sharedNode = outputNode->GetSharedInstance();
     ASSERT_NE(sharedNode, nullptr);
-    EXPECT_EQ(sharedNode->GetNodeId(), FAST_NODE_ID);
+    EXPECT_EQ(sharedNode->GetNodeId(), fastNode->GetNodeId());
 
     HpaeNodeInfo otherNodeInfo = CreateFastNodeInfo();
     EXPECT_EQ(fastNode->GetOutputPort(), fastNode->GetOutputPort(otherNodeInfo, true));
