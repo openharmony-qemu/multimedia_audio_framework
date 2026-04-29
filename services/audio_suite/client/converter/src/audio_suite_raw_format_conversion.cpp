@@ -175,6 +175,7 @@ int32_t AudioSuiteRawFormatConversion::ConvertToFloat(
     const uint8_t *inData, uint32_t inDataSize, std::vector<float> &outBuffer)
 {
     uint32_t inputSampleSize = AudioSuiteUtil::GetSampleSize(inputFormat_.sampleFormat);
+    CHECK_AND_RETURN_RET_LOG(inputSampleSize != 0, ERR_INVALID_PARAM, "inputSampleSize cannot be zero.");
     uint32_t inSampleCount = inDataSize / inputSampleSize;
 
     outBuffer.resize(inSampleCount);

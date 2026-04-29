@@ -598,7 +598,7 @@ AudioConvertResult AudioFormatConverterImpl::ValidateSampleRateParams(uint32_t i
 AudioConvertResult AudioFormatConverterImpl::ValidateMinBytesParams(uint32_t inSampleCount, uint32_t inputBytes)
 {
     AudioConvertResult result = {nullptr, 0, ERR_INVALID_PARAM};
- 
+    CHECK_AND_RETURN_RET_LOG(inSampleCount != 0, result, "inSampleCount cannot be zero as a divisor.");
     uint32_t inputSampleSize = inputBytes / inSampleCount;
     uint32_t inputBytesPerFrame = inputSampleSize * inputFormat_.channelCount;
     uint32_t minBytesForIntMs = CalculateMinBytesForIntMs(inputBytesPerFrame);
@@ -624,6 +624,8 @@ AudioConvertResult AudioFormatConverterImpl::ExecuteConversion(const uint8_t* in
     CHECK_AND_RETURN_RET_LOG(!outputDataVector_.empty(), result, "Process: output vector is empty");
  
     uint32_t outputSampleSize = AudioSuiteUtil::GetSampleSize(outputFormat_.sampleFormat);
+    result = {nullptr, 0, ERR_INVALID_PARAM};
+    CHECK_AND_RETURN_RET_LOG(outputSampleSize != 0, result, "outputSampleSize cannot be zero as a divisor.");
     result.outData = outputDataVector_.data();
     result.outSampleCount = outputDataVector_.size() / outputSampleSize;
     result.errCode = SUCCESS;

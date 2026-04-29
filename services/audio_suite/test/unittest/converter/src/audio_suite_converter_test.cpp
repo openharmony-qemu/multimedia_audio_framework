@@ -37,6 +37,9 @@ constexpr uint32_t EXTRA_LARGE_BUFFER_SIZE = 50000;
 constexpr uint32_t LOOP_NUMBER = 10000000;
 constexpr uint32_t HASH_BUFFER_SIZE = 8192;
 static int32_t g_requestDataCallCount = 0;
+constexpr uint32_t REQUIRED_MS_FOR_11025HZ = 40;
+constexpr uint32_t MIN_FRAMES_FOR_20MS = 20;
+constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
 // MD5 constants
 constexpr uint32_t MD5_BLOCK_SIZE = 64;
 constexpr uint32_t MD5_DIGEST_SIZE = 16;
@@ -575,37 +578,37 @@ static OHConverterTestInfo g_converterTestCasesDirectProcess[] = {
         AudioSampleFormat::SAMPLE_S24LE,
         AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE},
-        {"ch_in_014.pcm", "innerch_out_017.pcm", "828b0a6cdfffbbdfb986fb8475b0bc68",
+    {"ch_in_014.pcm", "innerch_out_017.pcm", "828b0a6cdfffbbdfb986fb8475b0bc68",
         AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
         AudioSampleFormat::SAMPLE_S24LE,
         AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S24LE},
-        {"ch_in_014.pcm", "innerch_out_018.pcm", "c1caf629896d98125f31b99e5062f675",
+    {"ch_in_014.pcm", "innerch_out_018.pcm", "c1caf629896d98125f31b99e5062f675",
         AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
         AudioSampleFormat::SAMPLE_S24LE,
         AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
         AudioSampleFormat::SAMPLE_S16LE},
-        {"ch_in_014.pcm", "innerch_out_019.pcm", "fb5d08b6a4dbc5e90c69f3214ab79169",
+    {"ch_in_014.pcm", "innerch_out_019.pcm", "fb5d08b6a4dbc5e90c69f3214ab79169",
         AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
         AudioSampleFormat::SAMPLE_S24LE,
         AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE},
-        {"in_converter_22050_2_s24le.pcm", "innerch_out_020.pcm", "1f7e50aecfddcb4fe6f3c472a7469f49",
+    {"in_converter_22050_2_s24le.pcm", "innerch_out_020.pcm", "1f7e50aecfddcb4fe6f3c472a7469f49",
         AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S24LE,
         AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_MONO,
         AudioSampleFormat::SAMPLE_S16LE},
-        {"in_converter_44100_2_s16le.pcm", "innerch_out_021.pcm", "f7ecbec6321922dc0a6f93e93ba801a2",
+    {"in_converter_44100_2_s16le.pcm", "innerch_out_021.pcm", "f7ecbec6321922dc0a6f93e93ba801a2",
         AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE,
         AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
         AudioSampleFormat::SAMPLE_S24LE},
-        {"in_converter_11025_1_s16.pcm", "innerch_out_022.pcm", "c274111c0facfae79fea46c3a7a6153b",
+    {"in_converter_11025_1_s16.pcm", "innerch_out_022.pcm", "c274111c0facfae79fea46c3a7a6153b",
         AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_MONO,
         AudioSampleFormat::SAMPLE_S16LE,
         AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE},
-        {"in_converter_44100_2_s16le.pcm", "innerch_out_023.pcm", "311b73417d67674c7bf0bf7eafc75529",
+    {"in_converter_44100_2_s16le.pcm", "innerch_out_023.pcm", "311b73417d67674c7bf0bf7eafc75529",
         AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE,
         AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_MONO,
@@ -751,9 +754,15 @@ static bool ReadInputFileData(const std::string& filePath, std::vector<uint8_t>&
         return false;
     }
     
-    fseek(inputFile, 0, SEEK_END);
+    int32_t result = fseek(inputFile, 0, SEEK_END);
+    if (result != 0) {
+        return false;
+    }
     long fileSize = ftell(inputFile);
-    fseek(inputFile, 0, SEEK_SET);
+    result = fseek(inputFile, 0, SEEK_SET);
+    if (result != 0) {
+        return false;
+    }
     
     if (fileSize <= 0) {
         fclose(inputFile);
@@ -762,14 +771,16 @@ static bool ReadInputFileData(const std::string& filePath, std::vector<uint8_t>&
     
     inputData.resize(fileSize);
     size_t bytesRead = fread(inputData.data(), 1, fileSize, inputFile);
-    fclose(inputFile);
+    result = fclose(inputFile);
+    if (result != 0) {
+        return false;
+    }
     
     return bytesRead == static_cast<size_t>(fileSize);
 }
 
 // Helper function to calculate sample sizes
-static bool CalculateSampleSizes(const OHConverterTestInfo& info, uint32_t& inputSampleSize,
-                                  uint32_t& outputSampleSize)
+static bool CalculateSampleSizes(const OHConverterTestInfo& info, uint32_t& inputSampleSize, uint32_t& outputSampleSize)
 {
     inputSampleSize = AudioSuite::AudioSuiteUtil::GetSampleSize(info.inputSampleFormat);
     if (inputSampleSize == 0) {
@@ -787,24 +798,24 @@ static bool CalculateProcessingParameters(const OHConverterTestInfo& info, uint3
 {
     uint32_t inputSampleRate = static_cast<uint32_t>(info.inputSampleRate);
     uint32_t outputSampleRate = static_cast<uint32_t>(info.outputSampleRate);
-    double samplesPerMs = static_cast<double>(inputSampleRate * channelCount) / 1000;
+    double samplesPerMs = static_cast<double>(inputSampleRate * channelCount) / MILLISECONDS_PER_SECOND;
     
     bool is11025Hz = (info.inputSampleRate == AudioSamplingRate::SAMPLE_RATE_11025 ||
                      info.outputSampleRate == AudioSamplingRate::SAMPLE_RATE_11025);
     
-    samplesPerCall = is11025Hz ? static_cast<uint32_t>(samplesPerMs * 40) :
-                                 static_cast<uint32_t>(samplesPerMs * 20);
+    samplesPerCall = is11025Hz ? static_cast<uint32_t>(samplesPerMs * REQUIRED_MS_FOR_11025HZ) :
+                                 static_cast<uint32_t>(samplesPerMs * MIN_FRAMES_FOR_20MS);
     
     if (samplesPerCall == 0) {
         return false;
     }
     
     uint64_t gcd = std::gcd(static_cast<uint64_t>(inputSampleRate), static_cast<uint64_t>(outputSampleRate));
-    uint64_t gcdSecond = std::gcd(gcd, static_cast<uint64_t>(1000));
-    uint32_t minTimeMs = static_cast<uint32_t>(1000 / gcdSecond);
+    uint64_t gcdSecond = std::gcd(gcd, static_cast<uint64_t>(MILLISECONDS_PER_SECOND));
+    uint32_t minTimeMs = static_cast<uint32_t>(MILLISECONDS_PER_SECOND / gcdSecond);
     
     uint32_t inputBytesPerFrame = inputSampleSize * channelCount;
-    minBytesForIntMs = (inputSampleRate * inputBytesPerFrame * minTimeMs) / 1000;
+    minBytesForIntMs = (inputSampleRate * inputBytesPerFrame * minTimeMs) / MILLISECONDS_PER_SECOND;
     
     if (minBytesForIntMs == 0) {
         return false;
@@ -815,8 +826,7 @@ static bool CalculateProcessingParameters(const OHConverterTestInfo& info, uint3
 }
 
 // Helper function to write output data
-static bool WriteOutputData(const AudioSuite::AudioConvertResult& result,
-                             uint32_t outputSampleSize, FILE* outputFile)
+static bool WriteOutputData(const AudioSuite::AudioConvertResult& result, uint32_t outputSampleSize, FILE* outputFile)
 {
     if (result.outData == nullptr || result.outSampleCount == 0) {
         return true;
@@ -861,13 +871,13 @@ static bool ProcessDataInBatches(const ProcessBatchParams& params)
 }
 
 // Test function for new Process(inData, inSampleCount) interface
-static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo& info)
+static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
 {
     auto converter = CreateConverter(info);
     if (converter == nullptr) {
         return false;
     }
-    
+
     // Read input file
     std::string inputFilePath = CONVERTER_TEST_DIR + info.inputFileName;
     std::vector<uint8_t> inputData;
@@ -875,7 +885,7 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo& info)
         converter->Destroy();
         return false;
     }
-    
+
     // Calculate sample sizes
     uint32_t inputSampleSize = 0;
     uint32_t outputSampleSize = 0;
@@ -883,31 +893,30 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo& info)
         converter->Destroy();
         return false;
     }
-    
+
     // Get channel count
     auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.inputChannelLayout);
-    uint32_t channelCount = (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ?
-                           static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
-    
+    uint32_t channelCount =
+        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
+
     // Calculate processing parameters
     uint32_t samplesPerCall = 0;
     uint32_t minBytesForIntMs = 0;
-    if (!CalculateProcessingParameters(info, inputSampleSize, channelCount,
-                                        samplesPerCall, minBytesForIntMs)) {
+    if (!CalculateProcessingParameters(info, inputSampleSize, channelCount, samplesPerCall, minBytesForIntMs)) {
         converter->Destroy();
         return false;
     }
-    
+
     uint32_t totalInputSampleCount = static_cast<uint32_t>(inputData.size() / inputSampleSize);
-    
+
     // Open output file
     std::string outputFilePath = CONVERTER_TEST_DIR + info.outputFileName;
-    FILE* outputFile = fopen(outputFilePath.c_str(), "wb");
+    FILE *outputFile = fopen(outputFilePath.c_str(), "wb");
     if (outputFile == nullptr) {
         converter->Destroy();
         return false;
     }
-    
+
     // Process data in batches
     ProcessBatchParams params = {converter.get(),
         &inputData,
@@ -918,13 +927,16 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo& info)
         outputFile};
     bool success = ProcessDataInBatches(params);
 
-    fclose(outputFile);
+    int32_t result = fclose(outputFile);
+    if (result != 0) {
+        return false;
+    }
     converter->Destroy();
-    
+
     if (success) {
         VerifyResults(info);
     }
-    
+
     return success;
 }
 
