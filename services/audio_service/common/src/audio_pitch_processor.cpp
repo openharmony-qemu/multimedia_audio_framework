@@ -282,19 +282,15 @@ int32_t AudioPitchProcessor::ProcessBufferPitch(int8_t *inputBuffer, size_t inpu
 {
     CHECK_AND_RETURN_RET_LOG(IsValidChannelCount(), ERR_NOT_SUPPORTED,
         "Unsupported channel count: %{public}u, only support 1 or 2 channels", channels_);
-    
-    CHECK_AND_RETURN_RET_LOG(inputBuffer != nullptr && inputSize > 0,
-        ERR_INVALID_PARAM, "Invalid input params");
-    CHECK_AND_RETURN_RET_LOG(outputBuffer != nullptr,
-        ERR_INVALID_PARAM, "Invalid output buffer");
-    CHECK_AND_RETURN_RET_LOG(algoHandle_ != nullptr,
-        ERR_INVALID_PARAM, "Pitch processor not initialized");
-    CHECK_AND_RETURN_RET_LOG(format_ != INVALID_WIDTH,
-        ERR_INVALID_PARAM, "Invalid format");
+    CHECK_AND_RETURN_RET_LOG(inputBuffer != nullptr && inputSize > 0, ERR_INVALID_PARAM, "Invalid input params");
+    CHECK_AND_RETURN_RET_LOG(outputBuffer != nullptr, ERR_INVALID_PARAM, "Invalid output buffer");
+    CHECK_AND_RETURN_RET_LOG(algoHandle_ != nullptr, ERR_INVALID_PARAM, "Pitch processor not initialized");
     
     int32_t totalSamples = static_cast<int32_t>(inputSize / PcmFormatToBits(format_));
-    AUDIO_INFO_LOG("ProcessBufferPitch: inputSize=%{public}zu, channels=%{public}u, totalSamples=%{public}u",
+    AUDIO_DEBUG_LOG("ProcessBufferPitch: inputSize=%{public}zu, channels=%{public}u, totalSamples=%{public}u",
         inputSize, channels_, totalSamples);
+    Trace traceProcess("ProcessBufferPitch: inputSize=" + std::to_string(inputSize) + "channels= " +
+        std::to_string(channels_) + "totalSamples= " + std::to_string(totalSamples));
     
     int32_t ret = ConvertToS16Internal(inputBuffer, inputSize, internalS16Buffer_, totalSamples);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConvertToS16Internal failed");
@@ -311,7 +307,7 @@ int32_t AudioPitchProcessor::ProcessBufferPitch(int8_t *inputBuffer, size_t inpu
     ret = ConvertFromS16ToOriginal(processedBuffer, outputBuffer, outputSize, processedBuffer.size());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConvertFromS16ToOriginal failed");
     
-    AUDIO_INFO_LOG("ProcessBufferPitch done: outputSize=%{public}zu", outputSize);
+    AUDIO_DEBUG_LOG("ProcessBufferPitch done: outputSize=%{public}zu", outputSize);
     return SUCCESS;
 }
 

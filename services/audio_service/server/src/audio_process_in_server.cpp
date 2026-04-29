@@ -1506,6 +1506,7 @@ int32_t AudioProcessInServer::SetStaticRenderRate(uint32_t renderRate)
     CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(renderRate), SUCCESS);
     audioRenderRate_ = static_cast<AudioRendererRate>(renderRate);
     speed_ = ConvertAudioRenderRateToSpeed(audioRenderRate_);
+    pitch_ = speed_;
     CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
         "ProcessAndSetStaticBuffer fail!");
     return SUCCESS;
@@ -1675,6 +1676,8 @@ int32_t AudioProcessInServer::SetMuteHint(bool mute)
 
 int32_t AudioProcessInServer::SetStaticPitch(float pitch)
 {
+    CHECK_AND_RETURN_RET_LOG(pitch >= MIN_STREAM_PITCH_LEVEL && pitch <= MAX_STREAM_PITCH_LEVEL,
+        ERR_INVALID_PARAM, "Invalid pitch: %{public}f", pitch);
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
     CHECK_AND_RETURN_RET_LOG(processBuffer_->GetStaticMode(), ERR_INCORRECT_MODE, "not in static Mode");
     pitch_ = pitch;

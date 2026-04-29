@@ -380,7 +380,6 @@ private:
 
     float pitch_ = 1.0f;
     float speed_ = 1.0f;
-    float pitchSpeed_ = 1.0f;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;

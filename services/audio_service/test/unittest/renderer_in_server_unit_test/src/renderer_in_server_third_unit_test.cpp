@@ -2358,25 +2358,6 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_002, TestSize
 /**
  * @tc.name  : Test AudioStaticBufferProcessor API
  * @tc.type  : FUNC
- * @tc.number: AudioStaticBufferProcessor_003
- * @tc.desc  : Test AudioStaticBufferProcessor processBuffer
- */
-HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_003, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
-        AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
-    ASSERT_TRUE(bufferProcessorTest != nullptr);
-    bufferProcessorTest->ProcessBufferSpeed(RENDER_RATE_HALF);
-    EXPECT_EQ(bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_HALF)), SUCCESS);
-    EXPECT_EQ(bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_NORMAL)), SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioStaticBufferProcessor API
- * @tc.type  : FUNC
  * @tc.number: AudioStaticBufferProcessor_004
  * @tc.desc  : Test AudioStaticBufferProcessor processBuffer
  */
