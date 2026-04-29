@@ -90,7 +90,7 @@ CapturerInServer::~CapturerInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
-    if (needCheckBackground_) {
+    if (isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     TurnOffRemoteMicIndicator();
