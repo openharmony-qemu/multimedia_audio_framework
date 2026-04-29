@@ -156,7 +156,7 @@ AudioProcessInServer::~AudioProcessInServer()
     convertedBuffer_.buffer = nullptr;
     
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     TurnOffRemoteMicIndicator();
