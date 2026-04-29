@@ -77,7 +77,6 @@ void HpaeFastRendererManager::RemoveNodeFromMap(uint32_t sessionId)
     RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     sinkInputNodeMap_.erase(sessionId);
-
 }
 
 int32_t HpaeFastRendererManager::CreateFastNodes(const HpaeNodeInfo &nodeInfo)
@@ -976,7 +975,7 @@ int32_t HpaeFastRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInf
                 ConnectInputCluster(sessionId);
             }
             NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId,
-                 ConvertHpaeToRendererState(node->GetState()));
+                ConvertHpaeToRendererState(node->GetState()));
         }
     };
     SendRequest(request, __func__, true);
