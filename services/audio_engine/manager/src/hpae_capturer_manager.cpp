@@ -146,7 +146,7 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
 {
     CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && !SafeGetMap(sceneClusterMap_, sceneType));
     // DEVICE_TYPE_ACCESSORY effect move to HAL
-    CHECK_AND_RETURN_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
+    CHECK_AND_RETURN_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY,
         "deviceType %{public}d needn't create effect", sourceInfo_.deviceType);
 
     // todo: algorithm instance count control
