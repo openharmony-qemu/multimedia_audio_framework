@@ -1069,7 +1069,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION && usg != STREAM_USAGE_VOICE_MESSAGE) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
             continue;
         }
 
