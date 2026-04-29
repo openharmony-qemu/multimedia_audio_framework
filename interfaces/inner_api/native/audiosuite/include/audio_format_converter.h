@@ -33,6 +33,12 @@ enum class InputDataStatus {
     DATA_FINISHED = 3,      // End of data flow
 };
 
+struct AudioConvertResult {
+    uint8_t* outData = nullptr;       // Output data buffer
+    uint32_t outSampleCount = 0;      // Number of output samples
+    int32_t errCode = SUCCESS;
+};
+
 // Abstract class for format converter data request callback
 class FormatConverterDataCallback {
 public:
@@ -49,11 +55,13 @@ public:
     virtual ~AudioFormatConverter() = default;
 
     static std::shared_ptr<AudioFormatConverter> Create(
-        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat);
+        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat, const uint32_t resampleQuality = 1);
 
     virtual int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) = 0;
 
     virtual int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) = 0;
+
+    virtual AudioConvertResult Process(const uint8_t* inData, uint32_t inSampleCount) = 0;
 
     virtual void Destroy() = 0;
 private:
