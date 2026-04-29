@@ -16,6 +16,10 @@
 #ifndef CAPTURER_CLOCK_MANAGER_H
 #define CAPTURER_CLOCK_MANAGER_H
 
+#include <map>
+#include <memory>
+#include <mutex>
+
 #include "capturer_clock.h"
 #include "audio_source_clock.h"
 

@@ -129,6 +129,7 @@ public:
     MOCK_METHOD(void, OnDisConnectProcessCluster, (HpaeProcessorType), (override));
     MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, uint32_t), (override));
     MOCK_METHOD(void, OnNotifyDfxNodeInfoChanged, (uint32_t, const HpaeDfxNodeInfo &), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeAdmin, (bool, const HpaeDfxNodeInfo &), (override));
 };
 
 // Mock IStreamCallback
@@ -173,6 +174,14 @@ public:
         const size_t size), (override));
     MOCK_METHOD(int32_t, UpdateAppsUid, (const std::vector<int32_t> &appsUid), (override));
     MOCK_METHOD(int32_t, GetArmUsbDeviceStatus, (), (override));
+    MOCK_METHOD(int32_t, GetMmapBufferInfo,
+        (int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize), (override));
+    MOCK_METHOD(int32_t, GetMmapHandlePosition,
+        (uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec), (override));
+    MOCK_METHOD(void, NotifyStreamChangeToSource,
+        (StreamChangeType change, uint32_t streamId, SourceType source, CapturerState state,
+         uint32_t appUid, bool mute, bool mixWithWakeUp), (override));
 };
 } // namespace HPAE
 } // namespace AudioStandard
