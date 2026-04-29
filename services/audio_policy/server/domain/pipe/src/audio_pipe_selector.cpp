@@ -318,22 +318,19 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
 }
 
 void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(
-    std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction action)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, ConcurrencyAction action)
 {
-    // When action is PLAY_BOTH, renderer and capturer can coexist, skip hardcode logic.
     CHECK_AND_RETURN(action != PLAY_BOTH);
     bool hasFastVoipCapturer = false;
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
     for (auto &curPipeInfo : pipeInfoList) {
-        if (curPipeInfo->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) {
-            hasFastVoipCapturer = true;
-            break;
-        }
+        CHECK_AND_CONTINUE(curPipeInfo->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST));
+        hasFastVoipCapturer = true;
+        break;
     }
-    CHECK_AND_RETURN((incomingStream->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) && hasFastVoipCapturer);
-    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    AUDIO_INFO_LOG("ProcessRendererAndCapturerConcurrency: Set %{public}u to normal flag",
-        incomingStream->GetSessionId());
+    CHECK_AND_RETURN((streamDesc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) && hasFastVoipCapturer);
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    AUDIO_INFO_LOG("Set %{public}u to normal flag", streamDesc->GetSessionId());
 }
 
 void AudioPipeSelector::CheckFastStreamOverLimitToNormal(

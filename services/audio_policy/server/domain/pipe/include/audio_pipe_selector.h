@@ -108,7 +108,7 @@ private:
     void ProcessModemCommunicationConcurrency(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal);
     void SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> incomingStream,
+    void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         ConcurrencyAction action);
     bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
