@@ -812,6 +812,9 @@ static bool CalculateProcessingParameters(const OHConverterTestInfo& info, uint3
     
     uint64_t gcd = std::gcd(static_cast<uint64_t>(inputSampleRate), static_cast<uint64_t>(outputSampleRate));
     uint64_t gcdSecond = std::gcd(gcd, static_cast<uint64_t>(MILLISECONDS_PER_SECOND));
+    if (gcdSecond == 0) {
+        return false;
+    }
     uint32_t minTimeMs = static_cast<uint32_t>(MILLISECONDS_PER_SECOND / gcdSecond);
     
     uint32_t inputBytesPerFrame = inputSampleSize * channelCount;
@@ -877,29 +880,22 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
     if (converter == nullptr) {
         return false;
     }
-
-    // Read input file
     std::string inputFilePath = CONVERTER_TEST_DIR + info.inputFileName;
     std::vector<uint8_t> inputData;
     if (!ReadInputFileData(inputFilePath, inputData)) {
         converter->Destroy();
         return false;
     }
-
-    // Calculate sample sizes
     uint32_t inputSampleSize = 0;
     uint32_t outputSampleSize = 0;
     if (!CalculateSampleSizes(info, inputSampleSize, outputSampleSize)) {
         converter->Destroy();
         return false;
     }
-
-    // Get channel count
     auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.inputChannelLayout);
     uint32_t channelCount =
         (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
 
-    // Calculate processing parameters
     uint32_t samplesPerCall = 0;
     uint32_t minBytesForIntMs = 0;
     if (!CalculateProcessingParameters(info, inputSampleSize, channelCount, samplesPerCall, minBytesForIntMs)) {
@@ -908,25 +904,15 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
     }
 
     uint32_t totalInputSampleCount = static_cast<uint32_t>(inputData.size() / inputSampleSize);
-
-    // Open output file
     std::string outputFilePath = CONVERTER_TEST_DIR + info.outputFileName;
     FILE *outputFile = fopen(outputFilePath.c_str(), "wb");
     if (outputFile == nullptr) {
         converter->Destroy();
         return false;
     }
-
-    // Process data in batches
     ProcessBatchParams params = {converter.get(),
-        &inputData,
-        inputSampleSize,
-        outputSampleSize,
-        samplesPerCall,
-        totalInputSampleCount,
-        outputFile};
+        &inputData, inputSampleSize, outputSampleSize, samplesPerCall, totalInputSampleCount, outputFile};
     bool success = ProcessDataInBatches(params);
-
     int32_t result = fclose(outputFile);
     if (result != 0) {
         return false;
@@ -936,7 +922,6 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
     if (success) {
         VerifyResults(info);
     }
-
     return success;
 }
 
