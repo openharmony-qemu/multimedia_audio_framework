@@ -33,7 +33,7 @@ constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
 constexpr uint32_t FLOAT_SIZE_BYTES = sizeof(float);
 
 AudioSuiteRawFormatConversion::AudioSuiteRawFormatConversion(const uint32_t resampleQuality)
-    : initialized_(false), resampleQuality_(resampleQuality)
+    : initialized_(false), formatsSame_(false), resampleQuality_(resampleQuality)
 {}
 
 AudioSuiteRawFormatConversion::~AudioSuiteRawFormatConversion()
