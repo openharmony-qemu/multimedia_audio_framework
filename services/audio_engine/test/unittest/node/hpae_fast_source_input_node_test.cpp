@@ -30,7 +30,6 @@
 #include "hpae_mocks.h"
 #include "hpae_source_output_node.h"
 #include "oh_audio_buffer.h"
-#include "test_case_common.h"
 
 using namespace testing;
 using namespace testing::ext;

@@ -396,7 +396,8 @@ int32_t HpaeFastCapturerManager::Release(uint32_t sessionId)
 int32_t HpaeFastCapturerManager::SetStreamMute(uint32_t sessionId, bool isMute)
 {
     auto request = [this, sessionId, isMute]() {
-        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "Mute not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Mute not find sessionId %{public}u", sessionId);
         sourceOutputNodeMap_[sessionId]->SetMute(isMute);
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_RUNNING,
             sourceOutputNodeMap_[sessionId]->GetAppUid(), isMute);

@@ -324,7 +324,8 @@ int32_t HpaeFastSourceInputNode::GetAdapterBufferInfo()
         srcBufferFd_, srcTotalSizeInframe_, srcSpanSizeInframe_, srcByteSizePerFrame_, syncInfoSize_);
     if (ret != SUCCESS || srcBufferFd_ == -1 || srcTotalSizeInframe_ == 0 ||
         srcSpanSizeInframe_ == 0 || srcByteSizePerFrame_ == 0) {
-        AUDIO_ERR_LOG("GetMmapBufferInfo fail, ret:%{public}d, fd:%{public}d, totalFrame:%{public}u, spanFrame:%{public}u",
+        AUDIO_ERR_LOG("GetMmapBufferInfo fail, ret:%{public}d, fd:%{public}d,"
+            " totalFrame:%{public}u, spanFrame:%{public}u",
             ret, srcBufferFd_, srcTotalSizeInframe_, srcSpanSizeInframe_);
         return ERR_ILLEGAL_STATE;
     }
