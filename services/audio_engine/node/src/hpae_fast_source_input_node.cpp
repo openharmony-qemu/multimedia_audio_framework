@@ -461,7 +461,7 @@ void HpaeFastSourceInputNode::RecordCheckSyncInfo(uint64_t curReadPos)
     (void)srcAudioBuffer_->SetSyncReadFrame(curReadFrame);
 }
 
-bool HpaeFastSourceInputNode::IsVoipFast() const
+bool HpaeFastSourceInputNode::IsVoipFast()
 {
     return (GetNodeInfo().routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST) != 0 ||
         ((GetNodeInfo().routeFlag & AUDIO_INPUT_FLAG_FAST) != 0 &&
@@ -489,7 +489,7 @@ bool HpaeFastSourceInputNode::TryReadOneSpan(uint64_t handlePos)
     return true;
 }
 
-AudioStreamInfo HpaeFastSourceInputNode::GetDfxStreamInfo() const
+AudioStreamInfo HpaeFastSourceInputNode::GetDfxStreamInfo()
 {
     AudioStreamInfo streamInfo = {};
     const auto &nodeInfo = GetNodeInfo();

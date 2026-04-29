@@ -84,9 +84,9 @@ private:
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     void CheckWakeUpTime(int64_t &wakeUpTime);
     void RecordCheckSyncInfo(uint64_t curReadPos);
-    bool IsVoipFast() const;
+    bool IsVoipFast();
     bool TryReadOneSpan(uint64_t handlePos);
-    AudioStreamInfo GetDfxStreamInfo() const;
+    AudioStreamInfo GetDfxStreamInfo();
     void InitDumpFile();
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
