@@ -107,6 +107,17 @@ struct MD5Context {
     uint8_t buffer[MD5_BLOCK_SIZE];
 };
 
+// Parameters structure for batch processing
+struct ProcessBatchParams {
+    AudioSuite::AudioFormatConverter* converter;
+    const std::vector<uint8_t>* inputData;
+    uint32_t inputSampleSize;
+    uint32_t outputSampleSize;
+    uint32_t samplesPerCall;
+    uint32_t totalInputSampleCount;
+    FILE* outputFile;
+};
+
 static void BinHashInit(MD5Context* ctx);
 static void BinHashUpdate(MD5Context* ctx, const void* data, size_t len);
 static void BinHashFinal(uint8_t digest[16], MD5Context* ctx);
@@ -755,7 +766,7 @@ static bool ReadInputFileData(const std::string& filePath, std::vector<uint8_t>&
     
     return bytesRead == static_cast<size_t>(fileSize);
 }
- 
+
 // Helper function to calculate sample sizes
 static bool CalculateSampleSizes(const OHConverterTestInfo& info, uint32_t& inputSampleSize,
                                   uint32_t& outputSampleSize)
@@ -768,7 +779,7 @@ static bool CalculateSampleSizes(const OHConverterTestInfo& info, uint32_t& inpu
     outputSampleSize = AudioSuite::AudioSuiteUtil::GetSampleSize(info.outputSampleFormat);
     return outputSampleSize != 0;
 }
- 
+
 // Helper function to calculate processing parameters
 static bool CalculateProcessingParameters(const OHConverterTestInfo& info, uint32_t inputSampleSize,
                                           uint32_t channelCount, uint32_t& samplesPerCall,
@@ -802,7 +813,7 @@ static bool CalculateProcessingParameters(const OHConverterTestInfo& info, uint3
     uint32_t bytesPerCall = samplesPerCall * inputSampleSize;
     return bytesPerCall % minBytesForIntMs == 0;
 }
- 
+
 // Helper function to write output data
 static bool WriteOutputData(const AudioSuite::AudioConvertResult& result,
                              uint32_t outputSampleSize, FILE* outputFile)
@@ -815,25 +826,22 @@ static bool WriteOutputData(const AudioSuite::AudioConvertResult& result,
     size_t bytesWritten = fwrite(result.outData, 1, outputBytes, outputFile);
     return bytesWritten == outputBytes;
 }
- 
+
 // Helper function to process data in batches
-static bool ProcessDataInBatches(AudioSuite::AudioFormatConverter* converter,
-                                  const std::vector<uint8_t>& inputData,
-                                  uint32_t inputSampleSize, uint32_t outputSampleSize,
-                                  uint32_t samplesPerCall, uint32_t totalInputSampleCount,
-                                  FILE* outputFile)
+static bool ProcessDataInBatches(const ProcessBatchParams& params)
 {
     uint32_t processedSamples = 0;
-    while (processedSamples < totalInputSampleCount) {
-        uint32_t samplesToProcess = std::min(samplesPerCall, totalInputSampleCount - processedSamples);
-        if (samplesToProcess != samplesPerCall &&
-            processedSamples + samplesToProcess < totalInputSampleCount) {
+    while (processedSamples < params.totalInputSampleCount) {
+        uint32_t samplesToProcess = std::min(params.samplesPerCall,
+                                             params.totalInputSampleCount - processedSamples);
+        if (samplesToProcess != params.samplesPerCall &&
+            processedSamples + samplesToProcess < params.totalInputSampleCount) {
             return false;
         }
-        
-        size_t byteOffset = processedSamples * inputSampleSize;
-        AudioSuite::AudioConvertResult result = converter->Process(
-            inputData.data() + byteOffset, samplesToProcess);
+
+        size_t byteOffset = processedSamples * params.inputSampleSize;
+        AudioSuite::AudioConvertResult result = params.converter->Process(
+            params.inputData->data() + byteOffset, samplesToProcess);
         if (result.errCode != SUCCESS && processedSamples != 0) {
             processedSamples += samplesToProcess;
             continue;
@@ -841,17 +849,17 @@ static bool ProcessDataInBatches(AudioSuite::AudioFormatConverter* converter,
         if (result.errCode != SUCCESS) {
             return false;
         }
-        
-        if (!WriteOutputData(result, outputSampleSize, outputFile)) {
+
+        if (!WriteOutputData(result, params.outputSampleSize, params.outputFile)) {
             return false;
         }
-        
+
         processedSamples += samplesToProcess;
     }
-    
+
     return true;
 }
- 
+
 // Test function for new Process(inData, inSampleCount) interface
 static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo& info)
 {
@@ -901,10 +909,15 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo& info)
     }
     
     // Process data in batches
-    bool success = ProcessDataInBatches(converter.get(), inputData, inputSampleSize,
-                                        outputSampleSize, samplesPerCall,
-                                        totalInputSampleCount, outputFile);
-    
+    ProcessBatchParams params = {converter.get(),
+        &inputData,
+        inputSampleSize,
+        outputSampleSize,
+        samplesPerCall,
+        totalInputSampleCount,
+        outputFile};
+    bool success = ProcessDataInBatches(params);
+
     fclose(outputFile);
     converter->Destroy();
     
