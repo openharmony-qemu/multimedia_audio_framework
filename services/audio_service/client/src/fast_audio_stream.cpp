@@ -747,6 +747,16 @@ int32_t FastAudioStream::SetSpeed(float speed)
 
 int32_t FastAudioStream::SetPitch(float pitch)
 {
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NOT_SUPPORTED, "processClient is nullptr");
+        return processClient_->SetPitch(pitch);
+    }
+    AUDIO_ERR_LOG("%{public}s: not supported", logTag_.c_str());
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t FastAudioStream::SetSonicPitch(float pitch)
+{
     AUDIO_ERR_LOG("%{public}s: not supported", logTag_.c_str());
     return ERR_OPERATION_FAILED;
 }

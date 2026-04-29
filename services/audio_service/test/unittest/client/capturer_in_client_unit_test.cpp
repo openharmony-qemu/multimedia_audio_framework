@@ -222,6 +222,8 @@ public:
     {
         return SUCCESS;
     }
+
+    virtual int32_t SetPitch(float pitch) override { return SUCCESS; }
 };
 
 class TestRemoteDiedCallback : public RemoteDiedCallback {

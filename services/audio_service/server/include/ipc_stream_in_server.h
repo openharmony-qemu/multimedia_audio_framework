@@ -135,6 +135,8 @@ public:
 
     int32_t SetSpeed(float speed) override;
 
+    int32_t SetPitch(float pitch) override;
+
     int32_t SetOffloadDataCallbackState(int32_t state) override;
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,

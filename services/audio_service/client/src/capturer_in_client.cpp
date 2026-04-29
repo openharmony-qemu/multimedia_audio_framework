@@ -878,6 +878,12 @@ int32_t CapturerInClientInner::SetPitch(float pitch)
     return ERROR;
 }
 
+int32_t CapturerInClientInner::SetSonicPitch(float pitch)
+{
+    AUDIO_ERR_LOG("SetSonicPitch is not supported");
+    return ERROR;
+}
+
 float CapturerInClientInner::GetSpeed()
 {
     AUDIO_ERR_LOG("GetSpeed is not supported");

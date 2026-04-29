@@ -189,6 +189,8 @@ public:
         cacheCount = calculatedCacheCount;
         return calculateCacheCountRet;
     }
+
+    virtual int32_t SetPitch(float pitch) override { return SUCCESS; }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
@@ -1716,7 +1718,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_059, TestSize.Level1
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
 
     float pitch = 2.0f;
-    auto ret = ptrRendererInClientInner->SetPitch(pitch);
+    auto ret = ptrRendererInClientInner->SetSonicPitch(pitch);
     EXPECT_EQ(ret, SUCCESS);
 }
 
