@@ -109,6 +109,8 @@ private:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal);
     void SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void AdjustActionForRendererCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
     bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
     bool FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,

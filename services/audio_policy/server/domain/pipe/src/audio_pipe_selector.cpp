@@ -331,6 +331,37 @@ void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<Au
     AUDIO_INFO_LOG("Set %{public}u to normal flag", streamDesc->GetSessionId());
 }
 
+void AudioPipeSelector::AdjustActionForRendererCapturerConcurrency(
+    std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream,
+    ConcurrencyAction &action)
+{
+    // When FAST output stream coexists with FAST_VOIP capturer, force CONCEDE_INCOMING
+    // to downgrade the FAST renderer to NORMAL, avoiding hardware resource conflict.
+    if (action != PLAY_BOTH) {
+        return;
+    }
+    if (incomingStream->routeFlag_ != AUDIO_OUTPUT_FLAG_FAST) {
+        return;
+    }
+    bool hasFastVoipCapturer = false;
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
+    for (auto &curPipeInfo : pipeInfoList) {
+        if (curPipeInfo->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) {
+            hasFastVoipCapturer = true;
+            break;
+        }
+    }
+    if (existingStream->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) {
+        hasFastVoipCapturer = true;
+    }
+    if (hasFastVoipCapturer) {
+        AUDIO_INFO_LOG("AdjustActionForRendererCapturerConcurrency: incomingStream id %{public}u FAST->NORMAL",
+            incomingStream->GetSessionId());
+        action = CONCEDE_INCOMING;
+    }
+}
+
 void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
@@ -397,10 +428,17 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     }
 
     for (size_t cmpStreamIdx = 1; cmpStreamIdx < streamDescs.size(); ++cmpStreamIdx) {
+        // Skip if incoming stream already reset to normal route
+        if (streamDescs[cmpStreamIdx]->IsNormalRoute()) {
+            continue;
+        }
         // calculate concurrency in time order
         for (size_t curStreamDescIdx = 0; curStreamDescIdx < cmpStreamIdx; ++curStreamDescIdx) {
+            // Skip if existing stream already reset to normal route
+            if (streamDescs[curStreamDescIdx]->IsNormalRoute()) {
+                continue;
+            }
             ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx], streamsMoveToNormal);
-            ProcessRendererAndCapturerConcurrency(streamDescs[cmpStreamIdx]);
         }
     }
     ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
@@ -876,6 +914,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         incomingStream->GetSessionId(), incomingStream->GetRoute());
 
     AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    AdjustActionForRendererCapturerConcurrency(existingStream, incomingStream, action);
 
     bool isUpdate = false;
     switch (action) {
