@@ -1344,7 +1344,7 @@ int32_t AudioPipeSelector::SetCustomAudioMix(const std::string &zoneName, const 
 #endif
 }
 
-// If hd playback only supports app level, set normal routeflag for more than two active streams.
+// If hd playback, set normal routeflag for more than two active streams.
 void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
@@ -1352,8 +1352,8 @@ void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescrip
         "newDeviceDescs_ empty");
     auto existingHdPlayMode = existingStream->newDeviceDescs_[0]->hdPlaybackMode_;
     auto incomingHdPlayMode = incomingStream->newDeviceDescs_[0]->hdPlaybackMode_;
-    CHECK_AND_RETURN(existingHdPlayMode == HdPlaybackMode::APP_LEVEL &&
-        incomingHdPlayMode == HdPlaybackMode::APP_LEVEL &&
+    CHECK_AND_RETURN(existingHdPlayMode != HdPlaybackMode::HD_NOT_SUPPORTED &&
+        incomingHdPlayMode != HdPlaybackMode::HD_NOT_SUPPORTED &&
         (existingStream->IsRouteOffload() || incomingStream->IsRouteOffload()));
 
     ConcurrencyAction newAction = action;
