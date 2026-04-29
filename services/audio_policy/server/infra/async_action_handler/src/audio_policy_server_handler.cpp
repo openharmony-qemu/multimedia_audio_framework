@@ -2156,7 +2156,7 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
 int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     if (IPCSkeleton::GetCallingUid() != uid) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
             "Permission denied for setting callback capturer info with different uid");
     }
     int32_t clientPid = IPCSkeleton::GetCallingPid();
