@@ -75,6 +75,9 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float 
         inFrameLen,
         outFrameLen);
 
+    AUDIO_DEBUG_LOG("Process unified: inRate=%{public}u->outRate=%{public}u, channels=%{public}u, "
+        "inFrames=%{public}u, outFrames=%{public}u", inRate_, outRate_, channels_, inFrameLen, outFrameLen);
+
     uint32_t expectedOutFrameLen = outFrameLen;
 
     if (tmpOutBuf_.size() < static_cast<size_t>(expectedOutFrameLen) * channels_) {

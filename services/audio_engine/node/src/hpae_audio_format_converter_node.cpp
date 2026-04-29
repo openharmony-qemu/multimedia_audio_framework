@@ -103,10 +103,14 @@ void HpaeAudioFormatConverterNode::DoProcess()
     if (processedFrames_ >= outputFrameLen20ms_ && enableProcess_) {
         converterOutput_.Reset();
         if (ExtractOutputFromProcessedBuffer()) {
+            AUDIO_DEBUG_LOG("NodeId %{public}d: DoProcess drain processedBuffer_, remaining %{public}u frames",
+                GetNodeId(), processedFrames_);
             outputStream_.WriteDataToOutput(&converterOutput_);
             return;
         }
     }
+    AUDIO_DEBUG_LOG("NodeId %{public}d: DoProcess output silence, preOutputsEmpty=%{public}d, enableProcess=%{public}d, "
+        "processedFrames=%{public}u", GetNodeId(), preOutputs.empty(), enableProcess_, processedFrames_);
     outputStream_.WriteDataToOutput(&silenceData_);
 }
 
@@ -462,6 +466,8 @@ void HpaeAudioFormatConverterNode::AppendToUnprocessedBuffer(const float *data, 
         return;
     }
     unprocessedFrames_ += frameLen;
+    AUDIO_DEBUG_LOG("NodeId %{public}d: AppendToUnprocessedBuffer added %{public}u frames @%{public}u ch, "
+        "total unprocessedFrames=%{public}u", GetNodeId(), frameLen, channels, unprocessedFrames_);
 }
 
 void HpaeAudioFormatConverterNode::AppendToProcessedBuffer(const float *data, uint32_t frameLen, uint32_t channels)
@@ -489,9 +495,14 @@ void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inp
     uint32_t maxPullCount = resamplerInputThreshold_ / inputFrameLen + 1;
     uint32_t pullCount = 0;
 
+    AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead start, unprocessedFrames=%{public}u, threshold=%{public}u",
+        GetNodeId(), unprocessedFrames_, resamplerInputThreshold_);
+
     while (unprocessedFrames_ < resamplerInputThreshold_ && pullCount < maxPullCount) {
         auto &newInputs = inputStream_.ReadPreOutputData();
         if (newInputs.empty() || newInputs[0] == nullptr || !newInputs[0]->IsValid()) {
+            AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead stopped, upstream underflow after %{public}u pulls",
+                GetNodeId(), pullCount);
             break; // upstream underflow — stop pulling, don't store empty frames
         }
         float *data = newInputs[0]->GetPcmDataBuffer();
@@ -499,6 +510,11 @@ void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inp
         uint32_t channels = newInputs[0]->GetChannelCount();
         AppendToUnprocessedBuffer(data, frameLen, channels);
         pullCount++;
+    }
+
+    if (pullCount > 0) {
+        AUDIO_INFO_LOG("NodeId %{public}d: PullAhead pulled %{public}u frames, unprocessedFrames=%{public}u",
+            GetNodeId(), pullCount, unprocessedFrames_);
     }
 }
 
@@ -514,6 +530,10 @@ void HpaeAudioFormatConverterNode::ProcessResampleLoop()
 
     // Same rate -- no resampling needed, passthrough
     if (inRate == outRate) {
+        if (unprocessedFrames_ > 0) {
+            AUDIO_DEBUG_LOG("NodeId %{public}d: ProcessResampleLoop passthrough %{public}u frames",
+                GetNodeId(), unprocessedFrames_);
+        }
         MoveUnprocessedToProcessed(channels);
         return;
     }
@@ -526,6 +546,10 @@ void HpaeAudioFormatConverterNode::ProcessResampleLoop()
         // Calculate expected output frames for this resampler call
         uint32_t outFrameLen = static_cast<uint32_t>(
             static_cast<uint64_t>(inFrameLen) * outRate / inRate);
+
+        AUDIO_DEBUG_LOG("NodeId %{public}d: Resample iteration inRate=%{public}u->outRate=%{public}u, "
+            "inFrames=%{public}u, outFrames=%{public}u, unprocessedBefore=%{public}u",
+            GetNodeId(), inRate, outRate, inFrameLen, outFrameLen, unprocessedFrames_);
 
         // Ensure output buffer is large enough
         size_t outSamplesNeeded = static_cast<size_t>(outFrameLen) * channels;
@@ -589,6 +613,8 @@ int32_t HpaeAudioFormatConverterNode::ResampleWithChannelConversion(float *srcDa
 bool HpaeAudioFormatConverterNode::ExtractOutputFromProcessedBuffer()
 {
     if (processedFrames_ < outputFrameLen20ms_) {
+        AUDIO_DEBUG_LOG("NodeId %{public}d: ExtractOutput insufficient data, have=%{public}u, need=%{public}u",
+            GetNodeId(), processedFrames_, outputFrameLen20ms_);
         return false;
     }
     uint32_t channels = converterOutput_.GetChannelCount();
@@ -608,6 +634,8 @@ bool HpaeAudioFormatConverterNode::ExtractOutputFromProcessedBuffer()
     } else if (processedReadPos_ > processedBuffer_.size() / (channels * 2)) {
         CompactProcessedBuffer(channels);
     }
+    AUDIO_DEBUG_LOG("NodeId %{public}d: ExtractOutput success, remaining processedFrames=%{public}u",
+        GetNodeId(), processedFrames_);
     return true;
 }
 
@@ -655,6 +683,8 @@ void HpaeAudioFormatConverterNode::MoveUnprocessedToProcessed(uint32_t channels)
         return;
     }
     processedFrames_ += unprocessedFrames_;
+    AUDIO_DEBUG_LOG("NodeId %{public}d: MoveUnprocessedToProcessed moved %{public}u frames, "
+        "total processedFrames=%{public}u", GetNodeId(), unprocessedFrames_, processedFrames_);
     unprocessedFrames_ = 0;
 }
 
