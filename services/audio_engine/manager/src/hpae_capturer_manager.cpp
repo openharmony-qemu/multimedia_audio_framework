@@ -61,9 +61,6 @@ HpaeCapturerManager::~HpaeCapturerManager()
 int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &processorType,
     const AudioEnhanceScene &sceneType)
 {
-    // DEVICE_TYPE_ACCESSORY effect move to HAL
-    CHECK_AND_RETURN_RET_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
-        "captureId_ %{public}d needn't create effect", captureId_);
     const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
         GetEnhanceSupportedSceneType();
     auto item = audioEnhanceSupportedSceneTypes.find(sceneType);
@@ -148,6 +145,10 @@ void HpaeCapturerManager::UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clus
 void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioEnhanceScene enhanceScene)
 {
     CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && !SafeGetMap(sceneClusterMap_, sceneType));
+    // DEVICE_TYPE_ACCESSORY effect move to HAL
+    CHECK_AND_RETURN_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
+        "deviceType %{public}d needn't create effect", sourceInfo_.deviceType);
+
     // todo: algorithm instance count control
     HpaeNodeInfo clusterNodeInfo;
     clusterNodeInfo.channels = sourceInfo_.channels;
