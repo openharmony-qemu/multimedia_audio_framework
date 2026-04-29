@@ -1718,7 +1718,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_059, TestSize.Level1
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
 
     float pitch = 2.0f;
-    auto ret = ptrRendererInClientInner->SetPitch(pitch);
+    auto ret = ptrRendererInClientInner->SetSonicPitch(pitch);
     EXPECT_EQ(ret, SUCCESS);
 }
 

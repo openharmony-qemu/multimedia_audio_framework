@@ -1773,9 +1773,9 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetSpeed Failed, error: %{public}d", ret);
     }
-    ret = currentStream->SetPitch(speed);
+    ret = currentStream->SetSonicPitch(speed);
     if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("SetPitch Failed, error: %{public}d", ret);
+        AUDIO_WARNING_LOG("SetSonicPitch Failed, error: %{public}d", ret);
     }
     return SUCCESS;
 }
@@ -2980,7 +2980,24 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
         lock.unlock();
     }
 
-    SetPitch(AudioSpeed::GetPitchForSpeed(speed));
+    SetSonicPitch(AudioSpeed::GetPitchForSpeed(speed));
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::SetSonicPitch(float pitch)
+{
+    AUDIO_INFO_LOG("SetSonicPitch %{public}f", pitch);
+    CHECK_AND_RETURN_RET_LOG((pitch >= MIN_STREAM_SPEED_LEVEL) && (pitch <= MAX_STREAM_SPEED_LEVEL),
+        ERR_INVALID_PARAM, "invaild pitch index");
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) {
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+#ifdef SONIC_ENABLE
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    audioStream_->SetSonicPitch(pitch);
+#endif
+    pitch_ = pitch;
     return SUCCESS;
 }
 

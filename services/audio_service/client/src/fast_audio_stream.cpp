@@ -731,6 +731,12 @@ int32_t FastAudioStream::SetPitch(float pitch)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t FastAudioStream::SetSonicPitch(float pitch)
+{
+    AUDIO_ERR_LOG("%{public}s: not supported", logTag_.c_str());
+    return ERR_OPERATION_FAILED;
+}
+
 float FastAudioStream::GetSpeed()
 {
     AUDIO_ERR_LOG("%{public}s: not supported", logTag_.c_str());

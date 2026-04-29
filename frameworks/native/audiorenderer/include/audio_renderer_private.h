@@ -267,6 +267,7 @@ private:
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
+    int32_t SetSonicPitch(float pitch);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);

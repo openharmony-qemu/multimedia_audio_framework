@@ -98,6 +98,7 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
+    int32_t SetSonicPitch(float pitch) override;
     float GetSpeed() override;
     int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) override;
 
