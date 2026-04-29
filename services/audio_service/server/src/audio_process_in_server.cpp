@@ -156,7 +156,7 @@ AudioProcessInServer::~AudioProcessInServer()
     convertedBuffer_.buffer = nullptr;
     
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     TurnOffRemoteMicIndicator();
@@ -425,10 +425,13 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
-        CHECK_AND_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, sessionId_),
-            false, "NotifyPrivacyStop failed!");
+        bool ret = RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, sessionId_);
+        if (!ret) {
+            AUDIO_ERR_LOG("NotifyPrivacyStop failed!");
+        }
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = false;
+        return ret;
     } else {
         AUDIO_WARNING_LOG("MicIndicator:already off, Stream:%{public}u", sessionId_);
     }

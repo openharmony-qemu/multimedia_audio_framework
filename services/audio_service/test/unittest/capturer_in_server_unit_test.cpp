@@ -1346,8 +1346,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038J, TestSize.Level
 
     auto ret = capturerInServer_->TurnOffMicIndicator(CAPTURER_STOPPED);
     EXPECT_FALSE(ret);
-    EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
-    EXPECT_EQ(manager.tokenIdRecordMap_[0].size(), 1);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+    EXPECT_EQ(manager.tokenIdRecordMap_.count(0), 0);
+    ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_FALSE(ret);
     manager.tokenIdRecordMap_.clear();
 }
 
