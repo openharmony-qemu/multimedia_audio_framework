@@ -1551,7 +1551,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_055, TestSize.
     audioInterrupt.audioFocusType.isPlay = true;
     audioInterruptService->sessionService_.SetAudioSessionScene(pid, AudioSessionScene::MEDIA);
     EXPECT_NE(nullptr, audioInterruptService->sessionService_.sessionMap_[pid]);
-    audioInterruptService->sessionService_.sessionMap_[pid]->AddStreamInfo(audioInterrupt);
+    audioInterruptService->sessionService_.sessionMap_[pid]->AddStreamInfo({audioInterrupt, ACTIVE});
     ret = audioInterruptService->HandleLowPriorityEvent(pid, streamId + 1);
     EXPECT_FALSE(ret);
 }

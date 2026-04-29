@@ -67,7 +67,7 @@ void AddStreamInfoFuzzTest(FuzzedDataProvider& fdp)
     audioSession->IsSceneParameterSet();
     incomingInterrupt.audioFocusType.streamType = g_fuzzUtils.GetData<AudioStreamType>();
     incomingInterrupt.audioFocusType.sourceType = g_fuzzUtils.GetData<SourceType>();
-    audioSession->AddStreamInfo(incomingInterrupt);
+    audioSession->AddStreamInfo({incomingInterrupt, ACTIVE});
 }
 
 void RemoveStreamInfoFuzzTest(FuzzedDataProvider& fdp)
@@ -78,7 +78,7 @@ void RemoveStreamInfoFuzzTest(FuzzedDataProvider& fdp)
     audioSession->RemoveStreamInfo(streamId);
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = streamId;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->RemoveStreamInfo(streamId);
     audioSession->ClearStreamInfo();
 }
@@ -112,7 +112,7 @@ void DumpFuzzTest(FuzzedDataProvider& fdp)
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
     audioInterrupt.audioFocusType.streamType = g_fuzzUtils.GetData<AudioStreamType>();
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->Dump(dumpString);
     audioSession->ClearStreamInfo();
 }
@@ -131,7 +131,7 @@ void UpdateVoipStreamsDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt audioInterrupt;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->UpdateVoipStreamsDefaultOutputDevice();
     audioSession->ClearStreamInfo();
 }
@@ -177,7 +177,7 @@ void EnableVoipStreamsDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     AudioInterrupt interrupt;
     interrupt.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     interrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
-    audioSession->AddStreamInfo(interrupt);
+    audioSession->AddStreamInfo({interrupt, ACTIVE});
     audioSession->EnableVoipStreamsDefaultOutputDevice();
     audioSession->ClearStreamInfo();
 }
@@ -213,7 +213,7 @@ void IsAudioRendererEmptyFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt audioInterrupt;
     audioInterrupt.audioFocusType.streamType = g_fuzzUtils.GetData<AudioStreamType>();
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->IsAudioRendererEmpty();
     audioSession->ClearStreamInfo();
 }
