@@ -238,5 +238,37 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_005, TestSize.Level4)
     audioZoneClient->Restore();
     EXPECT_NE(nullptr, audioZoneClient->audioZoneCallback_);
 }
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_006
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone invalid param.
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_006, TestSize.Level4)
+{
+    auto zoneManager = AudioZoneManager::GetInstance();
+    ASSERT_NE(zoneManager, nullptr);
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t ret = zoneManager->GetCurrentRendererChangeInfosForZone(-1, infos);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_007
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with valid zoneId 0 (primary zone).
+*             When no renderer is running, infos should be empty.
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_007, TestSize.Level4)
+{
+    GetPermission();
+    auto zoneManager = AudioZoneManager::GetInstance();
+    ASSERT_NE(zoneManager, nullptr);
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t ret = zoneManager->GetCurrentRendererChangeInfosForZone(0, infos);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
