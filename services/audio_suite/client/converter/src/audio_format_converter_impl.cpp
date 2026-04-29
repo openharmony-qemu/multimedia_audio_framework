@@ -62,6 +62,8 @@ constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
 constexpr uint32_t REQUIRED_MS_FOR_11025HZ = 40;
 constexpr uint32_t MAX_DURATION_MS = 60;
 constexpr uint32_t MIN_DURATION_MS = 5;
+constexpr uint32_t MAX_RESAMPLE_QUALITY = 10;
+constexpr uint32_t MIN_RESAMPLE_QUALITY = 1;
  
 // Check maximum sample limit (60ms * max sample rate * max channels)
 constexpr uint32_t MAX_SAMPLE_RATE = 192000;
@@ -104,17 +106,17 @@ std::shared_ptr<AudioFormatConverter> AudioFormatConverter::Create(
         AUDIO_ERR_LOG("Create: unsupported sample format");
         return nullptr;
     }
+
+    CHECK_AND_RETURN_RET_LOG(resampleQuality >= MIN_RESAMPLE_QUALITY && resampleQuality <= MAX_RESAMPLE_QUALITY,
+        nullptr, "Resampling level assignment error");
     
     AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
         inputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(inputFormat.channelLayout),
         outputFormat.sampleRate, LAYOUT_TO_CHANNEL.at(outputFormat.channelLayout));
-
     auto audioFormatConverter = std::make_shared<AudioFormatConverterImpl>();
-    // Save input/output format
     audioFormatConverter->inputFormat_ = inputFormat;
     audioFormatConverter->outputFormat_ = outputFormat;
 
-    // Create a format conversion instance
     audioFormatConverter->formatConversion_ = std::make_unique<AudioSuiteFormatConversion>();
     CHECK_AND_RETURN_RET_LOG(audioFormatConverter->formatConversion_ != nullptr,
         nullptr, "Create: Failed to create format conversion instance");

@@ -33,11 +33,11 @@ enum class InputDataStatus {
     DATA_FINISHED = 3,      // End of data flow
 };
 
-typedef struct AudioConvertResult {
-    uint8_t* outData = nullptr;        // 输出数据缓冲区（内部分配，需调用销毁函数释放）
-    uint32_t outSampleCount = 0;      // 输出样本数
-    int32_t errCode = SUCCESS;             // 错误码：0=成功，非0=失败
-}AudioConvertResult;
+struct AudioConvertResult {
+    uint8_t* outData = nullptr;       // Output data buffer
+    uint32_t outSampleCount = 0;      // Number of output samples
+    int32_t errCode = SUCCESS;
+};
 
 // Abstract class for format converter data request callback
 class FormatConverterDataCallback {
