@@ -1817,6 +1817,7 @@ int32_t RendererInServer::SetRate(int32_t rate)
     if (processConfig_.rendererInfo.isStatic) {
         CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
         audioRenderRate_ = static_cast<AudioRendererRate>(rate);
+        speed_ = ConvertAudioRenderRateToSpeed(audioRenderRate_);
         CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
             "ProcessAndSetStaticBuffer fail!");
     }
@@ -2789,6 +2790,26 @@ int32_t RendererInServer::SetSpeed(float speed)
     return stream_->SetSpeed(speed);
 }
 
+int32_t RendererInServer::SetPitch(float pitch)
+{
+    CHECK_AND_RETURN_RET_LOG(pitch >= MIN_STREAM_PITCH_LEVEL && pitch <= MAX_STREAM_PITCH_LEVEL,
+        ERR_INVALID_PARAM, "Invalid pitch value: %{public}f", pitch);
+    
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic,
+        ERR_NOT_SUPPORTED, "SetPitch only supported in static mode");
+    
+    CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_STARTED,
+        ERR_ILLEGAL_STATE, "SetPitch not allowed during playback");
+    
+    pitch_ = pitch;
+    AUDIO_INFO_LOG("SetPitch: pitch=%{public}f", pitch_);
+    
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS,
+        ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer failed");
+    
+    return SUCCESS;
+}
+
 int32_t RendererInServer::SetOffloadDataCallbackState(int32_t state)
 {
     return stream_->SetOffloadDataCallbackState(state);
@@ -3078,15 +3099,21 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
         ERR_OPERATION_FAILED, "staticBuffer not inited");
-    int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
-
+    
+    int32_t ret = staticBufferProcessor_->ProcessBufferSpeed(speed_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferSpeed fail!");
+    
+    ret = staticBufferProcessor_->ProcessBufferPitch(pitch_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferPitch fail!");
+    
+    staticBufferProcessor_->SaveProcessBuffer();
+    
     uint8_t *bufferBase = nullptr;
     size_t bufferSize = 0;
     ret = staticBufferProcessor_->GetProcessedBuffer(&bufferBase, bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
+    
     staticBufferProvider_->SetProcessedBuffer(&bufferBase, bufferSize);
-    staticBufferProcessor_->SaveProcessBuffer();
     return SUCCESS;
 }
 

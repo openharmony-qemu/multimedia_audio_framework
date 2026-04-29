@@ -99,6 +99,13 @@ RendererInClientInner::~RendererInClientInner()
         callbackHandler_ = nullptr;
     }
     UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    
+    if (pitchProcessor_ != nullptr) {
+        pitchProcessor_->PitchAlgoRelease();
+        pitchProcessor_ = nullptr;
+    }
+    pitchBuffer_ = nullptr;
+    
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -772,14 +779,36 @@ int32_t RendererInClientInner::SetSpeed(float speed)
 int32_t RendererInClientInner::SetPitch(float pitch)
 {
     RETURN_RET_IF(isHWDecodingType_, SUCCESS);
-    std::lock_guard lock(speedMutex_);
-    if (audioSpeed_ == nullptr) {
-        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
-            curStreamParams_.channels);
-        GetBufferSize(bufferSize_);
-        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+        return ipcStream_->SetPitch(pitch);
     }
-    audioSpeed_->SetPitch(pitch);
+    
+    std::lock_guard lock(pitchMutex_);
+    if (pitchProcessor_ == nullptr) {
+        AudioStreamInfo streamInfo(
+            static_cast<AudioSamplingRate>(curStreamParams_.samplingRate),
+            static_cast<AudioEncodingType>(curStreamParams_.encoding),
+            static_cast<AudioSampleFormat>(curStreamParams_.format),
+            static_cast<AudioChannel>(curStreamParams_.channels),
+            static_cast<AudioChannelLayout>(curStreamParams_.channelLayout));
+        pitchProcessor_ = AudioPitchProcessor::CreateInstance(streamInfo);
+        CHECK_AND_RETURN_RET_LOG(pitchProcessor_ != nullptr, ERR_OPERATION_FAILED,
+            "Create pitch processor failed");
+        
+        int32_t ret = pitchProcessor_->PitchAlgoInit();
+        if (ret != SUCCESS) {
+            AUDIO_INFO_LOG("PitchAlgoInit failed");
+            pitchProcessor_ = nullptr;
+            return ERR_OPERATION_FAILED;
+        }
+        
+        GetBufferSize(bufferSize_);
+        pitchBuffer_ = std::make_unique<uint8_t[]>(bufferSize_ * MAX_PITCH_BUFFER_FACTOR);
+    }
+    
+    pitchProcessor_->SetPitch(pitch);
+    curPitch_ = pitch;
     AUDIO_DEBUG_LOG("SetPitch %{public}f", pitch);
     return SUCCESS;
 }

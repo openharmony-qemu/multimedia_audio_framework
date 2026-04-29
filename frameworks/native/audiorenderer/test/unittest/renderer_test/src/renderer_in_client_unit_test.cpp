@@ -189,6 +189,8 @@ public:
         cacheCount = calculatedCacheCount;
         return calculateCacheCountRet;
     }
+
+    virtual int32_t SetPitch(float pitch) override { return SUCCESS; }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {

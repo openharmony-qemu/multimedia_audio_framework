@@ -2351,8 +2351,8 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_002, TestSize
     std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
-    bufferProcessorTest->ProcessBuffer(RENDER_RATE_HALF);
-    EXPECT_EQ(bufferProcessorTest->ProcessBuffer(RENDER_RATE_NORMAL), SUCCESS);
+    bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_HALF));
+    EXPECT_EQ(bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_NORMAL)), SUCCESS);
 }
 
 /**
@@ -2369,9 +2369,9 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_003, TestSize
     std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
-    bufferProcessorTest->ProcessBuffer(RENDER_RATE_HALF);
-    EXPECT_EQ(bufferProcessorTest->ProcessBuffer(RENDER_RATE_HALF), SUCCESS);
-    EXPECT_EQ(bufferProcessorTest->ProcessBuffer(RENDER_RATE_NORMAL), SUCCESS);
+    bufferProcessorTest->ProcessBufferSpeed(RENDER_RATE_HALF);
+    EXPECT_EQ(bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_HALF)), SUCCESS);
+    EXPECT_EQ(bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_NORMAL)), SUCCESS);
 }
 
 /**
@@ -2391,20 +2391,28 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_004, TestSize
     uint8_t *dataBase = nullptr;
     size_t dataSize = 0;
 
-    bufferProcessorTest->speedBuffer_ = nullptr;
-    bufferProcessorTest->speedBufferSize_ = 0;
+    bufferProcessorTest->tempBuffer_ = nullptr;
+    bufferProcessorTest->tempBufferSize_ = 0;
+    bufferProcessorTest->processBuffer_ = nullptr;
+    bufferProcessorTest->processedBufferSize_ = 0;
     bufferProcessorTest->GetProcessedBuffer(&dataBase, dataSize);
 
-    bufferProcessorTest->speedBuffer_ = nullptr;
-    bufferProcessorTest->speedBufferSize_ = 100;
+    bufferProcessorTest->tempBuffer_ = nullptr;
+    bufferProcessorTest->tempBufferSize_ = 100;
+    bufferProcessorTest->processBuffer_ = nullptr;
+    bufferProcessorTest->processedBufferSize_ = 0;
     bufferProcessorTest->GetProcessedBuffer(&dataBase, dataSize);
 
-    bufferProcessorTest->speedBuffer_ = std::make_unique<uint8_t[]>(100);
-    bufferProcessorTest->speedBufferSize_ = 0;
+    bufferProcessorTest->tempBuffer_ = nullptr;
+    bufferProcessorTest->tempBufferSize_ = 0;
+    bufferProcessorTest->processBuffer_ = std::make_unique<uint8_t[]>(100);
+    bufferProcessorTest->processedBufferSize_ = 0;
     bufferProcessorTest->GetProcessedBuffer(&dataBase, dataSize);
 
-    bufferProcessorTest->speedBuffer_ = std::make_unique<uint8_t[]>(100);
-    bufferProcessorTest->speedBufferSize_ = 100;
+    bufferProcessorTest->tempBuffer_ = nullptr;
+    bufferProcessorTest->tempBufferSize_ = 0;
+    bufferProcessorTest->processBuffer_ = std::make_unique<uint8_t[]>(100);
+    bufferProcessorTest->processedBufferSize_ = 100;
     bufferProcessorTest->GetProcessedBuffer(&dataBase, dataSize);
     EXPECT_TRUE(dataBase != nullptr && dataSize != 0);
 }
@@ -2921,6 +2929,192 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
     rendererInServer->dupSpanSizeInFrame_ = TEST_MAX_INNERCAP_BUFFER_SIZE;
     rendererInServer->ReConfigDupStreamCallback();
     EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProcessor API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProcessor_ProcessBufferPitch_001
+ * @tc.desc  : Test AudioStaticBufferProcessor ProcessBufferPitch with normal pitch
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBufferPitch_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
+    std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
+        AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(bufferProcessorTest != nullptr);
+    
+    int32_t ret = bufferProcessorTest->ProcessBufferPitch(PITCH_DEFAULT);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProcessor API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProcessor_ProcessBufferPitch_002
+ * @tc.desc  : Test AudioStaticBufferProcessor ProcessBufferPitch with pitch less than minimum
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBufferPitch_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
+    std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
+        AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(bufferProcessorTest != nullptr);
+    
+    int32_t ret = bufferProcessorTest->ProcessBufferPitch(0.1f);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProcessor API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProcessor_ProcessBufferPitch_003
+ * @tc.desc  : Test AudioStaticBufferProcessor ProcessBufferPitch with pitch greater than maximum
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBufferPitch_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
+    std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
+        AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(bufferProcessorTest != nullptr);
+    
+    int32_t ret = bufferProcessorTest->ProcessBufferPitch(5.0f);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProcessor API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProcessor_ProcessBufferPitch_004
+ * @tc.desc  : Test AudioStaticBufferProcessor ProcessBufferPitch with valid pitch range
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBufferPitch_004, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
+    std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
+        AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(bufferProcessorTest != nullptr);
+    
+    int32_t ret = bufferProcessorTest->ProcessBufferPitch(0.5f);
+    EXPECT_EQ(ret, SUCCESS);
+    
+    ret = bufferProcessorTest->ProcessBufferPitch(2.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    
+    ret = bufferProcessorTest->ProcessBufferPitch(4.0f);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInServer SetPitch API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_SetPitch_001
+ * @tc.desc  : Test RendererInServer SetPitch in static mode with valid pitch
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    processConfig.rendererInfo.isStatic = true;
+    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(100, "test");
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    
+    rendererInServer->Init();
+    
+    int32_t ret = rendererInServer->SetPitch(PITCH_DEFAULT);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInServer SetPitch API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_SetPitch_002
+ * @tc.desc  : Test RendererInServer SetPitch with invalid pitch (below minimum)
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    processConfig.rendererInfo.isStatic = true;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    
+    int32_t ret = rendererInServer->SetPitch(0.1f);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RendererInServer SetPitch API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_SetPitch_003
+ * @tc.desc  : Test RendererInServer SetPitch with invalid pitch (above maximum)
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    processConfig.rendererInfo.isStatic = true;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    
+    int32_t ret = rendererInServer->SetPitch(5.0f);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RendererInServer SetPitch API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_SetPitch_004
+ * @tc.desc  : Test RendererInServer SetPitch not in static mode
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_004, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    processConfig.rendererInfo.isStatic = false;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    
+    rendererInServer->Init();
+    
+    int32_t ret = rendererInServer->SetPitch(PITCH_DEFAULT);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test RendererInServer SetPitch API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_SetPitch_005
+ * @tc.desc  : Test RendererInServer SetPitch during playback (not allowed)
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_005, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    processConfig.rendererInfo.isStatic = true;
+    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(100, "test");
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    
+    rendererInServer->Init();
+    rendererInServer->status_ = I_STATUS_STARTED;
+    
+    int32_t ret = rendererInServer->SetPitch(PITCH_DEFAULT);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 } // namespace AudioStandard
 } // namespace OHOS

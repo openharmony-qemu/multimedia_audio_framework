@@ -199,6 +199,7 @@ public:
     int32_t ResetStaticPlayPosition() override;
     int32_t SetMuteHint(bool mute) override;
     void ReportExceptionForFast();
+    int32_t SetStaticPitch(float pitch) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -318,14 +319,16 @@ private:
 
     mutable int64_t volumeDataCount_ = 0;
 
-    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
-    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
-    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
-
     std::mutex runnerMutex_;
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
     std::shared_ptr<AudioProcessInServerHandler> handler_ = nullptr;
     int64_t runningStamp_ = 0;
+
+    float pitch_ = 1.0f;
+    float speed_ = 1.0f;
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

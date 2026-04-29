@@ -107,6 +107,7 @@ public:
         (const std::shared_ptr<AudioFirstFrameCallback> &callback), (override));
     MOCK_METHOD(void, SetIsFirstFrame, (bool value), (override));
     MOCK_METHOD(int32_t, ResetStaticPlayPosition, (), (override));
+    MOCK_METHOD(int32_t, SetPitch, (float pitch), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {

@@ -2986,17 +2986,23 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
 
 int32_t AudioRendererPrivate::SetPitch(float pitch)
 {
-    AUDIO_INFO_LOG("set pitch %{public}f", pitch);
-    CHECK_AND_RETURN_RET_LOG((pitch >= MIN_STREAM_SPEED_LEVEL) && (pitch <= MAX_STREAM_SPEED_LEVEL),
-        ERR_INVALID_PARAM, "invaild pitch index");
+    AUDIO_INFO_LOG("SetPitch %{public}f", pitch);
+    CHECK_AND_RETURN_RET_LOG((pitch >= MIN_STREAM_PITCH_LEVEL) && (pitch <= MAX_STREAM_PITCH_LEVEL),
+        ERR_INVALID_PARAM, "Invalid pitch: %{public}f, valid range [0.25, 4.0]", pitch);
+    
     std::unique_lock<std::shared_mutex> lock;
-    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+    if (callbackLoopTid_ != gettid()) {
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-#ifdef SONIC_ENABLE
+    
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state != RENDERER_RUNNING,
+        ERR_ILLEGAL_STATE, "SetPitch not allowed during playback, state: %{public}d", state);
+
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    audioStream_->SetPitch(pitch);
-#endif
+    int32_t ret = audioStream_->SetPitch(pitch);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPitch failed: %{public}d", ret);
+    
     pitch_ = pitch;
     return SUCCESS;
 }

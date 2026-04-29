@@ -182,6 +182,8 @@ public:
     virtual int32_t ResetStaticPlayPosition() = 0; // Only can be used in static mode.
 
     virtual void CheckInnerCapVoIP() = 0;
+
+    virtual int32_t SetPitch(float pitch) = 0; // Only can be used in static mode.
 };
 } // namespace AudioStandard
 } // namespace OHOS
