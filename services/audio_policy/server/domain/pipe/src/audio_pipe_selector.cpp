@@ -399,16 +399,8 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     }
 
     for (size_t cmpStreamIdx = 1; cmpStreamIdx < streamDescs.size(); ++cmpStreamIdx) {
-        // Skip if incoming stream already reset to normal route
-        if (streamDescs[cmpStreamIdx]->IsNormalRoute()) {
-            continue;
-        }
         // calculate concurrency in time order
         for (size_t curStreamDescIdx = 0; curStreamDescIdx < cmpStreamIdx; ++curStreamDescIdx) {
-            // Skip if existing stream already reset to normal route
-            if (streamDescs[curStreamDescIdx]->IsNormalRoute()) {
-                continue;
-            }
             ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx], streamsMoveToNormal);
         }
     }
