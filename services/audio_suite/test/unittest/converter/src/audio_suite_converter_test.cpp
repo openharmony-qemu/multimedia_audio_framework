@@ -873,7 +873,6 @@ static bool ProcessDataInBatches(const ProcessBatchParams& params)
     return true;
 }
 
-// Test function for new Process(inData, inSampleCount) interface
 static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
 {
     auto converter = CreateConverter(info);
