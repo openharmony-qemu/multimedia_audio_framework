@@ -25,6 +25,7 @@
 #include "audio_utils.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
+#include "oh_audio_buffer.h"
 #include "volume_tools.h"
 #include "audio_stream_enum.h"
 

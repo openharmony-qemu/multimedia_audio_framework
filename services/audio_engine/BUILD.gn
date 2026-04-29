@@ -214,6 +214,7 @@ ohos_shared_library("audio_engine_node") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "init:libbegetutil",
   ]
 
