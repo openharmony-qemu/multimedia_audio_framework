@@ -122,7 +122,6 @@ void HpaeDirectSinkOutputNode::DoProcess()
         usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
     }
     periodTimer_.Start();
-
     std::move(renderFrameData_.begin() + renderSize_, renderFrameData_.begin() + currentSize_,
         renderFrameData_.begin());
     currentSize_ -= renderSize_;
@@ -186,9 +185,6 @@ int32_t HpaeDirectSinkOutputNode::GetRenderSinkInstance(const std::string &devic
 {
     renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, "", true,
         true, GetNodeInfo().routeFlag);
-    std::string sinkName = (deviceClass == "primary_direct_voip") ? HDI_ID_INFO_VOIP : HDI_ID_INFO_DIRECT;
-    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY,
-        sinkName, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get direct sink fail, deviceClass: %{public}s, renderId_: %{public}u",

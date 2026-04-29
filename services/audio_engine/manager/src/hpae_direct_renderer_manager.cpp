@@ -224,6 +224,7 @@ int32_t HpaeDirectRendererManager::CreateStream(const HpaeStreamInfo &streamInfo
 void HpaeDirectRendererManager::DeleteInputSession()
 {
     DisConnectInputSession();
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ not exist");
     RemoveNodeFromMap(curNode_->GetSessionId());
 }
 
@@ -527,7 +528,7 @@ void HpaeDirectRendererManager::MoveAllStreamToNewSink(const std::string &sinkNa
         }
     }
     for (auto node: sinkInputs) {
-        if (node->GetSessionId() == curNode_->GetSessionId()) {
+        if (curNode_ && node->GetSessionId() == curNode_->GetSessionId()) {
             DeleteInputSession();
         } else {
             RemoveNodeFromMap(node->GetSessionId());
@@ -603,6 +604,7 @@ int32_t HpaeDirectRendererManager::SuspendStreamManager(bool isSuspend)
         if (isSuspend_ == isSuspend) {
             return;
         }
+        CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sink output node is nullptr");
         isSuspend_ = isSuspend;
         if (isSuspend_) {
             sinkOutputNode_->RenderSinkStop();
