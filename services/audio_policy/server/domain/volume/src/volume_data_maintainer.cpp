@@ -766,10 +766,14 @@ std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType
 std::string VolumeDataMaintainer::GetVolumeValueMapKey(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
 {
     auto deviceGroupType = GetDeviceGroupTypeByDeviceType(device->getType());
+    std::string deviceGroupStr = std::to_string(static_cast<int32_t>(deviceGroupType));
+    if (device->deviceType_ == DEVICE_TYPE_SPEAKER && device->networkId_ != LOCAL_NETWORK_ID) {
+        deviceGroupStr = "DMSDP"; // distributed speaker.
+    }
 #ifdef FEATURE_AUDIO_ZONE
-    return "zone_" + GetZoneKey(zoneId) + "_deviceGroup_" + deviceGroupType;
+    return "zone_" + GetZoneKey(zoneId) + "_deviceGroup_" + deviceGroupStr;
 #else
-    return "deviceGroup_" + std::to_string(static_cast<int32_t>(deviceGroupType));
+    return "deviceGroup_" + deviceGroupStr;
 #endif
 }
 
