@@ -29,6 +29,7 @@ public:
     HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo);
     virtual ~HpaeAudioFormatConverterNode();
     void RegisterCallback(INodeFormatInfoCallback *callback);
+    void DoProcess() override;
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
         HpaeNodeInfo &nodeInfo) override;
@@ -42,6 +43,21 @@ private:
     int32_t ConverterProcess(float *srcData, float *dstData, float *tmpData, HpaePcmBuffer *input);
     void CheckAndUpdateInfo(HpaePcmBuffer *input);
     void UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo);
+
+    // --- Dual-buffer mechanism for non-standard sample rate handling ---
+    void AppendToUnprocessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
+    void AppendToProcessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
+    void PullAheadUntilThresholdOrFailure(uint32_t inputFrameLen);
+    void ProcessResampleLoop();
+    bool ExtractOutputFromProcessedBuffer();
+    void RemoveConsumedInputFrames(uint32_t consumedFrames, uint32_t channels);
+    void CompactProcessedBuffer(uint32_t channels);
+    void MoveUnprocessedToProcessed(uint32_t channels);
+    uint32_t CalculateResamplerInputThreshold() const;
+    void InitDualBuffer();
+    int32_t ResampleWithChannelConversion(float *srcData, uint32_t inFrameLen,
+        float *dstData, uint32_t outFrameLen, uint32_t resamplerChannels);
+
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer converterOutput_;
     HpaeNodeInfo preNodeInfo_;
@@ -50,6 +66,25 @@ private:
     HpaePcmBuffer tmpOutBuf_; // cache between resample and converter
     // if there is render effect, the effect node decides the output format of converter node
     INodeFormatInfoCallback *nodeFormatInfoCallback_ = nullptr;
+
+    // Unprocessed input accumulation buffer (interleaved float, input sample rate)
+    std::vector<float> unprocessedBuffer_;
+    uint32_t unprocessedFrames_ = 0;
+
+    // Processed output buffer (interleaved float, output sample rate)
+    std::vector<float> processedBuffer_;
+    uint32_t processedFrames_ = 0;
+    uint32_t processedReadPos_ = 0;
+
+    // Threshold: minimum input frames to trigger a resampler call
+    // 441 for 11025Hz, 801 for 8010Hz, 960 for 48000Hz
+    uint32_t resamplerInputThreshold_ = 0;
+
+    // 20ms output frame count at output sample rate (e.g., 960 for 48000Hz)
+    uint32_t outputFrameLen20ms_ = 0;
+
+    // Temporary buffer for resampler output (sized per call, reused)
+    std::vector<float> resamplerOutBuf_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

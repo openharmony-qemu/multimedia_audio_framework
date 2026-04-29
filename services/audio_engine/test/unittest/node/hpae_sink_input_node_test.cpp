@@ -96,7 +96,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_FALSE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -123,7 +122,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_001, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_TRUE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -150,7 +148,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_FALSE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -177,7 +174,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_003, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_TRUE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);

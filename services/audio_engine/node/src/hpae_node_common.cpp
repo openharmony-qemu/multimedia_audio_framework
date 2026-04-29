@@ -29,10 +29,6 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
-// to judge whether SampleRate is multiples of 50, if true use 20ms, false use 100ms
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
-static constexpr uint32_t FRAME_LEN_100MS = 100;
-static constexpr uint32_t FRAME_LEN_40MS = 40;
 
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
@@ -592,15 +588,7 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
 
 size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
-    size_t frameLen = 0;
-    if (sampleRate == SAMPLE_RATE_11025) {
-        frameLen = static_cast<size_t>(FRAME_LEN_40MS) * sampleRate / MS_PER_SECOND;
-    } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
-        frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND;
-    } else {
-        frameLen = static_cast<size_t>(FRAME_LEN_100MS) * sampleRate / MS_PER_SECOND;
-    }
-    return frameLen;
+    return static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND;
 }
 
 size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
