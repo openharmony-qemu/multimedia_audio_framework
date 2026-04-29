@@ -78,8 +78,8 @@ public:
 
     PcmBufferFormat inputFormat_;
     PcmBufferFormat outputFormat_;
-    std::shared_ptr<AudioSuiteFormatConversion> formatConversion_;
-    std::shared_ptr<AudioSuiteRawFormatConversion> rawFormatConversion_;
+    std::unique_ptr<AudioSuiteFormatConversion> formatConversion_;
+    std::unique_ptr<AudioSuiteRawFormatConversion> rawFormatConversion_;
     bool destroyed_ = false;
     std::mutex mutex_;
     std::vector<uint8_t> outputDataVector_;
