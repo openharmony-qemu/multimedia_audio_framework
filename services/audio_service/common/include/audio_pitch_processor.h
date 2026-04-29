@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -52,14 +52,6 @@ private:
     int32_t LoadPitchLibrary();
     int32_t CreatePitchEffect();
     int32_t ConfigurePitchBuffer();
-    
-    int32_t ConvertToS16Internal(int8_t *inputBuffer, size_t inputSize,
-        std::vector<int16_t> &s16Buffer, uint32_t totalSamples);
-    int32_t ConvertFromS16ToOriginal(const std::vector<int16_t> &s16Buffer,
-        int8_t *outputBuffer, size_t &outputSize, uint32_t totalSamples);
-    
-    static int16_t ConvertSampleToS16(const uint8_t *samplePtr, AudioSampleFormat format);
-    static void ConvertSampleFromS16(int16_t s16Sample, uint8_t *outputPtr, AudioSampleFormat format);
 
 private:
     float curPitch_ = PITCH_DEFAULT;

@@ -711,7 +711,7 @@ HWTEST_F(FastSystemStreamUnitTest, SetPitch_StaticMode_001, TestSize.Level1)
     EXPECT_EQ(res, ERR_NOT_SUPPORTED);
 
     fastAudioStream->rendererInfo_.isStatic = false;
-    int32_t res = fastAudioStream->SetPitch(1.0f);
+    res = fastAudioStream->SetPitch(1.0f);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
 }
 

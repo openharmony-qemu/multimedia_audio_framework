@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,13 +30,7 @@ namespace AudioStandard {
 namespace {
     const std::string LIB_PITCH_CHANGE = "/system/lib64/libaudio_pitch_change.z.so";
     const std::string PITCH_LIB = "PITCHLIB";
-    
-    constexpr float FLOAT_SCALE_16 = 1.0f / (1 << 15);
-    constexpr int32_t UINT8_MID_VALUE = 128;
     constexpr uint32_t DEFAULT_CHANNEL_LAYOUT_VALUE = 0;
-    constexpr size_t NUM_0 = 0;
-    constexpr size_t NUM_1 = 1;
-    constexpr size_t NUM_2 = 2;
 }
 
 void* AudioPitchProcessor::sharedSoHandle_ = nullptr;
@@ -180,103 +174,6 @@ int32_t AudioPitchProcessor::Apply(int16_t *inPcm, int16_t *outPcm, int32_t cnt,
     return SUCCESS;
 }
 
-int16_t AudioPitchProcessor::ConvertSampleToS16(const uint8_t *samplePtr, AudioSampleFormat format)
-{
-    switch (format) {
-        case SAMPLE_U8: {
-            uint8_t u8 = *samplePtr;
-            return static_cast<int16_t>((static_cast<int32_t>(u8) - UINT8_MID_VALUE) << BIT_8);
-        }
-        case SAMPLE_S16LE: {
-            return *reinterpret_cast<const int16_t*>(samplePtr);
-        }
-        case SAMPLE_S24LE: {
-            uint32_t value = samplePtr[NUM_0] | (samplePtr[NUM_1] << BIT_8) | (samplePtr[NUM_2] << BIT_16);
-            int32_t s24 = (static_cast<int32_t>(value) << BIT_8) >> BIT_8;
-            return static_cast<int16_t>(s24 >> BIT_8);
-        }
-        case SAMPLE_S32LE: {
-            int32_t s32 = *reinterpret_cast<const int32_t*>(samplePtr);
-            return static_cast<int16_t>((static_cast<double>(s32) / INT32_MAX) * INT16_MAX);
-        }
-        case SAMPLE_F32LE: {
-            float f32 = *reinterpret_cast<const float*>(samplePtr);
-            float capped = CapMax(f32);
-            return static_cast<int16_t>(capped * INT16_MAX);
-        }
-        default:
-            return 0;
-    }
-}
-
-void AudioPitchProcessor::ConvertSampleFromS16(int16_t s16Sample, uint8_t *outputPtr, AudioSampleFormat format)
-{
-    switch (format) {
-        case SAMPLE_U8: {
-            int32_t temp = (s16Sample >> BIT_8) + UINT8_MID_VALUE;
-            *outputPtr = static_cast<uint8_t>(std::max(0, std::min(UINT8_MAX, temp)));
-            break;
-        }
-        case SAMPLE_S16LE: {
-            *reinterpret_cast<int16_t*>(outputPtr) = s16Sample;
-            break;
-        }
-        case SAMPLE_S24LE: {
-            int32_t s24 = static_cast<int32_t>(s16Sample) << BIT_8;
-            outputPtr[NUM_0] = s24 & 0xFF;
-            outputPtr[NUM_1] = (s24 >> BIT_8) & 0xFF;
-            outputPtr[NUM_2] = (s24 >> BIT_16) & 0xFF;
-            break;
-        }
-        case SAMPLE_S32LE: {
-            int32_t s32 = static_cast<int32_t>((static_cast<double>(s16Sample) / INT16_MAX) * INT32_MAX);
-            *reinterpret_cast<int32_t*>(outputPtr) = s32;
-            break;
-        }
-        case SAMPLE_F32LE: {
-            float f32 = static_cast<float>(s16Sample) * FLOAT_SCALE_16;
-            *reinterpret_cast<float*>(outputPtr) = f32;
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-int32_t AudioPitchProcessor::ConvertToS16Internal(int8_t *inputBuffer, size_t inputSize,
-    std::vector<int16_t> &s16Buffer, uint32_t totalSamples)
-{
-    CHECK_AND_RETURN_RET_LOG(inputBuffer != nullptr && inputSize > 0,
-        ERR_INVALID_PARAM, "Invalid input params");
-    
-    uint32_t bytesPerSample = PcmFormatToBits(format_);
-    s16Buffer.resize(totalSamples);
-    
-    uint8_t *inputPtr = reinterpret_cast<uint8_t*>(inputBuffer);
-    for (uint32_t i = 0; i < totalSamples; i++) {
-        s16Buffer[i] = ConvertSampleToS16(inputPtr + i * bytesPerSample, format_);
-    }
-    
-    return SUCCESS;
-}
-
-int32_t AudioPitchProcessor::ConvertFromS16ToOriginal(const std::vector<int16_t> &s16Buffer,
-    int8_t *outputBuffer, size_t &outputSize, uint32_t totalSamples)
-{
-    CHECK_AND_RETURN_RET_LOG(outputBuffer != nullptr,
-        ERR_INVALID_PARAM, "Invalid output buffer");
-    
-    uint32_t bytesPerSample = PcmFormatToBits(format_);
-    outputSize = totalSamples * bytesPerSample;
-    
-    uint8_t *outputPtr = reinterpret_cast<uint8_t*>(outputBuffer);
-    for (uint32_t i = 0; i < totalSamples; i++) {
-        ConvertSampleFromS16(s16Buffer[i], outputPtr + i * bytesPerSample, format_);
-    }
-    
-    return SUCCESS;
-}
-
 int32_t AudioPitchProcessor::ProcessBufferPitch(int8_t *inputBuffer, size_t inputSize,
     int8_t *outputBuffer, size_t &outputSize)
 {
@@ -286,26 +183,28 @@ int32_t AudioPitchProcessor::ProcessBufferPitch(int8_t *inputBuffer, size_t inpu
     CHECK_AND_RETURN_RET_LOG(outputBuffer != nullptr, ERR_INVALID_PARAM, "Invalid output buffer");
     CHECK_AND_RETURN_RET_LOG(algoHandle_ != nullptr, ERR_INVALID_PARAM, "Pitch processor not initialized");
     
-    int32_t totalSamples = static_cast<int32_t>(inputSize / PcmFormatToBits(format_));
+    uint32_t totalSamples = static_cast<uint32_t>(inputSize / PcmFormatToBits(format_));
     AUDIO_DEBUG_LOG("ProcessBufferPitch: inputSize=%{public}zu, channels=%{public}u, totalSamples=%{public}u",
         inputSize, channels_, totalSamples);
     Trace traceProcess("ProcessBufferPitch: inputSize=" + std::to_string(inputSize) + "channels= " +
         std::to_string(channels_) + "totalSamples= " + std::to_string(totalSamples));
     
-    int32_t ret = ConvertToS16Internal(inputBuffer, inputSize, internalS16Buffer_, totalSamples);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConvertToS16Internal failed");
+    internalS16Buffer_.resize(totalSamples);
+    ConvertBufferToS16(reinterpret_cast<const uint8_t*>(inputBuffer), totalSamples,
+        internalS16Buffer_.data(), format_);
     
     int32_t maxProcessedSamples = totalSamples * MAX_PITCH_BUFFER_FACTOR;
     std::vector<int16_t> processedBuffer(maxProcessedSamples);
     int32_t outCnt = maxProcessedSamples;
     
-    ret = Apply(internalS16Buffer_.data(), processedBuffer.data(), totalSamples, outCnt);
+    int32_t ret = Apply(internalS16Buffer_.data(), processedBuffer.data(), totalSamples, outCnt);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Apply failed");
     
     processedBuffer.resize(outCnt);
     
-    ret = ConvertFromS16ToOriginal(processedBuffer, outputBuffer, outputSize, processedBuffer.size());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConvertFromS16ToOriginal failed");
+    outputSize = static_cast<size_t>(outCnt) * PcmFormatToBits(format_);
+    ConvertBufferFromS16(processedBuffer.data(), outCnt,
+        reinterpret_cast<uint8_t*>(outputBuffer), format_);
     
     AUDIO_DEBUG_LOG("ProcessBufferPitch done: outputSize=%{public}zu", outputSize);
     return SUCCESS;
