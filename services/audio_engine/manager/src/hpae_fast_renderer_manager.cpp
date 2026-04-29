@@ -326,6 +326,33 @@ int32_t HpaeFastRendererManager::StartRenderSink()
     return sinkOutputNode_->RenderSinkStart();
 }
 
+IAudioSinkAttr HpaeFastRendererManager::CreateSinkAttr()
+{
+    IAudioSinkAttr attr;
+    attr.adapterName = sinkInfo_.adapterName.c_str();
+    attr.sampleRate = sinkInfo_.samplingRate;
+    attr.channel = sinkInfo_.channels;
+    attr.format = sinkInfo_.format;
+    attr.channelLayout = sinkInfo_.channelLayout;
+    attr.deviceType = sinkInfo_.deviceType;
+    attr.volume = sinkInfo_.volume;
+    attr.openMicSpeaker = sinkInfo_.openMicSpeaker;
+    attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
+    attr.filePath = sinkInfo_.filePath.c_str();
+    attr.aux = sinkInfo_.splitMode.c_str();
+    attr.audioStreamFlag = sinkInfo_.deviceClass == "primary_mmap_voip" ?
+        AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
+    attr.isLoopback = sinkInfo_.isLoopback;
+    if (sinkInfo_.isUltraFast) {
+        attr.period = static_cast<int32_t>(
+            static_cast<float>(sinkInfo_.samplingRate) * ULTRA_FAST_PERIOD_TIME_IN_MS /
+            static_cast<float>(MILLISECOND_PER_SECOND));
+        AUDIO_INFO_LOG("UltraFast period set: %{public}u frames for rate %{public}u",
+            attr.period, sinkInfo_.samplingRate);
+    }
+    return attr;
+}
+
 int32_t HpaeFastRendererManager::InitSinkInner(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s, channel:%{public}u, rate:%{public}u",
@@ -349,27 +376,7 @@ int32_t HpaeFastRendererManager::InitSinkInner(bool isReload)
     sinkOutputNode_->SetTimeoutStopThd(sinkInfo_.suspendTime);
     AUDIO_INFO_LOG("GetRenderSinkInstance for fast path");
     sinkOutputNode_->GetRenderSinkInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
-    IAudioSinkAttr attr;
-    attr.adapterName = sinkInfo_.adapterName.c_str();
-    attr.sampleRate = sinkInfo_.samplingRate;
-    attr.channel = sinkInfo_.channels;
-    attr.format = sinkInfo_.format;
-    attr.channelLayout = sinkInfo_.channelLayout;
-    attr.deviceType = sinkInfo_.deviceType;
-    attr.volume = sinkInfo_.volume;
-    attr.openMicSpeaker = sinkInfo_.openMicSpeaker;
-    attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
-    attr.filePath = sinkInfo_.filePath.c_str();
-    attr.aux = sinkInfo_.splitMode.c_str();
-    attr.audioStreamFlag = sinkInfo_.deviceClass == "primary_mmap_voip" ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
-    attr.isLoopback = sinkInfo_.isLoopback;
-    if (sinkInfo_.isUltraFast) {
-        attr.period = static_cast<int32_t>(
-            static_cast<float>(sinkInfo_.samplingRate) * ULTRA_FAST_PERIOD_TIME_IN_MS /
-            static_cast<float>(MILLISECOND_PER_SECOND));
-        AUDIO_INFO_LOG("UltraFast period set: %{public}u frames for rate %{public}u",
-            attr.period, sinkInfo_.samplingRate);
-    }
+    IAudioSinkAttr attr = CreateSinkAttr();
     AUDIO_INFO_LOG("InitSinkInner attr, deviceClass:%{public}s deviceType:%{public}d flag:%{public}u "
         "channelLayout:%{public}" PRIu64, sinkInfo_.deviceClass.c_str(), sinkInfo_.deviceType,
         attr.audioStreamFlag, sinkInfo_.channelLayout);
@@ -530,7 +537,7 @@ int32_t HpaeFastRendererManager::Start(uint32_t sessionId)
         node->SetState(HPAE_SESSION_RUNNING);
         ConnectInputCluster(sessionId);
         SetSessionFade(sessionId, OPERATION_STARTED);
-        // NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -546,7 +553,7 @@ int32_t HpaeFastRendererManager::Pause(uint32_t sessionId)
         if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputCluster(sessionId);
         }
-        //NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -592,7 +599,7 @@ int32_t HpaeFastRendererManager::Stop(uint32_t sessionId)
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             DisConnectInputCluster(sessionId);
         }
-        // NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_STOPPED);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_STOPPED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -964,12 +971,12 @@ int32_t HpaeFastRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInf
         InitSinkInner(isReload);
 
         for (auto &[sessionId, node] : sinkInputNodeMap_) {
+            CreateFastNodes(node->GetNodeInfo());
             if (node->GetState() == HPAE_SESSION_RUNNING) {
-                CreateFastNodes(node->GetNodeInfo());
                 ConnectInputCluster(sessionId);
             }
-            // NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId,
-            //     ConvertHpaeToRendererState(node->GetState()));
+            NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId,
+                 ConvertHpaeToRendererState(node->GetState()));
         }
     };
     SendRequest(request, __func__, true);
@@ -979,7 +986,8 @@ int32_t HpaeFastRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInf
     return SUCCESS;
 }
 
-void HpaeFastRendererManager::TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode)
+void HpaeFastRendererManager::TriggerStreamState(uint32_t sessionId,
+    const std::shared_ptr<HpaeSinkInputNode> &inputNode)
 {
     HpaeSessionState inputState = inputNode->GetState();
     if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {

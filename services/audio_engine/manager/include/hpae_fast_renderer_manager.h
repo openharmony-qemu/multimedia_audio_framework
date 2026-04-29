@@ -138,6 +138,7 @@ private:
     void RemoveNodeFromMap(uint32_t sessionId);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void StopOutputNode();
+    IAudioSinkAttr CreateSinkAttr();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode);

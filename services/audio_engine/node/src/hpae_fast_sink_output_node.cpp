@@ -48,9 +48,11 @@ HpaeFastSinkOutputNode::HpaeFastSinkOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo)
 {
     frameLenMs_ = nodeInfo.samplingRate ? nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate : 0;
-    readTimeModel_.ConfigSampleRate(nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
-    writeTimeModel_.ConfigSampleRate(nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
-    logUtilsTag_ = "HpaeFastSinkOutputNode::" + (nodeInfo.deviceClass.empty() ? std::string("Fast") : nodeInfo.deviceClass);
+    uint32_t sampleRate = nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate;
+    readTimeModel_.ConfigSampleRate(sampleRate);
+    writeTimeModel_.ConfigSampleRate(sampleRate);
+    logUtilsTag_ = "HpaeFastSinkOutputNode::" +
+        (nodeInfo.deviceClass.empty() ? std::string("Fast") : nodeInfo.deviceClass);
     isUltraFast_ = (nodeInfo.deviceClass == "ultra_fast");
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeFastSinkOutputNode");
@@ -461,6 +463,22 @@ void HpaeFastSinkOutputNode::InitTransBuffer() //todo
     renderFrameData_.resize(dstSpanSizeInByte_);
 }
 
+int64_t HpaeFastSinkOutputNode::CalcServerAheadReadTime(uint32_t sampleRate)
+{
+    spanDuration_ = static_cast<int64_t>(dstSpanSizeInframe_) *
+        AUDIO_NS_PER_SECOND / static_cast<int64_t>(sampleRate);
+    int64_t temp = spanDuration_ / 5 * 3; // 3/5 spanDuration
+    if (isUltraFast_ && temp < ULTRA_FAST_MINIMUM_AHEAD_TIME_NS) {
+        temp = ULTRA_FAST_MINIMUM_AHEAD_TIME_NS;
+    }
+    int64_t setTime = -1;
+    int64_t maxSetTime = static_cast<int64_t>(dstTotalSizeInframe_ - dstSpanSizeInframe_) *
+        AUDIO_NS_PER_SECOND / static_cast<int64_t>(sampleRate);
+    GetSysPara("persist.multimedia.serveraheadreadtime", setTime);
+    temp = setTime > 0 && setTime < maxSetTime ? setTime : temp;
+    return temp < ONE_MILLISECOND_DURATION_NS ? ONE_MILLISECOND_DURATION_NS : temp;
+}
+
 int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
 {
     if (dstAudioBuffer_ != nullptr) {
@@ -477,16 +495,9 @@ int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
     writeTimeModel_.SetSpanCount(dstSpanSizeInframe_);
     uint32_t sampleRate = sinkOutAttr_.sampleRate == 0 ? GetNodeInfo().samplingRate : sinkOutAttr_.sampleRate;
     CHECK_AND_RETURN_RET_LOG(sampleRate > 0, ERR_INVALID_PARAM, "sampleRate is invalid");
-    spanDuration_ = static_cast<int64_t>(dstSpanSizeInframe_) * AUDIO_NS_PER_SECOND / static_cast<int64_t>(sampleRate);
-    int64_t temp = spanDuration_ / 5 * 3; // 3/5 spanDuration
-    temp = isUltraFast_ && temp < ULTRA_FAST_MINIMUM_AHEAD_TIME_NS ? ULTRA_FAST_MINIMUM_AHEAD_TIME_NS : temp;
-    int64_t setTime = -1;
-    int64_t maxSetTime = static_cast<int64_t>(dstTotalSizeInframe_ - dstSpanSizeInframe_) *
-        AUDIO_NS_PER_SECOND / static_cast<int64_t>(sampleRate);
-    GetSysPara("persist.multimedia.serveraheadreadtime", setTime);
-    temp = setTime > 0 && setTime < maxSetTime ? setTime : temp;
-    serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION_NS ? ONE_MILLISECOND_DURATION_NS : temp;
-    AUDIO_INFO_LOG("PrepareDeviceBuffer spanDuration:%{public}" PRId64 " aheadReadTime:%{public}" PRId64
+    serverAheadReadTime_ = CalcServerAheadReadTime(sampleRate);
+    AUDIO_INFO_LOG("PrepareDeviceBuffer spanDuration:%{public}" PRId64
+        " aheadReadTime:%{public}" PRId64
         " totalFrame:%{public}u spanFrame:%{public}u sampleRate:%{public}u",
         spanDuration_, serverAheadReadTime_, dstTotalSizeInframe_, dstSpanSizeInframe_, sampleRate);
     // Step B: Create OHAudioBuffer from the remote mmap buffer
@@ -495,7 +506,6 @@ int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(
         dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
         holder, dstBufferFd_, INVALID_BUFFER_FD);
-
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_ILLEGAL_STATE,
         "CreateFromRemote fail");
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_->GetBufferHolder() == holder, ERR_ILLEGAL_STATE,
@@ -515,7 +525,6 @@ int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
     InitAudiobuffer(true);
     InitTransBuffer();
     curWritePos_ = 0;
-
     AUDIO_INFO_LOG("PrepareDeviceBuffer success, fd:%{public}d, spanSizeInByte:%{public}zu",
         dstBufferFd_, dstSpanSizeInByte_);
     return SUCCESS;
@@ -781,9 +790,11 @@ int32_t HpaeFastSinkOutputNode::WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, ui
         ret = memcpy_s(writeBuf.buffer, writeBuf.bufLength, renderFrameData_.data(), writeSize);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy_s failed");
         if (writeSize < writeBuf.bufLength) {
-            ret = memset_s(writeBuf.buffer + writeSize, writeBuf.bufLength - writeSize, 0, writeBuf.bufLength - writeSize);
+            size_t remainingSize = writeBuf.bufLength - writeSize;
+            ret = memset_s(writeBuf.buffer + writeSize, remainingSize, 0, remainingSize);
             CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memset_s failed");
-            AUDIO_WARNING_LOG("WriteToDeviceBuffer short frame, sessionId:%{public}u valid:%{public}zu span:%{public}zu",
+            AUDIO_WARNING_LOG("WriteToDeviceBuffer short frame, "
+                "sessionId:%{public}u valid:%{public}zu span:%{public}zu",
                 GetSessionId(), writeSize, writeBuf.bufLength);
         }
     }
@@ -796,20 +807,7 @@ int32_t HpaeFastSinkOutputNode::WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, ui
         channelVolumes.volStart + channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
     ZeroVolumeCheck(vol);
     UpdateSilentState(writeBuf.buffer, writeBuf.dataLength);
-    if (startUpdate_) {
-        if (renderFrameNum_ == 0) {
-            last10FrameStartTime_ = ClockTime::GetCurNano();
-        }
-        renderFrameNum_++;
-        maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(sinkOutAttr_.format),
-            reinterpret_cast<char *>(writeBuf.buffer), writeBuf.dataLength);
-        if (renderFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
-            renderFrameNum_ = 0;
-            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
-                startUpdate_ = false;
-            }
-        }
-    }
+    UpdateAmplitudeIfNeeded(writeBuf);
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(writeBuf.buffer), writeBuf.dataLength);
 
     lastWriteTime_ = ClockTime::GetCurNano();
@@ -973,6 +971,25 @@ void HpaeFastSinkOutputNode::UpdateSilentState(uint8_t *buffer, size_t bufferSiz
     if (isInSilentState_) {
         AUDIO_WARNING_LOG("final hpae fast sink output becomes non-silent, sessionId:%{public}u", GetSessionId());
         isInSilentState_ = false;
+    }
+}
+
+void HpaeFastSinkOutputNode::UpdateAmplitudeIfNeeded(BufferDesc &writeBuf)
+{
+    if (!startUpdate_) {
+        return;
+    }
+    if (renderFrameNum_ == 0) {
+        last10FrameStartTime_ = ClockTime::GetCurNano();
+    }
+    renderFrameNum_++;
+    maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(sinkOutAttr_.format),
+        reinterpret_cast<char *>(writeBuf.buffer), writeBuf.dataLength);
+    if (renderFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+        renderFrameNum_ = 0;
+        if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+            startUpdate_ = false;
+        }
     }
 }
 

@@ -98,6 +98,7 @@ private:
     static constexpr uint32_t TIME_OUT_STOP_THD_DEFAULT_FRAME = 150;
     static constexpr int32_t CPU_INDEX = 2;
     static constexpr int32_t ONE_MINUTE = 60;
+    static constexpr size_t SIMD_ALIGNMENT_BYTES = 16;
 
     enum ZeroVolumeState : uint32_t {
         INACTIVE = 0,
@@ -136,6 +137,8 @@ private:
     void CheckPlaySignal(uint8_t *buffer, size_t bufferSize);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize) const;
     void UpdateSilentState(uint8_t *buffer, size_t bufferSize);
+    int64_t CalcServerAheadReadTime(uint32_t sampleRate);
+    void UpdateAmplitudeIfNeeded(BufferDesc &writeBuf);
     void ZeroVolumeCheck(int32_t vol);
     void HandleZeroVolumeStartEvent();
     void HandleZeroVolumeStopEvent();
@@ -175,7 +178,7 @@ private:
     std::string logUtilsTag_ = "";
     FILE *dumpHdi_ = nullptr;
     std::string dumpHdiName_ = "";
-    std::vector<char, AlignedAllocator<char, 16>> renderFrameData_;
+    std::vector<char, AlignedAllocator<char, SIMD_ALIGNMENT_BYTES>> renderFrameData_;
     size_t validRenderDataLen_ = 0;
 
     // Position update thread

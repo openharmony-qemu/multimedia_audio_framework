@@ -893,7 +893,8 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, zeroVolumeCheck_BluetoothA2dp_001, TestSize
     fastNode_->isExistLoopback_ = false;
     fastNode_->currentOutputDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     fastNode_->ZeroVolumeCheck(0);
-    EXPECT_EQ(fastNode_->zeroVolumeState_, HpaeFastSinkOutputNode::ZeroVolumeState::INACTIVE); // INACTIVE, unchanged due to A2DP early return
+    // INACTIVE, unchanged due to A2DP early return
+    EXPECT_EQ(fastNode_->zeroVolumeState_, HpaeFastSinkOutputNode::ZeroVolumeState::INACTIVE);
 }
 
 /**
