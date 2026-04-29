@@ -64,11 +64,6 @@ constexpr uint32_t MAX_DURATION_MS = 60;
 constexpr uint32_t MIN_DURATION_MS = 5;
 constexpr uint32_t MAX_RESAMPLE_QUALITY = 10;
 constexpr uint32_t MIN_RESAMPLE_QUALITY = 1;
- 
-// Check maximum sample limit (60ms * max sample rate * max channels)
-constexpr uint32_t MAX_SAMPLE_RATE = 192000;
-constexpr uint32_t MAX_CHANNELS = 2;
-constexpr double MAX_SAMPLE_LIMIT = (MAX_DURATION_MS * MAX_SAMPLE_RATE * MAX_CHANNELS) / 1000;
 
 std::mutex AudioFormatConverter::createMutex_;
 
@@ -554,7 +549,9 @@ AudioConvertResult AudioFormatConverterImpl::ValidateBasicParams(const uint8_t* 
         result, "Process: inSampleCount must be multiple of channelCount");
  
     result = {nullptr, 0, ERR_INVALID_PARAM};
-    CHECK_AND_RETURN_RET_LOG(inSampleCount <= MAX_SAMPLE_LIMIT, result, "Process: inSampleCount exceeds limit");
+    uint32_t maxSampleCount =
+        (MAX_DURATION_MS * inputFormat_.sampleRate * inputFormat_.channelCount) / MILLISECONDS_PER_SECOND;
+    CHECK_AND_RETURN_RET_LOG(inSampleCount <= maxSampleCount, result, "Process: inSampleCount exceeds limit");
  
     uint32_t inputSampleSize = AudioSuiteUtil::GetSampleSize(inputFormat_.sampleFormat);
     result = {nullptr, 0, ERR_INVALID_PARAM};
