@@ -775,7 +775,7 @@
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
-                <focus_type value="SOURCE_TYPE_VOICE_MESSAGE" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_MESSAGE" is_forced="true" action_type="MUTE" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_REMOTE_CAST" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_TRANSCRIPTION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_UNPROCESSED" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -973,7 +973,6 @@
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION"/>
                 <focus_type value="SOURCE_TYPE_WAKEUP"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC"/>
-                <focus_type value="SOURCE_TYPE_VOICE_MESSAGE"/>
                 <focus_type value="SOURCE_TYPE_UNPROCESSED"/>
                 <focus_type value="SOURCE_TYPE_LIVE"/>
             </deny>
@@ -999,6 +998,7 @@
                 <focus_type value="SOURCE_TYPE_REMOTE_CAST" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_TRANSCRIPTION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_MESSAGE" is_forced="true" action_type="MUTE" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>

@@ -5374,6 +5374,36 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_ResumeAudioFocusList_Audi
     EXPECT_EQ(audioInterruptZone->audioFocusInfoList.size(), 0);
 }
 
+/*
+* @tc.name  : Test AudioInterruptService
+* @tc.number: UpdateAIBaseFocusStrategy
+* @tc.desc  : Test UpdateAIBaseFocusStrategy
+*/
+HWTEST_F(AudioInterruptUnitTest, UpdateAIBaseFocusStrategy, TestSize.Level1)
+{
+    AudioInterrupt currentInterrupt;
+    currentInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+
+    AudioFocusEntry focusEntry;
+    audioInterruptStrategy->UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_MUTE);
+
+    currentInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    audioInterruptStrategy->UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_MUTE);
+
+    currentInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    audioInterruptStrategy->UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_MUTE);
+
+    incomingInterrupt.behaviorFlags_.aibaseMuteVoip = true;
+    audioInterruptStrategy->UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_MUTE);
+}
+
 /**
  * @tc.name  : Test UpdateStreamFocusState
  * @tc.number: UpdateStreamFocusStateTest_001

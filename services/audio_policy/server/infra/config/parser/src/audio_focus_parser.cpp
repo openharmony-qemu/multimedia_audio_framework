@@ -115,6 +115,7 @@ std::map<std::string, InterruptHint> AudioFocusParser::actionMap = {
     {"PAUSE", INTERRUPT_HINT_PAUSE},
     {"REJECT", INTERRUPT_HINT_STOP},
     {"STOP", INTERRUPT_HINT_STOP},
+    {"MUTE", INTERRUPT_HINT_MUTE},
     {"PLAY", INTERRUPT_HINT_NONE}
 };
 

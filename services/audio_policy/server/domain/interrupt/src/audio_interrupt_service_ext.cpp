@@ -133,11 +133,15 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
     return callingUid_;
 }
 
-void AudioInterruptService::SetLatestMuteState(const uint32_t &streamId, bool muteFlag)
+void AudioInterruptService::SetLatestMuteState(const AudioInterrupt &audioInterrupt, bool muteFlag)
 {
+    uint32_t streamId = audioInterrupt.streamId;
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
     streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
     policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        policyServer_->NotifyVoipPriorityLoweredByMute(streamId, muteFlag);
+    }
 }
 
 int32_t AudioInterruptService::ProcessActiveStreamFocus(
@@ -520,7 +524,7 @@ int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, 
     return sessionService_.SetAudioSessionBehavior(callerPid, behavior, callerUid);
 }
  
-void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)
+void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audioInterrupt, bool muteFlag)
 {
     if (audioInterrupt.isAudioSessionInterrupt) {
         AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
@@ -530,7 +534,7 @@ void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audi
             SetNonInterruptMute(interrupt.streamId, muteFlag);
         }
     } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-        SetLatestMuteState(audioInterrupt.streamId, muteFlag);
+        SetLatestMuteState(audioInterrupt, muteFlag);
     } else {
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
     }
