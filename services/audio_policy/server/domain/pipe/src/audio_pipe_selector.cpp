@@ -317,8 +317,10 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
     AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());
 }
 
-void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, ConcurrencyAction action)
 {
+    CHECK_AND_RETURN(action != PLAY_BOTH);
     bool hasFastVoipCapturer = false;
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
     for (auto &curPipeInfo : pipeInfoList) {
@@ -400,7 +402,6 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
         // calculate concurrency in time order
         for (size_t curStreamDescIdx = 0; curStreamDescIdx < cmpStreamIdx; ++curStreamDescIdx) {
             ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx], streamsMoveToNormal);
-            ProcessRendererAndCapturerConcurrency(streamDescs[cmpStreamIdx]);
         }
     }
     ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
@@ -876,6 +877,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         incomingStream->GetSessionId(), incomingStream->GetRoute());
 
     AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    ProcessRendererAndCapturerConcurrency(incomingStream, action);
 
     bool isUpdate = false;
     switch (action) {
@@ -1342,7 +1344,7 @@ int32_t AudioPipeSelector::SetCustomAudioMix(const std::string &zoneName, const 
 #endif
 }
 
-// If hd playback only supports app level, set normal routeflag for more than two active streams.
+// If hd playback, set normal routeflag for more than two active streams.
 void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
@@ -1350,8 +1352,8 @@ void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescrip
         "newDeviceDescs_ empty");
     auto existingHdPlayMode = existingStream->newDeviceDescs_[0]->hdPlaybackMode_;
     auto incomingHdPlayMode = incomingStream->newDeviceDescs_[0]->hdPlaybackMode_;
-    CHECK_AND_RETURN(existingHdPlayMode == HdPlaybackMode::APP_LEVEL &&
-        incomingHdPlayMode == HdPlaybackMode::APP_LEVEL &&
+    CHECK_AND_RETURN(existingHdPlayMode != HdPlaybackMode::HD_NOT_SUPPORTED &&
+        incomingHdPlayMode != HdPlaybackMode::HD_NOT_SUPPORTED &&
         (existingStream->IsRouteOffload() || incomingStream->IsRouteOffload()));
 
     ConcurrencyAction newAction = action;

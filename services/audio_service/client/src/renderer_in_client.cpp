@@ -722,6 +722,34 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
     return true;
 }
 
+bool RendererInClientInner::ProcessPitch(uint8_t *&buffer, size_t &bufferSize, bool &pitchCached)
+{
+    pitchCached = false;
+    std::lock_guard lockPitch(pitchMutex_);
+    
+    if (isEqual(curPitch_, 1.0f) || pitchProcessor_ == nullptr) {
+        return true;
+    }
+    Trace trace(traceTag_ + " ProcessPitch" + std::to_string(curPitch_));
+    size_t outputSize = bufferSize * MAX_PITCH_BUFFER_FACTOR;
+    int32_t ret = pitchProcessor_->ProcessBufferPitch(reinterpret_cast<int8_t*>(buffer), bufferSize,
+        reinterpret_cast<int8_t*>(pitchBuffer_.get()), outputSize);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("ProcessBufferPitch failed");
+        return false;
+    }
+    
+    if (outputSize == 0) {
+        AUDIO_ERR_LOG("Pitch buffer is empty");
+        return false;
+    }
+    
+    buffer = pitchBuffer_.get();
+    bufferSize = outputSize;
+    pitchCached = true;
+    return true;
+}
+
 void RendererInClientInner::DfxWriteInterval()
 {
     CHECK_AND_RETURN(renderMode_ == RENDER_MODE_NORMAL); // should only work in write mode.
@@ -776,7 +804,7 @@ void RendererInClientInner::NotifyStreamSilentChange()
     AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }
 
-int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
+int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool bufferCached,
     size_t oriBufferSize)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(sizePerFrameInByte_ > 0, ERROR,
@@ -832,7 +860,41 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(writtenSize);
 
-    return speedCached ? oriBufferSize : writtenSize;
+    return bufferCached ? oriBufferSize : writtenSize;
+}
+
+int32_t RendererInClientInner::ProcessBufferAndWriteCache(uint8_t *buffer, size_t bufferSize, size_t oriBufferSize)
+{
+    bool speedCached = false;
+    bool pitchCached = false;
+    AudioWriteState currentState = audioWriteState_.load();
+    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
+    
+    if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
+        audioWriteState_.store(currentState);
+        return bufferSize;
+    }
+    
+    if (!ProcessPitch(buffer, bufferSize, pitchCached)) {
+        audioWriteState_.store(currentState);
+        return bufferSize;
+    }
+    
+    WriteMuteDataSysEvent(buffer, bufferSize);
+    
+    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
+    
+    if (isBlendSet_) {
+        audioBlend_.Process(buffer, bufferSize);
+    }
+    
+    currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
+    currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
+    currentState.perPeriodFrame_ = 0;
+    audioWriteState_.store(currentState);
+    
+    return WriteCacheData(buffer, bufferSize, speedCached || pitchCached, oriBufferSize);
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
@@ -871,28 +933,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     size_t oriBufferSize = bufferSize;
-    bool speedCached = false;
-    AudioWriteState currentState = audioWriteState_.load();
-    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
-    if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
-        audioWriteState_.store(currentState);
-        return bufferSize;
-    }
-
-    WriteMuteDataSysEvent(buffer, bufferSize);
-
-    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
-        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
-
-    // hold lock
-    if (isBlendSet_) {
-        audioBlend_.Process(buffer, bufferSize);
-    }
-    currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
-    currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
-    currentState.perPeriodFrame_ = 0;
-    audioWriteState_.store(currentState);
-    int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
+    int32_t result = ProcessBufferAndWriteCache(buffer, bufferSize, oriBufferSize);
     MonitorMutePlay(false);
     return result;
 }

@@ -149,6 +149,19 @@ void AudioProcessInServerMicIndicatorExecute(FuzzedDataProvider &provider)
     audioProcessInServer->isMicIndicatorOn_ = provider.ConsumeBool();
     (void)audioProcessInServer->TurnOnMicIndicator();
     (void)audioProcessInServer->TurnOffMicIndicator(CAPTURER_RELEASED);
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    AudioProcessConfig stopFailConfig = InitProcessConfig();
+    stopFailConfig.appInfo.appTokenId = 0;
+    sptr<AudioProcessInServer> stopFailProcess = AudioProcessInServer::Create(stopFailConfig, releaseCallbackRet);
+    if (stopFailProcess != nullptr) {
+        stopFailProcess->isMicIndicatorOn_ = true;
+        manager.tokenIdRecordMap_[0] = {stopFailProcess->GetSessionId()};
+        (void)stopFailProcess->TurnOffMicIndicator(CAPTURER_PAUSED);
+        (void)stopFailProcess->TurnOnMicIndicator();
+    }
+    manager.tokenIdRecordMap_.clear();
 }
 
 void FuzzTest(FuzzedDataProvider &provider)

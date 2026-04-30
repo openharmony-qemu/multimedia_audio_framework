@@ -40,6 +40,7 @@
 #include "audio_stream_collector.h"
 #include "audio_interrupt_dfx.h"
 #include "audio_interrupt_strategy.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -103,7 +104,8 @@ public:
     bool AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingStreamId);
     AudioInterruptResult ActivateAudioInterrupt(
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
-    AudioInterruptResult DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    AudioInterruptResult DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isRemoveFocusHis = false);
     bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerInfo &capturerInfo);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 
@@ -129,6 +131,13 @@ public:
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
+    int32_t UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId);
+    int32_t UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId);
+
+private:
+    int32_t FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState);
+
+public:
     void ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id, const int32_t &oldId);
     int32_t ClearAudioFocusInfoList();
     void AudioInterruptZoneDump(std::string &dumpString);
@@ -163,6 +172,8 @@ public:
         int32_t callerUid = INVALID_UID);
     void RefreshAudioSceneAfterDelay(const int32_t zoneId);
     int32_t GetAudioSessionZoneidByPid(const int32_t pid);
+    void GetFocusDebugInfoByStreamId(uint32_t streamId, AudioDebugInfo &audioDebugInfo);
+    int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -316,7 +327,7 @@ private:
     void RemoveAllPlaceholderInterrupt(std::list<int32_t> &removeFocusInfoPidList);
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
-    void SetLatestMuteState(const uint32_t &streamId, bool muteFlag);
+    void SetLatestMuteState(const AudioInterrupt &audioInterrupt, bool muteFlag);
 
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
@@ -324,7 +335,7 @@ private:
         const AudioInterrupt &activeInterrupt);
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
-    void HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag);
+    void HandleMuteInterruptEvent(const AudioInterrupt &audioInterrupt, bool muteFlag);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId, bool returnDefault = false);
 
@@ -403,6 +414,9 @@ private:
         const InterruptErrorCode interruptErrorCode);
     int32_t FindAudioInterruptByPid(const int32_t zoneId, const int32_t callerPid, AudioInterrupt &audioInterrupt);
     void MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt);
+    void RecordFocusHistory(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
+        const InterruptEventInternal &interruptEvent);
+    void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -448,6 +462,7 @@ private:
     std::unique_ptr<AudioInterruptStrategy> interruptStrategy_;
 
     AudioStreamCollector& streamCollector_;
+    std::map<uint32_t, std::vector<AudioFocusBehavior>> audioFocusHisMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

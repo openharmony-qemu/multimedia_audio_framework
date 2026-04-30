@@ -920,26 +920,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPreferredOutputDeviceDescriptors.
-* @tc.number: GetPreferredOutputDeviceDescriptors_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, GetPreferredOutputDeviceDescriptors_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetPreferredOutputDeviceDescriptors_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    EXPECT_NO_THROW(
-        AudioRendererInfo rendererInfo;
-        rendererInfo.streamUsage = STREAM_USAGE_INVALID;
-        string networkId = REMOTE_NETWORK_ID;
-        GetServerPtr()->audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
-
-        rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-        GetServerPtr()->audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
-    );
-}
-
-/**
 * @tc.name  : Test GetDeviceRole.
 * @tc.number: GetDeviceRole_001
 * @tc.desc  : Test AudioPolicyService interfaces.

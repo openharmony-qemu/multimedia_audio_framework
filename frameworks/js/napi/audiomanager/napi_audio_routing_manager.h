@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -129,15 +130,11 @@ private:
         napi_value args, NapiAudioRoutingManager *napiRoutingMgr);
     static std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> GetNapiPrefInputDeviceChangeCb(
         napi_value args, NapiAudioRoutingManager *napiRoutingMgr);
-    static void AddPreferredOutputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-        std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> cb);
-    static void RemovePreferredOutputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-        std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> cb);
+    static std::vector<std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback>>
+        GetAllNapiPrefOutputDeviceChangeCb(napi_value args, NapiAudioRoutingManager *napiRoutingMgr);
+    static std::vector<std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback>>
+        GetAllNapiPrefInputDeviceChangeCb(napi_value args, NapiAudioRoutingManager *napiRoutingMgr);
     static void RemoveAllPrefOutputDeviceChangeCallback(napi_env env, NapiAudioRoutingManager *napiRoutingMgr);
-    static void AddPreferredInputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-        std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb);
-    static void RemovePreferredInputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-        std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb);
     static void RemoveAllPrefInputDeviceChangeCallback(napi_env env, NapiAudioRoutingManager *napiRoutingMgr);
 
     std::mutex preferredOutputDeviceMutex_;
@@ -147,10 +144,22 @@ private:
     AudioRoutingManager *audioRoutingMngr_ = nullptr;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
-    std::list<std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback>> preferredOutputDeviceCallbacks_;
-    std::list<std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback>> preferredInputDeviceCallbacks_;
     std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availableDeviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerMicrophoneBlockedCallback> microphoneBlockedCallbackNapi_ = nullptr;
+
+    // Save each callback registration's UID and streamUsage/sourceType
+    struct PreferredOutputCallbackInfo {
+        int32_t uid;
+        StreamUsage streamUsage;
+    };
+    struct PreferredInputCallbackInfo {
+        int32_t uid;
+        SourceType sourceType;
+    };
+    std::vector<std::pair<std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback>, PreferredOutputCallbackInfo>>
+        preferredOutputDeviceCallbackList_;
+    std::vector<std::pair<std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback>, PreferredInputCallbackInfo>>
+        preferredInputDeviceCallbackList_;
 
     napi_env env_;
 };

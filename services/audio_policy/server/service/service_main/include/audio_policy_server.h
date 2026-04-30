@@ -299,7 +299,8 @@ public:
 
     int32_t SetAppSilentOnDisplay(const int32_t displayId = -1) override;
 
-    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId,
+        bool isRemoveFocusHis = false) override;
 
     int32_t SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object, uint32_t clientUid) override;
 
@@ -336,6 +337,9 @@ public:
     int32_t GetStreamInFocusByUid(int32_t uid, int32_t zoneId, int32_t &streamType) override;
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, int32_t zoneId) override;
+
+    int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
+    int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
 
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
 
@@ -438,6 +442,8 @@ public:
     int32_t GetAvailableMicrophones(std::vector<sptr<MicrophoneDescriptor>> &retMicList) override;
 
     int32_t GetAudioDebugInfo(uint32_t sessionId, std::shared_ptr<AudioDebugInfo> &audioDebugInfo) override;
+
+    int32_t GetSessionDebugInfo(std::shared_ptr<AudioSessionDebugInfo> &sessionDebugInfo) override;
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
         const int32_t volume = 0) override;
@@ -560,6 +566,9 @@ public:
 
     int32_t GetAudioInterruptForZone(int32_t zoneId,
         std::vector<std::map<AudioInterrupt, int32_t>> &retList) override;
+
+    int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 
     int32_t GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag,
         std::vector<std::map<AudioInterrupt, int32_t>> &retList) override;
@@ -892,7 +901,8 @@ private:
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
     int32_t UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy);
-    int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isRemoveFocusHis = false);
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone, const bool stateChangeCallbackFlag = false,
         int32_t callerUid = INVALID_UID);

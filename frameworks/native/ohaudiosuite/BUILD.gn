@@ -57,6 +57,7 @@ ohos_shared_library("ohaudiosuite") {
       "../../../services/audio_suite/client/utils/src/audio_suite_format_conversion.cpp",
       "../../../services/audio_suite/client/utils/src/audio_suite_pcm_buffer.cpp",
       "../../../services/audio_suite/client/converter/src/audio_format_converter_impl.cpp",
+      "../../../services/audio_suite/client/converter/src/audio_suite_raw_format_conversion.cpp",
     ]
 
   deps = [

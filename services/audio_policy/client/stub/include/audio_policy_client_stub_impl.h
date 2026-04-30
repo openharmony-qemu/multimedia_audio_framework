@@ -80,14 +80,14 @@ public:
     int32_t RemoveMicStateChangeCallback();
     size_t GetMicStateChangeCallbackSize() const;
     bool HasMicStateChangeCallback();
-    int32_t AddPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
+    int32_t AddPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo, int32_t uid,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb);
-    int32_t RemovePreferredOutputDeviceChangeCallback(
+    int32_t RemovePreferredOutputDeviceChangeCallback(int32_t uid, StreamUsage streamUsage,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb = nullptr);
     size_t GetPreferredOutputDeviceChangeCallbackSize() const;
-    int32_t AddPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
+    int32_t AddPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo, int32_t uid,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb);
-    int32_t RemovePreferredInputDeviceChangeCallback(
+    int32_t RemovePreferredInputDeviceChangeCallback(int32_t uid, SourceType sourceType,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb = nullptr);
     size_t GetPreferredInputDeviceChangeCallbackSize() const;
     int32_t AddRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
@@ -189,9 +189,9 @@ public:
     int32_t OnSelfAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     int32_t OnSystemAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     int32_t OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
-    int32_t OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+    int32_t OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo, int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
-    int32_t OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+    int32_t OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo, int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
     int32_t OnRendererStateChange(
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
@@ -272,10 +272,12 @@ private:
         adaptiveSpatialRenderingEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback>> spatialAudioSourceTypeChangeCallbackList_;
 
-    std::unordered_map<StreamUsage,
-        std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>> preferredOutputDeviceCallbackMap_;
-    std::unordered_map<SourceType,
-        std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>>> preferredInputDeviceCallbackMap_;
+    std::unordered_map<int32_t,
+        std::unordered_map<StreamUsage,
+            std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>>> preferredOutputDeviceCallbackMap_;
+    std::unordered_map<int32_t,
+        std::unordered_map<SourceType,
+            std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>>>> preferredInputDeviceCallbackMap_;
 
     std::unordered_map<uint32_t,
         std::weak_ptr<DeviceChangeWithInfoCallback>> deviceChangeWithInfoCallbackMap_;

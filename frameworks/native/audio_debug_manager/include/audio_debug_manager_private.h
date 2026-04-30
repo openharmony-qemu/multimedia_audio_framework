@@ -53,6 +53,10 @@ public:
     int32_t UnregisterAudioLoopback(uintptr_t loopbackKey) override;
     int32_t PrintAudioLoopbackDebugInfo(uintptr_t loopbackKey, int32_t fd) const override;
 
+    int32_t SetAudioSessionCallback(
+        const std::shared_ptr<AudioSessionDebugCallback> &debugCallback) override;
+    int32_t PrintAudioSessionDebugInfo(int32_t fd) const override;
+
 private:
     static void LogAudioDebugInfo(const std::string &debugInfo);
     static int32_t WriteAudioDebugInfo(int32_t fd, const std::string &debugInfo);
@@ -67,13 +71,18 @@ private:
     int32_t GetAudioLoopbackDebugInfo(uintptr_t loopbackKey, AudioLoopbackDebugInfo &debugInfo) const;
     static std::string ParserAudioLoopbackDebugInfo(const AudioLoopbackDebugInfo &debugInfo);
 
+    int32_t GetAudioSessionDebugInfo(AudioSessionDebugInfo &debugInfo) const;
+    static std::string ParserAudioSessionDebugInfo(const AudioSessionDebugInfo &debugInfo);
+
 private:
     mutable std::mutex rendererMutex_;
     mutable std::mutex capturerMutex_;
     mutable std::mutex loopbackMutex_;
+    mutable std::mutex sessionMutex_;
     std::map<uintptr_t, std::shared_ptr<AudioRendererDebugCallback>> audioRendererDebugCallbacks_;
     std::map<uintptr_t, std::shared_ptr<AudioCapturerDebugCallback>> audioCapturerDebugCallbacks_;
     std::map<uintptr_t, std::shared_ptr<AudioLoopbackDebugCallback>> audioLoopbackDebugCallbacks_;
+    std::shared_ptr<AudioSessionDebugCallback> audioSessionDebugCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

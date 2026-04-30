@@ -822,60 +822,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetDevicesInner_001, TestSize.Level1)
     EXPECT_EQ(ret.size(), 0);
 }
 
-/**
- * @tc.name  : Test GetPreferredInputDeviceDescriptors.
- * @tc.number: GetPreferredInputDeviceDescriptors_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredInputDeviceDescriptors_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioCapturerInfo captureInfo;
-    std::string networkId = "1";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
-
-    ret = server->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, -1);
-    EXPECT_NE(ret.size(), 0);
-}
-
-/**
- * @tc.name  : Test GetPreferredOutputDeviceDescInner.
- * @tc.number: GetPreferredOutputDeviceDescInner_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredOutputDeviceDescInner_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioRendererInfo rendererInfo;
-    std::string networkId = "1";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
-
-    ret = server->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, -1);
-    EXPECT_NE(ret.size(), 0);
-}
-
-/**
- * @tc.name  : Test GetPreferredInputDeviceDescInner.
- * @tc.number: GetPreferredInputDeviceDescInner_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredInputDeviceDescInner_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioCapturerInfo captureInfo;
-    std::string networkId = "1";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
-
-    ret = server->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId, -1);
-    EXPECT_NE(ret.size(), 0);
-}
-
 #ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetMicrophoneMute.

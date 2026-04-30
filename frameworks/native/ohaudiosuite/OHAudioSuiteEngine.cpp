@@ -1263,9 +1263,11 @@ int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool
 {
     CHECK_AND_RETURN_RET_LOG(
         isSupported != nullptr, ERR_INVALID_PARAM, "IsNodeTypeSupported function failed, isSupported is nullptr.");
+    bool tempIsSupported = false;
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().IsNodeTypeSupported(
-        static_cast<AudioNodeType>(nodeType), isSupported);
+        static_cast<AudioNodeType>(nodeType), tempIsSupported);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "IsNodeTypeSupported function failed, ret = %{public}d.", ret);
+    *isSupported = tempIsSupported;
     return ret;
 }
 

@@ -121,6 +121,7 @@ public:
     int32_t SetOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode();
     int32_t SetSpeed(float speed);
+    int32_t SetPitch(float pitch);
     int32_t SetOffloadDataCallbackState(int32_t state);
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
@@ -383,6 +384,8 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
+    float pitch_ = 1.0f;
+    float speed_ = 1.0f;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;

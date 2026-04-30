@@ -81,17 +81,23 @@ int32_t AudioRoutingClientManager::SetPreferredInputDeviceChangeCallback(AudioCa
 }
 
 int32_t AudioRoutingClientManager::UnsetPreferredOutputDeviceChangeCallback(
-    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback)
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback,
+    const AudioRendererInfo &rendererInfo,
+    const int32_t uid)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    return AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(callback);
+    return AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(
+        callback, rendererInfo, uid);
 }
 
 int32_t AudioRoutingClientManager::UnsetPreferredInputDeviceChangeCallback(
-    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
+    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback,
+    const AudioCapturerInfo &capturerInfo,
+    const int32_t uid)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    return AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback(callback);
+    return AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback(
+        callback, capturerInfo, uid);
 }
 
 std::vector<sptr<MicrophoneDescriptor>> AudioRoutingClientManager::GetAvailableMicrophones()

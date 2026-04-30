@@ -22,6 +22,7 @@ namespace AudioStandard {
 struct AudioRendererDebugInfo;
 struct AudioCapturerDebugInfo;
 struct AudioLoopbackDebugInfo;
+struct AudioSessionDebugInfo;
 class AudioRendererDebugCallback {
 public:
     virtual ~AudioRendererDebugCallback() = default;
@@ -38,6 +39,12 @@ class AudioLoopbackDebugCallback {
 public:
     virtual ~AudioLoopbackDebugCallback() = default;
     virtual int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) = 0;
+};
+
+class AudioSessionDebugCallback {
+public:
+    virtual ~AudioSessionDebugCallback() = default;
+    virtual int32_t GetSessionDebugInfo(AudioSessionDebugInfo &debugInfo) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

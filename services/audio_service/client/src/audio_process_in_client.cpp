@@ -192,6 +192,8 @@ public:
 
     void CheckInnerCapVoIP() override;
 
+    int32_t SetPitch(float pitch) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 private:
@@ -2115,6 +2117,14 @@ int32_t AudioProcessInClientInner::ResetStaticPlayPosition()
 
     ExitStandByIfNeed();
     return processProxy_->ResetStaticPlayPosition();
+}
+
+int32_t AudioProcessInClientInner::SetPitch(float pitch)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "processProxy_ is nullptr");
+
+    return processProxy_->SetStaticPitch(pitch);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -112,20 +112,21 @@ private:
         AudioRoutingManagerImpl *audioRoutingManagerImpl);
     static void UnregisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
         AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    static void AddPreferredInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb);
-    static void AddPreferredOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb);
     static std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> GetTaihePrefInputDeviceChangeCb(
         std::shared_ptr<uintptr_t> &callback, AudioRoutingManagerImpl *audioRoutingManagerImpl);
     static std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> GetTaihePrefOutputDeviceChangeCb(
         std::shared_ptr<uintptr_t> &callback, AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    static void RemovePreferredInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb);
-    static void RemovePreferredOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb);
     static void RemoveAllPrefInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl);
     static void RemoveAllPrefOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl);
+
+    struct PreferredOutputCallbackInfo {
+        int32_t uid;
+        OHOS::AudioStandard::StreamUsage streamUsage;
+    };
+    struct PreferredInputCallbackInfo {
+        int32_t uid;
+        OHOS::AudioStandard::SourceType sourceType;
+    };
 
     std::mutex preferredOutputDeviceMutex_;
     std::mutex preferredInputDeviceMutex_;
@@ -136,8 +137,10 @@ private:
 
     std::shared_ptr<OHOS::AudioStandard::AudioManagerMicrophoneBlockedCallback> microphoneBlockedCallbackTaihe_
         = nullptr;
-    std::list<std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback>> preferredInputDeviceCallbacks_;
-    std::list<std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback>> preferredOutputDeviceCallbacks_;
+    std::vector<std::pair<std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback>, PreferredOutputCallbackInfo>>
+        preferredOutputDeviceCallbackList_;
+    std::vector<std::pair<std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback>, PreferredInputCallbackInfo>>
+        preferredInputDeviceCallbackList_;
     std::shared_ptr<OHOS::AudioStandard::AudioManagerDeviceChangeCallback> deviceChangeCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioManagerAvailableDeviceChangeCallback>
         availableDeviceChangeCallbackTaihe_ = nullptr;

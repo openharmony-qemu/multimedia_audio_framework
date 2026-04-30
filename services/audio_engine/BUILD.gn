@@ -212,6 +212,7 @@ ohos_shared_library("audio_engine_node") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "init:libbegetutil",
   ]
 
@@ -277,6 +278,7 @@ ohos_shared_library("hpae_engine_manager") {
     "data_share:datashare_consumer",
     "hilog:libhilog",
     "init:libbegetutil",
+    "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]

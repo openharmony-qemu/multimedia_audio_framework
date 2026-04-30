@@ -25,6 +25,7 @@ namespace AudioStandard {
 class AudioRendererDebugCallback;
 class AudioCapturerDebugCallback;
 class AudioLoopbackDebugCallback;
+class AudioSessionDebugCallback;
 
 class AudioDebugManager {
 public:
@@ -50,6 +51,10 @@ public:
         const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback) = 0;
     virtual int32_t UnregisterAudioLoopback(uintptr_t loopbackKey) = 0;
     virtual int32_t PrintAudioLoopbackDebugInfo(uintptr_t loopbackKey, int32_t fd) const = 0;
+
+    virtual int32_t SetAudioSessionCallback(
+        const std::shared_ptr<AudioSessionDebugCallback> &debugCallback) = 0;
+    virtual int32_t PrintAudioSessionDebugInfo(int32_t fd) const = 0;
 
     virtual ~AudioDebugManager() = default;
 

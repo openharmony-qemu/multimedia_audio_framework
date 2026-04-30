@@ -3328,6 +3328,11 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
     }
+    if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::AIBASE_MUTE_VOIP)) &&
+        PermissionUtil::VerifySystemPermission()) {
+        audioInterrupt_.behaviorFlags_.aibaseMuteVoip = true;
+        AUDIO_INFO_LOG("Capturer id: %{public}d activated AIBASE_MUTE_VOIP success", sessionID_);
+    }
     audioInterrupt_.independentStrategy = strategy;
     AUDIO_INFO_LOG("Capturer id: %{public}d set independentStrategy: %{public}d",
         sessionID_, static_cast<int32_t>(strategy.concurrencyMode));

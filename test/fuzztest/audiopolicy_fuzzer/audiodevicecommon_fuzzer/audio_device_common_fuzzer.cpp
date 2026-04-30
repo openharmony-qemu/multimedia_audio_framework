@@ -163,29 +163,6 @@ void GetPreferredInputStreamTypeInnerFuzzTest()
     OnStop();
 }
 
-void GetPreferredInputDeviceDescInnerFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
-    AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
-    DeviceType deviceType = GetData<DeviceType>();
-    shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
-    CHECK_AND_RETURN(audioPolicyServerHandler != nullptr);
-    audioDeviceCommon.Init(audioPolicyServerHandler);
-    audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
-
-    AudioRendererInfo rendererInfo;
-    rendererInfo.streamUsage = GetData<StreamUsage>();
-    audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
-    AudioCapturerInfo captureInfo;
-    captureInfo.sourceType = GetData<SourceType>();
-    std::string networkId = "LocalDevice";
-    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
-    audioDeviceCommon.DeInit();
-    OnStop();
-}
-
 void UpdateConnectedDevicesWhenDisconnectingFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -506,7 +483,6 @@ TestFuncs g_testFuncs[] = {
     FilterSourceOutputsFuzzTest,
     IsRingerOrAlarmerDualDevicesRangeFuzzTest,
     IsRingOverPlaybackFuzzTest,
-    GetPreferredInputDeviceDescInnerFuzzTest,
     GetPreferredInputStreamTypeInnerFuzzTest,
     UpdateDeviceInfoFuzzTest,
     UpdateConnectedDevicesWhenDisconnectingFuzzTest,

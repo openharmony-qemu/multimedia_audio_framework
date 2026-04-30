@@ -107,6 +107,7 @@ public:
         (const std::shared_ptr<AudioFirstFrameCallback> &callback), (override));
     MOCK_METHOD(void, SetIsFirstFrame, (bool value), (override));
     MOCK_METHOD(int32_t, ResetStaticPlayPosition, (), (override));
+    MOCK_METHOD(int32_t, SetPitch, (float pitch), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {
@@ -688,7 +689,29 @@ HWTEST_F(FastSystemStreamUnitTest, SetPitch_001, TestSize.Level1)
     int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream;
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    int32_t res = fastAudioStream->SetSonicPitch(1.0f);
+    EXPECT_EQ(res, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetPitch in static mode
+ * @tc.type  : FUNC
+ * @tc.number: SetPitch_StaticMode_001
+ * @tc.desc  : Test FastAudioStream SetPitch in static mode.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetPitch_StaticMode_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetPitch_StaticMode_001 start");
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    fastAudioStream->rendererInfo_.isStatic = true;
     int32_t res = fastAudioStream->SetPitch(1.0f);
+    EXPECT_EQ(res, ERR_NOT_SUPPORTED);
+
+    fastAudioStream->rendererInfo_.isStatic = false;
+    res = fastAudioStream->SetPitch(1.0f);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
 }
 

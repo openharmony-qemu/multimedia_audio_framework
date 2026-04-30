@@ -90,7 +90,7 @@ CapturerInServer::~CapturerInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
-    if (needCheckBackground_) {
+    if (isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     TurnOffRemoteMicIndicator();
@@ -720,13 +720,15 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, streamIndex_),
-            false,
+        bool ret = RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, streamIndex_);
+        if (!ret) {
+            AUDIO_ERR_LOG("NotifyPrivacyStop failed!");
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_STOP_ILLEGAL_STATE, "NotifyPrivacyStop failed", false),
-            "NotifyPrivacyStop failed!");
+                RECORD_STOP_ILLEGAL_STATE, "NotifyPrivacyStop failed", false);
+        }
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = false;
+        return ret;
     } else {
         AUDIO_WARNING_LOG("MicIndicator:already off, Stream:%{public}u", streamIndex_);
     }
@@ -1069,7 +1071,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION && usg != STREAM_USAGE_VOICE_MESSAGE) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
             continue;
         }
 

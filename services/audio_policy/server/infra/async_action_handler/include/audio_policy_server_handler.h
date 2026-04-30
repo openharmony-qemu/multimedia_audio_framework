@@ -15,6 +15,7 @@
 #ifndef AUDIO_POLICY_SERVER_HANDLER_H
 #define AUDIO_POLICY_SERVER_HANDLER_H
 #include <mutex>
+#include <functional>
 
 #include "singleton.h"
 #include "event_handler.h"
@@ -326,6 +327,17 @@ private:
     void ValidatePreferredOutputDeviceCallback(int32_t clientPid,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
+    // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
+    void ProcessPreferredOutputDeviceForClient(int32_t clientPid,
+        const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
+    void ProcessPreferredInputDeviceForClient(int32_t clientPid,
+    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
+    bool IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType);
+    bool ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid, StreamUsage streamUsage,
+        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+    bool ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid, SourceType sourceType,
+        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
     std::mutex clientCbRendererInfoMapMutex_;
@@ -347,6 +359,17 @@ private:
     std::unordered_map<int32_t, std::vector<AudioCapturerFilter>> clientCbCapturerFilterMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
+
+    // clientPid -> uid -> streamUsage -> device
+    std::unordered_map<int32_t,
+        std::unordered_map<int32_t,
+            std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>>>>
+        lastSentOutputDeviceMap_;
+    // clientPid -> uid -> sourceType -> device
+    std::unordered_map<int32_t,
+        std::unordered_map<int32_t,
+            std::unordered_map<SourceType, std::shared_ptr<AudioDeviceDescriptor>>>>
+        lastSentInputDeviceMap_;
 
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
 };

@@ -32,6 +32,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
+#include "audio_concurrency_parser.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
@@ -225,8 +226,9 @@ void ProcessRendererAndCapturerConcurrencyFuzzTest(FuzzedDataProvider& fdp)
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
+    ConcurrencyAction action = static_cast<ConcurrencyAction>(GetData<uint32_t>() % 4);
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc);
+    audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc, action);
 }
 
 void CheckFastStreamOverLimitToNormalFuzzTest(FuzzedDataProvider& fdp)

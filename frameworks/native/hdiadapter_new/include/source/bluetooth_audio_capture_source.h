@@ -127,6 +127,7 @@ private:
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     bool muteState_ = false;
+    std::unique_ptr<std::thread> stopThread_ = nullptr;
 
     std::shared_ptr<AudioSourceClock> audioSrcClock_ = nullptr;
 };

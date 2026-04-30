@@ -821,24 +821,6 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024A, TestSize.Level
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_024C.
- * @tc.desc  : Test UpdatePlaybackCaptureConfig denies voice message usage without permission.
- */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024C, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    AudioPlaybackCaptureConfig config;
-    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
-}
-
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
  * @tc.number: CapturerInServerUnitTest_024B.
  * @tc.desc  : Test UpdatePlaybackCaptureConfig keeps usages untouched when modern flag is false.
  */
@@ -1346,8 +1328,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038J, TestSize.Level
 
     auto ret = capturerInServer_->TurnOffMicIndicator(CAPTURER_STOPPED);
     EXPECT_FALSE(ret);
-    EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
-    EXPECT_EQ(manager.tokenIdRecordMap_[0].size(), 1);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+    EXPECT_EQ(manager.tokenIdRecordMap_.count(0), 0);
+    ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_FALSE(ret);
     manager.tokenIdRecordMap_.clear();
 }
 

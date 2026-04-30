@@ -3517,6 +3517,5 @@ HWTEST(AudioUtilsUnitTest, ConvertAudioRenderRateToSpeed_001, TestSize.Level1)
     ret = ConvertAudioRenderRateToSpeed(renderRate);
     EXPECT_FLOAT_EQ(ret, 1.0f);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

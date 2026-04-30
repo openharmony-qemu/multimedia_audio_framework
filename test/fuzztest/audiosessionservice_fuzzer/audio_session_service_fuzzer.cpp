@@ -263,7 +263,7 @@ void AudioSessionServiceHasStreamForDeviceTypeFuzzTest()
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
 
     AudioInterrupt audioInterrupt;
-    audioSession->streamsInSession_.push_back(audioInterrupt);
+    audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
     audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
     audioSessionService.HasStreamForDeviceType(callerPid, deviceType);
 }
@@ -283,7 +283,7 @@ void AudioSessionServiceAddStreamInfoFuzzTest()
     audioSession->audioSessionScene_ = GetData<AudioSessionScene>();
     audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
     audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
-    audioSessionService.AddStreamInfo(audioInterrupt);
+    audioSessionService.AddStreamInfo({audioInterrupt, ACTIVE});
 }
 
 void AudioSessionServiceClearStreamInfoFuzzTest()

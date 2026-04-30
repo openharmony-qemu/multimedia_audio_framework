@@ -142,9 +142,6 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
     int32_t UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &updatedDesc);
-#ifdef BLUETOOTH_ENABLE
-    void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
-#endif
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
     void UpdateAllUserSelectDevice(vector<shared_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
         AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc);

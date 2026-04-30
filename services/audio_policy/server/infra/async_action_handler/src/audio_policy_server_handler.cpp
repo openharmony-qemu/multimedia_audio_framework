@@ -82,6 +82,8 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
     clientCallbacksMap_.erase(clientPid);
+    lastSentOutputDeviceMap_.erase(clientPid);
+    lastSentInputDeviceMap_.erase(clientPid);
     pidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
     AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu] map %{public}s",
         audioPolicyClientProxyAPSCbsMap_.size(), pidsStrForPrinting_.c_str());
@@ -1381,66 +1383,145 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
 void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
-    std::stringstream deviceInfoStream;
-    std::stringstream clientInfoStream;
+    std::stringstream ss;
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        int32_t clientPid = it->first;
-        std::vector<AudioRendererFilter> rendererFilterList = GetCallbackRendererInfoList(clientPid);
-        for (auto rendererFilter : rendererFilterList) {
-            auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
-                GetPreferredOutputDeviceDescInner(rendererFilter.rendererInfo, LOCAL_NETWORK_ID, rendererFilter.uid);
-            ValidatePreferredOutputDeviceCallback(clientPid, deviceDescs);
-            for (auto &desc : deviceDescs) {
-                CHECK_AND_CONTINUE(desc != nullptr);
-                desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
-            }
-            if (!(it->second->hasBTPermission_)) {
-                AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
-            }
-            if (clientCallbacksMap_.count(clientPid) > 0 &&
-                clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
-                clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
-                CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
-                deviceInfoStream << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
-                clientInfoStream << clientPid << ":" << rendererFilter.rendererInfo.streamUsage << ",";
-                it->second->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, deviceDescs);
-            }
-        }
+        ProcessPreferredOutputDeviceForClient(it->first, it->second, ss);
     }
-    AUDIO_INFO_LOG("[deviceType:deviceId, ...] [%{public}s]  [clientPid:streamUsage, ...] [%{public}s]",
-        deviceInfoStream.str().c_str(), clientInfoStream.str().c_str());
+    AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
+}
+
+void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t clientPid,
+    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss)
+{
+    std::vector<AudioRendererFilter> rendererFilterList = GetCallbackRendererInfoList(clientPid);
+    std::stringstream clientSs;
+    for (auto rendererFilter : rendererFilterList) {
+        auto deviceDescs = AudioCoreService::GetCoreService()->
+            GetPreferredOutputDeviceDescInner(rendererFilter.rendererInfo, LOCAL_NETWORK_ID, rendererFilter.uid);
+        ValidatePreferredOutputDeviceCallback(clientPid, deviceDescs);
+        for (auto &desc : deviceDescs) {
+            CHECK_AND_CONTINUE(desc != nullptr);
+            desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
+        }
+        if (!clientHolder->hasBTPermission_) {
+            AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
+        }
+        CHECK_AND_CONTINUE(IsCallbackRegistered(clientPid, CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE));
+        CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
+
+        int32_t uid = rendererFilter.uid;
+        StreamUsage streamUsage = rendererFilter.rendererInfo.streamUsage;
+        CHECK_AND_CONTINUE(!ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, deviceDescs[0]));
+
+        lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = deviceDescs[0];
+        clientHolder->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, uid, deviceDescs);
+
+        clientSs << uid << ":" << static_cast<int32_t>(streamUsage)
+                 << "->" << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
+    }
+
+    std::string clientStr = clientSs.str();
+    if (!clientStr.empty()) {
+        ss << clientPid << "(" << clientStr << ") ";
+    }
+}
+
+bool AudioPolicyServerHandler::IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType)
+{
+    return clientCallbacksMap_.count(clientPid) > 0 &&
+        clientCallbacksMap_[clientPid].count(callbackType) > 0 &&
+        clientCallbacksMap_[clientPid][callbackType];
+}
+
+bool AudioPolicyServerHandler::ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid,
+    StreamUsage streamUsage, const std::shared_ptr<AudioDeviceDescriptor> &currentDevice)
+{
+    auto pidIt = lastSentOutputDeviceMap_.find(clientPid);
+    if (pidIt == lastSentOutputDeviceMap_.end()) {
+        return false;
+    }
+    auto uidIt = pidIt->second.find(uid);
+    if (uidIt == pidIt->second.end()) {
+        return false;
+    }
+    auto streamUsageIt = uidIt->second.find(streamUsage);
+    if (streamUsageIt == uidIt->second.end() || streamUsageIt->second == nullptr) {
+        return false;
+    }
+    if (currentDevice->IsSameDeviceDescPtr(streamUsageIt->second)) {
+        AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, streamUsage:%{public}d",
+            clientPid, uid, static_cast<int32_t>(streamUsage));
+        return true;
+    }
+    return false;
 }
 
 void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
-    std::stringstream deviceInfoStream;
-    std::stringstream clientInfoStream;
+    std::stringstream ss;
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        int32_t clientPid = it->first;
-        std::vector<AudioCapturerFilter> capturerFilterList = GetCallbackCapturerInfoList(clientPid);
-        for (auto capturerFilter : capturerFilterList) {
-            auto deviceDescs = AudioCoreService::GetCoreService()->
-                GetPreferredInputDeviceDescInner(capturerFilter.capturerInfo, capturerFilter.uid, LOCAL_NETWORK_ID);
-            if (!(it->second->hasBTPermission_)) {
-                AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
-            }
-            for (auto &desc : deviceDescs) {
-                CHECK_AND_CONTINUE(desc != nullptr);
-                desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
-            }
-            if (clientCallbacksMap_.count(clientPid) > 0 &&
-                clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) > 0 &&
-                clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE]) {
-                CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
-                deviceInfoStream << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
-                clientInfoStream << clientPid << ":" << capturerFilter.capturerInfo.sourceType << ",";
-                it->second->OnPreferredInputDeviceUpdated(capturerFilter.capturerInfo, deviceDescs);
-            }
-        }
+        ProcessPreferredInputDeviceForClient(it->first, it->second, ss);
     }
-    AUDIO_INFO_LOG("[deviceType:deviceId, ...] [%{public}s]  [clientPid:sourceType, ...] [%{public}s]",
-        deviceInfoStream.str().c_str(), clientInfoStream.str().c_str());
+    AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
+}
+
+void AudioPolicyServerHandler::ProcessPreferredInputDeviceForClient(int32_t clientPid,
+    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss)
+{
+    std::vector<AudioCapturerFilter> capturerFilterList = GetCallbackCapturerInfoList(clientPid);
+    std::stringstream clientSs;
+    for (auto capturerFilter : capturerFilterList) {
+        auto deviceDescs = AudioCoreService::GetCoreService()->
+            GetPreferredInputDeviceDescInner(capturerFilter.capturerInfo, LOCAL_NETWORK_ID, capturerFilter.uid);
+        if (!clientHolder->hasBTPermission_) {
+            AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
+        }
+        for (auto &desc : deviceDescs) {
+            CHECK_AND_CONTINUE(desc != nullptr);
+            desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
+        }
+        CHECK_AND_CONTINUE(IsCallbackRegistered(clientPid, CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE));
+        CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
+
+        int32_t uid = capturerFilter.uid;
+        SourceType sourceType = capturerFilter.capturerInfo.sourceType;
+        CHECK_AND_CONTINUE(!ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, deviceDescs[0]));
+
+        lastSentInputDeviceMap_[clientPid][uid][sourceType] = deviceDescs[0];
+        clientHolder->OnPreferredInputDeviceUpdated(capturerFilter.capturerInfo, uid, deviceDescs);
+
+        clientSs << uid << ":" << static_cast<int32_t>(sourceType)
+                 << "->" << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
+    }
+
+    std::string clientStr = clientSs.str();
+    if (!clientStr.empty()) {
+        ss << clientPid << "(" << clientStr << ") ";
+    }
+}
+
+bool AudioPolicyServerHandler::ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid,
+    SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor> &currentDevice)
+{
+    auto pidIt = lastSentInputDeviceMap_.find(clientPid);
+    if (pidIt == lastSentInputDeviceMap_.end()) {
+        return false;
+    }
+    auto uidIt = pidIt->second.find(uid);
+    if (uidIt == pidIt->second.end()) {
+        return false;
+    }
+    auto sourceTypeIt = uidIt->second.find(sourceType);
+    if (sourceTypeIt == uidIt->second.end() || sourceTypeIt->second == nullptr) {
+        return false;
+    }
+    if (currentDevice->IsSameDeviceDescPtr(sourceTypeIt->second)) {
+        AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, sourceType:%{public}d",
+            clientPid, uid, static_cast<int32_t>(sourceType));
+        return true;
+    }
+    return false;
 }
 
 void AudioPolicyServerHandler::HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1488,9 +1569,12 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
 
             CurrentOutputDeviceChangedEvent deviceChangedEvent;
             AudioRendererInfo rendererInfo;
-            rendererInfo.streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
+            auto streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
+            rendererInfo.streamUsage = (streamUsage <= STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) ?
+                STREAM_USAGE_MUSIC : streamUsage;
+            auto uid = pidUidMap_.count(it->first) > 0 ? pidUidMap_[it->first] : INVALID_UID;
             deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetPreferredOutputDeviceDescInner(
-                rendererInfo, eventContextObj->uid_, LOCAL_NETWORK_ID);
+                rendererInfo, LOCAL_NETWORK_ID, uid);
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
@@ -2153,8 +2237,8 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
 int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     if (IPCSkeleton::GetCallingUid() != uid) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), PERMISSION_DENIED,
-            "Permission denied for setting callback capturer info with different uid");
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+            "Permission denied for setting callback renderer info with different uid");
     }
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     lock_guard<mutex> lock(clientCbRendererInfoMapMutex_);

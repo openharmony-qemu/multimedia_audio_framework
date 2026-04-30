@@ -26,6 +26,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr int32_t TEST_UID = 1001;
+
 void AudioPolicyClientStubImplTest::SetUpTestCase(void) {}
 void AudioPolicyClientStubImplTest::TearDownTestCase(void) {}
 void AudioPolicyClientStubImplTest::SetUp(void) {}
@@ -380,11 +382,11 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_019, TestSize.Le
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
     AudioRendererInfo rendererInfo;
-    int32_t result = audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, cb);
+    int32_t result = audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, TEST_UID, cb);
     EXPECT_EQ(result, SUCCESS);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
-    audioPolicyClient->OnPreferredOutputDeviceUpdated(rendererInfo, desc);
+    audioPolicyClient->OnPreferredOutputDeviceUpdated(rendererInfo, TEST_UID, desc);
     EXPECT_NE(audioPolicyClient, nullptr);
 }
 
@@ -398,11 +400,11 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_020, TestSize.Le
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
     AudioCapturerInfo capturerInfo;
-    int32_t result = audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, cb);
+    int32_t result = audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, TEST_UID, cb);
     EXPECT_EQ(result, SUCCESS);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
-    audioPolicyClient->OnPreferredInputDeviceUpdated(capturerInfo, desc);
+    audioPolicyClient->OnPreferredInputDeviceUpdated(capturerInfo, TEST_UID, desc);
     EXPECT_NE(audioPolicyClient, nullptr);
 }
 
@@ -912,8 +914,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_040, TestSize.Le
 
     AudioRendererInfo rendererInfo;
     auto cb = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
-    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, cb);
-    auto ret = audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(cb);
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, TEST_UID, cb);
+    auto ret = audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(TEST_UID, rendererInfo.streamUsage, cb);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -929,8 +931,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_041, TestSize.Le
 
     AudioCapturerInfo capturerInfo;
     auto cb = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
-    audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, cb);
-    auto ret = audioPolicyClient->RemovePreferredInputDeviceChangeCallback(cb);
+    audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, TEST_UID, cb);
+    auto ret = audioPolicyClient->RemovePreferredInputDeviceChangeCallback(TEST_UID, capturerInfo.sourceType, cb);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1636,8 +1638,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_078, TestSize.Le
     AudioRendererInfo rendererInfo;
     auto mockCallback1 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
     auto mockCallback2 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
-    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, mockCallback1);
-    audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(mockCallback2);
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, TEST_UID, mockCallback1);
+    audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(TEST_UID, rendererInfo.streamUsage, mockCallback2);
     EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 1);
 }
 
@@ -1652,8 +1654,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_079, TestSize.Le
     AudioCapturerInfo capturerInfo;
     auto mockCallback1 = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
     auto mockCallback2 = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
-    audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, mockCallback1);
-    audioPolicyClient->RemovePreferredInputDeviceChangeCallback(mockCallback2);
+    audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, TEST_UID, mockCallback1);
+    audioPolicyClient->RemovePreferredInputDeviceChangeCallback(TEST_UID, capturerInfo.sourceType, mockCallback2);
     EXPECT_EQ(audioPolicyClient->GetPreferredInputDeviceChangeCallbackSize(), 1);
 }
 
@@ -1832,6 +1834,209 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_086, TestSize.Le
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioPolicyClient->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     EXPECT_NE(audioPolicyClient, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_MultiCallback_001
+* @tc.desc  : Test adding multiple output callbacks for same uid and streamUsage.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_001, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = TEST_UID;
+
+    auto cb1 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+    auto cb3 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+
+    // Add 3 callbacks
+    EXPECT_EQ(audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb2), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb3), SUCCESS);
+
+    // Verify callback count
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 3);
+
+    // Duplicate add should not increase count
+    EXPECT_EQ(audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 3);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_MultiCallback_002
+* @tc.desc  : Test removing specific output callback from vector.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_002, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = TEST_UID;
+
+    auto cb1 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+    auto cb3 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+
+    // Add 3 callbacks
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb1);
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb2);
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb3);
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 3);
+
+    // Remove cb2
+    EXPECT_EQ(audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(uid, rendererInfo.streamUsage, cb2),
+        SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 2);
+
+    // Remove cb1
+    EXPECT_EQ(audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(uid, rendererInfo.streamUsage, cb1),
+        SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 1);
+
+    // Remove cb3
+    EXPECT_EQ(audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(uid, rendererInfo.streamUsage, cb3),
+        SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_MultiCallback_003
+* @tc.desc  : Test invoking all registered output callbacks.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_003, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = TEST_UID;
+
+    auto cb1 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+    auto cb3 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+
+    // Add 3 callbacks
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb1);
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb2);
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb3);
+
+    // Invoke callbacks
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    EXPECT_EQ(audioPolicyClient->OnPreferredOutputDeviceUpdated(rendererInfo, uid, desc), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_MultiCallback_004
+* @tc.desc  : Test adding multiple input callbacks for same uid and sourceType.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_004, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    int32_t uid = TEST_UID;
+
+    auto cb1 = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
+
+    // Add 2 callbacks
+    EXPECT_EQ(audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, uid, cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, uid, cb2), SUCCESS);
+
+    // Verify callback count
+    EXPECT_EQ(audioPolicyClient->GetPreferredInputDeviceChangeCallbackSize(), 2);
+
+    // Duplicate add should not increase count
+    EXPECT_EQ(audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, uid, cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredInputDeviceChangeCallbackSize(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_MultiCallback_005
+* @tc.desc  : Test removing specific input callback from vector.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_005, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    int32_t uid = TEST_UID;
+
+    auto cb1 = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
+
+    // Add 2 callbacks
+    audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, uid, cb1);
+    audioPolicyClient->AddPreferredInputDeviceChangeCallback(capturerInfo, uid, cb2);
+    EXPECT_EQ(audioPolicyClient->GetPreferredInputDeviceChangeCallbackSize(), 2);
+
+    // Remove cb1
+    EXPECT_EQ(audioPolicyClient->RemovePreferredInputDeviceChangeCallback(uid, capturerInfo.sourceType, cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredInputDeviceChangeCallbackSize(), 1);
+
+    // Remove cb2
+    EXPECT_EQ(audioPolicyClient->RemovePreferredInputDeviceChangeCallback(uid, capturerInfo.sourceType, cb2), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredInputDeviceChangeCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_MultiCallback_006
+* @tc.desc  : Test nullptr callback handling.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_006, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    int32_t uid = TEST_UID;
+
+    // nullptr callback should return error
+    EXPECT_EQ(audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, nullptr), ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_MultiCallback_007
+* @tc.desc  : Test removing all callbacks with nullptr.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_007, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    int32_t uid = TEST_UID;
+
+    auto cb1 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
+
+    // Add 2 callbacks
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb1);
+    audioPolicyClient->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, cb2);
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 2);
+
+    // Remove all callbacks for uid with nullptr
+    EXPECT_EQ(audioPolicyClient->RemovePreferredOutputDeviceChangeCallback(uid, rendererInfo.streamUsage, nullptr),
+        SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
