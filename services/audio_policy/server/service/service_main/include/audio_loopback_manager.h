@@ -81,7 +81,7 @@ private:
     void RegisterLoopback(LoopbackType type, int32_t pid, const sptr<ILoopbackCallback> &callback,
         const sptr<LoopbackInServer> &loopbackInServer);
 
-    // Mush be called with mutex_.
+    // Must be called with mutex_.
     void BroadcastToControls(int command, bool success, int errorCode);
     void BroadcastStatusChange(int status, int reason);
 };

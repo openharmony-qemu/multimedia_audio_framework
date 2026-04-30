@@ -287,7 +287,7 @@ void AudioLoopbackManager::OnNormalDied(int32_t pid)
 void AudioLoopbackManager::BroadcastToControls(int command, bool success, int errorCode)
 {
     for (auto &item : globalControlCallbacks_) {
-        auto loopbackCb= item.second;
+        auto loopbackCb = item.second;
         if (loopbackCb != nullptr) {
             if (command == LOOPBACK_CMD_ENABLE) {
                 loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);

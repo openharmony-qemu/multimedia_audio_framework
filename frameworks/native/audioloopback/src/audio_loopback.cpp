@@ -131,8 +131,9 @@ void AudioLoopbackPrivate::ReportAudioLoopbackException(const AudioLoopbackRepor
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo)
+AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo, bool isGlobal)
 {
+    isGlobal_ = isGlobal;
     appInfo_ = appInfo;
     if (appInfo_.appPid == 0) {
         appInfo_.appPid = getpid();

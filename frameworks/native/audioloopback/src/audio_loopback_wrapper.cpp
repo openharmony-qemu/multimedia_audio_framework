@@ -25,7 +25,8 @@ AudioLoopbackWrapper::AudioLoopbackWrapper(AudioLoopbackMode mode, LoopbackType 
     AUDIO_INFO_LOG("AudioLoopbackWrapper created, mode %{public}d, type %{public}d", mode, type);
     
     if (type == LOOPBACK_TYPE_NORMAL || type == LOOPBACK_TYPE_GLOBAL_HANDLER) {
-        private_ = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
+        bool isGlobal = type == LOOPBACK_TYPE_GLOBAL_HANDLER;
+        private_ = std::make_shared<AudioLoopbackPrivate>(mode, appInfo, isGlobal);
     }
 }
 
