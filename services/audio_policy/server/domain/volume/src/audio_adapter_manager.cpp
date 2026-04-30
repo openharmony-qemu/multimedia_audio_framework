@@ -1037,7 +1037,6 @@ bool AudioAdapterManager::GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceD
     AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
-    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
     if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
         AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
         return false;
