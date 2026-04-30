@@ -2317,7 +2317,6 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     if (IsNoRunningStream(outputStreamDescs)) {
         HandleFetchOutputWhenNoRunningStream(reason);
     }
-    ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::FetchOutputDeviceAndRoute");
     return ret;
 }
 
@@ -2405,6 +2404,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
     }
 #endif
     int32_t ret = FetchCapturerPipesAndExecute(inputStreamDescs);
+    ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::FetchOutputDeviceAndRoute");
     return ret;
 }
 
