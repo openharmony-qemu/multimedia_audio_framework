@@ -939,6 +939,26 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_007, TestSize.Lev
 }
 
 /**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_008
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_008, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::string idInfo;
+    HdiIdType idType = HDI_ID_TYPE_PRIMARY;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_LIVE;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, HDI_ID_INFO_LIVE);
+}
+
+/**
  * @tc.name: Test UpdateAudioPipeVolume_001
  * @tc.desc: Test UpdateAudioPipeVolume with empty vector
  * @tc.type: FUNC

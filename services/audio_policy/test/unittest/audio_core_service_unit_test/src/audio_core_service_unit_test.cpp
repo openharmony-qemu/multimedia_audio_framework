@@ -5141,6 +5141,30 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_081, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_082
+ * @tc.desc  : Test routerflag is AUDIO_INPUT_FLAG_LIVE.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_082, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->pipeRole_ = PIPE_ROLE_INPUT;
+    pipe->routeFlag_ = AUDIO_INPUT_FLAG_LIVE;
+    pipeList.push_back(pipe);
+
+    uint32_t sessionId = 1;
+    AudioStreamDescriptor runningSessionInfo = {};
+    bool hasSession = false;
+    bool result = audioCoreService->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(hasSession, false);
+}
+
+/**
  * @tc.name  : Test UpdateArmModuleInfo API with valid parameters
  * @tc.type  : FUNC
  * @tc.number: UpdateArmModuleInfo_001

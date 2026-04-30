@@ -303,6 +303,7 @@ static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag
         {HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION},
         {HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT}
@@ -364,6 +365,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     std::shared_ptr<IAudioCaptureSource> unprocessSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
     if (unprocessSource != nullptr && unprocessSource->IsInited()) {
         unprocessSource->UpdateActiveDevice(type);
+    }
+    std::shared_ptr<IAudioCaptureSource> liveSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE);
+    if (liveSource != nullptr && liveSource->IsInited()) {
+        liveSource->UpdateActiveDevice(type);
     }
     std::shared_ptr<IAudioCaptureSource> ultrasonicSource =
         GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
@@ -2860,7 +2865,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
             info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
             info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI ||
-            info == HDI_ID_INFO_INTERPHONE;
+            info == HDI_ID_INFO_INTERPHONE || info == HDI_ID_INFO_LIVE;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {

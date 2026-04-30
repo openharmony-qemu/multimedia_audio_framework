@@ -1035,6 +1035,8 @@ uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSourc
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
         case AUDIO_INPUT_RAW_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESS);
+        case AUDIO_INPUT_LIVE_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_LIVE);
         case AUDIO_INPUT_ULTRASONIC_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ULTRASONIC);
         case AUDIO_INPUT_VOICE_RECOGNITION_TYPE:
@@ -1570,11 +1572,13 @@ enum AudioFlag AudioCaptureSource::ConvertToAudioInputRouteFlag(int32_t sourceTy
         case SOURCE_TYPE_UNPROCESSED:
             audioInputRouteFlag = AUDIO_INPUT_FLAG_UNPROCESS;
             break;
+        case SOURCE_TYPE_LIVE:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_LIVE;
+            break;
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_CAMCORDER:
         case SOURCE_TYPE_VOICE_MESSAGE:
         case SOURCE_TYPE_VOICE_CALL:
-        case SOURCE_TYPE_LIVE:
             audioInputRouteFlag = AUDIO_INPUT_FLAG_NORMAL;
             break;
         case SOURCE_TYPE_ULTRASONIC:

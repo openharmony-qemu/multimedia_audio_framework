@@ -3150,7 +3150,8 @@ bool AudioCoreService::HandleNormalInputPipes(const std::vector<std::shared_ptr<
 
         uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP_FAST |
             AUDIO_INPUT_FLAG_WAKEUP | AUDIO_INPUT_FLAG_UNPROCESS | AUDIO_INPUT_FLAG_ULTRASONIC |
-            AUDIO_INPUT_FLAG_VOICE_RECOGNITION | AUDIO_INPUT_FLAG_RAW_AI | AUDIO_INPUT_FLAG_INTERPHONE;
+            AUDIO_INPUT_FLAG_VOICE_RECOGNITION | AUDIO_INPUT_FLAG_RAW_AI | AUDIO_INPUT_FLAG_INTERPHONE |
+            AUDIO_INPUT_FLAG_LIVE;
 
         if ((pipe->routeFlag_ & flagMask) != 0) {
             continue;

@@ -1083,6 +1083,8 @@ HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_AI);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_UNPROCESS);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_LIVE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_LIVE);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_NORMAL);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC);
@@ -1182,6 +1184,21 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_012, TestSize.Level
     captureSource->attr_.hdiSourceType = "AUDIO_INPUT_INTERPHON_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHONE * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_013
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_013, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_LIVE;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_LIVE_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_LIVE * UNIQUE_ID_INTERVAL);
 }
 
 /**
