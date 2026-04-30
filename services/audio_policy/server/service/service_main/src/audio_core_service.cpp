@@ -72,6 +72,7 @@ static const std::unordered_set<SourceType> VOIP_PRIVACY_MUTE_TARGET_SOURCES = {
     SOURCE_TYPE_MIC,
     SOURCE_TYPE_ULTRASONIC,
     SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_VOICE_RECOGNITION,
     SOURCE_TYPE_WAKEUP,
 };
@@ -2621,8 +2622,6 @@ void AudioCoreService::SyncVoipPrivacyMuteState(
     const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
     const std::unordered_set<uint32_t> &targetMuteSessions)
 {
-    size_t muteCount = 0;
-    size_t unmuteCount = 0;
     for (const auto &streamDesc : allCapturerStreamDescs) {
         if (streamDesc == nullptr) {
             continue;
@@ -2631,17 +2630,10 @@ void AudioCoreService::SyncVoipPrivacyMuteState(
         bool targetMute = targetMuteSessions.count(sessionId) > 0;
         bool currentMute = streamDesc->voipPrivacyMuted_.load();
         if (targetMute == currentMute) {
-            AUDIO_INFO_LOG("SyncVoipPrivacyMuteState keep sessionId:%{public}u mute:%{public}d",
-                sessionId, targetMute);
             continue;
         }
         if (UpdateVoipPrivacyMuteForSession(sessionId, targetMute)) {
             streamDesc->voipPrivacyMuted_.store(targetMute);
-            if (targetMute) {
-                ++muteCount;
-            } else {
-                ++unmuteCount;
-            }
             AUDIO_INFO_LOG("SyncVoipPrivacyMuteState update sessionId:%{public}u mute:%{public}d",
                 sessionId, targetMute);
         }
