@@ -638,6 +638,88 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
 }
 
 /**
+* @tc.name  : AudioPolicyServer_016A
+* @tc.number: AudioPolicyServer_016A
+* @tc.desc  : Test ActivateAudioInterrupt updates descriptor voipNoPrivacyFlag.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016A, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    ASSERT_NE(policyServerTest, nullptr);
+    policyServerTest->coreService_ = AudioCoreService::GetCoreService();
+    policyServerTest->eventEntry_ =
+        std::make_shared<AudioCoreService::EventEntry>(policyServerTest->coreService_);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 816001;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = streamDesc->GetSessionId();
+    audioInterrupt.uid = IPCSkeleton::GetCallingUid();
+    audioInterrupt.pid = IPCSkeleton::GetCallingPid();
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    audioInterrupt.audioFocusType.isPlay = false;
+    audioInterrupt.behaviorFlags_.voipNoPrivacyFlag = true;
+
+    int32_t ret = policyServerTest->ActivateAudioInterrupt(audioInterrupt, DEFAULT_ZONE_ID, false);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(streamDesc->voipNoPrivacyFlag_.load());
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+* @tc.name  : AudioPolicyServer_016B
+* @tc.number: AudioPolicyServer_016B
+* @tc.desc  : Test SetAudioSessionBehavior updates descriptor voipNoPrivacyFlag by pid.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016B, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    ASSERT_NE(policyServerTest, nullptr);
+    policyServerTest->coreService_ = AudioCoreService::GetCoreService();
+    policyServerTest->eventEntry_ =
+        std::make_shared<AudioCoreService::EventEntry>(policyServerTest->coreService_);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 816002;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->callerPid_ = IPCSkeleton::GetCallingPid();
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    constexpr uint32_t voipNoPrivacyBehavior = 0x00000001;
+    int32_t ret = policyServerTest->SetAudioSessionBehavior(voipNoPrivacyBehavior);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(streamDesc->voipNoPrivacyFlag_.load());
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_017
 * @tc.desc  : Test SetRingerModeLegacy.

@@ -774,7 +774,41 @@ int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bo
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
-    return coreService_->SetCapturerMuteHint(sessionId, mute);
+    int32_t ret = coreService_->SetCapturerMuteHint(sessionId, mute);
+    if (ret == SUCCESS) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(
+            "AudioCoreService::EventEntry::SetCapturerMuteHint");
+    }
+    return ret;
+}
+
+void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled,
+    const std::string &reason)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
+        sessionId, enabled);
+    coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled);
+    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+}
+
+void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled,
+    const std::string &reason)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
+        callerPid, enabled);
+    coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled);
+    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+}
+
+void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
 }
 
 void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
