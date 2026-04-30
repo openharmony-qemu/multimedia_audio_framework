@@ -23,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+namespace {
 constexpr uint32_t SAMPLE_RATE_11025 = 11025;
 constexpr uint32_t FRAME_LEN_20MS = 20;
 constexpr uint32_t MS_PER_SECOND = 1000;
@@ -31,6 +32,7 @@ constexpr uint32_t MAX_SAMPLE_RATE = SAMPLE_RATE_384000;
 constexpr uint32_t MIN_SAMPLE_RATE = SAMPLE_RATE_8000;
 constexpr uint32_t MAX_FRAME_LEN = SAMPLE_RATE_384000 * 10; // max frame size, max sample rate, 10s duration
 constexpr uint32_t MAX_QUALITY = 10;
+}
 // Unified Process: accepts arbitrary input frame counts, outputs resampled data in one call.
 // The caller (converter node) handles input accumulation and output splitting.
 ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality)

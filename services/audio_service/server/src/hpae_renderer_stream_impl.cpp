@@ -64,7 +64,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
     spanSizeInFrame_ = FRAME_LEN_20MS * usedSampleRate_ / AUDIO_MS_PER_S;
-    AUDIO_INFO_LOG("RendererStream: unified 20ms span, usedSampleRate=%{public}u, spanSizeInFrame=%{public}u",
+    AUDIO_INFO_LOG("RendererStream: unified 20ms span, usedSampleRate=%{public}u, spanSizeInFrame=%{public}zu",
         usedSampleRate_, spanSizeInFrame_);
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));

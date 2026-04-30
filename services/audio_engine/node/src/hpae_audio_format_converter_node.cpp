@@ -23,16 +23,16 @@
 #include "hpae_node_common.h"
 #include "securec.h"
 
-static constexpr uint32_t MS_IN_SECOND = 1000;
-static constexpr uint32_t REASAMPLE_QUAILTY = 1;
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
-static constexpr uint32_t SAMPLE_RATE_11025 = 11025;
-static constexpr uint32_t FRAME_LEN_20MS = 20;
-static constexpr uint32_t FRAME_LEN_40MS = 40;
-static constexpr uint32_t FRAME_LEN_100MS = 100;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+namespace {
+constexpr uint32_t REASAMPLE_QUAILTY = 1;
+constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
+constexpr uint32_t SAMPLE_RATE_11025 = 11025;
+constexpr uint32_t FRAME_LEN_40MS = 40;
+constexpr uint32_t FRAME_LEN_100MS = 100;
+}
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
@@ -149,8 +149,9 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     // Step 1: Append input data to unprocessedBuffer_
     AppendToUnprocessedBuffer(srcData, inputFrameLen, inputChannels);
 
-    // Step 1b: Pull-Ahead — if not enough data accumulated, actively pull from upstream
-    if (resampler_ != nullptr && unprocessedFrames_ < resamplerInputThreshold_ &&
+    // Step 1b: Pull-Ahead — if not enough data accumulated and credit available, actively pull from upstream
+    if (resampler_ != nullptr && pullAheadCredit_ > 0 &&
+        unprocessedFrames_ < resamplerInputThreshold_ &&
         resampler_->GetInRate() != resampler_->GetOutRate()) {
         PullAheadUntilThresholdOrFailure(inputFrameLen);
     }
@@ -162,7 +163,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     converterOutput_.Reset();
     if (!ExtractOutputFromProcessedBuffer()) {
         // Not enough output data -- fill with silence
-        memset(converterOutput_.GetPcmDataBuffer(), 0, converterOutput_.Size());
+       return &silenceData_;
     }
 
 #ifdef ENABLE_HOOK_PCM
@@ -340,7 +341,7 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     PcmBufferInfo outPcmBufferInfo = pcmBufferInfo_; // isMultiFrames_ and frame_ are inheritated from sinkInputNode
     outPcmBufferInfo.ch = outChannelInfo.numChannels;
     outPcmBufferInfo.rate = resampler_->GetOutRate();
-    outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
+    outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
 
     AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, update tmp PCM buffer info!",
@@ -377,7 +378,7 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
         return;
     }
     resamplerInputThreshold_ = CalculateResamplerInputThreshold();
-    outputFrameLen20ms_ = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
+    outputFrameLen20ms_ = resampler_->GetOutRate() * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
 
     uint32_t channels = resampler_->GetChannels();
 
@@ -395,6 +396,14 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
     processedReadPos_ = 0;
 
     resamplerOutBuf_.resize(processedCapacity, 0.0f);
+
+    // Initialize pull-ahead credit: max 20ms output chunks one threshold input produces
+    if (outputFrameLen20ms_ > 0) {
+        pullAheadMaxCredit_ = maxOutFrames / outputFrameLen20ms_;
+    } else {
+        pullAheadMaxCredit_ = 0;
+    }
+    pullAheadCredit_ = pullAheadMaxCredit_;
 
     // Resize tmpOutBuf_ for maxOutFrames to handle upmix+resample path
     // (resample first produces outRate frames, then upmix expands channels)
@@ -431,7 +440,7 @@ uint32_t HpaeAudioFormatConverterNode::CalculateResamplerInputThreshold() const
     uint32_t outRate = resampler_->GetOutRate();
 
     if (inRate == outRate) {
-        return inRate * FRAME_LEN_20MS / MS_IN_SECOND;
+        return inRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
     }
 
     // Find the minimum span that produces exact output at outRate.
@@ -439,11 +448,11 @@ uint32_t HpaeAudioFormatConverterNode::CalculateResamplerInputThreshold() const
     // 11025Hz: 441 * 48000 / 11025 = 1920 (exact)
     // 8010Hz:  801 * 48000 / 8010 = 4800 (exact)
     if (inRate == SAMPLE_RATE_11025) {
-        return inRate * FRAME_LEN_40MS / MS_IN_SECOND; // 441
+        return inRate * FRAME_LEN_40MS / MILLISECOND_PER_SECOND; // 441
     } else if (inRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
-        return inRate * FRAME_LEN_100MS / MS_IN_SECOND; // e.g., 801 for 8010Hz
+        return inRate * FRAME_LEN_100MS / MILLISECOND_PER_SECOND; // e.g., 801 for 8010Hz
     } else {
-        return inRate * FRAME_LEN_20MS / MS_IN_SECOND; // standard 20ms
+        return inRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND; // standard 20ms
     }
 }
 
@@ -487,34 +496,50 @@ void HpaeAudioFormatConverterNode::AppendToProcessedBuffer(const float *data, ui
     processedFrames_ += frameLen;
 }
 
+bool HpaeAudioFormatConverterNode::TryPullOneFrame()
+{
+    auto &newInputs = inputStream_.ReadPreOutputData();
+    if (newInputs.empty() || newInputs[0] == nullptr || !newInputs[0]->IsValid()) {
+        return false;
+    }
+    float *data = newInputs[0]->GetPcmDataBuffer();
+    uint32_t frameLen = newInputs[0]->GetFrameLen();
+    uint32_t channels = newInputs[0]->GetChannelCount();
+    AppendToUnprocessedBuffer(data, frameLen, channels);
+    return true;
+}
+
 void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inputFrameLen)
 {
-    if (inputFrameLen == 0) {
+    if (inputFrameLen == 0 || pullAheadCredit_ == 0) {
         return;
     }
-    uint32_t maxPullCount = resamplerInputThreshold_ / inputFrameLen + 1;
+
     uint32_t pullCount = 0;
 
-    AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead start, unprocessedFrames=%{public}u, threshold=%{public}u",
-        GetNodeId(), unprocessedFrames_, resamplerInputThreshold_);
+    AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead start, unprocessedFrames=%{public}u, threshold=%{public}u, "
+        "credit=%{public}u", GetNodeId(), unprocessedFrames_, resamplerInputThreshold_, pullAheadCredit_);
 
-    while (unprocessedFrames_ < resamplerInputThreshold_ && pullCount < maxPullCount) {
-        auto &newInputs = inputStream_.ReadPreOutputData();
-        if (newInputs.empty() || newInputs[0] == nullptr || !newInputs[0]->IsValid()) {
+    while (pullAheadCredit_ > 0 && unprocessedFrames_ < resamplerInputThreshold_) {
+        if (!TryPullOneFrame()) {
             AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead stopped, upstream underflow after %{public}u pulls",
                 GetNodeId(), pullCount);
-            break; // upstream underflow — stop pulling, don't store empty frames
+            break;
         }
-        float *data = newInputs[0]->GetPcmDataBuffer();
-        uint32_t frameLen = newInputs[0]->GetFrameLen();
-        uint32_t channels = newInputs[0]->GetChannelCount();
-        AppendToUnprocessedBuffer(data, frameLen, channels);
+        pullAheadCredit_--;
+        pullCount++;
+    }
+
+    // If credit exhausted and no output available, pull one more uncredited frame
+    // to prevent deadlock where neither pull nor output can make progress
+    if (pullAheadCredit_ == 0 && unprocessedFrames_ < resamplerInputThreshold_ && processedFrames_ == 0) {
+        TryPullOneFrame();
         pullCount++;
     }
 
     if (pullCount > 0) {
-        AUDIO_INFO_LOG("NodeId %{public}d: PullAhead pulled %{public}u frames, unprocessedFrames=%{public}u",
-            GetNodeId(), pullCount, unprocessedFrames_);
+        AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead pulled %{public}u frames, unprocessedFrames=%{public}u, "
+            "credit=%{public}u", GetNodeId(), pullCount, unprocessedFrames_, pullAheadCredit_);
     }
 }
 
@@ -636,6 +661,10 @@ bool HpaeAudioFormatConverterNode::ExtractOutputFromProcessedBuffer()
     }
     AUDIO_DEBUG_LOG("NodeId %{public}d: ExtractOutput success, remaining processedFrames=%{public}u",
         GetNodeId(), processedFrames_);
+    // Return one credit: data has been consumed downstream
+    if (pullAheadCredit_ < pullAheadMaxCredit_) {
+        pullAheadCredit_++;
+    }
     return true;
 }
 

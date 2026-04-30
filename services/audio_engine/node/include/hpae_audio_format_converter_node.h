@@ -53,6 +53,7 @@ private:
     void RemoveConsumedInputFrames(uint32_t consumedFrames, uint32_t channels);
     void CompactProcessedBuffer(uint32_t channels);
     void MoveUnprocessedToProcessed(uint32_t channels);
+    bool TryPullOneFrame();
     uint32_t CalculateResamplerInputThreshold() const;
     void InitDualBuffer();
     int32_t ResampleWithChannelConversion(float *srcData, uint32_t inFrameLen,
@@ -85,6 +86,11 @@ private:
 
     // Temporary buffer for resampler output (sized per call, reused)
     std::vector<float> resamplerOutBuf_;
+
+    // Pull-ahead credit counter: caps upstream pulls to prevent buffer bloat.
+    // Decremented on each successful pull, incremented when output is consumed downstream.
+    uint32_t pullAheadCredit_ = 0;
+    uint32_t pullAheadMaxCredit_ = 0;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
