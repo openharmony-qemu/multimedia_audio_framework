@@ -29,6 +29,7 @@ const int32_t STREAM_VOICE_TEST = STREAM_VOICE_CALL;
 const int32_t STREAM_USAGE_MEDIA_TEST = 1;
 const uint32_t TEST_PIPE_ID = 100;
 const uint32_t TEST_PIPE_ID_2 = 200;
+const uint32_t TEST_PIPE_ID_INVALID = 0xFFFFFFFF;
 
 class AudioVolumeUnitTest : public testing::Test {
 public:
@@ -1330,11 +1331,11 @@ HWTEST_F(AudioVolumeUnitTest, GetCurVolume_001, TestSize.Level1)
 {
     uint32_t sessionId = 1;
     struct VolumeValues volumes;
-    float result = GetCurVolume(sessionId, nullptr, TEST_PIPE_ID, &volumes);
+    float result = GetCurVolume(sessionId, nullptr, TEST_PIPE_ID_INVALID, &volumes);
     EXPECT_FLOAT_EQ(result, 1.0f);
 
     const char *streamType = "stream";
-    result = GetCurVolume(sessionId, streamType, TEST_PIPE_ID, &volumes);
+    result = GetCurVolume(sessionId, streamType, TEST_PIPE_ID_INVALID, &volumes);
     EXPECT_FLOAT_EQ(result, 1.0f);
 }
 
