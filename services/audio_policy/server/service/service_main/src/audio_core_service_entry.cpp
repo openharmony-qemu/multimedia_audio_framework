@@ -136,28 +136,20 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
-    int32_t ret = SUCCESS;
     switch (operation) {
         case SESSION_OPERATION_START:
-            ret = coreService_->StartClient(sessionId);
-            break;
+            return coreService_->StartClient(sessionId);
         case SESSION_OPERATION_PAUSE:
-            ret = coreService_->PauseClient(sessionId);
-            break;
+            return coreService_->PauseClient(sessionId);
         case SESSION_OPERATION_STANDBY:
-            ret = coreService_->StandbyClient(sessionId);
-            break;
+            return coreService_->StandbyClient(sessionId);
         case SESSION_OPERATION_STOP:
-            ret = coreService_->StopClient(sessionId);
-            break;
+            return coreService_->StopClient(sessionId);
         case SESSION_OPERATION_RELEASE:
-            ret = coreService_->ReleaseClient(sessionId, opMsg, needRemoveFromMap);
-            break;
+            return coreService_->ReleaseClient(sessionId, opMsg, needRemoveFromMap);
         default:
-            ret = SUCCESS;
-            break;
+            return SUCCESS;
     }
-    return ret;
 }
 
 int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
