@@ -7133,6 +7133,122 @@ HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_005, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test OnCapturerSessionAdded.
+* @tc.number: OnCapturerSessionAdded_002
+* @tc.desc  : Test only normal source sessions are cached in sessionSourceTypeMap_.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionAdded_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionAdded_002 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    coreService->SetConfigParserFlag();
+    AudioVolumeManager::GetInstance().SetDefaultDeviceLoadFlag(true);
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->normalSourceOpened_ = SOURCE_TYPE_MIC;
+
+    AudioStreamInfo streamInfo;
+    SessionInfo sessionInfo = {SOURCE_TYPE_MIC, 48000, 2};
+    uint64_t normalSessionId = 610001;
+    EXPECT_EQ(coreService->OnCapturerSessionAdded(normalSessionId, sessionInfo, streamInfo), SUCCESS);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(normalSessionId), 1);
+
+    sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
+    uint64_t remoteCastSessionId = 610002;
+    EXPECT_EQ(coreService->OnCapturerSessionAdded(remoteCastSessionId, sessionInfo, streamInfo), SUCCESS);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(remoteCastSessionId), 0);
+
+    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    uint64_t wakeupSessionId = 610003;
+    EXPECT_EQ(coreService->OnCapturerSessionAdded(wakeupSessionId, sessionInfo, streamInfo), SUCCESS);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(wakeupSessionId), 0);
+
+    coreService->normalSourceOpened_ = SOURCE_TYPE_INVALID;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    uint64_t normalNotOpenedSessionId = 610004;
+    EXPECT_EQ(coreService->OnCapturerSessionAdded(normalNotOpenedSessionId, sessionInfo, streamInfo), SUCCESS);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(normalNotOpenedSessionId), 0);
+
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->normalSourceOpened_ = SOURCE_TYPE_INVALID;
+}
+
+/**
+* @tc.name  : Test HasNormalTypeCapturerSession.
+* @tc.number: HasNormalTypeCapturerSession_002
+* @tc.desc  : Test null source strategy map still detects normal recording sessions.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HasNormalTypeCapturerSession_002 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(nullptr);
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    pipe->streamDescriptors_.push_back(streamDesc);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = {nullptr, pipe};
+    EXPECT_TRUE(coreService->HasNormalTypeCapturerSession(pipeList));
+
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
+}
+
+/**
+* @tc.name  : Test HasNormalTypeCapturerSession.
+* @tc.number: HasNormalTypeCapturerSession_003
+* @tc.desc  : Test non-recording, special source, null stream, and source strategy streams are ignored.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HasNormalTypeCapturerSession_003 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->emplace(SOURCE_TYPE_MIC, AudioSourceStrategyType {
+        "AUDIO_INPUT_MIC_TYPE",
+        "primary",
+        "primary_input",
+        AUDIO_INPUT_FLAG_NORMAL,
+        1
+    });
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->streamDescriptors_.push_back(nullptr);
+
+    auto playbackStream = std::make_shared<AudioStreamDescriptor>();
+    playbackStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    playbackStream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    pipe->streamDescriptors_.push_back(playbackStream);
+
+    auto specialStream = std::make_shared<AudioStreamDescriptor>();
+    specialStream->audioMode_ = AUDIO_MODE_RECORD;
+    specialStream->capturerInfo_.sourceType = SOURCE_TYPE_REMOTE_CAST;
+    pipe->streamDescriptors_.push_back(specialStream);
+
+    auto strategyStream = std::make_shared<AudioStreamDescriptor>();
+    strategyStream->audioMode_ = AUDIO_MODE_RECORD;
+    strategyStream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    pipe->streamDescriptors_.push_back(strategyStream);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = {pipe};
+    EXPECT_FALSE(coreService->HasNormalTypeCapturerSession(pipeList));
+
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
+}
+
+/**
  * @tc.name  : GetEnhancedRoutingSupported_001
  * @tc.number: GetEnhancedRoutingSupported_001
  * @tc.desc  : Verify AudioSelectInterfaceService forwards enhanced routing support from strategy layer.
