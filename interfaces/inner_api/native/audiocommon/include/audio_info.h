@@ -32,6 +32,7 @@
 #include <audio_interrupt_info.h>
 #include <audio_session_info.h>
 #include <audio_stream_info.h>
+#include <audio_volume_info.h>
 #include <audio_asr.h>
 #include "audio_shared_memory.h"
 #include "audio_pipe_types.h"

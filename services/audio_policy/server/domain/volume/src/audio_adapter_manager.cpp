@@ -120,7 +120,7 @@ bool AudioAdapterManager::Init()
     volumeDataMaintainer_.SetVolumeList(defaultVolumeTypeList_);
     if (!lret) {
         AUDIO_INFO_LOG("Audio Volume Config Load Configuration successfully");
-        useNonlinearAlgo_ = 1;
+        useNonlinearAlgo_ = true;
         UpdateVolumeMapIndex();
     }
 
@@ -236,15 +236,7 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         CloneSystemSoundUrl();
     }
 
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-#ifdef FEATURE_AUDIO_ZONE
-        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
-            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
-        }
-#endif
-    }
+    LoadVolumeValueMapFromDb();
     UpdateVolumeForAllPipes();
 
     if (!isNeedCopyVolumeData_ && !isNeedCopyMuteData_ && !isNeedCopyRingerModeData_ && !isNeedCopySystemUrlData_) {
@@ -261,6 +253,33 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         InitSafeTime(true);
         AUDIO_INFO_LOG("Copy audio_policy private database success to settings database, delete private database...");
         DeleteAudioPolicyKvStore();
+    }
+}
+
+void AudioAdapterManager::LoadVolumeValueMapFromDb()
+{
+    const std::list<DeviceType> DEVICE_TYPE_LIST_FOR_EACH_GROUP = {
+        // one device for each DeviceGroupType.
+        DEVICE_TYPE_EARPIECE,
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_DP,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_HEARING_AID,
+        DEVICE_TYPE_WIRED_HEADSET,
+        DEVICE_TYPE_REMOTE_CAST,
+        DEVICE_TYPE_LINE_DIGITAL
+    };
+
+    for (auto deviceType : DEVICE_TYPE_LIST_FOR_EACH_GROUP) {
+        auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+        volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::LEVEL, false);
+        volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::MUTE, false);
+        UpdateVolumeWhenDeviceConnect(desc);
+#ifdef FEATURE_AUDIO_ZONE
+        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
+            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
+        }
+#endif
     }
 }
 
@@ -3329,10 +3348,7 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     AudioRingerMode ringerMode = ringerMode_.load();
     volumeDataMaintainer_.GetRingerMode(ringerMode);
     ringerMode_.store(ringerMode);
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-    }
+    LoadVolumeValueMapFromDb();
     LoadMuteStatusMap();
     UpdateVolumeForAllPipes();
     DealDoNotDisturbStatus();

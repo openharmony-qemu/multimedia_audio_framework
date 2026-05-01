@@ -429,6 +429,7 @@ private:
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
+    void LoadVolumeValueMapFromDb();
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);
