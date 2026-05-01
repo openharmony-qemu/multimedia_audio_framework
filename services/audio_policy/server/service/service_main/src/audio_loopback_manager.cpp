@@ -97,7 +97,9 @@ void AudioLoopbackManager::RegisterLoopback(LoopbackType type, int32_t pid,
             break;
         }
         case LOOPBACK_TYPE_GLOBAL_HANDLER: {
-            sptr<IRemoteObject::DeathRecipient> handlerDeathRecipient = new LoopbackDeathRecipient([this]() { OnHandlerDied(); });
+            sptr<IRemoteObject::DeathRecipient> handlerDeathRecipient = new LoopbackDeathRecipient([this]() {
+                OnHandlerDied();
+            });
             callback->AsObject()->AddDeathRecipient(handlerDeathRecipient);
             globalHandlerCallback_ = callback;
             handlerPid_ = pid;
@@ -301,7 +303,7 @@ void AudioLoopbackManager::BroadcastToControls(int command, bool success, int er
 void AudioLoopbackManager::BroadcastStatusChange(int status, int reason)
 {
     for (auto &item : globalControlCallbacks_) {
-        auto loopbackCb= item.second;
+        auto loopbackCb = item.second;
         if (loopbackCb != nullptr) {
             loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM);
         }

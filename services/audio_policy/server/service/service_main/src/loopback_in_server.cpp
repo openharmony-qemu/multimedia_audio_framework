@@ -36,7 +36,7 @@ LoopbackInServer::~LoopbackInServer()
 
 int32_t LoopbackInServer::Enable(bool enable, int32_t &ret)
 {
-    AUDIO_DEBUG_LOG("LoopbackInServer::Enable, enable %{public}d, type %{public}d", enable, static_cast<int32_t>(type_));
+    AUDIO_INFO_LOG("enable %{public}d, type %{public}d", enable, static_cast<int32_t>(type_));
     
     auto manager = manager_.lock();
     if (manager == nullptr) {

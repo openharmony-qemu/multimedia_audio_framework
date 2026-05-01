@@ -94,7 +94,6 @@ int main()
     int32_t result = SUCCESS;
     auto loopback = AudioLoopback::CreateAudioLoopback(
         LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, result, appInfo);
-
     if (result != SUCCESS || loopback == nullptr) {
         cout << "[Error] CreateAudioLoopback failed: " << ErrorToString(result) << endl;
         cout << "Note: GLOBAL_CONTROL requires GLOBAL_HANDLER process to be running first!" << endl;

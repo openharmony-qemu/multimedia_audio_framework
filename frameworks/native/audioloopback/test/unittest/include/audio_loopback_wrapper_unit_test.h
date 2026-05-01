@@ -42,7 +42,8 @@ public:
     MOCK_METHOD(AudioLoopbackStatus, GetStatus, (), (override));
     MOCK_METHOD(int32_t, SetVolume, (float volume), (override));
     MOCK_METHOD(float, GetVolume, (), (override));
-    MOCK_METHOD(int32_t, SetAudioLoopbackCallback, (const std::shared_ptr<AudioLoopbackCallback> &callback), (override));
+    MOCK_METHOD(int32_t, SetAudioLoopbackCallback, (const std::shared_ptr<AudioLoopbackCallback> &callback),
+        (override));
     MOCK_METHOD(int32_t, RemoveAudioLoopbackCallback, (), (override));
     MOCK_METHOD(bool, SetReverbPreset, (AudioLoopbackReverbPreset preset), (override));
     MOCK_METHOD(AudioLoopbackReverbPreset, GetReverbPreset, (), (override));
