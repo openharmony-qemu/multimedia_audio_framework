@@ -37,7 +37,7 @@ public:
     void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
         const std::vector<StreamDeviceInfo> &inputDevices);
     void ClearSelectedDevices();
-    bool HasNonPairScoSelected();
+    bool AllScoPairSelected();
 
 private:
     bool IsCallStreamUsage(StreamUsage streamUsage);
@@ -47,10 +47,6 @@ private:
     bool IsScoDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    bool IsSameWirelessDevicePair(const std::shared_ptr<AudioDeviceDescriptor> &device1,
-        const std::shared_ptr<AudioDeviceDescriptor> &device2);
-    bool CheckWirelessDeviceConflict(const std::shared_ptr<AudioDeviceDescriptor> &device,
-        RouterType routerType, bool isOutput);
     int FindHighestPriorityDevice(std::string &highestPriorityMac);
     
     std::vector<StreamDeviceInfo> outputStreamDevices_;

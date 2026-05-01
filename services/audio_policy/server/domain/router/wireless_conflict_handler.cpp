@@ -80,47 +80,20 @@ bool WirelessConflictHandler::IsWirelessDevice(const std::shared_ptr<AudioDevice
            device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
 }
 
-bool WirelessConflictHandler::IsSameWirelessDevicePair(const std::shared_ptr<AudioDeviceDescriptor> &device1,
-    const std::shared_ptr<AudioDeviceDescriptor> &device2)
+bool WirelessConflictHandler::AllScoPairSelected()
 {
-    if (device1 == nullptr || device2 == nullptr) {
-        return false;
-    }
-    return device1->macAddress_ == device2->macAddress_;
-}
-
-bool WirelessConflictHandler::HasNonPairScoSelected()
-{
+    bool allScoPair = true;
     for (auto &info : outputStreamDevices_) {
         if (IsScoDevice(info.device) && info.routerType != ROUTER_TYPE_PAIR_DEVICE) {
-            return true;
+            allScoPair = false;
         }
     }
     for (auto &info : inputStreamDevices_) {
         if (IsScoDevice(info.device) && info.routerType != ROUTER_TYPE_PAIR_DEVICE) {
-            return true;
+            allScoPair = false;
         }
     }
-    return false;
-}
-
-bool WirelessConflictHandler::CheckWirelessDeviceConflict(
-    const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType, bool isOutput)
-{
-    if (IsScoDevice(device) && routerType == ROUTER_TYPE_PAIR_DEVICE && !HasNonPairScoSelected()) {
-        return true;
-    }
-    
-    auto &targetDevices = isOutput ? inputStreamDevices_ : outputStreamDevices_;
-    for (auto &info : targetDevices) {
-        if (info.device != nullptr && IsWirelessDevice(info.device) &&
-            !IsSameWirelessDevicePair(device, info.device)) {
-            AUDIO_INFO_LOG("Wireless device conflict: deviceId %{public}d vs %{public}d",
-                device->deviceId_, info.device->deviceId_);
-            return true;
-        }
-    }
-    return false;
+    return allScoPair;
 }
 
 int WirelessConflictHandler::FindHighestPriorityDevice(std::string &highestPriorityMac)
@@ -148,11 +121,11 @@ int WirelessConflictHandler::FindHighestPriorityDevice(std::string &highestPrior
 bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
     StreamUsage streamUsage, SourceType sourceType, bool isOutput)
 {
-    if (device == nullptr || device->macAddress_.empty()) {
+    if (device == nullptr || device->macAddress_.empty() || !IsWirelessDevice(device)) {
         return false;
     }
     
-    if (IsWirelessDevice(device) && CheckWirelessDeviceConflict(device, routerType, isOutput)) {
+    if (IsScoDevice(device) && routerType == ROUTER_TYPE_PAIR_DEVICE && AllScoPairSelected()) {
         return true;
     }
     
