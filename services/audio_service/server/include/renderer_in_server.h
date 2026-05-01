@@ -90,6 +90,8 @@ public:
     void HandleOperationStarted();
     int32_t OnWriteData(size_t length) override;
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    int32_t OnWriteDataNoWake(int8_t *inputData, size_t requestDataLen) override;
+    void WakeClientFutex() override;
     int32_t GetAvailableSize(size_t &length) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
@@ -179,6 +181,7 @@ public:
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
+    int32_t RefreshServerBufferForSpanSizeUpdate();
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
 
@@ -199,7 +202,7 @@ public:
     int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
     void ReportExceptionForOffload();
 public:
-    const AudioProcessConfig processConfig_;
+    AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
     void OnStatusUpdateSubs(IOperation operation);
@@ -243,7 +246,9 @@ private:
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
     void ProcessManagerType();
+    void HandleOperationPaused(std::shared_ptr<IStreamListener> stateListener);
     void HandleOperationStopped(RendererStage stage);
+    void UpdateStreamStatusByRendererState();
     bool IsMovieOffloadStream();
     bool IsMovieStream();
     template <typename T>
@@ -259,6 +264,7 @@ private:
     void PauseInner();
     void ClearInnerCapBufferForInject();
     void InitDupBufferInner(int32_t innerCapId);
+    int32_t OnWriteDataInternal(int8_t *inputData, size_t requestDataLen, bool wakeFutex);
 
     // only for a2dp offload
     void WaitForDataConnection();
@@ -266,12 +272,12 @@ private:
     int32_t DisableDualToneInner();
     void PreDualToneBufferSilenceForOffload();
 
-    int32_t WriteData(int8_t *inputData, size_t requestDataLen);
+    int32_t WriteData(int8_t *inputData, size_t requestDataLen, bool wakeFutex = true);
     void PauseDirectStream();
 
     int32_t CreateServerBuffer();
     int32_t ProcessAndSetStaticBuffer();
-    int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
+    int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen, bool wakeFutex);
     void MarkStaticFadeOut();
     void MarkStaticFadeIn(bool isRefresh);
     void HandleIsWriteFirst(bool isWriteFirst);

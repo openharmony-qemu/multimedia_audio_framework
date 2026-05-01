@@ -349,14 +349,14 @@ int32_t HpaeManagerImpl::StartWithSyncId(HpaeStreamClassType streamClassType, ui
     return manager_->StartWithSyncId(streamClassType, sessionId, syncId);
 }
 
-int32_t HpaeManagerImpl::Pause(HpaeStreamClassType streamClassType, uint32_t sessionId)
+int32_t HpaeManagerImpl::Pause(HpaeStreamClassType streamClassType, uint32_t sessionId, bool isStandby)
 {
     CHECK_AND_RETURN_RET(manager_,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
             BusinessScenario::PAUSE, ERR_NULL_POINTER),
         "manager is nullptr", false), ERR_ILLEGAL_STATE));
-    return manager_->Pause(streamClassType, sessionId);
+    return manager_->Pause(streamClassType, sessionId, isStandby);
 }
 
 int32_t HpaeManagerImpl::Flush(HpaeStreamClassType streamClassType, uint32_t sessionId)
@@ -408,6 +408,20 @@ int32_t HpaeManagerImpl::RegisterStatusCallback(HpaeStreamClassType streamClassT
             BusinessScenario::CALLBACK, ERR_NULL_POINTER),
         "manager is nullptr", false), ERR_ILLEGAL_STATE));
     return manager_->RegisterStatusCallback(streamClassType, sessionId, callback);
+}
+
+int32_t HpaeManagerImpl::GetStreamSpanSize(HpaeStreamClassType streamClassType, uint32_t sessionId,
+    uint32_t &spanSizeInFrame)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->GetStreamSpanSize(streamClassType, sessionId, spanSizeInFrame);
+}
+
+int32_t HpaeManagerImpl::GetStreamRouteFlag(HpaeStreamClassType streamClassType, uint32_t sessionId,
+    uint32_t &routeFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->GetStreamRouteFlag(streamClassType, sessionId, routeFlag);
 }
 
 // record stream interface
@@ -903,6 +917,18 @@ void HpaeManagerImpl::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, 
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
     manager_->TriggerAppsUidUpdate(streamClassType, sessionId);
+}
+
+float HpaeManagerImpl::GetMaxAmplitude()
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, 0.0f, "manager is nullptr");
+    return manager_->GetMaxAmplitude();
+}
+
+void HpaeManagerImpl::SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->SetSinkMuteForSwitchDevice(deviceClass, mute);
 }
 
 int32_t HpaeManagerImpl::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute)

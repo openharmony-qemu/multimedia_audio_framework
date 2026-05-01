@@ -166,7 +166,10 @@ public:
     bool IsUseMoveToConcedeType() const
     {
         return (audioFlag_ == AUDIO_OUTPUT_FLAG_LOWPOWER) ||
-            (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL);
+            (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL) ||
+            (audioFlag_ == AUDIO_OUTPUT_FLAG_FAST) ||
+            (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) ||
+            (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
     }
 
     bool IsMediaScene() const

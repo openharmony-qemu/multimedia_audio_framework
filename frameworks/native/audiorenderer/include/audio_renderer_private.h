@@ -247,6 +247,7 @@ private:
         IAudioStream::SwitchInfo &info);
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream, RestoreInfo restoreInfo,
         RendererState previousState, IAudioStream::SwitchInfo &switchInfo);
+    void UpdateFlagForSwitchInfo(IAudioStream::SwitchInfo &switchInfo, IAudioStream::StreamClass targetClass);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();

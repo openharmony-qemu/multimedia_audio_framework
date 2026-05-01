@@ -542,7 +542,7 @@ int32_t HpaeFastRendererManager::Start(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeFastRendererManager::Pause(uint32_t sessionId)
+int32_t HpaeFastRendererManager::Pause(uint32_t sessionId, bool isStandby)
 {
     auto request = [this, sessionId]() {
         Trace trace("HpaeFastRendererManager::Pause id[" + std::to_string(sessionId) + "]");

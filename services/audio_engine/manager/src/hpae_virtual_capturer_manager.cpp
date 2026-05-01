@@ -75,7 +75,7 @@ int32_t HpaeVirtualCapturerManager::Start(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeVirtualCapturerManager::Pause(uint32_t sessionId)
+int32_t HpaeVirtualCapturerManager::Pause(uint32_t sessionId, bool isStandby)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualCapturerManager::Pause");
     std::lock_guard<std::mutex> lock(captureMutex_);

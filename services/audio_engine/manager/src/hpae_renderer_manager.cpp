@@ -111,9 +111,19 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     // for collaboration
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     node->SetNodeInfo(nodeInfo);
+    node->SetIsLowLatency(false);
     uint32_t sessionId = nodeInfo.sessionId;
 
     sinkInputNodeMap_[sessionId] = node;
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = sinkInfo_.frameLen;
+    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
+    if (frameLenAdjusted) {
+        node->SetNodeInfo(nodeInfo);
+        TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
+            static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
+    }
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 #ifdef ENABLE_HIDUMP_DFX
@@ -842,16 +852,18 @@ void HpaeRendererManager::SetSessionState(uint32_t sessionId, HpaeSessionState r
     sessionNodeMap_[sessionId].state = renderState;
 }
 
-int32_t HpaeRendererManager::Pause(uint32_t sessionId)
+int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
 {
-    auto request = [this, sessionId]() {
+    auto request = [this, sessionId, isStandby]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Pause");
-        AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s",
-            sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str());
+        AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s,isStandb:%{public}d",
+            sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str(), isStandby);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
-        if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
+        if (isStandby) {
+            DisConnectInputSession(sessionId);
+        } else if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputSession(sessionId);
         }
         UpdateClusterStreamInfo(sceneType);

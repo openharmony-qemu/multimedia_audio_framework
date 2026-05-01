@@ -2858,7 +2858,7 @@ HWTEST_F(RendererInServerThirdUnitTest, SelectModeAndWriteData_001, TestSize.Lev
 
     int8_t *inputData = nullptr;
     size_t requestDataLen = 0;
-    ret = rendererInServer->SelectModeAndWriteData(inputData, requestDataLen);
+    ret = rendererInServer->SelectModeAndWriteData(inputData, requestDataLen, false);
     EXPECT_NE(SUCCESS, ret);
 }
 

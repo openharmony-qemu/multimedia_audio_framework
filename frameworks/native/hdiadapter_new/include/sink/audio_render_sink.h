@@ -82,6 +82,7 @@ public:
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
+    DeviceType GetCurrentOutputDevice() override;
     void HandleDeviceCallback(const bool state);
 
     bool IsInA2dpOffload() override;

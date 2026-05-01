@@ -179,6 +179,9 @@ public:
     std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);
     std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForDevice(
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
+    
+    bool HasPausedFastPipeInDelayedSwitch();
+    std::string GetPausedFastPipeModuleNameInDelayedSwitch();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

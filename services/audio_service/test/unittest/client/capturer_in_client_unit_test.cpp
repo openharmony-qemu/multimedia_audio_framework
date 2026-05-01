@@ -852,7 +852,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_001, TestSize.Level1)
     Init(capturerInClientInner);
     capturerInClientInner->capturerInfo_.capturerFlags = 1;
     AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
-    EXPECT_NE(capturerInClientInner, nullptr);
+    EXPECT_EQ(ret.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
 }
 
 /**
@@ -918,6 +918,38 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_004, TestSize.Level1)
     int32_t processChannels = static_cast<int32_t>(capturerInClientInner->streamParams_.channels);
     int32_t realChannels = static_cast<int32_t>(ret.streamInfo.channels);
     EXPECT_EQ(realChannels, processChannels);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig API
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_005
+ * @tc.desc  : Test ConstructConfig low latency flag passthrough.
+ */
+HWTEST(CapturerInClientUnitTest, ConstructConfig_005, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+    AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(ret.capturerInfo.capturerFlags, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig API
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_006
+ * @tc.desc  : Test ConstructConfig voip low latency flag passthrough.
+ */
+HWTEST(CapturerInClientUnitTest, ConstructConfig_006, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+    AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(ret.capturerInfo.capturerFlags, AUDIO_FLAG_VOIP_FAST);
 }
 
 /**

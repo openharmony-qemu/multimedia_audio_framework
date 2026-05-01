@@ -547,6 +547,7 @@ struct AudioCallBackStreamInfo {
     bool forceData = false;
     uint64_t writePos_ = 0;
     bool isWriteFirst_ = false;
+    bool isLowLatency = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

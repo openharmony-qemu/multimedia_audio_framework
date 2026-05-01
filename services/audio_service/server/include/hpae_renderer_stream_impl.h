@@ -105,8 +105,11 @@ public:
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
+    void TriggerClientWake() override;
     void TriggerAppsUidUpdate() override;
+    uint32_t GetRouteFlag() const noexcept override;
 private:
+    int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
     void SyncOffloadMode();
     void InitRingBuffer();
     int32_t WriteDataFromRingBuffer(bool forceData, int8_t *inputData, size_t &requestDataLen);
@@ -175,6 +178,7 @@ private:
     bool isCallbackMode_ = true; // true is callback buffer mode, false is write buffer mode
     bool isMoveAble_ = true;
     std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
+    size_t ringBufferCapacityInBytes_ = 0;
     FILE *dumpEnqueueIn_ = nullptr;
     const size_t preBufSizeInBytes_ = 0;
     std::atomic<bool> preBufDone_ = false;
@@ -197,6 +201,8 @@ private:
     uint64_t writePos_ = 0;
     float speed_ = 1.0f;
     bool isWriteFirst_ = false;
+    bool delayedWake_ = false;
+    std::atomic<uint32_t> routeFlag_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

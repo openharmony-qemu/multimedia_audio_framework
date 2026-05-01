@@ -22,6 +22,7 @@ enum Operation : int32_t {
     START_STREAM = 0,
     PAUSE_STREAM,
     STOP_STREAM,
+    UPDATE_SPANSIZE,
     RELEASE_STREAM,
     FLUSH_STREAM,
     DRAIN_STREAM,

@@ -337,7 +337,7 @@ int32_t HpaeAdapterManager::GetSessionIdAndRemove(uint32_t paIndex, uint32_t &se
 
 void HpaeAdapterManager::SetHighResolution(AudioProcessConfig &processConfig, uint32_t sessionId)
 {
-    if (processConfig.audioMode != AUDIO_MODE_PLAYBACK) {
+    if (processConfig.audioMode != AUDIO_MODE_PLAYBACK || managerType_ == DIRECT_PLAYBACK) {
         return;
     }
     bool spatializationEnabled = processConfig.rendererInfo.spatializationEnabled;

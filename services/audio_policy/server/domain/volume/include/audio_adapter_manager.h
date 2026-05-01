@@ -478,9 +478,11 @@ private:
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot(bool isFirst);
     bool IsPaRoute(uint32_t routeFlag);
+    bool IsLowLatencyRoute(uint32_t routeFlag);
     void DepressVolume(float &volume, int32_t volumeLevel,
         AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
     float GetVolumeReductionRatio(AudioStreamType streamUsage);
+    int32_t CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeInfo, AudioIOHandle &ioHandle);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
@@ -525,6 +527,7 @@ private:
     int32_t RestoreSystemAppVolumeLevel();
     int32_t RestoreSystemAppVolumeMuteStatus();
     bool IsStreamTypeInUse(AudioStreamType streamType, std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsDirectRoute(uint32_t routeFlag) const;
     void UpdatePipeVolumeWhenVgsStatusChanged();
     void UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId = 0);
