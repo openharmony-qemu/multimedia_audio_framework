@@ -252,7 +252,8 @@ HWTEST_F(HpaeMixerNodeTest, testSignalProcessNonEffectOutScene, TestSize.Level1)
     std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     hpaeMixerNode->Connect(hpaeSinkInputNode);
-    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, TEST_VALUE1);
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb =
+        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, TEST_VALUE1);
     hpaeSinkInputNode->RegisterWriteCallback(writeFixedValueCb);
     hpaeSinkInputNode->DoProcess();
     std::vector<HpaePcmBuffer*> inputs;
