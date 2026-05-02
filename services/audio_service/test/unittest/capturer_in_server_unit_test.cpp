@@ -958,18 +958,74 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_030, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test CapturerInServer.
+ * @tc.name  : Test HpaeCapturerStreamImpl API
  * @tc.type  : FUNC
- * @tc.number: DrainAudioBuffer_001.
- * @tc.desc  : Test DrainAudioBuffer interface.
+ * @tc.number: HpaeCapturerStream_017
+ * @tc.desc  : Test HpaeCapturerStreamImpl interface.
  */
-HWTEST_F(CapturerInServerUnitTest, DrainAudioBuffer_001, TestSize.Level1)
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level2)
 {
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    int32_t result = capturerInServer_->DrainAudioBuffer();
-    EXPECT_EQ(result, SUCCESS);
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+    size_t minBufferSize = 10;
+    int32_t abortTimes = 0;
+
+    capturerStreamImplRet->AbortCallback(abortTimes);
+    auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerStreamImpl fast span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_FastSpanSize_001
+ * @tc.desc  : Test HpaeCapturerStreamImpl with MMAP flag for 5ms span.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_FastSpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
+    processConfig.isInnerCapturer = false;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    
+    HpaeCapturerStreamImpl capturerStreamImpl(processConfig);
+    size_t expectedSpanSize = 5 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+    EXPECT_EQ(capturerStreamImpl.spanSizeInFrame_, expectedSpanSize);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerStreamImpl normal span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_NormalSpanSize_001
+ * @tc.desc  : Test HpaeCapturerStreamImpl with normal flag for 20ms span.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_NormalSpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    processConfig.isInnerCapturer = false;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    
+    HpaeCapturerStreamImpl capturerStreamImpl(processConfig);
+    size_t expectedSpanSize = 20 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+    EXPECT_EQ(capturerStreamImpl.spanSizeInFrame_, expectedSpanSize);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerStreamImpl inner capturer span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_InnerSpanSize_001
+ * @tc.desc  : Test HpaeCapturerStreamImpl with inner capturer flag.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_InnerSpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
+    processConfig.isInnerCapturer = true;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    
+    HpaeCapturerStreamImpl capturerStreamImpl(processConfig);
+    size_t expectedSpanSize = 20 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+    EXPECT_EQ(capturerStreamImpl.spanSizeInFrame_, expectedSpanSize);
 }
 
 /**

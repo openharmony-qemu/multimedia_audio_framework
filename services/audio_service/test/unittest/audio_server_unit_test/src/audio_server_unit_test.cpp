@@ -32,6 +32,7 @@
 #include "audio_server_hpae_dump.h"
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
+#include "audio_module_info.h"
 
 using namespace testing::ext;
 using OHOS::AudioStandard::SetSysPara;
@@ -981,6 +982,75 @@ HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->CheckMaxLoopbackInstances(AUDIO_MODE_RECORD);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CreateAudioStream loopback branch
+ * @tc.type  : FUNC
+ * @tc.number: CreateAudioStream_Loopback_001
+ * @tc.desc  : Test CreateAudioStream with loopback flag for renderer.
+ */
+HWTEST_F(AudioServerUnitTest, CreateAudioStream_Loopback_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.isLoopback = true;
+    sptr<IRemoteObject> remoteObject = nullptr;
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
+    EXPECT_EQ(nullptr, remoteObject);
+}
+
+/**
+ * @tc.name  : Test CreateAudioStream loopback branch for capturer
+ * @tc.type  : FUNC
+ * @tc.number: CreateAudioStream_Loopback_002
+ * @tc.desc  : Test CreateAudioStream with loopback flag for capturer.
+ */
+HWTEST_F(AudioServerUnitTest, CreateAudioStream_Loopback_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.isLoopback = true;
+    sptr<IRemoteObject> remoteObject = nullptr;
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
+    EXPECT_EQ(nullptr, remoteObject);
+}
+
+/**
+ * @tc.name  : Test IsNormalIpcStream with enableNewRoute
+ * @tc.type  : FUNC
+ * @tc.number: IsNormalIpcStream_NewRoute_001
+ * @tc.desc  : Test IsNormalIpcStream when enableNewRoute is 1.
+ */
+HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_NewRoute_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    SetSysPara("persist.multimedia.enable_new_route", 1);
+    bool ret = audioServer->IsNormalIpcStream(config);
+    EXPECT_TRUE(ret);
+    SetSysPara("persist.multimedia.enable_new_route", 0);
+}
+
+/**
+ * @tc.name  : Test SetSinkMuteForSwitchDevice mmap branch
+ * @tc.type  : FUNC
+ * @tc.number: SetSinkMuteForSwitchDevice_Mmap_001
+ * @tc.desc  : Test SetSinkMuteForSwitchDevice with mmap device class.
+ */
+HWTEST_F(AudioServerUnitTest, SetSinkMuteForSwitchDevice_Mmap_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->SetSinkMuteForSwitchDevice(A2DP_FAST_CLASS, 1, false);
+    EXPECT_NE(SUCCESS, ret);
+    ret = audioServer->SetSinkMuteForSwitchDevice(MMAP_CLASS, 1, false);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 #ifdef TEMP_DISABLE

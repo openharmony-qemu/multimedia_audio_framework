@@ -950,6 +950,76 @@ HWTEST(AudioServiceUnitTest, GetMaxAmplitude_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetEndpointMuteForSwitchDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetEndpointMuteForSwitchDevice_001
+ * @tc.desc  : Test SetEndpointMuteForSwitchDevice with device class parameter.
+ */
+HWTEST(AudioServiceUnitTest, SetEndpointMuteForSwitchDevice_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->SetEndpointMuteForSwitchDevice("A2DP_FAST", true);
+    audioService->SetEndpointMuteForSwitchDevice("MMAP", false);
+    audioService->SetEndpointMuteForSwitchDevice("primary", true);
+    EXPECT_NE(nullptr, audioService);
+}
+
+/**
+ * @tc.name  : Test SetEndpointMuteForSwitchDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetEndpointMuteForSwitchDevice_002
+ * @tc.desc  : Test SetEndpointMuteForSwitchDevice with different mute values.
+ */
+HWTEST(AudioServiceUnitTest, SetEndpointMuteForSwitchDevice_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->SetEndpointMuteForSwitchDevice("test_device", true);
+    audioService->SetEndpointMuteForSwitchDevice("test_device", false);
+    EXPECT_NE(nullptr, audioService);
+}
+
+/**
+ * @tc.name  : Test OnProcessRelease loopback branch
+ * @tc.type  : FUNC
+ * @tc.number: OnProcessRelease_Loopback_001
+ * @tc.desc  : Test OnProcessRelease with loopback renderer.
+ */
+HWTEST(AudioServiceUnitTest, OnProcessRelease_Loopback_001, TestSize.Level1)
+{
+    bool isSwitchStream = false;
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.rendererInfo.isLoopback = true;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    AudioService::GetInstance()->GetAudioProcess(config);
+    int32_t ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test OnProcessRelease loopback capturer branch
+ * @tc.type  : FUNC
+ * @tc.number: OnProcessRelease_Loopback_002
+ * @tc.desc  : Test OnProcessRelease with loopback capturer.
+ */
+HWTEST(AudioServiceUnitTest, OnProcessRelease_Loopback_002, TestSize.Level1)
+{
+    bool isSwitchStream = false;
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.isLoopback = true;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    AudioService::GetInstance()->GetAudioProcess(config);
+    int32_t ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
  * @tc.name  : Test GetCapturerBySessionID API
  * @tc.type  : FUNC
  * @tc.number: GetCapturerBySessionID_001
