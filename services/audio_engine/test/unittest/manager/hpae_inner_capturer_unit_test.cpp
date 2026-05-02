@@ -1151,6 +1151,101 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, DeactivateThread_002, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test Pause with isStandby for InnerCapturerManager
+ * @tc.type  : FUNC
+ * @tc.number: PauseWithStandby_001
+ * @tc.desc  : Test Pause with isStandby=true for renderer stream in InnerCapturerManager
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, PauseWithStandby_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeSinkInputInfo sinkInputInfo;
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId, true) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : Test Pause with isStandby for InnerCapturerManager
+ * @tc.type  : FUNC
+ * @tc.number: PauseWithStandby_002
+ * @tc.desc  : Test Pause with isStandby=false for renderer stream in InnerCapturerManager
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, PauseWithStandby_002, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeSinkInputInfo sinkInputInfo;
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId, false) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : Test SetIsLowLatency for InnerCapturerManager
+ * @tc.type  : FUNC
+ * @tc.number: SetIsLowLatency_001
+ * @tc.desc  : Test SetIsLowLatency is called with false during AddSingleNodeToSinkInner
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetIsLowLatency_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    auto it = hpaeInnerCapturerManager_->sinkInputNodeMap_.find(playStreamInfo.sessionId);
+    ASSERT_EQ(it != hpaeInnerCapturerManager_->sinkInputNodeMap_.end(), true);
+    auto node = it->second;
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->GetIsLowLatency(), false);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
  * @tc.name  : InnerCapSinkNode_Reset_Empty_001
  * @tc.type  : FUNC
  * @tc.desc  : Test Reset with no connections (Branch 1: preOutputMap is empty).

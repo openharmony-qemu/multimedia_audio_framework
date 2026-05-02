@@ -782,6 +782,112 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Release_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name    : PauseWithStandby_001
+ * @tc.type    : FUNC
+ * @tc.number  : PauseWithStandby_001
+ * @tc.desc    : Verify Pause with isStandby=true for existing sessionId.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, PauseWithStandby_001, TestSize.Level0)
+{
+    int32_t ret = manager_->Pause(TEST_SESSION_ID, true);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name    : PauseWithStandby_002
+ * @tc.type    : FUNC
+ * @tc.number  : PauseWithStandby_002
+ * @tc.desc    : Verify Pause with isStandby=false for existing sessionId.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, PauseWithStandby_002, TestSize.Level0)
+{
+    int32_t ret = manager_->Pause(TEST_SESSION_ID, false);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name    : SetIsLowLatency_001
+ * @tc.type    : FUNC
+ * @tc.number  : SetIsLowLatency_001
+ * @tc.desc    : Verify SetIsLowLatency is called with false during AddSingleNodeToSink.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, SetIsLowLatency_001, TestSize.Level0)
+{
+    auto newNode = CreateTestNode(205, HPAE_SESSION_PREPARED);
+    int32_t ret = manager_->AddNodeToSink(newNode);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+    EXPECT_EQ(manager_->sinkInputNodeMap_.count(205), 1u);
+    EXPECT_EQ(newNode->GetIsLowLatency(), false);
+}
+
+/**
+ * @tc.name    : AdjustFrameLen_001
+ * @tc.type    : FUNC
+ * @tc.number  : AdjustFrameLen_001
+ * @tc.desc    : Verify AdjustFrameLen adjusts frameLen when input and output differ.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, AdjustFrameLen_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceName = TEST_DEVICE_NAME;
+    sinkInfo.deviceClass = TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = TEST_SINK_NAME;
+    sinkInfo.frameLen = FRAME_SIZE;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 480;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
+ * @tc.name    : AdjustFrameLen_002
+ * @tc.type    : FUNC
+ * @tc.number  : AdjustFrameLen_002
+ * @tc.desc    : Verify AdjustFrameLen returns false when frameLen already matches.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, AdjustFrameLen_002, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceName = TEST_DEVICE_NAME;
+    sinkInfo.deviceClass = TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = TEST_SINK_NAME;
+    sinkInfo.frameLen = FRAME_SIZE;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 960;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
  * @tc.name    : AddNodeToSink_001
  * @tc.type    : FUNC
  * @tc.number  : AddNodeToSink_001
