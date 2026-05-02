@@ -1542,7 +1542,8 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
     AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
         streamType, mute, isUpdateUi);
 
-    if (streamType == STREAM_NOTIFICATION && audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION &&
+        audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
         AUDIO_INFO_LOG("Cannot unmute the notification volume because of the SILENT or VIBRATE mode");
         return ERR_OPERATION_FAILED;
     }
