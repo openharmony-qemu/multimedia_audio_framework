@@ -416,5 +416,49 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_008, TestSize.Level1)
     EXPECT_EQ(info, "BT_Speaker");
 }
 
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_010
+ * @tc.desc   : Test primary_mmap_voip capture id selection for VOIP low latency path
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_010, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary_mmap_voip", SOURCE_TYPE_MIC);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP));
+    
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_CAPTURE);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_FAST);
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, "voip");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_011
+ * @tc.desc   : Test primary_mmap capture id selection for normal low latency path
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_011, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary_mmap", SOURCE_TYPE_MIC);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT));
+    
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_CAPTURE);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_FAST);
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, "default");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
