@@ -2920,6 +2920,5 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_005, TestSize.Level1)
     audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
     EXPECT_EQ(action, CONCEDE_INCOMING);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
