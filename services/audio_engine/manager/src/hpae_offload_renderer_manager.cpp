@@ -140,6 +140,7 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     uint32_t sessionId = nodeInfo.sessionId;
     HILOG_COMM_INFO("[FinishMove] session:%{public}u to sink:offload", sessionId);
     AddNodeToMap(node);
+    CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sinkOutputNode_ is nullptr");
     const auto outNodeInfo = sinkOutputNode_->GetNodeInfo();
     bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
     if (frameLenAdjusted) {
