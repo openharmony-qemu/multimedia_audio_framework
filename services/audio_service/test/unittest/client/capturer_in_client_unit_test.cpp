@@ -2239,5 +2239,197 @@ HWTEST(CapturerInClientUnitTest, IsRestoreNeeded_001, TestSize.Level4)
         ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
     EXPECT_EQ(testCapturerClient->IsRestoreNeeded(), true);
 }
+
+HWTEST(CapturerInClientUnitTest, ConstructConfig_MMAP_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->clientPid_ = 10;
+    capturerInClientInner->clientUid_ = 10;
+    capturerInClientInner->appTokenId_ = 10;
+    capturerInClientInner->fullTokenId_ = 10;
+    capturerInClientInner->streamParams_.channels = STEREO;
+    capturerInClientInner->streamParams_.encoding = ENCODING_PCM;
+    capturerInClientInner->streamParams_.format = SAMPLE_S16LE;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    capturerInClientInner->streamParams_.channelLayout = CH_LAYOUT_STEREO;
+    capturerInClientInner->eStreamType_ = STREAM_MUSIC;
+    
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+    AudioProcessConfig config = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_MMAP);
+}
+
+HWTEST(CapturerInClientUnitTest, ConstructConfig_VOIP_FAST_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->clientPid_ = 10;
+    capturerInClientInner->clientUid_ = 10;
+    capturerInClientInner->appTokenId_ = 10;
+    capturerInClientInner->fullTokenId_ = 10;
+    capturerInClientInner->streamParams_.channels = STEREO;
+    capturerInClientInner->streamParams_.encoding = ENCODING_PCM;
+    capturerInClientInner->streamParams_.format = SAMPLE_S16LE;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    capturerInClientInner->streamParams_.channelLayout = CH_LAYOUT_STEREO;
+    
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+    AudioProcessConfig config = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_VOIP_FAST);
+}
+
+HWTEST(CapturerInClientUnitTest, ConstructConfig_InvalidFlag_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->clientPid_ = 10;
+    capturerInClientInner->clientUid_ = 10;
+    capturerInClientInner->streamParams_.channels = STEREO;
+    capturerInClientInner->streamParams_.encoding = ENCODING_PCM;
+    capturerInClientInner->streamParams_.format = SAMPLE_S16LE;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    
+    capturerInClientInner->capturerInfo_.capturerFlags = 99;
+    AudioProcessConfig config = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
+}
+
+HWTEST(CapturerInClientUnitTest, GetStreamClass_MMAP_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+    
+    IAudioStream::StreamClass streamClass = capturerInClientInner->GetStreamClass();
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::FAST_STREAM);
+}
+
+HWTEST(CapturerInClientUnitTest, GetStreamClass_VOIP_FAST_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+    
+    IAudioStream::StreamClass streamClass = capturerInClientInner->GetStreamClass();
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::FAST_STREAM);
+}
+
+HWTEST(CapturerInClientUnitTest, GetStreamClass_NORMAL_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+    
+    IAudioStream::StreamClass streamClass = capturerInClientInner->GetStreamClass();
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+}
+
+HWTEST(CapturerInClientUnitTest, GetFastStatus_MMAP_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+    
+    FastStatus status = capturerInClientInner->GetFastStatus();
+    EXPECT_EQ(status, FASTSTATUS_FAST);
+}
+
+HWTEST(CapturerInClientUnitTest, GetFastStatus_VOIP_FAST_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+    
+    FastStatus status = capturerInClientInner->GetFastStatus();
+    EXPECT_EQ(status, FASTSTATUS_FAST);
+}
+
+HWTEST(CapturerInClientUnitTest, GetFastStatus_NORMAL_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+    
+    FastStatus status = capturerInClientInner->GetFastStatus();
+    EXPECT_EQ(status, FASTSTATUS_NORMAL);
+}
+
+HWTEST(CapturerInClientUnitTest, InitDfxOperation_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->sessionId_ = 12345;
+    capturerInClientInner->clientConfig_.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    capturerInClientInner->clientConfig_.streamInfo.customSampleRate = 0;
+    capturerInClientInner->clientConfig_.streamInfo.channels = STEREO;
+    capturerInClientInner->clientConfig_.streamInfo.format = SAMPLE_S16LE;
+    
+    capturerInClientInner->InitDfxOperation();
+    
+    std::string expectedFileName = "12345_48000_2_1_capturer_client_in.pcm";
+    EXPECT_EQ(capturerInClientInner->dumpInFile_, expectedFileName);
+}
+
+HWTEST(CapturerInClientUnitTest, InitDfxOperation_002, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->sessionId_ = 12345;
+    capturerInClientInner->clientConfig_.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    capturerInClientInner->clientConfig_.streamInfo.customSampleRate = SAMPLE_RATE_44100;
+    capturerInClientInner->clientConfig_.streamInfo.channels = STEREO;
+    capturerInClientInner->clientConfig_.streamInfo.format = SAMPLE_S16LE;
+    
+    capturerInClientInner->InitDfxOperation();
+    
+    std::string expectedFileName = "12345_44100_2_1_capturer_client_in.pcm";
+    EXPECT_EQ(capturerInClientInner->dumpInFile_, expectedFileName);
+}
+
+HWTEST(CapturerInClientUnitTest, InitDfxOperation_003, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->sessionId_ = 12345;
+    capturerInClientInner->clientConfig_.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    capturerInClientInner->clientConfig_.streamInfo.customSampleRate = 0;
+    capturerInClientInner->clientConfig_.streamInfo.channels = MONO;
+    capturerInClientInner->clientConfig_.streamInfo.format = SAMPLE_S32LE;
+    
+    capturerInClientInner->InitDfxOperation();
+    
+    std::string expectedFileName = "12345_48000_1_4_capturer_client_in.pcm";
+    EXPECT_EQ(capturerInClientInner->dumpInFile_, expectedFileName);
+}
+
+HWTEST(CapturerInClientUnitTest, ConstructConfig_AllValidFlags_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->clientPid_ = 10;
+    capturerInClientInner->clientUid_ = 10;
+    capturerInClientInner->streamParams_.channels = STEREO;
+    capturerInClientInner->streamParams_.encoding = ENCODING_PCM;
+    capturerInClientInner->streamParams_.format = SAMPLE_S16LE;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+    AudioProcessConfig config = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
+    
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+    config = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_MMAP);
+    
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+    config = capturerInClientInner->ConstructConfig();
+    EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_VOIP_FAST);
+}
+
+HWTEST(CapturerInClientUnitTest, ConstructConfig_InvalidFlagsReset_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->clientPid_ = 10;
+    capturerInClientInner->clientUid_ = 10;
+    capturerInClientInner->streamParams_.channels = STEREO;
+    capturerInClientInner->streamParams_.encoding = ENCODING_PCM;
+    capturerInClientInner->streamParams_.format = SAMPLE_S16LE;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    
+    std::vector<int32_t> invalidFlags = {1, 2, 3, 100, -1, 255};
+    for (auto flag : invalidFlags) {
+        capturerInClientInner->capturerInfo_.capturerFlags = flag;
+        AudioProcessConfig config = capturerInClientInner->ConstructConfig();
+        EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

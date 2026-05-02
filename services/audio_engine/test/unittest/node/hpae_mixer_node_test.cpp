@@ -137,4 +137,160 @@ HWTEST_F(HpaeMixerNodeTest, testMixerConnectWithInfo, TestSize.Level1)
     hpaeMixerNode->DisConnectWithInfo(cluster, hpaeMixerNode->GetNodeInfo());
     EXPECT_EQ(cluster->fmtConverterNodeMap_.size() == 1, true); // not delete convertnode, equal 1
 }
+
+HWTEST_F(HpaeMixerNodeTest, testSetupAudioLimiterAlreadySetup, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    int32_t ret = hpaeMixerNode->SetupAudioLimiter();
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t ret2 = hpaeMixerNode->SetupAudioLimiter();
+    EXPECT_EQ(ret2, ERROR);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testResetMixerNode, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    bool ret = hpaeMixerNode->Reset();
+    EXPECT_EQ(ret, true);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testSetNodeInfo, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    HpaeNodeInfo newNodeInfo = nodeInfo;
+    newNodeInfo.streamType = STREAM_GAME;
+    newNodeInfo.effectInfo.streamUsage = STREAM_USAGE_MEDIA;
+    hpaeMixerNode->SetNodeInfo(newNodeInfo);
+    EXPECT_EQ(hpaeMixerNode->GetNodeInfo().streamType, STREAM_GAME);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testGetLatencyWithLimiter, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    uint64_t latency = hpaeMixerNode->GetLatency();
+    EXPECT_EQ(latency, 0);
+    hpaeMixerNode->SetupAudioLimiter();
+    latency = hpaeMixerNode->GetLatency();
+    EXPECT_GT(latency, 0);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testSignalProcessWithLimiter, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    hpaeMixerNode->SetupAudioLimiter();
+    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeMixerNode->Connect(hpaeSinkInputNode);
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb =
+        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, TEST_VALUE1);
+    hpaeSinkInputNode->RegisterWriteCallback(writeFixedValueCb);
+    hpaeSinkInputNode->DoProcess();
+    std::vector<HpaePcmBuffer*> inputs;
+    auto outputPort = hpaeSinkInputNode->GetOutputPort();
+    HpaePcmBuffer* buffer = outputPort->PullOutputData();
+    inputs.push_back(buffer);
+    HpaePcmBuffer* output = hpaeMixerNode->SignalProcess(inputs);
+    EXPECT_NE(output, nullptr);
+    hpaeMixerNode->DisConnect(hpaeSinkInputNode);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testSignalProcessEmptyInputs, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    std::vector<HpaePcmBuffer*> inputs;
+    HpaePcmBuffer* output = hpaeMixerNode->SignalProcess(inputs);
+    EXPECT_NE(output, nullptr);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testSignalProcessNonEffectOutScene, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeMixerNode->Connect(hpaeSinkInputNode);
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb =
+        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, TEST_VALUE1);
+    hpaeSinkInputNode->RegisterWriteCallback(writeFixedValueCb);
+    hpaeSinkInputNode->DoProcess();
+    std::vector<HpaePcmBuffer*> inputs;
+    auto outputPort = hpaeSinkInputNode->GetOutputPort();
+    HpaePcmBuffer* buffer = outputPort->PullOutputData();
+    inputs.push_back(buffer);
+    HpaePcmBuffer* output = hpaeMixerNode->SignalProcess(inputs);
+    EXPECT_NE(output, nullptr);
+    hpaeMixerNode->DisConnect(hpaeSinkInputNode);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testConnectWithInfoNullNode, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    nodeInfo.channels = MONO;
+    std::shared_ptr<HpaeSourceInputCluster> cluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeMixerNode->ConnectWithInfo(cluster, hpaeMixerNode->GetNodeInfo());
+    EXPECT_EQ(cluster->fmtConverterNodeMap_.size() == 1, true);
+}
+
+HWTEST_F(HpaeMixerNodeTest, testCheckUpdateInfoForDisConnect, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    std::vector<HpaePcmBuffer*> inputs;
+    HpaePcmBuffer* output = hpaeMixerNode->SignalProcess(inputs);
+    EXPECT_NE(output, nullptr);
+}
 } // namespace
