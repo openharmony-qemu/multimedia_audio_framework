@@ -467,7 +467,7 @@ bool HpaeFastSourceInputNode::IsVoipFast()
 {
     return (GetNodeInfo().routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST) != 0 ||
         ((GetNodeInfo().routeFlag & AUDIO_INPUT_FLAG_FAST) != 0 &&
-            (GetNodeInfo().routeFlag & AUDIO_INPUT_FLAG_VOIP) != 0);
+        (GetNodeInfo().routeFlag & AUDIO_INPUT_FLAG_VOIP) != 0);
 }
 
 bool HpaeFastSourceInputNode::TryReadOneSpan(uint64_t handlePos)

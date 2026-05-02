@@ -1111,11 +1111,17 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->isFirstFrame.store(true);
     basicBufferInfo_->currentLoopTimes.store(0);
     basicBufferInfo_->curStaticDataPos.store(0);
+
+    basicBufferInfo_->pendingSpanSize.store(0);
+    basicBufferInfo_->pendingEngineSize.store(0);
+    basicBufferInfo_->pendingRouteFlag.store(0);
 }
 
 void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
 {
     if (basicBufferInfo_) {
+        Trace::Count("OHAudioBufferBase::WakeFutexVal", static_cast<int64_t>(wakeVal));
+        Trace::Count("OHAudioBufferBase::FutexBeforeWake", static_cast<int64_t>(basicBufferInfo_->futexObj.load()));
         FutexTool::FutexWake(&(basicBufferInfo_->futexObj), wakeVal);
     }
 }
@@ -1232,6 +1238,41 @@ bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPo
         basicBufferInfo_->clientLastProcessTime.store(curTimestamp);
     }
     return ret;
+}
+
+void OHAudioBufferBase::SetPendingSpanSize(uint64_t spanSize, uint64_t engineSize, uint32_t routeFlag)
+{
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
+        HILOG_COMM_ERROR("[SetPendingSpanSize]basicBufferInfo_ is nullptr"));
+    basicBufferInfo_->pendingSpanSize.store(spanSize);
+    basicBufferInfo_->pendingEngineSize.store(engineSize);
+    basicBufferInfo_->pendingRouteFlag.store(routeFlag);
+}
+
+uint64_t OHAudioBufferBase::GetAndClearPendingSpanSize(uint64_t &engineSize, uint32_t &routeFlag)
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, 0,
+        HILOG_COMM_ERROR("[GetAndClearPendingSpanSize]basicBufferInfo_ is nullptr"));
+    uint64_t spanSize = basicBufferInfo_->pendingSpanSize.exchange(0);
+    engineSize = basicBufferInfo_->pendingEngineSize.exchange(0);
+    routeFlag = basicBufferInfo_->pendingRouteFlag.exchange(0);
+    return spanSize;
+}
+
+bool OHAudioBufferBase::HasPendingSpanSize() const
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, false,
+        HILOG_COMM_ERROR("[HasPendingSpanSize]basicBufferInfo_ is nullptr"));
+    return basicBufferInfo_->pendingSpanSize.load() > 0;
+}
+
+void OHAudioBufferBase::ClearPendingSpanSize()
+{
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
+        HILOG_COMM_ERROR("[ClearPendingSpanSize]basicBufferInfo_ is nullptr"));
+    basicBufferInfo_->pendingSpanSize.store(0);
+    basicBufferInfo_->pendingEngineSize.store(0);
+    basicBufferInfo_->pendingRouteFlag.store(0);
 }
 
 } // namespace AudioStandard

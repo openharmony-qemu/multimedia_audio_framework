@@ -499,8 +499,7 @@ int32_t HpaeDirectRendererManager::Stop(uint32_t sessionId)
             }
         } else {
             node->SetState(HPAE_SESSION_STOPPED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(),
-                OPERATION_STOPPED);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
         }
     };
     SendRequest(request, __func__);

@@ -20,6 +20,8 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "hpae_capturer_manager.h"
+#include "hpae_fast_capturer_manager.h"
+#include "i_hpae_capturer_manager.h"
 #include "hpae_node_common.h"
 
 using namespace OHOS;

@@ -27,6 +27,7 @@
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
+#include "i_hpae_manager.h"
 #include "policy_handler.h"
 #include "core_service_handler.h"
 #include "ipc_stream_in_server.h"
@@ -216,11 +217,16 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
 
-void AudioService::SetEndpointMuteForSwitchDevice(bool isMmap, bool mute)
+void AudioService::SetEndpointMuteForSwitchDevice(const std::string &deviceClass, bool mute)
 {
+    AUDIO_INFO_LOG("SetEndpointMuteForSwitchDevice deviceClass:%{public}s mute:%{public}d",
+        deviceClass.c_str(), mute);
+    
+    // 调用 HPAE 层方法
+    HPAE::IHpaeManager::GetHpaeManager().SetSinkMuteForSwitchDevice(deviceClass, mute);
+    
+    // 兼容旧的 AudioEndpoint（如有遗留场景）
     std::lock_guard<std::mutex> lockEndpoint(processListMutex_);
-    // mmap sink can't mute, must mut endpoint
-    CHECK_AND_RETURN(isMmap);
     for (auto &item : endpointList_) {
         CHECK_AND_CONTINUE(item.second != nullptr);
         item.second->SetMuteForSwitchDevice(mute);
@@ -1273,10 +1279,6 @@ float AudioService::GetMaxAmplitude(bool isOutputDevice)
 {
 #ifdef SUPPORT_LOW_LATENCY
     std::lock_guard<std::mutex> lock(processListMutex_);
-    if (linkedPairedList_.size() == 0) {
-        return 0;
-    }
-
     float fastAudioMaxAmplitude = 0;
     for (auto paired : linkedPairedList_) {
         if (isOutputDevice && (paired.second->GetDeviceRole() == OUTPUT_DEVICE)) {
@@ -1291,6 +1293,9 @@ float AudioService::GetMaxAmplitude(bool isOutputDevice)
                 fastAudioMaxAmplitude = curFastAudioMaxAmplitude;
             }
         }
+    }
+    if (isOutputDevice) {
+        fastAudioMaxAmplitude = std::max(fastAudioMaxAmplitude, HPAE::IHpaeManager::GetHpaeManager().GetMaxAmplitude());
     }
     return fastAudioMaxAmplitude;
 #else

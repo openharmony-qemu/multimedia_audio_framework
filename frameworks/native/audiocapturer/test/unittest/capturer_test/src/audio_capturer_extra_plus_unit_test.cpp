@@ -27,6 +27,7 @@
 #include "audio_system_manager.h"
 #include "fast_audio_stream.h"
 #include "audio_client_tracker_callback_service.h"
+#include "capturer_in_client.h"
 
 using namespace std;
 using namespace testing::ext;

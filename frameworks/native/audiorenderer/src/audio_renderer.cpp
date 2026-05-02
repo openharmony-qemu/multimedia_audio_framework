@@ -1030,7 +1030,8 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
             rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+            rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+            rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
             rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::FAST_STREAM;
         }
@@ -2716,6 +2717,18 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
     return switchResult;
 }
 
+void AudioRendererPrivate::UpdateFlagForSwitchInfo(IAudioStream::SwitchInfo &switchInfo,
+    IAudioStream::StreamClass targetClass)
+{
+    if (targetClass == IAudioStream::VOIP_STREAM) {
+        switchInfo.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+        switchInfo.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    } else if (targetClass == IAudioStream::FAST_STREAM) {
+        switchInfo.rendererInfo.originalFlag = AUDIO_FLAG_MMAP;
+        switchInfo.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    }
+}
+
 bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
@@ -2734,9 +2747,8 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     // create new IAudioStream
     targetClass = DecideStreamClassAndUpdateRendererInfo(flag);
-    if (targetClass == IAudioStream::VOIP_STREAM) {
-        switchInfo.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-    }
+    UpdateFlagForSwitchInfo(switchInfo, targetClass);
+
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");

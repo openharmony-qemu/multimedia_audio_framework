@@ -109,6 +109,11 @@ public:
         return (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
     }
 
+    bool IsRouteOffload() const
+    {
+        return (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
     bool IsRouteDirect() const
     {
         return routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT;

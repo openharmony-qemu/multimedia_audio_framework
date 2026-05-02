@@ -300,6 +300,27 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     CHECK_AND_RETURN_RET_LOG(audioA2dpOffloadManager_ != nullptr, ERROR, "audioA2dpOffloadManager_ is nullptr");
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
 
+    // Check if we need to stop fast sink before creating offload pipe
+    // This is to prevent concurrency between fast and offload when fast is in delayed switch state
+    bool hasNewOffloadPipe = false;
+    for (auto &pipeInfo : pipeInfos) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW && pipeInfo->IsRouteOffload()) {
+            hasNewOffloadPipe = true;
+            AUDIO_INFO_LOG("Found new offload pipe to create: %{public}s", pipeInfo->name_.c_str());
+            break;
+        }
+    }
+
+    if (hasNewOffloadPipe && pipeManager_->HasPausedFastPipeInDelayedSwitch()) {
+        std::string fastModuleName = pipeManager_->GetPausedFastPipeModuleNameInDelayedSwitch();
+        if (!fastModuleName.empty()) {
+            AUDIO_INFO_LOG("Stopping fast sink %{public}s before creating offload to prevent concurrency",
+                fastModuleName.c_str());
+            audioPolicyManager_.StopAudioPort(fastModuleName);
+        }
+    }
+
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");

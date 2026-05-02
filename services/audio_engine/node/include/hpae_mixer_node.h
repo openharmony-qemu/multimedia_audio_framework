@@ -16,6 +16,7 @@
 #define HPAE_MIXER_NODE_H
 #include <memory>
 #include <unordered_map>
+#include "audio_dump_pcm.h"
 #include "hpae_node.h"
 #include "hpae_plugin_node.h"
 #include "audio_limiter.h"
@@ -48,6 +49,8 @@ private:
     HpaePcmBuffer tmpOutput_;
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
     uint32_t waitFrames_ = 0;
+    FILE *dumpMix_ = nullptr;
+    std::string dumpMixName_ = "";
 };
 
 }  // namespace HPAE

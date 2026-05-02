@@ -71,13 +71,17 @@ public:
     virtual int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Start(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId) = 0;
-    virtual int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
+    virtual int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId, bool isStandby = false) = 0;
     virtual int32_t Flush(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
         const std::weak_ptr<IStreamStatusCallback> &callback) = 0;
+    virtual int32_t GetStreamSpanSize(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        uint32_t &spanSizeInFrame) = 0;
+    virtual int32_t GetStreamRouteFlag(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        uint32_t &routeFlag) = 0;
 
     virtual int32_t RegisterReadCallback(uint32_t sessionId,
         const std::weak_ptr<ICapturerStreamCallback> &callback) = 0;
@@ -155,6 +159,8 @@ public:
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
     virtual void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
+    virtual float GetMaxAmplitude() { return 0.0f; }
+    virtual void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) = 0;
 
     // interface for collaborative record
     virtual void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,

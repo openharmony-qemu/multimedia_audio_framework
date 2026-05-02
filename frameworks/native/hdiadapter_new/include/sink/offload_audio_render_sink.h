@@ -75,6 +75,7 @@ public:
     void DumpInfo(std::string &dumpString) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
+    DeviceType GetCurrentOutputDevice() override;
     bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);

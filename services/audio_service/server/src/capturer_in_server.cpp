@@ -453,6 +453,8 @@ int32_t CapturerInServer::CheckForReadData(size_t length, uint64_t currentWriteF
 // LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
+    // Loopback should not copy data to the buffer
+    CHECK_AND_RETURN(!processConfig_.capturerInfo.isLoopback);
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     int32_t ret = CheckForReadData(length, currentWriteFrame);
     CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
@@ -539,6 +541,8 @@ int32_t CapturerInServer::CheckForOnReadData(size_t requestDataLen, uint64_t cur
 // LCOV_EXCL_START
 int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
+    // Loopback should not copy data to the buffer
+    CHECK_AND_RETURN_RET(!processConfig_.capturerInfo.isLoopback, SUCCESS);
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     int32_t ret = CheckForOnReadData(requestDataLen, currentWriteFrame);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret == ERR_READ_FAILED ? ERR_READ_FAILED : ERR_WRITE_FAILED,
@@ -775,7 +779,9 @@ int32_t CapturerInServer::StartInner()
         return ERR_ILLEGAL_STATE;
     }
 
-    if (!needCheckBackground_ && PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid,
+    // Loopback capturer should bypass background recording permission check (hardware passthrough)
+    if (!needCheckBackground_ && !processConfig_.capturerInfo.isLoopback &&
+        PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid,
         processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
@@ -1014,6 +1020,11 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
     }
     status_ = I_STATUS_RELEASED;
+
+    if (processConfig_.capturerInfo.isLoopback) {
+        AudioService::GetInstance()->SetDecMaxLoopbackStreamCnt(processConfig_.audioMode);
+        AudioService::GetInstance()->DisableLoopback();
+    }
 
     CapturerClockManager::GetInstance().DeleteCapturerClock(streamIndex_);
 #ifdef HAS_FEATURE_INNERCAPTURER

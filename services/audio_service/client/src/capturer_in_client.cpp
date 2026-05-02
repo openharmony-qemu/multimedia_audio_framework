@@ -38,6 +38,7 @@
 
 #include "iipc_stream.h"
 #include "audio_capturer_log.h"
+#include "audio_dump_pcm.h"
 #include "audio_errors.h"
 #include "stream_dfx_manager.h"
 #include "volume_tools.h"
@@ -106,6 +107,7 @@ CapturerInClientInner::CapturerInClientInner(AudioStreamType eStreamType, int32_
 CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
+    DumpFileUtil::CloseDumpFile(&dumpInFd_);
     CapturerInClientInner::ReleaseAudioStream(true);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
@@ -521,9 +523,11 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_RECORD;
 
-    if (capturerInfo_.capturerFlags != 0) {
+    if (capturerInfo_.capturerFlags != AUDIO_FLAG_NORMAL &&
+        capturerInfo_.capturerFlags != AUDIO_FLAG_MMAP &&
+        capturerInfo_.capturerFlags != AUDIO_FLAG_VOIP_FAST) {
         AUDIO_WARNING_LOG("ConstructConfig find Capturer flag invalid:%{public}d", capturerInfo_.capturerFlags);
-        capturerInfo_.capturerFlags = 0;
+        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
     }
     config.capturerInfo = capturerInfo_;
 
@@ -589,6 +593,16 @@ int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
     return SUCCESS;
 }
 
+void CapturerInClientInner::InitDfxOperation()
+{
+    DumpFileUtil::CloseDumpFile(&dumpInFd_);
+    dumpInFile_ = std::to_string(sessionId_) + "_" + std::to_string(clientConfig_.streamInfo.customSampleRate == 0 ?
+        clientConfig_.streamInfo.samplingRate : clientConfig_.streamInfo.customSampleRate) + "_" +
+        std::to_string(clientConfig_.streamInfo.channels) + "_" + std::to_string(clientConfig_.streamInfo.format) +
+        "_capturer_client_in.pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpInFile_, &dumpInFd_);
+}
+
 int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &filterConfig)
 {
     AUDIO_INFO_LOG("Init Ipc stream");
@@ -642,6 +656,7 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_OPERATION_FAILED, "GetAudioSessionID fail", true), "GetAudioSessionID fail:%{public}d", ret);
 
+    InitDfxOperation();
     InitCallbackHandler();
     return SUCCESS;
 }
@@ -1804,6 +1819,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
         "HandleCapturerRead err : %{public}d", res);
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&buffer), userSize, userSize};
     VolumeTools::DfxOperation(tmpBuffer, clientConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
+    DumpFileUtil::WriteDumpFile(dumpInFd_, static_cast<void *>(&buffer), readSize);
     HandleCapturerPositionChanges(readSize);
     return readSize;
 }
@@ -2060,6 +2076,9 @@ bool CapturerInClientInner::GetHighResolutionEnabled()
 
 IAudioStream::StreamClass CapturerInClientInner::GetStreamClass()
 {
+    if (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP || capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) {
+        return IAudioStream::StreamClass::FAST_STREAM;
+    }
     return PA_STREAM;
 }
 
@@ -2142,6 +2161,9 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus CapturerInClientInner::GetFastStatus()
 {
+    if (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP || capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) {
+        return FASTSTATUS_FAST;
+    }
     return FASTSTATUS_NORMAL;
 }
 

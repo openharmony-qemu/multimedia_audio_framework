@@ -64,6 +64,7 @@ public:
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
+    DeviceType GetCurrentOutputDevice() override;
     void ResetActiveDeviceForDisconnect(DeviceType device) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;

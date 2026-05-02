@@ -2203,6 +2203,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
             return nullptr;
         }
         AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+        if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+            AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
+        }
         sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
         pipeInfoGuard->SetReleaseFlag(false);
         return remoteObject;
@@ -2381,6 +2384,11 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
 
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
+    int32_t enableNewRoute = 0;
+    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    if (enableNewRoute == 1) {
+        return true;
+    }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         return config.rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL ||
             config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ||
@@ -3030,7 +3038,9 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
     }
 
     bool isMmap = devceClass == A2DP_FAST_CLASS || devceClass == MMAP_CLASS;
-    AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(isMmap, mute);
+    if (isMmap) {
+        AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(devceClass, mute);
+    }
 
     uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(devceClass);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
@@ -3332,7 +3342,7 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
         return SUCCESS;
     }
 
-    // if stream is fast, create when endpoint config to reduce power
+    // // if stream is fast, create when endpoint config to reduce power
     CHECK_AND_RETURN_RET(!NeedDelayCreateSink(idBase, idType, idInfo), SUCCESS);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
     if (sink == nullptr) {

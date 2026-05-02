@@ -116,12 +116,13 @@ void HpaeDirectSinkOutputNode::DoProcess()
 #endif
     int32_t ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
     if (ret != SUCCESS || writeLen != renderSize_) {
-        AUDIO_ERR_LOG("RenderFrame failed, write len:%{public}zu", writeLen);
+        AUDIO_ERR_LOG("RenderFrame failed, write len:%{public}" PRIu64 "", writeLen);
         periodTimer_.Stop();
         uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
         usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
     }
     periodTimer_.Start();
+
     std::move(renderFrameData_.begin() + renderSize_, renderFrameData_.begin() + currentSize_,
         renderFrameData_.begin());
     currentSize_ -= renderSize_;
@@ -338,8 +339,7 @@ uint64_t HpaeDirectSinkOutputNode::GetLatency()
 int32_t HpaeDirectSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE,
-        "audioRendererSink_ not init");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 

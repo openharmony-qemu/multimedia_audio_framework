@@ -506,6 +506,7 @@ int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(
         dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
         holder, dstBufferFd_, INVALID_BUFFER_FD);
+
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_ILLEGAL_STATE,
         "CreateFromRemote fail");
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_->GetBufferHolder() == holder, ERR_ILLEGAL_STATE,
@@ -525,6 +526,7 @@ int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
     InitAudiobuffer(true);
     InitTransBuffer();
     curWritePos_ = 0;
+
     AUDIO_INFO_LOG("PrepareDeviceBuffer success, fd:%{public}d, spanSizeInByte:%{public}zu",
         dstBufferFd_, dstSpanSizeInByte_);
     return SUCCESS;

@@ -35,6 +35,7 @@
 #include "policy_handler.h"
 #include "audio_engine_log.h"
 #include "core_service_handler.h"
+#include "audio_stream_enum.h"
 #include "audio_volume.h"
 #include "volume_tools.h"
 #include "audio_sink_latency_fetcher.h"
@@ -47,6 +48,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
+static constexpr uint64_t FRAME_LEN_5MS = 5;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
@@ -72,6 +74,17 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
         spanSizeInFrame_ = FRAME_LEN_40MS * usedSampleRate_ / AUDIO_MS_PER_S;
     } else {
         spanSizeInFrame_ = FRAME_LEN_100MS * usedSampleRate_ / AUDIO_MS_PER_S;
+    }
+    if (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST &&
+        processConfig_.isInnerCapturer == false) {
+        spanSizeInFrame_ = FRAME_LEN_5MS * usedSampleRate_ / AUDIO_MS_PER_S;
+        AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
+    }
+    if ((processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST ||
+        processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_VOIP_FAST ||
+        processConfig_.rendererInfo.ultraFastFlag != ULTRA_NONE) &&
+        processConfig_.isInnerCapturer == false) {
+        delayedWake_ = true;
     }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
@@ -129,6 +142,8 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = isMoveAble_;
+    streamInfo.keepRunning = processConfig_.rendererInfo.keepRunning;
+    streamInfo.isLoopback = processConfig_.rendererInfo.isLoopback;
     streamInfo.privacyType = processConfig_.privacyType;
     AUDIO_INFO_LOG("channels %{public}u channelLayout %{public}" PRIu64 " samplingRate %{public}u format %{public}u "
         "frameLen %{public}zu streamType %{public}u sessionId %{public}u streamClassType %{public}u "
@@ -151,6 +166,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    Trace trace("HpaeRendererStreamImpl::Start[" + std::to_string(streamIndex_) + "]");
     preBufDone_.store(false);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
@@ -187,8 +203,10 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
 
 int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 {
-    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
-    int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    AUDIO_INFO_LOG("[%{public}u] Enter isStandby:%{public}d", streamIndex_, isStandby);
+    Trace trace("HpaeRendererStreamImpl::Pause[" + std::to_string(streamIndex_) + "]");
+    int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY,
+        processConfig_.originalSessionId, isStandby);
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
@@ -199,6 +217,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 int32_t HpaeRendererStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    Trace trace("HpaeRendererStreamImpl::Flush[" + std::to_string(streamIndex_) + "]");
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
@@ -210,6 +229,7 @@ int32_t HpaeRendererStreamImpl::Flush()
 int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter %{public}d", streamIndex_, stopFlag);
+    Trace trace("HpaeRendererStreamImpl::Drain[" + std::to_string(streamIndex_) + "]");
     preBufDone_.store(true);
     int32_t ret = IHpaeManager::GetHpaeManager().Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
@@ -222,6 +242,7 @@ int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 int32_t HpaeRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    Trace trace("HpaeRendererStreamImpl::Stop[" + std::to_string(streamIndex_) + "]");
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
@@ -686,7 +707,9 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             requestDataLen = callBackStreamInfo.forceData && noWaitDataFlag_ ? requestDataLen : 0;
         }
         callBackStreamInfo.requestDataLen = requestDataLen;
-        int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData, requestDataLen);
+        int32_t ret = callBackStreamInfo.isLowLatency ?
+            writeCallback->OnWriteDataNoWake(callBackStreamInfo.inputData, requestDataLen) :
+            writeCallback->OnWriteData(callBackStreamInfo.inputData, requestDataLen);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
         noWaitDataFlag_ = true;
         size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
@@ -948,10 +971,13 @@ int32_t HpaeRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 
 void HpaeRendererStreamImpl::InitRingBuffer()
 {
-    uint32_t maxLength = 20; // 20 for dup and dual play, only for enqueue buffer
-    size_t bufferSize = maxLength * spanSizeInFrame_ * byteSizePerFrame_;
+    static constexpr int32_t DEFAULT_SPAN_SIZE = 2;
+    size_t bufferSize = (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
+        usedSampleRate_ / AUDIO_US_PER_S * byteSizePerFrame_;
+    bufferSize = std::max(bufferSize, spanSizeInFrame_ * byteSizePerFrame_ * static_cast<size_t>(FRAME_LEN_20MS));
+    ringBufferCapacityInBytes_ = bufferSize;
     AUDIO_INFO_LOG("bufferSize: %{public}zu, spanSizeInFrame: %{public}zu, byteSizePerFrame: %{public}zu,"
-        "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, maxLength);
+        "reservedCapacity:%{public}zu", bufferSize, spanSizeInFrame_, byteSizePerFrame_, ringBufferCapacityInBytes_);
     // create ring buffer
     ringBuffer_ = AudioRingCache::Create(bufferSize);
     if (ringBuffer_ == nullptr) {
@@ -1003,10 +1029,51 @@ int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(bool forceData, int8_t *
 
 void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
 {
+    if (operation == OPERATION_UPDATE_SPANSIZE) {
+        uint32_t spanSizeInFrame = 0;
+        int32_t ret = IHpaeManager::GetHpaeManager().GetStreamSpanSize(HPAE_STREAM_CLASS_TYPE_PLAY,
+            processConfig_.originalSessionId, spanSizeInFrame);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "GetStreamSpanSize failed:%{public}d", ret);
+        uint32_t routeFlag = 0;
+        ret = IHpaeManager::GetHpaeManager().GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_PLAY,
+            processConfig_.originalSessionId, routeFlag);
+        if (ret == SUCCESS) {
+            routeFlag_.store(routeFlag);
+        }
+        AUDIO_INFO_LOG("OnStatusUpdate recv span update, streamIndex:%{public}u sessionId:%{public}u span:%{public}u "
+            "routeFlag:%{public}u", streamIndex_, processConfig_.originalSessionId, spanSizeInFrame, routeFlag);
+        ret = UpdateSpanSize(spanSizeInFrame);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UpdateSpanSize failed:%{public}d", ret);
+    }
     auto statusCallback = statusCallback_.lock();
     if (statusCallback) {
         statusCallback->OnStatusUpdate(operation);
     }
+}
+
+int32_t HpaeRendererStreamImpl::UpdateSpanSize(uint32_t spanSizeInFrame)
+{
+    CHECK_AND_RETURN_RET_LOG(spanSizeInFrame != 0, ERR_INVALID_PARAM, "spanSizeInFrame is 0");
+    if (spanSizeInFrame_ == spanSizeInFrame) {
+        AUDIO_DEBUG_LOG("UpdateSpanSize unchanged, sessionId:%{public}u span:%{public}u",
+            processConfig_.originalSessionId, spanSizeInFrame);
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("UpdateSpanSize change, sessionId:%{public}u oldSpan:%{public}zu newSpan:%{public}u "
+        "oldMinBuf:%{public}zu", processConfig_.originalSessionId, spanSizeInFrame_, spanSizeInFrame, minBufferSize_);
+    spanSizeInFrame_ = spanSizeInFrame;
+    minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
+    if (ringBuffer_ != nullptr) {
+        size_t requiredSize = std::max(ringBufferCapacityInBytes_,
+            spanSizeInFrame_ * byteSizePerFrame_ * static_cast<size_t>(20));
+        if (ringBuffer_->GetCahceSize() != requiredSize) {
+            AUDIO_INFO_LOG("UpdateSpanSize reconfig ringBuffer, sessionId:%{public}u old:%{public}zu new:%{public}zu",
+                processConfig_.originalSessionId, ringBuffer_->GetCahceSize(), requiredSize);
+            ringBuffer_->ReConfig(requiredSize, true);
+        }
+        ringBufferCapacityInBytes_ = requiredSize;
+    }
+    return SUCCESS;
 }
 
 void HpaeRendererStreamImpl::SetSendDataEnabled(bool enabled)
@@ -1100,6 +1167,19 @@ void HpaeRendererStreamImpl::TriggerAppsUidUpdate()
 {
     AUDIO_INFO_LOG("%{public}u Enter", streamIndex_);
     IHpaeManager::GetHpaeManager().TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+}
+
+void HpaeRendererStreamImpl::TriggerClientWake()
+{
+    auto writeCallback = writeCallback_.lock();
+    if (writeCallback) {
+        writeCallback->WakeClientFutex();
+    }
+}
+
+uint32_t HpaeRendererStreamImpl::GetRouteFlag() const noexcept
+{
+    return routeFlag_.load();
 }
 } // namespace AudioStandard
 } // namespace OHOS

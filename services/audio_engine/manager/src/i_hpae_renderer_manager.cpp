@@ -19,22 +19,36 @@
 #include "i_hpae_renderer_manager.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
+#include "hpae_fast_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
 #include "hpae_injector_renderer_manager.h"
+#include "hpae_direct_renderer_manager.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
+static const std::string DEVICE_CLASS_PRIMARY_MMAP = "primary_mmap";
+static const std::string DEVICE_CLASS_PRIMARY_MMAP_VOIP = "primary_mmap_voip";
+static const std::string DEVICE_CLASS_A2DP_VOIP = "a2dp_fast";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
+static const std::string DEVICE_CLASS_ULTRA_FAST = "ultra_fast";
 static const std::string DEVICE_NAME_INNER_CAP = "InnerCapturerSink";
 static const std::string DEVICE_NAME_CAST_INNER_CAP = "RemoteCastInnerCapturer";
+static const std::string DEVICE_CLASS_VOIP_DIRECT = "voip";
+static const std::string DEVICE_CLASS_DIRECT = "direct";
 std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManager(HpaeSinkInfo &sinkInfo)
 {
     if (sinkInfo.deviceClass == DEVICE_CLASS_OFFLOAD || sinkInfo.deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD) {
         AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeOffloadRendererManager");
         return std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    } else if (sinkInfo.deviceClass ==  DEVICE_CLASS_PRIMARY_MMAP ||
+        sinkInfo.deviceClass == DEVICE_CLASS_PRIMARY_MMAP_VOIP ||
+        sinkInfo.deviceClass == DEVICE_CLASS_A2DP_VOIP ||
+        sinkInfo.deviceClass == DEVICE_CLASS_ULTRA_FAST) {
+        AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeFastRendererManager");
+        return std::make_shared<HpaeFastRendererManager>(sinkInfo);
     } else if ((sinkInfo.deviceName.compare(0, DEVICE_NAME_INNER_CAP.length(), DEVICE_NAME_INNER_CAP) == 0)
         || sinkInfo.deviceName == DEVICE_NAME_CAST_INNER_CAP) {
             AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeInnerCapturerManager");
@@ -42,6 +56,9 @@ std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManage
     } else if (sinkInfo.deviceName == VIRTUAL_INJECTOR) {
         AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeInjectorRendererManager");
         return std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    } else if (sinkInfo.deviceName == DEVICE_CLASS_VOIP_DIRECT || sinkInfo.deviceName == DEVICE_CLASS_DIRECT) {
+        AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeDirectRendererManager");
+        return std::make_shared<HpaeDirectRendererManager>(sinkInfo);
     }
     AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeRendererManager");
     return std::make_shared<HpaeRendererManager>(sinkInfo);
@@ -88,6 +105,18 @@ int32_t IHpaeRendererManager::SetSinkVirtualOutputNode(
     AUDIO_ERR_LOG("Unsupported operation");
     return ERROR;
 };
+
+bool IHpaeRendererManager::AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNodeInfo &outNodeInfo)
+{
+    // Check if input node's frameLen needs to modify.
+    const std::size_t inFrameLenUs = inNodeInfo.frameLen * AUDIO_US_PER_MS / inNodeInfo.samplingRate;
+    const std::size_t outFrameLenUs = outNodeInfo.frameLen * AUDIO_US_PER_MS / outNodeInfo.samplingRate;
+    if (inFrameLenUs != outFrameLenUs) {
+        inNodeInfo.frameLen = outFrameLenUs * inNodeInfo.samplingRate / AUDIO_US_PER_MS;
+        return true;
+    }
+    return false;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
