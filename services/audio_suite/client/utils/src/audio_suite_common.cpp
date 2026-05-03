@@ -179,13 +179,21 @@ std::string AudioSuiteUtil::GetCurrentTimestamp()
 
     std::tm tm = {};
 #ifdef _WIN32
-    localtime_s(&tm, &time);
+    errno_t err = localtime_s(&tm, &time);
+    if (err != 0) {
+        AUDIO_ERR_LOG("localtime_s failed, err = %{public}d", err);
+        return "";
+    }
 #else
-    localtime_r(&time, &tm);
+    std::tm *result = localtime_r(&time, &tm);
+    if (result == nullptr) {
+        AUDIO_ERR_LOG("localtime_r failed");
+        return "";
+    }
 #endif
 
     char buffer[64];
-    int ret = snprintf(buffer, sizeof(buffer),
+    int ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1,
         "%04d-%02d-%02d %02d:%02d:%02d.%03d",
         tm.tm_year + 1900,
         tm.tm_mon + 1,
@@ -195,7 +203,7 @@ std::string AudioSuiteUtil::GetCurrentTimestamp()
         tm.tm_sec,
         static_cast<int>(ms.count()));
     if (ret < 0) {
-        AUDIO_ERR_LOG("snprintf failed");
+        AUDIO_ERR_LOG("snprintf_s failed");
         return "";
     }
     return std::string(buffer);

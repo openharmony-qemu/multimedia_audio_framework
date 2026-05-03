@@ -832,7 +832,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetGeneralVoiceChangeType(
  * @since 26.0.0
  */
 OH_AudioSuite_Result OH_AudioSuite_PrintInfo(
- 	OH_AudioSuiteEngine* audioSuiteEngine, OH_AudioSuitePipeline* audioSuitePipeline, int fd);
+    OH_AudioSuiteEngine* audioSuiteEngine, OH_AudioSuitePipeline* audioSuitePipeline, int fd);
 
 #ifdef __cplusplus
 }

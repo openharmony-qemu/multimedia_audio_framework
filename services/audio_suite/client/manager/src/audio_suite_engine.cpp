@@ -875,22 +875,23 @@ int32_t AudioSuiteEngine::PrintInfo(uint32_t pipelineId, int32_t fd)
     std::shared_ptr<IAudioSuitePipeline> targetPipeline = nullptr;
     if (pipelineId != INVALID_PIPELINE_ID) {
         auto it = pipelineMap_.find(pipelineId);
-        CHECK_AND_RETURN_RET_LOG(it != pipelineMap_.end(),
-            ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "PrintInfo pipeline not found, id = %{public}u", pipelineId);
+        CHECK_AND_RETURN_RET_LOG(it != pipelineMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+            "PrintInfo pipeline not found, id = %{public}u",
+            pipelineId);
         targetPipeline = it->second;
     }
 
-    auto request = [this, pipelineId, fd, targetPipeline]() {
+    auto self = shared_from_this();
+    auto request = [self, pipelineId, fd, targetPipeline]() {
         AUDIO_DEBUG_LOG("PrintInfo enter");
 
-        std::string content = GenerateTextSnapshot(pipelineId, targetPipeline);
-        int32_t writeResult = WriteOutput(content, fd);
-        managerCallback_.OnPrintInfo(writeResult);
+        std::string content = self->GenerateTextSnapshot(pipelineId, targetPipeline);
+        int32_t writeResult = self->WriteOutput(content, fd);
+        self->managerCallback_.OnPrintInfo(writeResult);
     };
 
     SendRequest(request, __func__);
     return SUCCESS;
-
 }
 
 std::string AudioSuiteEngine::GenerateTextSnapshot(uint32_t pipelineId,
