@@ -331,14 +331,14 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getPipelineTest, TestSize.Level0)
     EXPECT_EQ(engineManger.IsInit(), true);
     AudioSuiteManager manager;
     EXPECT_EQ(manager.Init(), SUCCESS);
-
+ 
     AudioSuitePipelineState state;
     int32_t result = manager.GetPipelineState(1, state);
     EXPECT_EQ(result, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
-
+ 
     result = manager.GetPipelineState(2, state);
     EXPECT_EQ(result, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
-
+ 
     engineManger.pipelineMap_[3] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.GetPipelineState(3);
     EXPECT_EQ(result, SUCCESS);
@@ -407,13 +407,13 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getNodeEnableStatusTest, TestSize.Leve
     
     bool bypass;
     engineManger.nodeMap_[1] = 3;
-
+ 
     int32_t result = manager.GetNodeBypassStatus(1, bypass);
     EXPECT_EQ(result, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
-
+ 
     result = manager.GetNodeBypassStatus(2, bypass);
     EXPECT_EQ(result, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
-
+ 
     engineManger.nodeMap_[5] = 6;
     engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.GetNodeBypassStatus(5);

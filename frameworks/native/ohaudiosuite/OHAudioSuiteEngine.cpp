@@ -279,7 +279,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyNode(OH_AudioNode *audioNode)
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyNode suiteEngine is nullptr");
-
+        
     int32_t error = suiteEngine->DestroyNode(node);
     return ConvertError(error);
 }
