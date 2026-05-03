@@ -28,6 +28,8 @@
 #include "bluetooth_hfp_interface.h"
 #include "bluetooth_a2dp_interface.h"
 #include "hisysevent.h"
+#include "stream_dfx_manager.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -161,18 +163,18 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
     BluetoothRemoteDevice device;
     if (macAddress != "") {
         int32_t tmp = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
-        if (tmp != SUCCESS) {
-            HILOG_COMM_ERROR("[SetActiveA2dpDevice]the configuring A2DP device doesn't exist.");
-            return ERROR;
-        }
+        CHECK_AND_CALL_FUNC_RETURN_RET_HILOG(tmp == SUCCESS, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                ERR_PLAY_DEVICE_SWITCH_DEVICE_NOT_FOUND, "A2DP bluetooth device not found or not connected", false),
+            "[SetActiveA2dpDevice]the configuring A2DP device doesn't exist.");
     } else {
         AUDIO_INFO_LOG("Deactive A2DP device");
     }
     int32_t ret = BluetoothA2dpInterface::GetInstance().SetActiveSinkDevice(device);
-    if (ret != 0) {
-        HILOG_COMM_ERROR("[SetActiveA2dpDevice] failed, result: %{public}d", ret);
-        return ERROR;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_HILOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "Failed to activate A2DP bluetooth audio device", false),
+        "[SetActiveA2dpDevice] failed, result: %{public}d", ret);
     activeA2dpDevice_ = device;
     return SUCCESS;
 }
@@ -192,10 +194,10 @@ int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int3
 {
     BluetoothRemoteDevice device;
     int32_t ret = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
-    if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("[SetDeviceAbsVolume]: the configuring A2DP device doesn't exist.");
-        return ERROR;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_HILOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_SET_VOLUME_FAILED, "A2DP bluetooth device not found or not connected", false),
+        "[SetDeviceAbsVolume]: the configuring A2DP device doesn't exist.");
     return AvrcpTarget::GetProfile()->SetDeviceAbsoluteVolume(device, volume);
 }
 
@@ -204,13 +206,16 @@ int32_t AudioA2dpManager::GetA2dpDeviceStreamInfo(const std::string& macAddress,
 {
     BluetoothRemoteDevice device;
     int32_t ret = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
-    if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("[GetA2dpDeviceStreamInfo]: the configuring A2DP device doesn't exist.");
-        return ERROR;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_HILOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_DEVICE_NOT_FOUND, "A2DP bluetooth device not found or not connected", false),
+        "[GetA2dpDeviceStreamInfo]: the configuring A2DP device doesn't exist.");
     A2dpCodecStatus codecStatus = BluetoothA2dpInterface::GetInstance().GetCodecStatus(device);
     bool result = GetAudioStreamInfo(codecStatus.codecInfo, streamInfo);
-    CHECK_AND_RETURN_RET_LOG(result, ERROR, "GetA2dpDeviceStreamInfo: Unsupported a2dp codec info");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM, "A2DP device codec information is invalid or unsupported", false),
+        "GetA2dpDeviceStreamInfo: Unsupported a2dp codec info");
     return SUCCESS;
 }
 
@@ -478,6 +483,8 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
     if (macAddress != "" && HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
         AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device, %{public}s does not exist.",
             GetEncryptAddr(macAddress).c_str());
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_DEVICE_NOT_FOUND, "HFP bluetooth device not found or not connected", false);
         return ERROR;
     }
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
@@ -486,16 +493,16 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
         AUDIO_WARNING_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
         int32_t ret = DisconnectScoWrapper();
-        if (ret != 0) {
-            HILOG_COMM_ERROR("[SetActiveHfpDevice]DisconnectSco failed, result: %{public}d", ret);
-            return ERROR;
-        }
+        CHECK_AND_CALL_FUNC_RETURN_RET_HILOG(ret == 0, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "Failed to disconnect HFP SCO connection", false),
+            "[SetActiveHfpDevice]DisconnectSco failed, result: %{public}d", ret);
     }
     int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
-    if (res != SUCCESS) {
-        HILOG_COMM_ERROR("[SetActiveHfpDevice] failed, result: %{public}d", res);
-        return ERROR;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_HILOG(res == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "Failed to activate HFP bluetooth device", false),
+        "[SetActiveHfpDevice] failed, result: %{public}d", res);
     activeHfpDevice_ = device;
     return SUCCESS;
 }

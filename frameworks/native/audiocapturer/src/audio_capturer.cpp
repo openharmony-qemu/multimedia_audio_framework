@@ -983,7 +983,7 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
         capturerInfo_.sourceType, GetStatus() == CAPTURER_RUNNING);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "select input device failed", true),
+            ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "select input device failed", true),
         "select input device failed");
     return SUCCESS;
 }
@@ -994,7 +994,7 @@ int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<Audio
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED, "create capturer filter failed", true),
+            ERR_RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED, "create capturer filter failed", true),
         "create capturer filter failed");
     audioCapturerFilter->uid = static_cast<int32_t>(getuid());
     audioCapturerFilter->capturerInfo = capturerInfo_;

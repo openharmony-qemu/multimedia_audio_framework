@@ -41,6 +41,8 @@
 #include "audio_route_select_info.h"
 #include "sco_audio_scene_manager.h"
 #include "audio_interrupt_custom.h"
+#include "stream_dfx_manager.h"
+#include "ipc_skeleton.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -1571,7 +1573,10 @@ int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool ac
     AUDIO_INFO_LOG("[ADeviceEvent] withlock device %{public}d, active %{public}d from uid %{public}d",
         deviceType, active, uid);
     int32_t ret = AudioSelectInterfaceService::GetInstance().SetDeviceActive(deviceType, active, "", uid);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SetDeviceActive failed", false),
+        "SetDeviceActive failed");
 
     FetchDeviceAndRoute("SetDeviceActive", AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
 
@@ -2066,7 +2071,10 @@ int32_t AudioCoreService::SetMediaOutputDeviceByUid(DeviceType deviceType, const
 {
     AUDIO_INFO_LOG("select device %{public}d from uid %{public}d", deviceType, uid);
     int32_t ret = AudioSelectInterfaceService::GetInstance().SetMediaOutputDeviceByUid(deviceType, uid);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetMediaOutputDeviceByUid failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SetMediaOutputDeviceByUid failed", false),
+        "SetMediaOutputDeviceByUid failed");
     FetchOutputDeviceAndRoute("SetMediaOutputDeviceByUid", AudioStreamDeviceChangeReason::OVERRODE);
     ReloadSourceForDeviceChange(audioRouterSelectStrategy_.Get1stCurrentInputDevice(uid),
         audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid), "SetMediaOutputDeviceByUid");
@@ -2147,11 +2155,17 @@ void AudioCoreService::NotifyRemoteRenderState(std::string networkId, std::strin
     } else {
         ret = audioDeviceCommon_.MoveToLocalOutputDevice(targetSinkInputs, localDevice);
     }
-    CHECK_AND_RETURN_LOG((ret == SUCCESS), "MoveToLocalOutputDevice failed!");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(ret == SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "MoveToLocalOutputDevice failed", false),
+        "MoveToLocalOutputDevice failed!");
 
     // Suspend device, notify audio stream manager that device has been changed.
     ret = audioPolicyManager_.SuspendAudioDevice(networkId, true);
-    CHECK_AND_RETURN_LOG((ret == SUCCESS), "SuspendAudioDevice failed!");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(ret == SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SuspendAudioDevice failed", false),
+        "SuspendAudioDevice failed!");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {};
     desc.push_back(localDevice);
@@ -2255,23 +2269,25 @@ void AudioCoreService::ConfigDistributedRoutingRole(
     FetchDeviceAndRoute("ConfigDistributedRoutingRole", AudioStreamDeviceChangeReason::OVERRODE);
 }
 
+
 int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
 {
     int32_t result = audioPolicyManager_.SetRingerMode(ringMode);
-    if (result == SUCCESS) {
-        if (Util::IsRingerAudioScene(audioSceneManager_.GetAudioScene(true))) {
-            AUDIO_INFO_LOG("[ADeviceEvent] fetch output device after switch new ringmode");
-            FetchOutputDeviceAndRoute("SetRingerMode");
-            ReloadSourceForDeviceChange(audioRouterSelectStrategy_.Get1stCurrentInputDevice(),
-                audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), "SetRingerMode");
-        }
-        Volume vol = {false, 1.0f, 0};
-        DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        vol.isMute = (ringMode == RINGER_MODE_NORMAL) ? false : true;
-        vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevel(STREAM_RING));
-        vol.volumeFloat = GetSystemVolumeInDb(STREAM_RING, vol.volumeInt, curOutputDeviceType);
-        audioVolumeManager_.SetSharedVolume(STREAM_RING, curOutputDeviceType, vol);
+    CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_SET_VOLUME_FAILED, "SetRingerMode failed", false));
+    if (Util::IsRingerAudioScene(audioSceneManager_.GetAudioScene(true))) {
+        AUDIO_INFO_LOG("[ADeviceEvent] fetch output device after switch new ringmode");
+        FetchOutputDeviceAndRoute("SetRingerMode");
+        ReloadSourceForDeviceChange(audioRouterSelectStrategy_.Get1stCurrentInputDevice(),
+            audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), "SetRingerMode");
     }
+    Volume vol = {false, 1.0f, 0};
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    vol.isMute = (ringMode == RINGER_MODE_NORMAL) ? false : true;
+    vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevel(STREAM_RING));
+    vol.volumeFloat = GetSystemVolumeInDb(STREAM_RING, vol.volumeInt, curOutputDeviceType);
+    audioVolumeManager_.SetSharedVolume(STREAM_RING, curOutputDeviceType, vol);
     return result;
 }
 
