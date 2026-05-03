@@ -1002,6 +1002,9 @@ int32_t AudioSuiteEngine::WriteOutput(const std::string &content, int32_t fd)
     while (writtenSize < totalSize) {
         ssize_t bytesWritten = write(fd, data + writtenSize, totalSize - writtenSize);
         if (bytesWritten < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             AUDIO_ERR_LOG("WriteOutput write failed, errno = %{public}d", errno);
             return ERR_AUDIO_SUITE_WRITE_FAILED;
         }
