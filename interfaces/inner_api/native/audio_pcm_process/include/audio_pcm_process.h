@@ -55,6 +55,27 @@ AudioConvertResult AudioConverterProcess(AudioConverterHandle handle, const uint
 
 void AudioConverterDestroy(AudioConverterHandle handle);
 
+// mix c-apis
+typedef void* AudioMixHandle;
+
+struct AudioMixStream {
+    const uint8_t* data;
+    int sampleCount;
+    float volume; // 0.0~1.0
+};
+
+struct AudioMixResult {
+    uint8_t* outData;
+    int outSampleCount;
+    int errCode; // 0 for success, non-0 for fail.
+};
+
+AudioMixHandle AudioMixerCreate(const AudioFormatConfig* inCfg);
+
+AudioMixResult AudioMixerProcess(AudioMixHandle handle, const AudioMixStream* streams, int streamCount);
+
+void AudioMixerDestroy(AudioMixHandle hanlde);
+
 #ifdef __cplusplus
 }
 #endif
