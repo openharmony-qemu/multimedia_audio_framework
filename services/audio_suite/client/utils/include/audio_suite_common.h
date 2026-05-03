@@ -32,7 +32,7 @@ static constexpr uint32_t SAMPLE_SIZE_4_BYTE = 4;
 static const std::unordered_map<std::string, std::vector<std::string>> OPTIONS_FIELD_NAMES = {
     {"AudioEqualizerFrequencyBandGains",
         {"band0", "band1", "band2", "band3", "band4", "band5", "band6", "band7", "band8", "band9"}},
-    {"AudioSpaceRenderPositionParams", {"x", "y", "z"}},    
+    {"AudioSpaceRenderPositionParams", {"x", "y", "z"}},
     {"AudioSpaceRenderRotationParams", {"x", "y", "z", "surroundTime", "surroundDirection"}},
     {"AudioSpaceRenderExtensionParams", {"extRadius", "extAngle"}},
     {"speedAndPitch", {"speed", "pitch"}},
