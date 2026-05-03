@@ -16,6 +16,8 @@
     *GetAudioSuiteManager*;
     *AudioFormatConverter*;
     *IAudioFormatConverter*;
+    *MixerProcessorManager*;
+    *MixerProcessor*;
   local:
     *;
 };
