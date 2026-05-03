@@ -881,13 +881,12 @@ int32_t AudioSuiteEngine::PrintInfo(uint32_t pipelineId, int32_t fd)
         targetPipeline = it->second;
     }
 
-    auto self = shared_from_this();
-    auto request = [self, pipelineId, fd, targetPipeline]() {
+    auto request = [this, pipelineId, fd, targetPipeline]() {
         AUDIO_DEBUG_LOG("PrintInfo enter");
-
-        std::string content = self->GenerateTextSnapshot(pipelineId, targetPipeline);
-        int32_t writeResult = self->WriteOutput(content, fd);
-        self->managerCallback_.OnPrintInfo(writeResult);
+        
+        std::string content = GenerateTextSnapshot(pipelineId, targetPipeline);
+        int32_t writeResult = WriteOutput(content, fd);
+        managerCallback_.OnPrintInfo(writeResult);
     };
 
     SendRequest(request, __func__);
