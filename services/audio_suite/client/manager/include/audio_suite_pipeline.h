@@ -84,6 +84,12 @@ public:
     int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) override;
     PipelineWorkMode GetWorkMode() override;
 
+    // Getter methods for PrintInfo
+    const std::unordered_map<uint32_t, std::shared_ptr<AudioNode>> &GetNodeMap() const override;
+    const std::unordered_map<uint32_t, uint32_t> &GetConnections() const override;
+    const std::unordered_map<uint32_t, std::vector<uint32_t>> &GetReverseConnections() const override;
+    AudioSuitePipelineState GetCurrentPipelineState() const override;
+
     // for queue and thread
     bool IsRunning(void) override;
     bool IsMsgProcessing() override;

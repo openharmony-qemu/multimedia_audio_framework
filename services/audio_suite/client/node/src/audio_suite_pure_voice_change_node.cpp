@@ -89,6 +89,16 @@ int32_t AudioSuitePureVoiceChangeNode::DeInit()
     return SUCCESS;
 }
 
+int32_t AudioSuitePureVoiceChangeNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    std::string optionValue = "";
+    int32_t ret = GetOptions("AudioPureVoiceChangeOption", optionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !optionValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo = "    Pure Voice Change: " +
+        AudioSuiteUtil::FormatOptionsValue("AudioPureVoiceChangeOption", optionValue) + "\n";
+    return SUCCESS;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS

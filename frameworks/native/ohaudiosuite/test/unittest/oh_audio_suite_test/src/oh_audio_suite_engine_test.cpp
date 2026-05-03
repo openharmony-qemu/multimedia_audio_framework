@@ -488,8 +488,14 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StartPipeline_003, TestSize
     ret = OH_AudioSuiteEngine_ConnectNodes(mixNode, outputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
+    ret = OH_AudioSuite_PrintInfo(audioSuiteEngine, pipeline, -1);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_STATE);
+
+    ret = OH_AudioSuite_PrintInfo(audioSuiteEngine, pipeline, -1);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2881,7 +2887,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEnvironmentType_001, Tes
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_GetEnvironmentType.
  * @tc.number: OH_AudioSuiteEngine_GetEnvironmentType_002
@@ -2917,7 +2923,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEnvironmentType_002, Tes
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_GetSoundFieldType.
  * @tc.number: OH_AudioSuiteEngine_GetSoundFieldType_001
@@ -2955,7 +2961,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSoundFieldType_001, Test
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_GetSoundFieldType.
  * @tc.number: OH_AudioSuiteEngine_GetSoundFieldType_002
@@ -2991,7 +2997,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSoundFieldType_002, Test
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains.
  * @tc.number: OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains_001
@@ -3029,7 +3035,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEqualizerFrequencyBandGa
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains.
  * @tc.number: OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains_002
@@ -3064,7 +3070,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEqualizerFrequencyBandGa
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_GetVoiceBeautifierType.
  * @tc.number: OH_AudioSuiteEngine_GetVoiceBeautifierType_001
@@ -3102,7 +3108,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetVoiceBeautifierType_001,
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_GetVoiceBeautifierType.
  * @tc.number: OH_AudioSuiteEngine_GetVoiceBeautifierType_002

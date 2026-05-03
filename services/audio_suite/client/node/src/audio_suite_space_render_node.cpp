@@ -15,16 +15,16 @@
 #ifndef LOG_TAG
 #define LOG_TAG "AudioSpaceRenderNode"
 #endif
- 
+
 #include "audio_suite_space_render_node.h"
 #include <fstream>
 #include "audio_utils.h"
 #include "audio_suite_log.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
- 
+
 namespace {
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_IN_CHANNEL_LAYOUT = CH_LAYOUT_MONO;
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_OUT_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
@@ -82,14 +82,36 @@ int32_t AudioSuiteSpaceRenderNode::DeInit()
         algoInterface_->Deinit();
         algoInterface_ = nullptr;
     }
- 
+
     if (isInit_) {
         isInit_ = false;
         AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::DeInit end");
         return SUCCESS;
     }
- 
+
     return ERROR;
+}
+
+int32_t AudioSuiteSpaceRenderNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    std::string positionValue = "";
+    int32_t ret = GetOptions("AudioSpaceRenderPositionParams", positionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !positionValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo += "    Position: " +
+        AudioSuiteUtil::FormatOptionsValue("AudioSpaceRenderPositionParams", positionValue) + "\n";
+
+    std::string rotationValue = "";
+    ret = GetOptions("AudioSpaceRenderRotationParams", rotationValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !rotationValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo += "    Rotation: " +
+        AudioSuiteUtil::FormatOptionsValue("AudioSpaceRenderRotationParams", rotationValue) + "\n";
+
+    std::string extensionValue = "";
+    ret = GetOptions("AudioSpaceRenderExtensionParams", extensionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !extensionValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo += "    Extension: " +
+        AudioSuiteUtil::FormatOptionsValue("AudioSpaceRenderExtensionParams", extensionValue) + "\n";
+    return SUCCESS;
 }
 
 }  // namespace AudioSuite

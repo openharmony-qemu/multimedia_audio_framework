@@ -1312,6 +1312,37 @@ void AudioSuiteManager::OnGetOptions(int32_t result)
     callbackCV_.notify_all();
 }
 
+int32_t AudioSuiteManager::PrintInfo(uint32_t pipelineId, int32_t fd)
+{
+    AUDIO_DEBUG_LOG("PrintInfo enter.");
+
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishPrintInfo_ = false;
+    int32_t ret = suiteEngine_->PrintInfo(pipelineId, fd);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine PrintInfo failed, ret = %{public}d", ret);
+
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishPrintInfo_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "PrintInfo timeout");
+
+    AUDIO_DEBUG_LOG("PrintInfo leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(printInfoResult_ == SUCCESS,
+        printInfoResult_,
+        HILOG_COMM_ERROR("[PrintInfo]engine failed, printInfoResult_ = %{public}d", printInfoResult_));
+    return printInfoResult_;
+}
+
+void AudioSuiteManager::OnPrintInfo(int32_t result)
+{
+    std::lock_guard<std::mutex> lock(callbackMutex_);
+    printInfoResult_ = result;
+    isFinishPrintInfo_ = true;
+    callbackCV_.notify_one();
+}
+
 void AudioSuiteManager::OnSetOptions(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -1394,9 +1425,11 @@ void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option)
     char comma;
     int32_t genderInt;
     int32_t typeInt;
-    iss >> genderInt >> comma >> typeInt;
+    float pitch;
+    iss >> genderInt >> comma >> typeInt >> comma >> pitch;
     option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(genderInt);
     option.optionType = static_cast<AudioPureVoiceChangeType>(typeInt);
+    option.pitch = pitch;
 }
 
 void ParseValue(const std::string &valueStr, std::vector<int32_t> &result)

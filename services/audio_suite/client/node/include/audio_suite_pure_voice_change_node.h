@@ -28,6 +28,7 @@ public:
     ~AudioSuitePureVoiceChangeNode();
     int32_t Init() override;
     int32_t DeInit() override;
+    int32_t PrintNodeInfo(std::string &nodeInfo) override;
 
 private:
     bool isInit_ = false;

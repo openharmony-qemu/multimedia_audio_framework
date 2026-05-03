@@ -86,6 +86,16 @@ int32_t AudioSuiteEnvNode::DeInit()
     return ERROR;
 }
 
+int32_t AudioSuiteEnvNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    std::string optionValue = "";
+    int32_t ret = GetOptions("EnvironmentType", optionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !optionValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo = "    Environment: " +
+        AudioSuiteUtil::FormatOptionsValue("EnvironmentType", optionValue) + "\n";
+    return SUCCESS;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS

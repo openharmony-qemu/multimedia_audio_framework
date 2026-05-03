@@ -331,6 +331,11 @@ uint32_t AudioNode::GenerateAudioNodeId()
     return nodeIdCounter_;
 }
 
+int32_t AudioNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    return ERROR;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS

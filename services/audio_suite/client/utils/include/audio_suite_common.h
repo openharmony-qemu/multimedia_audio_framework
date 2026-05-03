@@ -29,6 +29,46 @@ static constexpr uint32_t SAMPLE_SIZE_2_BYTE = 2;
 static constexpr uint32_t SAMPLE_SIZE_3_BYTE = 3;
 static constexpr uint32_t SAMPLE_SIZE_4_BYTE = 4;
 
+static const std::unordered_map<std::string, std::vector<std::string>> OPTIONS_FIELD_NAMES = {
+    {"AudioEqualizerFrequencyBandGains", {"band0", "band1", "band2", "band3", "band4",
+                                           "band5", "band6", "band7", "band8", "band9"}},
+    {"AudioSpaceRenderPositionParams", {"x", "y", "z"}},
+    {"AudioSpaceRenderRotationParams", {"x", "y", "z", "surroundTime", "surroundDirection"}},
+    {"AudioSpaceRenderExtensionParams", {"extRadius", "extAngle"}},
+    {"speedAndPitch", {"speed", "pitch"}},
+    {"AudioPureVoiceChangeOption", {"optionGender", "optionType", "pitch"}},
+};
+
+static const std::unordered_map<std::string, std::unordered_map<int, std::string>> ENUM_STRING_MAP = {
+    {"EnvironmentType", {
+        {0, "Close"}, {1, "Broadcast"}, {2, "Earpiece"},
+        {3, "Underwater"}, {4, "Gramophone"}
+    }},
+    {"SoundFieldType", {
+        {0, "Close"}, {1, "FrontFacing"}, {2, "Grand"},
+        {3, "Near"}, {4, "Wide"}
+    }},
+    {"VoiceBeautifierType", {
+        {1, "Clear"}, {2, "Theatre"}, {3, "CD"}, {4, "Studio"}
+    }},
+    {"GeneralVoiceChangeType", {
+        {1, "Cute"}, {2, "Cyberpunk"}, {3, "Female"}, {4, "Male"},
+        {5, "Mix"}, {6, "Monster"}, {7, "Seasoned"}, {8, "Synth"},
+        {9, "Trill"}, {10, "War"}
+    }},
+    {"AudioPureVoiceChangeGenderOption", {
+        {1, "FEMALE"}, {2, "MALE"}
+    }},
+    {"AudioPureVoiceChangeType", {
+        {1, "CARTOON"}, {2, "CUTE"}, {3, "FEMALE"}, {4, "MALE"},
+        {5, "MONSTER"}, {6, "ROBOTS"}, {7, "SEASONED"}
+    }}
+};
+
+static const std::unordered_map<std::string, std::vector<std::string>> FIELD_ENUM_TYPE_MAP = {
+    {"AudioPureVoiceChangeOption", {"AudioPureVoiceChangeGenderOption", "AudioPureVoiceChangeType", ""}}
+};
+
 class AudioSuiteRingBuffer {
 public:
     AudioSuiteRingBuffer() = default;
@@ -92,6 +132,14 @@ public:
         }
         return sampleSize;
     }
+
+    static bool IsEnumTypeOption(const std::string &name);
+    static std::string ConvertEnumToString(const std::string &name, const std::string &value);
+    static std::string GetCurrentTimestamp();
+    static std::string GetWorkModeString(PipelineWorkMode mode);
+    static std::string GetStateString(AudioSuitePipelineState state);
+    static std::string GetSampleFormatString(AudioSampleFormat format);
+    static std::string FormatOptionsValue(const std::string &name, const std::string &value);
 };
 
 class AudioSuiteLibraryManager {

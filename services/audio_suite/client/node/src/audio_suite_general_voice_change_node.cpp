@@ -81,6 +81,16 @@ int32_t AudioSuiteGeneralVoiceChangeNode::DeInit()
     return SUCCESS;
 }
 
+int32_t AudioSuiteGeneralVoiceChangeNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    std::string optionValue = "";
+    int32_t ret = GetOptions("GeneralVoiceChangeType", optionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !optionValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo = "    General Voice Change: " +
+        AudioSuiteUtil::FormatOptionsValue("GeneralVoiceChangeType", optionValue) + "\n";
+    return SUCCESS;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS
