@@ -142,9 +142,9 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteTempoPitchNode::SignalProcess(
     CHECK_AND_RETURN_RET_LOG(!inputs.empty(), retError, "Inputs list is empty");
     CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, retError, "Input data is nullptr");
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), retError, "Invalid input format");
-
+ 
     algoInput_[0] = inputs[0]->GetPcmData();
-
+ 
     int32_t ret = algoInterface_->Apply(algoInput_, algoOutput_);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, retError, "Node SignalProcess Apply failed");
     frameOutBytes_ = static_cast<uint32_t>(ret * sizeof(int16_t));

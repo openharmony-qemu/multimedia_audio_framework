@@ -15,16 +15,16 @@
 #ifndef LOG_TAG
 #define LOG_TAG "AudioSpaceRenderNode"
 #endif
-
+ 
 #include "audio_suite_space_render_node.h"
 #include <fstream>
 #include "audio_utils.h"
 #include "audio_suite_log.h"
-
+ 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
-
+ 
 namespace {
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_IN_CHANNEL_LAYOUT = CH_LAYOUT_MONO;
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_OUT_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
@@ -82,13 +82,13 @@ int32_t AudioSuiteSpaceRenderNode::DeInit()
         algoInterface_->Deinit();
         algoInterface_ = nullptr;
     }
-
+ 
     if (isInit_) {
         isInit_ = false;
         AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::DeInit end");
         return SUCCESS;
     }
-
+ 
     return ERROR;
 }
 
