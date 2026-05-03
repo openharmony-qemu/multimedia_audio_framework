@@ -160,9 +160,13 @@ audio_ohos_library("audio_pcm_process") {
       "client/converter/include",
       "client/manager/include",
       "client/pcm_process/include",
+      "client/utils/include",
+      "client/node/include",
       "../../interfaces/inner_api/native/audiocommon/include/",
       "../../interfaces/inner_api/native/audiosuite/include",
       "../../interfaces/inner_api/native/audio_pcm_process/include",
+      "../audio_engine/utils/",
+      "../audio_engine/plugin/channel_converter/include/",
     ]
 
     sources = [ "client/pcm_process/src/audio_pcm_process_impl.cpp" ]

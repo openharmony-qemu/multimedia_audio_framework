@@ -21,58 +21,55 @@
 extern "C" {
 #endif
 
-// BitDepth CAPI
 enum AudioBitDepth {
-    AudioBit16Int = 16, // 16bit
-    AudioBit24Int = 24, // 24bit
-    AudioBit32Int = 32, // 32bit
-    AudioBit32Float = 33 // 32 float
+    AudioBit16Int = 16,
+    AudioBit24Int = 24,
+    AudioBit32Int = 32,
+    AudioBit32Float = 33
 };
 
-// channel
-enum AudioChannel {
+enum CAudioChannel {
     AudioChMono = 1,
     AudioChStereo = 2
 };
 
 struct AudioFormatConfig {
     int sampleRate;
-    AudioChannel channel;
+    CAudioChannel channel;
     AudioBitDepth bitDepth;
 };
 
 typedef void* AudioConverterHandle;
 
-struct AudioConvertResult {
+struct CAudioConvertResult {
     uint8_t* outData;
-    int outSampleCount; // output sample count.
-    int errCode; // 0 for success, non-0 for fail.
+    int outSampleCount;
+    int errCode;
 };
 
 AudioConverterHandle AudioConverterCreate(const AudioFormatConfig* inCfg, const AudioFormatConfig* outCfg);
 
-AudioConvertResult AudioConverterProcess(AudioConverterHandle handle, const uint8_t* inData, int inSampleCount);
+CAudioConvertResult AudioConverterProcess(AudioConverterHandle handle, const uint8_t* inData, int inSampleCount);
 
 void AudioConverterDestroy(AudioConverterHandle handle);
 
-// mix c-apis
 typedef void* AudioMixHandle;
 
-struct AudioMixStream {
+struct CAudioMixStream {
     const uint8_t* data;
     int sampleCount;
-    float volume; // 0.0~1.0
+    float volume;
 };
 
 struct AudioMixResult {
     uint8_t* outData;
-    int outSampleCount;
-    int errCode; // 0 for success, non-0 for fail.
+    int outSamplerCount;
+    int errCode;
 };
 
 AudioMixHandle AudioMixerCreate(const AudioFormatConfig* inCfg);
 
-AudioMixResult AudioMixerProcess(AudioMixHandle handle, const AudioMixStream* streams, int streamCount);
+AudioMixResult AudioMixerProcess(AudioMixHandle handle, const CAudioMixStream* streams, int streamCount);
 
 void AudioMixerDestroy(AudioMixHandle hanlde);
 

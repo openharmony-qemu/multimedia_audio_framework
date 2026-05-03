@@ -16,9 +16,36 @@
 #ifndef AUDIO_PCM_PROCESS_IMPL_H
 #define AUDIO_PCM_PROCESS_IMPL_H
 
+#include <memory>
+#include <vector>
+#include <mutex>
+
 #include "audio_pcm_process.h"
 #include "audio_format_converter.h"
 #include "audio_suite_mixer_processor.h"
+#include "audio_suite_pcm_buffer.h"
+#include "audio_suite_base.h"
 
+namespace OHOS {
+namespace AudioStandard {
+namespace AudioSuite {
+
+struct ConverterHandleWrapper {
+    std::shared_ptr<AudioFormatConverter> converter;
+    PcmBufferFormat inputFormat;
+    PcmBufferFormat outputFormat;
+};
+
+struct MixerHandleWrapper {
+    std::unique_ptr<MixerProcessor> mixer;
+    AudioFormat format;
+    std::vector<uint8_t> outputBuffer;
+    uint32_t bitDepth = 0;
+    bool bufferAllocated = false;
+    uint32_t expectedSampleCount = 0;
+};
+} // namespace AudioSuite
+} // namespace AudioStandard
+} // namespace OHOS
 
 #endif // AUDIO_PCM_PROCESS_IMPL_H
