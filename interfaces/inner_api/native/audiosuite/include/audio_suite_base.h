@@ -100,7 +100,14 @@ inline static const std::unordered_map<AudioChannelLayout, AudioChannel> LAYOUT_
     {AudioChannelLayout::CH_LAYOUT_OCTAGONAL, AudioChannel::CHANNEL_8},
     {AudioChannelLayout::CH_LAYOUT_5POINT1POINT2, AudioChannel::CHANNEL_8},
     {AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE, AudioChannel::CHANNEL_8},
-    {AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8}
+    {AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1POINT4, AudioChannel::CHANNEL_10},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1POINT2, AudioChannel::CHANNEL_10},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1POINT4, AudioChannel::CHANNEL_12},
+    {AudioChannelLayout::CH_LAYOUT_10POINT2, AudioChannel::CHANNEL_12},
+    {AudioChannelLayout::CH_LAYOUT_9POINT1POINT4, AudioChannel::CHANNEL_14},
+    {AudioChannelLayout::CH_LAYOUT_9POINT1POINT6, AudioChannel::CHANNEL_16},
+    {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
 };
 
 struct AudioFormat {
