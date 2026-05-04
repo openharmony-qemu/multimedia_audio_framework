@@ -17,6 +17,7 @@
 #endif
 
 #include <string>
+#include <memory>
 #include <atomic>
 #include <unordered_map>
 #include <vector>
