@@ -59,6 +59,7 @@ public:
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) = 0;
     virtual int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) = 0;
+    virtual int32_t PrintInfo(uint32_t pipelineId, int32_t fd) = 0;
 };
 
 }  // namespace AudioSuite

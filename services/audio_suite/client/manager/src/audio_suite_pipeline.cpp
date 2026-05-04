@@ -1316,6 +1316,24 @@ void AudioSuitePipeline::SetWorkGroupId(int32_t workGroupId)
     workGroupId_ = workGroupId;
 }
 
+const std::unordered_map<uint32_t, std::shared_ptr<AudioNode>> &AudioSuitePipeline::GetNodeMap() const
+{
+    return nodeMap_;
+}
+const std::unordered_map<uint32_t, uint32_t> &AudioSuitePipeline::GetConnections() const
+{
+    return connections_;
+}
+const std::unordered_map<uint32_t, std::vector<uint32_t>> &AudioSuitePipeline::GetReverseConnections() const
+{
+    return reverseConnections_;
+}
+
+AudioSuitePipelineState AudioSuitePipeline::GetCurrentPipelineState() const
+{
+    return pipelineState_;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS
