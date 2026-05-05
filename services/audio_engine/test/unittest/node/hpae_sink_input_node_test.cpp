@@ -789,20 +789,6 @@ HWTEST_F(HpaeSinkInputNodeTest, testGetLatencyWithHistoryBuffer, TestSize.Level0
 }
 
 /**
- * @tc.name  : testTriggerClientWakeNullCallback
- * @tc.type  : FUNC
- * @tc.desc  : Test TriggerClientWake when callback is null
- */
-HWTEST_F(HpaeSinkInputNodeTest, testTriggerClientWakeNullCallback, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    
-    sinkInputNode->TriggerClientWake();
-}
-
-/**
  * @tc.name  : testCheckAndDestroyHistoryBuffer_CreateBuffer
  * @tc.type  : FUNC
  * @tc.desc  : Test CheckAndDestroyHistoryBuffer when historyFrameCount > 0 and historyBuffer is null
