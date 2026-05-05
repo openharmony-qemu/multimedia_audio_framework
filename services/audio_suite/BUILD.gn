@@ -96,6 +96,7 @@ audio_ohos_library("audio_suite") {
       "client/utils/src/audio_suite_pcm_buffer.cpp",
       "client/utils/src/audio_suite_format_conversion.cpp",
       "client/utils/src/audio_suite_algo_interface.cpp",
+      "client/utils/src/audio_suite_serializer.cpp",
       "client/utils/src/audio_suite_eq_algo_interface_impl.cpp",
       "client/utils/src/audio_suite_env_algo_interface_impl.cpp",
       "client/utils/src/audio_suite_nr_algo_interface_impl.cpp",

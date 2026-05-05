@@ -20,6 +20,7 @@
 #include <dlfcn.h>
 #include "audio_errors.h"
 #include "audio_suite_log.h"
+#include "audio_suite_serializer.h"
 #include "audio_suite_tempo_pitch_algo_interface_impl.h"
 
 namespace OHOS {
@@ -29,7 +30,6 @@ namespace AudioSuite {
 static const std::string PITCH_LIB = "PITCHLIB";
 static constexpr int32_t EXPAND_FRAME_SIZE = 256;
 static constexpr int32_t EXPAND_FRAME_RATE = 2;
-static constexpr int32_t ALGO_PARAM_LENGTH = 2;
 
 AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc)
 {
@@ -144,11 +144,15 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::SetParameter(const std::string &p
 {
     CHECK_AND_RETURN_RET_LOG(tempoAlgoHandle_, ERROR, "Invalid tempoAlgoHandle_");
     CHECK_AND_RETURN_RET_LOG(pitchAlgoHandle_, ERROR, "Invalid pitchAlgoHandle_");
-    std::vector<float> params = ParseStringToFloatArray(paramValue, ',');
-    CHECK_AND_RETURN_RET_LOG(params.size() == ALGO_PARAM_LENGTH, ERROR, "ParseStringToFloatArray error");
 
-    speedRate_ = params[0];
-    pitchRate_ = params[1];
+    TempoPitchParams params;
+    if (!Serializer<TempoPitchParams>::Deserialize(paramValue, params)) {
+        AUDIO_ERR_LOG("Failed to deserialize tempo and pitch parameters");
+        return ERROR;
+    }
+
+    speedRate_ = params.speed;
+    pitchRate_ = params.pitch;
     int32_t ret = tempoAlgoApi_.setParam(tempoAlgoHandle_, speedRate_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "Set tempo param error %{public}d", ret);
 
@@ -223,24 +227,6 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
     }
     // return outFrameLen >= 0
     return outFrameLen;
-}
-
-std::vector<float> AudioSuiteTempoPitchAlgoInterfaceImpl::ParseStringToFloatArray(
-    const std::string &str, char delimiter)
-{
-    std::vector<float> params;
-    std::string paramValue;
-    std::istringstream iss(str);
-
-    while (std::getline(iss, paramValue, delimiter)) {
-        if (!paramValue.empty()) {
-            float value;
-            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
-                "Tempo convert string to float value error, invalid data is %{public}s", paramValue.c_str());
-            params.push_back(value);
-        }
-    }
-    return params;
 }
 
 }  // namespace AudioSuite
