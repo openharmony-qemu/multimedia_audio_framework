@@ -21,6 +21,7 @@ ohos_fuzztest("AudioRouterCenterFuzzTest") {
   fuzz_config_file = "../audioroutercenter_fuzzer"
 
   include_dirs = [
+    "../../../../services/audio_policy/server/domain/router",
     "../../../../services/audio_policy/server/include/service",
     "../../../../services/audio_policy/server/include",
     "../../../../frameworks/native/audioutils/include",
