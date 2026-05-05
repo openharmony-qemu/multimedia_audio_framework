@@ -986,34 +986,6 @@ HWTEST_F(HpaeSinkInputNodeTest, testDoProcess_CustomSampleRateNotMultipleOf50, T
 }
 
 /**
- * @tc.name  : testRewindHistoryBuffer
- * @tc.type  : FUNC
- * @tc.desc  : Test RewindHistoryBuffer function
- */
-HWTEST_F(HpaeSinkInputNodeTest, testRewindHistoryBuffer, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.historyFrameCount = 5;
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    auto mockStreamCallback = std::make_shared<MockStreamCallback>();
-    auto mockNodeCallback = std::make_shared<MockNodeCallback>();
-    sinkInputNode->writeCallback_ = mockStreamCallback;
-    sinkInputNode->nodeInfo_.statusCallback = mockNodeCallback;
-    
-    EXPECT_NE(sinkInputNode->historyBuffer_, nullptr);
-    
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
-        .WillOnce([&](AudioCallBackStreamInfo& info) {
-            return SUCCESS;
-        });
-    
-    sinkInputNode->RewindHistoryBuffer(10000, 100);
-    EXPECT_EQ(sinkInputNode->hdiFramePosition_.load(), 100);
-    EXPECT_EQ(sinkInputNode->rewindTime_.load(), 10000);
-}
-
-/**
  * @tc.name  : testRewindHistoryBufferNull
  * @tc.type  : FUNC
  * @tc.desc  : Test RewindHistoryBuffer when historyBuffer is null

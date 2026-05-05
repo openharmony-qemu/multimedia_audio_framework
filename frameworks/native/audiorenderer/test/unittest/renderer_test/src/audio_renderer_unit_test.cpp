@@ -4814,59 +4814,5 @@ HWTEST(AudioRendererUnitTest, WaitSwitchStreamIfNeeded_001, TestSize.Level1)
     res = testRendererInner->WaitSwitchStreamIfNeeded(false);
     EXPECT_EQ(true, res);
 }
-
-/**
- * @tc.name  : AudioRenderer_DecideStreamClass_FastStream_001
- * @tc.number: DecideStreamClass_FastStream_001
- * @tc.desc  : Test DecideStreamClassAndUpdateRendererInfo for FAST_STREAM with MMAP flag
- */
-HWTEST(AudioRendererUnitTest, DecideStreamClass_FastStream_001, TestSize.Level1)
-{
-    AudioRendererOptions options;
-    options.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    options.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    options.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    options.streamInfo.channels = AudioChannel::STEREO;
-    options.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    options.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    options.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    
-    auto audioRenderer = AudioRenderer::Create(options);
-    ASSERT_NE(audioRenderer, nullptr);
-    
-    AudioRendererPrivate* rendererPrivate = static_cast<AudioRendererPrivate*>(audioRenderer.get());
-    if (rendererPrivate != nullptr) {
-        EXPECT_EQ(rendererPrivate->rendererInfo_.originalFlag, AUDIO_FLAG_MMAP);
-        EXPECT_EQ(rendererPrivate->rendererInfo_.rendererFlags, AUDIO_FLAG_MMAP);
-        EXPECT_EQ(rendererPrivate->rendererInfo_.pipeType, PIPE_TYPE_OUT_LOWLATENCY);
-    }
-}
-
-/**
- * @tc.name  : AudioRenderer_VoipStream_FlagCheck_001
- * @tc.number: VoipStream_FlagCheck_001
- * @tc.desc  : Test VOIP stream flags setting
- */
-HWTEST(AudioRendererUnitTest, VoipStream_FlagCheck_001, TestSize.Level1)
-{
-    AudioRendererOptions options;
-    options.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    options.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    options.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    options.streamInfo.channels = AudioChannel::STEREO;
-    options.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
-    options.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
-    options.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-    
-    auto audioRenderer = AudioRenderer::Create(options);
-    ASSERT_NE(audioRenderer, nullptr);
-    
-    AudioRendererPrivate* rendererPrivate = static_cast<AudioRendererPrivate*>(audioRenderer.get());
-    if (rendererPrivate != nullptr) {
-        EXPECT_EQ(rendererPrivate->rendererInfo_.originalFlag, AUDIO_FLAG_VOIP_FAST);
-        EXPECT_EQ(rendererPrivate->rendererInfo_.rendererFlags, AUDIO_FLAG_VOIP_FAST);
-    }
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

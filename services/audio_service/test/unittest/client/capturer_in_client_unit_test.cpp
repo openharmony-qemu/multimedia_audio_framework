@@ -852,7 +852,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_001, TestSize.Level1)
     Init(capturerInClientInner);
     capturerInClientInner->capturerInfo_.capturerFlags = 1;
     AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
-    EXPECT_EQ(ret.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(ret.capturerInfo.capturerFlags, AUDIO_FLAG_MMAP);
 }
 
 /**

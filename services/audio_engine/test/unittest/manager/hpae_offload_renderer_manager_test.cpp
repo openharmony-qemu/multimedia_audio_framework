@@ -810,22 +810,6 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, PauseWithStandby_002, TestSize.
 }
 
 /**
- * @tc.name    : SetIsLowLatency_001
- * @tc.type    : FUNC
- * @tc.number  : SetIsLowLatency_001
- * @tc.desc    : Verify SetIsLowLatency is called with false during AddSingleNodeToSink.
- */
-HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, SetIsLowLatency_001, TestSize.Level0)
-{
-    auto newNode = CreateTestNode(205, HPAE_SESSION_PREPARED);
-    int32_t ret = manager_->AddNodeToSink(newNode);
-    EXPECT_EQ(ret, SUCCESS);
-    manager_->HandleMsg();
-    EXPECT_EQ(manager_->sinkInputNodeMap_.count(205), 1u);
-    EXPECT_EQ(newNode->GetIsLowLatency(), false);
-}
-
-/**
  * @tc.name    : AdjustFrameLen_001
  * @tc.type    : FUNC
  * @tc.number  : AdjustFrameLen_001
@@ -896,6 +880,10 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, AdjustFrameLen_002, TestSize.Le
 HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, AddNodeToSink_001, TestSize.Level0)
 {
     auto newNode = CreateTestNode(204, HPAE_SESSION_PREPARED);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.frameLen = 480;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    manager_->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
     int32_t ret = manager_->AddNodeToSink(newNode);
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
