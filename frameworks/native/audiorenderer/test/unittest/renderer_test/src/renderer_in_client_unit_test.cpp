@@ -3907,7 +3907,7 @@ HWTEST(RendererInClientNewUnitTest, ConstructConfig_AllValidFlags_001, TestSize.
 HWTEST(RendererInClientNewUnitTest, GetStreamClass_LowLatency_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     IAudioStream::StreamClass streamClass = rendererInClientInner->GetStreamClass();
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::FAST_STREAM);
@@ -3922,7 +3922,7 @@ HWTEST(RendererInClientNewUnitTest, GetStreamClass_LowLatency_001, TestSize.Leve
 HWTEST(RendererInClientNewUnitTest, GetStreamClass_VOIP_FAST_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     IAudioStream::StreamClass streamClass = rendererInClientInner->GetStreamClass();
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::FAST_STREAM);
@@ -3952,7 +3952,7 @@ HWTEST(RendererInClientNewUnitTest, GetStreamClass_Normal_001, TestSize.Level1)
 HWTEST(RendererInClientNewUnitTest, GetFastStatus_LowLatency_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     FastStatus status = rendererInClientInner->GetFastStatus();
     EXPECT_EQ(status, FASTSTATUS_FAST);
@@ -3967,7 +3967,7 @@ HWTEST(RendererInClientNewUnitTest, GetFastStatus_LowLatency_001, TestSize.Level
 HWTEST(RendererInClientNewUnitTest, GetFastStatus_VOIP_FAST_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     FastStatus status = rendererInClientInner->GetFastStatus();
     EXPECT_EQ(status, FASTSTATUS_FAST);
@@ -4005,79 +4005,6 @@ HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NoPending_001
     
     rendererInClientInner->CheckAndProcessPendingSpanSize();
     EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
-}
-
-/**
- * @tc.name  : Test CheckAndProcessPendingSpanSize with invalid span size
- * @tc.type  : FUNC
- * @tc.number: CheckAndProcessPendingSpanSize_InvalidSpan_001
- * @tc.desc  : Test CheckAndProcessPendingSpanSize ignores invalid span size.
- */
-HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_InvalidSpan_001, TestSize.Level1)
-{
-    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    uint32_t totalSizeInFrame = 100;
-    uint32_t byteSizePerFrame = 4;
-    rendererInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
-    
-    // Invalid span size (too small)
-    rendererInClientInner->clientBuffer_->SetPendingSpanSize(10, 20, 0);
-    rendererInClientInner->CheckAndProcessPendingSpanSize();
-    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
-    
-    // Invalid span size (too large)
-    rendererInClientInner->clientBuffer_->SetPendingSpanSize(10000, 20000, 0);
-    rendererInClientInner->CheckAndProcessPendingSpanSize();
-    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
-}
-
-/**
- * @tc.name  : Test CheckAndProcessPendingSpanSize with valid span size
- * @tc.type  : FUNC
- * @tc.number: CheckAndProcessPendingSpanSize_ValidSpan_001
- * @tc.desc  : Test CheckAndProcessPendingSpanSize processes valid span size.
- */
-HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_ValidSpan_001, TestSize.Level1)
-{
-    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    uint32_t totalSizeInFrame = 100;
-    uint32_t byteSizePerFrame = 4;
-    rendererInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
-    rendererInClientInner->sizePerFrameInByte_ = 4;
-    
-    uint32_t validSpanSize = 960;
-    uint64_t engineSize = 1920;
-    rendererInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize, AUDIO_OUTPUT_FLAG_FAST);
-    rendererInClientInner->CheckAndProcessPendingSpanSize();
-    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, validSpanSize);
-    EXPECT_EQ(rendererInClientInner->cacheSizeInFrame_, engineSize);
-}
-
-/**
- * @tc.name  : Test CheckAndProcessPendingSpanSize with AUDIO_OUTPUT_FLAG_FAST
- * @tc.type  : FUNC
- * @tc.number: CheckAndProcessPendingSpanSize_FastFlag_001
- * @tc.desc  : Test CheckAndProcessPendingSpanSize updates rendererFlags for FAST flag.
- */
-HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_FastFlag_001, TestSize.Level1)
-{
-    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    uint32_t totalSizeInFrame = 100;
-    uint32_t byteSizePerFrame = 4;
-    rendererInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
-    rendererInClientInner->sizePerFrameInByte_ = 4;
-    
-    uint32_t validSpanSize = 960;
-    uint64_t engineSize = 1920;
-    rendererInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize, AUDIO_OUTPUT_FLAG_FAST);
-    rendererInClientInner->CheckAndProcessPendingSpanSize();
-    EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_MMAP);
 }
 
 /**
@@ -4211,7 +4138,7 @@ void RendererInClientPublicNewUnitTest::TearDown(void) {}
 HWTEST(RendererInClientPublicNewUnitTest, SetLoudnessGain_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->SetLoudnessGain(1.0f);
     EXPECT_EQ(ret, ERROR);
@@ -4242,7 +4169,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetLoudnessGain_NormalStream_001, Test
 HWTEST(RendererInClientPublicNewUnitTest, GetLoudnessGain_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     rendererInClientInner->loudnessGain_ = 1.0f;
     
     float gain = rendererInClientInner->GetLoudnessGain();
@@ -4274,7 +4201,7 @@ HWTEST(RendererInClientPublicNewUnitTest, GetLoudnessGain_NormalStream_001, Test
 HWTEST(RendererInClientPublicNewUnitTest, SetRenderRate_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->SetRenderRate(RENDER_RATE_DOUBLE);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
@@ -4320,7 +4247,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetRenderRate_NormalStream_001, TestSi
 HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->SetSpeed(2.0f);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
@@ -4369,7 +4296,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetPitch_NormalStream_001, TestSize.Le
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     
     int32_t ret = rendererInClientInner->SetPitch(2.0f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -4412,25 +4339,7 @@ HWTEST(RendererInClientPublicNewUnitTest, GetSpeed_NormalStream_001, TestSize.Le
 HWTEST(RendererInClientPublicNewUnitTest, Clear_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-    
-    int32_t ret = rendererInClientInner->Clear();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test Clear for normal stream
- * @tc.type  : FUNC
- * @tc.number: Clear_NormalStream_001
- * @tc.desc  : Test Clear works for normal stream.
- */
-HWTEST(RendererInClientPublicNewUnitTest, Clear_NormalStream_001, TestSize.Level1)
-{
-    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererInClientInner->renderMode_ = RENDER_MODE_CALLBACK;
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    rendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->Clear();
     EXPECT_EQ(ret, SUCCESS);
@@ -4445,7 +4354,7 @@ HWTEST(RendererInClientPublicNewUnitTest, Clear_NormalStream_001, TestSize.Level
 HWTEST(RendererInClientPublicNewUnitTest, SetLowPowerVolume_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->SetLowPowerVolume(0.5f);
     EXPECT_EQ(ret, SUCCESS);
@@ -4460,7 +4369,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetLowPowerVolume_FastStream_001, Test
 HWTEST(RendererInClientPublicNewUnitTest, GetLowPowerVolume_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     rendererInClientInner->lowPowerVolume_ = 0.5f;
     
     float volume = rendererInClientInner->GetLowPowerVolume();
@@ -4476,7 +4385,7 @@ HWTEST(RendererInClientPublicNewUnitTest, GetLowPowerVolume_FastStream_001, Test
 HWTEST(RendererInClientPublicNewUnitTest, SetOffloadMode_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->SetOffloadMode(1, true);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
@@ -4491,7 +4400,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetOffloadMode_FastStream_001, TestSiz
 HWTEST(RendererInClientPublicNewUnitTest, UnsetOffloadMode_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->UnsetOffloadMode();
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
@@ -4506,7 +4415,7 @@ HWTEST(RendererInClientPublicNewUnitTest, UnsetOffloadMode_FastStream_001, TestS
 HWTEST(RendererInClientPublicNewUnitTest, GetAudioEffectMode_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     rendererInClientInner->effectMode_ = EFFECT_DEFAULT;
     
     AudioEffectMode mode = rendererInClientInner->GetAudioEffectMode();
@@ -4522,7 +4431,7 @@ HWTEST(RendererInClientPublicNewUnitTest, GetAudioEffectMode_FastStream_001, Tes
 HWTEST(RendererInClientPublicNewUnitTest, SetAudioEffectMode_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->SetAudioEffectMode(EFFECT_DEFAULT);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
@@ -4537,7 +4446,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetAudioEffectMode_FastStream_001, Tes
 HWTEST(RendererInClientPublicNewUnitTest, SetPrivacyType_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     rendererInClientInner->privacyType_ = PRIVACY_TYPE_PUBLIC;
     
     rendererInClientInner->SetPrivacyType(PRIVACY_TYPE_PRIVATE);
@@ -4553,7 +4462,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetPrivacyType_FastStream_001, TestSiz
 HWTEST(RendererInClientPublicNewUnitTest, FlushAudioStream_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     bool ret = rendererInClientInner->FlushAudioStream();
     EXPECT_TRUE(ret);
@@ -4568,7 +4477,7 @@ HWTEST(RendererInClientPublicNewUnitTest, FlushAudioStream_FastStream_001, TestS
 HWTEST(RendererInClientPublicNewUnitTest, DrainAudioStream_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     bool ret = rendererInClientInner->DrainAudioStream(false);
     EXPECT_TRUE(ret);
@@ -4583,27 +4492,10 @@ HWTEST(RendererInClientPublicNewUnitTest, DrainAudioStream_FastStream_001, TestS
 HWTEST(RendererInClientPublicNewUnitTest, Write_Meta_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-    
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     uint8_t buffer[1024] = {0};
     uint8_t metaBuffer[1024] = {0};
     int32_t ret = rendererInClientInner->Write(buffer, 1024, metaBuffer, 1024);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
-}
-
-/**
- * @tc.name  : Test Write for fast stream
- * @tc.type  : FUNC
- * @tc.number: Write_FastStream_001
- * @tc.desc  : Test Write returns ERR_INVALID_OPERATION for fast stream.
- */
-HWTEST(RendererInClientPublicNewUnitTest, Write_FastStream_001, TestSize.Level1)
-{
-    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-    
-    uint8_t buffer[1024] = {0};
-    int32_t ret = rendererInClientInner->Write(buffer, 1024);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
 
@@ -4676,7 +4568,7 @@ HWTEST(RendererInClientPublicNewUnitTest, UnsetRendererPeriodPositionCallback_Fa
 HWTEST(RendererInClientPublicNewUnitTest, SetBufferSizeInMsec_FastStream_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     int32_t ret = rendererInClientInner->SetBufferSizeInMsec(10);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);

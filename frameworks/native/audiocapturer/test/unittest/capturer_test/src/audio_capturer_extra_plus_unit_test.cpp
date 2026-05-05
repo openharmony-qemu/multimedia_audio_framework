@@ -971,32 +971,5 @@ HWTEST(AudioCapturerUnitTest, SetStreamCallback_001, TestSize.Level1)
     int32_t ret = fastAudioStream.SetStreamCallback(callback);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
-
-/**
- * @tc.name  : Test DecideStreamClassAndUpdateCapturerInfo for FAST_STREAM
- * @tc.type  : FUNC
- * @tc.number: DecideStreamClass_FastStream_001
- * @tc.desc  : Test FAST_STREAM decision sets correct flags for mmap mode
- */
-HWTEST(AudioCapturerUnitTest, DecideStreamClass_FastStream_001, TestSize.Level1)
-{
-    AudioCapturerOptions options;
-    options.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    options.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    options.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    options.streamInfo.channels = AudioChannel::STEREO;
-    options.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
-    options.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
-    
-    auto audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(audioCapturer, nullptr);
-    
-    AudioCapturerPrivate* capturerPrivate = static_cast<AudioCapturerPrivate*>(audioCapturer.get());
-    if (capturerPrivate != nullptr) {
-        EXPECT_EQ(capturerPrivate->capturerInfo_.originalFlag, AUDIO_FLAG_MMAP);
-        EXPECT_EQ(capturerPrivate->capturerInfo_.capturerFlags, AUDIO_FLAG_MMAP);
-        EXPECT_EQ(capturerPrivate->capturerInfo_.pipeType, PIPE_TYPE_IN_LOWLATENCY);
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS

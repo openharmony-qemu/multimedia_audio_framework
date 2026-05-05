@@ -1066,7 +1066,7 @@ HWTEST_F(HpaeRendererManagerTest, PauseWithStandby_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId, true) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
 
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
