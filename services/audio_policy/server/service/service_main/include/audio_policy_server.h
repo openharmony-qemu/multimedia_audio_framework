@@ -59,6 +59,7 @@
 #endif
 #include "audio_pipe_selector.h"
 #include "boot_animation_state_info.h"
+#include "audio_loopback_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -389,6 +390,10 @@ public:
     int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
     int32_t SetLoopbackVolume(float volume, bool &ret) override;
     int32_t GetLoopbackVolume(float &volume, bool &ret) override;
+
+    int32_t CreateLoopback(int32_t mode, int32_t type, const sptr<IRemoteObject> &cbObject,
+        sptr<IRemoteObject> &loopback, int32_t &ret) override;
+    int32_t DestroyLoopback(int32_t type, int32_t &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -943,6 +948,8 @@ private:
     AudioIOHandleMap &audioIOHandleMap_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
+
+    std::shared_ptr<AudioLoopbackManager> loopbackManager_;
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;

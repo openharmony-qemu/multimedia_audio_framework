@@ -57,7 +57,7 @@ class AudioLoopbackPrivate : public AudioLoopback,
                              public AudioCapturerReadCallback,
                              public AudioRendererWriteCallback {
 public:
-    explicit AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo);
+    explicit AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo, bool isGlobal = false);
     virtual ~AudioLoopbackPrivate();
 
     bool Enable(bool enable) override;
