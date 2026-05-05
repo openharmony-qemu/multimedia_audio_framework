@@ -34,12 +34,14 @@ if (audio_framework_feature_audiosuite_support) {
       "../../client/converter/include",
       "../../client/node/include",
       "../../client/utils/include",
+      "../../client/pcm_process/include",
       "../../../audio_engine/buffer",
       "../../../audio_engine/plugin/channel_converter/include/",
-      "../../../audio_engine/plugin/resample/include",
+      "../../../audio_engine/plugin/resample/include/",
       "../../../audio_service/common/include/limiter",
       "../../../../interfaces/inner_api/native/audiocommon/include",
       "../../../../interfaces/inner_api/native/audiosuite/include",
+      "../../../../interfaces/inner_api/native/audio_pcm_process/include",
       "../../../audio_engine/node/include",
       "./converter/include",
     ]
@@ -165,6 +167,35 @@ if (audio_framework_feature_audiosuite_support) {
     resource_config_file = "./resource/ohos_test.xml"
   }
 
+  ohos_unittest("audio_pcm_process_impl_test") {
+    module_out_path = module_output_path
+    sources = [
+      "pcm_process/audio_pcm_process_impl_test.cpp",
+    ]
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+
+    configs = [ ":audio_suite_unit_config" ]
+
+    deps = [
+      "../../:audio_pcm_process",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "hilog:libhilog",
+    ]
+  }
+
   ohos_executable("aiss_algo_demo_wav") {
     sanitize = {
       cfi = true
@@ -197,9 +228,7 @@ if (audio_framework_feature_audiosuite_support) {
     part_name = "audio_framework"
     subsystem_name = "multimedia"
   }
-}
 
-if (audio_framework_feature_audiosuite_support) {
   group("audio_pcm_process_module_test") {
     deps = [
       "../module_test:audio_pcm_process_module_test",
