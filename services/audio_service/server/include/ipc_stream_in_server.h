@@ -99,6 +99,7 @@ public:
     int32_t GetAudioEffectMode(int32_t &effectMode) override; // renderer only
 
     int32_t SetPrivacyType(int32_t privacyType) override; // renderer only
+    int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) override; // renderer only
 
     int32_t GetPrivacyType(int32_t &privacyType) override; // renderer only
 
@@ -134,6 +135,8 @@ public:
 
     int32_t SetSpeed(float speed) override;
 
+    int32_t SetPitch(float pitch) override;
+
     int32_t SetOffloadDataCallbackState(int32_t state) override;
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
@@ -146,6 +149,8 @@ public:
     int32_t SetRebuildFlag() override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
+
+    int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal) override;
 
     int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override;
 

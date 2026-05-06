@@ -38,7 +38,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 13
      */
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
 
     /**
      * @brief Sets the audio effect Param.
@@ -48,7 +48,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 13
      */
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
 
     /**
      * @brief Gets the audio effect Param.
@@ -58,7 +58,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 13
      */
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
 };
 
 } // namespace AudioStandard

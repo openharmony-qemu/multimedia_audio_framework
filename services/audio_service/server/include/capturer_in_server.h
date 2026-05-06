@@ -73,7 +73,8 @@ public:
     int32_t StopSession();
     void SetRebuildFlag();
 
-    bool TurnOnMicIndicator(CapturerState capturerState);
+    bool CheckBgRecordPermission(CapturerState capturerState);
+    bool TurnOnMicIndicator();
     bool TurnOffMicIndicator(CapturerState capturerState);
     void TurnOnRemoteMicIndicator();
     void TurnOffRemoteMicIndicator();
@@ -101,6 +102,8 @@ private:
     void ReportOverflowEvent();
     int32_t StartPrivacyConfirmDialog(uint32_t sessionId);
     void OnPrivacyAuthorityResult(bool isAllowed);
+    int32_t CheckForReadData(size_t length, uint64_t currentWriteFrame);
+    int32_t CheckForOnReadData(size_t requestDataLen, uint64_t currentWriteFrame);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;

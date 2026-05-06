@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <memory>
 #include <cstring>
+#include <string>
 #include <timestamp.h>
 #include <mutex>
 #include "audio_effect.h"
@@ -28,6 +29,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct AudioRendererDebugInfo;
+class AudioRendererDebugCallback;
+class AudioRendererPrivate;
 /**
  * @brief Defines information about audio renderer parameters.
  * @since 8
@@ -145,6 +150,8 @@ public:
      */
     virtual void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReason reason) = 0;
+    virtual void OnOutputDeviceChangeWithPreDevice(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason, const AudioDeviceDescriptor &preDeviceInfo) {}
 };
 
 class AudioRendererFastStatusChangeCallback {
@@ -1116,6 +1123,18 @@ public:
     virtual float GetSpeed() = 0;
 
     /**
+     * @brief Get current renderer debug info.
+     *
+     * @param debugInfo Renderer debug info.
+     * @return Returns 0 if successful.
+     */
+    virtual int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const
+    {
+        (void)debugInfo;
+        return 0;
+    }
+
+    /**
     * @brief Get offload status.
     *
     * @return Returns <b>true</b> if offload is enabled.
@@ -1284,6 +1303,21 @@ public:
         return 0;
     };
 
+    /**
+     * @brief Set the pitch for audio renderer.
+     * Only can be set when the renderState is not RUNNING.
+     *
+     * @param pitch The pitch to be set. Value range: [0.25, 4.0], default is 1.0.
+     * @return Returns {@link SUCCESS} if pitch is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * - ERR_INVALID_PARAM: pitch value out of valid range.
+     * - ERR_NOT_SUPPORTED: not in RENDER_MODE_STATIC mode.
+     * - ERR_ILLEGAL_STATE: renderer is in playback state.
+     * @since 26
+     */
+    virtual int32_t SetPitch(float pitch) { return 0; };
+
+    virtual void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) { return; }
 private:
     virtual int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
 
@@ -1300,6 +1334,16 @@ private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     static bool CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
+    static bool CheckUltrasonicPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
+    static std::shared_ptr<AudioRendererPrivate> CreateAndInitRendererObject(
+        const AudioRendererOptions &rendererOptions, const AppInfo &appInfo, AudioStreamType audioStreamType);
+    static bool InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate> audioRenderer,
+        const AudioRendererOptions &rendererOptions, std::shared_ptr<AudioSharedMemory> sharedMemory,
+        const AppInfo &appInfo);
+    static std::shared_ptr<AudioRenderer> SetupStaticRendererFinal(
+        std::shared_ptr<AudioRendererPrivate> audioRenderer,
+        const AudioRendererOptions &rendererOptions,
+        std::shared_ptr<StaticBufferEventCallback> callback);
     static std::mutex createRendererMutex_;
 };
 }  // namespace AudioStandard

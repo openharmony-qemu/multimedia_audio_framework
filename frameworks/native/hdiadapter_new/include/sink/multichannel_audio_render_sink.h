@@ -22,6 +22,9 @@
 #include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "adapter/i_device_manager.h"
+#ifdef MULTI_BUS_ENABLE
+#include "util/audio_playing_app_manager.h"
+#endif
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -61,6 +64,7 @@ public:
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
+    DeviceType GetCurrentOutputDevice() override;
     void ResetActiveDeviceForDisconnect(DeviceType device) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
@@ -86,6 +90,7 @@ private:
     void AdjustAudioBalance(char *data, uint64_t len);
     void CheckUpdateState(char *data, uint64_t len);
     void UpdateSinkState(bool started);
+    bool SetPlayingAppNameParam(const std::string &param);
 
 private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -139,6 +144,9 @@ private:
     std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
+#ifdef MULTI_BUS_ENABLE
+    AudioPlayingAppManager playingAppManager_;
+#endif
 };
 
 } // namespace AudioStandard

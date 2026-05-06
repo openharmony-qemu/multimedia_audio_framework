@@ -16,6 +16,7 @@
 #ifndef AUDIO_SOURCE_CLOCK_H
 #define AUDIO_SOURCE_CLOCK_H
 
+#include <memory>
 #include <mutex>
 #include <vector>
 #include "audio_info.h"

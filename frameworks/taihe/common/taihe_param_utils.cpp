@@ -223,8 +223,28 @@ int32_t TaiheParamUtils::GetRendererOptions(OHOS::AudioStandard::AudioRendererOp
     if (options.privacyType.has_value()) {
         opts->privacyType = static_cast<OHOS::AudioStandard::AudioPrivacyType>(options.privacyType.value().get_value());
     }
+
+    if (options.originalAppIdInfo.has_value()) {
+        status = GetAppInfo(opts->appInfo, options.originalAppIdInfo.value());
+        CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse AppIdInfo failed");
+    }
     return AUDIO_OK;
 }
+
+int32_t TaiheParamUtils::GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppIdInfo const &options)
+{
+    appInfo.appUid = options.appUid;
+    appInfo.appPid = options.appPid;
+
+    CHECK_AND_RETURN_RET_LOG(options.appTokenId >= 0, AUDIO_INVALID_PARAM, "appTokenId is invalid negative value");
+    appInfo.appTokenId = static_cast<uint32_t>(options.appTokenId);
+
+    CHECK_AND_RETURN_RET_LOG(options.appTokenId >= 0, AUDIO_INVALID_PARAM, "appFullTokenId is invalid negative value");
+    appInfo.appFullTokenId = static_cast<uint64_t>(options.appFullTokenId);
+
+    return AUDIO_OK;
+}
+
 int32_t TaiheParamUtils::GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
     AudioSpatialDeviceState in)
 {
@@ -387,7 +407,7 @@ int32_t TaiheParamUtils::GetAudioSessionStrategy(OHOS::AudioStandard::AudioSessi
     return AUDIO_OK;
 }
 
-int32_t TaiheParamUtils::UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray)
+int32_t TaiheParamUtils::UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray)
 {
     CHECK_AND_RETURN_RET_LOG(!propertyArray.property.empty(), 0, "propertyArray.property is empty");
     int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
@@ -400,13 +420,13 @@ int32_t TaiheParamUtils::UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffe
     return static_cast<int32_t>(classSet.size());
 }
 
-int32_t TaiheParamUtils::GetEffectPropertyArray(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray,
+int32_t TaiheParamUtils::GetEffectPropertyArray(OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray,
     array_view<AudioEffectProperty> in)
 {
-    OHOS::AudioStandard::AudioEffectPropertyArrayV3 effectArray;
-    OHOS::AudioStandard::AudioEffectPropertyArrayV3 enhanceArray;
+    OHOS::AudioStandard::AudioEffectPropertyArray effectArray;
+    OHOS::AudioStandard::AudioEffectPropertyArray enhanceArray;
     for (const auto &inProperty : in) {
-        OHOS::AudioStandard::AudioEffectPropertyV3 prop = {
+        OHOS::AudioStandard::AudioEffectProperty prop = {
             .name = std::string(inProperty.name),
             .category = std::string(inProperty.category),
             .flag = static_cast<OHOS::AudioStandard::EffectFlag>(inProperty.flag.get_value()),
@@ -565,7 +585,7 @@ string TaiheParamUtils::ToTaiheString(const std::string &src)
 }
 
 taihe::array<AudioEffectProperty> TaiheParamUtils::ToTaiheEffectPropertyArray(
-    const OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray)
+    const OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray)
 {
     std::vector<AudioEffectProperty> resultVec;
     for (const auto &property : propertyArray.property) {
@@ -631,7 +651,7 @@ VolumeEvent TaiheParamUtils::SetValueVolumeEvent(const OHOS::AudioStandard::Volu
         .volumeMode = taihe::optional<AudioVolumeMode>(std::in_place_t{},
             TaiheAudioEnum::GetJsAudioVolumeMode(volumeEvent.volumeMode)),
         .percentage = taihe::optional<int32_t>(std::in_place_t{}, volumeEvent.volumeDegree),
-        
+        .appUid = taihe::optional<int32_t>(std::in_place_t{}, volumeEvent.appUid),
     };
     return taiheVolumeEvent;
 }
@@ -760,6 +780,7 @@ CurrentOutputDeviceChangedEvent TaiheParamUtils::SetValueCurrentOutputDeviceChan
         .devices = TaiheParamUtils::SetDeviceDescriptors(event.devices),
         .changeReason = TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(event.changeReason),
         .recommendedAction = TaiheAudioEnum::ToTaiheOutputDeviceChangeRecommendedAction(event.recommendedAction),
+        .preDevices = TaiheParamUtils::SetDeviceDescriptors(event.preDevices),
     };
     return currentOutputDeviceChangedEvent;
 }

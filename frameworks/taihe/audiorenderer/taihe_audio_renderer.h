@@ -36,6 +36,7 @@ public:
     explicit AudioRendererImpl(std::shared_ptr<AudioRendererImpl> obj);
     ~AudioRendererImpl() = default;
 
+    int64_t GetImplPtr();
     static void CreateRendererFailed();
     static std::shared_ptr<AudioRendererImpl> CreateAudioRendererNativeObject();
     static AudioRendererOrNull CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);

@@ -68,7 +68,8 @@ enum StreamUsage {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
     STREAM_USAGE_ANNOUNCEMENT,
     STREAM_USAGE_EMERGENCY,
-    STREAM_USAGE_MAX = STREAM_USAGE_EMERGENCY
+    STREAM_USAGE_INTERPHONE,
+    STREAM_USAGE_MAX = STREAM_USAGE_INTERPHONE
 };
 
 /**
@@ -108,6 +109,8 @@ enum AudioPipeType {
     PIPE_TYPE_OUT_HWDECODING = 16,
     PIPE_TYPE_IN_NORMAL_RAW_AI = 17,
     PIPE_TYPE_OUT_3DA_DIRECT = 18,
+    PIPE_TYPE_OUT_INTERPHONE = 19,
+    PIPE_TYPE_IN_INTERPHONE = 20,
 };
 
 enum AudioPreloadType {
@@ -137,6 +140,7 @@ struct AudioStreamParams {
     uint8_t micInFormat = 0;
     uint8_t micInChannels = 0;
     uint64_t micInChannelLayout = 0ULL;
+    bool isVoiceRecognitionMicInEcDegrade = false;
     uint8_t ultraFastFlag = 0;
 };
 
@@ -417,7 +421,8 @@ inline const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_88200,
     SAMPLE_RATE_96000,
     SAMPLE_RATE_176400,
-    SAMPLE_RATE_192000
+    SAMPLE_RATE_192000,
+    SAMPLE_RATE_384000
 };
 
 inline const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
@@ -446,7 +451,8 @@ inline const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_RINGTONE,
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
     STREAM_USAGE_ANNOUNCEMENT,
-    STREAM_USAGE_EMERGENCY
+    STREAM_USAGE_EMERGENCY,
+    STREAM_USAGE_INTERPHONE
 };
 
 enum SetLoudVolMode {
@@ -496,7 +502,13 @@ public:
     bool operator==(const AudioStreamInfo &info) const
     {
         return encoding == info.encoding && format == info.format && channels == info.channels &&
-            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
+            channelLayout == info.channelLayout && samplingRate == info.samplingRate &&
+            customSampleRate == info.customSampleRate;
+    }
+
+    uint32_t GetEffectiveSampleRate() const
+    {
+        return customSampleRate != 0 ? customSampleRate : static_cast<uint32_t>(samplingRate);
     }
 
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
@@ -523,6 +535,7 @@ struct AudioStreamData {
 struct AudioCallBackStreamInfo {
     uint64_t framePosition = 0;
     uint64_t hdiFramePosition = 0;
+    uint64_t rewindTime = 0;
     uint64_t framesWritten = 0;
     std::vector<uint64_t> timestamp = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency = 0;
@@ -534,6 +547,7 @@ struct AudioCallBackStreamInfo {
     bool forceData = false;
     uint64_t writePos_ = 0;
     bool isWriteFirst_ = false;
+    bool isLowLatency = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

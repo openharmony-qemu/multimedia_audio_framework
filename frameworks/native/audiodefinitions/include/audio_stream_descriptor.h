@@ -64,6 +64,12 @@ public:
     AudioStreamInfo micInStreamInfo_ = {};
     AudioStreamInfo ecStreamInfo_ = {};
     volatile bool isStandby_{false};
+    // Flag to indicate VoIP stream should be excluded from priority comparison during mute callback
+    std::atomic<bool> voipPriorityLowered_{false};
+    // Flag to indicate this stream is configured as VOIP no-privacy by focus/session behavior
+    std::atomic<bool> voipNoPrivacyFlag_{false};
+    // Flag to indicate this stream is currently muted by VOIP privacy concurrent-capture policy
+    std::atomic<bool> voipPrivacyMuted_{false};
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
@@ -98,6 +104,11 @@ public:
     uint32_t GetSessionId() const
     {
         return sessionId_;
+    }
+
+    SourceType GetSourceType() const
+    {
+        return capturerInfo_.sourceType;
     }
 
     bool IsRunning() const
@@ -155,7 +166,10 @@ public:
     bool IsUseMoveToConcedeType() const
     {
         return (audioFlag_ == AUDIO_OUTPUT_FLAG_LOWPOWER) ||
-            (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL);
+            (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL) ||
+            (audioFlag_ == AUDIO_OUTPUT_FLAG_FAST) ||
+            (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) ||
+            (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
     }
 
     bool IsMediaScene() const
@@ -301,6 +315,21 @@ public:
         return newDeviceDescs_[0];
     }
 
+    bool HasNewDeviceDescs()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        return !newDeviceDescs_.empty() && newDeviceDescs_.front() != nullptr;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetFirstNewDeviceDesc()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.empty() || newDeviceDescs_.front() == nullptr) {
+            return nullptr;
+        }
+        return newDeviceDescs_.front();
+    }
+
     bool IsA2dpOffloadStream()
     {
         std::lock_guard<std::mutex> lock(lock_);
@@ -340,6 +369,19 @@ public:
     {
         std::lock_guard<std::mutex> lock(lock_);
         oldDeviceDescs_ = devices;
+    }
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetNewDeviceDescs()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        return newDeviceDescs_;
+    }
+
+    void SwapAndUpdateNewDeviceDescs(std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDevices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        oldDeviceDescs_ = newDeviceDescs_;
+        newDeviceDescs_ = std::move(newDevices);
     }
 
     bool IsDeviceRemote()
@@ -412,6 +454,16 @@ public:
         return forcedNormalFlag_.exchange(false);
     }
 
+    void SetRouteSelectRejectedFlag(bool isRejected)
+    {
+        routeSelectRejectedFlag_ = isRejected;
+    }
+
+    bool GetRouteSelectRejectedFlag() const
+    {
+        return routeSelectRejectedFlag_.load();
+    }
+
     int32_t GetRealUid() const;
 
 private:
@@ -428,6 +480,7 @@ private:
     std::shared_mutex ultraFastFlagLock_;
     uint32_t ultraFastFlag_ = ULTRA_NONE;
     std::atomic<bool> forcedNormalFlag_ = false;
+    std::atomic<bool> routeSelectRejectedFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

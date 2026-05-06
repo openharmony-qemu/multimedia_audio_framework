@@ -82,8 +82,8 @@ private:
     std::shared_ptr<BluetoothAdapterWrapper> GetAdapter(const std::string &adapterName, bool tryCreate = false);
     int32_t SwitchAdapterDesc(BtAudioAdapterDescriptor *descs, const std::string &adapterName, uint32_t size);
     uint32_t GetPortId(const std::string &adapterName, BtAudioPortDirection portFlag);
-    uint32_t GetHdiRenderId(const std::string &adapterName);
-    uint32_t GetHdiCaptureId(const std::string &adapterName);
+    uint32_t GetHdiRenderId(const std::shared_ptr<BluetoothAdapterWrapper> &wrapper);
+    uint32_t GetHdiCaptureId(const std::shared_ptr<BluetoothAdapterWrapper> &wrapper);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 8;

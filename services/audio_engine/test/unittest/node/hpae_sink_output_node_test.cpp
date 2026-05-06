@@ -2692,6 +2692,112 @@ HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkPause_NullSink_001, TestSize.Level1)
     int32_t result = hpaeSinkOutputNode->RenderSinkPause();
     EXPECT_EQ(result, ERROR);
 }
+
+// FaultCode test constants
+static constexpr int32_t TEST_APP_UID = 1001;
+static constexpr int32_t TEST_APP_UID_SECOND = 1002;
+
+/**
+ * @tc.name  : FaultCode_RenderSinkInit_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit returns ERROR when audioRendererSink_ is nullptr,
+ *             covering PLAY_CREATE_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkInit_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    hpaeSinkOutputNode->audioRendererSink_ = nullptr;
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+
+    int32_t result = hpaeSinkOutputNode->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_RenderSinkInit_SinkInitFail
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit returns error when sink Init fails,
+ *             covering PLAY_CREATE_STREAM_FAIL fault code path.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkInit_SinkInitFail, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockSink, Init(_)).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+    int32_t result = hpaeSinkOutputNode->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : FaultCode_UpdateAppsUid_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test UpdateAppsUid returns ERROR when audioRendererSink_ is nullptr,
+ *             covering PLAY_SEND_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_UpdateAppsUid_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    hpaeSinkOutputNode->audioRendererSink_ = nullptr;
+    std::vector<int32_t> appsUid = {TEST_APP_UID, TEST_APP_UID_SECOND};
+
+    int32_t result = hpaeSinkOutputNode->UpdateAppsUid(appsUid);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_UpdateAppsUid_SinkNotInited
+ * @tc.type  : FUNC
+ * @tc.desc  : Test UpdateAppsUid returns ERR_ILLEGAL_STATE when sink is not initialized,
+ *             covering PLAY_START_STATE_ILLEGAL fault code path.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_UpdateAppsUid_SinkNotInited, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
+
+    std::vector<int32_t> appsUid = {TEST_APP_UID};
+    int32_t result = hpaeSinkOutputNode->UpdateAppsUid(appsUid);
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : FaultCode_RenderSinkDeInit_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkDeInit returns ERROR when audioRendererSink_ is nullptr.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkDeInit_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    hpaeSinkOutputNode->audioRendererSink_ = nullptr;
+
+    int32_t result = hpaeSinkOutputNode->RenderSinkDeInit();
+    EXPECT_EQ(result, ERROR);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

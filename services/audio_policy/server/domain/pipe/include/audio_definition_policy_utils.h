@@ -33,7 +33,6 @@ namespace AudioStandard {
 class AudioDefinitionPolicyUtils {
 public:
     static uint32_t PcmFormatToBytes(AudioSampleFormat format);
-    static AudioChannel ConvertLayoutToAudioChannel(AudioChannelLayout layout);
     static DeviceType GetDeviceTypeFromStr(const std::string &deviceTypeStr);
 private:
     AudioDefinitionPolicyUtils() {}

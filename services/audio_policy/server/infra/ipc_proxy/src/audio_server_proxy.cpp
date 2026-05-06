@@ -62,6 +62,16 @@ int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, BluetoothOff
     return result;
 }
 
+int32_t AudioServerProxy::SetAudioSceneForPipeProxy(uint32_t pipeId, AudioScene audioScene, bool scoExcludeFlag)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t result = gsp->SetAudioSceneForPipe(pipeId, audioScene, scoExcludeFlag);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return result;
+}
+
 float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -126,7 +136,7 @@ bool AudioServerProxy::GetEffectOffloadEnabledProxy()
 }
 
 int32_t AudioServerProxy::UpdateActiveDevicesRouteProxy(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState state, const std::string &deviceName, const std::string &networkId)
+    BluetoothOffloadState state, const uint32_t pipeId, const std::string &networkId)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
@@ -135,7 +145,7 @@ int32_t AudioServerProxy::UpdateActiveDevicesRouteProxy(std::vector<std::pair<De
     for (auto &device : activeDevices) {
         activeDevicesInt.push_back({static_cast<int32_t>(device.first), static_cast<int32_t>(device.second)});
     }
-    int32_t ret = gsp->UpdateActiveDevicesRoute(activeDevicesInt, state, deviceName, networkId);
+    int32_t ret = gsp->UpdateActiveDevicesRoute(activeDevicesInt, state, pipeId, networkId);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }
@@ -273,28 +283,6 @@ void AudioServerProxy::RestoreSessionProxy(const uint32_t &sessionID, RestoreInf
     restoreInfoIpc.restoreInfo = restoreInfo;
     gsp->RestoreSession(sessionID, restoreInfoIpc);
     IPCSkeleton::SetCallingIdentity(identity);
-}
-
-int32_t AudioServerProxy::GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray, deviceType);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-}
-
-int32_t AudioServerProxy::SetAudioEnhancePropertyProxy(const AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEnhanceProperty(propertyArray, deviceType);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
 }
 
 int32_t AudioServerProxy::SetMicrophoneMuteProxy(bool isMute)
@@ -462,7 +450,7 @@ void AudioServerProxy::SetParameterCallbackProxy(const sptr<IRemoteObject>& obje
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray,
     const DeviceType& deviceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -473,32 +461,13 @@ int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyA
     return ret;
 }
 
-int32_t AudioServerProxy::GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioServerProxy::GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray,
+    const DeviceType& deviceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEffectProperty(propertyArray, DeviceType::DEVICE_TYPE_NONE);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-}
-
-int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEffectProperty(propertyArray);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-}
-
-int32_t AudioServerProxy::GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEffectProperty(propertyArray);
+    int32_t ret = gsp->GetAudioEffectProperty(propertyArray, deviceType);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }

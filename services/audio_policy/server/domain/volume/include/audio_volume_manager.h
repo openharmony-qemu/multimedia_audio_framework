@@ -45,6 +45,9 @@
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "audio_loud_volume_manager.h"
 #endif
+#include "app_volume_manager.h"
+#include "safe_volume_manager.h"
+#include "ringer_mode_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -120,11 +123,14 @@ public:
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
     int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
+    int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage);
     int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute);
+    int32_t SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
     bool IsAppRingMuted(int32_t appUid);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+    int32_t SetSelfAppVolumeLevelWithCallback(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
     int32_t GetVolumeAdjustZoneId();
     int32_t DisableSafeMediaVolume();
@@ -143,11 +149,15 @@ public:
     int32_t SetRingerMode(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
     int32_t GetSystemVolumeDegreeInterface(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
+    int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
+        bool isUpdateUi, DeviceType deviceType);
     int32_t GetSystemVolumeLevelInterface(AudioStreamType streamType, int32_t zoneId = 0);
     void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
+    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
+        int32_t zoneId = 0, int32_t previousVolume = -1);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::shared_ptr<LoudVolumeManager> GetLoudVolumeManager();
 #endif
@@ -200,26 +210,24 @@ public:
     void HandleLegacyHighVolumeNotification(VolumeNotifyActionType actionType,
         AudioStreamType streamType = STREAM_DEFAULT, int32_t volumeLevel = 0);
     bool IsLegacyHighVolumeChecked();
-    void FlushSystemAppVolume();
     void InitAudioZoneVolume(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs);
     void TriggerAudioZoneVolumeSync(int32_t zoneId);
+    void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
+    bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
+    bool IsRingerModeValid(AudioRingerMode ringMode);
+    bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
+    void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
+
 private:
-    AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-        audioSceneManager_(AudioSceneManager::GetInstance()),
-        audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
-        audioOffloadStream_(AudioOffloadStream::GetInstance()) {}
-    ~AudioVolumeManager() {}
+    AudioVolumeManager();
+    ~AudioVolumeManager() = default;
 
     int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel,
         bool isNearlinkDevice = false, AudioStreamType streamType = STREAM_DEFAULT);
     int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice);
     void CreateCheckMusicActiveThread();
-    bool IsBlueTooth(const DeviceType &deviceType);
-    bool IsNearLink(const DeviceType &deviceType);
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
     void CheckNearlinkActiveMusicTime(int32_t safeVolume);
     void CheckWiredActiveMusicTime(int32_t safeVolume);
@@ -229,11 +237,7 @@ private:
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support, int32_t volume);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType = DEVICE_TYPE_NONE);
-    void PublishSafeVolumeNotification(int32_t notificationId);
-    void CancelSafeVolumeNotification(int32_t notificationId);
-    bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
-    bool DeviceIsSupportSafeVolume();
     void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
     void CheckLowerDeviceVolume(DeviceType deviceType);
     int32_t CheckRestoreDeviceVolume(DeviceType deviceType);
@@ -256,7 +260,6 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
         const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t zoneId);
-    void ScheduleSystemAppVolumePersist();
 
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -267,7 +270,7 @@ private:
     int32_t loudVolumeSupportMode_ = 0;
     std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
-    bool supportVibrator_ = false;
+    int32_t volumeStep_ = 1;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
     int64_t activeSafeTimeBt_ = 0;
@@ -302,9 +305,6 @@ private:
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::mutex volumeGroupsMutex_;
 
-    std::mutex ringerModeMuteMutex_;
-    std::atomic<bool> ringerModeMute_ = true;
-    std::condition_variable ringerModeMuteCondition_;
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
@@ -322,8 +322,7 @@ private:
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
     DeviceType curOutputDeviceType_ = DEVICE_TYPE_NONE;
 
-    std::atomic<bool> systemAppVolumeDirty_ {false};
-    std::atomic<bool> systemAppVolumeFlushScheduled_ {false};
+    AppVolumeManager appVolumeManager_;
 
     std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
         std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
@@ -336,6 +335,8 @@ private:
     AudioActiveDevice& audioActiveDevice_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioOffloadStream& audioOffloadStream_;
+    SafeVolumeManager safeVolumeManager_;
+    RingerModeManager ringerModeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::mutex forceControlVolumeTypeMutex_;
     bool needForceControlVolumeType_ = false;

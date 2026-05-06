@@ -637,6 +637,71 @@ HWTEST_F(HpaeSourceProcessClusterTest, TestHpaeSourceProcessCluster_018, TestSiz
     EXPECT_EQ(cluster->SetAppsEnhanceMuteState(true), SUCCESS);
     EXPECT_EQ(cluster->SetAppsEnhanceMuteState(false), SUCCESS);
 }
+
+// FaultCode test constants
+static constexpr uint64_t TEST_SCENE_KEY_CODE = 12345;
+
+/**
+ * @tc.name  : Test CaptureEffectCreate fault code
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_CaptureEffectCreate_001
+ * @tc.desc  : Test CaptureEffectCreate returns ERROR_ILLEGAL_STATE when captureEffectNode_ is null
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, FaultCode_CaptureEffectCreate_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto cluster = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+    cluster->captureEffectNode_ = nullptr;
+    CaptureEffectAttr attr;
+    EXPECT_EQ(cluster->CaptureEffectCreate(TEST_SCENE_KEY_CODE, attr), ERROR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test CaptureEffectRelease fault code
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_CaptureEffectRelease_001
+ * @tc.desc  : Test CaptureEffectRelease returns ERROR_ILLEGAL_STATE when captureEffectNode_ is null
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, FaultCode_CaptureEffectRelease_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto cluster = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+    cluster->captureEffectNode_ = nullptr;
+    EXPECT_EQ(cluster->CaptureEffectRelease(TEST_SCENE_KEY_CODE), ERROR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test GetPreOutNum fault code
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_GetPreOutNum_001
+ * @tc.desc  : Test GetPreOutNum returns 0 when captureEffectNode_ is null
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, FaultCode_GetPreOutNum_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto cluster = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+    cluster->captureEffectNode_ = nullptr;
+    EXPECT_EQ(cluster->GetPreOutNum(), 0);
+}
+
+/**
+ * @tc.name  : Test GetOutputPort fallback when fmtConverterNodeMap_ key not found
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_GetOutputPort_001
+ * @tc.desc  : Test GetOutputPort returns mixerNode_ port when fmtConverterNodeMap_ key not found
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, FaultCode_GetOutputPort_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    auto cluster = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+    HpaeNodeInfo differentNodeInfo = nodeInfo;
+    differentNodeInfo.samplingRate = SAMPLE_RATE_16000;
+    OutputPort<HpaePcmBuffer *> *port = cluster->GetOutputPort(differentNodeInfo, false);
+    EXPECT_NE(port, nullptr);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

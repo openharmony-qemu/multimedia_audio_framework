@@ -101,7 +101,6 @@ public:
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetRunningStreamUsageNoUltrasonic();
     SourceType GetRunningSourceTypeNoUltrasonic();
-    StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
     std::vector<std::pair<int32_t, AudioStreamType>> GetActiveStreams();
@@ -114,14 +113,12 @@ public:
     std::set<int32_t> GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType);
     int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
     bool HasRunningRendererStream();
-    bool HasRunningRecognitionCapturerStream();
-    bool HasRunningNormalCapturerStream(DeviceType type);
     bool HasRunningCapturerStreamByUid(int32_t uid = INVALID_UID);
     bool IsMediaPlaying();
     bool IsVoipStreamActive();
     bool IsStreamRunning(StreamUsage streamUsage);
     void UpdateAppVolume(int32_t appUid, int32_t volume);
-    void ReportExceptionForBackMute(uint32_t sessionId, uint32_t usage, int32_t uid);
+    void ReportExceptionForBackgroundMute(uint32_t sessionId, uint32_t usage, int32_t uid);
 
 private:
     std::mutex streamsInfoMutex_;

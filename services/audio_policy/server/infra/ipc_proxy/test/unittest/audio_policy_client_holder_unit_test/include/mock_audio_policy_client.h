@@ -51,10 +51,10 @@ public:
     MOCK_METHOD(ErrCode, OnMicStateUpdated,
                 (const MicStateChangeEvent& micStateChangeEvent), (override));
     MOCK_METHOD(ErrCode, OnPreferredOutputDeviceUpdated,
-                (const AudioRendererInfo& rendererInfo,
+                (const AudioRendererInfo& rendererInfo, int32_t uid,
                  const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc), (override));
     MOCK_METHOD(ErrCode, OnPreferredInputDeviceUpdated,
-                (const AudioCapturerInfo& capturerInfo,
+                (const AudioCapturerInfo& capturerInfo, int32_t uid,
                  const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc), (override));
     MOCK_METHOD(ErrCode, OnRendererStateChange,
                 (const std::vector<std::shared_ptr<AudioRendererChangeInfo>>& audioRendererChangeInfos), (override));
@@ -63,7 +63,8 @@ public:
     MOCK_METHOD(ErrCode, OnRendererDeviceChange,
                 (uint32_t sessionId,
                  const AudioDeviceDescriptor& deviceInfo,
-                 const AudioStreamDeviceChangeReasonExt& reason), (override));
+                 const AudioStreamDeviceChangeReasonExt& reason,
+                 const AudioDeviceDescriptor& preDeviceInfo), (override));
     MOCK_METHOD(ErrCode, OnRecreateRendererStreamEvent,
                 (uint32_t sessionId,
                  int32_t streamFlag,
@@ -117,6 +118,8 @@ public:
         (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled, bool headTrackingEnabled),
         (override));
     MOCK_METHOD(ErrCode, OnSpatialAudioSourceTypeChange, (int32_t mode), (override));
+    MOCK_METHOD(ErrCode, OnAudioRouteSelectRefined,
+        (const std::shared_ptr<AudioRouteSelectInfo>& routeSelectInfo, int32_t& selectResult), (override));
 };
 
 } // namespace AudioStandard

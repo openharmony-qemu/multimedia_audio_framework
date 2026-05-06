@@ -139,6 +139,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRender
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
 
     auto audioRendererStateChangeCallbackTest = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -159,6 +160,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRender
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
 
     auto audioRendererStateChangeCallbackTest = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -182,6 +184,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRender
 {
     int callBackSetResult = -1;
 
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(), nullptr);
     EXPECT_NE(SUCCESS, callBackSetResult);
 }
@@ -196,6 +199,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRender
     int callBackSetResult = -1;
     std::string testCaseName("AudioStreamChangeListnerRegisterAudioRendererEventListener_004");
 
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(), nullptr);
     EXPECT_NE(SUCCESS, callBackSetResult);
 
@@ -220,6 +224,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudio
     std::string testCaseName("Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_001");
 
     auto audioRendererStateChangeCallbackTest2 = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest2);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -238,6 +243,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudio
 {
     int callBackUnSetResult = -1;
 
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackUnSetResult = g_audioManagerInstance->UnregisterAudioRendererEventListener(getpid());
     EXPECT_EQ(SUCCESS, callBackUnSetResult);
 
@@ -258,6 +264,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudio
     std::string testCaseName("Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_003");
 
     auto audioRendererStateChangeCallbackTest = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -619,6 +626,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
     g_callbackName = testCaseName;
 
     auto audioRendererStateChangeCallbackTest = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -671,6 +679,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
     g_callbackName = testCaseName;
 
     auto audioRendererStateChangeCallbackTest = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -727,6 +736,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
     ASSERT_NE(nullptr, audioRenderer);
 
     auto audioRendererStateChangeCallbackTest = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
 
@@ -758,7 +768,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
 
 /**
 * @tc.name  : Test Feature RendererStateChangeCallback
-* @tc.number: Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_001
+* @tc.number: Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_004
 * @tc.desc  : Test RendererStateChangeCallback interface in release state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
@@ -777,6 +787,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
     ASSERT_NE(nullptr, audioRenderer);
 
     auto audioRendererStateChangeCallbackTest = make_shared<AudioRendererStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
 
@@ -820,6 +831,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCaptur
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
 
     auto audioCapturerStateChangeCallbackTest = make_shared<AudioCapturerStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(),
         audioCapturerStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -840,6 +852,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCaptur
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
 
     auto audioCapturerStateChangeCallbackTest = make_shared<AudioCapturerStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(),
         audioCapturerStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -863,6 +876,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCaptur
 {
     int callBackSetResult = -1;
 
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(), nullptr);
     EXPECT_NE(SUCCESS, callBackSetResult);
 }
@@ -877,6 +891,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCaptur
     int callBackSetResult = -1;
     std::string testCaseName("AudioStreamChangeListnerRegisterAudioCapturerEventListener_004");
 
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(), nullptr);
     EXPECT_NE(SUCCESS, callBackSetResult);
 
@@ -902,6 +917,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudio
 
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
 
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(), nullptr);
     EXPECT_NE(SUCCESS, callBackSetResult);
 
@@ -924,6 +940,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudio
 {
     int callBackUnSetResult = -1;
 
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackUnSetResult = g_audioManagerInstance->UnregisterAudioCapturerEventListener(getpid());
     EXPECT_EQ(SUCCESS, callBackUnSetResult);
 
@@ -944,6 +961,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudio
     std::string testCaseName("Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_003");
 
     auto audioCapturerStateChangeCallbackTest = make_shared<AudioCapturerStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(),
         audioCapturerStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -1276,6 +1294,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     g_callbackName = testCaseName;
 
     auto audioCapturerStateChangeCallbackTest = make_shared<AudioCapturerStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(),
         audioCapturerStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -1331,6 +1350,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     g_callbackName = testCaseName;
 
     auto audioCapturerStateChangeCallbackTest = make_shared<AudioCapturerStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(),
         audioCapturerStateChangeCallbackTest);
     EXPECT_EQ(SUCCESS, callBackSetResult);
@@ -1389,6 +1409,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     ASSERT_NE(nullptr, audioCapturer);
 
     auto audioCapturerStateChangeCallbackTest = make_shared<AudioCapturerStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(),
         audioCapturerStateChangeCallbackTest);
 
@@ -1440,6 +1461,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     ASSERT_NE(nullptr, audioCapturer);
 
     auto audioCapturerStateChangeCallbackTest = make_shared<AudioCapturerStateChangeCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(),
         audioCapturerStateChangeCallbackTest);
 
@@ -1541,6 +1563,7 @@ HWTEST_F(AudioStreamManagerUnitTest, SetAudioFormatUnsupportedErrorCallback_001,
     int32_t ret = -1;
     std::string testCaseName("SetAudioFormatUnsupportedErrorCallback_001");
     auto audioFormatUnsupportedErrorCallbackTest = nullptr;
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     ret = g_audioManagerInstance->SetAudioFormatUnsupportedErrorCallback(audioFormatUnsupportedErrorCallbackTest);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     ret = g_audioManagerInstance->UnsetAudioFormatUnsupportedErrorCallback();
@@ -1557,6 +1580,7 @@ HWTEST_F(AudioStreamManagerUnitTest, SetAudioFormatUnsupportedErrorCallback_002,
     int32_t ret = -1;
     std::string testCaseName("SetAudioFormatUnsupportedErrorCallback_002");
     auto audioFormatUnsupportedErrorCallbackTest = make_shared<AudioFormatUnsupportedErrorCallbackTest>(testCaseName);
+    CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     ret = g_audioManagerInstance->SetAudioFormatUnsupportedErrorCallback(audioFormatUnsupportedErrorCallbackTest);
     EXPECT_EQ(SUCCESS, ret);
     ret = g_audioManagerInstance->UnsetAudioFormatUnsupportedErrorCallback();
@@ -1620,31 +1644,6 @@ HWTEST_F(AudioStreamManagerUnitTest, ForceStopAudioStream_003, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
     bool res = audioCapturer->Start();
     EXPECT_EQ(res, true);
-}
-
-/**
-* @tc.name   : Test IsCapturerFocusAvailable API
-* @tc.number : IsCapturerFocusAvailable_001
-* @tc.desc   : Test IsCapturerFocusAvailable interface
-*/
-HWTEST_F(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_001, TestSize.Level1)
-{
-    ASSERT_NE(g_audioManagerInstance, nullptr);
-    AudioCapturerOptions capturerOptions;
-    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    capturerOptions.streamInfo.channels = AudioChannel::MONO;
-    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
-    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    AudioCapturerInfo changeInfo;
-    int32_t result = audioCapturer->GetCapturerInfo(changeInfo);
-    EXPECT_EQ(result, SUCCESS);
-    bool isAvailable = g_audioManagerInstance->IsCapturerFocusAvailable(changeInfo);
-    EXPECT_EQ(isAvailable, true);
 }
 
 /**

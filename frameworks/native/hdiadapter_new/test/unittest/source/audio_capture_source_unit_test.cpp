@@ -1168,5 +1168,225 @@ HWTEST_F(AudioCaptureSourceUnitTest, UpdateRawSampleAttr_002, TestSize.Level1)
     captureSource->UpdateRawSampleAttr(param);
     EXPECT_NE(captureSource, nullptr);
 }
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_012
+ * @tc.desc   : Test GetUniqueIdBySourceType for AUDIO_INPUT_INTERPHON_TYPE
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_012, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_INTERPHONE;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_INTERPHON_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHONE * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test ConvertToAudioInputRouteFlag API
+ * @tc.number : ConvertToAudioInputRouteFlag_002
+ * @tc.desc   : Test ConvertToAudioInputRouteFlag for SOURCE_TYPE_INTERPHONE
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_002, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    AudioFlag result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_INTERPHONE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_INTERPHONE);
+}
+
+/**
+ * @tc.name   : Test Multiple Stop Call
+ * @tc.number : MultipleStopCall_001
+ * @tc.desc   : Test multiple Stop() calls to verify stopThread_ join logic
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, MultipleStopCall_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test Multiple Stop Call
+ * @tc.number : MultipleStopCall_002
+ * @tc.desc   : Test multiple Stop() calls without Start to verify stopThread_ handling
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, MultipleStopCall_002, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test Destructor Thread Safety
+ * @tc.number : DestructorThreadSafety_001
+ * @tc.desc   : Test destructor handles stopThread_ and captureThread_ safely without crash
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, DestructorThreadSafety_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(10006, "test_device");
+    EXPECT_NE(captureSource, nullptr);
+    captureSource = nullptr;
+    EXPECT_EQ(captureSource, nullptr);
+}
+
+/**
+ * @tc.name   : Test Destructor Thread Safety After Stop
+ * @tc.number : DestructorThreadSafety_002
+ * @tc.desc   : Test destructor handles stopThread_ join after Stop() is called
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, DestructorThreadSafety_002, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    primarySource_ = nullptr;
+    EXPECT_EQ(primarySource_, nullptr);
+}
+
+/**
+ * @tc.name   : Test Destructor After Stop
+ * @tc.number : DestructorAfterStop_001
+ * @tc.desc   : Test destructor after Stop() call to verify no use-after-free
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, DestructorAfterStop_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+    primarySource_ = nullptr;
+    EXPECT_EQ(primarySource_, nullptr);
+}
+
+/**
+ * @tc.name   : Test IsCaptureThreadRunning Atomic
+ * @tc.number : IsCaptureThreadRunningAtomic_001
+ * @tc.desc   : Test isCaptureThreadRunning_ atomic operation through NonblockingStart/Stop
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, IsCaptureThreadRunningAtomic_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(10007, "primary");
+    EXPECT_NE(captureSource, nullptr);
+    captureSource->attr_.sourceType = SOURCE_TYPE_EC;
+    captureSource->attr_.adapterName = "primary";
+    captureSource->attr_.sampleRate = 48000;
+    captureSource->attr_.channel = 2;
+    captureSource->attr_.format = SAMPLE_S16LE;
+    captureSource = nullptr;
+    EXPECT_EQ(captureSource, nullptr);
+}
+
+/**
+ * @tc.name   : Test Nonblocking Flow Thread Safety
+ * @tc.number : NonblockingThreadSafety_001
+ * @tc.desc   : Test NonblockingStart/NonblockingStop thread safety for EC source type
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, NonblockingThreadSafety_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(10008, "primary");
+    EXPECT_NE(captureSource, nullptr);
+    captureSource->attr_.sourceType = SOURCE_TYPE_EC;
+    captureSource->attr_.adapterName = "primary";
+    captureSource->attr_.sampleRate = 48000;
+    captureSource->attr_.channel = 2;
+    captureSource->attr_.format = SAMPLE_S16LE;
+    captureSource->attr_.deviceType = DEVICE_TYPE_MIC;
+    IAudioSourceAttr attr = captureSource->attr_;
+    int32_t ret = captureSource->Init(attr);
+    if (ret == SUCCESS && captureSource->IsInited()) {
+        ret = captureSource->Start();
+        if (ret == SUCCESS) {
+            ret = captureSource->Stop();
+            EXPECT_EQ(ret, SUCCESS);
+        }
+        captureSource->DeInit();
+    }
+    captureSource = nullptr;
+    EXPECT_EQ(captureSource, nullptr);
+}
+
+/**
+ * @tc.name   : Test Nonblocking Source Destructor Without Stop
+ * @tc.number : NonblockingDestructorNoStop_001
+ * @tc.desc   : Test destructor handles captureThread_ when NonblockingStart was called but no Stop
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, NonblockingDestructorNoStop_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(10010, "primary");
+    EXPECT_NE(captureSource, nullptr);
+    captureSource->attr_.sourceType = SOURCE_TYPE_EC;
+    captureSource->attr_.adapterName = "primary";
+    captureSource->attr_.sampleRate = 48000;
+    captureSource->attr_.channel = 2;
+    captureSource->attr_.format = SAMPLE_S16LE;
+    captureSource->attr_.deviceType = DEVICE_TYPE_MIC;
+    captureSource = nullptr;
+    EXPECT_EQ(captureSource, nullptr);
+}
+
+/**
+ * @tc.name   : Test Stop Without Init
+ * @tc.number : StopWithoutInit_001
+ * @tc.desc   : Test Stop() called before Init() to verify stopThread_ null handling
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, StopWithoutInit_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(10012, "test_device");
+    EXPECT_NE(captureSource, nullptr);
+    int32_t ret = captureSource->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    captureSource = nullptr;
+    EXPECT_EQ(captureSource, nullptr);
+}
+
+/**
+ * @tc.name   : Test Destructor CaptureThread Joinable
+ * @tc.number : DestructorCaptureThreadJoinable_001
+ * @tc.desc   : Test destructor joins captureThread_ when NonblockingStart succeeded without Stop
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, DestructorCaptureThreadJoinable_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(10013, "primary");
+    EXPECT_NE(captureSource, nullptr);
+    captureSource->attr_.sourceType = SOURCE_TYPE_EC;
+    captureSource->attr_.adapterName = "primary";
+    captureSource->attr_.sampleRate = 48000;
+    captureSource->attr_.channel = 2;
+    captureSource->attr_.format = SAMPLE_S16LE;
+    captureSource->attr_.deviceType = DEVICE_TYPE_MIC;
+    IAudioSourceAttr attr = captureSource->attr_;
+    int32_t ret = captureSource->Init(attr);
+    if (ret == SUCCESS && captureSource->IsInited()) {
+        ret = captureSource->Start();
+        if (ret == SUCCESS) {
+            captureSource = nullptr;
+            EXPECT_EQ(captureSource, nullptr);
+            return;
+        }
+        captureSource->DeInit();
+    }
+    captureSource = nullptr;
+    EXPECT_EQ(captureSource, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

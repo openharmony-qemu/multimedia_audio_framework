@@ -18,6 +18,7 @@
 #define HDI_INVALID_ID 0xFFFFFFFF
 
 #include <memory>
+#include <new>
 #include "parcel.h"
 
 #include "audio_module_info.h"
@@ -54,6 +55,8 @@ public:
     AudioPipeAction pipeAction_ = PIPE_ACTION_DEFAULT;
 
     bool softLinkFlag_ = false;
+
+    bool isRunning_ = false;
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 
@@ -106,6 +109,11 @@ public:
         return (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
     }
 
+    bool IsRouteOffload() const
+    {
+        return (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
     bool IsRouteDirect() const
     {
         return routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT;
@@ -119,6 +127,11 @@ public:
     bool IsSameAdapter(const std::string &targetAdapterName) const
     {
         return adapterName_ == targetAdapterName;
+    }
+
+    bool IsSameName(const std::string &targetPipeName) const
+    {
+        return name_ == targetPipeName;
     }
 
     bool IsSameNetworkId(const std::string &targetNetworkId) const
@@ -157,6 +170,8 @@ public:
 
     bool HasStream();
 
+    bool IsPipeMatch(const std::string adapterName, const uint32_t targetFlag);
+
 private:
     void DumpCommonAttrs(std::string &dumpString);
 
@@ -166,6 +181,7 @@ private:
 
     bool ultraFastPipe_ = false;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // PIPE_INFO_H

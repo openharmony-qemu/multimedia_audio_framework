@@ -231,7 +231,6 @@ void ReloadA2dpOffloadOnDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
     std::string macAddress = "00:11:22:33:44:55";
     std::string deviceName = "usb_headset";
     AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t classTypeCount = static_cast<int32_t>(ClassType::TYPE_INVALID) + 1;
     ClassType classType = static_cast<ClassType>(GetData<uint8_t>() % classTypeCount);
     AudioModuleInfo moduleInfo = {"className", "TEST", "TEST"};
@@ -340,16 +339,6 @@ void UpdateDeviceListFuzzTest(FuzzedDataProvider& fdp)
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     updatedDesc.deviceRole_ = DeviceRoleVec[roleCount];
     audioDeviceStatus.UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
-    OnStop();
-}
-
-void CheckAndActiveHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioDeviceDescriptor desc;
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    desc.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.CheckAndActiveHfpDevice(desc);
     OnStop();
 }
 
@@ -599,7 +588,6 @@ void Test(FuzzedDataProvider& fdp)
     HandleDistributedDeviceUpdateFuzzTest,
     UpdateDeviceListFuzzTest,
     OnPreferredStateUpdatedFuzzTest,
-    CheckAndActiveHfpDeviceFuzzTest,
     TriggerAvailableDeviceChangedCallbackFuzzTest,
     TriggerDeviceChangedCallbackFuzzTest,
     HandleDpDeviceFuzzTest,

@@ -91,7 +91,8 @@ public:
         AudioEqualizerFrequencyBandGains &frequencyBandGains) override;
     int32_t GetVoiceBeautifierType(uint32_t nodeId,
         VoiceBeautifierType &voiceBeautifierType) override;
-    int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool *isSupported) override;
+    int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported) override;
+    int32_t PrintInfo(uint32_t pipelineId, int32_t fd) override;
 
     // callback Member functions
     void OnCreatePipeline(int32_t result, uint32_t pipelineId) override;
@@ -111,6 +112,7 @@ public:
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnGetOptions(int32_t result) override;
     void OnSetOptions(int32_t result) override;
+    void OnPrintInfo(int32_t result) override;
 
 private:
     void WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType);
@@ -162,6 +164,8 @@ private:
     int32_t getOptionsResult_ = 0;
     bool isFinishSetOptions_ = false;
     int32_t setOptionsResult_ = 0;
+    bool isFinishPrintInfo_ = false;
+    int32_t printInfoResult_ = 0;
     std::unordered_map<uint32_t, bool> isFinishRenderFrameMap_;
     std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
     std::unordered_map<uint32_t, bool> isFinishMultiRenderFrameMap_;
@@ -182,7 +186,7 @@ void ParseValue(const std::string valueStr, float &speed, float &pitch);
 
 void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option);
 
-void ParseValue(const std::string &valueStr, int32_t *result);
+void ParseValue(const std::string &valueStr, std::vector<int32_t> &result);
 
 int32_t StringToInt32(std::string &str);
 

@@ -107,6 +107,9 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_REMOTE_OFFLOAD:
             sink = CreateRemoteOffloadRenderSink(info);
             break;
+        case HDI_ID_TYPE_INTERPHONE:
+            sink = CreateRemoteOffloadRenderSink(info);
+            break;
 #endif
         default:
             AUDIO_ERR_LOG("invalid type");
@@ -183,11 +186,20 @@ std::shared_ptr<IDeviceManager> HdiAdapterFactory::CreateDeviceManager(uint32_t 
     return deviceManager;
 }
 
+bool HdiAdapterFactory::IsMultiStreamInfo(const std::string &info)
+{
+    return info == "Typec_Speaker" || info == "Wired_Speaker" ||
+           info == "Hdmi_Speaker" || info == "Wireless_Speaker";
+}
+
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreatePrimaryRenderSink(const uint32_t renderId,
     const std::string &info)
 {
     if (info == HDI_ID_INFO_DIRECT || info == HDI_ID_INFO_VOIP || info == HDI_ID_INFO_DP ||
         info == HDI_ID_INFO_USB) {
+        return std::make_shared<AudioRenderSink>(renderId, info);
+    }
+    if (IsMultiStreamInfo(info)) {
         return std::make_shared<AudioRenderSink>(renderId, info);
     }
     return std::make_shared<AudioRenderSink>(renderId);

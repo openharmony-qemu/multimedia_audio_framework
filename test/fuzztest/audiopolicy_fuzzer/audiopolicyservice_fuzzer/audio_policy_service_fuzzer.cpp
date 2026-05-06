@@ -246,8 +246,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     sptr<AudioRendererFilter> fuzzAudioRendererFilter = new AudioRendererFilter();
 
     // set offload support on for covery
-    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.HandleRecoveryPreferredDevices(fuzzInt32One,
-        fuzzInt32Two, fuzzInt32Three);
     GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(fuzzInt32One, fuzzBool);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.DeviceParamsCheck(fuzzDeviceRole,
@@ -317,7 +315,7 @@ void AudioPolicyServiceSubscribeSafeVolumeEventFuzztest(const uint8_t *rawData, 
         return;
     }
 
-    SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
+    OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
 }
 
 void AudioPolicyServiceSetAppVolumeLevelFuzztest(const uint8_t *rawData, size_t size)
@@ -403,26 +401,6 @@ void AudioPolicyServiceGetDevicesFuzztest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
 }
 
-void AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioCapturerInfo captureInfo;
-    std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo, networkId);
-}
-
-void AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioRendererInfo rendererInfo;
-    std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
-}
-
 void AudioPolicyServiceGetOutputDeviceFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -439,14 +417,6 @@ void AudioPolicyServiceGetInputDeviceFuzztest(const uint8_t *rawData, size_t siz
     }
     sptr<AudioCapturerFilter> audioCapturerFilter(new AudioCapturerFilter());
     GetServerPtr()->audioPolicyService_.GetInputDevice(audioCapturerFilter);
-}
-
-void AudioPolicyServiceGetActiveOutputDeviceDescriptorFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    GetServerPtr()->audioPolicyService_.GetActiveOutputDeviceDescriptor();
 }
 
 void AudioPolicyServiceOnUpdateAnahsSupportFuzztest(const uint8_t *rawData, size_t size)
@@ -781,7 +751,7 @@ void AudioPolicyServiceGetSupportedAudioEffectPropertyFuzztest(const uint8_t *ra
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
 }
 
@@ -789,7 +759,7 @@ void AudioPolicyServiceGetSupportedEffectPropertyFuzztest(const uint8_t *rawData
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetSupportedEffectProperty(propertyArray);
 }
 
@@ -797,7 +767,7 @@ void AudioPolicyServiceGetSupportedEnhancePropertyFuzztest(const uint8_t *rawDat
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetSupportedEnhanceProperty(propertyArray);
 }
 
@@ -805,7 +775,7 @@ void AudioPolicyServiceCheckSupportedAudioEffectPropertyFuzztest(const uint8_t *
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     EffectFlag flag = CAPTURE_EFFECT_FLAG;
     GetServerPtr()->audioPolicyService_.CheckSupportedAudioEffectProperty(propertyArray, flag);
 }
@@ -814,7 +784,7 @@ void AudioPolicyServiceSetAudioEffectPropertyFuzztest(const uint8_t *rawData, si
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.SetAudioEffectProperty(propertyArray);
 }
 
@@ -822,36 +792,16 @@ void AudioPolicyServiceGetAudioEnhancePropertyFuzztest(const uint8_t *rawData, s
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArrayv3;
-    GetServerPtr()->audioPolicyService_.GetAudioEnhanceProperty(propertyArrayv3);
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-}
-
-void AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    AudioEnhancePropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
 }
 
 void AudioPolicyServiceGetAudioEffectPropertyFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
     }
-    AudioEffectPropertyArrayV3 propertyArrayv3;
-    GetServerPtr()->audioPolicyService_.GetAudioEffectProperty(propertyArrayv3);
     AudioEffectPropertyArray propertyArray;
     GetServerPtr()->audioPolicyService_.GetAudioEffectProperty(propertyArray);
-}
-
-void AudioPolicyServiceSetAudioEnhancePropertyFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    AudioEnhancePropertyArray propertyArray;
-    GetServerPtr()->audioPolicyService_.SetAudioEnhanceProperty(propertyArray);
 }
 
 void AudioPolicyServiceGetA2dpOffloadFlagFuzztest(const uint8_t *rawData, size_t size)
@@ -893,16 +843,6 @@ void AudioPolicyServiceIsDevicePlaybackSupportedFuzztest(const uint8_t *rawData,
     AudioProcessConfig config;
     AudioDeviceDescriptor deviceInfo;
     GetServerPtr()->audioPolicyService_.IsDevicePlaybackSupported(config, deviceInfo);
-}
-
-void GetPreferredInputDeviceDescInnerFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioCapturerInfo captureInfo;
-    std::string networkId = "";
-    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
 }
 
 void AudioPolicyServiceOnPrivacyDeviceSelectedFuzztest(const uint8_t *rawData, size_t size)
@@ -994,11 +934,8 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceNotifyWakeUpCapturerRemovedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceIsAbsVolumeSupportedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetDevicesFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetOutputDeviceFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetInputDeviceFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetActiveOutputDeviceDescriptorFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOnUpdateAnahsSupportFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOnPnpDeviceStatusUpdatedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOnDeviceStatusUpdatedFuzztest,
@@ -1039,14 +976,11 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceSetAudioEffectPropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetAudioEnhancePropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetAudioEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetAudioEnhancePropertyFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetA2dpOffloadFlagFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceSetSleAudioOperationCallbackFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerRemovedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceUpdateSpatializationSupportedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceIsDevicePlaybackSupportedFuzztest,
-    OHOS::AudioStandard::GetPreferredInputDeviceDescInnerFuzzTest,
     OHOS::AudioStandard::AudioPolicyServiceOnPrivacyDeviceSelectedFuzztest,
     OHOS::AudioStandard::IsSupportInnerCaptureOffloadFuzzTest,
     OHOS::AudioStandard::LoadModernInnerCapSinkFuzzTest,

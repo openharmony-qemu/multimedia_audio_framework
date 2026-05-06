@@ -40,11 +40,7 @@ public:
     
     virtual void OnSetSourceOutputMuteCb(int32_t result) = 0;
 
-    virtual void OnGetAudioEffectPropertyCbV3(int32_t result) = 0;
-
     virtual void OnGetAudioEffectPropertyCb(int32_t result) = 0;
-
-    virtual void OnGetAudioEnhancePropertyCbV3(int32_t result) = 0;
 
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) = 0;
 

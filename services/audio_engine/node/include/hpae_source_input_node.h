@@ -64,8 +64,8 @@ public:
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId() const;
     void SetInjectState(bool isInjecting);
-    void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID, bool mute = false);
+    void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, SourceType source,
+        CapturerState state, uint32_t appUid = INVALID_UID, bool mute = false, bool mixWithWakeUp = false);
 
 private:
     int32_t GetCapturerSourceAdapter(

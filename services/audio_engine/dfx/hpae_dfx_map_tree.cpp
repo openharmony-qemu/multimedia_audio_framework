@@ -298,9 +298,10 @@ void HpaeDfxMapTree::PrintSubTree(uint32_t nodeId, const std::string &prefix, bo
 void HpaeDfxMapTree::PrintNodeInfo(std::string &outStr, const HpaeDfxNodeInfo &nodeInfo,
     size_t parentCount)
 {
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
     outStr = outStr + nodeInfo.nodeName + ": " + "sessionId[" + std::to_string(nodeInfo.sessionId) + "],";
     outStr = outStr + "nodeId[" + std::to_string(nodeInfo.nodeId) + "],";
-    outStr = outStr + "rate[" + std::to_string(nodeInfo.samplingRate) + "],";
+    outStr = outStr + "rate[" + std::to_string(effectiveRate) + "],";
     outStr = outStr + "ch[" + std::to_string(nodeInfo.channels) + "],";
     outStr = outStr + "bw[" + std::to_string(nodeInfo.format) + "],";
     outStr = outStr + "len[" + std::to_string(nodeInfo.frameLen) + "],";

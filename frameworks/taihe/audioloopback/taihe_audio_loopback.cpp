@@ -28,9 +28,22 @@
 namespace ANI::Audio {
 static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
 static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+
+static AudioDevicePair ConvertNativeDevicePair(const OHOS::AudioStandard::AudioDevicePair &nativePair)
+{
+    AudioDevicePair pair {
+        .inputDevice = nativePair.first == nullptr ? TaiheParamUtils::MakeEmptyDeviceDescriptor() :
+            TaiheParamUtils::SetDeviceDescriptor(*nativePair.first),
+        .outputDevice = nativePair.second == nullptr ? TaiheParamUtils::MakeEmptyDeviceDescriptor() :
+            TaiheParamUtils::SetDeviceDescriptor(*nativePair.second),
+    };
+    return pair;
+}
+
 std::mutex AudioLoopbackImpl::createMutex_;
 int32_t AudioLoopbackImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
 OHOS::AudioStandard::AudioLoopbackMode AudioLoopbackImpl::sLoopbackMode_ = OHOS::AudioStandard::LOOPBACK_HARDWARE;
+OHOS::AudioStandard::LoopbackType AudioLoopbackImpl::sLoopbackType_ = OHOS::AudioStandard::LOOPBACK_TYPE_NORMAL;
 
 AudioLoopbackImpl::AudioLoopbackImpl() : loopback_(nullptr) {}
 
@@ -82,6 +95,55 @@ AudioLpback AudioLoopbackImpl::CreateAudioLoopbackWrapper(OHOS::AudioStandard::A
     return AudioLpback::make_type_audioLpback(make_holder<AudioLoopbackImpl, AudioLoopback>(impl));
 }
 
+AudioLpback AudioLoopbackImpl::CreateGlobalAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode mode,
+    OHOS::AudioStandard::LoopbackType type)
+{
+    std::lock_guard<std::mutex> lock(createMutex_);
+    AudioLpback result = AudioLpback::make_type_null();
+    sLoopbackMode_ = mode;
+    sLoopbackType_ = type;
+    std::shared_ptr<AudioLoopbackImpl> impl = std::make_shared<AudioLoopbackImpl>();
+    if (impl == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "No memory");
+        return result;
+    }
+    auto streamManager = OHOS::AudioStandard::AudioStreamManager::GetInstance();
+    if (streamManager != nullptr && streamManager->IsAudioLoopbackSupported(mode)) {
+        if (type == OHOS::AudioStandard::LOOPBACK_TYPE_NORMAL) {
+            impl->loopback_ = OHOS::AudioStandard::AudioLoopback::CreateAudioLoopback(mode);
+        } else {
+            int32_t createResult = OHOS::AudioStandard::SUCCESS;
+            impl->loopback_ = OHOS::AudioStandard::AudioLoopback::CreateAudioLoopback(mode, type, createResult);
+            if (createResult != OHOS::AudioStandard::SUCCESS) {
+                AUDIO_ERR_LOG("AudioLoopback Create failed, result %{public}d", createResult);
+                AudioLoopbackImpl::isConstructSuccess_ = createResult;
+            }
+        }
+        if (impl->loopback_ == nullptr) {
+            AUDIO_ERR_LOG("AudioLoopback Create failed");
+            AudioLoopbackImpl::isConstructSuccess_ = TAIHE_ERR_NO_PERMISSION;
+        }
+    } else {
+        AUDIO_ERR_LOG("AudioLoopback not supported");
+        AudioLoopbackImpl::isConstructSuccess_ = TAIHE_ERR_UNSUPPORTED;
+    }
+
+    if (impl->loopback_ != nullptr && impl->callbackTaihe_ == nullptr) {
+        impl->callbackTaihe_ = std::make_shared<TaiheAudioLoopbackCallback>();
+        if (impl->callbackTaihe_ == nullptr) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "No memory");
+            return result;
+        }
+        int32_t ret = impl->loopback_->SetAudioLoopbackCallback(impl->callbackTaihe_);
+        if (ret) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Construct SetLoopbackCallback failed");
+            return result;
+        }
+    }
+    sLoopbackType_ = OHOS::AudioStandard::LOOPBACK_TYPE_NORMAL;
+    return AudioLpback::make_type_audioLpback(make_holder<AudioLoopbackImpl, AudioLoopback>(impl));
+}
+
 AudioLoopbackStatus AudioLoopbackImpl::GetStatusSync()
 {
     if (loopback_ == nullptr) {
@@ -108,6 +170,48 @@ void AudioLoopbackImpl::SetVolumeSync(double volume)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return;
     }
+}
+
+taihe::array<AudioDevicePair> AudioLoopbackImpl::GetSupportedDevicePairs()
+{
+    AUDIO_INFO_LOG("GetSupportedDevicePairs called");
+    std::vector<AudioDevicePair> result;
+    CHECK_AND_RETURN_RET_LOG(loopback_ != nullptr, array<AudioDevicePair>(result), "loopback_ is nullptr");
+
+    std::vector<OHOS::AudioStandard::AudioDevicePair> nativePairs = loopback_->GetSupportedDevicePairs();
+    result.reserve(nativePairs.size());
+    for (const auto &nativePair : nativePairs) {
+        if (nativePair.first == nullptr || nativePair.second == nullptr) {
+            AUDIO_WARNING_LOG("getSupportedDevicePairs skip invalid pair");
+            continue;
+        }
+        result.emplace_back(ConvertNativeDevicePair(nativePair));
+    }
+    return array<AudioDevicePair>(result);
+}
+
+AudioDevicePairOrNull AudioLoopbackImpl::GetPreferredDevicePair()
+{
+    AUDIO_INFO_LOG("GetPreferredDevicePair called");
+    OHOS::AudioStandard::AudioDevicePair nativePair;
+    if (loopback_ == nullptr) {
+        AUDIO_WARNING_LOG("loopback_ is nullptr");
+        return AudioDevicePairOrNull::make_type_null();
+    }
+    nativePair = loopback_->GetPreferredDevicePair();
+    if (nativePair.first == nullptr || nativePair.second == nullptr) {
+        return AudioDevicePairOrNull::make_type_null();
+    }
+    return AudioDevicePairOrNull::make_type_audioDevicePair(ConvertNativeDevicePair(nativePair));
+}
+
+double AudioLoopbackImpl::GetVolume()
+{
+    if (loopback_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
+        return 0.0;
+    }
+    return static_cast<double>(loopback_->GetVolume());
 }
 
 bool AudioLoopbackImpl::EnableSync(bool enable)
@@ -259,6 +363,27 @@ AudioLpback CreateAudioLoopbackSync(AudioLoopbackMode mode)
     }
     return output;
 }
+
+AudioLpback CreateGlobalAudioLoopbackSync(AudioLoopbackMode mode, bool isController)
+{
+    AudioLpback result = AudioLpback::make_type_null();
+    int32_t audioLoopbackMode = mode.get_value();
+    if ((!TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackMode(audioLoopbackMode))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "loopback mode invaild");
+        return result;
+    }
+    OHOS::AudioStandard::AudioLoopbackMode loopbackMode =
+        static_cast<OHOS::AudioStandard::AudioLoopbackMode>(audioLoopbackMode);
+    OHOS::AudioStandard::LoopbackType type = isController ?
+        OHOS::AudioStandard::LOOPBACK_TYPE_GLOBAL_CONTROL : OHOS::AudioStandard::LOOPBACK_TYPE_GLOBAL_HANDLER;
+    AudioLpback output = AudioLoopbackImpl::CreateGlobalAudioLoopbackWrapper(loopbackMode, type);
+    if (AudioLoopbackImpl::isConstructSuccess_ != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(AudioLoopbackImpl::isConstructSuccess_);
+        AudioLoopbackImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
+    }
+    return output;
+}
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateAudioLoopbackSync(ANI::Audio::CreateAudioLoopbackSync);
+TH_EXPORT_CPP_API_CreateGlobalAudioLoopbackSync(ANI::Audio::CreateGlobalAudioLoopbackSync);

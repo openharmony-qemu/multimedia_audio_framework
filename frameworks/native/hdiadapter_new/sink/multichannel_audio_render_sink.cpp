@@ -35,7 +35,12 @@ const std::string DEFAULT_NAME = "multichannel";
 namespace OHOS {
 namespace AudioStandard {
 MultichannelAudioRenderSink::MultichannelAudioRenderSink(const std::string &halName)
+#ifdef MULTI_BUS_ENABLE
+    : halName_(halName == HDI_ID_INFO_DEFAULT ? DEFAULT_NAME : halName),
+      playingAppManager_([this](const std::string &param) { return SetPlayingAppNameParam(param); })
+#else
     : halName_(halName == HDI_ID_INFO_DEFAULT ? DEFAULT_NAME : halName)
+#endif
 {
     AUDIO_INFO_LOG("construction");
 }
@@ -130,6 +135,9 @@ int32_t MultichannelAudioRenderSink::Start(void)
     AUDIO_INFO_LOG("start success, frameSize: %{public}" PRIu64 ", frameCount: %{public}" PRIu64, frameSize,
         frameCount);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Start();
+#endif
     return SUCCESS;
 }
 
@@ -154,6 +162,9 @@ int32_t MultichannelAudioRenderSink::Stop(void)
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Stop();
+#endif
     started_ = false;
     return SUCCESS;
 }
@@ -356,6 +367,18 @@ void MultichannelAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     }
 }
 
+bool MultichannelAudioRenderSink::SetPlayingAppNameParam(const std::string &param)
+{
+    AUDIO_INFO_LOG("param: %{public}s", param.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, false, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set playing app name param fail, error code: %{public}d", ret);
+        return false;
+    }
+    return true;
+}
+
 int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
@@ -392,6 +415,11 @@ int32_t MultichannelAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> 
     return SUCCESS;
 }
 
+DeviceType MultichannelAudioRenderSink::GetCurrentOutputDevice()
+{
+    return currentActiveDevice_;
+}
+
 void MultichannelAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
 {
     if (currentActiveDevice_ == device) {
@@ -401,6 +429,10 @@ void MultichannelAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType devi
 
 int32_t MultichannelAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid, appsUid + size);
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid, appsUid + size);
@@ -410,6 +442,10 @@ int32_t MultichannelAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX
 
 int32_t MultichannelAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());

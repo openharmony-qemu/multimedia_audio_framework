@@ -481,7 +481,8 @@ enum AudioEnhanceScene {
     SCENE_ASR = 4,
     SCENE_VOICE_MESSAGE = 5,
     SCENE_RECOGNITION = 6,
-    SCENE_NONE = 7,
+    SCENE_COLLABORATIVE_RECORD = 7,
+    SCENE_NONE = 8,
 };
 
 /**
@@ -506,15 +507,15 @@ struct AudioSceneEffectInfo {
 
 enum EffectFlag { RENDER_EFFECT_FLAG = 0, CAPTURE_EFFECT_FLAG = 1};
 
-struct AudioEffectPropertyV3 {
+struct AudioEffectProperty {
     std::string name;
     std::string category;
     EffectFlag flag;
-    friend bool operator==(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    friend bool operator==(const AudioEffectProperty &lhs, const AudioEffectProperty &rhs)
     {
         return (lhs.category == rhs.category && lhs.name == rhs.name && lhs.flag == rhs.flag);
     };
-    friend bool operator<(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    friend bool operator<(const AudioEffectProperty &lhs, const AudioEffectProperty &rhs)
     {
         return ((lhs.name == rhs.name) || (lhs.name == rhs.name && lhs.category < rhs.category)
             || (lhs.name == rhs.name && lhs.category == rhs.category && lhs.flag < rhs.flag));
@@ -531,116 +532,6 @@ struct AudioEffectPropertyV3 {
         category = parcel.ReadString();
         flag = static_cast<EffectFlag>(parcel.ReadInt32());
     };
-};
-
-struct AudioEffectPropertyArrayV3 : public Parcelable {
-    std::vector<AudioEffectPropertyV3> property;
-
-    bool Marshalling(Parcel &parcel) const override
-    {
-        int32_t size = static_cast<int32_t>(property.size());
-        parcel.WriteInt32(size);
-        for (const auto &item : property) {
-            if (!item.Marshalling(parcel)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    static AudioEffectPropertyArrayV3 *Unmarshalling(Parcel &parcel)
-    {
-        auto propertyArray = new(std::nothrow) AudioEffectPropertyArrayV3();
-        if (propertyArray == nullptr) {
-            return nullptr;
-        }
-
-        int32_t size = parcel.ReadInt32();
-        if (size < 0 || size > AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
-            delete propertyArray;
-            return nullptr;
-        }
-        for (int32_t i = 0; i < size; i++) {
-            AudioEffectPropertyV3 property;
-            property.UnmarshallingSelf(parcel);
-            propertyArray->property.push_back(property);
-        }
-        return propertyArray;
-    }
-};
-
-struct AudioEnhanceProperty {
-    std::string enhanceClass;
-    std::string enhanceProp;
-    friend bool operator==(const AudioEnhanceProperty &lhs, const AudioEnhanceProperty &rhs)
-    {
-        return lhs.enhanceClass == rhs.enhanceClass && lhs.enhanceProp == rhs.enhanceProp;
-    }
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteString(enhanceClass)&&
-            parcel.WriteString(enhanceProp);
-    }
-    void UnmarshallingSelf(Parcel &parcel)
-    {
-        enhanceClass = parcel.ReadString();
-        enhanceProp = parcel.ReadString();
-    }
-};
-
-struct AudioEnhancePropertyArray : public Parcelable {
-    std::vector<AudioEnhanceProperty> property;
-
-    bool Marshalling(Parcel &parcel) const override
-    {
-        int32_t size = static_cast<int32_t>(property.size());
-        parcel.WriteInt32(size);
-        for (const auto &item : property) {
-            if (!item.Marshalling(parcel)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    static AudioEnhancePropertyArray *Unmarshalling(Parcel &parcel)
-    {
-        auto propertyArray = new(std::nothrow) AudioEnhancePropertyArray();
-        if (propertyArray == nullptr) {
-            return nullptr;
-        }
-
-        int32_t size = parcel.ReadInt32();
-        if (size < 0 || size > AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
-            delete propertyArray;
-            return nullptr;
-        }
-        for (int32_t i = 0; i < size; i++) {
-            AudioEnhanceProperty property;
-            property.UnmarshallingSelf(parcel);
-            propertyArray->property.push_back(property);
-        }
-        return propertyArray;
-    }
-};
-
-struct AudioEffectProperty {
-    std::string effectClass;
-    std::string effectProp;
-    friend bool operator==(const AudioEffectProperty &lhs, const AudioEffectProperty &rhs)
-    {
-        return lhs.effectClass == rhs.effectClass && lhs.effectProp == rhs.effectProp;
-    }
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteString(effectClass)&&
-            parcel.WriteString(effectProp);
-    }
-    void UnmarshallingSelf(Parcel &parcel)
-    {
-        effectClass = parcel.ReadString();
-        effectProp = parcel.ReadString();
-    }
 };
 
 struct AudioEffectPropertyArray : public Parcelable {
@@ -701,6 +592,7 @@ enum AudioEffectChainSetParamIndex {
     FRONTEND_APP_TYPE = 18,
     STEREO_ENHANCEMENT_INDEX = 19,
     MAX_PARAM_INDEX,
+    MAX_PARAM_CAPACITY = 99,
 };
 
 enum AudioEffectCommandCode {

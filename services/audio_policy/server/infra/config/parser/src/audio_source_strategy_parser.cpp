@@ -45,6 +45,7 @@ const std::unordered_map<std::string, SourceType> AudioSourceStrategyParser::sou
     {"SOURCE_TYPE_EC", SOURCE_TYPE_EC},
     {"SOURCE_TYPE_MIC_REF", SOURCE_TYPE_MIC_REF},
     {"SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT", SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT},
+    {"SOURCE_TYPE_INTERPHONE", SOURCE_TYPE_INTERPHONE},
 };
 
 AudioSourceStrategyParser::AudioSourceStrategyParser()

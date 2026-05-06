@@ -334,7 +334,7 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, UpdateSpatializationSupported, Test
 HWTEST_F(AudioPolicyServiceExtendedUnitTest, SubscribeSafeVolumeEvent, TestSize.Level1)
 {
     EXPECT_NO_THROW(
-        SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
+        OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
     );
 }
 
@@ -455,20 +455,6 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetDistributedRoutingRoleInfo_001, 
     ASSERT_NE(nullptr, GetServerPtr());
     GetPermission();
     GetServerPtr()->audioPolicyService_.GetDistributedRoutingRoleInfo();
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
-* @tc.number: GetActiveOutputDeviceDescriptor_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetActiveOutputDeviceDescriptor_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceExtendedUnitTest GetActiveOutputDeviceDescriptor_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetPermission();
-    auto res = GetServerPtr()->audioPolicyService_.GetActiveOutputDeviceDescriptor();
-    ASSERT_NE(nullptr, res);
 }
 
 /**

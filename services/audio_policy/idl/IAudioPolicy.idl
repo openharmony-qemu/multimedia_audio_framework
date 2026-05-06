@@ -37,15 +37,15 @@ sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneDescriptor;
 sequenceable audio_effect..OHOS.AudioStandard.ConverterConfig;
 sequenceable audio_device_info..OHOS.AudioStandard.AudioStreamDeviceChangeReasonExt;
 sequenceable audio_interrupt_info..OHOS.AudioStandard.InterruptEvent;
-sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArrayV3;
 sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArray;
-sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
 sequenceable audio_info..OHOS.AudioStandard.ToneInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneStream;
 sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneMix;
 sequenceable audio_system_manager..OHOS.AudioStandard.ActiveStreamVolumeInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneVolumeConfig;
+sequenceable audio_debug_info..OHOS.AudioStandard.AudioDebugInfo;
+sequenceable audio_debug_info..OHOS.AudioStandard.AudioSessionDebugInfo;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -102,7 +102,7 @@ interface IAudioPolicy {
     void CheckVKBInfo([in] String bundleName, [out] boolean isValid);
     void SetQueryBundleNameListCallback([in] IRemoteObject object);
     void ActivateAudioInterrupt([in] AudioInterrupt audioInterrupt, [in] int zoneID, [in] boolean isUpdatedAudioStrategy);
-    void DeactivateAudioInterrupt([in] AudioInterrupt audioInterrupt, [in] int zoneId); /* zoneID default value: 0 -- local device */
+    void DeactivateAudioInterrupt([in] AudioInterrupt audioInterrupt, [in] int zoneId, [in] boolean isRemoveFocusHis); /* zoneID default value: 0 -- local device */
     void SetAudioManagerInterruptCallback([in] int clientId, [in] IRemoteObject object);
     void UnsetAudioManagerInterruptCallback([in] int clientId);
     void RequestAudioFocus([in] int clientId, [in] AudioInterrupt audioInterrupt);
@@ -215,20 +215,15 @@ interface IAudioPolicy {
     void GetDevicesInner([in] int deviceFlag, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
     void SetMicrophoneMutePersistent([in] boolean isMute, [in] int type);
     void GetPersistentMicMuteState([out] boolean retMuteState);
-    void GetSupportedAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray);
-    void GetAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray);
-    void SetAudioEffectProperty([in] AudioEffectPropertyArrayV3 propertyArray);
-    void GetSupportedAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray);
     void GetSupportedAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
-    void GetAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray);
     void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
-    void SetAudioEnhanceProperty([in] AudioEnhancePropertyArray propertyArray);
     void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray);
     void InjectInterruption([in] String networkId, [in] InterruptEvent event);
-    void ActivateAudioSession([in] int strategy);
+    void ActivateAudioSession([in] int strategy, [in] boolean stateChangeCallbackFlag);
     void DeactivateAudioSession();
     void IsAudioSessionActivated([out] boolean retIsActivated);
     void SetInputDevice([in] int deviceType, [in] unsigned int session_ID, [in] int sourceType, [in] boolean isRunning);
+    void SetSplitModeReady();
     void LoadSplitModule([in] String splitArgs, [in] String networkId);
     void GetSystemActiveVolumeType([in] int clientUid, [out] int audioStreamType); //  AudioStreamType audioStreamType
     void GetOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
@@ -238,7 +233,7 @@ interface IAudioPolicy {
     void IsAllowedPlayback([in] int uid, [in] int pid, [in] unsigned int sessionId, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
     void SetVoiceRingtoneMute([in] boolean isMute);
     void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo, [in] int uid);
-    void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
+    void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo, [in] int uid);
     void GetStreamInFocusByUid([in]  int uid, [in] int zoneId, [out] int retStreamType); /* zoneID default value: 0 -- local device */
     void SetPreferredDevice([in] int preferredType, [in] sharedptr<AudioDeviceDescriptor> desc, [in] int uid);
     void SetDeviceVolumeBehavior([in] String networkId, [in] int deviceType, [in] VolumeBehavior volumeBehavior);
@@ -278,7 +273,13 @@ interface IAudioPolicy {
     void UpdateDeviceInfo([in] sharedptr<AudioDeviceDescriptor> deviceDesc, [in] int command);
     void SetSleAudioOperationCallback([in] IRemoteObject object);
     void SetKaraokeParameters([in] int deviceType, [in] String parameters, [out] boolean ret);
+    void SetLoopbackVolume([in] float volume, [out] boolean ret);
+    void GetLoopbackVolume([out] float volume, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean isSupported);
+    void GetLoopbackSupportedDevicePairs([out] List<sharedptr<AudioDeviceDescriptor>> inputDevices,
+        [out] List<sharedptr<AudioDeviceDescriptor>> outputDevices, [out] int ret); 
+    void GetLoopbackPreferredDevicePair([out] sharedptr<AudioDeviceDescriptor> inputDevice,
+        [out] sharedptr<AudioDeviceDescriptor> outputDevice, [out] int ret);
     void SetCollaborativePlaybackEnabledForDevice([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enabled);
     void IsCollaborativePlaybackSupported([out] boolean ret);
     void IsCollaborativePlaybackSupportedForDevice([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [out] boolean isSupported);
@@ -299,6 +300,8 @@ interface IAudioPolicy {
     void SetAncoSourceOutputStreamMute([in] int uid, [in] boolean setMute);
     void UpdateSafeVolumeByStrMode();
     void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
+    [oneway] void RecordBootAnimationClientStateTime([in] List<long> info);
+    void GetAudioDebugInfo([in] unsigned int sessionId, [out] sharedptr<AudioDebugInfo> audioDebugInfo);
     // AudioPolicyInterfaceCode end
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
@@ -337,4 +340,11 @@ interface IAudioPolicy {
     void SetAudioZoneVolumeConfig([in] String zoneName, [in] List<AudioZoneVolumeConfig> configs);
     void TriggerAudioZoneVolumeSync();
     void SetMediaOutputDevice([in] int deviceType /* deviceType */);
+    void SetRegisterInterruptCallbackFlag([in] unsigned int streamId, [in] boolean interruptCallbackFlag);
+    void SetRegisterStateChangeCallbackFlag([in] boolean stateChangeCallbackFlag);
+    void GetSessionDebugInfo([out] sharedptr<AudioSessionDebugInfo> sessionDebugInfo);
+    void GetCurrentRendererChangeInfosForZone([in] int zoneId, [out] List<sharedptr<AudioRendererChangeInfo>> infos);
+    void CreateLoopback([in] int mode, [in] int type, [in] IRemoteObject cbObject, [out] IRemoteObject loopback,
+        [out] int ret);
+    void DestroyLoopback([in] int type, [out] int ret);
 }

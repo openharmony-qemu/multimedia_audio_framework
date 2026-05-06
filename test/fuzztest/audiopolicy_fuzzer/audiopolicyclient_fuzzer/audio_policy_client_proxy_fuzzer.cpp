@@ -310,25 +310,27 @@ void AudioPolicyClientProxyOnMicStateUpdatedFuzzTest(FuzzedDataProvider& fdp)
 void AudioPolicyClientProxyOnPreferredOutputDeviceUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioRendererInfo rendererInfo;
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
     }
-    audioPolicyClientProxy->OnPreferredOutputDeviceUpdated(rendererInfo, desc);
+    audioPolicyClientProxy->OnPreferredOutputDeviceUpdated(rendererInfo, uid, desc);
 }
 
 void AudioPolicyClientProxyOnPreferredInputDeviceUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerInfo capturerInfo;
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
     }
-    audioPolicyClientProxy->OnPreferredInputDeviceUpdated(capturerInfo, desc);
+    audioPolicyClientProxy->OnPreferredInputDeviceUpdated(capturerInfo, uid, desc);
 }
 
 void AudioPolicyClientProxyOnRendererStateChangeFuzzTest(FuzzedDataProvider& fdp)
@@ -370,12 +372,13 @@ void AudioPolicyClientProxyOnRendererDeviceChangeFuzzTest(FuzzedDataProvider& fd
     uint32_t sessionId = GetData<uint32_t>();
     AudioStreamDeviceChangeReasonExt reason = g_testReasons[GetData<uint32_t>() % g_testReasons.size()];
     AudioDeviceDescriptor deviceInfo;
+    AudioDeviceDescriptor preDeviceInfo;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
     }
-    audioPolicyClientProxy->OnRendererDeviceChange(sessionId, deviceInfo, reason);
+    audioPolicyClientProxy->OnRendererDeviceChange(sessionId, deviceInfo, reason, preDeviceInfo);
 }
 
 void AudioPolicyClientProxyOnRecreateRendererStreamEventFuzzTest(FuzzedDataProvider& fdp)

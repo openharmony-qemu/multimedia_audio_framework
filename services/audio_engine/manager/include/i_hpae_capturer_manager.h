@@ -28,11 +28,12 @@ namespace HPAE {
 class IHpaeCapturerManager : public HpaeStreamManager {
 public:
     virtual ~IHpaeCapturerManager() {}
+    static std::shared_ptr<IHpaeCapturerManager> CreateCapturerManager(HpaeSourceInfo &sourceInfo);
     virtual int32_t CreateStream(const HpaeStreamInfo& streamInfo) = 0;
     virtual int32_t DestroyStream(uint32_t sessionId) = 0;
 
     virtual int32_t Start(uint32_t sessionId) = 0;
-    virtual int32_t Pause(uint32_t sessionId) = 0;
+    virtual int32_t Pause(uint32_t sessionId, bool isStandby = false) = 0;
     virtual int32_t Flush(uint32_t sessionId) = 0;
     virtual int32_t Drain(uint32_t sessionId) = 0;
     virtual int32_t Stop(uint32_t sessionId) = 0;
@@ -67,6 +68,9 @@ public:
         const SourceType &sourceType) = 0;
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; };
     virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) { return 0; };
+    // interface for collaborative record
+    virtual void EnableCaptureCollaboration(SourceType sourceType);
+    virtual void DisableCaptureCollaboration(SourceType sourceType);
 private:
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxMapTree dfxTree_;

@@ -240,36 +240,7 @@ HWTEST(AudioUtilsUnitTest, GetSysPara_001, TestSize.Level1)
 
 
 /**
- * @tc.name  : Test GetEngineFlag API
- * @tc.type  : FUNC
- * @tc.number: GetEngineFlag_001
- * @tc.desc  : Test GetEngineFlag interface.
- */
-HWTEST(AudioUtilsUnitTest, GetEngineFlag_001, TestSize.Level1)
-{
-#ifdef SUPPORT_OLD_ENGINE
-    // 测试默认返回值
-    int32_t result = GetEngineFlag();
-    EXPECT_GE(result, 0);
-    
-    // 测试设置为0
-    SetSysPara("const.multimedia.audio.proaudioEnable", 0);
-    result = GetEngineFlag();
-    EXPECT_EQ(result, 0);
-    
-    // 测试设置为1
-    SetSysPara("const.multimedia.audio.proaudioEnable", 1);
-    result = GetEngineFlag();
-    EXPECT_EQ(result, 1);
-#else
-    // 未定义SUPPORT_OLD_ENGINE宏时,应返回1
-    int32_t result = GetEngineFlag();
-    EXPECT_EQ(result, 1);
-#endif
-}
-
-/**
- * @tc.name  : Test UpdateMaxAmplitude API
+* @tc.name  : Test UpdateMaxAmplitude API
  * @tc.type  : FUNC
  * @tc.number: UpdateMaxAmplitude_001
  * @tc.desc  : Test UpdateMaxAmplitude interface  when adapterFormat is SAMPLE_U8_C.
@@ -3546,6 +3517,5 @@ HWTEST(AudioUtilsUnitTest, ConvertAudioRenderRateToSpeed_001, TestSize.Level1)
     ret = ConvertAudioRenderRateToSpeed(renderRate);
     EXPECT_FLOAT_EQ(ret, 1.0f);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

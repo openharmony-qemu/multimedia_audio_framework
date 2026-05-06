@@ -104,6 +104,7 @@ public:
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
     FastStatus GetFastStatus() override;
+    int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const override;
 
     uint32_t GetOverflowCount() const override;
     int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;
@@ -129,6 +130,7 @@ public:
     bool abortRestore_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     mutable std::shared_ptr<AudioDeviceDescriptor> selectedDevice_ = nullptr;
+    bool mixWithWakeUp_ = false;
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
@@ -180,6 +182,9 @@ private:
         IAudioStream::SwitchInfo &info);
     bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, CapturerState previousState,
         IAudioStream::SwitchInfo &info);
+    bool FallbackToNormalStreamForGenerateNewStream(const RestoreInfo &restoreInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, IAudioStream::SwitchInfo &switchInfo,
+        std::shared_ptr<IAudioStream> &newAudioStream);
     void HandleAudioInterruptWhenServerDied();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
@@ -203,6 +208,14 @@ private:
     bool IsRestoreOrStopNeeded();
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
         CapturerState previousState);
+    void CheckStartResultAndReport(bool result);
+    int32_t InitAndReportErrorEvent(AudioStreamParams audioStreamParams,
+        IAudioStream::StreamClass streamClass, const AudioCapturerParams params);
+    int32_t CheckStateAndReportErrorEvent(CapturerState state);
+    int32_t CheckDegradeFallback(AudioStreamParams audioStreamParams, bool degradeFallback, size_t validDataLength,
+        const size_t processFrameSize, size_t &processBufSize, size_t &micInBufSize, size_t &ecBufSize);
+    bool CheckForGenerateNewStream();
+    int32_t CheckForStartImpl(CapturerState state);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
@@ -261,6 +274,9 @@ public:
     void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
+    int32_t InterruptHintResumeHandle(State currentState);
+    int32_t InterruptHintPauseHandle(State currentState);
+    void WaitForSwitchTimeout(bool result);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;
     bool isForcePaused_ = false;
@@ -316,7 +332,7 @@ public:
     virtual ~InputDeviceChangeWithInfoCallbackImpl() = default;
 
     void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) override;
+        const AudioStreamDeviceChangeReasonExt reason, const AudioDeviceDescriptor &preDeviceInfo) override;
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;

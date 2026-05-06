@@ -73,6 +73,16 @@ public:
         const int32_t audioDeviceSelectMode = 0) const;
 
     /**
+     * @brief Restore the audio output device selection according to the filter conditions.
+     *
+     * @param audioRendererFilter filter conditions.
+     * @return Returns {@link SUCCESS} if the restore is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) const;
+
+    /**
      * @brief Select the audio input device according to the filter conditions.
      *
      * @param audioRendererFilter filter conditions.

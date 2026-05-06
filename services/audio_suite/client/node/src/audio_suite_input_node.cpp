@@ -172,7 +172,7 @@ int32_t AudioInputNode::GetDataFromUser()
                 inPcmData_.GetPcmData() + singleGetSize, inPcmData_.GetDataSize() - singleGetSize, &isFinished);
 
             ++curTryCounts;
-            CHECK_AND_RETURN_RET_LOG((getSize > 0) &&
+            CHECK_AND_RETURN_RET_LOG((getSize >= 0) &&
                 (static_cast<uint32_t>(getSize) <= inPcmData_.GetDataSize() - singleGetSize),
                 ERROR, "OnRequestDataCallBack error, ret = %{public}d", singleGetSize);
             singleGetSize += static_cast<uint32_t>(getSize);

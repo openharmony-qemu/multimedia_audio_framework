@@ -45,9 +45,11 @@ int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
     std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_;
     bool isVoiceType = true;
+    bool isLoopback = false;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
         isVoiceType = AudioPolicyUtils::GetInstance().IsVoiceStreamType(streamDesc->rendererInfo_.streamUsage);
+        isLoopback = streamDesc->rendererInfo_.isLoopback;
     } else {
         audioStreamConfig = streamDesc->capturerInfo_.sourceType;
         isVoiceType = AudioPolicyUtils::GetInstance().IsVoiceSourceType(streamDesc->capturerInfo_.sourceType);
@@ -61,11 +63,11 @@ int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
         return SUCCESS;
     }
 
-    auto runDeviceActivationFlow = [&deviceDesc, &isRunning, &realUid](auto &&config) -> int32_t {
-        int32_t ret = SleAudioDeviceManager::GetInstance().SetActiveDevice(*deviceDesc, config);
+    auto runDeviceActivationFlow = [&deviceDesc, &isRunning, &realUid, &isLoopback](auto &&config) -> int32_t {
+        int32_t ret = SleAudioDeviceManager::GetInstance().SetActiveDevice(*deviceDesc, config, realUid, isLoopback);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Activating Nearlink device fails");
         CHECK_AND_RETURN_RET_LOG(isRunning, ret, "Stream is not running, no needs start playing");
-        return SleAudioDeviceManager::GetInstance().StartPlaying(*deviceDesc, config, realUid);
+        return SleAudioDeviceManager::GetInstance().StartPlaying(*deviceDesc, config, realUid, isLoopback);
     };
 
     int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);

@@ -23,6 +23,7 @@
 #include "audio_stream_types.h"
 #include "audio_device_info.h"
 #include "audio_errors.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -164,6 +165,7 @@ public:
     virtual void SetClientDeviceId(const std::string &deviceId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void GetRendererInfo(AudioRendererInfo &rendererInfo) = 0;
+    virtual void CheckInnerCapVoIP() = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj,
@@ -194,7 +196,9 @@ public:
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
+    virtual int32_t SetSonicPitch(float pitch) { return ERR_NOT_SUPPORTED; }
     virtual float GetSpeed() = 0;
+    virtual int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) { return SUCCESS; }
 
     virtual int32_t SetRebuildFlag() { return 0; }
     virtual int32_t RequestUserPrivacyAuthority(uint32_t sessionId) = 0;
@@ -364,6 +368,8 @@ public:
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 
     virtual bool IsRestoreNeeded() { return false; }
+
+    virtual void UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal) {}
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 

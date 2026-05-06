@@ -64,11 +64,14 @@ public:
 
     MOCK_METHOD(sptr<IRemoteObject>, AsObject, (), (override));
     MOCK_METHOD(int32_t, SetRebuildFlag, (), (override));
+    MOCK_METHOD(int32_t, SetVoipNoPrivacyFlag, (bool voipNoPrivacyFlag), (override));
     MOCK_METHOD(int32_t, GetServerKeepRunning, (bool &keepRunning), (override));
 
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
     MOCK_METHOD(int32_t, SetStaticRenderRate, (uint32_t renderRate), (override));
     MOCK_METHOD(int32_t, ResetStaticPlayPosition, (), (override));
+    MOCK_METHOD(int32_t, UpdateUnderrunInfo, (uint32_t underrunInfoKey, int32_t underrunInfoVal), (override));
+    MOCK_METHOD(int32_t, SetStaticPitch, (float pitch), (override));
 };
 
 class AudioProcessInClientUnitTest : public testing::Test {
@@ -1406,7 +1409,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_072, TestSize.Lev
         AUDIO_MODE_RECORD, config.appInfo.appUid);
     ptrAudioProcessInClientInner->Init(config, ptrFastAudioStream);
 
-    uint32_t framePos = 0;
+    int64_t framePos = 0;
     int64_t sec = 0;
     int64_t nanoSec = 0;
     auto ret = ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
@@ -2552,7 +2555,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_GetAudioTime_002,
     ptrBufferInfo->handlePos.store(0);
     ptrBufferInfo->handleTime.store(0);
 
-    uint32_t framePos = 0;
+    int64_t framePos = 0;
     int64_t sec = 0;
     int64_t nanoSec = 0;
     auto ret = ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
@@ -2695,6 +2698,62 @@ HWTEST(AudioProcessInClientUnitTest, IsRestoreNeeded_001, TestSize.Level1)
     EXPECT_EQ(ptrAudioProcessInClientInner->CheckAndWaitBufferReadyForRecord(), true);
     EXPECT_EQ(ptrAudioProcessInClientInner->CheckAndWaitBufferReadyForPlayback(), true);
     EXPECT_EQ(ptrAudioProcessInClientInner->IsRestoreNeeded(), true);
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_001
+ * @tc.desc  : Test UpdateUnderrunInfo when stamp + ONE_MILLISECOND_DURATION > LIMIT_FAST_COUNT * limit is true
+ */
+HWTEST(AudioProcessInClientUnitTest, UpdateUnderrunInfo_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = false;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    auto mockIAudioProcess = sptr<MockIAudioProcess>::MakeSptr();
+    ptrAudioProcessInClientInner->processProxy_ = mockIAudioProcess;
+
+    // Test UpdateUnderrunInfo when UNDERRUN_TYPE_ISTIMEOUT is true
+    EXPECT_CALL(*mockIAudioProcess, UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true))
+        .Times(1)
+        .WillOnce(Return(SUCCESS));
+    
+    int32_t ret = ptrAudioProcessInClientInner->processProxy_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_002
+ * @tc.desc  : Test UpdateUnderrunInfo when stamp + ONE_MILLISECOND_DURATION > LIMIT_FAST_COUNT * limit is false
+ */
+HWTEST(AudioProcessInClientUnitTest, UpdateUnderrunInfo_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = false;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    auto mockIAudioProcess = sptr<MockIAudioProcess>::MakeSptr();
+    ptrAudioProcessInClientInner->processProxy_ = mockIAudioProcess;
+
+    // Test UpdateUnderrunInfo when UNDERRUN_TYPE_ISTIMEOUT is false
+    EXPECT_CALL(*mockIAudioProcess, UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, false))
+        .Times(1)
+        .WillOnce(Return(SUCCESS));
+    
+    int32_t ret = ptrAudioProcessInClientInner->processProxy_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, false);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

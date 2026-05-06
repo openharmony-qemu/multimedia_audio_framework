@@ -50,6 +50,7 @@
 #include "audio_utils_c.h"
 #include "policy_handler.h"
 #include "volume_tools.h"
+#include "stream_dfx_manager.h"
 
 #include "media_monitor_manager.h"
 #include "istandard_audio_service.h"
@@ -70,6 +71,7 @@ static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
+static const int32_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms, align with legacy AudioProcessInClient
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 10000; // 10ms
 static constexpr int32_t ONE_MINUTE = 60;
@@ -217,7 +219,9 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
-    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
+    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT && rendererInfo_.rendererFlags != AUDIO_FLAG_3DA_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
@@ -268,13 +272,50 @@ int32_t RendererInClientInner::InitSharedBuffer()
     return SUCCESS;
 }
 
+bool RendererInClientInner::IsLowLatencyRenderer() const
+{
+    return rendererInfo_.rendererFlags == AUDIO_FLAG_MMAP || rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_FAST;
+}
+
+uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
+{
+    if (!IsLowLatencyRenderer() && spanSizeInFrame_ == 0) {
+        return OLD_BUF_DURATION_IN_USEC;
+    }
+    uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :
+        curStreamParams_.customSampleRate;
+    if (sampleRate == 0) {
+        return OLD_BUF_DURATION_IN_USEC;
+    }
+    // For low-latency callback mode, the callback quantum should follow one server span.
+    // cacheSizeInFrame_ comes from server engine size, which is typically span * 2.
+    uint32_t frameCount = spanSizeInFrame_ > 0 ? spanSizeInFrame_ : cacheSizeInFrame_.load();
+    if (frameCount == 0) {
+        return OLD_BUF_DURATION_IN_USEC;
+    }
+    uint64_t durationInUs = static_cast<uint64_t>(frameCount) * AUDIO_US_PER_S / sampleRate;
+    AUDIO_INFO_LOG("GetDefaultCallbackBufferDurationInUs low latency, frameCount:%{public}u sampleRate:%{public}u "
+        "durationInUs:%{public}" PRIu64, frameCount, sampleRate, durationInUs);
+    return durationInUs;
+}
+
+int32_t RendererInClientInner::GetBufferWaitTimeoutInMs() const
+{
+    if (offloadEnable_) {
+        return OFFLOAD_OPERATION_TIMEOUT_IN_MS;
+    }
+    return IsLowLatencyRenderer() ? FAST_WRITE_CACHE_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+}
+
 int32_t RendererInClientInner::InitIpcStream()
 {
     Trace trace("RendererInClientInner::InitIpcStream");
     AudioProcessConfig config = ConstructConfig();
     bool resetSilentMode = (gServerProxy_ == nullptr) ? true : false;
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
-    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(gasp != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_SERVICE_UNAVAILABLE, "Can not get service", true),
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     int32_t errorCode = 0;
     ipcProxy_ = nullptr;
@@ -285,23 +326,38 @@ int32_t RendererInClientInner::InitIpcStream()
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
         gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
     }
-    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_NULL_POINTER, "ipcProxy is null", true),
+        "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IIpcStream>(ipcProxy_);
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_NULL_POINTER, "iface_cast failed", true),
+        "failed when iface_cast.");
 
     // in plan next: old listener_ is destoried here, will server receive dieth notify?
     listener_ = sptr<IpcStreamListenerImpl>::MakeSptr(shared_from_this());
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterStreamListener failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_OPERATION_FAILED, "RegisterStreamListener failed", true),
+        "RegisterStreamListener failed:%{public}d", ret);
 
     if (resetSilentMode && gServerProxy_ != nullptr && silentModeAndMixWithOthers_) {
         ipcStream_->SetSilentModeAndMixWithOthers(silentModeAndMixWithOthers_);
     }
     ret = InitSharedBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_OPERATION_FAILED, "InitSharedBuffer failed", true),
+        "InitSharedBuffer failed:%{public}d", ret);
 
     ret = ipcStream_->GetAudioSessionID(sessionId_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
+            PLAY_CREATE_INVALID_INDEX, "GetAudioSessionID failed", true),
+        "GetAudioSessionID failed:%{public}d", ret);
     traceTag_ = "[" + std::to_string(sessionId_) + "]RendererInClient"; // [100001]RendererInClient
     InitCallbackHandler();
     return SUCCESS;
@@ -348,7 +404,7 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     if (bufferDurationInUs > MAX_BUF_DURATION_IN_USEC) {
         AUDIO_ERR_LOG("InitCallbackBuffer with invalid duration %{public}" PRIu64", use default instead.",
             bufferDurationInUs);
-        bufferDurationInUs = OLD_BUF_DURATION_IN_USEC;
+        bufferDurationInUs = GetDefaultCallbackBufferDurationInUs();
     }
     // Calculate buffer size based on duration.
 
@@ -584,7 +640,7 @@ void RendererInClientInner::WaitForBufferNeedOperate()
 {
     Trace trace("WaitForBufferNeedOperate");
     CheckFrozenStateInStaticMode();
-    int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+    int32_t timeout = GetBufferWaitTimeoutInMs();
     FutexCode futexRes = clientBuffer_->WaitFor(
         (rendererInfo_.isStatic ? STATIC_HEARTBEAT_INTERVAL_IN_MS : static_cast<int64_t>(timeout)) *
         AUDIO_US_PER_SECOND,
@@ -599,7 +655,26 @@ void RendererInClientInner::WaitForBufferNeedOperate()
 
             return CheckStaticAndOperate();
         });
-    if (futexRes != SUCCESS) {
+    if (futexRes == FUTEX_TIMEOUT && clientBuffer_ != nullptr) {
+        uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
+        int32_t writableInFrame = clientBuffer_->GetWritableDataFrames();
+        int32_t readableFrames = clientBuffer_->GetReadableDataFrames();
+        size_t totalSizeInByte = static_cast<size_t>(totalSizeInFrame) * sizePerFrameInByte_;
+        size_t writableSizeInByte = writableInFrame > 0 ?
+            static_cast<size_t>(writableInFrame) * sizePerFrameInByte_ : 0;
+        bool condWritable = writableInFrame > 0;
+        bool condCbFit = cbBufferSize_ <= totalSizeInByte;
+        bool condWritableEnough = writableSizeInByte >= cbBufferSize_;
+        bool condReadableLow = readableFrames <= static_cast<int32_t>(cacheSizeInFrame_.load());
+        AUDIO_INFO_LOG("WaitForBufferNeedOperate timeout, sessionId:%{public}u state:%{public}d "
+            "timeoutMs:%{public}d lowLatency:%{public}d writable:%{public}d readable:%{public}d cache:%{public}u "
+            "cbBytes:%{public}zu totalFrames:%{public}u totalBytes:%{public}zu writableBytes:%{public}zu "
+            "condWritable:%{public}d condCbFit:%{public}d condWritableEnough:%{public}d condReadableLow:%{public}d",
+            sessionId_, state_.load(), timeout, IsLowLatencyRenderer(), writableInFrame, readableFrames,
+            cacheSizeInFrame_.load(), cbBufferSize_,
+            totalSizeInFrame, totalSizeInByte, writableSizeInByte, condWritable, condCbFit, condWritableEnough,
+            condReadableLow);
+    } else if (futexRes != SUCCESS) {
         AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
     }
 }
@@ -622,7 +697,7 @@ void RendererInClientInner::CallClientHandle()
         auto endRunning = ClockTime::GetCurNano();
         auto duration = endRunning - startRunning;
         if (duration >= ONWRITEDATA_TIMEOUT_NS) {
-            AudioPerformanceMonitor::GetInstance().UpdateIsTimeoutCB(sessionId_, true);
+            ipcStream_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true);
         }
         guard.CheckCurrTimeout();
     }
@@ -635,6 +710,7 @@ bool RendererInClientInner::WriteCallbackFunc()
     if (!WaitForRunning()) {
         return true;
     }
+    CheckAndProcessPendingSpanSize();
     if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
         HILOG_COMM_WARN("[WriteCallbackFunc]The queue is too long, reducing data through loops");
     }
@@ -704,6 +780,34 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
     return true;
 }
 
+bool RendererInClientInner::ProcessPitch(uint8_t *&buffer, size_t &bufferSize, bool &pitchCached)
+{
+    pitchCached = false;
+    std::lock_guard lockPitch(pitchMutex_);
+    
+    if (isEqual(curPitch_, 1.0f) || pitchProcessor_ == nullptr) {
+        return true;
+    }
+    Trace trace(traceTag_ + " ProcessPitch" + std::to_string(curPitch_));
+    size_t outputSize = bufferSize * MAX_PITCH_BUFFER_FACTOR;
+    int32_t ret = pitchProcessor_->ProcessBufferPitch(reinterpret_cast<int8_t*>(buffer), bufferSize,
+        reinterpret_cast<int8_t*>(pitchBuffer_.get()), outputSize);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("ProcessBufferPitch failed");
+        return false;
+    }
+    
+    if (outputSize == 0) {
+        AUDIO_ERR_LOG("Pitch buffer is empty");
+        return false;
+    }
+    
+    buffer = pitchBuffer_.get();
+    bufferSize = outputSize;
+    pitchCached = true;
+    return true;
+}
+
 void RendererInClientInner::DfxWriteInterval()
 {
     CHECK_AND_RETURN(renderMode_ == RENDER_MODE_NORMAL); // should only work in write mode.
@@ -758,7 +862,7 @@ void RendererInClientInner::NotifyStreamSilentChange()
     AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }
 
-int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
+int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool bufferCached,
     size_t oriBufferSize)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(sizePerFrameInByte_ > 0, ERROR,
@@ -775,7 +879,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
 
     while (remainSize >= sizePerFrameInByte_) {
         FutexCode futexRes = FUTEX_OPERATION_FAILED;
-        int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+        int32_t timeout = GetBufferWaitTimeoutInMs();
         futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
             [this] () { return (state_ != RUNNING) || CheckBufferNeedWrite(); });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
@@ -814,11 +918,83 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(writtenSize);
 
-    return speedCached ? oriBufferSize : writtenSize;
+    return bufferCached ? oriBufferSize : writtenSize;
+}
+
+void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
+{
+    totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
+    if (sizePerFrameInByte_ == 0) {
+        AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
+        return;
+    }
+    int64_t writtenFrameNumber = totalBytesWritten_ / static_cast<int64_t>(sizePerFrameInByte_);
+    AUDIO_DEBUG_LOG("frame size: %{public}zu", sizePerFrameInByte_);
+
+    {
+        std::lock_guard<std::mutex> lock(markReachMutex_);
+        if (!rendererMarkReached_) {
+            AUDIO_DEBUG_LOG("Frame mark position: %{public}" PRId64", Total frames written: %{public}" PRId64,
+                static_cast<int64_t>(rendererMarkPosition_), static_cast<int64_t>(writtenFrameNumber));
+            if (writtenFrameNumber >= rendererMarkPosition_) {
+                AUDIO_DEBUG_LOG("OnMarkReached %{public}" PRId64".", rendererMarkPosition_);
+                SendRenderMarkReachedEvent(rendererMarkPosition_);
+                rendererMarkReached_ = true;
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(periodReachMutex_);
+        rendererPeriodWritten_ += static_cast<int64_t>((bytesWritten / sizePerFrameInByte_));
+        AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64", Total frames written: %{public}" PRId64,
+            static_cast<int64_t>(rendererPeriodWritten_), static_cast<int64_t>(totalBytesWritten_));
+        if (rendererPeriodWritten_ >= rendererPeriodSize_ && rendererPeriodSize_ > 0) {
+            rendererPeriodWritten_ %= rendererPeriodSize_;
+            AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRId64,
+                static_cast<int64_t>(rendererPeriodWritten_));
+            SendRenderPeriodReachedEvent(rendererPeriodSize_);
+        }
+    }
+}
+
+int32_t RendererInClientInner::ProcessBufferAndWriteCache(uint8_t *buffer, size_t bufferSize, size_t oriBufferSize)
+{
+    bool speedCached = false;
+    bool pitchCached = false;
+    AudioWriteState currentState = audioWriteState_.load();
+    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
+    
+    if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
+        audioWriteState_.store(currentState);
+        return bufferSize;
+    }
+    
+    if (!ProcessPitch(buffer, bufferSize, pitchCached)) {
+        audioWriteState_.store(currentState);
+        return bufferSize;
+    }
+    
+    WriteMuteDataSysEvent(buffer, bufferSize);
+    
+    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
+    
+    if (isBlendSet_) {
+        audioBlend_.Process(buffer, bufferSize);
+    }
+    
+    currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
+    currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
+    currentState.perPeriodFrame_ = 0;
+    audioWriteState_.store(currentState);
+    
+    return WriteCacheData(buffer, bufferSize, speedCached || pitchCached, oriBufferSize);
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
+    CheckAndProcessPendingSpanSize();
     // eg: RendererInClient::sessionId:100001 WriteSize:3840
     DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
@@ -853,28 +1029,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     size_t oriBufferSize = bufferSize;
-    bool speedCached = false;
-    AudioWriteState currentState = audioWriteState_.load();
-    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
-    if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
-        audioWriteState_.store(currentState);
-        return bufferSize;
-    }
-
-    WriteMuteDataSysEvent(buffer, bufferSize);
-
-    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
-        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
-
-    // hold lock
-    if (isBlendSet_) {
-        audioBlend_.Process(buffer, bufferSize);
-    }
-    currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
-    currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
-    currentState.perPeriodFrame_ = 0;
-    audioWriteState_.store(currentState);
-    int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
+    int32_t result = ProcessBufferAndWriteCache(buffer, bufferSize, oriBufferSize);
     MonitorMutePlay(false);
     return result;
 }
@@ -1061,6 +1216,9 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
     }
+    if (rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        return true;
+    }
 
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
         HILOG_COMM_ERROR("[DrainAudioStreamInner]ipcStream is not inited!"));
@@ -1209,6 +1367,12 @@ int32_t RendererInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
     return SUCCESS;
 }
 
+void RendererInClientInner::UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal)
+{
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream_ is nullptr");
+    ipcStream_->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+}
+
 int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
@@ -1288,6 +1452,55 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     int32_t ret = ipcStream_->Start();
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     return SUCCESS;
+}
+
+void RendererInClientInner::CheckAndProcessPendingSpanSize()
+{
+    Trace trace("RendererInClientInner::CheckAndProcessPendingSpanSize");
+    AUDIO_DEBUG_LOG("CheckAndProcessPendingSpanSize enter, sessionId:%{public}u", sessionId_);
+
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr");
+    uint64_t spanSize = 0;
+    uint64_t engineSize = 0;
+    uint32_t routeFlag = 0;
+    spanSize = clientBuffer_->GetAndClearPendingSpanSize(engineSize, routeFlag);
+    if (spanSize == 0) {
+        AUDIO_DEBUG_LOG("No pending span size");
+        return;
+    }
+    const uint32_t MIN_SPAN_SIZE = 32;
+    const uint32_t MAX_SPAN_SIZE = 8192;
+    uint32_t spanSizeInFrame = static_cast<uint32_t>(spanSize);
+    if (spanSizeInFrame < MIN_SPAN_SIZE || spanSizeInFrame > MAX_SPAN_SIZE) {
+        AUDIO_ERR_LOG("Invalid pending span size %{public}u, ignore", spanSizeInFrame);
+        return;
+    }
+    AUDIO_INFO_LOG("Process pending span size: %{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
+        spanSizeInFrame, engineSize, routeFlag);
+
+    // 直接更新参数，不需要调用 InitSharedBuffer（buffer 没变化）
+    spanSizeInFrame_ = spanSizeInFrame;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
+    cacheSizeInFrame_ = engineSize;
+
+    // 更新 rendererFlags（根据 routeFlag）
+    if (routeFlag != 0) {
+        if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
+            if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
+                rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+                AUDIO_INFO_LOG("Updated rendererFlags to VOIP_FAST (0x%{public}x)", rendererInfo_.rendererFlags);
+            } else {
+                rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+                AUDIO_INFO_LOG("Updated rendererFlags to MMAP (0x%{public}x)", rendererInfo_.rendererFlags);
+            }
+        } else {
+            rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+            AUDIO_INFO_LOG("Updated rendererFlags to NORMAL (0x%{public}x)", rendererInfo_.rendererFlags);
+        }
+    }
+    AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}u "
+        "rendererFlags:0x%{public}x",
+        spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInFrame_.load(), rendererInfo_.rendererFlags);
 }
 } // namespace AudioStandard
 } // namespace OHOS

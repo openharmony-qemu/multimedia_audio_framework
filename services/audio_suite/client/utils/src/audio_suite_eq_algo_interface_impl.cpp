@@ -93,6 +93,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
     int32_t result = algoApi_.getSize(&stSize_);
     if (IMEDIA_SWS_EOK != result) {
         AUDIO_ERR_LOG("iMedia_Eq_GetSize ERROR: %{public}d", result);
+        Deinit();
         return result;
     }
 

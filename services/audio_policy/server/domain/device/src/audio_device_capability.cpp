@@ -31,6 +31,7 @@ std::string RemoteDeviceCapability::GetJsonString() const
     cJSON_AddBoolToObject(interface, "isSupportHiLinkControl", isSupportHiLinkControl_);
     cJSON_AddStringToObject(interface, "device_name", deviceName_.c_str());
     cJSON_AddNumberToObject(interface, "protocol", protocol_);
+    cJSON_AddNumberToObject(interface, "hd_play_mode", hdPlaybackMode_);
     char *pChar = cJSON_PrintUnformatted(interface);
     CHECK_AND_RETURN_RET_LOG(pChar != nullptr, "", "pChar is null");
     cJSON_Delete(interface);
@@ -59,9 +60,9 @@ void RemoteDeviceCapability::FromJsonString(const std::string &jsonString)
         initVolume_ = static_cast<int32_t>(volumeObj->valueint);
     }
 
-    cJSON *supportVolumeObj = cJSON_GetObjectItem(root, "isSupportHiLinkControl");
-    if (supportVolumeObj && cJSON_IsNumber(supportVolumeObj)) {
-        isSupportHiLinkControl_ = true;
+    cJSON *supportHilinkControlObj = cJSON_GetObjectItem(root, "support_hilink_control");
+    if (supportHilinkControlObj && cJSON_IsNumber(supportHilinkControlObj)) {
+        isSupportHiLinkControl_ = static_cast<int32_t>(supportHilinkControlObj->valueint) == 1;
     }
 
     cJSON *muteObj = cJSON_GetObjectItem(root, "init_mute_status");
@@ -76,6 +77,11 @@ void RemoteDeviceCapability::FromJsonString(const std::string &jsonString)
     cJSON *protocolObj = cJSON_GetObjectItem(root, "protocol");
     if (protocolObj && cJSON_IsNumber(protocolObj)) {
         protocol_ = static_cast<int32_t>(protocolObj->valueint);
+    }
+
+    cJSON *hdPlaybackModeObj = cJSON_GetObjectItem(root, "hd_play_mode");
+    if (hdPlaybackModeObj && cJSON_IsNumber(hdPlaybackModeObj)) {
+        hdPlaybackMode_ = static_cast<int32_t>(hdPlaybackModeObj->valueint);
     }
 
     cJSON_Delete(root);

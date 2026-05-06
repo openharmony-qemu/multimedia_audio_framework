@@ -18,6 +18,8 @@
 #include <string>
 #include <queue>
 
+#include "boot_animation_state_info.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -26,6 +28,7 @@ public:
     virtual ~IAudioServerHpaeDump() = default;
     virtual int32_t Initialize() = 0;
     virtual void AudioDataDump(std::string &dumpString, std::queue<std::u16string> &argQue) = 0;
+    virtual void RecordBootStateTime(AudioServerBootState state, int64_t curTime) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

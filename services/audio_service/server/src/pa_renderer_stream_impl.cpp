@@ -1024,14 +1024,14 @@ int32_t PaRendererStreamImpl::OffloadSetVolume()
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, "offload", &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, id, &volumes);
     AUDIO_INFO_LOG("sessionID %{public}u volume: %{public}f", streamIndex_, volume);
     if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLUME_EPSILON)) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
         AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     }
-    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
     return sink->SetVolume(volume, volume);

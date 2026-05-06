@@ -33,6 +33,7 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
+#include "audio_select_interface_service.h"
 #include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
@@ -284,23 +285,31 @@ void AudioCoreServiceSetPreferredInputDeviceIfValidFuzzTest(FuzzedDataProvider& 
     audioCoreService->SetPreferredInputDeviceIfValid(streamDesc);
 }
 
+void AudioSelectInterfaceServiceSetInputDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    DeviceType deviceType = GetData<DeviceType>();
+    uint32_t sessionId = GetData<uint32_t>();
+    int32_t uid = GetData<int32_t>();
+    AudioSelectInterfaceService::GetInstance().SetInputDevice(deviceType, sessionId, uid);
+}
+
+void AudioSelectInterfaceServiceSetPreferredInputDeviceIfValidFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = GetData<uint32_t>();
+    streamDesc->appInfo_.appUid = GetData<int32_t>();
+    streamDesc->capturerInfo_.sourceType = GetData<SourceType>();
+    streamDesc->preferredInputDevice.deviceType_ = GetData<DeviceType>();
+    streamDesc->preferredInputDevice.deviceRole_ = INPUT_DEVICE;
+    AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(streamDesc);
+}
+
 void AudioCoreServiceParsePreferredInputDeviceHistoryFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     audioCoreService->Init();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->ParsePreferredInputDeviceHistory(streamDesc);
-}
-
-void AudioCoreServiceWriteDesignateAudioCaptureDeviceEventFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    audioCoreService->Init();
-    SourceType sourceType = GetData<SourceType>();
-    int32_t deviceType = GetData<int32_t>();
-    bool isNormalSelection = GetData<bool>();
-
-    audioCoreService->WriteDesignateAudioCaptureDeviceEvent(sourceType, deviceType, isNormalSelection);
 }
 
 void AudioCoreServiceGetFlagForMmapStreamFuzzTest(FuzzedDataProvider& fdp)
@@ -532,8 +541,9 @@ void Test(FuzzedDataProvider& fdp)
     AudioCoreServiceIsNoRunningStreamFuzzTest,
     AudioCoreServiceBluetoothServiceCrashedCallbackFuzzTest,
     AudioCoreServiceSetPreferredInputDeviceIfValidFuzzTest,
+    AudioSelectInterfaceServiceSetInputDeviceFuzzTest,
+    AudioSelectInterfaceServiceSetPreferredInputDeviceIfValidFuzzTest,
     AudioCoreServiceParsePreferredInputDeviceHistoryFuzzTest,
-    AudioCoreServiceWriteDesignateAudioCaptureDeviceEventFuzzTest,
     AudioCoreServiceGetFlagForMmapStreamFuzzTest,
     AudioCoreServiceGetPaIndexByPortNameFuzzTest,
     AudioCoreServiceNotifyDistributedOutputChangeFuzzTest,

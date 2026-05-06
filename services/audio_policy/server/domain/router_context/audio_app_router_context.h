@@ -27,12 +27,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-enum class StreamState {
-    STARTED,
-    PAUSED,
-    STOPPED,
-};
-
 struct AudioAppRouterContext {
     bool isForeground_ = true;
 
@@ -45,7 +39,8 @@ struct AudioAppRouterContext {
     std::map<uint32_t, StreamUsage> outputStreams_;
 
     std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> streamSelectDevices_;
-    std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> streamDefaultDevices_;
+    std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> mediaDefaultDevices_;
+    std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> callDefaultDevices_;
 
     AudioAppRouterContext() = default;
     AudioAppRouterContext(int32_t pid, int32_t uid, bool isForeground)

@@ -82,8 +82,9 @@ int32_t AudioDevicesClientManager::SelectOutputDevice(sptr<AudioRendererFilter> 
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= 0 || (audioRendererFilter->uid == -1),
         ERR_INVALID_PARAM, "invalid uid.");
 
-    CHECK_AND_RETURN_RET_LOG(audioDeviceSelectMode == 0 || audioDeviceSelectMode == 1,
-        ERR_INVALID_PARAM, "invalid audioDeviceSelectMode.");
+    CHECK_AND_RETURN_RET_LOG(audioDeviceSelectMode == SELECT_STRATEGY_DEFAULT ||
+        audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT ||
+        audioDeviceSelectMode == SELECT_STRATEGY_STREAM, ERR_INVALID_PARAM, "invalid audioDeviceSelectMode.");
 
     AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s> " \
         " audioDeviceSelectMode<%{public}d>", getpid(), audioRendererFilter->uid,
@@ -92,6 +93,13 @@ int32_t AudioDevicesClientManager::SelectOutputDevice(sptr<AudioRendererFilter> 
 
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
         audioDeviceSelectMode);
+}
+
+int32_t AudioDevicesClientManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_INVALID_PARAM, "invalid parameter");
+    AUDIO_DEBUG_LOG("[%{public}d] RestoreOutputDevice: uid<%{public}d>", getpid(), audioRendererFilter->uid);
+    return AudioPolicyManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
 }
 
 int32_t AudioDevicesClientManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,

@@ -32,8 +32,6 @@ class AudioServiceAdapterCallback {
 public:
     virtual void OnAudioStreamRemoved(const uint64_t sessionID) = 0;
 
-    virtual void OnSetVolumeDbCb() = 0;
-
     virtual ~AudioServiceAdapterCallback() {}
 };
 
@@ -216,13 +214,6 @@ public:
      *
      * @return int32_t the result.
      */
-    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
-
-    /**
-     * @brief Get current effect property.
-     *
-     * @return int32_t the result.
-     */
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
 
     /**
@@ -230,15 +221,7 @@ public:
      *
      * @return int32_t the result.
      */
-    virtual int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
-
-    /**
-     * @brief Get current enhance property.
-     *
-     * @return int32_t the result.
-     */
-    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    virtual int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
     /**
@@ -294,6 +277,11 @@ public:
      * @return {@link true} if support, {@link false} otherwise
      */
     virtual void LoadCollaborationConfig() = 0;
+
+    virtual void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType) = 0;
+    virtual void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType) = 0;
 
     virtual ~AudioServiceAdapter();
 };

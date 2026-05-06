@@ -25,7 +25,6 @@ using namespace std;
 constexpr int32_t NEED_TO_FETCH = 1;
 
 enum DEVICE_PRIORITY {
-    PRIORITY_APP,
     PRIORITY_PRIVACY,
     PRIORITY_PUBLIC,
     PRIORITY_BASE,
@@ -90,28 +89,13 @@ public:
     bool HasConnectedA2dp();
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
     int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
-    int32_t UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
-    int32_t UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
-    int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
-    shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
-    shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> GetBuiltinOutputDevice(DeviceType devType);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     VolumeBehavior GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType);
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const SourceType sourceType, bool isRunning);
-    int32_t RemoveSelectedInputDevice(const uint32_t sessionID);
-    shared_ptr<AudioDeviceDescriptor> GetSelectedCaptureDevice(const uint32_t sessionID);
-    int32_t SetPreferredInputDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &devDesc, const uint32_t sessionID, const SourceType sourceType);
-    shared_ptr<AudioDeviceDescriptor> GetOnlinePreferredInputDevice(const uint32_t sessionID);
-    int32_t RemovePreferredInputDevice(const uint32_t sessionID);
     void Dump(std::string &dumpString);
     void UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
-    bool IsSessionSetDefaultDevice(uint32_t sessionId);
     bool ExistsByType(DeviceType devType);
     bool ExistsByTypeAndAddress(DeviceType devType, const string &address);
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
@@ -120,6 +104,7 @@ public:
     AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsDeviceAvailable(AudioDeviceUsage audioDevUsage, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
 
 private:
     AudioDeviceManager();
@@ -213,20 +198,12 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
     bool hasEarpiece_ = false;
     unordered_map<uint32_t, std::pair<DeviceType, StreamUsage>> selectedDefaultOutputDeviceInfo_;
-    vector<std::pair<uint32_t, DeviceType>> mediaDefaultOutputDevices_;
-    vector<std::pair<uint32_t, DeviceType>> callDefaultOutputDevices_;
-    DeviceType selectedMediaDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
-    DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
     std::mutex currentActiveDevicesMutex_;
-    unordered_map<uint32_t, std::pair<DeviceType, SourceType>> selectedInputDeviceInfo_;
-    std::mutex selectInputDeviceMutex_;
     std::string remoteInfoNetworkId_ = "";
     DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
     std::mutex virtualDevicesMutex_;
     std::mutex descArrayMutex_;
-    unordered_map<uint32_t, std::pair<std::shared_ptr<AudioDeviceDescriptor>, SourceType>> preferredInputDeviceInfo_;
-    std::mutex preferredInputDeviceMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

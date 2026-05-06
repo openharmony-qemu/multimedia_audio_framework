@@ -152,6 +152,16 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteTempoPitchNode::SignalProcess(
     return intermediateResult_;
 }
 
+int32_t AudioSuiteTempoPitchNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    std::string optionValue = "";
+    int32_t ret = GetOptions("speedAndPitch", optionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !optionValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo = "    TempoAndPitch: " +
+        AudioSuiteUtil::FormatOptionsValue("speedAndPitch", optionValue) + "\n";
+    return SUCCESS;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS

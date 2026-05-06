@@ -32,7 +32,6 @@
 #include "audio_device_manager.h"
 #include "audio_stream_collector.h"
 #include "audio_state_manager.h"
-#include "audio_affinity_manager.h"
 #include "audio_policy_server_handler.h"
 
 #include "audio_a2dp_device.h"
@@ -64,10 +63,6 @@ public:
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
         const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
@@ -94,7 +89,6 @@ public:
         ConnectState connectState, bool isVrSupported = true);
     std::vector<SourceOutput> GetSourceOutputs();
     void SetFirstScreenOn();
-    void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
     bool GetVirtualCall(pid_t uid);
@@ -105,7 +99,6 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
         audioConfigManager_(AudioCoreConfigManager::GetInstance()),
@@ -118,7 +111,8 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         pipeManager_(AudioPipeManager::GetPipeManager()),
-        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
+        audioRouterSelectStrategy_(AudioRouterSelectStrategy::GetInstance()) {}
     ~AudioDeviceCommon() {}
 
     void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &updatedDesc,
@@ -128,7 +122,6 @@ private:
 
     bool IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
     bool IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
-    void RemoveOfflineDevice(const AudioDeviceDescriptor& updatedDesc);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
     bool IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -174,7 +167,6 @@ private:
     AudioRouterCenter& audioRouterCenter_;
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioActiveDevice& audioActiveDevice_;
     AudioCoreConfigManager& audioConfigManager_;
@@ -189,6 +181,7 @@ private:
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
     AudioUsrSelectManager& audioUsrSelectManager_;
+    AudioRouterSelectStrategy& audioRouterSelectStrategy_;
 };
 
 }

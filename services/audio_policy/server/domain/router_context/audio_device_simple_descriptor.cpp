@@ -26,17 +26,8 @@ namespace AudioStandard {
 
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceSimpleDescriptor::GetOnlineDeviceDescriptor() const
 {
-    auto devices = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
-    for (const auto& device : devices) {
-        if (device->deviceType_ == deviceType_ &&
-            device->deviceRole_ == deviceRole_ &&
-            device->deviceId_ == deviceId_ &&
-            device->networkId_ == networkId_ &&
-            device->macAddress_ == macAddress_) {
-            return device;
-        }
-    }
-    return nullptr;
+    auto ret = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceId_);
+    return ret ? make_shared<AudioDeviceDescriptor>(*ret) : nullptr;
 }
 
 }

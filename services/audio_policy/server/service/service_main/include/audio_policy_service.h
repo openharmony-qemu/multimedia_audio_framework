@@ -45,7 +45,6 @@
 #include "audio_state_manager.h"
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
-#include "audio_affinity_manager.h"
 #include "audio_ec_info.h"
 
 #ifdef BLUETOOTH_ENABLE
@@ -74,6 +73,8 @@
 #include "sle_audio_device_manager.h"
 #include "va_device_manager.h"
 #include "audio_pipe_manager.h"
+#include "audio_policy_dump.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -113,8 +114,6 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
-
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
@@ -141,6 +140,8 @@ public:
         const std::string &caller = "");
 
     void OnConnectFailed(AudioDeviceDescriptor &desc);
+
+    void OnVehiclePriorityChanged(bool enable);
 
     void LoadEffectLibrary();
 
@@ -187,15 +188,6 @@ public:
 
     void RegisterRemoteDevStatusCallback();
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
-
     int32_t GetMaxRendererInstances();
 
     bool IsEnhancedRoutingSupported();
@@ -229,23 +221,16 @@ public:
 
     void MuteMediaWhenAccountsChanged();
 
-    // for effect V3
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     // for effect
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    // for enhance
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
-
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
@@ -265,7 +250,6 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectService_(AudioEffectService::GetAudioEffectService()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
 #ifdef AUDIO_WIRED_DETECT
@@ -289,17 +273,18 @@ private:
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
         sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
         vaDeviceManager_(VADeviceManager::GetInstance()),
-        pipeManager_(AudioPipeManager::GetPipeManager())
+        pipeManager_(AudioPipeManager::GetPipeManager()),
+        audioPolicyDump_(AudioPolicyDump::GetInstance())
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
     ~AudioPolicyService();
 
-    void GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    void GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    void GetSupportedEffectProperty(AudioEffectPropertyArray &propertyArray);
+    void GetSupportedEnhanceProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArray &propertyArray, const EffectFlag& flag);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray);
 
     void RegisterNameMonitorHelper();
 
@@ -328,7 +313,20 @@ private:
 
     BluetoothOffloadState GetA2dpOffloadFlag();
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
-    bool CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property);
+    bool CheckVoipAnrOn(std::vector<AudioEffectProperty> &property);
+
+    // Helper functions for GetProcessDeviceInfo refactoring
+    int32_t HandlePlaybackModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    int32_t HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    int32_t HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    int32_t HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    bool IsVoipStreamUsage(StreamUsage streamUsage);
+    void SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
+        const AudioDeviceDescriptor &sourceDesc, DeviceRole role);
 private:
 
     static bool isBtListenerRegistered;
@@ -380,7 +378,6 @@ private:
     bool isMicrophoneMutePersistent_ = false;
 
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 #ifdef AUDIO_WIRED_DETECT
@@ -422,6 +419,7 @@ private:
     SleAudioDeviceManager& sleAudioDeviceManager_;
     VADeviceManager& vaDeviceManager_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+    AudioPolicyDump& audioPolicyDump_;
 };
 
 } // namespace AudioStandard

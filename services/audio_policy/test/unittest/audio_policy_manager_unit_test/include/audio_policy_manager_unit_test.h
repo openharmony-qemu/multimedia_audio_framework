@@ -77,6 +77,18 @@ public:
     virtual int32_t OnDistributedOutputChange(bool isRemote)
         override {return 0;}
     virtual int32_t OnDistributedServiceOnline() override {return 0;}
+    virtual int32_t SetSplitModeReadyRefined() override {return 0;}
+};
+
+class ConcreteAudioRouteSelector : public AudioRouteSelector {
+public:
+    virtual int32_t OnAudioRouteSelect(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
+        int32_t &selectResult) override
+    {
+        (void)routeSelectInfo;
+        selectResult = ROUTE_SELECT_RESULT_SUCCESS;
+        return 0;
+    }
 };
 
 class ConcreteAudioDeviceAnahs : public AudioDeviceAnahs {

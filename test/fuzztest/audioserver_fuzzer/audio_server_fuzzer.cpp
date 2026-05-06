@@ -895,7 +895,6 @@ void AudioServerSetExtraParametersTest()
     std::string key = g_testKeys[id];
     std::pair<std::string, std::string> kvpair = std::make_pair(g_testKeys[id], g_testKeys[id]);
     kvpairs.push_back(kvpair);
-    audioServerPtr->CacheExtraParameters(key, kvpairs);
     audioServerPtr->ParseAudioParameter();
 }
 
@@ -1291,21 +1290,11 @@ void AudioServerSetIORoutesFuzzTest()
         return;
     }
     BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[index % testBluetoothOffloadStates.size()];
-    std::string deviceName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    uint32_t pipeId = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->SetIORoutes(activeDevices, a2dpOffloadFlag, deviceName);
+    audioServerPtr->SetIORoutes(activeDevices, a2dpOffloadFlag, pipeId);
     std::vector<DeviceType> deviceTypes = {deviceType};
-    audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
-}
-
-void AudioServerUpdateActiveDeviceRouteFuzzTest()
-{
-    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t type = provider.ConsumeIntegral<int32_t>();
-    int32_t flag = provider.ConsumeIntegral<int32_t>();
-    int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->UpdateActiveDeviceRoute(type, flag, a2dpOffloadFlag);
+    audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
 }
 
 void AudioServerUpdateActiveDevicesRouteFuzzTest()
@@ -1315,7 +1304,8 @@ void AudioServerUpdateActiveDevicesRouteFuzzTest()
     int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
     std::string deviceName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
+    uint32_t pipeId = provider.ConsumeIntegral<uint32_t>();
+    audioServerPtr->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, pipeId);
 }
 
 void AudioServerSetDmDeviceTypeFuzzTest()
@@ -1950,10 +1940,7 @@ void UpdateArmInstance()
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag deviceFlag = g_testDeviceFlags[provider.ConsumeIntegral<uint32_t>() % g_testDeviceFlags.size()];
     std::vector<DeviceType> deviceTypes = {deviceType};
-    BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[provider.ConsumeIntegral<uint32_t>() %
-        testBluetoothOffloadStates.size()];
-    std::string deviceName = provider.ConsumeRandomLengthString();
-    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
 }
 
 void UpdateDeviceForAllSource()
@@ -1966,12 +1953,9 @@ void UpdateDeviceForAllSource()
     DeviceType deviceType = g_testDeviceTypes[provider.ConsumeIntegral<uint32_t>() % g_testDeviceTypes.size()];
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
     std::vector<DeviceType> deviceTypes = {deviceType};
-    BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[provider.ConsumeIntegral<uint32_t>() %
-        testBluetoothOffloadStates.size()];
-    std::string deviceName = provider.ConsumeRandomLengthString();
-    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
     deviceFlag = DeviceFlag::ALL_DEVICES_FLAG;
-    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes);
 }
 
 void OnRemoteDied()
@@ -2155,8 +2139,9 @@ void SetIORoutesForRemote()
     DeviceType type = DEVICE_TYPE_INVALID;
     DeviceFlag flag = g_testDeviceFlags[provider.ConsumeIntegral<uint32_t>() % g_testDeviceFlags.size()];
     std::vector<DeviceType> deviceTypes;
+    deviceTypes.push_back(type);
     std::string networkId = "LocalDevice";
-    audioServerPtr->SetIORoutesForRemote(type, flag, deviceTypes, networkId);
+    audioServerPtr->SetIORoutesForRemote(flag, deviceTypes, networkId);
 }
 
 void ReleaseActiveDeviceRoute()
@@ -2292,7 +2277,6 @@ vector<TestFuncs> g_testFuncs = {
     AudioServerOnDataTransferStateChangeFuzzTest,
     AudioServerSetAudioParameterFuzzTest,
     AudioServerSetIORoutesFuzzTest,
-    AudioServerUpdateActiveDeviceRouteFuzzTest,
     AudioServerUpdateActiveDevicesRouteFuzzTest,
     AudioServerSetDmDeviceTypeFuzzTest,
     AudioServerSetAudioMonoStateFuzzTest,

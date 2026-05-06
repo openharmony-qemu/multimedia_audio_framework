@@ -23,9 +23,10 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedMediaRenderDevice();
+    auto desc = AudioRouterSelectStrategy::GetInstance().GetMediaDefaultOutputDevice(clientUID, sessionID);
     if (desc == nullptr) {
         desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
     }
@@ -34,9 +35,10 @@ shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsag
     return desc;
 }
 
-shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedCallRenderDevice();
+    auto desc = AudioRouterSelectStrategy::GetInstance().GetCallDefaultOutputDevice(clientUID, sessionID);
     if (desc == nullptr) {
         desc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice(streamUsage);
     }

@@ -34,188 +34,47 @@ std::shared_ptr<AudioInterruptService> GetInterruptServiceTest()
 }
 
 /**
- * @tc.name: SetOffloadVolume_001
- * @tc.desc: Test SetOffloadVolume
+ * @tc.name: SetOffloadSessionId_001
+ * @tc.desc: Test SetOffloadSessionId with new signature
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_001, TestSize.Level4)
+HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadSessionId_001, TestSize.Level4)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_002
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_002, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_SPEECH;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_003
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_003, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_RING;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
+    
     uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
+        != audioAdapterManager->offloadSessionID_.end(), true);
+    EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_.find(ioHandle)
+        != audioAdapterManager->ioHandleSessionMap_.end(), true);
 }
 
 /**
- * @tc.name: SetOffloadVolume_004
- * @tc.desc: Test SetOffloadVolume
+ * @tc.name: SetOffloadSessionId_002
+ * @tc.desc: Test SetOffloadSessionId with remote adapter
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_004, TestSize.Level4)
+HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadSessionId_002, TestSize.Level4)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_RING;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
-    uint32_t sessionId = 1;
+    
+    uint32_t sessionId = MIN_STREAMID + 2;
+    uint32_t ioHandle = 200;
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_005
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_005, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "offload";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_006
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_006, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "remote";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_007
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_007, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "offload";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_008
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_008, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "remote";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_[sessionId], OFFLOAD_IN_REMOTE);
 }
 
 /**
  * @tc.name: ResetOffloadSessionId_001
- * @tc.desc: Test ResetOffloadSessionId
+ * @tc.desc: Test ResetOffloadSessionId with new signature
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
@@ -225,17 +84,31 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, ResetOffloadSessionId_001, TestSize.Lev
     EXPECT_NE(audioAdapterManager, nullptr);
 
     uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_[adapter].has_value(), false);
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
+    audioAdapterManager->ResetOffloadSessionId(sessionId);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
+        == audioAdapterManager->offloadSessionID_.end(), true);
+    EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_.find(ioHandle)
+        == audioAdapterManager->ioHandleSessionMap_.end(), true);
+}
 
-    adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_[adapter].has_value(), false);
+/**
+ * @tc.name: ResetOffloadSessionId_002
+ * @tc.desc: Test ResetOffloadSessionId when sessionId not exist
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, ResetOffloadSessionId_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+
+    uint32_t sessionId = MIN_STREAMID + 1;
+    audioAdapterManager->ResetOffloadSessionId(sessionId);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
+        == audioAdapterManager->offloadSessionID_.end(), true);
 }
 
 /**
@@ -618,6 +491,256 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, LegacyHighVolumeCheckTime_001, TestSize
     int64_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     EXPECT_EQ(audioAdapterManager->SetLegacyHighVolumeCheckTime(now), ERROR);
     EXPECT_EQ(audioAdapterManager->GetLegacyHighVolumeCheckTime(), now);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_001
+* @tc.desc: Test IsStreamTypeInUse with null streamDesc
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    AudioStreamType streamType = STREAM_MUSIC;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_002
+* @tc.desc: Test IsStreamTypeInUse with matching volume type from stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_003
+* @tc.desc: Test IsStreamTypeInUse with non-matching volume type
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_003, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->callerUid_ = 1000;
+    AudioStreamType streamType = STREAM_RING;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_004
+* @tc.desc: Test IsStreamTypeInUse with STREAM_MUSIC and non-system voice assistant
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_004, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
+    streamDesc->callerUid_ = 1001;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_005
+* @tc.desc: Test IsStreamTypeInUse with STREAM_MUSIC and system voice assistant
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_005, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
+    streamDesc->callerUid_ = 1000;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_006
+* @tc.desc: Test IsStreamTypeInUse with non-MUSIC stream and voice assistant
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_006, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
+    streamDesc->callerUid_ = 1001;
+    AudioStreamType streamType = STREAM_RING;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_007
+* @tc.desc: Test IsStreamTypeInUse with STREAM_VOICE_CALL matching stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_007, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_008
+* @tc.desc: Test IsStreamTypeInUse with STREAM_NOTIFICATION matching stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_008, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_NOTIFICATION;
+    AudioStreamType streamType = STREAM_NOTIFICATION;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_009
+* @tc.desc: Test IsStreamTypeInUse with STREAM_ALARM matching stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_009, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+    AudioStreamType streamType = STREAM_ALARM;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_010
+* @tc.desc: Test IsStreamTypeInUse with STREAM_RING matching stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_010, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+    AudioStreamType streamType = STREAM_RING;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_011
+* @tc.desc: Test IsStreamTypeInUse with STREAM_ACCESSIBILITY matching stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_011, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ACCESSIBILITY;
+    AudioStreamType streamType = STREAM_ACCESSIBILITY;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_012
+* @tc.desc: Test IsStreamTypeInUse with STREAM_SYSTEM matching stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_012, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_SYSTEM;
+    AudioStreamType streamType = STREAM_SYSTEM;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: IsStreamTypeInUse_014
+* @tc.desc: Test IsStreamTypeInUse with STREAM_DTMF matching stream usage
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_014, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_DTMF;
+    AudioStreamType streamType = STREAM_DTMF;
+
+    bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
+    EXPECT_EQ(result, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

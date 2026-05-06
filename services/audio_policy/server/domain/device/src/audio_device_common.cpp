@@ -98,7 +98,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_UNPROCESS_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
-    std::string(PRIMARY_RAW_AI_MIC)
+    std::string(PRIMARY_RAW_AI_MIC),
+    std::string(PRIMARY_INTERPHON_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -182,100 +183,6 @@ void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredInputDeviceUpdated();
     }
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
-{
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    RouterType bypassType = RouterType::ROUTER_TYPE_NONE;
-    if (rendererInfo.streamUsage <= STREAM_USAGE_UNKNOWN ||
-        rendererInfo.streamUsage > STREAM_USAGE_MAX) {
-        AUDIO_WARNING_LOG("Invalid usage[%{public}d], return current device.", rendererInfo.streamUsage);
-        std::shared_ptr<AudioDeviceDescriptor> devDesc =
-            std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
-        deviceList.push_back(devDesc);
-        return deviceList;
-    }
-    if (networkId == LOCAL_NETWORK_ID) {
-        auto preferredType = AudioPolicyUtils::GetInstance().GetPreferredTypeByStreamUsage(rendererInfo.streamUsage);
-        if (preferredType == AUDIO_CALL_RENDER && uid >= 0) {
-            bypassType = RouterType::ROUTER_TYPE_USER_SELECT;
-            std::shared_ptr<AudioDeviceDescriptor> preferredDevice =
-                AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(uid, INVALID_STREAM_ID);
-            CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
-            auto device = audioDeviceManager_.FindConnectedDeviceById(preferredDevice->deviceId_);
-            if (device != nullptr && audioDeviceManager_.IsDeviceAvailable(CALL_OUTPUT_DEVICES, device)) {
-                deviceList.push_back(preferredDevice);
-                return deviceList;
-            }
-        }
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-            audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage,
-                -1, "GetPreferredOutputDeviceDescInner", bypassType);
-        for (size_t i = 0; i < descs.size(); i++) {
-            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
-            deviceList.push_back(devDesc);
-        }
-
-        FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
-            bypassType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC };
-        info.caller = "GetPreferredOutputDeviceDescInner";
-        descs = audioRouterCenter_.FetchDupDevices(info);
-        for (size_t i = 0; i < descs.size(); i++) {
-            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
-            deviceList.push_back(devDesc);
-        }
-    } else {
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
-        for (const auto &desc : descs) {
-            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
-            deviceList.push_back(devDesc);
-        }
-    }
-
-    return deviceList;
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredInputDeviceDescInner(
-    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
-{
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    if (captureInfo.sourceType <= SOURCE_TYPE_INVALID ||
-        captureInfo.sourceType > SOURCE_TYPE_MAX) {
-        std::shared_ptr<AudioDeviceDescriptor> devDesc =
-            std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentInputDevice(uid));
-        deviceList.push_back(devDesc);
-        return deviceList;
-    }
-
-    if (captureInfo.sourceType == SOURCE_TYPE_WAKEUP) {
-        std::shared_ptr<AudioDeviceDescriptor> devDesc =
-            std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
-        devDesc->networkId_ = LOCAL_NETWORK_ID;
-        deviceList.push_back(devDesc);
-        return deviceList;
-    }
-
-    if (networkId == LOCAL_NETWORK_ID) {
-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
-        CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr.");
-        if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
-            captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
-            desc->deviceType_ = DEVICE_TYPE_INVALID;
-            desc->deviceRole_ = INPUT_DEVICE;
-        }
-        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
-        deviceList.push_back(devDesc);
-    } else {
-        vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteCaptureDevices();
-        for (const auto &desc : descs) {
-            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
-            deviceList.push_back(devDesc);
-        }
-    }
-
-    return deviceList;
 }
 
 int32_t AudioDeviceCommon::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
@@ -378,16 +285,6 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDe
     }
 }
 
-void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updatedDesc)
-{
-    if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
-        audioAffinityManager_.RemoveOfflineRendererDevice(updatedDesc);
-    }
-    if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
-        audioAffinityManager_.RemoveOfflineCapturerDevice(updatedDesc);
-    }
-}
-
 void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
@@ -402,13 +299,15 @@ void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDevic
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "UpdateConnectedDevicesWhenDisconnecting");
         }
-        if (audioStateManager_.GetPreferredCallCaptureDevice() != nullptr &&
-            desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallCaptureDevice())) {
+        auto callInputDevice = strategy.GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
+        if (callInputDevice != nullptr && callInputDevice->deviceType_ != DEVICE_TYPE_NONE &&
+            desc->IsSameDeviceDesc(*callInputDevice)) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
                 std::make_shared<AudioDeviceDescriptor>());
         }
-        if (audioStateManager_.GetPreferredRecordCaptureDevice() != nullptr &&
-            desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredRecordCaptureDevice())) {
+        auto mediaInputDevice = strategy.GetMediaInputDevice(INVALID_UID, INVALID_STREAM_ID, SOURCE_TYPE_INVALID);
+        if (mediaInputDevice != nullptr && mediaInputDevice->deviceType_ != DEVICE_TYPE_NONE &&
+            desc->IsSameDeviceDesc(*mediaInputDevice)) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
                 std::make_shared<AudioDeviceDescriptor>());
         }
@@ -419,7 +318,6 @@ void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDevic
 void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume)
 {
-    RemoveOfflineDevice(updatedDesc);
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
 
     // Remember the disconnected device descriptor and remove it
@@ -489,17 +387,16 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         return;
     }
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
+    FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "updateConnectedDescWhenCon_1", ROUTER_TYPE_USER_SELECT };
     if (NeedClearPreferredMediaRenderer(
         AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID),
-        audioDescriptor, audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
-            "UpdateConnectedDevicesWhenConnectingForOutputDevice_1", ROUTER_TYPE_USER_SELECT), usage)) {
+        audioDescriptor, audioRouterCenter_.FetchOutputDevices(info), usage)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
+    info = { STREAM_USAGE_VOICE_COMMUNICATION, "updateConnectedDescWhenCon_2", ROUTER_TYPE_USER_SELECT };
     if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
-        "UpdateConnectedDevicesWhenConnectingForOutputDevice_2",
-        ROUTER_TYPE_USER_SELECT).front()) && (usage & VOICE) == VOICE) {
+        *audioRouterCenter_.FetchOutputDevices(info).front()) && (usage & VOICE) == VOICE) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
@@ -609,8 +506,9 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescr
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
     } else {
-        descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID, "GetDeviceDescriptorInner");
+        FetchDeviceInfo info = { rendererChangeInfo->rendererInfo.streamUsage,
+            rendererChangeInfo->clientUID, "GetDeviceDescriptorInner" };
+        descs = audioRouterCenter_.FetchOutputDevices(info);
     }
     return descs;
 }
@@ -710,7 +608,7 @@ int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag,
 
 void AudioDeviceCommon::NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc)
 {
-    bool isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
+    bool isDistOld = IsDistributedOutput(audioRouterSelectStrategy_.Get1stCurrentOutputDevice());
     bool isDistNew = IsDistributedOutput(deviceDesc);
     AUDIO_INFO_LOG("Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
     if (isDistOld != isDistNew) {
@@ -896,13 +794,6 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
         }
     }
     return sourceOutputs;
-}
-
-void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
-{
-    bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
-    AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);
 }
 
 void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()

@@ -22,6 +22,7 @@
 #include "audio_state_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_router_select_strategy.h"
+#include "conflict_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,14 +33,16 @@ public:
     RouterBase() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()) {}
     virtual ~RouterBase() {};
 
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        const uint32_t sessionID = INVALID_STREAM_ID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        const uint32_t sessionID = INVALID_STREAM_ID) = 0;
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0) = 0;
+        const uint32_t sessionID = INVALID_STREAM_ID) = 0;
     virtual vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
         int32_t clientUID) = 0;
     virtual std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0) = 0;
+        const uint32_t sessionID = INVALID_STREAM_ID) = 0;
     virtual std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
     virtual RouterType GetRouterType() = 0;
 
@@ -157,6 +160,30 @@ public:
         AUDIO_INFO_LOG("Wired cast, ALARM, NOTIFICATION, ENFORCED_TONE and VOICE_ASSISTANT sound on local device");
         return true;
     }
+
+    void RegisterConflictHandler(std::shared_ptr<ConflictHandler> handler)
+    {
+        handlers.push_back(handler);
+    }
+
+    void ClearConflictHandler()
+    {
+        handlers.clear();
+    }
+
+    bool CheckConflict(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
+        StreamUsage streamUsage, SourceType sourceType, bool isOutput)
+    {
+        for (auto &handler : handlers) {
+            if (handler != nullptr && handler->Detect(device, routerType, streamUsage, sourceType, isOutput)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
+    std::vector<std::shared_ptr<ConflictHandler>> handlers;
 };
 } // namespace AudioStandard
 } // namespace OHOS

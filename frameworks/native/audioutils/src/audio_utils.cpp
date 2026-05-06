@@ -42,7 +42,6 @@
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
 #include "securec.h"
-#include "privacy_error.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
 using namespace std::chrono_literals;
@@ -68,11 +67,11 @@ constexpr int32_t UID_AUDIO_BROKER = 5557;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
+constexpr int32_t UID_D2D_SA = 7040;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t UID_DMSDP_SA = 7071;
-constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 const uint32_t UNIQUE_ID_INTERVAL = 8;
@@ -82,6 +81,8 @@ constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
 constexpr size_t VISIBLE_LEN = 3;
+
+constexpr uint8_t UINT8_MID_VALUE = 128;
 
 const int32_t DATA_INDEX_0 = 0;
 const int32_t DATA_INDEX_1 = 1;
@@ -112,6 +113,7 @@ std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_MSDP_SA,
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
+    UID_D2D_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_TELEPHONY_SA, // used in distributed communication call
     UID_DMSDP_SA
@@ -220,7 +222,9 @@ bool Util::IsDualToneStreamType(const AudioStreamType streamType)
     if (VolumeUtils::IsPCVolumeEnable()) {
         return false;
     }
-    return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
+    // The notification is not dual tone type. But it always uses the volume of the speaker.
+    return streamType == STREAM_RING || streamType == STREAM_VOICE_RING ||
+        streamType == STREAM_ALARM || streamType == STREAM_NOTIFICATION;
 }
 
 bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
@@ -296,6 +300,11 @@ int64_t ClockTime::GetCurNano()
         "GetCurNanoTime fail, result:%{public}d", ret);
     result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
     return result;
+}
+
+int64_t ClockTime::GetCurMilli()
+{
+    return GetCurNano() / AUDIO_NS_PER_MILLISECOND;
 }
 
 int64_t ClockTime::GetRealNano()
@@ -568,6 +577,13 @@ bool PermissionUtil::VerifySystemPermission()
     return false;
 }
 
+bool PermissionUtil::IsHap()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return tokenTypeFlag == Security::AccessToken::TOKEN_HAP;
+}
+
 bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_t tokenId)
 {
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
@@ -829,31 +845,6 @@ bool SwitchStreamUtil::HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, S
     return true;
 }
 
-std::mutex g_recordMapMutex;
-std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
-
-int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char* permission)
-{
-    Trace trace("PrivacyKit::StartUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}u permission:%{public}s",
-        targetTokenId, permission);
-    WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
-    int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
-    guard.CheckCurrTimeout();
-    return res;
-}
-
-int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* permission)
-{
-    Trace trace("PrivacyKit::StopUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}u permission:%{public}s",
-        targetTokenId, permission);
-    WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
-    int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
-    guard.CheckCurrTimeout();
-    return res;
-}
-
 int32_t PermissionUtil::StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
     const char* permission)
 {
@@ -889,62 +880,6 @@ int32_t PermissionUtil::AddRemotePermissionUsedRecord(const std::string &deviceI
         successCount, failCount);
     guard.CheckCurrTimeout();
     return res;
-}
-
-bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
-{
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    std::lock_guard<std::mutex> lock(g_recordMapMutex);
-    if (g_tokenIdRecordMap.count(targetTokenId)) {
-        if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
-            g_tokenIdRecordMap[targetTokenId].emplace(sessionId);
-        } else {
-            AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
-        }
-    } else {
-        AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
-            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
-        int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
-            "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
-        if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
-            AUDIO_ERR_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING error code:%{public}d", res);
-        }
-        WatchTimeout reguard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacyStart");
-        res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
-        reguard.CheckCurrTimeout();
-        CHECK_AND_RETURN_RET_LOG(res == 0, false, "AddPermissionUsedRecord for tokenId %{public}u!"
-            "The PrivacyKit error code:%{public}d", targetTokenId, res);
-        g_tokenIdRecordMap[targetTokenId] = {sessionId};
-    }
-    return true;
-}
-
-bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId)
-{
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    std::unique_lock<std::mutex> lock(g_recordMapMutex);
-    if (!g_tokenIdRecordMap.count(targetTokenId)) {
-        AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
-        return true;
-    }
-
-    if (g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
-        g_tokenIdRecordMap[targetTokenId].erase(sessionId);
-    }
-    AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
-        g_tokenIdRecordMap[targetTokenId].size());
-    if (g_tokenIdRecordMap[targetTokenId].empty()) {
-        g_tokenIdRecordMap.erase(targetTokenId);
-        AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
-            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
-        int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
-            "The PrivacyKit error code:%{public}d", targetTokenId, res);
-    }
-    return true;
 }
 
 static std::unordered_map<int32_t, std::pair<uint32_t, std::string>> g_solePipeSourceMap = {};
@@ -1140,6 +1075,98 @@ void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 {
     for (; n > 0; n--) {
         *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
+    }
+}
+
+int16_t ConvertSampleToS16(const uint8_t *samplePtr, AudioSampleFormat format)
+{
+    if (samplePtr == nullptr) {
+        return 0;
+    }
+    switch (format) {
+        case SAMPLE_U8: {
+            uint8_t u8 = *samplePtr;
+            return static_cast<int16_t>((static_cast<int32_t>(u8) - UINT8_MID_VALUE) << BIT_8);
+        }
+        case SAMPLE_S16LE: {
+            return *reinterpret_cast<const int16_t*>(samplePtr);
+        }
+        case SAMPLE_S24LE: {
+            uint32_t value = samplePtr[DATA_INDEX_0] | (samplePtr[DATA_INDEX_1] << BIT_8) |
+                (samplePtr[DATA_INDEX_2] << BIT_16);
+            int32_t s24 = (static_cast<int32_t>(value) << BIT_8) >> BIT_8;
+            return static_cast<int16_t>(s24 >> BIT_8);
+        }
+        case SAMPLE_S32LE: {
+            int32_t s32 = *reinterpret_cast<const int32_t*>(samplePtr);
+            return static_cast<int16_t>((static_cast<double>(s32) / INT32_MAX) * INT16_MAX);
+        }
+        case SAMPLE_F32LE: {
+            float f32 = *reinterpret_cast<const float*>(samplePtr);
+            float capped = CapMax(f32);
+            return static_cast<int16_t>(capped * INT16_MAX);
+        }
+        default:
+            return 0;
+    }
+}
+
+void ConvertSampleFromS16(int16_t s16Sample, uint8_t *outputPtr, AudioSampleFormat format)
+{
+    if (outputPtr == nullptr) {
+        return;
+    }
+    switch (format) {
+        case SAMPLE_U8: {
+            int32_t temp = (s16Sample >> BIT_8) + UINT8_MID_VALUE;
+            *outputPtr = static_cast<uint8_t>(std::max(0, std::min(static_cast<int32_t>(UINT8_MAX), temp)));
+            break;
+        }
+        case SAMPLE_S16LE: {
+            *reinterpret_cast<int16_t*>(outputPtr) = s16Sample;
+            break;
+        }
+        case SAMPLE_S24LE: {
+            int32_t s24 = static_cast<int32_t>(s16Sample) << BIT_8;
+            outputPtr[DATA_INDEX_0] = s24 & 0xFF;
+            outputPtr[DATA_INDEX_1] = (s24 >> BIT_8) & 0xFF;
+            outputPtr[DATA_INDEX_2] = (s24 >> BIT_16) & 0xFF;
+            break;
+        }
+        case SAMPLE_S32LE: {
+            int32_t s32 = static_cast<int32_t>((static_cast<double>(s16Sample) / INT16_MAX) * INT32_MAX);
+            *reinterpret_cast<int32_t*>(outputPtr) = s32;
+            break;
+        }
+        case SAMPLE_F32LE: {
+            float f32 = static_cast<float>(s16Sample) * (1.0f / (1 << (BIT_16 - 1)));
+            *reinterpret_cast<float*>(outputPtr) = f32;
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void ConvertBufferToS16(const uint8_t *input, uint32_t samples, int16_t *output, AudioSampleFormat format)
+{
+    if (input == nullptr || output == nullptr || samples == 0) {
+        return;
+    }
+    uint32_t bytesPerSample = PcmFormatToBits(format);
+    for (uint32_t i = 0; i < samples; i++) {
+        output[i] = ConvertSampleToS16(input + i * bytesPerSample, format);
+    }
+}
+
+void ConvertBufferFromS16(const int16_t *input, uint32_t samples, uint8_t *output, AudioSampleFormat format)
+{
+    if (input == nullptr || output == nullptr || samples == 0) {
+        return;
+    }
+    uint32_t bytesPerSample = PcmFormatToBits(format);
+    for (uint32_t i = 0; i < samples; i++) {
+        ConvertSampleFromS16(input[i], output + i * bytesPerSample, format);
     }
 }
 
@@ -1959,16 +1986,18 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
     {STREAM_VOICE_CALL, {
         STREAM_USAGE_VOICE_COMMUNICATION,
         STREAM_USAGE_VIDEO_COMMUNICATION,
-        STREAM_USAGE_VOICE_MODEM_COMMUNICATION}},
+        STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+        STREAM_USAGE_INTERPHONE}},
     {STREAM_VOICE_CALL_ASSISTANT, {
         STREAM_USAGE_VOICE_CALL_ASSISTANT}},
     {STREAM_RING, {
         STREAM_USAGE_RINGTONE,
+        STREAM_USAGE_VOICE_RINGTONE}},
+    {STREAM_NOTIFICATION, {
         STREAM_USAGE_SYSTEM,
         STREAM_USAGE_NOTIFICATION,
         STREAM_USAGE_ENFORCED_TONE,
-        STREAM_USAGE_DTMF,
-        STREAM_USAGE_VOICE_RINGTONE}},
+        STREAM_USAGE_DTMF}},
 #ifdef FEATURE_AUDIO_ZONE
     {STREAM_MUSIC, {
         STREAM_USAGE_UNKNOWN,
@@ -2044,6 +2073,7 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_UNKNOWN, STREAM_MUSIC},
     {STREAM_USAGE_MUSIC, STREAM_MUSIC},
     {STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_COMMUNICATION},
+    {STREAM_USAGE_INTERPHONE, STREAM_VOICE_COMMUNICATION},
     {STREAM_USAGE_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_USAGE_ALARM, STREAM_ALARM},
     {STREAM_USAGE_VOICE_MESSAGE, STREAM_VOICE_MESSAGE},
@@ -2173,7 +2203,9 @@ AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamUsage(StreamUsage streamUsag
 
 std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamUsageMap_ = {
     {STREAM_RING, {STREAM_USAGE_VOICE_RINGTONE}},
-    {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION}},
+    {STREAM_NOTIFICATION, {STREAM_USAGE_NOTIFICATION}},
+    {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION,
+        STREAM_USAGE_INTERPHONE}},
     {STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
     {STREAM_ALARM, {STREAM_USAGE_ALARM}},
     {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
@@ -2265,7 +2297,7 @@ int32_t VolumeUtils::VolumeLevelToDegree(int32_t level, int32_t maxLevel)
     if (level == VOLUME_LEVEL_ZERO) {
         return VOLUME_DEGREE_ZERO;
     }
-    
+
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }
@@ -2318,7 +2350,7 @@ VolumeScale VolumeScale::Adjust(const VolumeScale &volume)
 {
     if (volume.volumeLevel_ == volumeLevel_) {
         int32_t oldVal = volumeDegree_;
-        if (valueType_ == VolumeKeyType::VOLUME_KEY_TYPE_LEVEL) {
+        if (valueType_ == VolumeKeyType::LEVEL) {
             volumeDegree_ = volume.volumeDegree_;
         }
 

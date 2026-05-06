@@ -1040,6 +1040,168 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test HpaeRendererManager Pause API with isStandby
+ * @tc.type  : FUNC
+ * @tc.number: PauseWithStandby_001
+ * @tc.desc  : Test Pause with isStandby=true for renderer stream
+ */
+HWTEST_F(HpaeRendererManagerTest, PauseWithStandby_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeSinkInputInfo sinkInputInfo;
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
+    hpaeRendererManager->SetSpeed(streamInfo.sessionId, 1.0f);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId, true) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManager Pause API with isStandby=false
+ * @tc.type  : FUNC
+ * @tc.number: PauseWithStandby_002
+ * @tc.desc  : Test Pause with isStandby=false for renderer stream
+ */
+HWTEST_F(HpaeRendererManagerTest, PauseWithStandby_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeSinkInputInfo sinkInputInfo;
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
+    hpaeRendererManager->SetSpeed(streamInfo.sessionId, 1.0f);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId, false) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_001
+ * @tc.desc  : Test AdjustFrameLen with different frameLen in microseconds
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_001, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 480;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen same frameLen
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_002
+ * @tc.desc  : Test AdjustFrameLen when frameLen already matches
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_002, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 960;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen different samplingRate
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_003
+ * @tc.desc  : Test AdjustFrameLen with different samplingRate
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_003, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 441;
+    inNodeInfo.samplingRate = SAMPLE_RATE_44100;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test SetIsLowLatency for HpaeRendererManager
+ * @tc.type  : FUNC
+ * @tc.number: SetIsLowLatency_001
+ * @tc.desc  : Test SetIsLowLatency is called with false during AddSingleNodeToSink
+ */
+HWTEST_F(HpaeRendererManagerTest, SetIsLowLatency_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    auto it = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    ASSERT_EQ(it != hpaeRendererManager->sinkInputNodeMap_.end(), true);
+    auto node = it->second;
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->GetIsLowLatency(), false);
+
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
  * @tc.name: CreateRendererManager
  * @tc.type: FUNC
  * @tc.number: CreateRendererManager_001
@@ -1802,7 +1964,11 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_001, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = true;
-    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload, true), ERROR);
+
+    hpaeRendererManager->InitManager(isReload, false);
+    isReload = false;
+    hpaeRendererManager->InitManager(isReload, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
@@ -1827,7 +1993,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_002, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = true;
-    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload, true), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
@@ -2749,6 +2915,8 @@ HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    hpaeRendererManager->sinkInputNodeMap_.clear();
+    hpaeRendererManager->EnableCollaboration();
     
     HpaeNodeInfo nodeInfo1;
     uint32_t sessionIdTemp1 = TEST_STREAM_SESSION_ID;
@@ -2771,6 +2939,32 @@ HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
     hpaeRendererManager->EnableCollaboration();
 
     WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test OnCollborationFadeDone
+ * @tc.type  : FUNC
+ * @tc.number: OnCollborationFadeDone_001
+ * @tc.desc  : Test OnCollborationFadeDone.
+ */
+HWTEST_F(HpaeRendererManagerTest, OnCollborationFadeDone_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    hpaeRendererManager->isReloadManagerFromCollStateChange_ = false;
+    hpaeRendererManager->OnCollborationFadeDone(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->isReloadManagerFromCollStateChange_ = true;
+    hpaeRendererManager->OnCollborationFadeDone(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(hpaeRendererManager);
+
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
@@ -3145,5 +3339,163 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test StopInterphoneSinkIfNeeded for interphone stream
+ * @tc.type  : FUNC
+ * @tc.number: StopInterphoneSinkIfNeeded_001
+ * @tc.desc  : Test StopInterphoneSinkIfNeeded when deviceName contains "Interphone".
+ */
+HWTEST_F(HpaeRendererManagerTest, StopInterphoneSinkIfNeeded_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceName = "Interphone_Sink";  // deviceName contains "Interphone"
+    sinkInfo.filePath = g_rootPath + "interphone_stop_test.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    // Test StopInterphoneSinkIfNeeded function directly with deviceName containing "Interphone"
+    hpaeRendererManager->StopInterphoneSinkIfNeeded();
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test StopInterphoneSinkIfNeeded for non-interphone stream
+ * @tc.type  : FUNC
+ * @tc.number: StopInterphoneSinkIfNeeded_002
+ * @tc.desc  : Test StopInterphoneSinkIfNeeded when deviceName does not contain "Interphone".
+ */
+HWTEST_F(HpaeRendererManagerTest, StopInterphoneSinkIfNeeded_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();  // deviceName is "Speaker", does not contain "Interphone"
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    // Test StopInterphoneSinkIfNeeded - should not stop for non-interphone deviceName
+    hpaeRendererManager->StopInterphoneSinkIfNeeded();
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test Pause for interphone stream
+ * @tc.type  : FUNC
+ * @tc.number: Pause_Interphone_001
+ * @tc.desc  : Test Pause when deviceName contains "Interphone", calls StopInterphoneSinkIfNeeded.
+ */
+HWTEST_F(HpaeRendererManagerTest, Pause_Interphone_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceName = "Interphone_Sink";  // deviceName contains "Interphone"
+    sinkInfo.filePath = g_rootPath + "interphone_pause_test.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.effectInfo.effectScene = SCENE_MUSIC;
+    streamInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    
+    EXPECT_EQ(hpaeRendererManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    HpaeSinkInputInfo sinkInputInfo;
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
+    
+    // Pause will call StopInterphoneSinkIfNeeded internally for interphone deviceName
+    // Since outputCluster is stopped immediately, fade out cannot complete, state stays at PAUSING
+    EXPECT_EQ(hpaeRendererManager->Pause(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSING);
+    
+    EXPECT_EQ(hpaeRendererManager->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test Pause for non-interphone stream
+ * @tc.type  : FUNC
+ * @tc.number: Pause_NonInterphone_001
+ * @tc.desc  : Test Pause when deviceName does not contain "Interphone".
+ */
+HWTEST_F(HpaeRendererManagerTest, Pause_NonInterphone_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();  // deviceName is "Speaker", does not contain "Interphone"
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.effectInfo.effectScene = SCENE_MUSIC;
+    streamInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    
+    EXPECT_EQ(hpaeRendererManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    HpaeSinkInputInfo sinkInputInfo;
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
+    
+    EXPECT_EQ(hpaeRendererManager->Pause(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+    
+    EXPECT_EQ(hpaeRendererManager->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 }  // namespace

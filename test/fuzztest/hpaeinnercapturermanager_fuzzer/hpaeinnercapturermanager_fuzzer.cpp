@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 #include "hpaeinnercapturermanager_fuzzer.h"
 #include <iostream>
 #include <cstddef>
@@ -44,6 +44,9 @@ const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_SESSION_ID = 123456;
+constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50;
+constexpr int32_t MSG_PROCESSING_SLEEP_MS = 20;
+constexpr int32_t MSG_PROCESSING_EXTRA_SLEEP_MS = 40;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
@@ -138,11 +141,13 @@ void RoundStreamInfo(HpaeStreamInfo &streamInfo)
     RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
 }
 
+// Fix Bug 1: Add deviceName = "InnerCapturerSink" to both GetInCapSinkInfo and GetInCapFuzzSinkInfo
 HpaeSinkInfo GetInCapSinkInfo()
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceName = "InnerCapturerSink";
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = g_rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
     RoundSinkInfo(sinkInfo);
@@ -157,6 +162,7 @@ HpaeSinkInfo GetInCapFuzzSinkInfo()
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceName = "InnerCapturerSink";
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = g_rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
     RoundSinkInfo(sinkInfo);
@@ -164,6 +170,30 @@ HpaeSinkInfo GetInCapFuzzSinkInfo()
     sinkInfo.frameLen = DEFAULT_FRAME_LENGTH;
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     return sinkInfo;
+}
+
+// Helper: init a play stream info with DEFAULT_SESSION_ID
+void InitPlayStreamInfo(HpaeStreamInfo &streamInfo)
+{
+    RoundStreamInfo(streamInfo);
+    streamInfo.sessionId = DEFAULT_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+}
+
+// Helper: init a record stream info with DEFAULT_SESSION_ID + 1
+void InitRecordStreamInfo(HpaeStreamInfo &streamInfo)
+{
+    RoundStreamInfo(streamInfo);
+    streamInfo.sessionId = DEFAULT_SESSION_ID + 1;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
+    streamInfo.sourceType = SOURCE_TYPE_MIC;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
 }
 
 HpaeStreamInfo GetInCapPlayStreamInfo()
@@ -220,10 +250,12 @@ static HpaeStreamInfo GetInCapRecordFuzzStreamInfo()
 
 void WaitForMsgProcessing(std::shared_ptr<HpaeInnerCapturerManager>& hpaeInnerCapturerManager)
 {
-    while (hpaeInnerCapturerManager->IsMsgProcessing()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20ms frameLen, need optimize
+    int retry = 0;
+    while (hpaeInnerCapturerManager->IsMsgProcessing() && retry < MAX_MSG_PROCESSING_RETRY_COUNT) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(MSG_PROCESSING_SLEEP_MS));
+        retry++;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(40));  // 40ms wait time, need optimize
+    std::this_thread::sleep_for(std::chrono::milliseconds(MSG_PROCESSING_EXTRA_SLEEP_MS));
 }
 
 void HpaeInnerCapturerManagerFuzzTest1()
@@ -231,8 +263,10 @@ void HpaeInnerCapturerManagerFuzzTest1()
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->GetThreadName();
@@ -244,8 +278,11 @@ void HpaeInnerCapturerManagerFuzzTest1()
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
     hpaeInnerCapturerManager->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb);
     hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Pause(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Pause(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Flush(recordStreamInfo.sessionId);
     hpaeInnerCapturerManager->Drain(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
@@ -253,22 +290,27 @@ void HpaeInnerCapturerManagerFuzzTest1()
     hpaeInnerCapturerManager->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo);
     hpaeInnerCapturerManager->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo);
     hpaeInnerCapturerManager->Stop(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Stop(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Release(recordStreamInfo.sessionId);
     hpaeInnerCapturerManager->Release(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 2: Use recordStreamInfo.sessionId instead of new GetData<uint32_t>() for session IDs
 void HpaeInnerCapturerManagerFuzzTest2()
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->GetThreadName();
     HpaeStreamInfo recordStreamInfo = GetInCapRecordFuzzStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
-    uint32_t recordSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->Start(recordSessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeSourceOutputInfo sourceOutoputInfo;
 
@@ -276,25 +318,31 @@ void HpaeInnerCapturerManagerFuzzTest2()
     hpaeInnerCapturerManager->CreateStream(playStreamInfo);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    uint32_t playSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->RegisterWriteCallback(playSessionId, writeInPlayDataCb);
-    
-    hpaeInnerCapturerManager->Start(playSessionId);
-    hpaeInnerCapturerManager->Pause(recordSessionId);
-    hpaeInnerCapturerManager->Pause(playSessionId);
-    hpaeInnerCapturerManager->Flush(recordSessionId);
-    hpaeInnerCapturerManager->Drain(playSessionId);
+    hpaeInnerCapturerManager->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb);
+
+    hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Pause(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Pause(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Flush(recordStreamInfo.sessionId);
+    hpaeInnerCapturerManager->Drain(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeSinkInputInfo sinkInputInfo;
-    hpaeInnerCapturerManager->GetSinkInputInfo(playSessionId, sinkInputInfo);
-    hpaeInnerCapturerManager->GetSourceOutputInfo(recordSessionId, sourceOutoputInfo);
-    hpaeInnerCapturerManager->Stop(recordSessionId);
-    hpaeInnerCapturerManager->Release(recordSessionId);
-    hpaeInnerCapturerManager->Release(playSessionId);
+    hpaeInnerCapturerManager->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo);
+    hpaeInnerCapturerManager->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo);
+    hpaeInnerCapturerManager->Stop(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Stop(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Release(recordStreamInfo.sessionId);
+    hpaeInnerCapturerManager->Release(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 2: Use recordStreamInfo.sessionId instead of new GetData<uint32_t>() for session IDs
 void HpaeInnerCapturerManagerFuzzTest3()
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
@@ -302,8 +350,8 @@ void HpaeInnerCapturerManagerFuzzTest3()
     hpaeInnerCapturerManager->GetThreadName();
     HpaeStreamInfo recordStreamInfo = GetInCapRecordFuzzStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
-    uint32_t recordSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->Start(recordSessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeSourceOutputInfo sourceOutoputInfo;
 
@@ -311,21 +359,26 @@ void HpaeInnerCapturerManagerFuzzTest3()
     hpaeInnerCapturerManager->CreateStream(playStreamInfo);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    uint32_t playSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->RegisterWriteCallback(playSessionId, writeInPlayDataCb);
-    
-    hpaeInnerCapturerManager->Start(playSessionId);
-    hpaeInnerCapturerManager->Pause(recordSessionId);
-    hpaeInnerCapturerManager->Pause(playSessionId);
-    hpaeInnerCapturerManager->Flush(recordSessionId);
-    hpaeInnerCapturerManager->Drain(playSessionId);
+    hpaeInnerCapturerManager->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb);
+
+    hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Pause(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Pause(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Flush(recordStreamInfo.sessionId);
+    hpaeInnerCapturerManager->Drain(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeSinkInputInfo sinkInputInfo;
-    hpaeInnerCapturerManager->GetSinkInputInfo(playSessionId, sinkInputInfo);
-    hpaeInnerCapturerManager->GetSourceOutputInfo(recordSessionId, sourceOutoputInfo);
-    hpaeInnerCapturerManager->Stop(recordSessionId);
-    hpaeInnerCapturerManager->Release(recordSessionId);
-    hpaeInnerCapturerManager->Release(playSessionId);
+    hpaeInnerCapturerManager->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo);
+    hpaeInnerCapturerManager->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo);
+    hpaeInnerCapturerManager->Stop(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Stop(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Release(recordStreamInfo.sessionId);
+    hpaeInnerCapturerManager->Release(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
@@ -338,15 +391,19 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
 
     HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
     hpaeInnerCapturerManager->CreateStream(playStreamInfo);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo playSencondStreamInfo = GetInCapPlayStreamInfo();
     ++playSencondStreamInfo.sessionId;
     hpaeInnerCapturerManager->CreateStream(playSencondStreamInfo);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Start(playSencondStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
@@ -366,6 +423,7 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     hpaeInnerCapturerManager->SuspendStreamManager(true);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->AddNodeToSink(HpaeSinkInputSencondNode);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->SuspendStreamManager(false);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Release(playSencondNodeInfo.sessionId);
@@ -375,22 +433,28 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 2: Use recordStreamInfo.sessionId and playStreamInfo.sessionId instead of GetData<uint32_t>()
 void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    hpaeInnerCapturerManager->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordFuzzStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
-    uint32_t recordSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->Start(recordSessionId);
-    
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+
     HpaeStreamInfo playStreamInfo = GetInCapPlayFuzzStreamInfo();
-    uint32_t playSessionId = GetData<uint32_t>();
     hpaeInnerCapturerManager->CreateStream(playStreamInfo);
-    hpaeInnerCapturerManager->Start(playSessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo playSencondStreamInfo = GetInCapPlayFuzzStreamInfo();
     ++playSencondStreamInfo.sessionId;
     hpaeInnerCapturerManager->CreateStream(playSencondStreamInfo);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Start(playSencondStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
@@ -404,7 +468,7 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     std::shared_ptr<HpaeSinkInputNode> HpaeSinkInputSencondNode =
         std::make_shared<HpaeSinkInputNode>(playSencondNodeInfo);
-    hpaeInnerCapturerManager->Release(playSessionId);
+    hpaeInnerCapturerManager->Release(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     bool isConnect = GetData<bool>();
     hpaeInnerCapturerManager->AddSingleNodeToSinkInner(HpaeSinkInputSencondNode, isConnect);
@@ -412,16 +476,18 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend1);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->AddNodeToSink(HpaeSinkInputSencondNode);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     bool isSuspend2 = GetData<bool>();
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend2);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Release(playSencondNodeInfo.sessionId);
     hpaeInnerCapturerManager->Release(playSencondStreamInfo.sessionId);
-    hpaeInnerCapturerManager->Release(recordSessionId);
+    hpaeInnerCapturerManager->Release(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 2: Use recordStreamInfo.sessionId and playStreamInfo.sessionId instead of GetData<uint32_t>()
 void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
@@ -430,16 +496,19 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordFuzzStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
-    uint32_t recordSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->Start(recordSessionId);
-    
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+
     HpaeStreamInfo playStreamInfo = GetInCapPlayFuzzStreamInfo();
-    uint32_t playSessionId = GetData<uint32_t>();
     hpaeInnerCapturerManager->CreateStream(playStreamInfo);
-    hpaeInnerCapturerManager->Start(playSessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo playSencondStreamInfo = GetInCapPlayFuzzStreamInfo();
     ++playSencondStreamInfo.sessionId;
     hpaeInnerCapturerManager->CreateStream(playSencondStreamInfo);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Start(playSencondStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
@@ -453,7 +522,7 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     std::shared_ptr<HpaeSinkInputNode> HpaeSinkInputSencondNode =
         std::make_shared<HpaeSinkInputNode>(playSencondNodeInfo);
-    hpaeInnerCapturerManager->Release(playSessionId);
+    hpaeInnerCapturerManager->Release(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     bool isConnect = GetData<bool>();
     hpaeInnerCapturerManager->AddSingleNodeToSinkInner(HpaeSinkInputSencondNode, isConnect);
@@ -461,12 +530,13 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend1);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->AddNodeToSink(HpaeSinkInputSencondNode);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     bool isSuspend2 = GetData<bool>();
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend2);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Release(playSencondNodeInfo.sessionId);
     hpaeInnerCapturerManager->Release(playSencondStreamInfo.sessionId);
-    hpaeInnerCapturerManager->Release(recordSessionId);
+    hpaeInnerCapturerManager->Release(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
@@ -519,9 +589,8 @@ void HpaeInnerCapturerManagerOtherFuzzTest2()
     auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordFuzzStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
-    uint32_t recordSessionId = GetData<uint32_t>();
     WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->Start(recordSessionId);
+    hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
 
     HpaeStreamInfo playStreamInfo = GetInCapPlayFuzzStreamInfo();
@@ -529,9 +598,8 @@ void HpaeInnerCapturerManagerOtherFuzzTest2()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
 
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    uint32_t playSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->RegisterWriteCallback(playSessionId, writeInPlayDataCb);
-    hpaeInnerCapturerManager->Start(playSessionId);
+    hpaeInnerCapturerManager->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb);
+    hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
 
     hpaeInnerCapturerManager->GetAllSinkInputsInfo();
@@ -541,16 +609,16 @@ void HpaeInnerCapturerManagerOtherFuzzTest2()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     int32_t testVariable = GetData<int32_t>();
     float volume = GetData<float>();
-    hpaeInnerCapturerManager->SetClientVolume(playSessionId, volume);
-    hpaeInnerCapturerManager->SetRate(playSessionId, testVariable);
-    hpaeInnerCapturerManager->SetAudioEffectMode(playSessionId, testVariable);
-    hpaeInnerCapturerManager->GetAudioEffectMode(playSessionId, testVariable);
-    hpaeInnerCapturerManager->SetPrivacyType(playSessionId, testVariable);
-    hpaeInnerCapturerManager->GetPrivacyType(playSessionId, testVariable);
-    hpaeInnerCapturerManager->GetWritableSize(playSessionId);
-    hpaeInnerCapturerManager->UpdateSpatializationState(playSessionId, true, true);
-    hpaeInnerCapturerManager->UpdateMaxLength(playSessionId, testVariable);
-    hpaeInnerCapturerManager->SetClientVolume(playSessionId, volume);
+    hpaeInnerCapturerManager->SetClientVolume(playStreamInfo.sessionId, volume);
+    hpaeInnerCapturerManager->SetRate(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->SetAudioEffectMode(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->GetAudioEffectMode(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->SetPrivacyType(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->GetPrivacyType(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->GetWritableSize(playStreamInfo.sessionId);
+    hpaeInnerCapturerManager->UpdateSpatializationState(playStreamInfo.sessionId, true, true);
+    hpaeInnerCapturerManager->UpdateMaxLength(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->SetClientVolume(playStreamInfo.sessionId, volume);
     bool isMute = GetData<bool>();
     hpaeInnerCapturerManager->SetMute(isMute);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
@@ -565,9 +633,8 @@ void HpaeInnerCapturerManagerOtherFuzzTest3()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordFuzzStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);
-    uint32_t recordSessionId = GetData<uint32_t>();
     WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->Start(recordSessionId);
+    hpaeInnerCapturerManager->Start(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
 
     HpaeStreamInfo playStreamInfo = GetInCapPlayFuzzStreamInfo();
@@ -575,9 +642,8 @@ void HpaeInnerCapturerManagerOtherFuzzTest3()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
 
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    uint32_t playSessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->RegisterWriteCallback(playSessionId, writeInPlayDataCb);
-    hpaeInnerCapturerManager->Start(playSessionId);
+    hpaeInnerCapturerManager->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb);
+    hpaeInnerCapturerManager->Start(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
 
     hpaeInnerCapturerManager->GetAllSinkInputsInfo();
@@ -587,16 +653,16 @@ void HpaeInnerCapturerManagerOtherFuzzTest3()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     int32_t testVariable = GetData<int32_t>();
     float volume = GetData<float>();
-    hpaeInnerCapturerManager->SetClientVolume(playSessionId, volume);
-    hpaeInnerCapturerManager->SetRate(playSessionId, testVariable);
-    hpaeInnerCapturerManager->SetAudioEffectMode(playSessionId, testVariable);
-    hpaeInnerCapturerManager->GetAudioEffectMode(playSessionId, testVariable);
-    hpaeInnerCapturerManager->SetPrivacyType(playSessionId, testVariable);
-    hpaeInnerCapturerManager->GetPrivacyType(playSessionId, testVariable);
-    hpaeInnerCapturerManager->GetWritableSize(playSessionId);
-    hpaeInnerCapturerManager->UpdateSpatializationState(playSessionId, true, true);
-    hpaeInnerCapturerManager->UpdateMaxLength(playSessionId, testVariable);
-    hpaeInnerCapturerManager->SetClientVolume(playSessionId, volume);
+    hpaeInnerCapturerManager->SetClientVolume(playStreamInfo.sessionId, volume);
+    hpaeInnerCapturerManager->SetRate(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->SetAudioEffectMode(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->GetAudioEffectMode(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->SetPrivacyType(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->GetPrivacyType(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->GetWritableSize(playStreamInfo.sessionId);
+    hpaeInnerCapturerManager->UpdateSpatializationState(playStreamInfo.sessionId, true, true);
+    hpaeInnerCapturerManager->UpdateMaxLength(playStreamInfo.sessionId, testVariable);
+    hpaeInnerCapturerManager->SetClientVolume(playStreamInfo.sessionId, volume);
     bool isMute = GetData<bool>();
     hpaeInnerCapturerManager->SetMute(isMute);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
@@ -620,17 +686,20 @@ void HpaeInnerCapturerManagerReloadFuzzTest1()
     hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     isReload = GetData<bool>();
     hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 4: Use GetInCapSinkInfo() instead of default HpaeSinkInfo()
 void MoveStreamFuzzTest()
 {
-    HpaeSinkInfo sinkInfo;
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     uint32_t sessionId = GetData<uint32_t>();
     std::string sinkName = "13222";
     hpaeInnerCapturerManager->MoveStream(sessionId, sinkName);
@@ -638,11 +707,13 @@ void MoveStreamFuzzTest()
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 4: Use GetInCapSinkInfo() instead of default HpaeSinkInfo()
 void MoveAllStreamFuzzTest()
 {
-    HpaeSinkInfo sinkInfo;
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     std::vector<uint32_t> sessionId = {GetData<uint32_t>(), GetData<uint32_t>(), GetData<uint32_t>()};
     std::string sinkName = "13222";
     hpaeInnerCapturerManager->MoveAllStream(sinkName, sessionId);
@@ -650,11 +721,13 @@ void MoveAllStreamFuzzTest()
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 4: Use GetInCapSinkInfo() instead of default HpaeSinkInfo()
 void OnNodeStatusUpdateFuzzTest()
 {
-    HpaeSinkInfo sinkInfo;
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     uint32_t sessionId = GetData<uint32_t>();
     IOperation operation = IOperation::OPERATION_INVALID;
     hpaeInnerCapturerManager->OnNodeStatusUpdate(sessionId, operation);
@@ -662,18 +735,177 @@ void OnNodeStatusUpdateFuzzTest()
     hpaeInnerCapturerManager->DeInit();
 }
 
+// Fix Bug 4: Use GetInCapSinkInfo() instead of default HpaeSinkInfo()
 void OnFadeDoneFuzzTest()
 {
-    HpaeSinkInfo sinkInfo;
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     uint32_t sessionId = GetData<uint32_t>();
     hpaeInnerCapturerManager->OnFadeDone(sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
 
-typedef void (*TestFuncs[14])();
+// --- New dispatch functions (Bug 5: missing API tests) ---
+
+void InitDeInitCorrectPathFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    mgr->IsInit();
+    mgr->IsRunning();
+    mgr->DeInit();
+}
+
+void FullPlayLifecycleFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    HpaeStreamInfo playInfo;
+    InitPlayStreamInfo(playInfo);
+    mgr->CreateStream(playInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(playInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Pause(playInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(playInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Flush(playInfo.sessionId);
+    mgr->Drain(playInfo.sessionId);
+    mgr->Stop(playInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Release(playInfo.sessionId);
+    mgr->DestroyStream(playInfo.sessionId);
+    mgr->DeInit();
+}
+
+void FullRecordLifecycleFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    HpaeStreamInfo recInfo;
+    InitRecordStreamInfo(recInfo);
+    mgr->CreateStream(recInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(recInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(recInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Release(recInfo.sessionId);
+    mgr->DestroyStream(recInfo.sessionId);
+    mgr->DeInit();
+}
+
+void DualPathLifecycleFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    HpaeStreamInfo playInfo;
+    HpaeStreamInfo recInfo;
+    InitPlayStreamInfo(playInfo);
+    InitRecordStreamInfo(recInfo);
+    mgr->CreateStream(playInfo);
+    mgr->CreateStream(recInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(playInfo.sessionId);
+    mgr->Start(recInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Stop(playInfo.sessionId);
+    mgr->Stop(recInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->Release(playInfo.sessionId);
+    mgr->Release(recInfo.sessionId);
+    mgr->DestroyStream(playInfo.sessionId);
+    mgr->DestroyStream(recInfo.sessionId);
+    mgr->DeInit();
+}
+
+void SetLoudnessGainFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    uint32_t sessionId = GetData<uint32_t>();
+    float gain = GetData<float>();
+    mgr->SetLoudnessGain(sessionId, gain);
+    mgr->DeInit();
+}
+
+void DumpSinkInfoFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    mgr->DumpSinkInfo();
+    mgr->GetDeviceHDFDumpInfo();
+    mgr->DeInit();
+}
+
+void SetOffloadPolicyFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    uint32_t sessionId = GetData<uint32_t>();
+    int32_t state = GetData<int32_t>();
+    mgr->SetOffloadPolicy(sessionId, state);
+    mgr->DeInit();
+}
+
+void SetSpeedFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    uint32_t sessionId = GetData<uint32_t>();
+    float speed = GetData<float>();
+    mgr->SetSpeed(sessionId, speed);
+    mgr->DeInit();
+}
+
+void RegisterReadCallbackFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    uint32_t sessionId = GetData<uint32_t>();
+    std::weak_ptr<ICapturerStreamCallback> callback;
+    mgr->RegisterReadCallback(sessionId, callback);
+    mgr->DeInit();
+}
+
+void DeInitWithMoveDefaultFuzzTest()
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    auto mgr = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    mgr->Init();
+    WaitForMsgProcessing(mgr);
+    HpaeStreamInfo playInfo;
+    InitPlayStreamInfo(playInfo);
+    mgr->CreateStream(playInfo);
+    WaitForMsgProcessing(mgr);
+    mgr->Start(playInfo.sessionId);
+    WaitForMsgProcessing(mgr);
+    mgr->DeInit(true);
+}
+
+typedef void (*TestFuncs[24])();
 
 TestFuncs g_testFuncs = {
     HpaeInnerCapturerManagerFuzzTest1,
@@ -690,6 +922,16 @@ TestFuncs g_testFuncs = {
     MoveAllStreamFuzzTest,
     OnNodeStatusUpdateFuzzTest,
     OnFadeDoneFuzzTest,
+    InitDeInitCorrectPathFuzzTest,
+    FullPlayLifecycleFuzzTest,
+    FullRecordLifecycleFuzzTest,
+    DualPathLifecycleFuzzTest,
+    SetLoudnessGainFuzzTest,
+    DumpSinkInfoFuzzTest,
+    SetOffloadPolicyFuzzTest,
+    SetSpeedFuzzTest,
+    RegisterReadCallbackFuzzTest,
+    DeInitWithMoveDefaultFuzzTest,
 };
 
 bool FuzzTest(const uint8_t *rawData, size_t size)
@@ -708,7 +950,7 @@ bool FuzzTest(const uint8_t *rawData, size_t size)
     if (len > 0) {
         g_testFuncs[code % len]();
     } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
     }
 
     return true;

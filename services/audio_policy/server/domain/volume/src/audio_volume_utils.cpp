@@ -18,6 +18,7 @@
 #endif
 
 #include "audio_volume_utils.h"
+#include "audio_volume_parser.h"
 #include "audio_zone_service.h"
 
 namespace OHOS {
@@ -87,6 +88,10 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDevi
     
     std::map<AudioVolumeType, AudioZoneVolumeConfig> zoneConfigIt = zoneVolumeConfigMap_[zoneName];
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (internalVolumeType == STREAM_NOTIFICATION) {
+        // Use the volume config of ringtone instead of notification.
+        internalVolumeType = STREAM_RING;
+    }
     CHECK_AND_RETURN_LOG(zoneConfigIt.contains(internalVolumeType), "streamType in zone not config");
     volumeLevel = zoneConfigIt[internalVolumeType].defaultVolume;
 }
@@ -101,6 +106,10 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDevi
     }
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (internalVolumeType == STREAM_NOTIFICATION) {
+        // Use the volume config of ringtone instead of notification.
+        internalVolumeType = STREAM_RING;
+    }
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
             streamVolumeInfos_[internalVolumeType] != nullptr);
@@ -200,6 +209,10 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     }
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (internalVolumeType == STREAM_NOTIFICATION) {
+        // Use the volume config of ringtone instead of notification.
+        internalVolumeType = STREAM_RING;
+    }
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
             streamVolumeInfos_[internalVolumeType] != nullptr);
@@ -244,6 +257,10 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     
     std::map<AudioVolumeType, AudioZoneVolumeConfig> zoneConfigIt = zoneVolumeConfigMap_[zoneName];
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (internalVolumeType == STREAM_NOTIFICATION) {
+        // Use the volume config of ringtone instead of notification.
+        internalVolumeType = STREAM_RING;
+    }
     CHECK_AND_RETURN_LOG(zoneConfigIt.contains(internalVolumeType), "streamType in zone not config");
     volumeLevel = zoneConfigIt[internalVolumeType].minVolume;
 }
@@ -259,6 +276,10 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
 
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (internalVolumeType == STREAM_NOTIFICATION) {
+        // Use the volume config of ringtone instead of notification.
+        internalVolumeType = STREAM_RING;
+    }
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
             streamVolumeInfos_[internalVolumeType] != nullptr);

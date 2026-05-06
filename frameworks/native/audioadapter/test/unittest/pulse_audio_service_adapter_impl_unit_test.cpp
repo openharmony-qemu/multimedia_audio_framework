@@ -35,7 +35,6 @@ public:
 class AudioServiceAdapterCallbackTest : public AudioServiceAdapterCallback {
 public:
     void OnAudioStreamRemoved(const uint64_t sessionID) override { return; }
-    void OnSetVolumeDbCb() override { return; }
 };
 
 /**

@@ -17,6 +17,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "capturer_in_server.h"
+#include "record_privacy_manager.h"
 
 using namespace testing::ext;
 
@@ -114,31 +115,6 @@ public:
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
 };
-
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
- * @tc.number: CapturerInServerSecondUnitTest_003.
- * @tc.desc  : Test InitBufferStatus interface.
- */
-HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_003, TestSize.Level1)
-{
-    AudioBufferHolder bufferHolder;
-    uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
-    uint32_t byteSizePerFrame = 10;
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    int32_t result = capturerInServer_->InitBufferStatus();
-    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
-
-    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
-    capturerInServer_->audioServerBuffer_->spanBasicInfo_.spanConut_ = 5;
-    capturerInServer_->InitBufferStatus();
-    EXPECT_NE(capturerInServer_, nullptr);
-}
 
 /**
  * @tc.name  : Test CapturerInServer.
@@ -672,11 +648,11 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_037, Tes
 
     CapturerState capturerState = CAPTURER_NEW;
     capturerInServer_->processConfig_.appInfo.appFullTokenId = (static_cast<uint64_t>(1) << 32);
-    auto ret = capturerInServer_->TurnOnMicIndicator(capturerState);
-    EXPECT_EQ(ret, false);
+    auto ret = capturerInServer_->CheckBgRecordPermission(capturerState);
+    EXPECT_EQ(ret, true);
 
     capturerInServer_->isMicIndicatorOn_ = true;
-    ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    ret = capturerInServer_->TurnOnMicIndicator();
     EXPECT_EQ(true, ret);
 }
 
@@ -764,6 +740,40 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_042, Tes
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
     auto ret = capturerInServer_->RestoreSession(restoreInfo);
     EXPECT_EQ(NEED_RESTORE, ret);
+}
+
+HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorFail_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    processConfig.capturerInfo.isLoopback = false;
+    processConfig.appInfo.appTokenId = 0;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 202;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    info.nextState = CAPTURER_PREPARED;
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    auto ret = capturerInServer_->StartInner();
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+    manager.tokenIdRecordMap_.clear();
 }
 
 /**
@@ -1225,6 +1235,36 @@ HWTEST_F(CapturerInServerSecondUnitTest, ReportPlaybackCaptureUserChoice_001, Te
     capturerInServer_->OnPrivacyAuthorityResult(true);
     capturerInServer_->OnPrivacyAuthorityResult(false);
     EXPECT_NE(result, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test CapturerInServer destructor loopback effect cleanup branch.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerSecondUnitTest_Destructor_LoopBackEffectEnabled_001
+ * @tc.desc  : Cover false and true branches of loopback effect cleanup in destructor.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_Destructor_LoopBackEffectEnabled_001,
+    TestSize.Level1)
+{
+    {
+        AudioProcessConfig processConfig;
+        processConfig.capturerInfo.loopBackEffectEnabled = false;
+        std::weak_ptr<IStreamListener> streamListener;
+        auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+        ASSERT_NE(capturerInServer_, nullptr);
+        capturerInServer_->status_ = I_STATUS_RELEASED;
+        capturerInServer_ = nullptr;
+    }
+
+    {
+        AudioProcessConfig processConfig;
+        processConfig.capturerInfo.loopBackEffectEnabled = true;
+        std::weak_ptr<IStreamListener> streamListener;
+        auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+        ASSERT_NE(capturerInServer_, nullptr);
+        capturerInServer_->status_ = I_STATUS_RELEASED;
+        capturerInServer_ = nullptr;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

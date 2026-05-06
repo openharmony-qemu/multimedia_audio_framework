@@ -168,6 +168,7 @@ static bool IsAudioProcessConfigEqual(const AudioProcessConfig &a, const AudioPr
         a.capturerInfo.recorderType == b.capturerInfo.recorderType &&
         a.capturerInfo.isLoopback == b.capturerInfo.isLoopback &&
         a.capturerInfo.loopbackMode == b.capturerInfo.loopbackMode &&
+        a.capturerInfo.mixWithWakeUp == b.capturerInfo.mixWithWakeUp &&
         a.streamType == b.streamType &&
         a.deviceType == b.deviceType &&
         a.isInnerCapturer == b.isInnerCapturer &&
@@ -766,99 +767,15 @@ HWTEST(AudioIpcSerializationUnitTest, SupportedEffectConfig_004, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test AudioEffectPropertyArrayV3.
- * @tc.number: AudioEffectPropertyArrayV3_001
- * @tc.desc  : Test AudioEffectPropertyArrayV3 Serialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArrayV3_001, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEffectPropertyArrayV3 propertyArray = {};
-    AudioEffectPropertyV3 property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2, CAPTURE_EFFECT_FLAG };
-    propertyArray.property.push_back(property);
-
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArrayV3>(
-        AudioEffectPropertyArrayV3::Unmarshalling(parcel));
-    ASSERT_NE(newPropertyArray, nullptr);
-    EXPECT_EQ(newPropertyArray->property.size(), propertyArray.property.size());
-    if (newPropertyArray->property.size() == propertyArray.property.size()) {
-        for (int32_t i = 0; i < propertyArray.property.size(); i++) {
-            EXPECT_EQ(newPropertyArray->property[i], propertyArray.property[i]);
-        }
-    }
-}
-
-/**
- * @tc.name  : Test AudioEffectPropertyArrayV3.
- * @tc.number: AudioEffectPropertyArrayV3_002
- * @tc.desc  : Test AudioEffectPropertyArrayV3 Deserialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArrayV3_002, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEffectPropertyArrayV3 propertyArray = {};
-    AudioEffectPropertyV3 property = {};
-
-    propertyArray.property.assign(AUDIO_EFFECT_COUNT_UPPER_LIMIT + 1, property);
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArrayV3>(
-        AudioEffectPropertyArrayV3::Unmarshalling(parcel));
-    EXPECT_EQ(newPropertyArray, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioEnhancePropertyArray.
- * @tc.number: AudioEnhancePropertyArray_001
- * @tc.desc  : Test AudioEnhancePropertyArray Deserialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEnhancePropertyArray_001, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEnhancePropertyArray propertyArray = {};
-    AudioEnhanceProperty property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2 };
-    propertyArray.property.push_back(property);
-
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEnhancePropertyArray>(
-        AudioEnhancePropertyArray::Unmarshalling(parcel));
-    ASSERT_NE(newPropertyArray, nullptr);
-    EXPECT_EQ(newPropertyArray->property.size(), propertyArray.property.size());
-    if (newPropertyArray->property.size() == propertyArray.property.size()) {
-        for (int32_t i = 0; i < propertyArray.property.size(); i++) {
-            EXPECT_EQ(newPropertyArray->property[i], propertyArray.property[i]);
-        }
-    }
-}
-
-/**
- * @tc.name  : Test AudioEnhancePropertyArray.
- * @tc.number: AudioEnhancePropertyArray_002
- * @tc.desc  : Test AudioEnhancePropertyArray Deserialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEnhancePropertyArray_002, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEnhancePropertyArray propertyArray = {};
-    AudioEnhanceProperty property = {};
-
-    propertyArray.property.assign(AUDIO_EFFECT_COUNT_UPPER_LIMIT + 1, property);
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEnhancePropertyArray>(
-        AudioEnhancePropertyArray::Unmarshalling(parcel));
-    EXPECT_EQ(newPropertyArray, nullptr);
-}
-
-/**
  * @tc.name  : Test AudioEffectPropertyArray.
  * @tc.number: AudioEffectPropertyArray_001
- * @tc.desc  : Test AudioEffectPropertyArray Deserialization.
+ * @tc.desc  : Test AudioEffectPropertyArray Serialization.
  */
 HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArray_001, TestSize.Level1)
 {
     Parcel parcel;
     AudioEffectPropertyArray propertyArray = {};
-    AudioEffectProperty property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2 };
+    AudioEffectProperty property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2, CAPTURE_EFFECT_FLAG };
     propertyArray.property.push_back(property);
 
     EXPECT_TRUE(propertyArray.Marshalling(parcel));
@@ -1071,6 +988,28 @@ HWTEST(AudioIpcSerializationUnitTest, CurrentOutputDeviceChangedEvent_001, TestS
     EXPECT_NE(device, nullptr);
 
     event.devices.assign(CurrentOutputDeviceChangedEvent::DEVICE_CHANGE_VALID_SIZE + 1, device);
+    EXPECT_TRUE(event.Marshalling(parcel));
+    auto newEvent = std::shared_ptr<CurrentOutputDeviceChangedEvent>(
+        CurrentOutputDeviceChangedEvent::Unmarshalling(parcel));
+    EXPECT_EQ(newEvent, nullptr);
+}
+
+/**
+ * @tc.name  : Test CurrentOutputDeviceChangedEvent.
+ * @tc.number: CurrentOutputDeviceChangedEvent_002
+ * @tc.desc  : Test CurrentOutputDeviceChangedEvent Deserialization.
+ */
+HWTEST(AudioIpcSerializationUnitTest, CurrentOutputDeviceChangedEvent_002, TestSize.Level1)
+{
+    Parcel parcel;
+    CurrentOutputDeviceChangedEvent event = {};
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    auto preDevice = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(device, nullptr);
+    EXPECT_NE(preDevice, nullptr);
+
+    event.devices.assign(CurrentOutputDeviceChangedEvent::DEVICE_CHANGE_VALID_SIZE - 1, device);
+    event.preDevices.assign(CurrentOutputDeviceChangedEvent::DEVICE_CHANGE_VALID_SIZE + 1, preDevice);
     EXPECT_TRUE(event.Marshalling(parcel));
     auto newEvent = std::shared_ptr<CurrentOutputDeviceChangedEvent>(
         CurrentOutputDeviceChangedEvent::Unmarshalling(parcel));

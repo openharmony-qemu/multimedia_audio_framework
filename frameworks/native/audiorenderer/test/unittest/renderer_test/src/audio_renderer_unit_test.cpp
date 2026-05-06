@@ -4814,6 +4814,5 @@ HWTEST(AudioRendererUnitTest, WaitSwitchStreamIfNeeded_001, TestSize.Level1)
     res = testRendererInner->WaitSwitchStreamIfNeeded(false);
     EXPECT_EQ(true, res);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

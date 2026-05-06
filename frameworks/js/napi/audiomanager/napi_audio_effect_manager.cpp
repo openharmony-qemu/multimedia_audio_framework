@@ -150,7 +150,7 @@ napi_value NapiAudioEffectMgr::GetSupportedAudioEffectProperty(napi_env env, nap
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
         "incorrect parameter types: The type of options must be empty"), "argcCount invalid");
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     int32_t ret = napiEffectMgr->audioEffectMngr_->GetSupportedAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturn(env, ret,
         "interface operation failed"), "get support audio effect property failure!");
@@ -171,7 +171,7 @@ napi_value NapiAudioEffectMgr::GetAudioEffectProperty(napi_env env, napi_callbac
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
         "incorrect parameter types: The type of options must be empty"), "argcCount invalid");
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     int32_t ret = napiEffectMgr->audioEffectMngr_->GetAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturn(env, ret,
         "interface operation failed"), "get audio enhance property failure!");
@@ -200,7 +200,7 @@ napi_value NapiAudioEffectMgr::SetAudioEffectProperty(napi_env env, napi_callbac
         NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of options must be array"), "invaild valueType");
 
-    AudioEffectPropertyArrayV3 propertyArray = {};
+    AudioEffectPropertyArray propertyArray = {};
     napi_status status = NapiParamUtils::GetEffectPropertyArray(env, propertyArray, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(propertyArray.property.size() > 0,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,

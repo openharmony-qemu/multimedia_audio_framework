@@ -488,8 +488,14 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StartPipeline_003, TestSize
     ret = OH_AudioSuiteEngine_ConnectNodes(mixNode, outputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
+    ret = OH_AudioSuite_PrintInfo(audioSuiteEngine, pipeline, -1);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_STATE);
+
+    ret = OH_AudioSuite_PrintInfo(audioSuiteEngine, pipeline, -1);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

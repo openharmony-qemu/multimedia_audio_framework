@@ -247,7 +247,7 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
     rendererNapi->rendererOptions_ = rendererOptions;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-    rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
+    rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions, rendererOptions.appInfo);
 #else
     std::string cacheDir = "";
     rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
@@ -2094,6 +2094,7 @@ napi_value NapiAudioRenderer::RegisterRendererCallback(napi_env env, napi_value 
         if (!cb->GetArInterruptTsfnFlag()) {
             cb->CreateArInterrupt(env);
         }
+        napiRenderer->audioRenderer_->SetRegisterInterruptCallbackFlag(true);
     } else if (cbName == STATE_CHANGE_CALLBACK_NAME) {
         if (!cb->GetArStateChangeTsfnFlag()) {
             cb->CreateArStateChange(env);
@@ -2404,7 +2405,7 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
 
     CHECK_AND_RETURN_LOG(napiRenderer->rendererOptions_.has_value(), "rendererOptions_ has no value");
     const auto &streamInfo = napiRenderer->rendererOptions_->streamInfo;
-    uint32_t sampleRate = streamInfo.samplingRate;
+    uint32_t sampleRate = streamInfo.GetEffectiveSampleRate();
     uint32_t bytesPerSample = (streamInfo.channels * Util::GetSamplePerFrame(streamInfo.format));
     size_t bufferSize = Util::CalculatePcmSizeFromDurationCeiling(
         std::chrono::microseconds(MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
@@ -2480,7 +2481,7 @@ napi_value NapiAudioRenderer::SetIndependentAudioSessionStrategy(napi_env env, n
     size_t argc = ARGS_TWO;
     napi_value argv[ARGS_TWO] = {};
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "argcCount invaild");
 
     AudioSessionStrategy audioSessionStrategy;

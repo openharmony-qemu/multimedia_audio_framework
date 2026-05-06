@@ -32,6 +32,7 @@
 #include <audio_interrupt_info.h>
 #include <audio_session_info.h>
 #include <audio_stream_info.h>
+#include <audio_volume_info.h>
 #include <audio_asr.h>
 #include "audio_shared_memory.h"
 #include "audio_pipe_types.h"
@@ -58,6 +59,7 @@ constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
+constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
@@ -67,7 +69,11 @@ constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
+constexpr float MIN_STREAM_PITCH_LEVEL = 0.25f;
+constexpr float MAX_STREAM_PITCH_LEVEL = 4.0f;
+constexpr float PITCH_DEFAULT = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t UID_COCKPIT_SA = 1041;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 constexpr int32_t DEFAULT_ZONEID = 0;
@@ -374,6 +380,7 @@ enum CallbackChange : int32_t {
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
+    CALLBACK_ROUTE_SELECTOR,
     CALLBACK_MAX,
 };
 
@@ -381,6 +388,12 @@ enum AdjustStreamVolume {
     STREAM_VOLUME_INFO = 0,
     LOW_POWER_VOLUME_INFO,
     DUCK_VOLUME_INFO,
+};
+
+enum UnderrunInfoType : uint32_t {
+    UNDERRUN_TYPE_ISTIMEOUT = 1 << 0,
+    UNDERRUN_TYPE_ISUSEARK = 1 << 1,
+    UNDERRUN_TYPE_MAX = 1 << 2,
 };
 
 struct AdjustStreamVolumeInfo {
@@ -437,6 +450,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
+    CALLBACK_ROUTE_SELECTOR,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -453,6 +467,7 @@ struct VolumeEvent : public Parcelable {
     DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool notifyRssWhenAccountsChange = false;
+    int32_t appUid = -1;
 
     VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
         volume(volLevel), updateUi(isUiUpdated) {}
@@ -468,7 +483,8 @@ struct VolumeEvent : public Parcelable {
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(notifyRssWhenAccountsChange)
-            && parcel.WriteInt32(static_cast<int32_t>(deviceType));
+            && parcel.WriteInt32(static_cast<int32_t>(deviceType))
+            && parcel.WriteInt32(appUid);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -481,6 +497,7 @@ struct VolumeEvent : public Parcelable {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         notifyRssWhenAccountsChange = parcel.ReadBool();
         deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        appUid = parcel.ReadInt32();
     }
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
@@ -600,6 +617,34 @@ enum AudioLoopbackStatus {
     LOOPBACK_AVAILABLE_RUNNING = 1,
 };
 
+enum LoopbackType {
+    /** Normal loopback type, for single process usage.*/
+    LOOPBACK_TYPE_NORMAL = 0,
+    /** Global handler type, the main executor, system-wide unique.*/
+    LOOPBACK_TYPE_GLOBAL_HANDLER = 1,
+    /** Global control type, for sending control commands.*/
+    LOOPBACK_TYPE_GLOBAL_CONTROL = 2,
+};
+
+enum LoopbackCommand {
+    /** Enable command.*/
+    LOOPBACK_CMD_ENABLE = 1,
+    /** Disable command.*/
+    LOOPBACK_CMD_DISABLE = 2,
+};
+
+enum LoopBackError : int32_t {
+    ERROR_LOOPBACK_HANDLER_NOT_EXIST = 0,
+    ERROR_LOOPBACK_HANDLER_ALREADY_EXIST,
+    ERROR_LOOPBACK_OPERATION_NOT_SUPPORTED,
+    ERROR_LOOPBACK_PERMISSION_DENIED,
+};
+
+enum LoopbackStatusReason {
+    /** Handler process died.*/
+    LOOPBACK_REASON_HANDLER_DIED = 0,
+};
+
 enum AudioLoopbackState {
     LOOPBACK_STATE_IDLE,
     LOOPBACK_STATE_PREPARED,
@@ -686,10 +731,12 @@ struct AudioRendererInfo : public Parcelable {
     uint32_t audioFlag = 0x0;
     bool forceToNormal = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    bool voipNoPrivacyFlag = false;
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
     uint32_t ultraFastFlag = ULTRA_NONE;
+    bool isCallWaitingTone = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -726,9 +773,11 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
+            && parcel.WriteBool(voipNoPrivacyFlag)
             && parcel.WriteBool(toneFlag)
             && parcel.WriteBool(keepRunning)
-            && parcel.WriteBool(isStatic);
+            && parcel.WriteBool(isStatic)
+            && parcel.WriteBool(isCallWaitingTone);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -755,9 +804,11 @@ struct AudioRendererInfo : public Parcelable {
         audioFlag = parcel.ReadUint32();
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+        voipNoPrivacyFlag = parcel.ReadBool();
         toneFlag = parcel.ReadBool();
         keepRunning = parcel.ReadBool();
         isStatic = parcel.ReadBool();
+        isCallWaitingTone = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -784,6 +835,8 @@ public:
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
+    bool mixWithWakeUp = false;
+    bool loopBackEffectEnabled = false;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -805,7 +858,9 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
             parcel.WriteBool(isLoopback) &&
-            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode)) &&
+            parcel.WriteBool(mixWithWakeUp) &&
+            parcel.WriteBool(loopBackEffectEnabled);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -821,6 +876,8 @@ public:
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        mixWithWakeUp = parcel.ReadBool();
+        loopBackEffectEnabled = parcel.ReadBool();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -837,13 +894,6 @@ public:
 struct AudioRendererDesc {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-};
-
-struct AudioRendererOptions {
-    AudioStreamInfo streamInfo;
-    AudioRendererInfo rendererInfo;
-    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
-    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct MicStateChangeEvent : public Parcelable {
@@ -1143,6 +1193,14 @@ struct AppInfo {
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
     std::string deviceId {""};
+};
+
+struct AudioRendererOptions {
+    AudioStreamInfo streamInfo;
+    AudioRendererInfo rendererInfo;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
+    AppInfo appInfo;
 };
 
 struct BufferQueueState {
@@ -1473,6 +1531,8 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(capturerInfo.recorderType);
         parcel.WriteBool(capturerInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
+        parcel.WriteBool(capturerInfo.mixWithWakeUp);
+        parcel.WriteBool(capturerInfo.loopBackEffectEnabled);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1537,6 +1597,8 @@ struct AudioProcessConfig : public Parcelable {
         config->capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         config->capturerInfo.isLoopback = parcel.ReadBool();
         config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
+        config->capturerInfo.loopBackEffectEnabled = parcel.ReadBool();
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
@@ -1586,6 +1648,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
         parcel.WriteBool(rendererInfo.isVirtualKeyboard);
         parcel.WriteBool(rendererInfo.keepRunning);
+        parcel.WriteBool(rendererInfo.voipNoPrivacyFlag);
         parcel.WriteBool(rendererInfo.isStatic);
     }
 
@@ -1608,6 +1671,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
         config->rendererInfo.keepRunning = parcel.ReadBool();
+        config->rendererInfo.voipNoPrivacyFlag = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();
     }
 };
@@ -1755,6 +1819,7 @@ enum AudioParamKey {
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
     AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
+    SOUND_CARD_INFO = 1002,
 };
 
 struct DStatusInfo {
@@ -1916,6 +1981,11 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
+}
+
+static inline bool ValidStreamId(uint32_t streamId)
+{
+    return streamId != 0 && streamId != INVALID_STREAM_ID;
 }
 
 enum RouterType {
@@ -2190,11 +2260,32 @@ struct FetchDeviceInfo : public Parcelable {
     AudioPipeType audioPipeType = PIPE_TYPE_UNKNOWN;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     std::string caller = "";
+    std::string bundleName = "";
+    RouterType bypassType = ROUTER_TYPE_NONE;
+    uint32_t streamId = INVALID_STREAM_ID;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
         : streamUsage(streamUsage), preStreamUsage(preStreamUsage), clientUID(clientUID),
           routerType(routerType), audioPipeType(audioPipeType), privacyType(privacyType)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, std::string caller)
+        : streamUsage(streamUsage), caller(caller)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, std::string caller, RouterType bypassType)
+        : streamUsage(streamUsage), caller(caller), bypassType(bypassType)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID, std::string caller)
+        : streamUsage(streamUsage), clientUID(clientUID), caller(caller)
+    {}
+
+    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID, AudioPrivacyType privacyType,
+        std::string caller, std::string bundleName)
+        : streamUsage(streamUsage), clientUID(clientUID), privacyType(privacyType),
+          caller(caller), bundleName(bundleName)
     {}
 
     FetchDeviceInfo() = default;
@@ -2207,7 +2298,10 @@ struct FetchDeviceInfo : public Parcelable {
             parcel.WriteInt32(static_cast<int32_t>(routerType)) &&
             parcel.WriteInt32(static_cast<int32_t>(audioPipeType)) &&
             parcel.WriteInt32(static_cast<int32_t>(privacyType)) &&
-            parcel.WriteString(caller);
+            parcel.WriteString(caller) &&
+            parcel.WriteString(bundleName) &&
+            parcel.WriteInt32(static_cast<int32_t>(bypassType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(streamId));
     }
 
     static FetchDeviceInfo *Unmarshalling(Parcel &parcel)
@@ -2224,6 +2318,9 @@ struct FetchDeviceInfo : public Parcelable {
         info->audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         info->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         info->caller = parcel.ReadString();
+        info->bundleName = parcel.ReadString();
+        info->bypassType = static_cast<RouterType>(parcel.ReadInt32());
+        info->streamId = static_cast<uint32_t>(parcel.ReadInt32());
 
         return info;
     }
@@ -2237,6 +2334,9 @@ struct FetchDeviceInfo : public Parcelable {
         audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         caller = parcel.ReadString();
+        bundleName = parcel.ReadString();
+        bypassType = static_cast<RouterType>(parcel.ReadInt32());
+        streamId = static_cast<uint32_t>(parcel.ReadInt32());
     }
 };
 
@@ -2262,6 +2362,8 @@ struct CapturerStreamInfo {
     bool mute_ = MUTE_INVALID;
 
     int32_t uid_ = UID_INVALID;
+
+    bool mixWithWakeUp_ = false;
 };
 
 /**

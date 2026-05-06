@@ -85,7 +85,7 @@ class DeviceChangeWithInfoCallbackFuzzTest : public DeviceChangeWithInfoCallback
 public:
     DeviceChangeWithInfoCallbackFuzzTest() {}
     void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) override {}
+        const AudioStreamDeviceChangeReasonExt reason, const AudioDeviceDescriptor &preDeviceInfo) override {}
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override {}
@@ -209,7 +209,7 @@ void AudioPolicyManagerTwoFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().GetAudioFocusInfoList(focusInfoList, zoneId);
     AudioPolicyManager::GetInstance().SetClientCallbacksEnable(callbackChange, enable, block);
     AudioPolicyManager::GetInstance().SetCallbackRendererInfo(rendererInfo);
-    AudioPolicyManager::GetInstance().SetCallbackCapturerInfo(capturerInfo);
+    AudioPolicyManager::GetInstance().SetCallbackCapturerInfo(capturerInfo, -1);
     AudioPolicyManager::GetInstance().RegisterFocusInfoChangeCallback(clientId, callback);
     AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
 }

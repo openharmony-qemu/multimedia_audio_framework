@@ -41,6 +41,7 @@ enum AudioFocuState {
     STOP,
     PLACEHOLDER,
     PAUSEDBYREMOTE,
+    STANDBY, // Audio stream has no data
 };
 
 enum InterruptMode {
@@ -246,6 +247,16 @@ struct AudioFocusType {
     }
 };
 
+struct AudioFocusBehavior {
+    uint32_t streamId = 0;
+    int32_t pid { -1 };
+    int32_t uid { -1 };
+    AudioStreamType streamType = STREAM_DEFAULT;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
+    int64_t timestamp = 0;
+};
+
 enum InterruptStage {
     INTERRUPT_STAGE_START = 0x10,
     INTERRUPT_STAGE_RESTART = 0x11,
@@ -312,6 +323,12 @@ public:
     InterruptEventCallbackType callbackType {INTERRUPT_EVENT_CALLBACK_DEFAULT};
     AudioSessionActiveBehaviors behaviorFlags_ {};
     AudioSessionStrategy independentStrategy = { AudioConcurrencyMode::INVALID };
+    bool mixWithWakeUp = false;
+    int64_t startTimeNs = 0;
+    bool registerCallbackFlag = false;
+    bool activatedRegisterCallbackFlag = false;
+    bool isCallWaitingTone = false;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -365,7 +382,13 @@ public:
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.callbackType));
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.voipNoPrivacyFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.muteWhenInterruptFlag);
+        res = res && parcel.WriteBool(interrupt.behaviorFlags_.aibaseMuteVoip);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.independentStrategy.concurrencyMode));
+        res = res && parcel.WriteBool(interrupt.mixWithWakeUp);
+        res = res && parcel.WriteInt64(interrupt.startTimeNs);
+        res = res && parcel.WriteBool(interrupt.registerCallbackFlag);
+        res = res && parcel.WriteBool(interrupt.activatedRegisterCallbackFlag);
+        res = res && parcel.WriteBool(interrupt.isCallWaitingTone);
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -399,7 +422,13 @@ public:
         interrupt.callbackType = static_cast<InterruptEventCallbackType>(parcel.ReadInt32());
         interrupt.behaviorFlags_.voipNoPrivacyFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.muteWhenInterruptFlag = parcel.ReadBool();
+        interrupt.behaviorFlags_.aibaseMuteVoip = parcel.ReadBool();
         interrupt.independentStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
+        interrupt.mixWithWakeUp = parcel.ReadBool();
+        interrupt.startTimeNs = parcel.ReadInt64();
+        interrupt.registerCallbackFlag = parcel.ReadBool();
+        interrupt.activatedRegisterCallbackFlag = parcel.ReadBool();
+        interrupt.isCallWaitingTone = parcel.ReadBool();
     }
 
     bool Marshalling(Parcel &parcel) const override

@@ -250,6 +250,7 @@ inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_
 enum AudioDeviceSelectMode {
     SELECT_STRATEGY_DEFAULT = 0,
     SELECT_STRATEGY_INDEPENDENT = 1,
+    SELECT_STRATEGY_STREAM = 2,
 };
 
 enum DmDeviceType {
@@ -396,6 +397,12 @@ enum SleSelectState {
     USER_SELECT_INVALID = 0,
     USER_NOT_SELECT_SLE = 1,
     USER_SELECT_SLE = 2,
+};
+
+enum HdPlaybackMode {
+    HD_NOT_SUPPORTED = 0,
+    APP_LEVEL,
+    DEVICE_LEVEL,
 };
 
 enum VolumeControlMode {

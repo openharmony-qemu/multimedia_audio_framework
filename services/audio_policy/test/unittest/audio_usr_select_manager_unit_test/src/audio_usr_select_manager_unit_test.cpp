@@ -143,35 +143,105 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
 
 /**
 * @tc.name  : Test AudioUsrSelectManager.
-* @tc.number: AudioUsrSelectManager_IsSourcePreferHighQuality_001
-* @tc.desc  : Test IsSourcePreferHighQuality interface.
+* @tc.number: AudioUsrSelectManager_IsSourceTypeSupportedByMC_001
+* @tc.desc  : Test IsSourceTypeSupportedByMC interface.
 */
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_IsSourcePreferHighQuality_001, TestSize.Level1)
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_IsSourceTypeSupportedByMC_001, TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    
-    // Test high quality source types - should return true
-    EXPECT_TRUE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_MIC));
-    EXPECT_TRUE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_CAMCORDER));
-    EXPECT_TRUE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_LIVE));
-    
-    // Test non-high quality source types - should return false
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_INVALID));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_RECOGNITION));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_WAKEUP));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_CALL));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_COMMUNICATION));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_ULTRASONIC));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VIRTUAL_CAPTURE));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_MESSAGE));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_REMOTE_CAST));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_UNPROCESSED));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_EC));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_MIC_REF));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_OFFLOAD_CAPTURE));
-    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT));
+
+    EXPECT_TRUE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_MIC));
+    EXPECT_TRUE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_CAMCORDER));
+    EXPECT_TRUE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_LIVE));
+
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_INVALID));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_VOICE_RECOGNITION));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_WAKEUP));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_VOICE_CALL));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_VOICE_COMMUNICATION));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_ULTRASONIC));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_VIRTUAL_CAPTURE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_VOICE_MESSAGE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_REMOTE_CAST));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_UNPROCESSED));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_EC));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_MIC_REF));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_OFFLOAD_CAPTURE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourceTypeSupportedByMC(SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT));
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetCapturerDevice_001
+* @tc.desc  : Test GetCapturerDevice with mcSelected flag true and supported source type.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetCapturerDevice_001, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+
+    audioUsrSelectManager.recordDeviceInfoList_.clear();
+    audioUsrSelectManager.mcSelectedFlag_ = true;
+
+    int32_t uid = 123;
+    auto device = audioUsrSelectManager.GetCapturerDevice(uid, SourceType::SOURCE_TYPE_MIC);
+    EXPECT_NE(device, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetCapturerDevice_002
+* @tc.desc  : Test GetCapturerDevice with mcSelected flag true and unsupported source type.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetCapturerDevice_002, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+
+    audioUsrSelectManager.recordDeviceInfoList_.clear();
+    audioUsrSelectManager.mcSelectedFlag_ = true;
+
+    int32_t uid = 123;
+    auto device = audioUsrSelectManager.GetCapturerDevice(uid, SourceType::SOURCE_TYPE_VOICE_RECOGNITION);
+    EXPECT_NE(device, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetCapturerDevice_003
+* @tc.desc  : Test GetCapturerDevice with invalid source type.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetCapturerDevice_003, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+
+    audioUsrSelectManager.recordDeviceInfoList_.clear();
+    audioUsrSelectManager.mcSelectedFlag_ = false;
+
+    int32_t uid = 123;
+    auto device = audioUsrSelectManager.GetCapturerDevice(uid, SourceType::SOURCE_TYPE_INVALID);
+    EXPECT_NE(device, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetCapturerDevice_004
+* @tc.desc  : Test GetCapturerDevice with camcorder source type.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetCapturerDevice_004, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+
+    audioUsrSelectManager.recordDeviceInfoList_.clear();
+
+    int32_t uid = 321;
+    RecordDeviceInfo info {.uid_ = uid};
+    audioUsrSelectManager.recordDeviceInfoList_.push_back(info);
+
+    auto device = audioUsrSelectManager.GetCapturerDevice(uid, SourceType::SOURCE_TYPE_CAMCORDER);
+    EXPECT_NE(device, nullptr);
+
+    audioUsrSelectManager.recordDeviceInfoList_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS

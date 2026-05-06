@@ -25,7 +25,6 @@
 #include "audio_info.h"
 #include "audio_utils.h"
 #include "audio_volume_config.h"
-#include "audio_volume_parser.h"
 #include "audio_zone_info.h"
 
 namespace OHOS {
@@ -37,7 +36,6 @@ static const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
     STREAM_ACCESSIBILITY,
     STREAM_RING,
     STREAM_ALARM,
-    STREAM_VOICE_RING,
     STREAM_ULTRASONIC,
     // adjust the type of music from the head of list to end, make sure music is updated last.
     // avoid interference from ring updates on special platform.
@@ -80,6 +78,7 @@ static inline const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
 static inline const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
+    STREAM_NOTIFICATION,
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_ALARM,

@@ -350,10 +350,53 @@ napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendere
         GetStreamInfo(env, &(opts->streamInfo), res);
     }
 
+    status = napi_get_named_property(env, in, "originalAppIdInfo", &res);
+    if (status == napi_ok) {
+        GetAppInfo(env, &(opts->appInfo), res);
+    }
+
     int32_t intValue = {};
     status = GetValueInt32(env, "privacyType", intValue, in);
     if (status == napi_ok) {
         opts->privacyType = static_cast<AudioPrivacyType>(intValue);
+    }
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAppInfo(const napi_env &env, AppInfo *appInfo, napi_value in)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, napi_invalid_arg,
+        "GetAppInfo failed, valueType is not object");
+
+    int32_t intValue = {0};
+    napi_status status = GetValueInt32(env, "appUid", intValue, in);
+    if (status == napi_ok) {
+        appInfo->appUid = intValue;
+    }
+
+    status = GetValueInt32(env, "appPid", intValue, in);
+    if (status == napi_ok) {
+        appInfo->appPid = intValue;
+    }
+
+    napi_value res = nullptr;
+    status = napi_get_named_property(env, in, "appTokenId", &res);
+    if (status == napi_ok) {
+        uint32_t uintValue = {0};
+        status = GetValueUInt32(env, uintValue, res);
+        if (status == napi_ok) {
+            appInfo->appTokenId = uintValue;
+        }
+    }
+
+    int64_t int64Value = {0};
+    status = GetValueInt64(env, "appFullTokenId", int64Value, in);
+    if (status == napi_ok) {
+        CHECK_AND_RETURN_RET_LOG(int64Value >= 0, napi_invalid_arg, "appFullTokenId is invalid negative value");
+        appInfo->appFullTokenId = static_cast<uint64_t>(int64Value);
     }
 
     return napi_ok;
@@ -409,19 +452,42 @@ napi_status NapiParamUtils::SetRendererInfo(const napi_env &env, const AudioRend
     return napi_ok;
 }
 
-napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in)
+napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in)
 {
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
-    if (status == napi_ok) {
-        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_192000) {
-            streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
-        } else {
-            AUDIO_ERR_LOG("invaild samplingRate");
-            return napi_generic_failure;
+    // samplingRate is an optional field. If not present, keep default value and return napi_ok
+    // to allow other fields in the same object to continue parsing
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_ok, "samplingRate field not present");
+    // Validate sample rate: 8000-384000, divisible by 10, or 11025
+    constexpr int32_t SAMPLE_RATE_RESOLUTION_10 = 10;
+    bool isValidRate = (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000 &&
+        intValue % SAMPLE_RATE_RESOLUTION_10 == 0) || intValue == SAMPLE_RATE_11025;
+    CHECK_AND_RETURN_RET_LOG(isValidRate, napi_generic_failure, "invalid samplingRate: %{public}d", intValue);
+    // Check if it's a standard enum value
+    bool isStandardEnum = false;
+    for (const auto &rate : AUDIO_SUPPORTED_SAMPLING_RATES) {
+        if (static_cast<int32_t>(rate) == intValue) {
+            isStandardEnum = true;
+            streamInfo->samplingRate = rate;
+            break;
         }
     }
 
+    // If not a standard enum value, treat as custom sample rate
+    CHECK_AND_RETURN_RET(!isStandardEnum, napi_ok);
+    streamInfo->samplingRate = SAMPLE_RATE_8000; // default fallback
+    streamInfo->customSampleRate = static_cast<uint32_t>(intValue);
+    AUDIO_INFO_LOG("custom sample rate: %{public}d", intValue);
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in)
+{
+    napi_status status = ParseSamplingRate(env, streamInfo, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetStreamInfo ParseSamplingRate failed");
+
+    int32_t intValue = {0};
     status = GetValueInt32(env, "channels", intValue, in);
     if (status == napi_ok) {
         streamInfo->channels = static_cast<AudioChannel>(intValue);
@@ -448,17 +514,10 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
 
 napi_status NapiParamUtils::GetEcStreamInfo(const napi_env &env, AudioStreamInfo *ecStreamInfo, napi_value in)
 {
-    int32_t intValue = {0};
-    napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
-    if (status == napi_ok) {
-        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_192000) {
-            ecStreamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
-        } else {
-            AUDIO_ERR_LOG("invaild samplingRate");
-            return napi_generic_failure;
-        }
-    }
+    napi_status status = ParseSamplingRate(env, ecStreamInfo, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetEcStreamInfo ParseSamplingRate failed");
 
+    int32_t intValue = {0};
     status = GetValueInt32(env, "channels", intValue, in);
     if (status == napi_ok) {
         ecStreamInfo->channels = static_cast<AudioChannel>(intValue);
@@ -492,7 +551,9 @@ napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStream
 {
     napi_status status = napi_create_object(env, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetStreamInfo napi_create_object failed");
-    SetValueInt32(env, "samplingRate", static_cast<int32_t>(streamInfo.samplingRate), result);
+    int32_t samplingRateValue = streamInfo.customSampleRate != 0 ?
+        static_cast<int32_t>(streamInfo.customSampleRate) : static_cast<int32_t>(streamInfo.samplingRate);
+    SetValueInt32(env, "samplingRate", samplingRateValue, result);
     SetValueInt32(env, "channels", static_cast<int32_t>(streamInfo.channels), result);
     SetValueInt32(env, "sampleFormat", static_cast<int32_t>(streamInfo.format), result);
     SetValueInt32(env, "encodingType", static_cast<int32_t>(streamInfo.encoding), result);
@@ -542,8 +603,10 @@ napi_status NapiParamUtils::ToJsAudioStreamInfo(const napi_env &env,
 
     napi_value value = nullptr;
 
-    // samplingRate
-    status = napi_create_int32(env, static_cast<int32_t>(info.samplingRate), &value);
+    // samplingRate: return customSampleRate if set, otherwise return samplingRate enum value
+    int32_t samplingRateValue = info.customSampleRate != 0 ?
+        static_cast<int32_t>(info.customSampleRate) : static_cast<int32_t>(info.samplingRate);
+    status = napi_create_int32(env, samplingRateValue, &value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create samplingRate failed");
     status = napi_set_named_property(env, result, "samplingRate", value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set samplingRate failed");
@@ -791,6 +854,53 @@ napi_status NapiParamUtils::GetPlaybackCaptureConfig(const napi_env &env,
     return NapiParamUtils::GetCaptureFilterOptionsVector(env, &(captureConfig->filterOptions), res);
 }
 
+napi_status NapiParamUtils::GetCapturerSubStreamOptions(
+    const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    napi_value result = nullptr;
+    napi_status status = napi_ok;
+
+    if (napi_get_named_property(env, in, "processedStreamInfo", &result) == napi_ok) {
+        status = GetStreamInfo(env, &(opts->streamInfo), result);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseProcessedStreamInfo failed");
+        CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
+            "processedStreamInfo does not support custom sample rate");
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without processedStreamInfo");
+    }
+
+    if (napi_get_named_property(env, in, "micInStreamInfo", &result) == napi_ok) {
+        AudioStreamInfo *targetMicInStreamInfo = &(opts->micInStreamInfo);
+        if (opts->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+            targetMicInStreamInfo = &(opts->streamInfo);
+            AUDIO_INFO_LOG("ParseCapturerOptions, sourceType is UNPROCESSED_VOICE_ASSISTANT, "
+                "micInStreamInfo is mapped to streamInfo");
+        }
+        status = GetMicInStreamInfo(env, targetMicInStreamInfo, result);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseMicInStreamInfo failed");
+        CHECK_AND_RETURN_RET_LOG(targetMicInStreamInfo->customSampleRate == 0, napi_generic_failure,
+            "micInStreamInfo does not support custom sample rate");
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without micInStreamInfo");
+    }
+
+    if (napi_get_named_property(env, in, "ecStreamInfo", &result) == napi_ok) {
+        status = GetEcStreamInfo(env, &(opts->ecStreamInfo), result);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseEcStreamInfo failed");
+        CHECK_AND_RETURN_RET_LOG(opts->ecStreamInfo.customSampleRate == 0, napi_generic_failure,
+            "ecStreamInfo does not support custom sample rate");
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without ecStreamInfo");
+    }
+
+    if (napi_get_named_property(env, in, "playbackCaptureConfig", &result) == napi_ok) {
+        return GetPlaybackCaptureConfig(env, &(opts->playbackCaptureConfig), result);
+    }
+
+    AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
 {
     napi_value result = nullptr;
@@ -799,6 +909,8 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
 
     status = GetStreamInfo(env, &(opts->streamInfo), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseStreamInfo failed");
+    CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
+        "streamInfo does not support custom sample rate");
 
     status = napi_get_named_property(env, in, "capturerInfo", &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
@@ -815,39 +927,7 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
     opts->preferredInputDevice = device;
 
-    if (napi_get_named_property(env, in, "processedStreamInfo", &result) == napi_ok) {
-        status = GetStreamInfo(env, &(opts->streamInfo), result);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseProcessedStreamInfo failed");
-    } else {
-        AUDIO_INFO_LOG("ParseCapturerOptions, without processedStreamInfo");
-    }
-
-    if (napi_get_named_property(env, in, "micInStreamInfo", &result) == napi_ok) {
-        AudioStreamInfo *targetMicInStreamInfo = &(opts->micInStreamInfo);
-        if (opts->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
-            targetMicInStreamInfo = &(opts->streamInfo);
-            AUDIO_INFO_LOG("ParseCapturerOptions, sourceType is UNPROCESSED_VOICE_ASSISTANT, "
-                "micInStreamInfo is mapped to streamInfo");
-        }
-        status = GetMicInStreamInfo(env, targetMicInStreamInfo, result);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseMicInStreamInfo failed");
-    } else {
-        AUDIO_INFO_LOG("ParseCapturerOptions, without micInStreamInfo");
-    }
-
-    if (napi_get_named_property(env, in, "ecStreamInfo", &result) == napi_ok) {
-        status = GetEcStreamInfo(env, &(opts->ecStreamInfo), result);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseEcStreamInfo failed");
-    } else {
-        AUDIO_INFO_LOG("ParseCapturerOptions, without ecStreamInfo");
-    }
-
-    if (napi_get_named_property(env, in, "playbackCaptureConfig", &result) == napi_ok) {
-        return GetPlaybackCaptureConfig(env, &(opts->playbackCaptureConfig), result);
-    }
-
-    AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
-    return napi_ok;
+    return GetCapturerSubStreamOptions(env, opts, in);
 }
 
 napi_status NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(const napi_env &env,
@@ -955,6 +1035,7 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
     SetValueInt32(env, "volumeMode",
         NapiAudioEnum::GetJsAudioVolumeMode(static_cast<AudioVolumeMode>(volumeEvent.volumeMode)), result);
     SetValueInt32(env, "percentage", static_cast<int32_t>(volumeEvent.volumeDegree), result);
+    SetValueInt32(env, "appUid", volumeEvent.appUid, result);
     return napi_ok;
 }
 
@@ -1420,7 +1501,7 @@ napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
     return napi_ok;
 }
 
-int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArray &propertyArray)
 {
     int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
     std::set<std::string> classSet;
@@ -1433,19 +1514,19 @@ int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArrayV3 &pro
 }
 
 napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env,
-    AudioEffectPropertyArrayV3 &propertyArray, napi_value in)
+    AudioEffectPropertyArray &propertyArray, napi_value in)
 {
     uint32_t arrayLen = 0;
     napi_status status = napi_get_array_length(env, in, &arrayLen);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && arrayLen > 0, status, "get array length invalid");
 
-    AudioEffectPropertyArrayV3 effectArray;
-    AudioEffectPropertyArrayV3 enhanceArray;
+    AudioEffectPropertyArray effectArray;
+    AudioEffectPropertyArray enhanceArray;
     for (uint32_t i = 0; i < arrayLen; i++) {
         napi_value element = nullptr;
         napi_get_element(env, in, i, &element);
 
-        AudioEffectPropertyV3 prop;
+        AudioEffectProperty prop;
         napi_value propValue = nullptr;
 
         status = napi_get_named_property(env, element, "name", &propValue);
@@ -1485,7 +1566,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env,
 }
 
 napi_status NapiParamUtils::SetEffectProperty(const napi_env &env,
-    const AudioEffectPropertyArrayV3 &propertyArray, napi_value &result)
+    const AudioEffectPropertyArray &propertyArray, napi_value &result)
 {
     int32_t position = 0;
     napi_value jsEffectInfoObj = nullptr;
@@ -1499,126 +1580,6 @@ napi_status NapiParamUtils::SetEffectProperty(const napi_env &env,
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set category failed");
         status = SetValueInt32(env, "flag", property.flag, jsEffectInfoObj);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set flag failed");
-        napi_set_element(env, result, position, jsEffectInfoObj);
-        position++;
-    }
-    return napi_ok;
-}
-
-napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectPropertyArray &effectArray,
-    napi_value in)
-{
-    uint32_t arrayLen = 0;
-    napi_status status = napi_get_array_length(env, in, &arrayLen);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get subKeys length failed");
-
-    for (uint32_t i = 0; i < arrayLen; i++) {
-        napi_value element = nullptr;
-        napi_get_element(env, in, i, &element);
-
-        AudioEffectProperty prop;
-        napi_value propValue = nullptr;
-
-        status = napi_get_named_property(env, element, "effectClass", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get effectClass failed");
-        prop.effectClass = GetStringArgument(env, propValue);
-
-        status = napi_get_named_property(env, element, "effectProp", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get effectProp failed");
-        prop.effectProp = GetStringArgument(env, propValue);
-
-        effectArray.property.push_back(prop);
-    }
-
-    int32_t size = static_cast<int32_t>(effectArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-                             napi_invalid_arg, "Audio effect property array size invalid");
-
-    std::set<std::string> classSet;
-    for (int32_t i = 0; i < size; i++) {
-        if (effectArray.property[i].effectClass != "" && effectArray.property[i].effectProp != "") {
-            classSet.insert(effectArray.property[i].effectClass);
-        }
-    }
-    CHECK_AND_RETURN_RET_LOG(size == static_cast<int32_t>(classSet.size()), napi_invalid_arg,
-        "Audio enhance property array exist duplicate data");
-
-    return napi_ok;
-}
-
-napi_status NapiParamUtils::GetEnhancePropertyArray(napi_env env, AudioEnhancePropertyArray &enhanceArray,
-    napi_value in)
-{
-    uint32_t arrayLen = 0;
-    napi_status status = napi_get_array_length(env, in, &arrayLen);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get subKeys length failed");
-
-    for (size_t i = 0; i < arrayLen; i++) {
-        napi_value element = nullptr;
-        napi_get_element(env, in, i, &element);
-
-        AudioEnhanceProperty prop;
-        napi_value propValue = nullptr;
-
-        status = napi_get_named_property(env, element, "enhanceClass", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get enhanceClass failed");
-        prop.enhanceClass = GetStringArgument(env, propValue);
-
-        status = napi_get_named_property(env, element, "enhanceProp", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get enhanceProp failed");
-        prop.enhanceProp = GetStringArgument(env, propValue);
-
-        enhanceArray.property.push_back(prop);
-    }
-
-    int32_t size = static_cast<int32_t>(enhanceArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-                             napi_invalid_arg, "Audio enhance property array size invalid");
-
-    std::set<std::string> classSet;
-    for (int32_t i = 0; i < size; i++) {
-        if (enhanceArray.property[i].enhanceClass != "" && enhanceArray.property[i].enhanceProp != "") {
-            classSet.insert(enhanceArray.property[i].enhanceClass);
-        }
-    }
-    CHECK_AND_RETURN_RET_LOG(size == static_cast<int32_t>(classSet.size()), napi_invalid_arg,
-        "Audio enhance property array exist duplicate data");
-
-    return napi_ok;
-}
-
-napi_status NapiParamUtils::SetEnhanceProperty(const napi_env &env, const AudioEnhancePropertyArray &enhanceArray,
-    napi_value &result)
-{
-    int32_t position = 0;
-    napi_value jsEnhanceInfoObj = nullptr;
-    napi_status status = napi_create_array_with_length(env, enhanceArray.property.size(), &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get create array failed");
-    for (const auto &property : enhanceArray.property) {
-        napi_create_object(env, &jsEnhanceInfoObj);
-        status = SetValueString(env, "enhanceClass", property.enhanceClass, jsEnhanceInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set enhanceClass failed");
-        status = SetValueString(env, "enhanceProp", property.enhanceProp, jsEnhanceInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set enhanceProp failed");
-        napi_set_element(env, result, position, jsEnhanceInfoObj);
-        position++;
-    }
-    return napi_ok;
-}
-
-napi_status NapiParamUtils::SetEffectProperty(const napi_env &env, const AudioEffectPropertyArray &effectArray,
-    napi_value &result)
-{
-    int32_t position = 0;
-    napi_value jsEffectInfoObj = nullptr;
-    napi_status status = napi_create_array_with_length(env, effectArray.property.size(), &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get create array failed");
-    for (const auto &property : effectArray.property) {
-        napi_create_object(env, &jsEffectInfoObj);
-        status = SetValueString(env, "effectClass", property.effectClass, jsEffectInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set effectClass failed");
-        status = SetValueString(env, "effectProp", property.effectProp, jsEffectInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set effectProp failed");
         napi_set_element(env, result, position, jsEffectInfoObj);
         position++;
     }
@@ -1698,6 +1659,24 @@ napi_status NapiParamUtils::ToJsActiveStreamsVolumeInfo(const napi_env &env,
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set element failed");
     }
     return status;
+}
+
+napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
+    const SoundCardInfo &info, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create napi_create_object failed");
+    status = SetValueString(env, "name", info.name, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set name failed");
+    status = SetValueString(env, "vendor", info.vendor, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set vendor failed");
+    status = SetValueString(env, "model", info.model, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set model failed");
+    status = SetValueString(env, "busAddress", info.busAddress, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set busAddress failed");
+    status = SetValueString(env, "driver", info.driver, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set driver failed");
+    return napi_ok;
 }
 } // namespace AudioStandard
 } // namespace OHOS

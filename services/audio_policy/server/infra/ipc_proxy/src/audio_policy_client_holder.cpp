@@ -16,6 +16,7 @@
 #include "audio_policy_client_holder.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "audio_errors.h"
 #include "audio_policy_utils.h"
 
 namespace OHOS {
@@ -114,7 +115,7 @@ void AudioPolicyClientHolder::OnMicStateUpdated(const MicStateChangeEvent &micSt
     audioPolicyClient_->OnMicStateUpdated(micStateChangeEvent);
 }
 
-void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo, int32_t uid,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
@@ -124,10 +125,10 @@ void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRenderer
         clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
         deviceDesc->SetClientInfo(clientInfo);
     }
-    audioPolicyClient_->OnPreferredOutputDeviceUpdated(rendererInfo, desc);
+    audioPolicyClient_->OnPreferredOutputDeviceUpdated(rendererInfo, uid, desc);
 }
 
-void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo, int32_t uid,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
@@ -137,7 +138,7 @@ void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerI
         clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
         deviceDesc->SetClientInfo(clientInfo);
     }
-    audioPolicyClient_->OnPreferredInputDeviceUpdated(capturerInfo, desc);
+    audioPolicyClient_->OnPreferredInputDeviceUpdated(capturerInfo, uid, desc);
 }
 
 void AudioPolicyClientHolder::OnRendererStateChange(
@@ -167,13 +168,16 @@ void AudioPolicyClientHolder::OnCapturerStateChange(
 }
 
 void AudioPolicyClientHolder::OnRendererDeviceChange(const uint32_t sessionId,
-    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
     clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceInfo.deviceType_);
     deviceInfo.SetClientInfo(clientInfo);
-    audioPolicyClient_->OnRendererDeviceChange(sessionId, deviceInfo, reason);
+    clientInfo.isSupportedDevice_ = CheckDeviceSupported(preDeviceInfo.deviceType_);
+    preDeviceInfo.SetClientInfo(clientInfo);
+    audioPolicyClient_->OnRendererDeviceChange(sessionId, deviceInfo, reason, preDeviceInfo);
 }
 
 void AudioPolicyClientHolder::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
@@ -371,6 +375,14 @@ void AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange(const SpatialAudioS
         AUDIO_INFO_LOG("AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange 0 0");
         audioPolicyClient_->OnSpatialAudioSourceTypeChange(SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
     }
+}
+
+int32_t AudioPolicyClientHolder::OnAudioRouteSelectRefined(
+    const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClient_ != nullptr, ERROR, "audioPolicyClient_ is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(routeSelectInfo != nullptr, ERROR, "routeSelectInfo is nullptr.");
+    return audioPolicyClient_->OnAudioRouteSelectRefined(routeSelectInfo, selectResult);
 }
 
 bool AudioPolicyClientHolder::CheckDeviceSupported(DeviceType devicetype)

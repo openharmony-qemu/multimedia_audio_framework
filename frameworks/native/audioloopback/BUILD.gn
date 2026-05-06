@@ -18,12 +18,14 @@ config("audio_loopback_config") {
   include_dirs = [
     "./include",
     "../audiostream/include",
+    "../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../frameworks/native/audiostream/include",
     "../../../services/audio_service/client/include",
+    "../audiodefinitions/include",
   ]
   cflags = [
     "-Wall",
@@ -48,7 +50,10 @@ ohos_shared_library("audio_loopback") {
 
   configs = [ ":audio_loopback_config" ]
 
-  sources = [ "src/audio_loopback.cpp" ]
+  sources = [
+    "src/audio_loopback.cpp",
+    "src/audio_loopback_wrapper.cpp",
+  ]
 
   defines = []
   if (audio_framework_feature_low_latency) {
@@ -62,10 +67,13 @@ ohos_shared_library("audio_loopback") {
     "../../../services/audio_service:audio_policy_manager",
     "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
+    "../../../services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_service/idl:audio_policy_client_idl_interface",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
     "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
+    "../audio_debug_manager:audio_debug_manager",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -90,10 +98,17 @@ ohos_shared_library("audio_loopback") {
 }
 
 config("audio_external_library_config") {
-  include_dirs =
-      [
-        "../../../interfaces/inner_api/native/audiocapturer/include",
-        "../../../interfaces/inner_api/native/audiorenderer/include",
-        "../../../interfaces/inner_api/native/audioloopback/include",
-    ]
+  include_dirs = [
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/audioloopback/include",
+  ]
+}
+
+group("audio_loopback_test_packages") {
+  testonly = true
+  deps = [
+    "./test/unittest:audio_loopback_unit_test",
+    "./test/unittest:audio_loopback_wrapper_unit_test",
+  ]
 }

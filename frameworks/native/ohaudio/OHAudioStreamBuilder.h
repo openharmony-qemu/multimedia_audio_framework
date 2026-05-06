@@ -76,6 +76,7 @@ public:
     OH_AudioStream_Result SetMuteWhenInterrupted(bool muteWhenInterrupted);
     OH_AudioStream_Result SetCapturerFastStatusChangeCallback(
         OH_AudioCapturer_OnFastStatusChange callback, void *userData);
+    OH_AudioStream_Result SetCapturerLoopbackEffectEnabled(bool enabled);
 
 private:
     int32_t streamType_;
@@ -89,6 +90,7 @@ private:
     AudioEncodingType encodingType_ = ENCODING_PCM;
     AudioSampleFormat sampleFormat_ = SAMPLE_S16LE;
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
+    uint32_t customSampleRate_ = 0;
 
     // renderer params
     StreamUsage usage_ = STREAM_USAGE_UNKNOWN;
@@ -98,6 +100,7 @@ private:
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
     bool modernInnerCapturer_ = false;
+    bool loopBackEffectEnabled_ = false;
 
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;

@@ -951,7 +951,6 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
         case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
             if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_NEW) {
                 AUDIO_INFO_LOG("PA_SUBSCRIPTION_EVENT_NEW");
-                g_audioServiceAdapterCallback->OnSetVolumeDbCb();
             } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
                 AUDIO_INFO_LOG("PA_SUBSCRIPTION_EVENT_REMOVE");
             }
@@ -973,6 +972,16 @@ void PulseAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIn
 
 void PulseAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+}
+
+void PulseAudioServiceAdapterImpl::EnableCaptureCollaboration(uint32_t sourcePortIndex,
+    uint32_t collabSourcePortIndex, SourceType sourceType)
+{
+}
+
+void PulseAudioServiceAdapterImpl::DisableCaptureCollaboration(uint32_t sourcePortIndex,
+    uint32_t collabSourcePortIndex, SourceType sourceType)
 {
 }
 

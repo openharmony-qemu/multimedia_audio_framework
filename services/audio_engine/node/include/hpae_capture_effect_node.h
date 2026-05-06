@@ -19,6 +19,9 @@
 #include "hpae_plugin_node.h"
 #include "hpae_node.h"
 #include "audio_effect.h"
+#ifdef ENABLE_HOOK_PCM
+#include "hpae_pcm_dumper.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,9 +32,11 @@ constexpr uint32_t CAPTURER_ID_OFFSET = 16;
 constexpr uint32_t BITLENGTH = 8;
 
 struct CaptureEffectAttr {
-    uint32_t micChannels;
-    uint32_t ecChannels;
-    uint32_t micRefChannels;
+    bool needEc { false };
+    bool needMicRef { false };
+    uint32_t micChannels { 0 };
+    uint32_t ecChannels { 0 };
+    uint32_t micRefChannels { 0 };
 };
 
 class HpaeCaptureEffectNode : public HpaePluginNode {
@@ -54,6 +59,7 @@ private:
     void GetCaptureEffectMicChannelLayout(uint32_t channels, AudioChannelLayout &channelLayout);
     void SetCapturerEffectConfig(AudioBufferConfig micConfig, AudioBufferConfig ecConfig,
         AudioBufferConfig micrefConfig);
+    HpaePcmBuffer *SignalProcessCollaboration(const std::vector<HpaePcmBuffer*> &inputs);
 
     uint64_t sceneKeyCode_ = 0;
     std::string sceneType_ = "";
@@ -66,6 +72,11 @@ private:
     std::vector<uint8_t> cacheDataOut_;
     std::unique_ptr<HpaePcmBuffer> outPcmBuffer_ { nullptr };
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> capturerEffectConfigMap_;
+#ifdef ENABLE_HOOK_PCM
+    std::unique_ptr<HpaePcmDumper> inputMicDumper_ = nullptr;
+    std::unique_ptr<HpaePcmDumper> inputRefDumper_ = nullptr;
+    std::unique_ptr<HpaePcmDumper> outputDumper_ = nullptr;
+#endif
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

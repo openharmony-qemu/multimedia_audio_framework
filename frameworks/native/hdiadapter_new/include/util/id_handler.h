@@ -38,7 +38,7 @@ public:
 
     uint32_t GetId(HdiIdBase base, HdiIdType type, const std::string &info = HDI_ID_INFO_DEFAULT);
     uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass,
-        const std::string &info = HDI_ID_INFO_DEFAULT);
+        const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
 
@@ -61,6 +61,7 @@ private:
 
     uint32_t CreateInfoId(void);
     uint32_t GetIdForSolePipeSource(SourceType sourceType, uint32_t routeFlag);
+    uint32_t GetRenderIdByDeviceClassSub(const std::string &deviceClass, const std::string &info, uint32_t routeFlag);
 
 private:
     static constexpr uint32_t HDI_ID_BASE_OFFSET = 12;

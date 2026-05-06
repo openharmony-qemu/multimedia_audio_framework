@@ -447,6 +447,11 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceDescriptors, audioDeviceSelectMode);
 }
 
+int32_t AudioSystemManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) const
+{
+    return AudioDevicesClientManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
+}
+
 int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
@@ -818,6 +823,11 @@ int32_t AudioSystemManager::DisableSafeMediaVolume()
 int32_t AudioSystemManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
 {
     return AudioInterruptClientManager::GetInstance().InjectInterruption(networkId, event);
+}
+
+int32_t AudioSystemManager::SetSplitModeReady()
+{
+    return AudioSystemClientPolicyManager::GetInstance().SetSplitModeReady();
 }
 
 int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)

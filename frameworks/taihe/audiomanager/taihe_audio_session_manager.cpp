@@ -204,7 +204,7 @@ void AudioSessionManagerImpl::EnableMuteSuggestionWhenMixWithOthers(bool enable)
     }
 }
 
-void AudioSessionManagerImpl::SetCaptureMuteHintSync(bool mute)
+void AudioSessionManagerImpl::SetCapturerMuteHintSync(bool mute)
 {
     if (audioSessionMngr_ == nullptr) {
         AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
@@ -215,8 +215,6 @@ void AudioSessionManagerImpl::SetCaptureMuteHintSync(bool mute)
     int32_t ret = audioSessionMngr_->SetCapturerMuteHint(mute);
     if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE);
-    } else if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
     } else if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
     }
@@ -363,6 +361,7 @@ void AudioSessionManagerImpl::RegisterAudioSessionStateCallback(std::shared_ptr<
         std::static_pointer_cast<TaiheAudioSessionStateCallback>(stateChangedCallback);
     taiheSessionManager->sessionStateCallbackList_.push_back(cb);
     cb->SaveCallbackReference(callback);
+    taiheSessionManager->audioSessionMngr_->SetRegisterStateChangeCallbackFlag(true);
 
     AUDIO_INFO_LOG("OnAudioSessionStateChangeCallback is successful");
 }

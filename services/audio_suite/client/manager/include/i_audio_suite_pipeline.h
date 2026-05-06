@@ -53,6 +53,12 @@ public:
     virtual int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) = 0;
 
     virtual uint32_t GetPipelineId() = 0;
+    virtual PipelineWorkMode GetWorkMode() = 0;
+
+    virtual const std::unordered_map<uint32_t, std::shared_ptr<AudioNode>>& GetNodeMap() const = 0;
+    virtual const std::unordered_map<uint32_t, uint32_t>& GetConnections() const = 0;
+    virtual const std::unordered_map<uint32_t, std::vector<uint32_t>>& GetReverseConnections() const = 0;
+    virtual AudioSuitePipelineState GetCurrentPipelineState() const = 0;
 };
 
 }  // namespace AudioSuite

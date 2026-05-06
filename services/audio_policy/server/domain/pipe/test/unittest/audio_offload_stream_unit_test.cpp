@@ -28,6 +28,7 @@ static const uint32_t TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID = 100000;
 static const uint32_t TEST_OFFLOAD_IN_PRIMARY_2_SESSION_ID = 100001;
 static const uint32_t TEST_OFFLOAD_IN_REMOTE_1_SESSION_ID = 100002;
 static const uint32_t TEST_OFFLOAD_IN_REMOTE_2_SESSION_ID = 100003;
+static const uint32_t TEST_OFFLOAD_IO_HANDLE = 100;
 
 void AudioOffloadStreamTest::SetUpTestCase(void) {}
 
@@ -149,7 +150,8 @@ HWTEST_F(AudioOffloadStreamTest, GetOffloadSessionId_001, TestSize.Level3)
  */
 HWTEST_F(AudioOffloadStreamTest, SetOffloadStatus_001, TestSize.Level2)
 {
-    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
+    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY,
+        TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, TEST_OFFLOAD_IO_HANDLE);
     EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
     testOffloadModule_->UnsetOffloadStatus(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
     EXPECT_EQ(NO_OFFLOAD_STREAM_SESSIONID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
@@ -162,9 +164,11 @@ HWTEST_F(AudioOffloadStreamTest, SetOffloadStatus_001, TestSize.Level2)
  */
 HWTEST_F(AudioOffloadStreamTest, SetOffloadStatus_002, TestSize.Level3)
 {
-    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
+    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID,
+        TEST_OFFLOAD_IO_HANDLE);
     EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
-    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_REMOTE, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
+    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_REMOTE, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID,
+        TEST_OFFLOAD_IO_HANDLE);
     EXPECT_EQ(NO_OFFLOAD_STREAM_SESSIONID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
     EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_REMOTE));
 }
@@ -176,12 +180,15 @@ HWTEST_F(AudioOffloadStreamTest, SetOffloadStatus_002, TestSize.Level3)
  */
 HWTEST_F(AudioOffloadStreamTest, UpdateOffloadStatusFromUpdateTracker_001, TestSize.Level2)
 {
-    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
+    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID,
+        TEST_OFFLOAD_IO_HANDLE);
 
-    testOffloadModule_->UpdateOffloadStatusFromUpdateTracker(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, RENDERER_STOPPED);
+    testOffloadModule_->UpdateOffloadStatusFromUpdateTracker(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID,
+        RENDERER_STOPPED);
     EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 
-    testOffloadModule_->UpdateOffloadStatusFromUpdateTracker(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, RENDERER_RUNNING);
+    testOffloadModule_->UpdateOffloadStatusFromUpdateTracker(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID,
+        RENDERER_RUNNING);
     EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -192,7 +199,8 @@ HWTEST_F(AudioOffloadStreamTest, UpdateOffloadStatusFromUpdateTracker_001, TestS
  */
 HWTEST_F(AudioOffloadStreamTest, UpdateOffloadStatusFromUpdateTracker_002, TestSize.Level4)
 {
-    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
+    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID,
+        TEST_OFFLOAD_IO_HANDLE);
     testOffloadModule_->UpdateOffloadStatusFromUpdateTracker(TEST_OFFLOAD_IN_PRIMARY_2_SESSION_ID, RENDERER_RUNNING);
     EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }

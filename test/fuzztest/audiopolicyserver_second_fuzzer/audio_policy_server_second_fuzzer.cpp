@@ -262,6 +262,15 @@ void AudioPolicyServerForceVolumeKeyControlType(FuzzedDataProvider& fdp)
     server->ForceVolumeKeyControlType(volumeType, duration, ret);
 }
 
+void AudioPolicyServerGetCurrentRendererChangeInfosForZone(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t zoneId = GetData<int32_t>();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    server->GetCurrentRendererChangeInfosForZone(zoneId, audioRendererChangeInfos);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -273,6 +282,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyServerForceSelectDevice,
     AudioPolicyServerSelectPrivateDevice,
     AudioPolicyServerForceVolumeKeyControlType,
+    AudioPolicyServerGetCurrentRendererChangeInfosForZone,
     });
     func(fdp);
 }

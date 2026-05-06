@@ -24,7 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetMediaRenderDevice(StreamUsage streamUsage,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
@@ -60,7 +60,7 @@ bool PrivacyPriorityRouter::IsA2dpDisable(shared_ptr<AudioDeviceDescriptor> &hfp
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();

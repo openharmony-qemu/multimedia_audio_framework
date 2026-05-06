@@ -153,6 +153,13 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &remoteAddr,
     return ret;
 }
 
+bool SleAudioDeviceManager::IsAudioLoopbackSupported(const std::string &remoteAddr)
+{
+    (void)remoteAddr;
+    // in plan: use callback_ to get result
+    return true;
+}
+
 int32_t SleAudioDeviceManager::SendUserSelection(const std::string &device,
     uint32_t streamType, int32_t eventType)
 {
@@ -187,8 +194,12 @@ bool SleAudioDeviceManager::IsGameApp(int32_t uid)
     return it->second;
 }
 
-uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid)
+uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid, bool isLoopback)
 {
+    if (isLoopback && streamUsage == STREAM_USAGE_MUSIC) {
+        // in plan: change to target type.
+        return SLE_AUDIO_STREAM_GAME;
+    }
     bool isGameApp = IsGameApp(uid);
     if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {
         return SLE_AUDIO_STREAM_GAME;
@@ -230,33 +241,33 @@ std::set<SourceType> SleAudioDeviceManager::GetSourceTypesBySleStreamType(uint32
 }
 
 int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
-    int32_t uid)
+    int32_t uid, bool isLoopback)
 {
     CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
-    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid));
+    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback));
 }
 
 int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
-    int32_t uid)
+    int32_t uid, bool isLoopback)
 {
     CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
     return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
 }
 
 int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
-    int32_t uid)
+    int32_t uid, bool isLoopback)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
     static const unordered_set<StreamUsage> EXTENDED_WAITING_USAGES = {
         STREAM_USAGE_VOICE_MESSAGE, STREAM_USAGE_VOICE_ASSISTANT, STREAM_USAGE_NAVIGATION
     };
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid),
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback),
         EXTENDED_WAITING_USAGES.contains(streamUsage) ?
             SLE_EXTENDED_TIMEOUT_MS : SLE_STANDARD_TIMEOUT_MS);
 }
 
 int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
-    int32_t uid)
+    int32_t uid, bool isLoopback)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
     static const unordered_set<SourceType> EXTENDED_WAITING_TYPES = {
@@ -395,12 +406,14 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
         StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
 
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
-            streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid());
+            streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid(),
+                streamDesc->rendererInfo_.isLoopback);
             oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
             UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
         }
         if (IsMoveToNearlinkDevice(streamDesc)) {
-            streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid());
+            streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid(),
+                streamDesc->rendererInfo_.isLoopback);
             newDeviceAddr = streamDesc->newDeviceDescs_[0]->macAddress_;
             if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_) {
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, true);

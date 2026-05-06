@@ -18,6 +18,7 @@
 #include "capturer_in_client.h"
 
 #include <atomic>
+#include <cstdio>
 #include <cinttypes>
 #include <condition_variable>
 #include <sstream>
@@ -65,6 +66,7 @@ public:
     int32_t SetInMainThreadState(bool isInMainThread) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
+    void CheckInnerCapVoIP() override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
@@ -96,7 +98,9 @@ public:
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
+    int32_t SetSonicPitch(float pitch) override;
     float GetSpeed() override;
+    int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) override;
 
     // callback mode api
     AudioRenderMode GetRenderMode() override;
@@ -252,6 +256,7 @@ private:
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
     int32_t FlushCbBuffer();
+    void InitDfxOperation();
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
 
@@ -268,6 +273,10 @@ private:
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
     bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
+
+    void FillCapturerClientOnlyInfo(AudioDebugInfo &debugInfo);
+    void FillCapturerDeviceInfo(AudioDebugInfo &debugInfo, uint32_t sessionId);
+    int32_t CheckForSetAudioStreamInfo(const AudioStreamParams info);
 
 private:
     AudioStreamType eStreamType_;
@@ -359,6 +368,8 @@ private:
 
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
+    std::string dumpInFile_ = "";
+    FILE *dumpInFd_ = nullptr;
 
     // Event handler
     bool runnerReleased_ = false;

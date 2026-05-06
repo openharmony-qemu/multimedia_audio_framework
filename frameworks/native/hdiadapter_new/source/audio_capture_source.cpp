@@ -45,6 +45,9 @@ namespace AudioStandard {
 static constexpr uint32_t DECIMAL_BASE = 10;
 static constexpr uint32_t RAW_CHANNEL_COUNT = 1;
 static constexpr uint32_t MICIN_CHANNEL_COUNT = 4;
+static constexpr uint32_t AUDIO_D2D = 12;
+static constexpr uint32_t AUDIO_INPUT_INTERPHON_TYPE = 1 << 16;
+AudioInputType hdiAudioInterphoneInputType = static_cast<AudioInputType>(AUDIO_INPUT_INTERPHON_TYPE);
 static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
@@ -140,14 +143,22 @@ AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::stri
 
 AudioCaptureSource::~AudioCaptureSource()
 {
-    isCaptureThreadRunning_ = false;
+    isCaptureThreadRunning_.store(false);
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
+    if (captureThread_ != nullptr && captureThread_->joinable()) {
+        captureThread_->join();
+        captureThread_ = nullptr;
+    }
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("in routeFlag:%{public}d", attr.routeFlag);
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (attr.sourceType == SOURCE_TYPE_MIC_REF || attr.sourceType == SOURCE_TYPE_EC) {
         InitEcOrMicRefAttr(attr);
@@ -315,13 +326,16 @@ int32_t AudioCaptureSource::Stop(void)
     Trace trace("AudioCaptureSource::Stop");
     std::promise<void> promiseEnsureLock;
     auto futurePromiseEnsureLock = promiseEnsureLock.get_future();
-    std::thread stopThread([&promiseEnsureLock, this] {
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
+    stopThread_ = std::make_unique<std::thread>([&promiseEnsureLock, this] {
         std::lock_guard<std::mutex> lock(statusMutex_);
         promiseEnsureLock.set_value();
         DoStop();
     });
     futurePromiseEnsureLock.get();
-    stopThread.detach();
 
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
         SetAccessoryDeviceState(false);
@@ -834,9 +848,10 @@ const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioI
     {"AUDIO_INPUT_RAW_TYPE", AUDIO_INPUT_RAW_TYPE},
     {"AUDIO_INPUT_LIVE_TYPE", AUDIO_INPUT_LIVE_TYPE},
     {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION},
-    {"AUDIO_INPUT_ULTRASONIC_TYPE",  AUDIO_INPUT_ULTRASONIC_TYPE},
+    {"AUDIO_INPUT_ULTRASONIC_TYPE", AUDIO_INPUT_ULTRASONIC_TYPE},
     {"AUDIO_INPUT_RAW_AI_TYPE", AUDIO_INPUT_RAW_AI_TYPE},
-    {"AUDIO_INPUT_CAMCORDER_TYPE", AUDIO_INPUT_CAMCORDER_TYPE}
+    {"AUDIO_INPUT_CAMCORDER_TYPE", AUDIO_INPUT_CAMCORDER_TYPE},
+    {"AUDIO_INPUT_INTERPHON_TYPE", hdiAudioInterphoneInputType}
 };
 
 AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceType)
@@ -903,6 +918,9 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             break;
         case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT: // This configuration uses the old channel.
             hdiAudioInputType = AUDIO_INPUT_VOICE_TRANSCRIPTION;
+            break;
+        case SOURCE_TYPE_INTERPHONE:
+            hdiAudioInputType = hdiAudioInterphoneInputType;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
@@ -1009,6 +1027,9 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
 
 uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const
 {
+    if (hdiSource == static_cast<AudioInputType>(AUDIO_INPUT_INTERPHON_TYPE)) {
+        return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_INTERPHONE);
+    }
     switch (hdiSource) {
         case AUDIO_INPUT_VOICE_TRANSCRIPTION:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
@@ -1103,6 +1124,9 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
     param.type = AUDIO_IN_MEDIA;
+    if (attr_.routeFlag == AUDIO_INPUT_FLAG_INTERPHONE) {
+        param.type = static_cast<AudioCategory>(AUDIO_D2D);
+    }
     param.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;
@@ -1348,7 +1372,7 @@ int32_t AudioCaptureSource::NonblockingStart(void)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     started_.store(true);
 
-    isCaptureThreadRunning_ = true;
+    isCaptureThreadRunning_.store(true);
     captureThread_ = std::make_unique<std::thread>(&AudioCaptureSource::CaptureThreadLoop, this);
     std::string threadName = "OS_Capture";
     threadName += (attr_.sourceType == SOURCE_TYPE_EC) ? "Ec" : "MicRef";
@@ -1358,9 +1382,10 @@ int32_t AudioCaptureSource::NonblockingStart(void)
 
 int32_t AudioCaptureSource::NonblockingStop(void)
 {
-    isCaptureThreadRunning_ = false;
+    isCaptureThreadRunning_.store(false);
     if (captureThread_ != nullptr && captureThread_->joinable()) {
         captureThread_->join();
+        captureThread_ = nullptr;
     }
 
     if (!started_.load()) {
@@ -1566,6 +1591,9 @@ enum AudioFlag AudioCaptureSource::ConvertToAudioInputRouteFlag(int32_t sourceTy
             break;
         case SOURCE_TYPE_OFFLOAD_CAPTURE:
             audioInputRouteFlag = AUDIO_INPUT_FLAG_OFFLOAD;
+            break;
+        case SOURCE_TYPE_INTERPHONE:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_INTERPHONE;
             break;
         default:
             audioInputRouteFlag = AUDIO_FLAG_NONE;

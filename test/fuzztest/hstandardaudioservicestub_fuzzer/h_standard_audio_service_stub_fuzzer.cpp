@@ -86,25 +86,15 @@ void SetAudioScene(FuzzedDataProvider &provider)
     bool scoExcludeFlag = provider.ConsumeBool();
     audioServer->SetAudioScene(audioScene, a2dpOffloadFlag, scoExcludeFlag);
 }
- 
-void UpdateActiveDeviceRoute(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    int32_t type = provider.ConsumeIntegral<int32_t>();
-    int32_t flag = provider.ConsumeIntegral<int32_t>();
-    int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
-    audioServer->UpdateActiveDeviceRoute(type, flag, a2dpOffloadFlag);
-}
 
 void UpdateActiveDevicesRoute(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::vector<IntPair> activeDevices;
     int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
-    std::string deviceName =  provider.ConsumeRandomLengthString();
-    audioServer->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
+    uint32_t pipeId = provider.ConsumeIntegral<uint32_t>();
+    audioServer->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, pipeId);
 }
-
 
 void UpdateDualToneState(FuzzedDataProvider &provider)
 {
@@ -411,50 +401,20 @@ void GetEffectOffloadEnabled(FuzzedDataProvider &provider)
     audioServer->GetEffectOffloadEnabled(isEffectOffloadEnabled);
 }
 
-void GetAudioEffectPropertyV3(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEffectPropertyArrayV3 propertyArray;
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->GetAudioEffectProperty(propertyArray, deviceType);
-}
-
-void SetAudioEffectPropertyV3(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEffectPropertyArrayV3 propertyArray;
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->SetAudioEffectProperty(propertyArray, deviceType);
-}
-
-void GetAudioEnhanceProperty(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEnhancePropertyArray propertyArray;
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->GetAudioEnhanceProperty(propertyArray, deviceType);
-}
-
 void GetAudioEffectProperty(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioEffectPropertyArray propertyArray;
-    audioServer->GetAudioEffectProperty(propertyArray);
-}
-
-void SetAudioEnhanceProperty(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioEnhancePropertyArray propertyArray;
     int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->SetAudioEnhanceProperty(propertyArray, deviceType);
+    audioServer->GetAudioEffectProperty(propertyArray, deviceType);
 }
 
 void SetAudioEffectProperty(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioEffectPropertyArray propertyArray;
-    audioServer->SetAudioEffectProperty(propertyArray);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetAudioEffectProperty(propertyArray, deviceType);
 }
 
 void SuspendRenderSink(FuzzedDataProvider &provider)
@@ -887,7 +847,6 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     SetExtraParameters,
     SetMicrophoneMute,
     SetAudioScene,
-    UpdateActiveDeviceRoute,
     UpdateActiveDevicesRoute,
     UpdateDualToneState,
     SetParameterCallback,
@@ -928,11 +887,7 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     SetAsrVoiceMuteMode,
     IsWhispering,
     GetEffectOffloadEnabled,
-    GetAudioEffectPropertyV3,
-    SetAudioEffectPropertyV3,
-    GetAudioEnhanceProperty,
     GetAudioEffectProperty,
-    SetAudioEnhanceProperty,
     SetAudioEffectProperty,
     SuspendRenderSink,
     RestoreRenderSink,

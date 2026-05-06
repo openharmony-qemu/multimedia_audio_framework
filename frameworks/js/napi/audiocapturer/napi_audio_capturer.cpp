@@ -1056,7 +1056,7 @@ napi_value NapiAudioCapturer::SetMuteHint(napi_env env, napi_callback_info info)
             "AudioCapturer state is error.");
         CHECK_AND_RETURN_LOG(napiAudioCapturer->audioCapturer_ != nullptr, "audioCapturer_ is nullptr");
         context->intValue = napiAudioCapturer->audioCapturer_->SetMuteHint(context->muteHint);
-        if (context->intValue == ERROR_ILLEGAL_STATE) {
+        if (context->intValue == ERROR_ILLEGAL_STATE || context->intValue == ERR_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE);
             return;
         }
@@ -1602,7 +1602,7 @@ napi_value NapiAudioCapturer::SetIndependentAudioSessionStrategy(napi_env env, n
     size_t argc = ARGS_TWO;
     napi_value argv[ARGS_TWO] = {};
     auto *napiAudioCapturer = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "argcCount invaild");
 
     AudioSessionStrategy audioSessionStrategy;

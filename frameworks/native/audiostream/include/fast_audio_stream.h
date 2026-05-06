@@ -87,6 +87,7 @@ public:
     int32_t SetInMainThreadState(bool isInMainThread) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
+    void CheckInnerCapVoIP() override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj,
@@ -168,6 +169,7 @@ public:
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
+    int32_t SetSonicPitch(float pitch) override;
     float GetSpeed() override;
 
     // Recording related APIs

@@ -23,6 +23,7 @@
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
 #include "audio_session_device_info.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,7 +38,8 @@ class AudioSessionService : public AudioSessionStateMonitor {
     DECLARE_SINGLETON(AudioSessionService)
 public:
     // Audio session manager interfaces
-    int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
+    int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
+        const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
 
@@ -50,22 +52,25 @@ public:
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType,
-        bool forceFetch = false);
+        bool forceFetch = false, int32_t callerUid = INVALID_UID);
     bool IsStreamAllowedToSetDevice(const uint32_t streamId);
     DeviceType GetSessionDefaultOutputDevice(const int32_t callerPid);
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
 
-    int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
+    int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene,
+        int32_t callerUid = INVALID_UID);
     StreamUsage GetAudioSessionStreamUsage(int32_t callerPid);
     StreamUsage GetAudioSessionStreamUsageForDevice(const int32_t callerPid);
     bool IsAudioSessionFocusMode(int32_t callerPid);
     bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
-    std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
+    std::vector<std::pair<AudioInterrupt, AudioFocuState>> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
-    void AddStreamInfo(const AudioInterrupt &audioInterrupt);
+    void AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
     void RemoveStreamInfo(const int32_t callerPid, const uint32_t streamId);
     void ClearStreamInfo(const int32_t callerPid);
+    int32_t UpdateStreamFocusState(const int32_t callerPid, uint32_t streamId, AudioFocuState focuState);
+    bool IsAllStreamsInState(const int32_t callerPid, AudioFocuState state);
     bool IsStreamInfoEmpty(const int32_t callerPid);
     bool IsAudioRendererEmpty(const int32_t callerPid);
     AudioConcurrencyMode GetSessionStrategy(int32_t callerPid);
@@ -85,14 +90,19 @@ public:
     int32_t EnableMuteSuggestionWhenMixWithOthers(int32_t callerPid, bool enable);
     bool IsMuteSuggestionWhenMixEnabled(int32_t callerPid);
     int32_t SetAudioSessionCapturerMuteHint(int32_t callerPid, bool mute);
-    int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior);
+    int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
+        int32_t callerUid = INVALID_UID);
     AudioSessionActiveBehaviors GetSessionBehaviors(const int32_t callerPid);
+    void SetRegisterStateChangeCallbackFlag(int32_t callerPid, const bool stateChangeCallbackFlag);
+    void GetStateChangeCallbackFlag(int32_t callerPid, bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
+    void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
     void GenerateFakeStreamId(int32_t callerPid);
     std::shared_ptr<AudioSession> CreateAudioSession(
-        int32_t callerPid, AudioSessionStrategy strategy = {AudioConcurrencyMode::INVALID});
+        int32_t callerPid, AudioSessionStrategy strategy = {AudioConcurrencyMode::INVALID},
+        int32_t callerUid = INVALID_UID);
     bool IsAudioSessionFocusModeInner(int32_t callerPid);
     bool ShouldExcludeStreamTypeInner(const AudioInterrupt &audioInterrupt);
 

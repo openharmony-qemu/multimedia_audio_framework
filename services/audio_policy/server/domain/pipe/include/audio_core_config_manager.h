@@ -49,7 +49,6 @@ public:
     void OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs);
     void OnVoipConfigParsed(bool enableFastVoip);
     void OnUpdateRouteSupport(bool isSupported);
-    void SetEnhancedRoutingSupported(bool isSupported);
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
@@ -85,7 +84,6 @@ public:
     void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
     bool GetVoipConfig();
     bool GetUpdateRouteSupport();
-    bool GetEnhancedRoutingSupported();
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
@@ -126,6 +124,8 @@ public:
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoForMultiChannel(
         std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
         AudioChannelLayout channelLayout);
+    std::shared_ptr<PipeStreamPropInfo> GetAvailableStreamPropInfoForDevice(
+        const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos, DeviceType deviceType);
     AudioPolicyConfigData &GetAudioPolicyConfigData() const { return audioPolicyConfig_; }
     bool IsDeviceSimulated(std::shared_ptr<AudioDeviceDescriptor> desc);
 
@@ -167,7 +167,6 @@ private:
     bool hasEarpiece_ = false;
     bool isChipGeneralConfig_ = false;
     bool isUpdateRouteSupported_ = true;
-    bool isEnhancedRoutingSupported_ = true;
     bool isSupportEac3_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;

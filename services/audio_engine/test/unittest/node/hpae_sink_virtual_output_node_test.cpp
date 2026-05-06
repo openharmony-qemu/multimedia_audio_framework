@@ -234,6 +234,38 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, HpaeSinkVirtualOutputNodeTestReload, Tes
     node->ReloadNode(nodeInfo_);
     EXPECT_EQ(node->ringCache_ != nullptr, true);
 }
+
+/**
+ * @tc.name  : FaultCode_PeekAudioData_NullBuffer
+ * @tc.type  : FUNC
+ * @tc.desc  : Test PeekAudioData returns ERROR_INVALID_PARAM when buffer is nullptr,
+ *             covering PLAY_SEND_INVALID_PARAM fault code path.
+ */
+HWTEST_F(HpaeSinkVirtualOutputNodeTest, FaultCode_PeekAudioData_NullBuffer, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node =
+        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    AudioStreamInfo audioStreamInfo;
+
+    int32_t result = node->PeekAudioData(nullptr, 0, audioStreamInfo);
+    EXPECT_EQ(result, ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : FaultCode_RenderSinkInit_NullRingCache
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit returns ERR_INVALID_OPERATION when ringCache_ is nullptr,
+ *             covering PLAY_CREATE_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeSinkVirtualOutputNodeTest, FaultCode_RenderSinkInit_NullRingCache, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node =
+        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    node->ringCache_.reset();
+
+    int32_t result = node->RenderSinkInit();
+    EXPECT_EQ(result, ERR_INVALID_OPERATION);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

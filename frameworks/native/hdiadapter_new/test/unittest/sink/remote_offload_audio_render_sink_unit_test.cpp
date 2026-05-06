@@ -20,6 +20,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/remote_offload_audio_render_sink.h"
+#include "../include/sink/mock_remote_i_audio_render.h"
 
 using namespace testing::ext;
 
@@ -203,28 +204,6 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_008, Te
 
 /**
  * @tc.name   : Test OffloadSink API
- * @tc.number : RemoteOffloadSinkUnitTest_009
- * @tc.desc   : Test remote offload sink update app uid
- */
-HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_009, TestSize.Level1)
-{
-    EXPECT_TRUE(sink_);
-    std::vector<int32_t> appsUid = {};
-    sink_->UpdateAppsUid(appsUid);
-    appsUid.push_back(20000001);
-    appsUid.push_back(20000002);
-    sink_->UpdateAppsUid(appsUid);
-    int32_t ret = sink_->Start();
-    EXPECT_EQ(ret, ERR_NOT_STARTED);
-    sink_->UpdateAppsUid(appsUid);
-    appsUid.clear();
-    sink_->UpdateAppsUid(appsUid);
-    ret = sink_->Stop();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test OffloadSink API
  * @tc.number : RemoteOffloadSinkUnitTest_011
  * @tc.desc   : Test remote offload sink deinit with invalid state
  */
@@ -234,6 +213,297 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_011, Te
     sink->SetInvalidState();
     sink->DeInit();
     EXPECT_FALSE(sink->IsInited());
+}
+
+/**
+ * @tc.name   : Test Start Mock HDI fail
+ * @tc.number : Start_MockHdiFail_001
+ * @tc.desc   : Test Start with Mock HDI Start fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, Start_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, Start()).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->renderInited_.store(true);
+    sink->started_.store(false);
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+}
+
+/**
+ * @tc.name   : Test Start Mock HDI fail
+ * @tc.number : Start_MockHdiFail_002
+ * @tc.desc   : Test Start with Mock HDI Start fail and HD_NOT_SUPPORTED
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, Start_MockHdiFail_002, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, Start()).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->renderInited_.store(true);
+    sink->started_.store(false);
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::HD_NOT_SUPPORTED;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+}
+
+/**
+ * @tc.name   : Test Stop Mock HDI fail
+ * @tc.number : Stop_MockHdiFail_001
+ * @tc.desc   : Test Stop with Mock HDI Stop fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, Stop_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, Stop()).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->started_.store(true);
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->Stop();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+}
+
+/**
+ * @tc.name   : Test Pause Mock HDI fail
+ * @tc.number : Pause_MockHdiFail_001
+ * @tc.desc   : Test Pause with Mock HDI Pause fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, Pause_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, Pause()).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->started_.store(true);
+    sink->paused_.store(false);
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->Pause();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+}
+
+/**
+ * @tc.name   : Test FlushInner Mock HDI fail
+ * @tc.number : FlushInner_MockHdiFail_001
+ * @tc.desc   : Test FlushInner with Mock HDI Flush fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, FlushInner_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, Flush()).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->started_.store(true);
+    sink->isFlushing_.store(false);
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->FlushInner();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test GetLatencyInner Mock HDI fail
+ * @tc.number : GetLatencyInner_MockHdiFail_001
+ * @tc.desc   : Test GetLatencyInner with Mock HDI GetLatency fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, GetLatencyInner_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, GetLatency(testing::_)).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->GetLatencyInner();
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name   : Test GetRenderPositionInner Mock HDI fail
+ * @tc.number : GetRenderPositionInner_MockHdiFail_001
+ * @tc.desc   : Test GetRenderPositionInner with Mock HDI GetRenderPosition fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, GetRenderPositionInner_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender,
+        GetRenderPosition(testing::_, testing::_)).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->isFlushing_.store(false);
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->GetRenderPositionInner();
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name   : Test SetAudioParameter Mock HDI fail
+ * @tc.number : SetAudioParameter_MockHdiFail_001
+ * @tc.desc   : Test SetAudioParameter with Mock HDI SetExtraParams fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, SetAudioParameter_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, SetExtraParams(testing::_)).WillRepeatedly(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    sink->SetAudioParameter(AudioParamKey::NONE, "", "test=value");
+    int32_t ret = sink->audioRender_->SetExtraParams("test=value");
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test SetSpeed Mock HDI fail
+ * @tc.number : SetSpeed_MockHdiFail_001
+ * @tc.desc   : Test SetSpeed with Mock HDI SetRenderSpeed fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, SetSpeed_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, SetRenderSpeed(testing::_)).WillRepeatedly(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    sink->SetSpeed(1.5f);
+    int32_t ret = sink->audioRender_->SetRenderSpeed(1.5f);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test UpdateAppsUid Mock HDI fail
+ * @tc.number : UpdateAppsUid_MockHdiFail_001
+ * @tc.desc   : Test UpdateAppsUid with Mock HDI SetExtraParams fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, UpdateAppsUid_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, SetExtraParams(testing::_)).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->runningLock_ = std::make_shared<AudioRunningLock>("test");
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    std::vector<int32_t> newAppsUid = {20000002, 20000003};
+    int32_t ret = sink->UpdateAppsUid(newAppsUid);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : Test RegistOffloadHdiCallback Mock HDI fail
+ * @tc.number : RegistOffloadHdiCallback_MockHdiFail_001
+ * @tc.desc   : Test RegistOffloadHdiCallback with Mock HDI RegCallback fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RegistOffloadHdiCallback_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, RegCallback(testing::_, testing::_)).WillRepeatedly(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    sink->RegistOffloadHdiCallback([](RenderCallbackType type) {});
+    int32_t ret = sink->audioRender_->RegCallback(new RemoteOffloadHdiCallbackImpl(sink.get()), (int8_t)0);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test CreateRender Mock HDI fail
+ * @tc.number : CreateRender_MockHdiFail_001
+ * @tc.desc   : Test CreateRender with Mock HDI CreateRender fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, CreateRender_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->CreateRender();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+}
+
+/**
+ * @tc.name   : Test SetBufferSize Mock HDI fail
+ * @tc.number : SetBufferSize_MockHdiFail_001
+ * @tc.desc   : Test SetBufferSize with Mock HDI ReqMmapBuffer fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, SetBufferSize_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, ReqMmapBuffer(testing::_, testing::_)).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->SetBufferSize(100);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name   : Test SetVolumeInner Mock HDI fail
+ * @tc.number : SetVolumeInner_MockHdiFail_001
+ * @tc.desc   : Test SetVolumeInner with Mock HDI SetVolume fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, SetVolumeInner_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, SetVolume(testing::_)).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+    sink->audioRender_ = mockRender;
+    sink->isFlushing_.store(false);
+    sink->validState_.store(true);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+    int32_t ret = sink->SetVolumeInner(1.0f, 1.0f);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test RenderFrame Mock HDI fail
+ * @tc.number : RenderFrame_MockHdiFail_001
+ * @tc.desc   : Test RenderFrame with Mock HDI RenderFrame fail
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RenderFrame_MockHdiFail_001, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    uint64_t writeLen = 0;
+    EXPECT_CALL(*mockRender, RenderFrame(testing::_, testing::_)).WillOnce(testing::Return(ERR_OPERATION_FAILED));
+
+    sink->audioRender_ = mockRender;
+    sink->started_.store(true);
+    sink->validState_.store(true);
+    sink->isFlushing_.store(false);
+    sink->attr_.hdPlayBackMode = HdPlaybackMode::APP_LEVEL;
+    sink->appsUid_.insert(20000001);
+
+    char data = 0;
+    uint64_t len = 1;
+    int32_t ret = sink->RenderFrame(data, len, writeLen);
+    EXPECT_EQ(ret, ERR_WRITE_FAILED);
 }
 
 } // namespace AudioStandard

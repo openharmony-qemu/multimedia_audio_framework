@@ -83,6 +83,12 @@ AudioRendererImpl::AudioRendererImpl(std::shared_ptr<AudioRendererImpl> obj)
     }
 }
 
+int64_t AudioRendererImpl::GetImplPtr()
+{
+    return reinterpret_cast<uintptr_t>(this);
+}
+
+
 void AudioRendererImpl::CreateRendererFailed()
 {
     AudioRendererImpl::isConstructSuccess_ = TAIHE_ERR_SYSTEM;
@@ -106,7 +112,8 @@ std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeO
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-    audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::CreateRenderer(rendererOptions);
+    audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::CreateRenderer(rendererOptions,
+        rendererOptions.appInfo);
 #else
     std::string cacheDir = "";
     audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::Create(cacheDir, rendererOptions);
@@ -780,6 +787,7 @@ void AudioRendererImpl::RegisterRendererCallback(std::shared_ptr<uintptr_t> &cal
         std::static_pointer_cast<TaiheAudioRendererCallback>(taiheRenderer->callbackTaihe_);
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->SaveCallbackReference(cbName, callback);
+    taiheRenderer->audioRenderer_->SetRegisterInterruptCallbackFlag(true);
 }
 
 void AudioRendererImpl::RegisterPeriodPositionCallback(int64_t frame, std::shared_ptr<uintptr_t> &callback,

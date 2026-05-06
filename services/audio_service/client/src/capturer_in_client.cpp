@@ -22,6 +22,7 @@
 #include "capturer_in_client.h"
 #include "capturer_in_client_inner.h"
 
+#include <unistd.h>
 #include <atomic>
 #include <cinttypes>
 #include <condition_variable>
@@ -29,6 +30,7 @@
 #include <string>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -36,11 +38,15 @@
 
 #include "iipc_stream.h"
 #include "audio_capturer_log.h"
+#include "audio_dump_pcm.h"
 #include "audio_errors.h"
+#include "stream_dfx_manager.h"
 #include "volume_tools.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"
+#include "audio_device_info.h"
+#include "audio_stream_change_info.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_process_config.h"
@@ -77,6 +83,12 @@ inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerIn
     return capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
         (params.micInChannels > CHANNEL_UNKNOW || params.ecChannels > CHANNEL_UNKNOW);
 }
+
+inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &params)
+{
+    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && params.isVoiceRecognitionMicInEcDegrade;
+}
 }
 
 std::shared_ptr<CapturerInClient> CapturerInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
@@ -95,6 +107,7 @@ CapturerInClientInner::CapturerInClientInner(AudioStreamType eStreamType, int32_
 CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
+    DumpFileUtil::CloseDumpFile(&dumpInFd_);
     CapturerInClientInner::ReleaseAudioStream(true);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
@@ -146,9 +159,13 @@ int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCa
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is already nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "IpcStream is already nullptr", true), "IpcStream is already nullptr");
     int32_t ret = ipcStream_->UpdatePlaybackCaptureConfig(config);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_OPERATION_FAILED, "UpdatePlaybackCaptureConfig failed", true), "failed: %{public}d", ret);
 
     filterConfig_ = config;
 #endif
@@ -164,6 +181,11 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 void CapturerInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
 {
     AUDIO_WARNING_LOG("GetRendererInfo is not supported");
+}
+
+void CapturerInClientInner::CheckInnerCapVoIP()
+{
+    AUDIO_WARNING_LOG("CheckInnerCapVoIP is not supported");
 }
 
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -205,6 +227,40 @@ void CapturerInClientInner::UpdateTracker(const std::string &updateCase)
     }
 }
 
+int32_t CapturerInClientInner::CheckForSetAudioStreamInfo(const AudioStreamParams info)
+{
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(
+            IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS, ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CONFING_OPERATION_FAILED,
+                "[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params", true));
+    } else if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CONFING_OPERATION_FAILED,
+                "[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params", true));
+    } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(IAudioStream::GetByteSizePerFrameWithMicInEc(info, sizePerFrameInByte_) ==
+            SUCCESS, ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithMicInEc failed with invalid params"),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CONFING_OPERATION_FAILED,
+                "[SetAudioStreamInfo]GetByteSizePerFrameWithMicInEc failed with invalid params", true));
+    } else {
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CONFING_OPERATION_FAILED,
+                "[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params", true));
+    }
+    return SUCCESS;
+}
+
 int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
@@ -214,33 +270,26 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         info.format, eStreamType_, info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-
-    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
-        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
-            ERROR_INVALID_PARAM,
-            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"));
-    } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
-        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithMicInEc(info, sizePerFrameInByte_) ==
-            SUCCESS, ERROR_INVALID_PARAM,
-            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithMicInEc failed with invalid params"));
-    } else {
-        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
-            ERROR_INVALID_PARAM,
-            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
-    }
-    
+    int32_t initRet = CheckForSetAudioStreamInfo(info);
+    CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_ILLEGAL_STATE, "CheckForSetAudioStreamInfo failed", true));
     if (state_ != NEW) {
         AUDIO_INFO_LOG("State is %{public}d, not new, release existing stream and recreate.", state_.load());
         int32_t ret = DeinitIpcStream();
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
-            HILOG_COMM_ERROR("[SetAudioStreamInfo]release existing stream failed."));
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]release existing stream failed."),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CONFING_ILLEGAL_STATE, "[SetAudioStreamInfo]release existing stream failed.", true));
     }
 
     streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
-    int32_t initRet = InitIpcStream(config);
-    CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
-        HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
+    initRet = InitIpcStream(config);
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(initRet == SUCCESS, initRet,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "[SetAudioStreamInfo]Init stream failed", true));
     state_ = PREPARED;
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalCapturer";
 
@@ -418,7 +467,9 @@ void CapturerInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t da
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
     AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64 "", eventCode, data);
-    CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_ILLEGAL_STATE, "Runner is Released", true), "Runner is Released");
     callbackHandler_->SendCallbackEvent(eventCode, data);
 }
 
@@ -432,7 +483,9 @@ void CapturerInClientInner::InitCallbackHandler()
 // call this without lock, we should be able to call deinit in any case.
 int32_t CapturerInClientInner::DeinitIpcStream()
 {
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, SUCCESS, "IpcStream is already nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_RELEASE_ILLEGAL_STATE, "IpcStream is already nullptr", true), "IpcStream is already nullptr");
     ipcStream_->Release(false);
     // in plan:
     ipcStream_ = nullptr;
@@ -452,6 +505,10 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
+    } else if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+        AUDIO_INFO_LOG("voice recognition use process channels only for degrade input, channels:%{public}d",
+            config.streamInfo.channels);
     } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.micInChannels +
             streamParams_.ecChannels);
@@ -466,9 +523,11 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_RECORD;
 
-    if (capturerInfo_.capturerFlags != 0) {
+    if (capturerInfo_.capturerFlags != AUDIO_FLAG_NORMAL &&
+        capturerInfo_.capturerFlags != AUDIO_FLAG_MMAP &&
+        capturerInfo_.capturerFlags != AUDIO_FLAG_VOIP_FAST) {
         AUDIO_WARNING_LOG("ConstructConfig find Capturer flag invalid:%{public}d", capturerInfo_.capturerFlags);
-        capturerInfo_.capturerFlags = 0;
+        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
     }
     config.capturerInfo = capturerInfo_;
 
@@ -486,16 +545,21 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
 int32_t CapturerInClientInner::InitSharedBuffer()
 {
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()), RECORD_CREATE_ILLEGAL_STATE,
+        "InitSharedBuffer failed, null ipcStream_", true), "InitSharedBuffer failed, null ipcStream_.");
     int32_t ret = ipcStream_->ResolveBuffer(clientBuffer_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "ResolveBuffer failed", true), "ResolveBuffer failed:%{public}d", ret);
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
     ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame_, byteSizePerFrame);
 
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "ResolveBuffer failed"
-        ":%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_INVALID_PARAM, "ResolveBuffer size mismatch", true), "ResolveBuffer failed:%{public}d", ret);
 
     clientSpanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame;
 
@@ -509,7 +573,9 @@ int32_t CapturerInClientInner::InitSharedBuffer()
 // InitCacheBuffer should be able to modify the cache size between clientSpanSizeInByte_ and 4 * clientSpanSizeInByte_
 int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
 {
-    CHECK_AND_RETURN_RET_LOG(clientSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "clientSpanSizeInByte_ invalid");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientSpanSizeInByte_ != 0, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_ILLEGAL_STATE, "clientSpanSizeInByte_ invalid", true), "clientSpanSizeInByte_ invalid");
 
     AUDIO_INFO_LOG("old size:%{public}zu, new size:%{public}zu", cacheSizeInByte_, targetSize);
     cacheSizeInByte_ = targetSize;
@@ -527,14 +593,26 @@ int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
     return SUCCESS;
 }
 
+void CapturerInClientInner::InitDfxOperation()
+{
+    DumpFileUtil::CloseDumpFile(&dumpInFd_);
+    dumpInFile_ = std::to_string(sessionId_) + "_" + std::to_string(clientConfig_.streamInfo.customSampleRate == 0 ?
+        clientConfig_.streamInfo.samplingRate : clientConfig_.streamInfo.customSampleRate) + "_" +
+        std::to_string(clientConfig_.streamInfo.channels) + "_" + std::to_string(clientConfig_.streamInfo.format) +
+        "_capturer_client_in.pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpInFile_, &dumpInFd_);
+}
+
 int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &filterConfig)
 {
     AUDIO_INFO_LOG("Init Ipc stream");
     AudioProcessConfig config = ConstructConfig();
 
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
-    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
-        HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(gasp != nullptr, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "[InitIpcStream]Create failed, can not get service.", true));
     int32_t errorCode = 0;
     ipcProxy_ = nullptr;
     gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy_);
@@ -543,40 +621,60 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
         gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy_);
     }
-    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
-    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(errorCode == SUCCESS, errorCode,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "create audio stream fail", true), "failed with create audio stream fail.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_NULL_POINTER, "ipcProxy is null", true),
+        "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IIpcStream>(ipcProxy_);
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_NULL_POINTER, "iface_cast IIpcStream failed", true), "failed when iface_cast.");
 
     // in plan: old listener_ is destoried here, will server receive dieth notify?
     listener_ = sptr<IpcStreamListenerImpl>::MakeSptr(shared_from_this());
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterStreamListener failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "RegisterStreamListener failed", true),
+        "RegisterStreamListener failed:%{public}d", ret);
 
     ret = InitSharedBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "InitSharedBuffer fail", true), "InitSharedBuffer failed:%{public}d", ret);
 
     ret = InitCacheBuffer(clientSpanSizeInByte_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitCacheBuffer failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "InitCacheBuffer failed", true), "InitCacheBuffer failed:%{public}d", ret);
 
     ret = ipcStream_->GetAudioSessionID(sessionId_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "GetAudioSessionID fail", true), "GetAudioSessionID fail:%{public}d", ret);
 
+    InitDfxOperation();
     InitCallbackHandler();
     return SUCCESS;
 }
 
 int32_t CapturerInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
 {
-    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Params is not set", true), "Params is not set");
     info = streamParams_;
     return SUCCESS;
 }
 
 int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
 {
-    CHECK_AND_RETURN_RET_LOG((state_ != RELEASED) && (state_ != NEW), ERR_ILLEGAL_STATE,
-        "State error %{public}d", state_.load());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((state_ != RELEASED) && (state_ != NEW), ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "State error", true), "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
 }
@@ -594,14 +692,21 @@ State CapturerInClientInner::GetState()
 bool CapturerInClientInner::GetAudioTimeInner(
     Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency)
 {
-    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
-    CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(paramsIsSet_ == true, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Params is not set", true), "Params is not set");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ != STOPPED, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Invalid status", true), "Invalid status:%{public}d", state_.load());
     uint64_t currentReadPos = totalBytesRead_ / sizePerFrameInByte_;
-    timestamp.framePosition = currentReadPos;
+    timestamp.framePosition = currentReadPos > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(currentReadPos);
 
     uint64_t writePos = 0;
     int64_t handleTime = 0;
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "invalid buffer status", true), "invalid buffer status");
     clientBuffer_->GetHandleInfo(writePos, handleTime);
     if (writePos == 0 || handleTime == 0) {
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
@@ -626,9 +731,15 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
 bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
-    CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(paramsIsSet_ == true, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Params is not set", true), "Params is not set");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ != STOPPED, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Invalid status", true), "Invalid status:%{public}d", state_.load());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "invalid buffer status", true), "invalid buffer status");
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         return GetAudioTimeInner(timestamp, base, 0);
@@ -637,10 +748,13 @@ bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Ti
     uint64_t writePos = 0;
     uint64_t writeTimeStamp = 0;
     clientBuffer_->GetTimeStampInfo(writePos, writeTimeStamp);
-    CHECK_AND_RETURN_RET_LOG(writeTimeStamp != 0, false, "writeTimeStamp is zero");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(writeTimeStamp != 0, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "writeTimeStamp is zero", true), "writeTimeStamp is zero");
     AUDIO_DEBUG_LOG("pos:%{public}" PRIu64 " ts:%{public}" PRIu64, writePos, writeTimeStamp);
 
-    timestamp.framePosition = writePos;
+    timestamp.framePosition = writePos > static_cast<uint64_t>(INT64_MAX) ?
+        INT64_MAX : static_cast<int64_t>(writePos);
     timestamp.time.tv_sec = static_cast<time_t>(writeTimeStamp / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(writeTimeStamp % AUDIO_NS_PER_SECOND);
 
@@ -663,7 +777,9 @@ void CapturerInClientInner::SetSwitchInfoTimestamp(
 
 int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Capturer stream is released", true), "Capturer stream is released");
     bufferSize = clientSpanSizeInByte_;
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
@@ -675,8 +791,12 @@ int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 
 int32_t CapturerInClientInner::GetFrameCount(uint32_t &frameCount)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
-    CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Capturer stream is released", true), "Capturer stream is released");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "sizePerFrameInByte_ is 0", true), "sizePerFrameInByte_ is 0!");
     frameCount = spanSizeInFrame_;
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         frameCount = cbBufferSize_ / sizePerFrameInByte_;
@@ -743,7 +863,9 @@ bool CapturerInClientInner::GetMute()
 
 int32_t CapturerInClientInner::SetMuteHint(bool mute)
 {
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "ipcStream is null", true), "ipcStream is null");
     return ipcStream_->SetMuteHint(mute);
 }
 
@@ -771,10 +893,81 @@ int32_t CapturerInClientInner::SetPitch(float pitch)
     return ERROR;
 }
 
+int32_t CapturerInClientInner::SetSonicPitch(float pitch)
+{
+    AUDIO_ERR_LOG("SetSonicPitch is not supported");
+    return ERROR;
+}
+
 float CapturerInClientInner::GetSpeed()
 {
     AUDIO_ERR_LOG("GetSpeed is not supported");
     return 1.0;
+}
+
+void CapturerInClientInner::FillCapturerClientOnlyInfo(AudioDebugInfo &debugInfo)
+{
+    Timestamp timestamp;
+    if (GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
+        debugInfo.captureTimestamp = timestamp;
+    }
+
+    size_t bufferSize = 0;
+    if (GetBufferSize(bufferSize) == SUCCESS) {
+        debugInfo.captureBufferSize = bufferSize;
+    }
+
+    debugInfo.captureOverflowCount = GetOverflowCount();
+}
+
+void CapturerInClientInner::FillCapturerDeviceInfo(AudioDebugInfo &debugInfo, uint32_t sessionId)
+{
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> changeInfos;
+    auto &policyMgr = AudioPolicyManager::GetInstance();
+    int32_t ret = policyMgr.GetCurrentCapturerChangeInfos(changeInfos);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("GetCurrentCapturerChangeInfos failed:%{public}d", ret);
+        return;
+    }
+    for (const auto &info : changeInfos) {
+        if (info == nullptr) {
+            continue;
+        }
+        if (info->sessionId == static_cast<int32_t>(sessionId)) {
+            debugInfo.inputDeviceInfo = info->inputDeviceInfo;
+            break;
+        }
+    }
+}
+
+int32_t CapturerInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
+{
+    AUDIO_DEBUG_LOG("GetAudioDebugInfo enter");
+    uint32_t sessionId = UINT32_MAX;
+    if (GetAudioSessionID(sessionId) != SUCCESS) {
+        AUDIO_WARNING_LOG("GetAudioSessionID failed");
+    }
+
+    if (sessionId != UINT32_MAX) {
+        int32_t ret = AudioPolicyManager::GetInstance().GetAudioDebugInfo(sessionId, debugInfo);
+        if (ret == SUCCESS) {
+            FillCapturerClientOnlyInfo(debugInfo);
+            FillCapturerDeviceInfo(debugInfo, sessionId);
+            return SUCCESS;
+        }
+        AUDIO_WARNING_LOG("GetAudioDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
+    }
+
+    debugInfo.sessionId = sessionId;
+    GetAudioStreamInfo(debugInfo.streamParams);
+    *debugInfo.capturerInfo = capturerInfo_;
+    debugInfo.capturerInfo->samplingRate = static_cast<AudioSamplingRate>(debugInfo.streamParams.samplingRate);
+    debugInfo.capturerInfo->encodingType = static_cast<uint8_t>(debugInfo.streamParams.encoding);
+    debugInfo.capturerInfo->channelLayout = debugInfo.streamParams.channelLayout;
+
+    FillCapturerClientOnlyInfo(debugInfo);
+    FillCapturerDeviceInfo(debugInfo, sessionId);
+    return SUCCESS;
 }
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
@@ -910,7 +1103,9 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
         AUDIO_WARNING_LOG("Init OS_AudioReadCB thread time out");
     }
 
-    CHECK_AND_RETURN_RET_LOG(streamParams_.samplingRate != 0, ERR_ILLEGAL_STATE, "invalid sample rate");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(streamParams_.samplingRate != 0, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "invalid sample rate", true), "invalid sample rate");
 
     uint64_t bufferDurationInUs = spanSizeInFrame_ * AUDIO_US_PER_S / streamParams_.samplingRate;
     InitCallbackBuffer(bufferDurationInUs);
@@ -926,8 +1121,12 @@ AudioCaptureMode CapturerInClientInner::GetCaptureMode()
 
 int32_t CapturerInClientInner::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
 {
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
-    CHECK_AND_RETURN_RET_LOG(capturerMode_ == CAPTURE_MODE_CALLBACK, ERR_INCORRECT_MODE, "incorrect capturer mode");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_INVALID_PARAM, "Invalid null callback", true), "Invalid null callback");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(capturerMode_ == CAPTURE_MODE_CALLBACK, ERR_INCORRECT_MODE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_INVALID_OPERATION, "incorrect capturer mode", true), "incorrect capturer mode");
     std::lock_guard<std::mutex> lock(readCbMutex_);
     readCb_ = callback;
     return SUCCESS;
@@ -1055,7 +1254,9 @@ int32_t CapturerInClientInner::Clear()
     }
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_SEND_DATA_OPERATION_FAILED, "Clear buffer fail", true), "Clear buffer fail, ret %{public}d.", ret);
     return SUCCESS;
 }
 
@@ -1109,7 +1310,9 @@ int64_t CapturerInClientInner::GetFramesWritten()
 
 int64_t CapturerInClientInner::GetFramesRead()
 {
-    CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, INVALID_FRAME_SIZE, "sizePerFrameInByte_ is 0!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sizePerFrameInByte_ != 0, INVALID_FRAME_SIZE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "sizePerFrameInByte_ is 0", true), "sizePerFrameInByte_ is 0!");
     uint64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
     return readFrameNumber;
 }
@@ -1148,13 +1351,19 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     Trace trace("CapturerInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_START_ILLEGAL_STATE, "Start failed Illegal state", true);
         AUDIO_ERR_LOG("Start failed Illegal state: %{public}d", state_.load());
         return false;
     }
 
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_START_ILLEGAL_STATE, "ipcStream is not inited", true), "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     if (ret != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_START_OPERATION_FAILED, "Start call server failed", true);
         AUDIO_ERR_LOG("Start call server failed: %{public}u", ret);
         return false;
     }
@@ -1165,6 +1374,8 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     });
 
     if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_START_OPERATION_FAILED, "Start failed", true);
         AUDIO_ERR_LOG("Start failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
@@ -1207,7 +1418,7 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     gasp->RequestUserPrivacyAuthority(sessionId);
  
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS * 5), [this] {
         return notifiedOperation_ == USER_PRIVACY_AUTHORITY; // will be false when got notified.
     });
     Operation operation = notifiedOperation_;
@@ -1215,7 +1426,9 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     waitLock.unlock();
  
     std::unique_lock<std::mutex> lock(playbackCaptureStartCallbackMutex_);
-    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
+    CHECK_AND_CALL_FUNC_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_ILLEGAL_STATE, "playbackCaptureStartCallback_ is nullptr", true));
     if (operation != USER_PRIVACY_AUTHORITY) {
         AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), operation, result);
@@ -1234,13 +1447,19 @@ bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     Trace trace("CapturerInClientInner::PauseAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_PAUSE_ILLEGAL_STATE, "Pause State is not RUNNING", true);
         AUDIO_ERR_LOG("Pause State is not RUNNING. Illegal state:%{public}u", state_.load());
         return false;
     }
 
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_PAUSE_ILLEGAL_STATE, "ipcStream is not inited", true), "ipcStream is not inited!");
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_PAUSE_OPERATION_FAILED, "Pause call server failed", true);
         AUDIO_ERR_LOG("Pause call server failed:%{public}u", ret);
         return false;
     }
@@ -1250,6 +1469,8 @@ bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     });
 
     if (notifiedOperation_ != PAUSE_STREAM || notifiedResult_ != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_PAUSE_OPERATION_FAILED, "Pause failed", true);
         AUDIO_ERR_LOG("Pause failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
@@ -1280,13 +1501,19 @@ bool CapturerInClientInner::StopAudioStream()
         return true;
     }
     if ((state_ != RUNNING) && (state_ != PAUSED)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_STOP_ILLEGAL_STATE, "Stop failed. Illegal state", true);
         AUDIO_ERR_LOG("Stop failed. Illegal state:%{public}u", state_.load());
         return false;
     }
 
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_STOP_ILLEGAL_STATE, "ipcStream is not inited", true), "ipcStream is not inited!");
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_STOP_OPERATION_FAILED, "Stop call server failed", true);
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
         return false;
     }
@@ -1304,6 +1531,8 @@ bool CapturerInClientInner::StopAudioStream()
         });
 
     if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_STOP_OPERATION_FAILED, "Stop failed", true);
         AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         state_ = INVALID;
@@ -1325,6 +1554,8 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 {
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_RELEASE_ILLEGAL_STATE, "Already release, do nothing", true);
         AUDIO_WARNING_LOG("Already release, do nothing");
         return true;
     }
@@ -1335,6 +1566,8 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     if (ipcStream_ != nullptr) {
         ipcStream_->Release(isSwitchStream);
     } else {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_RELEASE_ILLEGAL_STATE, "Release while ipcStream is null", true);
         AUDIO_WARNING_LOG("Release while ipcStream is null");
     }
 
@@ -1381,15 +1614,25 @@ bool CapturerInClientInner::FlushAudioStream()
     Trace trace("CapturerInClientInner::FlushAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_FLUSH_ILLEGAL_STATE, "Flush failed. Illegal state", true);
         AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
         return false;
     }
-    CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush ringCache failed");
-    CHECK_AND_RETURN_RET_LOG(FlushCbBuffer() == SUCCESS, false, "Flush cbBuffer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_FLUSH_ILLEGAL_STATE, "Flush ringCache failed", true), "Flush ringCache failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(FlushCbBuffer() == SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_FLUSH_ILLEGAL_STATE, "Flush cbBuffer failed", true), "Flush cbBuffer failed");
 
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_FLUSH_ILLEGAL_STATE, "ipcStream is not inited", true), "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
     if (ret != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_FLUSH_ILLEGAL_STATE, "Flush call server failed", true);
         AUDIO_ERR_LOG("Flush call server failed:%{public}u", ret);
         return false;
     }
@@ -1399,6 +1642,8 @@ bool CapturerInClientInner::FlushAudioStream()
     });
 
     if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_FLUSH_ILLEGAL_STATE, "Flush failed", true);
         AUDIO_ERR_LOG("Flush failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         notifiedOperation_ = MAX_OPERATION_CODE;
@@ -1422,7 +1667,9 @@ int32_t CapturerInClientInner::FlushCbBuffer()
     if (cbBuffer_ != nullptr && capturerMode_ == CAPTURE_MODE_CALLBACK) {
         std::lock_guard<std::mutex> lock(cbBufferMutex_);
         int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_FLUSH_ILLEGAL_STATE, "Clear buffer fail", true), "Clear buffer fail, ret %{public}d.", ret);
         AUDIO_INFO_LOG("Flush cbBuffer_ for sessionId:%{public}d uid:%{public}d, ret:%{public}d",
             sessionId_, clientUid_, ret);
     }
@@ -1439,7 +1686,9 @@ void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecr
 {
     AUDIO_INFO_LOG("NSetPreferredFrameSize to %{public}d", frameSize);
     int32_t sampleRate = clientConfig_.streamInfo.samplingRate;
-    CHECK_AND_RETURN(sampleRate != 0);
+    CHECK_AND_CALL_FUNC_RETURN(sampleRate != 0,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "sampleRate is 0", true));
     int32_t duration = frameSize * AUDIO_US_PER_SECOND / sampleRate * AUDIO_MS_PER_SECOND;
     InitCallbackBuffer(duration);
 }
@@ -1530,8 +1779,10 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 {
     Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
 
-    CHECK_AND_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE && userSize > 0,
-        ERR_INVALID_PARAM, "invalid size %{public}zu", userSize);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE && userSize > 0,
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_SEND_DATA_INVALID_PARAM, "invalid size", true), "invalid size %{public}zu", userSize);
 
     std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
     if (state_ != RUNNING) {
@@ -1551,7 +1802,9 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     std::lock_guard<std::mutex> lock(readMutex_);
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
-        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_SEND_DATA_ILLEGAL_STATE, "ipcStream_ is null", true), "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
             AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
             METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
@@ -1560,9 +1813,13 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 
     size_t readSize = 0;
     int32_t res = HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
-    CHECK_AND_RETURN_RET_LOG(res >= 0, ERROR, "HandleCapturerRead err : %{public}d", res);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(res >= 0, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_SEND_DATA_OPERATION_FAILED, "HandleCapturerRead err", true),
+        "HandleCapturerRead err : %{public}d", res);
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&buffer), userSize, userSize};
     VolumeTools::DfxOperation(tmpBuffer, clientConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
+    DumpFileUtil::WriteDumpFile(dumpInFd_, static_cast<void *>(&buffer), readSize);
     HandleCapturerPositionChanges(readSize);
     return readSize;
 }
@@ -1634,19 +1891,28 @@ int32_t CapturerInClientInner::RegisterRemoteDiedCallback(const std::shared_ptr<
     if (deathRecipient_ == nullptr) {
         deathRecipient_ = sptr<RemoteDeathRecipient>::MakeSptr(callback);
     }
-    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_ILLEGAL_STATE, "ipcProxy_ is null!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_ILLEGAL_STATE, "ipcProxy_ is null", true), "ipcProxy_ is null!");
     bool result = ipcProxy_->AddDeathRecipient(deathRecipient_);
-    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_OPERATION_FAILED, "AddDeathRecipient failed", true), "AddDeathRecipient failed.");
     return SUCCESS;
 }
 
 int32_t CapturerInClientInner::UnregisterRemoteDiedCallback()
 {
     std::lock_guard<std::mutex> lock(deathRecipientLock_);
-    CHECK_AND_RETURN_RET_LOG(deathRecipient_ != nullptr && ipcProxy_ != nullptr, ERR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(deathRecipient_ != nullptr && ipcProxy_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_ILLEGAL_STATE, "deathRecipient or ipcProxy_ is null", true),
         "deathRecipient or ipcProxy_ is null!");
     bool result = ipcProxy_->RemoveDeathRecipient(deathRecipient_);
-    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "RemoveDeathRecipient failed.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_OPERATION_FAILED, "RemoveDeathRecipient failed", true),
+        "RemoveDeathRecipient failed.");
     deathRecipient_ = nullptr;
     return SUCCESS;
 }
@@ -1655,7 +1921,10 @@ void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, co
     std::shared_ptr<CapturerPositionCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(markReachMutex_);
-    CHECK_AND_RETURN_LOG(callback != nullptr, "CapturerPositionCallback is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(callback != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_INVALID_PARAM, "CapturerPositionCallback is nullptr", true),
+        "CapturerPositionCallback is nullptr");
     capturerPositionCallback_ = callback;
     capturerMarkPosition_ = markPosition;
     capturerMarkReached_ = false;
@@ -1673,7 +1942,10 @@ void CapturerInClientInner::SetCapturerPeriodPositionCallback(int64_t periodPosi
     const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(periodReachMutex_);
-    CHECK_AND_RETURN_LOG(callback != nullptr, "CapturerPeriodPositionCallback is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(callback != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_INVALID_PARAM, "CapturerPeriodPositionCallback is nullptr", true),
+        "CapturerPeriodPositionCallback is nullptr");
     capturerPeriodPositionCallback_ = callback;
     capturerPeriodSize_ = periodPosition;
     totalBytesRead_ = 0;
@@ -1804,6 +2076,9 @@ bool CapturerInClientInner::GetHighResolutionEnabled()
 
 IAudioStream::StreamClass CapturerInClientInner::GetStreamClass()
 {
+    if (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP || capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) {
+        return IAudioStream::StreamClass::FAST_STREAM;
+    }
     return PA_STREAM;
 }
 
@@ -1821,8 +2096,12 @@ bool CapturerInClientInner::GetSilentModeAndMixWithOthers()
 
 bool CapturerInClientInner::RestoreAudioStream(bool needStoreState)
 {
-    CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
-    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(proxyObj_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_ILLEGAL_STATE, "proxyObj_ is null", true), "proxyObj_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_ILLEGAL_STATE, "state_ no need for restore", true),
         "state_ is %{public}d, no need for restore", state_.load());
     bool result = false;
     State oldState = state_;
@@ -1882,6 +2161,9 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus CapturerInClientInner::GetFastStatus()
 {
+    if (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP || capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) {
+        return FASTSTATUS_FAST;
+    }
     return FASTSTATUS_NORMAL;
 }
 
@@ -1904,27 +2186,35 @@ void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
 
 void CapturerInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
-    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(clientBuffer_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Client OHAudioBuffer is nullptr", true), "Client OHAudioBuffer is nullptr");
     clientBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
 
 void CapturerInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 {
-    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(clientBuffer_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "Client OHAudioBuffer is nullptr", true), "Client OHAudioBuffer is nullptr");
     clientBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus CapturerInClientInner::CheckRestoreStatus()
 {
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Client OHAudioBuffer is nullptr", true), "Client OHAudioBuffer is nullptr");
     return clientBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus CapturerInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "Client OHAudioBuffer is nullptr", true), "Client OHAudioBuffer is nullptr");
     return clientBuffer_->SetRestoreStatus(restoreStatus);
 }
 
@@ -1969,13 +2259,17 @@ void CapturerInClientInner::ResetCallbackLoopTid()
 
 bool CapturerInClientInner::GetStopFlag() const
 {
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "Client OHAudioBuffer is nullptr", true), "Client OHAudioBuffer is nullptr");
     return clientBuffer_->GetStopFlag();
 }
 
 int32_t CapturerInClientInner::SetRebuildFlag()
 {
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "ipcStream is not inited", true), "ipcStream is not inited!");
     return ipcStream_->SetRebuildFlag();
 }
 
@@ -1988,7 +2282,9 @@ int32_t CapturerInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag
 
 bool CapturerInClientInner::IsRestoreNeeded()
 {
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_QUERY_ILLEGAL_STATE, "buffer null", true), "buffer null");
 
     RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
     if (restoreStatus == NEED_RESTORE) {
@@ -2043,7 +2339,9 @@ bool CapturerInClientInner::ResetStaticPlayPosition()
 
 int32_t CapturerInClientInner::SetInMainThreadState(bool isInMainThread)
 {
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CONFING_ILLEGAL_STATE, "IpcStream is nullptr", true), "IpcStream is nullptr");
     return ipcStream_->SetInMainThreadState(isInMainThread);
 }
 } // namespace AudioStandard

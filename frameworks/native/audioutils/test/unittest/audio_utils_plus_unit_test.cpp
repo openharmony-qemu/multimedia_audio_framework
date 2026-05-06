@@ -689,25 +689,6 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_007, TestSize.Level3)
 }
 
 /**
-* @tc.name  : Test RecordPaSilenceState API
-* @tc.type  : FUNC
-* @tc.number: RecordPaSilenceState_001
-* @tc.desc  : Test RecordPaSilenceState
-*/
-HWTEST(AudioUtilsPlusUnitTest, RecordPaSilenceState_001, TestSize.Level3)
-{
-    uint32_t sessionId = 111111;
-    bool isSilence = true;
-    enum PA_PIPE_TYPE paPipeType = static_cast<PA_PIPE_TYPE>(100);
-    uint32_t  uid = 1000;
-    RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_NORMAL, uid);
-    RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_MULTICHANNEL, uid);
-    RecordPaSilenceState(sessionId, isSilence, paPipeType, uid);
-    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
-    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), 1);
-}
-
-/**
 * @tc.name  : Test PauseSilenceMonitor API
 * @tc.type  : FUNC
 * @tc.number: PauseSilenceMonitor_001
@@ -809,6 +790,77 @@ HWTEST(AudioUtilsPlusUnitTest, GetStreamUsageByVolumeTypeForFetchDevice, TestSiz
     EXPECT_EQ(usages.size(), 1);
     usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(STREAM_ALL);
     EXPECT_EQ(usages.size(), 1);
+}
+
+/**
+* @tc.name  : Test UpdateIsBackPlay
+* @tc.type  : FUNC
+* @tc.number: UpdateIsBackPlay_001
+* @tc.desc  : Test UpdateIsBackPlay when appPid matches
+*/
+HWTEST(AudioUtilsPlusUnitTest, UpdateIsBackPlay_001, TestSize.Level3)
+{
+    int32_t appPid = 100001;
+    uint32_t sessionId = 1001;
+    uint32_t tokenId = 100001;
+
+    AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, tokenId, appPid);
+    
+    // Test when appPid matches - should set isBackPlay to true
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(appPid, true);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isBackPlay, true);
+
+    // Test when appPid matches - should set isBackPlay to false
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(appPid, false);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isBackPlay, false);
+}
+
+/**
+* @tc.name  : Test UpdateIsBackPlay
+* @tc.type  : FUNC
+* @tc.number: UpdateIsBackPlay_002
+* @tc.desc  : Test UpdateIsBackPlay when appPid does not match
+*/
+HWTEST(AudioUtilsPlusUnitTest, UpdateIsBackPlay_002, TestSize.Level3)
+{
+    int32_t appPid1 = 100001;
+    int32_t appPid2 = 100002;
+    uint32_t sessionId1 = 1001;
+    uint32_t sessionId2 = 1002;
+    uint32_t tokenId1 = 100001;
+    uint32_t tokenId2 = 100002;
+
+    AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId1, tokenId1, appPid1);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId2, tokenId2, appPid2);
+
+    // Update appPid1's isBackPlay to true
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(appPid1, true);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId1].isBackPlay, true);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId2].isBackPlay, false);
+
+    // Update appPid2's isBackPlay to true
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(appPid2, true);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId1].isBackPlay, true);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId2].isBackPlay, true);
+}
+
+/**
+* @tc.name  : Test UpdateIsBackPlay
+* @tc.type  : FUNC
+* @tc.number: UpdateIsBackPlay_003
+* @tc.desc  : Test UpdateIsBackPlay when silenceDetectMap_ is empty
+*/
+HWTEST(AudioUtilsPlusUnitTest, UpdateIsBackPlay_003, TestSize.Level3)
+{
+    int32_t appPid = 100001;
+
+    AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
+    
+    // Should not crash when map is empty
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(appPid, true);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), 0);
 }
 
 } // namespace AudioStandard

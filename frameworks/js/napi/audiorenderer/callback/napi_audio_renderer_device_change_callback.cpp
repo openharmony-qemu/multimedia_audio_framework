@@ -271,12 +271,13 @@ int32_t NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetCallbackListSize
     return callbacks_.size();
 }
 
-void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
-    const AudioStreamDeviceChangeReason reason)
+void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChangeWithPreDevice(
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReason reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
-        OnJsCallbackOutputDeviceInfo((*autoRef)->cb_, deviceInfo, reason);
+        OnJsCallbackOutputDeviceInfo((*autoRef)->cb_, deviceInfo, reason, preDeviceInfo);
     }
 }
 
@@ -316,6 +317,11 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputDe
             args[PARAM0]);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && deviceObj != nullptr,
             " fail to convert to jsobj");
+        napi_value preDeviceObj = nullptr;
+        nstatus = NapiParamUtils::SetValueDeviceInfo(env, event->preDeviceInfo_, preDeviceObj);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && preDeviceObj != nullptr,
+            " fail to convert to jsobj");
+        napi_set_named_property(env, args[PARAM0], "preDevices", preDeviceObj);
 
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
@@ -331,11 +337,22 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OutputDeviceInfoTsfnFi
 }
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnJsCallbackOutputDeviceInfo(napi_ref method,
-    const AudioDeviceDescriptor &deviceInfo, AudioStreamDeviceChangeReason reason)
+    const AudioDeviceDescriptor &deviceInfo, AudioStreamDeviceChangeReason reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     CHECK_AND_RETURN_LOG(method != nullptr, "OnJsCallbackOutputDeviceInfo method is nullptr");
+    
+    napi_value jsCallback = nullptr;
+    napi_status status = napi_get_reference_value(env_, method, &jsCallback);
+    CHECK_AND_RETURN_LOG(status == napi_ok && jsCallback != nullptr, "callback get reference value fail");
+    napi_ref newCallbackRef = nullptr;
+    const int32_t refCount = 1;
+    status = napi_create_reference(env_, jsCallback, refCount, &newCallbackRef);
+    CHECK_AND_RETURN_LOG(status == napi_ok && newCallbackRef != nullptr, "callback get reference value fail");
+
     AudioRendererOutputDeviceChangeWithInfoJsCallback *event =
-        new AudioRendererOutputDeviceChangeWithInfoJsCallback {method, env_, deviceInfo, reason};
+        new AudioRendererOutputDeviceChangeWithInfoJsCallback {
+            newCallbackRef, env_, deviceInfo, reason, "unknown", preDeviceInfo};
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
 
     napi_acquire_threadsafe_function(arOutputDevChgTsfn_);

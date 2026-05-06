@@ -56,6 +56,12 @@ enum AudioLoopbackMode: i32 {
   HARDWARE = 0,
 }
 
+enum LoopbackType: i32 {
+  NORMAL = 0,
+  GLOBAL_HANDLER = 1,
+  GLOBAL_CONTROL = 2,
+}
+
 enum AudioLoopbackStatus: i32 {
   UNAVAILABLE_DEVICE = -2,
   UNAVAILABLE_SCENE = -1,
@@ -246,10 +252,18 @@ struct AudioCapturerFilter {
   capturerInfo: Optional<AudioCapturerInfo>;
 }
 
+struct AppIdInfo {
+  appUid: i32;
+  appPid: i32;
+  appTokenId: i32;
+  appFullTokenId: i64;
+}
+
 struct AudioRendererOptions {
   streamInfo: AudioStreamInfo;
   rendererInfo: AudioRendererInfo;
   privacyType: Optional<AudioPrivacyType>;
+  originalAppIdInfo: Optional<AppIdInfo>;
 }
 
 enum AudioPrivacyType: i32 {
@@ -346,6 +360,7 @@ interface AudioManager {
   GetSpatializationManager(): AudioSpatializationManager;
   GetEffectManager(): AudioEffectManager;
   GetCollaborativeManager(): AudioCollaborativeManager;
+  GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -408,6 +423,10 @@ interface AudioRoutingManager {
   SelectOutputDeviceByFilterWithStrategySync(filter: AudioRendererFilter,
     outputAudioDevices: Array<AudioDeviceDescriptor>, strategy: AudioDevcieSelectStrategy): void;
 
+  @gen_async("restoreOutputDeviceByFilter")
+  @gen_promise("restoreOutputDeviceByFilter")
+  RestoreOutputDeviceByFilterSync(filter: AudioRendererFilter): void;
+
   @gen_async("selectInputDevice")
   @gen_promise("selectInputDevice")
   SelectInputDeviceSync(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
@@ -440,6 +459,9 @@ interface AudioRoutingManager {
 
   @gen_promise("unexcludeOutputDevices")
   UnexcludeOutputDevicesWithUsage(usage: DeviceUsage): void;
+
+  @gen_promise("getActiveOutputDeviceDescriptors")
+  GetActiveOutputDeviceDescriptorsSync(): Array<AudioDeviceDescriptor>;
 
   OnPreferredInputDeviceChangeForCapturerInfo(capturerInfo: AudioCapturerInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
   OnMicBlockStatusChanged(callback: (data: DeviceBlockStatusInfo) => void): void;
@@ -714,6 +736,11 @@ struct AudioDeviceDescriptor {
   @readonly capabilities: Optional<Array<AudioStreamInfo>>;
 }
 
+struct AudioDevicePair {
+  inputDevice: AudioDeviceDescriptor;
+  outputDevice: AudioDeviceDescriptor;
+}
+
 struct VolumeEvent {
   volumeType: AudioVolumeType;
   volume: i32;
@@ -722,6 +749,7 @@ struct VolumeEvent {
   networkId: String;
   volumeMode: Optional<AudioVolumeMode>;
   percentage: Optional<i32>;
+  appUid: Optional<i32>;
 }
 
 struct StreamVolumeEvent {
@@ -758,6 +786,7 @@ enum AudioStreamDeviceChangeReason: i32 {
 struct AudioStreamDeviceChangeInfo {
   devices: Array<AudioDeviceDescriptor>;
   changeReason: AudioStreamDeviceChangeReason;
+  preDevices: Array<AudioDeviceDescriptor>;
 }
 
 enum ToneType: i32 {
@@ -867,6 +896,7 @@ struct CurrentOutputDeviceChangedEvent {
   devices: Array<AudioDeviceDescriptor>;
   changeReason: AudioStreamDeviceChangeReason;
   recommendedAction: OutputDeviceChangeRecommendedAction;
+  preDevices: Array<AudioDeviceDescriptor>;
 }
 
 enum BluetoothAndNearlinkPreferredRecordCategory: i32 {
@@ -903,8 +933,8 @@ interface AudioSessionManager {
   SetMediaOutputDeviceSync(deviceType: DeviceType): void;
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
-  @gen_promise("setCaptureMuteHint")
-  SetCaptureMuteHintSync(mute: bool): void;
+  @gen_promise("setCapturerMuteHint")
+  SetCapturerMuteHintSync(mute: bool): void;
 
   SetAudioSessionBehavior(behavior: i32): void;
 
@@ -1076,6 +1106,7 @@ struct AudioTimestampInfo {
 interface AudioRenderer {
   @get GetState(): AudioState;
 
+  GetImplPtr(): i64;
   @gen_async("getRendererInfo")
   @gen_promise("getRendererInfo")
   GetRendererInfoSync(): AudioRendererInfo;
@@ -1408,12 +1439,23 @@ enum AudioLoopbackEqualizerPreset: i32 {
   BRIGHT = 3,
 }
 
+union AudioDevicePairOrNull {
+  type_audioDevicePair: AudioDevicePair;
+  type_null: @null unit;
+}
+
 interface AudioLoopback {
   @gen_promise("getStatus")
   GetStatusSync(): AudioLoopbackStatus;
 
   @gen_promise("setVolume")
   SetVolumeSync(volume: f64): void;
+
+  GetVolume(): f64;
+
+  GetSupportedDevicePairs(): Array<AudioDevicePair>;
+
+  GetPreferredDevicePair(): AudioDevicePairOrNull;
 
   @gen_promise("enable")
   EnableSync(enable: bool): bool;
@@ -1438,6 +1480,9 @@ union AudioLpback {
 @gen_promise("createAudioLoopback")
 function CreateAudioLoopbackSync(mode: AudioLoopbackMode): AudioLpback;
 
+@gen_promise("createGlobalAudioLoopback")
+function CreateGlobalAudioLoopbackSync(mode: AudioLoopbackMode, isController: bool): AudioLpback;
+
 interface AudioCollaborativeManager {
   IsCollaborativePlaybackSupported(): bool;
 
@@ -1447,4 +1492,21 @@ interface AudioCollaborativeManager {
 
   @gen_promise("setCollaborativePlaybackEnabledForDevice")
   SetCollaborativePlaybackEnabledForDeviceSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
+}
+
+interface AudioDeviceEnhanceManager {
+  @gen_promise("IsEnhancedRoutingSupported")
+  IsEnhancedRoutingSupported(): bool;
+
+  @gen_promise("selectOutputDevice")
+  SelectOutputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectOutputDeviceForAudioRenderer")
+  SelectOutputDeviceForAudioRendererSync(renderer: AudioRenderer, deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectInputDevice")
+  SelectInputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectInputDeviceForAudioCapturer")
+  SelectInputDeviceForAudioCapturerSync(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
 }

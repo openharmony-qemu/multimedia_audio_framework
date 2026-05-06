@@ -31,6 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static constexpr int32_t MS_PER_S = 1000;
+static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const unsigned int BUFFER_CALC_20MS = 20;
 static std::map<AudioSampleFormat, std::string> formatEnumToStr = {
     {SAMPLE_U8, "s16le"},
@@ -49,6 +50,35 @@ static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
     {"s24le", SAMPLE_S24LE},
     {"s32le", SAMPLE_S32LE},
 };
+
+static bool CalculateArmBufferDurationMs(const AudioModuleInfo &moduleInfo, uint32_t &buffCalcMs)
+{
+    CHECK_AND_RETURN_RET(!(moduleInfo.rate.empty() || moduleInfo.format.empty() || moduleInfo.channels.empty() ||
+        moduleInfo.bufferSize.empty()), true);
+
+    uint32_t rateValue = 0;
+    uint32_t channelValue = 0;
+    uint32_t bufferSizeValue = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.rate, rateValue), false,
+        "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.channels, channelValue), false,
+        "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.bufferSize, bufferSizeValue), false,
+        "convert invalid original bufferSize: %{public}s", moduleInfo.bufferSize.c_str());
+
+    const uint32_t bytesPerSample =
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]);
+    CHECK_AND_RETURN_RET_LOG(bytesPerSample > 0, false, "bytesPerSample is 0");
+
+    const uint64_t denom = static_cast<uint64_t>(rateValue) *
+                           static_cast<uint64_t>(channelValue) *
+                           static_cast<uint64_t>(bytesPerSample);
+    CHECK_AND_RETURN_RET_LOG(denom > 0, false, "denom is 0");
+    const uint64_t number = static_cast<uint64_t>(bufferSizeValue) *
+                            static_cast<uint64_t>(MS_PER_S);
+    buffCalcMs = static_cast<uint32_t>((number + denom / ROUNDING_HALF_DIVISOR) / denom);
+    return true;
+}
 } // namespace
 
 int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -76,7 +106,7 @@ int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
         auto coreService = AudioCoreService::GetCoreService();
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
         bool isEcFeatureEnable = coreService->GetEcFeatureEnable();
-        auto currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+        auto currentOutputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice();
         if (!(isEcFeatureEnable && role == INPUT_DEVICE) &&
             AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
             AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(currentOutputDevice.networkId_,
@@ -109,6 +139,9 @@ void AudioArmDeviceBehavior::UpdateArmModuleInfo(const std::shared_ptr<AudioDevi
     AudioModuleInfo &moduleInfo)
 {
     CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "AudioDeviceDescriptor is nullptr");
+    uint32_t buffCalcMs = BUFFER_CALC_20MS;
+    CHECK_AND_RETURN_LOG(CalculateArmBufferDurationMs(moduleInfo, buffCalcMs),
+        "calculate arm buffer duration ms failed");
     CHECK_AND_RETURN_LOG(deviceDesc->GetAudioStreamInfo().size() != 0, "AudioStreamInfo is empty");
     DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
     CHECK_AND_RETURN_LOG(!deviceStreamInfo.samplingRate.empty(), "samplingRate is empty");
@@ -133,7 +166,7 @@ void AudioArmDeviceBehavior::UpdateArmModuleInfo(const std::shared_ptr<AudioDevi
 
         uint32_t bufferSize = rateValue * channelValue *
             AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-            BUFFER_CALC_20MS / static_cast<uint32_t>(MS_PER_S);
+            buffCalcMs / static_cast<uint32_t>(MS_PER_S);
         moduleInfo.bufferSize = std::to_string(bufferSize);
         AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
     }

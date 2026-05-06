@@ -346,6 +346,14 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerFastStatusChangeCallback(
     return audioStreamBuilder->SetCapturerFastStatusChangeCallback(callback, userData);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerLoopbackEffectEnabled(
+    OH_AudioStreamBuilder* builder, bool enabled)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetCapturerLoopbackEffectEnabled(enabled);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -377,12 +385,22 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
         case AudioSamplingRate::SAMPLE_RATE_96000:
         case AudioSamplingRate::SAMPLE_RATE_176400:
         case AudioSamplingRate::SAMPLE_RATE_192000:
-            AUDIO_DEBUG_LOG("sampleFormat input value is valid");
+        case AudioSamplingRate::SAMPLE_RATE_384000:
+            AUDIO_DEBUG_LOG("samplingRate input value is valid");
             break;
         default:
-            AUDIO_ERR_LOG("sampleFormat input value is invalid");
+            if (streamType_ == RENDERER_TYPE &&
+                (rate >= SAMPLE_RATE_8000 && rate <= SAMPLE_RATE_384000 &&
+                rate % SAMPLE_RATE_RESOLUTION_10 == 0)) {
+                AUDIO_INFO_LOG("custom samplingRate %{public}d", rate);
+                customSampleRate_ = static_cast<uint32_t>(rate);
+                samplingRate_ = SAMPLE_RATE_8000;
+                return AUDIOSTREAM_SUCCESS;
+            }
+            AUDIO_ERR_LOG("samplingRate input value is invalid");
             return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
+    customSampleRate_ = 0;
     samplingRate_ = rate;
     return AUDIOSTREAM_SUCCESS;
 }
@@ -518,6 +536,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
         (AudioChannel)channelCount_,
         channelLayout_
     };
+    streamInfo.customSampleRate = customSampleRate_;
 
     AudioRendererInfo rendererInfo = {
         CONTENT_TYPE_UNKNOWN,
@@ -580,7 +599,6 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MOVIE);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
-        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
     } else {
         config.isModernInnerCapturer = true;
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
@@ -589,7 +607,6 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MOVIE);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
-        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_NAVIGATION);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_ALARM);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_NOTIFICATION);
@@ -621,6 +638,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         sourceType_,
         latencyMode_
     };
+    capturerInfo.loopBackEffectEnabled = loopBackEffectEnabled_;
 
     AudioCapturerOptions options = {
         streamInfo,
@@ -824,6 +842,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerFastStatusChangeCallback(
         "SetCapturerFastStatusChangeCallback Error, invalid type input");
     capturerFastStatusChangeCallback_ = callback;
     capturerFastStatusChangeUserData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerLoopbackEffectEnabled(bool enabled)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ == CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCapturerLoopbackEffectEnabled error, invalid type input.");
+    loopBackEffectEnabled_ = enabled;
     return AUDIOSTREAM_SUCCESS;
 }
 }  // namespace AudioStandard

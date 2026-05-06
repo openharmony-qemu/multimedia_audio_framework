@@ -24,16 +24,21 @@
 #include "audio_router_infra.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
+#include "audio_core_config_manager.h"
+#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool ENHANCE_ROUTING_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 {
-    static AudioRouterIndependentStrategy independent;
-    static AudioRouterFollowStrategy follow;
+    if (ENHANCE_ROUTING_SUPPORTED) {
+        static AudioRouterIndependentStrategy independent;
+        return independent;
+    }
 
-    // 这儿要根据配置以及是否PC模式决定走独立还是跟随策略todo
+    static AudioRouterFollowStrategy follow;
     return follow;
 }
 
@@ -160,7 +165,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetFinalOutput
         }
     }
 
-    return isConnected ? desc : nullptr;
+    return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetFinalOutputDeviceForCall(
@@ -181,16 +186,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetFinalOutput
         }
     }
 
-    return isConnected ? desc : nullptr;
+    return isConnected ? desc : make_shared<AudioDeviceDescriptor>();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetRecognitionInputDevice()
 {
     AudioRouterInfra::GetInstance().Lock();
-    
+
     auto simpleDesc = AudioRouterInfra::GetInstance().GetRecognitionCaptureDevice();
     auto result = ConvertSimpleToDevice(simpleDesc);
-    
+
     AudioRouterInfra::GetInstance().Unlock();
     return result;
 }
@@ -202,59 +207,96 @@ void AudioRouterSelectStrategy::SetRecognitionInputDevice(
     AudioRouterInfra::GetInstance().SetRecognitionCaptureDevice(simpleDesc);
 }
 
-void AudioRouterSelectStrategy::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
+bool AudioRouterSelectStrategy::GetEnhancedRoutingSupported() const
+{
+    return ENHANCE_ROUTING_SUPPORTED;
+}
+
+int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceType, int32_t uid,
+    uint32_t streamId, StreamUsage streamUsage)
+{
+    AUDIO_INFO_LOG("stream %{public}u with usage %{public}d selects output device %{public}d",
+        streamId, streamUsage, deviceType);
+
+    auto setDev = AudioDeviceManager::GetAudioDeviceManager().GetBuiltinOutputDevice(deviceType);
+    if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
+        auto before = GetMediaDefaultOutputDevice(uid, streamId);
+        UpdateMediaDefaultOutputDevice(uid, streamId, setDev);
+        auto after = GetMediaDefaultOutputDevice(uid, streamId);
+        if (!IsSameDeviceDeviceDescriptor(before, after)) {
+            AUDIO_WARNING_LOG("media default output device change");
+            return NEED_TO_FETCH;
+        }
+    } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        auto before = GetCallDefaultOutputDevice(uid, streamId);
+        UpdateCallDefaultOutputDevice(uid, streamId, setDev);
+        auto after = GetCallDefaultOutputDevice(uid, streamId);
+        if (!IsSameDeviceDeviceDescriptor(before, after)) {
+            AUDIO_WARNING_LOG("call default output device change");
+            return NEED_TO_FETCH;
+        }
+    } else {
+        AUDIO_ERR_LOG("Invalid stream usage %{public}d", streamUsage);
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+bool AudioRouterSelectStrategy::IsStreamSetDefaultOutputDevice(int32_t uid, uint32_t streamId)
+{
+    AudioRouterInfra::GetInstance().Lock();
+    auto mediaOutputDevice = AudioRouterInfra::GetInstance().GetStreamDefaultDevice(uid, streamId,
+        SelectDeviceType::MEDIA_OUTPUT);
+    auto callOutputDevice = AudioRouterInfra::GetInstance().GetStreamDefaultDevice(uid, streamId,
+        SelectDeviceType::CALL_OUTPUT);
+
+    bool isSetDefault = (mediaOutputDevice != nullptr) || (callOutputDevice != nullptr);
+    AudioRouterInfra::GetInstance().Unlock();
+    return isSetDefault;
+}
+
+void AudioRouterSelectStrategy::UpdateMediaDefaultOutputDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
-    AudioRouterInfra::GetInstance().UpdateStreamDefaultDevice(uid, streamId, simpleDesc);
+    AudioRouterInfra::GetInstance().UpdateStreamDefaultDevice(uid, streamId,
+        SelectDeviceType::MEDIA_OUTPUT, simpleDesc);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetStreamDefaultDevice(
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetMediaDefaultOutputDevice(
     int32_t uid, uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
-    
-    auto simpleDesc = AudioRouterInfra::GetInstance().GetStreamDefaultDevice(uid, streamId);
+
+    auto simpleDesc = AudioRouterInfra::GetInstance().GetStreamDefaultDevice(uid, streamId,
+        SelectDeviceType::MEDIA_OUTPUT);
     auto result = ConvertSimpleToDevice(simpleDesc);
-    
+
     AudioRouterInfra::GetInstance().Unlock();
     return result;
 }
 
-void AudioRouterSelectStrategy::UpdateCurrentOutputDevice(int32_t uid,
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices)
+void AudioRouterSelectStrategy::UpdateCallDefaultOutputDevice(int32_t uid, uint32_t streamId,
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    auto simpleDevices = ConvertDeviceToSimple(devices);
-    AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(uid, simpleDevices);
+    auto simpleDesc = ConvertDeviceToSimple(device);
+    AudioRouterInfra::GetInstance().UpdateStreamDefaultDevice(uid, streamId,
+        SelectDeviceType::CALL_OUTPUT, simpleDesc);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::GetCurrentOutputDevice(int32_t uid)
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetCallDefaultOutputDevice(
+    int32_t uid, uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
-    
-    auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(uid);
-    auto devices = ConvertSimpleToDevice(simpleDescs);
+
+    auto simpleDesc = AudioRouterInfra::GetInstance().GetStreamDefaultDevice(uid, streamId,
+        SelectDeviceType::CALL_OUTPUT);
+    auto result = ConvertSimpleToDevice(simpleDesc);
 
     AudioRouterInfra::GetInstance().Unlock();
-    return devices;
-}
-
-void AudioRouterSelectStrategy::UpdateCurrentInputDevice(int32_t uid,
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices)
-{
-    auto simpleDevices = ConvertDeviceToSimple(devices);
-    AudioRouterInfra::GetInstance().UpdateCurrentInputDevice(uid, simpleDevices);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::GetCurrentInputDevice(int32_t uid)
-{
-    AudioRouterInfra::GetInstance().Lock();
-    
-    auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(uid);
-    auto devices = ConvertSimpleToDevice(simpleDescs);
-
-    AudioRouterInfra::GetInstance().Unlock();
-    return devices;
+    return result;
 }
 
 void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
@@ -378,6 +420,17 @@ bool AudioRouterSelectStrategy::IsDeviceExcluded(const std::shared_ptr<AudioDevi
     return routerInfra.IsDeviceExcluded(simpleDesc, usage);
 }
 
+bool AudioRouterSelectStrategy::IsSameDeviceDeviceDescriptor(
+    std::shared_ptr<AudioDeviceDescriptor> desc1, std::shared_ptr<AudioDeviceDescriptor> desc2)
+{
+    if (desc1 == nullptr && desc2 == nullptr) {
+        return true;
+    } else if (desc1 != nullptr && desc2 != nullptr) {
+        return desc1->IsSameDeviceDescPtr(desc2);
+    }
+    return false;
+}
+
 void AudioRouterSelectStrategy::SetScoExcluded(bool scoExcluded)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
@@ -396,5 +449,74 @@ bool AudioRouterSelectStrategy::IsPreferredDevice(const AudioDeviceDescriptor &d
     auto &routerInfra = AudioRouterInfra::GetInstance();
     return routerInfra.IsPreferredDevice(simpleDesc);
 }
+
+bool AudioRouterSelectStrategy::HasValidSelectDevice(AudioSelectDeviceInfo selectInfo)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    return routerInfra.HasValidSelectDevice(selectInfo);
+}
+
+AudioDeviceDescriptor AudioRouterSelectStrategy::Get1stCurrentInputDevice(int32_t uid)
+{
+    auto descs = GetCurrentInputDevice(uid);
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid, descs.empty() ? 0 : descs[0]->deviceId_);
+    return !descs.empty() && descs.back() ? *descs.back() : AudioDeviceDescriptor();
+}
+
+AudioDeviceDescriptor AudioRouterSelectStrategy::Get1stCurrentOutputDevice(int32_t uid)
+{
+    auto descs = GetCurrentOutputDevice(uid);
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid, descs.empty() ? 0 : descs[0]->deviceId_);
+    return !descs.empty() && descs.back() ? *descs.back() : AudioDeviceDescriptor();
+}
+
+bool AudioRouterSelectStrategy::IsCurrentInputDevice(const int32_t deviceId, int32_t uid)
+{
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid, deviceId);
+    auto descs = GetCurrentInputDevice(uid);
+    auto it = find_if(descs.cbegin(), descs.cend(), [deviceId](auto &item) {
+        return item && item->deviceId_ == deviceId;
+    });
+    return it != descs.cend();
+}
+
+bool AudioRouterSelectStrategy::IsCurrentOutputDevice(const int32_t deviceId, int32_t uid)
+{
+    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid, deviceId);
+    auto descs = GetCurrentOutputDevice(uid);
+    auto it = find_if(descs.cbegin(), descs.cend(), [deviceId](auto &item) {
+        return item && item->deviceId_ == deviceId;
+    });
+    return it != descs.cend();
+}
+
+set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentOutputDevice(set<DeviceType> &&types)
+{
+    AUDIO_INFO_LOG("deviceType=%{public}d", types.empty() ? 0 : *types.begin());
+    set<shared_ptr<AudioDeviceDescriptor>> result;
+    auto ids = AudioRouterInfra::GetInstance().FindCurrentOutputDevice(std::move(types));
+    for (auto deviceId: ids) {
+        auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceId);
+        CHECK_AND_CONTINUE(desc);
+        result.insert(desc);
+        AUDIO_INFO_LOG("deviceId=%{public}d, deviceType=%{public}d", desc->deviceId_, desc->deviceType_);
+    }
+    return result;
+}
+
+set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentInputDevice(set<DeviceType> &&types)
+{
+    AUDIO_INFO_LOG("deviceType=%{public}d", types.empty() ? 0 : *types.begin());
+    set<shared_ptr<AudioDeviceDescriptor>> result;
+    auto ids = AudioRouterInfra::GetInstance().FindCurrentInputDevice(std::move(types));
+    for (auto deviceId: ids) {
+        auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceId);
+        CHECK_AND_CONTINUE(desc);
+        result.insert(desc);
+        AUDIO_INFO_LOG("deviceId=%{public}d, deviceType=%{public}d", desc->deviceId_, desc->deviceType_);
+    }
+    return result;
+}
+
 }
 }

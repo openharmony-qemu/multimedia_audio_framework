@@ -28,6 +28,8 @@
 #include "audio_stream_collector.h"
 #include "audio_strategy_router_parser.h"
 #include "audio_usage_strategy_parser.h"
+#include "wireless_conflict_handler.h"
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,22 +41,23 @@ public:
         static AudioRouterCenter audioRouterCenter;
         return audioRouterCenter;
     }
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(StreamUsage streamUsage,
-        int32_t clientUID, std::string caller, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
-        AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo info);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0);
+        RouterType &routerType, const uint32_t sessionID = 0);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
-    void SetAlarmFollowRingRouter(const bool flag);
 
     int32_t GetSplitInfo(std::string &splitInfo);
 
     int32_t NotifyDistributedOutputChange(bool isRemote);
 
     bool IsConfigRouterStrategy(SourceType sourceType);
+    void RegisterConflictHandlers(std::shared_ptr<ConflictHandler> handler);
+    void ClearConflictHandlers();
+    int32_t SetSplitModeReady();
+    bool UpdateVehiclePriority(bool enable);
 private:
     AudioRouterCenter()
     {
@@ -105,12 +108,21 @@ private:
                     capturerConfig.first, capturerConfig.second.c_str());
             }
         }
+
+        wirelessConflictHandler_ = std::make_shared<WirelessConflictHandler>();
     }
 
     ~AudioRouterCenter() {}
 
     shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
-        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
+        RouterType &routerType, const std::set<RouterType> &bypassTypeSet,
+        const uint32_t streamId = INVALID_STREAM_ID);
+    shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(FetchDeviceInfo &info,
+        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
+        const uint32_t streamId = INVALID_STREAM_ID);
+    shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        std::vector<std::unique_ptr<RouterBase>> &routers, const RouterType routerType,
+        const uint32_t streamId = INVALID_STREAM_ID);
     shared_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
         const RouterType &bypassWithSco = RouterType::ROUTER_TYPE_NONE);
@@ -132,9 +144,7 @@ private:
     bool IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
         int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesInner(FetchDeviceInfo info,
-        RouterType &routerType, const RouterType &bypassType,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesInner(FetchDeviceInfo info);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
@@ -144,14 +154,50 @@ private:
     std::vector<std::unique_ptr<RouterBase>> recordCaptureRouters_;
     std::vector<std::unique_ptr<RouterBase>> voiceMessageRouters_;
 
+    std::atomic<bool> vehiclePriority_{false};
+
     unordered_map<StreamUsage, string> renderConfigMap_;
     unordered_map<SourceType, string> capturerConfigMap_;
 
     sptr<IStandardAudioRoutingManagerListener> audioDeviceRefinerCb_;
     void PostProcessOutPutDeviceLog(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         FetchDeviceInfo &bak, RouterType &routerType, const FetchDeviceInfo &info);
-    std::shared_ptr<AudioDeviceDescriptor> MediaFollowRingStrategy(StreamUsage streamUsage, int32_t clientUID,
-        StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType);
+    std::shared_ptr<AudioDeviceDescriptor> MediaFollowRingStrategy(FetchDeviceInfo &info,
+        StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType,
+        const uint32_t streamId = INVALID_STREAM_ID);
+    bool IsWirelessPrivacyDevice(shared_ptr<AudioDeviceDescriptor> desc);
+    bool IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc);
+
+    void StartArbiterContext();
+    void StopArbiterContext();
+    std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
+    std::mutex routerMutex_;
+
+    template<typename Func>
+    void ForEachRouter(Func func)
+    {
+        for (auto &router : mediaRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : callRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : callCaptureRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : ringRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : toneRenderRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : recordCaptureRouters_) {
+            if (router != nullptr) func(router);
+        }
+        for (auto &router : voiceMessageRouters_) {
+            if (router != nullptr) func(router);
+        }
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

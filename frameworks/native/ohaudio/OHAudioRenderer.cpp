@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "OHAudioCommon.h"
+#include "stream_dfx_manager.h"
 
 using OHOS::AudioStandard::Timestamp;
 
@@ -49,10 +50,15 @@ OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer *renderer)
 {
     AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_START_NULL_POINTER, "convert renderer failed", true),
+        "convert renderer failed");
     if (audioRenderer->Start()) {
         return AUDIOSTREAM_SUCCESS;
     } else {
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_START_ILLEGAL_STATE, "Start failed", true);
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     }
 }
@@ -61,11 +67,16 @@ OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer *renderer)
 {
     AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_PAUSE_NULL_POINTER, "convert renderer failed", true),
+        "convert renderer failed");
 
     if (audioRenderer->Pause()) {
         return AUDIOSTREAM_SUCCESS;
     } else {
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_PAUSE_ILLEGAL_STATE, "Pause failed", true);
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     }
 }
@@ -74,7 +85,10 @@ OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer *renderer)
 {
     AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_STOP_NULL_POINTER, "convert renderer failed", true),
+        "convert renderer failed");
 
     if (audioRenderer->Stop()) {
         return AUDIOSTREAM_SUCCESS;
@@ -87,7 +101,10 @@ OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer *renderer)
 {
     AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_FLUSH_NULL_POINTER, "convert renderer failed", true),
+        "convert renderer failed");
 
     if (audioRenderer->Flush()) {
         return AUDIOSTREAM_SUCCESS;
@@ -100,7 +117,10 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer *renderer)
 {
     AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_RELEASE_NULL_POINTER, "convert renderer failed", true),
+        "convert renderer failed");
 
     if (audioRenderer->Release()) {
         OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioRenderer>::DecreaseRef(audioRenderer);
@@ -625,7 +645,8 @@ int32_t OHAudioRenderer::GetSamplingRate()
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
-    return params.sampleRate;
+    return params.customSampleRate != 0 ?
+        static_cast<int32_t>(params.customSampleRate) : static_cast<int32_t>(params.sampleRate);
 }
 
 AudioSampleFormat OHAudioRenderer::GetSampleFormat()
@@ -823,11 +844,13 @@ void OHAudioRenderer::SetInterruptCallback(RendererCallback rendererCallbacks, v
         audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(
             rendererCallbacks.onInterruptEventCallback, (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
+        audioRenderer_->SetRegisterInterruptCallbackFlag(true);
     } else if (interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_COMBINED &&
         rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
         audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(rendererCallbacks.callbacks,
             (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
+        audioRenderer_->SetRegisterInterruptCallbackFlag(true);
     } else {
         AUDIO_WARNING_LOG("The audio renderer interrupt callback function is not set");
     }
@@ -1144,6 +1167,11 @@ int32_t OHAudioRenderer::SetIndependentAudioSessionStrategy(
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
+}
+
+const AudioRenderer *OHAudioRenderer::GetAudioRenderer() const
+{
+    return audioRenderer_.get();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -462,6 +462,64 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_PreDeviceNotDefault, Tes
     EXPECT_EQ(chain->GetChainId(), chainId);
 }
 
+HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedNotEc, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5681; // 0x5681 for test chainid
+    std::string scene = "SCENE_VOIP_UP";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
+        "DEVICE_OTHER", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceDeviceAttr deviceAttr =
+        { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 }; // 48000 for rate, 2 for ch and format, needEc is false
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+    EXPECT_NE(chain->algoSupportedConfig_.ecNum, 2); // 2 for DEFAULT_ECON_CH
+}
+
+HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedEc, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5681; // 0x5681 for test chainid
+    std::string scene = "SCENE_VOIP_UP";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
+        "DEVICE_OTHER", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceDeviceAttr deviceAttr =
+        { 48000, 2, 2, true, 48000, 2, 2, false, 48000, 2, 2 }; // 48000 for rate, 2 for ch and format, needEc is true
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+    EXPECT_EQ(chain->algoSupportedConfig_.ecNum, 2); // 2 for DEFAULT_ECON_CH
+}
+
+HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedNotMicRef, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5681; // 0x5681 for test chainid
+    std::string scene = "SCENE_VOIP_UP";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
+        "DEVICE_OTHER", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    // needMicRef is false
+    const AudioEnhanceDeviceAttr deviceAttr =
+        { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 }; // 48000 for rate, 2 for ch and format
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+    EXPECT_NE(chain->algoSupportedConfig_.micRefNum, 4); // 4 for DEFAULT_MICREFON_CH
+}
+
+HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedMicRef, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5681; // 0x5681 for test chainid
+    std::string scene = "SCENE_VOIP_UP";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
+        "DEVICE_OTHER", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    // needMicRef is true
+    const AudioEnhanceDeviceAttr deviceAttr =
+        { 48000, 2, 2, false, 48000, 2, 2, true, 48000, 4, 2 }; // 48000 for rate, 2 for ch and format
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+    EXPECT_EQ(chain->algoSupportedConfig_.micRefNum, 4); // 4 for DEFAULT_MICREFON_CH
+}
+
 HWTEST(AudioEnhanceChainUnitTest, SetAppsMuteStateSucc, TestSize.Level1)
 {
     auto chain = CreateNewChain();
@@ -521,6 +579,121 @@ HWTEST(AudioEnhanceChainUnitTest, SetAppsMuteStateWithAlgoParam, TestSize.Level1
 
     // Test set different state
     EXPECT_EQ(chain->SetAppsMuteState(0), SUCCESS);
+}
+
+HWTEST(AudioEnhanceChainUnitTest, CreateCollaborativeRecordChain, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5678;
+    std::string scene = "SCENE_COLLABORATIVE_RECORD";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0,
+        "DEVICE_MIC", "SPEAKER", "SCENE_COLLABORATIVE_RECORD", "DEVICE_NAME" };
+    const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 };
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+    EXPECT_EQ(chain->GetChainId(), chainId);
+
+    AudioBufferConfig micConfig = {};
+    AudioBufferConfig ecConfig = {};
+    AudioBufferConfig micRefConfig = {};
+    chain->GetAlgoConfig(micConfig, ecConfig, micRefConfig);
+
+    EXPECT_EQ(micConfig.samplingRate, 48000);
+    EXPECT_EQ(micConfig.channels, 2);
+    EXPECT_EQ(micConfig.format, 32);
+    EXPECT_EQ(ecConfig.samplingRate, 0);
+    EXPECT_EQ(ecConfig.channels, 0);
+    EXPECT_EQ(micRefConfig.samplingRate, 48000);
+    EXPECT_EQ(micRefConfig.channels, 2);
+    EXPECT_EQ(micRefConfig.format, 32);
+}
+
+HWTEST(AudioEnhanceChainUnitTest, CreateCollaborativeRecordChainWithModule, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5679;
+    std::string scene = "SCENE_COLLABORATIVE_RECORD";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0,
+        "DEVICE_MIC", "SPEAKER", "SCENE_COLLABORATIVE_RECORD", "DEVICE_NAME" };
+    const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 };
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+
+    AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
+    std::vector<EnhanceModulePara> moduleParas;
+    EnhanceModulePara para = { "collab_record", "AIHD", "libcollab_record", &lib };
+    moduleParas.emplace_back(para);
+    EXPECT_EQ(chain->CreateAllEnhanceModule(moduleParas), 0);
+    EXPECT_EQ(chain->IsEmptyEnhanceHandles(), false);
+    chain->ReleaseAllEnhanceModule();
+}
+
+HWTEST(AudioEnhanceChainUnitTest, ApplyCollaborativeRecordChain, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5680;
+    std::string scene = "SCENE_COLLABORATIVE_RECORD";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0,
+        "DEVICE_MIC", "SPEAKER", "SCENE_COLLABORATIVE_RECORD", "DEVICE_NAME" };
+    const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 };
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+
+    const uint32_t dataLen = 20 * 48 * 2 * 4;
+    std::vector<float> micInput(dataLen / sizeof(float));
+    std::vector<float> micRefInput(dataLen / sizeof(float));
+    for (uint32_t i = 0; i < micInput.size(); ++i) {
+        micInput[i] = static_cast<float>(i) * 0.01f;
+        micRefInput[i] = static_cast<float>(i) * 0.02f;
+    }
+
+    EnhanceTransBuffer transBuf = {};
+    transBuf.micData = micInput.data();
+    transBuf.micDataLen = micInput.size() * sizeof(float);
+    transBuf.micRefData = micRefInput.data();
+    transBuf.micRefDataLen = micRefInput.size() * sizeof(float);
+    EXPECT_EQ(chain->ApplyEnhanceChain(transBuf), SUCCESS);
+
+    std::vector<float> output(micInput.size());
+    EXPECT_EQ(chain->GetOutputDataFromChain(output.data(), output.size() * sizeof(float)), SUCCESS);
+}
+
+HWTEST(AudioEnhanceChainUnitTest, ApplyCollaborativeRecordChainWithModule, TestSize.Level1)
+{
+    const uint64_t chainId = 0x5681;
+    std::string scene = "SCENE_COLLABORATIVE_RECORD";
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0,
+        "DEVICE_MIC", "SPEAKER", "SCENE_COLLABORATIVE_RECORD", "DEVICE_NAME" };
+    const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 };
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+
+    AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
+    std::vector<EnhanceModulePara> moduleParas;
+    EnhanceModulePara para = { "collab_record", "AIHD", "libcollab_record", &lib };
+    moduleParas.emplace_back(para);
+    EXPECT_EQ(chain->CreateAllEnhanceModule(moduleParas), 0);
+
+    const uint32_t dataLen = 20 * 48 * 2 * 4;
+    std::vector<float> micInput(dataLen / sizeof(float));
+    std::vector<float> micRefInput(dataLen / sizeof(float));
+    for (uint32_t i = 0; i < micInput.size(); ++i) {
+        micInput[i] = static_cast<float>(i) * 0.01f;
+        micRefInput[i] = static_cast<float>(i) * 0.02f;
+    }
+
+    EnhanceTransBuffer transBuf = {};
+    transBuf.micData = micInput.data();
+    transBuf.micDataLen = micInput.size() * sizeof(float);
+    transBuf.micRefData = micRefInput.data();
+    transBuf.micRefDataLen = micRefInput.size() * sizeof(float);
+    EXPECT_EQ(chain->ApplyEnhanceChain(transBuf), SUCCESS);
+
+    std::vector<float> output(micInput.size());
+    EXPECT_EQ(chain->GetOutputDataFromChain(output.data(), output.size() * sizeof(float)), SUCCESS);
+
+    chain->ReleaseAllEnhanceModule();
 }
 } // AudioStandard
 } // OHOS

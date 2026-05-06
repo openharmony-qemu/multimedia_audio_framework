@@ -950,6 +950,76 @@ HWTEST(AudioServiceUnitTest, GetMaxAmplitude_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetEndpointMuteForSwitchDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetEndpointMuteForSwitchDevice_001
+ * @tc.desc  : Test SetEndpointMuteForSwitchDevice with device class parameter.
+ */
+HWTEST(AudioServiceUnitTest, SetEndpointMuteForSwitchDevice_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->SetEndpointMuteForSwitchDevice("A2DP_FAST", true);
+    audioService->SetEndpointMuteForSwitchDevice("MMAP", false);
+    audioService->SetEndpointMuteForSwitchDevice("primary", true);
+    EXPECT_NE(nullptr, audioService);
+}
+
+/**
+ * @tc.name  : Test SetEndpointMuteForSwitchDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetEndpointMuteForSwitchDevice_002
+ * @tc.desc  : Test SetEndpointMuteForSwitchDevice with different mute values.
+ */
+HWTEST(AudioServiceUnitTest, SetEndpointMuteForSwitchDevice_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->SetEndpointMuteForSwitchDevice("test_device", true);
+    audioService->SetEndpointMuteForSwitchDevice("test_device", false);
+    EXPECT_NE(nullptr, audioService);
+}
+
+/**
+ * @tc.name  : Test OnProcessRelease loopback branch
+ * @tc.type  : FUNC
+ * @tc.number: OnProcessRelease_Loopback_001
+ * @tc.desc  : Test OnProcessRelease with loopback renderer.
+ */
+HWTEST(AudioServiceUnitTest, OnProcessRelease_Loopback_001, TestSize.Level1)
+{
+    bool isSwitchStream = false;
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.rendererInfo.isLoopback = true;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    AudioService::GetInstance()->GetAudioProcess(config);
+    int32_t ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test OnProcessRelease loopback capturer branch
+ * @tc.type  : FUNC
+ * @tc.number: OnProcessRelease_Loopback_002
+ * @tc.desc  : Test OnProcessRelease with loopback capturer.
+ */
+HWTEST(AudioServiceUnitTest, OnProcessRelease_Loopback_002, TestSize.Level1)
+{
+    bool isSwitchStream = false;
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.isLoopback = true;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    AudioService::GetInstance()->GetAudioProcess(config);
+    int32_t ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
  * @tc.name  : Test GetCapturerBySessionID API
  * @tc.type  : FUNC
  * @tc.number: GetCapturerBySessionID_001
@@ -1976,6 +2046,58 @@ HWTEST(AudioServiceUnitTest, CheckShouldCap_001, TestSize.Level1)
     ret = audioService->CheckShouldCap(rendererConfig, innerCapId);
     EXPECT_EQ(ret, false);
 
+    audioService->workingConfigs_.clear();
+}
+
+/**
+ * @tc.name  : Test CheckShouldCap API
+ * @tc.type  : FUNC
+ * @tc.number: CheckShouldCap_002
+ * @tc.desc  : Test modern inner-cap voip flag checks renderer and fast process branches.
+ */
+HWTEST(AudioServiceUnitTest, CheckShouldCap_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    ASSERT_NE(audioService, nullptr);
+
+    audioService->workingConfigs_.clear();
+    audioService->allRendererMap_.clear();
+    audioService->allProcessInServer_.clear();
+
+    AudioPlaybackCaptureConfig audioPlaybackCaptureConfig;
+    audioPlaybackCaptureConfig.isModernInnerCapturer = true;
+    audioPlaybackCaptureConfig.filterOptions.usages.push_back(STREAM_USAGE_VOICE_COMMUNICATION);
+    audioService->workingConfigs_.insert(std::make_pair(1, audioPlaybackCaptureConfig));
+
+    AudioProcessConfig rendererConfig;
+    rendererConfig.audioMode = AUDIO_MODE_PLAYBACK;
+    rendererConfig.streamType = STREAM_VOICE_COMMUNICATION;
+    rendererConfig.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    rendererConfig.originalSessionId = MIN_STREAMID;
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    rendererConfig.rendererInfo.voipNoPrivacyFlag = false;
+    auto rendererFalse = std::make_shared<RendererInServer>(rendererConfig, streamListener);
+    audioService->allRendererMap_[rendererConfig.originalSessionId] = rendererFalse;
+    EXPECT_FALSE(audioService->CheckShouldCap(rendererConfig, 1));
+
+    rendererConfig.rendererInfo.voipNoPrivacyFlag = true;
+    auto rendererTrue = std::make_shared<RendererInServer>(rendererConfig, streamListener);
+    audioService->allRendererMap_[rendererConfig.originalSessionId] = rendererTrue;
+    EXPECT_TRUE(audioService->CheckShouldCap(rendererConfig, 1));
+
+    audioService->allRendererMap_.clear();
+    rendererConfig.originalSessionId = MIN_STREAMID + 1;
+    rendererConfig.rendererInfo.voipNoPrivacyFlag = true;
+    sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(rendererConfig, audioService);
+    ASSERT_NE(audioProcess, nullptr);
+    audioService->allProcessInServer_[rendererConfig.originalSessionId] = audioProcess;
+    EXPECT_TRUE(audioService->CheckShouldCap(rendererConfig, 1));
+
+    audioService->allProcessInServer_.clear();
     audioService->workingConfigs_.clear();
 }
 

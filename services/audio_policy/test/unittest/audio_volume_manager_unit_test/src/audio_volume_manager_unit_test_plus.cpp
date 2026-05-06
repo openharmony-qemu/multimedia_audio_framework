@@ -82,6 +82,20 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_102, TestSize.Level1)
     EXPECT_EQ(audioVolumeManager->audioPolicyServerHandler_, nullptr);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_103
@@ -94,7 +108,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_103, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = -1;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     audioVolumeManager->increaseNIsShowing_ = true;
     audioVolumeManager->restoreNIsShowing_ = true;
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
@@ -116,7 +130,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_104, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = -1;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     audioVolumeManager->increaseNIsShowing_ = false;
     audioVolumeManager->restoreNIsShowing_ = false;
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
@@ -136,7 +150,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_105, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_VOICE_CALL;
     int32_t volumeLevel = -1;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
 
     StreamUsage streamUsage = STREAM_USAGE_MUSIC;
@@ -157,9 +171,9 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_106, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_VOICE_CALL;
     int32_t volumeLevel = -1;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_MAX;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_MAX;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
-    EXPECT_EQ(audioVolumeManager->DeviceIsSupportSafeVolume(), false);
+    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(), false);
 
     audioVolumeManager->CheckToCloseNotification(streamType, volumeLevel);
 }
@@ -176,9 +190,9 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_107, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_VOICE_CALL;
     int32_t volumeLevel = 1;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_MAX;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_MAX;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
-    EXPECT_EQ(audioVolumeManager->DeviceIsSupportSafeVolume(), false);
+    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(), false);
 
     audioVolumeManager->CheckToCloseNotification(streamType, volumeLevel);
 }
@@ -193,10 +207,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_108, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     EXPECT_NE(audioVolumeManager, nullptr);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceCategory_ = CATEGORY_DEFAULT;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceCategory_ = CATEGORY_DEFAULT;
 
-    auto ret = audioVolumeManager->DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 
@@ -210,10 +224,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_109, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     EXPECT_NE(audioVolumeManager, nullptr);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_CAR;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceCategory_ = BT_CAR;
 
-    auto ret = audioVolumeManager->DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 
@@ -227,10 +241,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_110, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     EXPECT_NE(audioVolumeManager, nullptr);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceCategory_ = BT_SOUNDBOX;
 
-    auto ret = audioVolumeManager->DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 
@@ -244,9 +258,9 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_111, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     EXPECT_NE(audioVolumeManager, nullptr);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
 
-    auto ret = audioVolumeManager->DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 
@@ -260,7 +274,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_112, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     EXPECT_NE(audioVolumeManager, nullptr);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 0;
@@ -281,7 +295,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_113, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     EXPECT_NE(audioVolumeManager, nullptr);
 
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
     AudioStreamType streamType = STREAM_ALL;
     int32_t volumeLevel = 0;

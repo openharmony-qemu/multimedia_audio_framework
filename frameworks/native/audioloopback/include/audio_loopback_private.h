@@ -57,12 +57,13 @@ class AudioLoopbackPrivate : public AudioLoopback,
                              public AudioCapturerReadCallback,
                              public AudioRendererWriteCallback {
 public:
-    explicit AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo);
+    explicit AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo, bool isGlobal = false);
     virtual ~AudioLoopbackPrivate();
 
     bool Enable(bool enable) override;
     AudioLoopbackStatus GetStatus() override;
     int32_t SetVolume(float volume) override;
+    float GetVolume() override;
     int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) override;
     int32_t RemoveAudioLoopbackCallback() override;
     void OnWriteData(size_t length) override;
@@ -72,10 +73,14 @@ public:
     AudioLoopbackReverbPreset GetReverbPreset() override;
     bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) override;
     AudioLoopbackEqualizerPreset GetEqualizerPreset() override;
+    int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const override;
+
+    std::vector<AudioDevicePair> GetSupportedDevicePairs() override;
+
+    AudioDevicePair GetPreferredDevicePair() override;
 
     static void ReportAudioLoopbackException(const AudioLoopbackReportInfo &info);
 private:
-
     class RendererCallbackImpl : public AudioRendererCallback,
                                  public AudioRendererOutputDeviceChangeCallback,
                                  public AudioRendererFastStatusChangeCallback {
@@ -124,14 +129,15 @@ private:
     AudioLoopbackReportInfo GetReportInfo(AudioLoopbackErrorScope scope, AudioLoopbackErrorType type);
     void GetValidDevice();
 
+    bool isGlobal_ = false;
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
     AppInfo appInfo_ = {};
     std::map<std::string, std::string> karaokeParams_ = {};
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioCapturer> audioCapturer_;
-    std::mutex loopbackMutex_;
-    std::mutex stateMutex_;
+    mutable std::mutex loopbackMutex_;
+    mutable std::mutex stateMutex_;
     std::shared_ptr<AudioLoopbackCallback> statusCallback_;
     AudioLoopbackState currentState_ = LOOPBACK_STATE_IDLE;
     AudioLoopbackMode mode_ = LOOPBACK_HARDWARE;

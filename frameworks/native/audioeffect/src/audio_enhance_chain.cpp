@@ -37,25 +37,14 @@ const uint32_t DEFAULT_FORMAT = 2;
 const uint32_t DEFAULT_MICNUM = 2;
 const uint32_t DEFAULT_ECOFF_CH = 0;
 const uint32_t DEFAULT_MICREFOFF_CH = 0;
-const uint32_t DEFAULT_ECON_CH = 2;
-const uint32_t DEFAULT_MICREFON_CH = 4;
 const uint32_t BYTE_SIZE_SAMPLE_U8 = 1;
 const uint32_t BYTE_SIZE_SAMPLE_S16 = 2;
 const uint32_t BYTE_SIZE_SAMPLE_S24 = 3;
 const uint32_t BYTE_SIZE_SAMPLE_S32 = 4;
-const uint32_t DEFAULT_DEVICE_TYPE_CH = 4;
-const std::string DEFAULT_DEVICE_TYPE = "DEVICE_TYPE_MIC";
+const uint32_t CR_SAMPLE_RATE = 48000;
+const uint32_t CR_CHANNEL = 2;
+const uint32_t CR_FORMAT = 4; // f32
 
-const std::vector<std::string> NEED_EC_SCENE = {
-    "SCENE_VOIP_UP",
-    "SCENE_PRE_ENHANCE",
-    "SCENE_RECOGNITION",
-};
-
-const std::vector<std::string> NEED_MICREF_SCENE = {
-    "SCENE_VOIP_UP",
-    "SCENE_RECORD",
-};
 
 const std::map<uint32_t, AudioSampleFormat> FORMAT_CONVERT_MAP = {
     {BYTE_SIZE_SAMPLE_U8, SAMPLE_U8},
@@ -86,11 +75,42 @@ AudioEnhanceChain::AudioEnhanceChain(uint64_t chainId, const std::string &scene,
     InitAudioEnhanceChain();
 }
 
+void AudioEnhanceChain::InitCollabAudioEnhanceChain()
+{
+    // Collaborative recording: 48k, 2ch, 32f with same config ref
+    needEcFlag_ = false;
+    needMicRefFlag_ = true;
+    algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, CR_SAMPLE_RATE, CR_FORMAT * BITLENGTH,
+        CR_CHANNEL, DEFAULT_ECOFF_CH, CR_CHANNEL, CR_CHANNEL};
+    uint32_t byteLenPerFrameF32 = DEFAULT_FRAMELENGTH * (CR_SAMPLE_RATE / MILLISECOND) * CR_FORMAT;
+    algoAttr_ = {CR_FORMAT, algoSupportedConfig_.micNum + algoSupportedConfig_.micRefNum, byteLenPerFrameF32};
+
+    enhanceBuf_.micBuffer.resize(byteLenPerFrameF32 * CR_CHANNEL);
+    enhanceBuf_.micRefBuffer.resize(byteLenPerFrameF32 * CR_CHANNEL);
+    outputCache_.resize(byteLenPerFrameF32 * CR_CHANNEL);
+    algoCache_.input.resize(byteLenPerFrameF32 * algoAttr_.batchLen);
+    algoCache_.output.resize(byteLenPerFrameF32 * CR_CHANNEL);
+
+    AUDIO_INFO_LOG("collaborative record: micNum:2 ecNum:0 micRefNum:2 outNum:2 format:F32"
+        " byteLenPerFrame:%{public}u inputsize:%{public}zu outputsize:%{public}zu",
+        byteLenPerFrameF32, algoCache_.input.size(), algoCache_.output.size());
+
+    traceTagIn_ = sceneType_ + "_IN";
+    traceTagOut_ = sceneType_ + "_OUT";
+    dfxStreamInfo_ = { static_cast<AudioSamplingRate>(CR_SAMPLE_RATE), AudioEncodingType::ENCODING_PCM,
+        SAMPLE_F32LE, static_cast<AudioChannel>(CR_CHANNEL) };
+    std::string dumpFileInName = "Enhance_" + sceneType_ + "_" + GetTime() + "_In_" +
+        "0Ec_2Mic_2MicRef.pcm";
+    std::string dumpFileOutName = "Enhance_" + sceneType_ + "_" + GetTime() + "_Out.pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
+    return;
+}
+
 void AudioEnhanceChain::InitAudioEnhanceChain()
 {
-    if ((algoParam_.preDevice == DEFAULT_DEVICE_TYPE) && (deviceAttr_.micChannels < DEFAULT_DEVICE_TYPE_CH)) {
-        AUDIO_WARNING_LOG("mic channel[%{public}d] is set to 4", deviceAttr_.micChannels);
-        deviceAttr_.micChannels = DEFAULT_DEVICE_TYPE_CH;
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        return InitCollabAudioEnhanceChain();
     }
 
     algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_FORMAT * BITLENGTH,
@@ -99,16 +119,16 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
     algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
 
-    if (count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
+    if (deviceAttr_.needEc) {
         needEcFlag_ = true;
-        algoSupportedConfig_.ecNum = DEFAULT_ECON_CH;
+        algoSupportedConfig_.ecNum = deviceAttr_.ecChannels;
         algoAttr_.batchLen = deviceAttr_.micChannels + algoSupportedConfig_.ecNum;
         enhanceBuf_.ecBuffer.resize(deviceAttr_.ecChannels * byteLenPerFrame);
     }
 
-    if (count(NEED_MICREF_SCENE.begin(), NEED_MICREF_SCENE.end(), sceneType_)) {
+    if (deviceAttr_.needMicRef) {
         needMicRefFlag_ = true;
-        algoSupportedConfig_.micRefNum = DEFAULT_MICREFON_CH;
+        algoSupportedConfig_.micRefNum = deviceAttr_.micRefChannels;
         algoAttr_.batchLen += algoSupportedConfig_.micRefNum;
         enhanceBuf_.micRefBuffer.resize(deviceAttr_.micRefChannels * byteLenPerFrame);
     }
@@ -309,8 +329,53 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     return (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
 }
 
+int32_t AudioEnhanceChain::InitSingleEnhanceModuleForCollab(AudioEffectHandle enhanceHandle,
+    const std::string &enhanceProp)
+{
+    int32_t ret = ERROR;
+    AudioEffectTransInfo cmdInfo = {};
+    AudioEffectTransInfo replyInfo = {};
+    AlgoSupportConfig algoConfig = {};
+    replyInfo.data = &algoConfig;
+    replyInfo.size = sizeof(algoConfig);
+    ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] EFFECT_CMD_GET_CONFIG fail", sceneType_.c_str());
+
+    algoSupportedConfig_.sampleRate = algoConfig.inSampleRate;
+    algoSupportedConfig_.frameLength = DEFAULT_FRAMELENGTH;
+    algoSupportedConfig_.dataFormat = algoConfig.inFormat;
+    algoSupportedConfig_.micNum = CR_CHANNEL;
+    algoSupportedConfig_.micRefNum = CR_CHANNEL;
+    algoSupportedConfig_.ecNum = 0;
+
+    algoAttr_.batchLen = algoSupportedConfig_.micNum + algoSupportedConfig_.micRefNum;
+    uint32_t byteLenPerFrameF32 =  algoSupportedConfig_.frameLength *
+        (algoSupportedConfig_.sampleRate / MILLISECOND) * CR_FORMAT;
+    algoAttr_.byteLenPerFrame = byteLenPerFrameF32;
+
+    algoCache_.input.resize(byteLenPerFrameF32 * algoAttr_.batchLen);
+    algoCache_.output.resize(byteLenPerFrameF32 * algoSupportedConfig_.micNum);
+    AUDIO_INFO_LOG("algorate: %{public}u byteLenPerFrame: %{public}u inputsize:%{public}zu outputsize:%{public}zu",
+        algoSupportedConfig_.sampleRate, byteLenPerFrameF32, algoCache_.input.size(), algoCache_.output.size());
+
+    cmdInfo.data = static_cast<void *>(&algoSupportedConfig_);
+    cmdInfo.size = sizeof(algoSupportedConfig_);
+    ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s] EFFECT_CMD_SET_CONFIG fail", sceneType_.c_str());
+    CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(enhanceHandle) == SUCCESS, ERROR,
+        "[%{public}s] EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
+    CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(enhanceHandle, enhanceProp) == SUCCESS, ERROR,
+        "[%{public}s] EFFECT_CMD_SET_PROPERTY fail", sceneType_.c_str());
+    ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s] EFFECT_CMD_INIT fail", sceneType_.c_str());
+    return SUCCESS;
+}
+
 int32_t AudioEnhanceChain::InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp)
 {
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        return InitSingleEnhanceModuleForCollab(enhanceHandle, enhanceProp);
+    }
     int32_t ret = ERROR;
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
@@ -322,6 +387,7 @@ int32_t AudioEnhanceChain::InitSingleEnhanceModule(AudioEffectHandle enhanceHand
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get algo maxSampleRate failed!");
     }
+
     if (algoSupportedConfig_.sampleRate != maxSampleRate) {
         algoSupportedConfig_.sampleRate = maxSampleRate;
         uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (maxSampleRate / MILLISECOND) *
@@ -552,6 +618,25 @@ int32_t AudioEnhanceChain::PrepareChainInputData(void)
     uint32_t micRefIdx = micIdx + algoAttr_.byteLenPerFrame * algoSupportedConfig_.micNum;
     auto enhanceBufLen = enhanceBuf_.ecBuffer.size() + enhanceBuf_.micBuffer.size() + enhanceBuf_.micRefBuffer.size();
     CHECK_AND_RETURN_RET_LOG(enhanceBufLen <= algoCache_.input.size(), ERROR, "input cache insufficient");
+
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        auto memcpyRet = EOK;
+        if (enhanceBuf_.micBuffer.size() != 0) {
+            BufferDesc bufferIn = { enhanceBuf_.micBuffer.data(), enhanceBuf_.micBuffer.size(),
+                enhanceBuf_.micBuffer.size() };
+            VolumeTools::DfxOperation(bufferIn, dfxStreamInfo_, traceTagIn_, volumeDataCountIn_);
+            memcpyRet = memcpy_s(&algoCache_.input[micIdx], enhanceBuf_.micBuffer.size(),
+                enhanceBuf_.micBuffer.data(), enhanceBuf_.micBuffer.size());
+            CHECK_AND_RETURN_RET_LOG(memcpyRet == EOK, ERROR, "memcpy mic data error");
+        }
+
+        if (enhanceBuf_.micRefBuffer.size() != 0) {
+            memcpyRet = memcpy_s(&algoCache_.input[micRefIdx], enhanceBuf_.micRefBuffer.size(),
+                enhanceBuf_.micRefBuffer.data(), enhanceBuf_.micRefBuffer.size());
+            CHECK_AND_RETURN_RET_LOG(memcpyRet == EOK, ERROR, "memcpy mic data error");
+        }
+        return SUCCESS;
+    }
 
     if (enhanceBuf_.ecBuffer.size() != 0) {
         ret = DeinterleaverData(enhanceBuf_.ecBuffer.data(), deviceAttr_.ecChannels,

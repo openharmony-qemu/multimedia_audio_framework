@@ -15,6 +15,7 @@
 #ifndef AUDIO_POLICY_SERVER_HANDLER_H
 #define AUDIO_POLICY_SERVER_HANDLER_H
 #include <mutex>
+#include <functional>
 
 #include "singleton.h"
 #include "event_handler.h"
@@ -138,14 +139,17 @@ public:
     struct RendererDeviceChangeEvent {
         RendererDeviceChangeEvent() = delete;
         RendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-            const AudioDeviceDescriptor outputDeviceInfo, const AudioStreamDeviceChangeReason &reason)
-            : clientPid_(clientPid), sessionId_(sessionId), outputDeviceInfo_(outputDeviceInfo), reason_(reason)
+            const AudioDeviceDescriptor outputDeviceInfo, const AudioStreamDeviceChangeReason &reason,
+            const AudioDeviceDescriptor preOutputDeviceInfo)
+            : clientPid_(clientPid), sessionId_(sessionId), outputDeviceInfo_(outputDeviceInfo), reason_(reason),
+              preOutputDeviceInfo_(preOutputDeviceInfo)
         {}
 
         const int32_t clientPid_;
         const uint32_t sessionId_;
         const AudioDeviceDescriptor outputDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+        const AudioDeviceDescriptor preOutputDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     };
 
     struct CapturerCreateEvent {
@@ -162,6 +166,7 @@ public:
 
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
+    std::shared_ptr<AudioPolicyClientHolder> GetAudioPolicyClientHolder(int32_t clientId);
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const std::shared_ptr<AudioPolicyClientHolder> &cb);
     void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
@@ -202,7 +207,8 @@ public:
     bool SendRendererInfoEvent(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     bool SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-        const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason);
+        const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+        const AudioDeviceDescriptor &preOutputDeviceInfo);
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
@@ -222,8 +228,8 @@ public:
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
-    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID);
+    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID);
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
@@ -310,7 +316,7 @@ private:
     void HandleDeviceConfigChangedEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
-    std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
+    std::vector<AudioCapturerFilter> GetCallbackCapturerInfoList(int32_t clientPid);
 
     bool IsForceGetDevByVolumeType(int32_t uid);
     bool IsForceGetZoneDevice(int32_t uid);
@@ -321,10 +327,21 @@ private:
     void ValidatePreferredOutputDeviceCallback(int32_t clientPid,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
+    // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
+    void ProcessPreferredOutputDeviceForClient(int32_t clientPid,
+        const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
+    void ProcessPreferredInputDeviceForClient(int32_t clientPid,
+    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
+    bool IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType);
+    bool ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid, StreamUsage streamUsage,
+        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+    bool ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid, SourceType sourceType,
+        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
     std::mutex clientCbRendererInfoMapMutex_;
-    std::mutex clientCbCapturerInfoMapMutex_;
+    std::mutex clientCbCapturerFilterMapMutex_;
     std::mutex clientCbStreamUsageMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
@@ -339,9 +356,20 @@ private:
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     int32_t pidOfRss_ = -1;
     std::unordered_map<int32_t, std::vector<AudioRendererFilter>> clientCbRendererInfoMap_;
-    std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
+    std::unordered_map<int32_t, std::vector<AudioCapturerFilter>> clientCbCapturerFilterMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
+
+    // clientPid -> uid -> streamUsage -> device
+    std::unordered_map<int32_t,
+        std::unordered_map<int32_t,
+            std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>>>>
+        lastSentOutputDeviceMap_;
+    // clientPid -> uid -> sourceType -> device
+    std::unordered_map<int32_t,
+        std::unordered_map<int32_t,
+            std::unordered_map<SourceType, std::shared_ptr<AudioDeviceDescriptor>>>>
+        lastSentInputDeviceMap_;
 
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
 };

@@ -105,8 +105,11 @@ public:
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
+    void TriggerClientWake() override;
     void TriggerAppsUidUpdate() override;
+    uint32_t GetRouteFlag() const noexcept override;
 private:
+    int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
     void SyncOffloadMode();
     void InitRingBuffer();
     int32_t WriteDataFromRingBuffer(bool forceData, int8_t *inputData, size_t &requestDataLen);
@@ -124,7 +127,6 @@ private:
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
-    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType, std::string volumeDeviceClass);
     uint64_t GetOffloadLatency();
     bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
     void UpdateInnerCapWriteState(bool isWriteFirst);
@@ -133,9 +135,7 @@ private:
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
-    std::weak_ptr<IStatusCallback> offloadStateCallback_;
     State state_ = INVALID;
-    std::future<void> offloadVolumeRmap_;
 
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
@@ -160,6 +160,7 @@ private:
     uint64_t framePosition_ = 0;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastHdiFramePosition_ = 0;
+    uint64_t rewindTime_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
@@ -177,6 +178,7 @@ private:
     bool isCallbackMode_ = true; // true is callback buffer mode, false is write buffer mode
     bool isMoveAble_ = true;
     std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
+    size_t ringBufferCapacityInBytes_ = 0;
     FILE *dumpEnqueueIn_ = nullptr;
     const size_t preBufSizeInBytes_ = 0;
     std::atomic<bool> preBufDone_ = false;
@@ -199,6 +201,8 @@ private:
     uint64_t writePos_ = 0;
     float speed_ = 1.0f;
     bool isWriteFirst_ = false;
+    bool delayedWake_ = false;
+    std::atomic<uint32_t> routeFlag_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

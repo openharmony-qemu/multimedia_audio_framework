@@ -21,6 +21,7 @@
 #include <cinttypes>
 #include "audio_effect_log.h"
 #include "hpae_node_common.h"
+#include "stream_dfx_manager.h"
 
 static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
@@ -98,7 +99,10 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     if (inputs.size() != 1) {
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
-    CHECK_AND_RETURN_RET_LOG(resampler_, &silenceData_, "NodeId %{public}d resampler_ is nullptr", GetNodeId());
+    CHECK_AND_RETURN_RET(resampler_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false), &silenceData_));
 
     // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
     CheckAndUpdateInfo(inputs[0]);
@@ -213,8 +217,10 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
         };
         HILOG_COMM_INFO("[CheckUpdateOutInfo]NodeId %{public}d, update out channels and channelLayout: "
             "channels %{public}d -> %{public}d", GetNodeId(), curOutChannelInfo.numChannels, numChannels);
-        CHECK_AND_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == MIX_ERR_SUCCESS, false,
-            "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
+        CHECK_AND_RETURN_RET(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == MIX_ERR_SUCCESS,
+            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL, BusinessScenario::SEND_DATA,
+                    ERR_ILLEGAL_STATE), "Fail to set output channel info", false), false));
         uint32_t resampleChannels = std::min(channelConverter_.GetInChannelInfo().numChannels, numChannels);
         if (resampleChannels != resampler_->GetChannels()) {
             AUDIO_INFO_LOG("NodeId: %{public}d, Update resampler work channel from effectNode!", GetNodeId());

@@ -145,6 +145,9 @@ public:
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
+    int32_t SetPitch(float pitch) override;
+    void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override;
+    int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
     bool IsFastRenderer() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;
@@ -244,6 +247,7 @@ private:
         IAudioStream::SwitchInfo &info);
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream, RestoreInfo restoreInfo,
         RendererState previousState, IAudioStream::SwitchInfo &switchInfo);
+    void UpdateFlagForSwitchInfo(IAudioStream::SwitchInfo &switchInfo, IAudioStream::StreamClass targetClass);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();
@@ -264,7 +268,7 @@ private:
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
-    int32_t SetPitch(float pitch);
+    int32_t SetSonicPitch(float pitch);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
@@ -280,6 +284,13 @@ private:
     void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
     int32_t GetCurrentBackMuteStatus(bool &backMute);
     void SetSwitchInfoCallbacks(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
+    std::string &GetBundleNameByUid();
+    std::string &GetBundleNameByAppUid(int32_t uid);
+    int32_t ActivateAudioInterruptInStart(const bool isMute);
+    void HandleAudioInterruptInfo();
+    bool ValidateStartState();
+    bool ValidateNotSwitching();
+    bool ValidateAudioStream();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -321,6 +332,8 @@ private:
     int64_t framesAlreadyWritten_ = 0;
     int64_t sourceDuration_ = -1;
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
+    std::string bundleNameByUid_ = "";
+    std::string bundleNameByAppUid_ = "";
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     int32_t audioHapticsSyncId_ = 0;
@@ -333,6 +346,8 @@ private:
     bool inSwitchingFlag_ = false;
     std::atomic<int32_t> audioInterruptState_ = INVALID;
     bool isFirstSetMainUseArk_ = true;
+    bool interruptCallbackByIpcFlag_ = false;
+    bool isFirstStart_ = true;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
@@ -382,7 +397,7 @@ public:
     virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
 
     void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) override;
+        const AudioStreamDeviceChangeReasonExt reason, const AudioDeviceDescriptor &preDeviceInfo) override;
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;

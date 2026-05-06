@@ -500,6 +500,9 @@ bool TonePlayerImpl::InitAudioRenderer()
     if (rendererOptions_.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         rendererOptions_.rendererInfo.toneFlag = true;
     }
+    if (toneType_ == TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING) {
+        rendererOptions_.rendererInfo.isCallWaitingTone = true;
+    }
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");

@@ -16,6 +16,7 @@
 #ifndef RENDERER_IN_SERVER_H
 #define RENDERER_IN_SERVER_H
 
+#include <atomic>
 #include <mutex>
 #include <optional>
 #include "i_renderer_stream.h"
@@ -30,6 +31,7 @@
 #include "audio_stream_checker.h"
 #include "audio_static_buffer_processor.h"
 #include "audio_static_buffer_provider.h"
+#include "async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +45,17 @@ struct RendererLatestInfoForWorkgroup {
     float systemVolume;
 };
 class RendererInServer;
+
+class NotifyStandbyAction : public AsyncActionHandler::AsyncAction {
+public:
+    NotifyStandbyAction(uint32_t sessionId, bool isStandbyOn)
+        : sessionId_(sessionId), isStandbyOn_(isStandbyOn) {}
+    void Exec() override;
+private:
+    uint32_t sessionId_;
+    bool isStandbyOn_;
+};
+
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
     StreamCallbacks(uint32_t streamIndex, std::weak_ptr<RendererInServer> renderer);
@@ -77,12 +90,16 @@ public:
     void HandleOperationStarted();
     int32_t OnWriteData(size_t length) override;
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    int32_t OnWriteDataNoWake(int8_t *inputData, size_t requestDataLen) override;
+    void WakeClientFutex() override;
     int32_t GetAvailableSize(size_t &length) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();
+    void HandleDupStreamPause();
+    void HandleDualTonePause();
     int32_t Flush();
     int32_t Drain(bool stopFlag = false);
     int32_t Stop();
@@ -99,11 +116,14 @@ public:
     int32_t SetAudioEffectMode(int32_t effectMode);
     int32_t GetAudioEffectMode(int32_t &effectMode);
     int32_t SetPrivacyType(int32_t privacyType);
+    int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag);
     int32_t GetPrivacyType(int32_t &privacyType);
+    bool GetVoipNoPrivacyFlag() const;
 
     int32_t SetOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode();
     int32_t SetSpeed(float speed);
+    int32_t SetPitch(float pitch);
     int32_t SetOffloadDataCallbackState(int32_t state);
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
@@ -161,6 +181,7 @@ public:
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
+    int32_t RefreshServerBufferForSpanSizeUpdate();
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
 
@@ -172,6 +193,7 @@ public:
     int32_t SetTarget(RenderTarget target, int32_t &ret);
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
     int32_t SetLoopTimes(int64_t bufferLoopTimes);
+    int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     int32_t ResetStaticPlayPosition();
 
@@ -180,7 +202,7 @@ public:
     int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
     void ReportExceptionForOffload();
 public:
-    const AudioProcessConfig processConfig_;
+    AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
     void OnStatusUpdateSubs(IOperation operation);
@@ -196,7 +218,11 @@ private:
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
     int32_t StartInner();
+    int32_t ValidateStartState();
+    int32_t ValidateAndSetupBufferForStart();
+    void UpdateStartTimeInfo();
     int32_t StopInner();
+    int32_t Standby(bool isStandbyOn);
     int64_t GetLastAudioDuration();
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
     void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
@@ -220,7 +246,9 @@ private:
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
     void ProcessManagerType();
+    void HandleOperationPaused(std::shared_ptr<IStreamListener> stateListener);
     void HandleOperationStopped(RendererStage stage);
+    void UpdateStreamStatusByRendererState();
     bool IsMovieOffloadStream();
     bool IsMovieStream();
     template <typename T>
@@ -236,6 +264,7 @@ private:
     void PauseInner();
     void ClearInnerCapBufferForInject();
     void InitDupBufferInner(int32_t innerCapId);
+    int32_t OnWriteDataInternal(int8_t *inputData, size_t requestDataLen, bool wakeFutex);
 
     // only for a2dp offload
     void WaitForDataConnection();
@@ -243,17 +272,18 @@ private:
     int32_t DisableDualToneInner();
     void PreDualToneBufferSilenceForOffload();
 
-    int32_t WriteData(int8_t *inputData, size_t requestDataLen);
+    int32_t WriteData(int8_t *inputData, size_t requestDataLen, bool wakeFutex = true);
     void PauseDirectStream();
 
     int32_t CreateServerBuffer();
     int32_t ProcessAndSetStaticBuffer();
-    int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
+    int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen, bool wakeFutex);
     void MarkStaticFadeOut();
     void MarkStaticFadeIn(bool isRefresh);
     void HandleIsWriteFirst(bool isWriteFirst);
     void HandleStreamUnderrun();
     bool CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame);
+    void ReleasePostProcess();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -262,6 +292,7 @@ private:
     std::string traceTag_;
     mutable int64_t volumeDataCount_ = 0;
     std::atomic<IStatus> status_ = I_STATUS_IDLE;
+    std::atomic<bool> voipNoPrivacyFlag_ = false;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;
     std::atomic<bool> muteFlag_ = false;
@@ -359,12 +390,16 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
+    float pitch_ = 1.0f;
+    float speed_ = 1.0f;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
     bool isWriteFirst_ = false;
+    bool isOffloadJankReport = false;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

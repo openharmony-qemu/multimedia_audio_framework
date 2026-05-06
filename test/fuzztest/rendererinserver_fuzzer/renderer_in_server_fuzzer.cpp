@@ -569,6 +569,20 @@ void UpdateWriteIndexFuzzTest()
     RendererInServerPtr->UpdateWriteIndex();
 }
 
+void StandbyFuzzTest()
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    AudioProcessConfig config = InitAudioProcessConfig(testStreamInfo);
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> weakListener = streamListenerHolder;
+    auto RendererInServerPtr = std::make_shared<RendererInServer>(config, weakListener);
+    CHECK_AND_RETURN(RendererInServerPtr != nullptr);
+
+    bool isStandby = g_fuzzUtils.GetData<bool>();
+    RendererInServerPtr->Standby(isStandby);
+}
+
 void StartInnerDuringStandbyFuzzTest()
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
@@ -1304,7 +1318,7 @@ void SelectModeAndWriteData1FuzzTest()
         byteSizePerFrame);
     RendererInServerPtr->staticBufferProvider_ = std::make_shared<AudioStaticBufferProvider>(config.streamInfo,
         RendererInServerPtr->audioServerBuffer_);
-    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen);
+    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen, false);
 }
 
 void SelectModeAndWriteData2FuzzTest()
@@ -1323,7 +1337,7 @@ void SelectModeAndWriteData2FuzzTest()
     int8_t *inputData = arr;
     size_t requestDataLen = 0;
 
-    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen);
+    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen, false);
 }
 
 void CreateServerBufferFuzzTest()
@@ -1525,6 +1539,7 @@ vector<TestFuncs> g_testFuncs = {
     OnWriteData1FuzzTest,
     RequestHandleDataFuzzTest,
     UpdateWriteIndexFuzzTest,
+    StandbyFuzzTest,
     StartInnerDuringStandbyFuzzTest,
     StartStreamByTypeFuzzTest,
     DualToneStreamInStartFuzzTest,

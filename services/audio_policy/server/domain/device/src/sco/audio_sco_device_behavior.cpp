@@ -76,7 +76,7 @@ int32_t AudioScoDeviceBehavior::HandleScoOutputDeviceFetched(const std::shared_p
         return ERROR;
     }
     if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-        Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true));
+        Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true), true);
     }
 #endif
     AUDIO_INFO_LOG("out");

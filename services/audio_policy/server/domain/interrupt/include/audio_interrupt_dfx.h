@@ -47,6 +47,13 @@ struct AudioInterruptCheckInfo {
     std::list<AudioFocusErrorEvent> errorEvents;
 };
 
+enum InterruptErrorCode {
+    TYPE_MEDIA_PLAYBACK_NOT_LISTENING_INTERRUPT_CHANGE,
+    TYPE_MEDIA_PLAYBACK_ACTIVATED_LISTENING_INTERRUPT_CHANGE,
+    TYPE_AUDIOSESSION_NOT_LISTENING_STATE_CHANGE,
+    TYPE_AUDIOSESSION_ACTIVATED_LISTENING_STATE_CHANGE,
+};
+
 class AudioInterruptDfx : public std::enable_shared_from_this<AudioInterruptDfx> {
 public:
     AudioInterruptDfx();
@@ -60,6 +67,8 @@ public:
     void NotifyStreamSilentChange(uint32_t streamId);
     void CheckInterruptEvent(uint32_t streamId);
     void DelayCheckMuteStreamInterrupt(uint32_t streamId);
+    void HandleInterruptCallbackEvent(const AudioInterrupt &audioInterrupt);
+    void HandleStateChangeCallbackEvent(const int32_t usage, const int32_t uid, const int32_t type);
 
 private:
     void WriteAudioInterruptErrorEvent(const AudioFocusErrorEvent &interruptError);
@@ -71,6 +80,7 @@ private:
     void CheckMuteInterruptEvent(uint32_t streamId);
     void CheckShortInterruptEvent(uint32_t streamId);
     bool IsCheckDfxStream(AudioStreamType audioStreamType);
+    void WriteInterruptOrSessionCallbackErrorEvent(const int32_t usage, const int32_t uid, const int32_t type);
 
     AudioSessionService &sessionService_;
 

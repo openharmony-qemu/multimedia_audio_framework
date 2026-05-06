@@ -162,12 +162,6 @@ void AudioCoreConfigManager::OnInterruptGroupParsed(std::unordered_map<std::stri
 void AudioCoreConfigManager::OnUpdateRouteSupport(bool isSupported)
 {
     isUpdateRouteSupported_ = isSupported;
-    isEnhancedRoutingSupported_ = isSupported;
-}
-
-void AudioCoreConfigManager::SetEnhancedRoutingSupported(bool isSupported)
-{
-    isEnhancedRoutingSupported_ = isSupported;
 }
 
 void AudioCoreConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
@@ -238,7 +232,7 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
             streamProp->format_ = deviceStreamInfo.format;
             streamProp->sampleRate_ = static_cast<uint32_t>(rate);
             streamProp->channelLayout_ = layout;
-            streamProp->channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(layout);
+            streamProp->channels_ = ConvertLayoutToAudioChannel(layout);
             streamProp->bufferSize_ = AudioDefinitionPolicyUtils::PcmFormatToBytes(streamProp->format_) *
                 streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC;
             streamPropInfos.push_back(streamProp);
@@ -443,11 +437,6 @@ bool AudioCoreConfigManager::GetUpdateRouteSupport()
     return isUpdateRouteSupported_;
 }
 
-bool AudioCoreConfigManager::GetEnhancedRoutingSupported()
-{
-    return isEnhancedRoutingSupported_;
-}
-
 bool AudioCoreConfigManager::GetAdapterInfoFlag()
 {
     return isAdapterInfoMap_.load();
@@ -627,6 +616,22 @@ void AudioCoreConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioStr
     }
 }
 
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetAvailableStreamPropInfoForDevice(
+    const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos, DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(!streamPropInfos.empty(), nullptr, "streamPropInfos is empty");
+    for (const auto &streamPropInfo : streamPropInfos) {
+        if (streamPropInfo == nullptr) {
+            continue;
+        }
+        auto it = streamPropInfo->supportDeviceMap_.find(deviceType);
+        if (it != streamPropInfo->supportDeviceMap_.end()) {
+            return streamPropInfo;
+        }
+    }
+    return streamPropInfos.front();
+}
+
 void AudioCoreConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioStreamInfo &streamInfo)
@@ -648,9 +653,10 @@ void AudioCoreConfigManager::GetStreamPropInfoForRecord(
         CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "Get adapter info for normal capture failed");
     }
 
-    auto streamPropInfos = adapterPipeInfo->streamPropInfos_;
-    CHECK_AND_RETURN_LOG(streamPropInfos.size() > 0, "streamPropInfos is empty");
-    auto firstStreamPropInfo = streamPropInfos.front();
+    CHECK_AND_RETURN_LOG(!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_.front() != nullptr,
+        "newDeviceDescs is empty");
+    auto firstStreamPropInfo = GetAvailableStreamPropInfoForDevice(adapterPipeInfo->streamPropInfos_,
+        desc->newDeviceDescs_.front()->deviceType_);
     CHECK_AND_RETURN_LOG(firstStreamPropInfo != nullptr, "Get firstStreamPropInfo for normal capture failed");
     // Use *ptr to get copy and avoid modify the source data from XML
     *info = *firstStreamPropInfo;

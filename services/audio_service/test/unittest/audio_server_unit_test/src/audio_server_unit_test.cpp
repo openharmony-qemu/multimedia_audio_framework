@@ -31,6 +31,8 @@
 #include "audio_service_types.h"
 #include "audio_server_hpae_dump.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
+#include "audio_module_info.h"
 
 using namespace testing::ext;
 using OHOS::AudioStandard::SetSysPara;
@@ -40,7 +42,7 @@ const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 constexpr int32_t INVALID_VALUE = -1;
 
-static sptr<AudioServer> audioServer;
+sptr<AudioServer> audioServer;
 
 void AudioServerUnitTest::SetUpTestCase(void)
 {
@@ -65,7 +67,13 @@ void AudioServerUnitTest::SetUp(void)
 
 void AudioServerUnitTest::TearDown(void)
 {
-    // input testcase teardown step，teardown invoked after each testcases
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL].reset();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_REMOTE].reset();
+    AudioServer::audioParameterKeys.clear();
+    if (audioServer != nullptr) {
+        audioServer->isAudioParameterParsed_.store(true);
+    }
 }
 
 enum PermissionStatus {
@@ -515,33 +523,31 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     bool scoExcludeFlag = false;
-    std::string deviceName;
     std::vector<DeviceType> deviceTypes;
     std::vector<int32_t> activeOutputDevices;
 
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
+    deviceTypes.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag);
 
-    ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
-        A2DP_OFFLOAD, deviceName);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag);
     activeOutputDevices.clear();
     activeOutputDevices.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
-    ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
-        A2DP_OFFLOAD, deviceName);
+    deviceTypes.clear();
+    deviceTypes.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
     deviceTypes.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
-    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes,
-        A2DP_NOT_OFFLOAD, deviceName);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
     deviceTypes.clear();
     deviceTypes.push_back(DEVICE_TYPE_WIRED_HEADPHONES);
-    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes,
-        A2DP_NOT_OFFLOAD, deviceName);
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -978,6 +984,75 @@ HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test CreateAudioStream loopback branch
+ * @tc.type  : FUNC
+ * @tc.number: CreateAudioStream_Loopback_001
+ * @tc.desc  : Test CreateAudioStream with loopback flag for renderer.
+ */
+HWTEST_F(AudioServerUnitTest, CreateAudioStream_Loopback_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.isLoopback = true;
+    sptr<IRemoteObject> remoteObject = nullptr;
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
+    EXPECT_EQ(nullptr, remoteObject);
+}
+
+/**
+ * @tc.name  : Test CreateAudioStream loopback branch for capturer
+ * @tc.type  : FUNC
+ * @tc.number: CreateAudioStream_Loopback_002
+ * @tc.desc  : Test CreateAudioStream with loopback flag for capturer.
+ */
+HWTEST_F(AudioServerUnitTest, CreateAudioStream_Loopback_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.isLoopback = true;
+    sptr<IRemoteObject> remoteObject = nullptr;
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
+    EXPECT_EQ(nullptr, remoteObject);
+}
+
+/**
+ * @tc.name  : Test IsNormalIpcStream with enableNewRoute
+ * @tc.type  : FUNC
+ * @tc.number: IsNormalIpcStream_NewRoute_001
+ * @tc.desc  : Test IsNormalIpcStream when enableNewRoute is 1.
+ */
+HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_NewRoute_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    SetSysPara("persist.multimedia.enable_new_route", 1);
+    bool ret = audioServer->IsNormalIpcStream(config);
+    EXPECT_TRUE(ret);
+    SetSysPara("persist.multimedia.enable_new_route", 0);
+}
+
+/**
+ * @tc.name  : Test SetSinkMuteForSwitchDevice mmap branch
+ * @tc.type  : FUNC
+ * @tc.number: SetSinkMuteForSwitchDevice_Mmap_001
+ * @tc.desc  : Test SetSinkMuteForSwitchDevice with mmap device class.
+ */
+HWTEST_F(AudioServerUnitTest, SetSinkMuteForSwitchDevice_Mmap_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->SetSinkMuteForSwitchDevice(A2DP_FAST_CLASS, 1, false);
+    EXPECT_NE(SUCCESS, ret);
+    ret = audioServer->SetSinkMuteForSwitchDevice(MMAP_CLASS, 1, false);
+    EXPECT_NE(SUCCESS, ret);
+}
+
 #ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CreateAudioStream API
@@ -1023,24 +1098,24 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+    AudioEffectProperty  audioEffectProperty1 = {
         .name = "testName1",
         .category = "testCategory1",
         .flag = RENDER_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+    AudioEffectProperty  audioEffectProperty2 = {
         .name = "testName2",
         .category = "testCategory2",
         .flag = RENDER_EFFECT_FLAG,
     };
 
     int32_t ret = 0;
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
+    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
+    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
 
-    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 #endif
@@ -1053,24 +1128,24 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Le
 HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+    AudioEffectProperty  audioEffectProperty1 = {
         .name = "testName1",
         .category = "testCategory1",
         .flag = CAPTURE_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+    AudioEffectProperty  audioEffectProperty2 = {
         .name = "testName2",
         .category = "testCategory2",
         .flag = CAPTURE_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
+    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
+    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
 
     int32_t ret = 0;
-    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1083,24 +1158,24 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_002, TestSize.Le
 HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_003, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+    AudioEffectProperty  audioEffectProperty1 = {
         .name = "testName1",
         .category = "testCategory1",
         .flag = RENDER_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+    AudioEffectProperty  audioEffectProperty2 = {
         .name = "testName2",
         .category = "testCategory2",
         .flag = CAPTURE_EFFECT_FLAG,
     };
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
-    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
+    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
+    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
 
     int32_t ret = 0;
-    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1115,10 +1190,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_001, TestSize.Le
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
 
     int32_t ret = 0;
-    audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
+    audioServer->GetAudioEffectProperty(audioEffectPropertyArray, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 #endif
@@ -1133,9 +1208,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_002, TestSize.Le
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
 
-    int32_t ret = audioServer->GetAudioEnhancePropertyArray(audioEffectPropertyArrayV3, DEVICE_TYPE_EARPIECE);
+    int32_t ret = audioServer->GetAudioEnhancePropertyArray(audioEffectPropertyArray, DEVICE_TYPE_EARPIECE);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1149,9 +1224,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_003, TestSize.Le
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    AudioEffectPropertyArray audioEffectPropertyArray = {};
 
-    int32_t ret = audioServer->GetAudioEffectPropertyArray(audioEffectPropertyArrayV3);
+    int32_t ret = audioServer->GetAudioEffectPropertyArray(audioEffectPropertyArray);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1616,17 +1691,17 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_001, TestSize.Level1)
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
     BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
-    std::string deviceName = "test";
+    uint32_t pipeId = 0;
     int32_t ret = SUCCESS;
 
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back({DEVICE_TYPE_ACCESSORY, OUTPUT_DEVICES_FLAG});
-    ret = audioServer->SetIORoutes(activeDevices, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(activeDevices, a2dpOffloadFlag, pipeId);
     EXPECT_EQ(ret, SUCCESS);
 
     DeviceType type = DEVICE_TYPE_ACCESSORY;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1642,13 +1717,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_002, TestSize.Level1)
 
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_OFFLOAD;
-    std::string deviceName = "test";
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_ACCESSORY;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1664,13 +1737,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_003, TestSize.Level1)
 
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_OFFLOAD;
-    std::string deviceName = "test";
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_FILE_SOURCE;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1686,13 +1757,11 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_004, TestSize.Level1)
 
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_BLUETOOTH_A2DP;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1708,14 +1777,12 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_005, TestSize.Level1)
 
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_DEFAULT;
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1731,14 +1798,12 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_006, TestSize.Level1)
 
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = OUTPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_RINGING;
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1754,14 +1819,12 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_007, TestSize.Level1)
 
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = INPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_DEFAULT;
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1776,15 +1839,13 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_008, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     std::vector<DeviceType> deviceTypes;
-    deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
+    deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = INPUT_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_RINGING;
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1799,15 +1860,13 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_009, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     std::vector<DeviceType> deviceTypes;
-    deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
+    deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_DEFAULT;
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1822,15 +1881,13 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_010, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     std::vector<DeviceType> deviceTypes;
-    deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
+    deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DEVICES_FLAG;
 
     audioServer->audioScene_ = AUDIO_SCENE_RINGING;
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1845,14 +1902,12 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_011, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     std::vector<DeviceType> deviceTypes;
-    deviceTypes.push_back(DeviceType::DEVICE_TYPE_SPEAKER);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    std::string deviceName = "test";
+    deviceTypes.push_back(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = SUCCESS;
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DISTRIBUTED_DEVICES_FLAG;
 
-    ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
+    ret = audioServer->SetIORoutes(type, flag, deviceTypes);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -2532,18 +2587,16 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioSceneInner_005, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test CacheExtraParameters API
+ * @tc.name  : Test WaitAudioParameterParsed API
  * @tc.type  : FUNC
- * @tc.number: CacheExtraParameters_001
- * @tc.desc  : Test CacheExtraParameters interface.
+ * @tc.number: WaitAudioParameterParsed_002
+ * @tc.desc  : Test WaitAudioParameterParsed timeout behavior.
  */
-HWTEST_F(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level4)
+HWTEST_F(AudioServerUnitTest, WaitAudioParameterParsed_002, TestSize.Level4)
 {
     EXPECT_NE(nullptr, audioServer);
-    std::string key = "test_key";
-    std::vector<std::pair<std::string, std::string>> kvpairs = {{"sub_key1", "value1"}, {"sub_key2", "value2"}};
-    int32_t ret = audioServer->CacheExtraParameters(key, kvpairs);
-    EXPECT_EQ(false, ret);
+    audioServer->isAudioParameterParsed_.store(false);
+    EXPECT_FALSE(audioServer->WaitAudioParameterParsed());
 }
 
 /**
@@ -3007,12 +3060,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutesForRemote_001, TestSize.Leve
     std::vector<DeviceType> deviceTypes;
     deviceTypes.push_back(DEVICE_TYPE_SPEAKER);
 
-    int32_t ret = audioServer->SetIORoutesForRemote(DEVICE_TYPE_SPEAKER,
-        DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, deviceTypes, "network_id");
+    int32_t ret = audioServer->SetIORoutesForRemote(DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG,
+        deviceTypes, "network_id");
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetIORoutesForRemote(DEVICE_TYPE_SPEAKER,
-        DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes, "network_id");
+    ret = audioServer->SetIORoutesForRemote(DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes, "network_id");
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
@@ -3029,12 +3081,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateActiveDevicesRoute_001, TestSize.
     std::vector<IntPair> activeDevices;
     activeDevices.push_back({DEVICE_TYPE_SPEAKER, OUTPUT_DEVICES_FLAG});
 
-    int32_t ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, "", LOCAL_NETWORK_ID);
+    int32_t ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, 0, LOCAL_NETWORK_ID);
     EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     activeDevices.clear();
     activeDevices.push_back({DEVICE_TYPE_SPEAKER, OUTPUT_DEVICES_FLAG});
-    ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, "", "network_id");
+    ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, 0, "network_id");
     EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
@@ -3050,7 +3102,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateActiveDevicesRoute_002, TestSize.
 
     std::vector<IntPair> activeDevices;
 
-    int32_t ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, "", LOCAL_NETWORK_ID);
+    int32_t ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, 0, LOCAL_NETWORK_ID);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
@@ -3069,22 +3121,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateActiveDevicesRoute_003, TestSize.
         activeDevices.push_back({DEVICE_TYPE_SPEAKER, OUTPUT_DEVICES_FLAG});
     }
 
-    int32_t ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, "", LOCAL_NETWORK_ID);
+    int32_t ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, 0, LOCAL_NETWORK_ID);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
- * @tc.name  : Test UpdateActiveDeviceRoute API
- * @tc.type  : FUNC
- * @tc.number: AudioServerUpdateActiveDeviceRoute_001
- * @tc.desc  : Test UpdateActiveDeviceRoute interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerUpdateActiveDeviceRoute_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    int32_t ret = audioServer->UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICES_FLAG, 0);
-    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 /**
@@ -3277,6 +3315,71 @@ HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Leve
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(1, false);
     EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderFormat for SOURCE_TYPE_INTERPHONE
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderFormat_Interphone_001
+ * @tc.desc  : Test CheckRecorderFormat interface with SOURCE_TYPE_INTERPHONE.
+ */
+HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    config.streamInfo.channels = MONO;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderFormat for SOURCE_TYPE_INTERPHONE with fast stream
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderFormat_Interphone_002
+ * @tc.desc  : Test CheckRecorderFormat interface with SOURCE_TYPE_INTERPHONE fast stream flags.
+ */
+HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    config.capturerInfo.capturerFlags = AUDIO_INPUT_FLAG_FAST;
+    config.streamInfo.channels = MONO;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderFormat for interphone source type value
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderFormat_Interphone_003
+ * @tc.desc  : Test CheckRecorderFormat validates SOURCE_TYPE_INTERPHONE is supported.
+ */
+HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.channelLayout = CH_LAYOUT_STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    bool ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

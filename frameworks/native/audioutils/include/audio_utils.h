@@ -130,6 +130,7 @@ public:
 class ClockTime {
 public:
     static int64_t GetCurNano();
+    static int64_t GetCurMilli();
     static int64_t GetRealNano();
     static int64_t GetBootNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
@@ -173,16 +174,13 @@ public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
+    static bool IsHap();
     static bool VerifyBluetoothPermission();
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool VerifyGeneralPermission(
         const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
-    static bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
-    static int32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
-    static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
     static bool CheckCallingUidPermission(const std::vector<uid_t> &allowedUids);
     static int32_t StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
         const char* permission);
@@ -226,6 +224,13 @@ void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b);
 void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b);
 void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
+
+int16_t ConvertSampleToS16(const uint8_t *samplePtr, AudioSampleFormat format);
+void ConvertSampleFromS16(int16_t s16Sample, uint8_t *outputPtr, AudioSampleFormat format);
+void ConvertBufferToS16(const uint8_t *input, uint32_t samples, int16_t *output, AudioSampleFormat format);
+void ConvertBufferFromS16(const int16_t *input, uint32_t samples, uint8_t *output, AudioSampleFormat format);
+
+float CapMax(float v);
 
 std::string GetEncryptStr(const std::string &str);
 std::string ConvertNetworkId(const std::string &networkId);
@@ -616,6 +621,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_ULTRASONIC = 14,
     HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
     HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT = 16,
+    HDI_CAPTURE_OFFSET_INTERPHONE = 17,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -635,6 +641,11 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
     HDI_RENDER_OFFSET_HEARING_AID = 15,
     HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
+    HDI_RENDER_OFFSET_INTERPHONE = 17,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC = 18,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED = 19,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS = 20, // include bt_sco, a2dp_offload and nearlink
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

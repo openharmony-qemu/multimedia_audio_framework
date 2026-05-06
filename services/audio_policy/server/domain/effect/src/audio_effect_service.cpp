@@ -53,7 +53,8 @@ const std::set<std::string> STREAM_USAGE_SET = {
     "STREAM_USAGE_VIDEO_COMMUNICATION",
     "STREAM_USAGE_RANGING",
     "STREAM_USAGE_VOICE_MODEM_COMMUNICATION",
-    "STREAM_USAGE_VOICE_RINGTONE"
+    "STREAM_USAGE_VOICE_RINGTONE",
+    "STREAM_USAGE_INTERPHONE"
 };
 
 static void GetEnhancePropertyKey(const std::string &deviceType, const std::string &sceneType,

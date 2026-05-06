@@ -503,5 +503,26 @@ void OHAudioBuffer::WakeFutex(uint32_t wakeVal)
 {
     ohAudioBufferBase_.WakeFutex(wakeVal);
 }
+
+void OHAudioBuffer::SetPendingSpanSize(uint64_t spanSize, uint64_t engineSize, uint32_t routeFlag)
+{
+    ohAudioBufferBase_.SetPendingSpanSize(spanSize, engineSize, routeFlag);
+}
+
+uint64_t OHAudioBuffer::GetAndClearPendingSpanSize(uint64_t &engineSize, uint32_t &routeFlag)
+{
+    return ohAudioBufferBase_.GetAndClearPendingSpanSize(engineSize, routeFlag);
+}
+
+bool OHAudioBuffer::HasPendingSpanSize() const
+{
+    return ohAudioBufferBase_.HasPendingSpanSize();
+}
+
+void OHAudioBuffer::ClearPendingSpanSize()
+{
+    ohAudioBufferBase_.ClearPendingSpanSize();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

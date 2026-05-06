@@ -43,7 +43,7 @@ public:
 
     int32_t Start(uint32_t sessionId) override;
     int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId) override;
-    int32_t Pause(uint32_t sessionId) override;
+    int32_t Pause(uint32_t sessionId, bool isStandby = false) override;
     int32_t Flush(uint32_t sessionId) override;
     int32_t Drain(uint32_t sessionId) override;
     int32_t Stop(uint32_t sessionId) override;
@@ -132,7 +132,7 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
-    int32_t InitManager(bool isReload = false);
+    int32_t InitManager(bool isReload = false, bool isNeedCallBack = true);
     void InitDefaultNodeInfo();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
@@ -144,7 +144,7 @@ private:
     void EnableCollaboration();
     void DisableCollaboration();
     int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
-    int32_t DeleteProcessCluster(uint32_t sessionId);
+    int32_t DeleteProcessCluster(uint32_t sessionId, bool needInitEffect = true);
     int32_t DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
@@ -163,6 +163,8 @@ private:
     void DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType);
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
+    void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
+    void StopInterphoneSinkIfNeeded();
 
 private:
 
@@ -188,6 +190,7 @@ private:
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
+    bool isReloadManagerFromCollStateChange_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

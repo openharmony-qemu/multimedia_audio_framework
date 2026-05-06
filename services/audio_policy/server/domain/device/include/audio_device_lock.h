@@ -56,10 +56,6 @@ public:
     }
     void DeInit();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
     /*****IDeviceStatusObserver*****/
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);

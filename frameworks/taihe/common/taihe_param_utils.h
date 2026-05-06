@@ -51,6 +51,7 @@ public:
         AudioCapturerOptions const &options);
     static int32_t GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,
         AudioRendererOptions const &options);
+    static int32_t GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppIdInfo const &options);
     static int32_t GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
         AudioSpatialDeviceState in);
     static int32_t GetAudioDeviceDescriptor(
@@ -69,8 +70,8 @@ public:
         bool &argTransFlag, AudioRendererFilter const &in);
     static int32_t GetAudioSessionStrategy(OHOS::AudioStandard::AudioSessionStrategy &audioSessionStrategy,
         AudioSessionStrategy const &in);
-    static int32_t UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray);
-    static int32_t GetEffectPropertyArray(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray,
+    static int32_t UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray);
+    static int32_t GetEffectPropertyArray(OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray,
         array_view<AudioEffectProperty> in);
     static int32_t GetExtraParametersSubKV(std::vector<std::pair<std::string, std::string>> &subKV,
         map_view<string, string> in);
@@ -121,7 +122,7 @@ public:
         const std::shared_ptr<OHOS::AudioStandard::AudioCapturerChangeInfo> &src);
     static VolumeGroupInfo ToTaiheVolumeGroupInfo(const OHOS::sptr<OHOS::AudioStandard::VolumeGroupInfo> &src);
     static taihe::array<AudioEffectProperty> ToTaiheEffectPropertyArray(
-        const OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray);
+        const OHOS::AudioStandard::AudioEffectPropertyArray &propertyArray);
     static taihe::array<taihe::string> ToTaiheArrayString(const std::vector<std::string> &src);
     static taihe::array<uint8_t> ToTaiheArrayBuffer(uint8_t *src, size_t srcLen);
     static AudioSpatialEnabledStateForDevice ToTaiheAudioSpatialEnabledStateForDevice(

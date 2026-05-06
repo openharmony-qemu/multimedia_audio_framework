@@ -32,9 +32,35 @@ namespace AudioStandard {
 static __thread napi_ref g_loopbackConstructor = nullptr;
 static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
 static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+
+static napi_status SetJsDevicePair(const napi_env &env, const std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
+    const std::shared_ptr<AudioDeviceDescriptor> &outputDevice, napi_value &result)
+{
+    CHECK_AND_RETURN_RET_LOG(inputDevice != nullptr && outputDevice != nullptr, napi_invalid_arg,
+        "SetJsDevicePair inputDevice or outputDevice is nullptr");
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair napi_create_object failed");
+
+    napi_value inputDeviceValue = nullptr;
+    status = NapiParamUtils::SetDeviceDescriptor(env, *inputDevice, inputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set inputDevice failed");
+
+    napi_value outputDeviceValue = nullptr;
+    status = NapiParamUtils::SetDeviceDescriptor(env, *outputDevice, outputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set outputDevice failed");
+
+    status = napi_set_named_property(env, result, "inputDevice", inputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set inputDevice property failed");
+
+    status = napi_set_named_property(env, result, "outputDevice", outputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set outputDevice property failed");
+    return napi_ok;
+}
+
 mutex NapiAudioLoopback::createMutex_;
 int32_t NapiAudioLoopback::isConstructSuccess_ = SUCCESS;
 AudioLoopbackMode NapiAudioLoopback::sLoopbackMode_ = LOOPBACK_HARDWARE;
+LoopbackType NapiAudioLoopback::sLoopbackType_ = LOOPBACK_TYPE_NORMAL;
 
 NapiAudioLoopback::NapiAudioLoopback()
     : loopback_(nullptr), env_(nullptr) {}
@@ -63,6 +89,9 @@ napi_value NapiAudioLoopback::Init(napi_env env, napi_value exports)
     napi_property_descriptor audio_loopback_properties[] = {
         DECLARE_NAPI_FUNCTION("getStatus", GetStatus),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
+        DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
+        DECLARE_NAPI_FUNCTION("getSupportedDevicePairs", GetSupportedDevicePairs),
+        DECLARE_NAPI_FUNCTION("getPreferredDevicePair", GetPreferredDevicePair),
         DECLARE_NAPI_FUNCTION("enable", Enable),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
@@ -74,6 +103,7 @@ napi_value NapiAudioLoopback::Init(napi_env env, napi_value exports)
 
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_STATIC_FUNCTION("createAudioLoopback", CreateAudioLoopback),
+        DECLARE_NAPI_STATIC_FUNCTION("createGlobalAudioLoopback", CreateGlobalAudioLoopback),
     };
 
     status = napi_define_class(env, NAPI_AUDIO_LOOPBACK_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -111,9 +141,19 @@ napi_value NapiAudioLoopback::Construct(napi_env env, napi_callback_info info)
 
     napiLoopback->env_ = env;
     auto loopbackMode = sLoopbackMode_;
+    auto loopbackType = sLoopbackType_;
     auto streamManager = AudioStreamManager::GetInstance();
     if (streamManager != nullptr && streamManager->IsAudioLoopbackSupported(loopbackMode)) {
-        napiLoopback->loopback_ = AudioLoopback::CreateAudioLoopback(loopbackMode);
+        if (loopbackType == LOOPBACK_TYPE_NORMAL) {
+            napiLoopback->loopback_ = AudioLoopback::CreateAudioLoopback(loopbackMode);
+        } else {
+            int32_t createResult = SUCCESS;
+            napiLoopback->loopback_ = AudioLoopback::CreateAudioLoopback(loopbackMode, loopbackType, createResult);
+            if (createResult != SUCCESS) {
+                AUDIO_ERR_LOG("AudioLoopback Create failed, result %{public}d", createResult);
+                NapiAudioLoopback::isConstructSuccess_ = createResult;
+            }
+        }
         if (napiLoopback->loopback_  == nullptr) {
             AUDIO_ERR_LOG("AudioLoopback Create failed");
             NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_NO_PERMISSION;
@@ -150,12 +190,35 @@ napi_value NapiAudioLoopback::CreateAudioLoopbackWrapper(napi_env env, AudioLoop
     status = napi_get_reference_value(env, g_loopbackConstructor, &constructor);
     if (status == napi_ok) {
         sLoopbackMode_ = loopbackMode;
+        sLoopbackType_ = LOOPBACK_TYPE_NORMAL;
         status = napi_new_instance(env, constructor, 0, nullptr, &result);
     }
     if (status != napi_ok) {
         AUDIO_ERR_LOG("Failed in CreateAudioLoopbackWrapper, %{public}d", status);
         napi_get_undefined(env, &result);
     }
+    sLoopbackType_ = LOOPBACK_TYPE_NORMAL;
+    return result;
+}
+
+napi_value NapiAudioLoopback::CreateGlobalAudioLoopbackWrapper(napi_env env, AudioLoopbackMode mode, LoopbackType type)
+{
+    lock_guard<mutex> lock(createMutex_);
+    napi_status status = napi_invalid_arg;
+    napi_value result = nullptr;
+    napi_value constructor;
+
+    status = napi_get_reference_value(env, g_loopbackConstructor, &constructor);
+    if (status == napi_ok) {
+        sLoopbackMode_ = mode;
+        sLoopbackType_ = type;
+        status = napi_new_instance(env, constructor, 0, nullptr, &result);
+    }
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Failed in CreateGlobalAudioLoopbackWrapper, %{public}d", status);
+        napi_get_undefined(env, &result);
+    }
+    sLoopbackType_ = LOOPBACK_TYPE_NORMAL;
     return result;
 }
 
@@ -192,6 +255,45 @@ napi_value NapiAudioLoopback::CreateAudioLoopback(napi_env env, napi_callback_in
     };
 
     return NapiAsyncWork::Enqueue(env, context, "CreateAudioLoopback", nullptr, complete);
+}
+
+napi_value NapiAudioLoopback::CreateGlobalAudioLoopback(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("CreateGlobalAudioLoopback");
+    auto context = std::make_shared<AudioLoopbackAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("CreateGlobalAudioLoopback failed : no memory");
+        NapiAudioError::ThrowError(env, "CreateGlobalAudioLoopback failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->loopbackMode, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetAudioLoopbackMode failed",
+            NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context,
+            NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(context->loopbackMode), "loopback mode invaild",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->enable, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetIsController failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto complete = [env, context](napi_value &output) {
+        AudioLoopbackMode loopbackMode = static_cast<AudioLoopbackMode>(context->loopbackMode);
+        bool isController = context->enable;
+        LoopbackType type = isController ? LOOPBACK_TYPE_GLOBAL_CONTROL : LOOPBACK_TYPE_GLOBAL_HANDLER;
+        output = CreateGlobalAudioLoopbackWrapper(env, loopbackMode, type);
+        if (isConstructSuccess_ != SUCCESS) {
+            context->SignError(isConstructSuccess_);
+            isConstructSuccess_ = SUCCESS;
+        }
+    };
+
+    return NapiAsyncWork::Enqueue(env, context, "CreateGlobalAudioLoopback", nullptr, complete);
 }
 
 napi_value NapiAudioLoopback::GetStatus(napi_env env, napi_callback_info info)
@@ -261,6 +363,89 @@ napi_value NapiAudioLoopback::SetVolume(napi_env env, napi_callback_info info)
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetVolume", executor, complete);
+}
+
+napi_value NapiAudioLoopback::GetVolume(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioLoopbackAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetVolume failed : no memory");
+        NapiAudioError::ThrowError(env, "GetVolume failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioLoopback*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioLoopback = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioLoopbackStatus(napiAudioLoopback, context),
+            "context object state is error.");
+        context->volLevel = napiAudioLoopback->loopback_->GetVolume();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueDouble(env, context->volLevel, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetVolume", executor, complete);
+}
+ 
+napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callback_info info)
+{
+    size_t argc = PARAM0;
+    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
+
+    AUDIO_INFO_LOG("GetSupportedDevicePairs called");
+    std::vector<AudioDevicePair> nativePairs = napiLoopback->loopback_->GetSupportedDevicePairs();
+    napi_value result = nullptr;
+    napi_status status = napi_create_array(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "napi_create_array failed");
+
+    size_t insertIndex = 0;
+    for (const auto &nativePair : nativePairs) {
+        if (nativePair.first == nullptr || nativePair.second == nullptr) {
+            AUDIO_WARNING_LOG("GetSupportedDevicePairs skip invalid pair");
+            continue;
+        }
+        napi_value pairValue = nullptr;
+        status = SetJsDevicePair(env, nativePair.first, nativePair.second, pairValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "SetJsDevicePair failed");
+        status = napi_set_element(env, result, insertIndex, pairValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "napi_set_element failed");
+        insertIndex++;
+    }
+    return result;
+}
+
+napi_value NapiAudioLoopback::GetPreferredDevicePair(napi_env env, napi_callback_info info)
+{
+    size_t argc = PARAM0;
+    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
+
+    AUDIO_INFO_LOG("GetPreferredDevicePair called");
+    AudioDevicePair nativePair = napiLoopback->loopback_->GetPreferredDevicePair();
+    napi_value result = nullptr;
+    if (nativePair.first == nullptr || nativePair.second == nullptr) {
+        napi_get_null(env, &result);
+        return result;
+    }
+    napi_status status = SetJsDevicePair(env, nativePair.first, nativePair.second, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "SetJsDevicePair failed");
+    return result;
 }
 
 napi_value NapiAudioLoopback::Enable(napi_env env, napi_callback_info info)

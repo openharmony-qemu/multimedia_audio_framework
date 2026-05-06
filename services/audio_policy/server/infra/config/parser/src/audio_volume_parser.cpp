@@ -181,6 +181,40 @@ int32_t AudioVolumeParser::LoadConfig(StreamVolumeInfoMap &streamVolumeInfoMap)
     return ret;
 }
 
+int32_t AudioVolumeParser::LoadDefaultAppVolumeConfig(StreamVolumeInfoMap &streamVolumeInfoMap)
+{
+    AUDIO_INFO_LOG("enter");
+    std::shared_ptr<AudioXmlNode> rootNode = AudioXmlNode::Create();
+    int32_t ret = rootNode->Config(AUDIO_VOLUME_CONFIG_FILE, nullptr, 0);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to load default APP volume config");
+
+    rootNode->MoveToChildren();
+    while (rootNode->IsNodeValid()) {
+        if (rootNode->CompareName("volume_type")) {
+            std::string typeStr;
+            rootNode->GetProp("type", typeStr);
+            if (typeStr == "APP") {
+                return ParseAppVolumeConfig(rootNode, streamVolumeInfoMap);
+            }
+        }
+        rootNode->MoveToNext();
+    }
+    return SUCCESS;
+}
+
+int32_t AudioVolumeParser::ParseAppVolumeConfig(std::shared_ptr<AudioXmlNode> curNode,
+    StreamVolumeInfoMap &streamVolumeInfoMap)
+{
+    std::shared_ptr<StreamVolumeInfo> streamVolInfo = std::make_shared<StreamVolumeInfo>();
+    if (ParseStreamVolumeInfoAttr(curNode->GetCopyNode(), streamVolInfo) == AUDIO_OK) {
+        ParseDeviceVolumeInfos(curNode->GetChildrenNode(), streamVolInfo);
+        streamVolumeInfoMap[STREAM_APP] = streamVolInfo;
+        AUDIO_INFO_LOG("Successfully loaded default APP volume config");
+        return SUCCESS;
+    }
+    return ERROR;
+}
+
 void AudioVolumeParser::ParseStreamInfos(std::shared_ptr<AudioXmlNode> curNode,
     StreamVolumeInfoMap &streamVolumeInfoMap)
 {

@@ -25,6 +25,9 @@
 #include "audio_pipe_info.h"
 #include "audio_core_config_manager.h"
 #include "audio_concurrency_manager.h"
+#include "audio_policy_utils.h"
+#include "core_service_handler.h"
+#include "iaudio_policy_interface.h"
 
 
 namespace OHOS {
@@ -59,7 +62,6 @@ public:
     void SetEcEnableState(bool ecEnableState);
     AudioSampleFormat GetFastFormat() const;
     bool IsSupportInnerCaptureOffload();
-    bool GetEnhancedRoutingSupported();
     bool NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc);
     int32_t GetMaxRendererInstances();
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
@@ -88,17 +90,26 @@ public:
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
+    void StandbyClient(uint32_t sessionId);
+    void ClearStandbyFlag(uint32_t sessionId);
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
+
+    void AddStreamToPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeAction action);
+    void ClearPipeStreams(std::shared_ptr<AudioPipeInfo> pipeInfo);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
     int32_t GetStreamCount(const std::string adapterName, const uint32_t routeFlag);
     uint32_t GetPaIndexByIoHandle(AudioIOHandle id);
+    uint32_t QueryPipeIdBySessionId(uint32_t sessionId);
     void UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     void UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     uint32_t PcmOffloadSessionCount();
@@ -131,14 +142,20 @@ public:
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
     bool IsStreamUsageActive(const StreamUsage &usage);
+    bool IsInterphoneStreamActive();
+    bool IsInterphoneCapturerActive();
+    bool IsVoipOrCellularStreamActive();
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
     bool HasRunningStream();
+    bool IsA2dpUsed();
     bool HasFastOutputPipe();
     bool HasUltraFastStreamRequest();
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
     bool HasRunningRecognitionCapturerStream();
+    bool HasRunningNormalCapturerStream(DeviceType type);
+    bool HasRunningScoOutputStream();
     bool IsOnPrimaryAdapter(uint32_t sessionId);
     void AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void RemoveSwitchStream(uint32_t sessionId);
@@ -146,8 +163,25 @@ public:
     void AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateNewDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByStreamUsage(StreamUsage streamUsage);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsBySourceType(SourceType sourceType);
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    StreamUsage GetLastestRunningCallStreamUsage();
+    bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    std::vector<std::string> GetNoRunningPipeModuleName();
+    bool CheckNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool CheckRemoteNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool IsPipeNeedStop(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    std::string GetModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo);
+
+    std::vector<PipeDeviceVolumeInfo> GetAllPipeDeviceVolumeInfo();
+    std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);
+    std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForDevice(
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
+    
+    bool HasPausedFastPipeInDelayedSwitch();
+    std::string GetPausedFastPipeModuleNameInDelayedSwitch();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
@@ -155,6 +189,11 @@ private:
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
     AudioStreamInfo DecideStreamInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo,
         const std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
+    std::vector<PipeDeviceVolumeInfo> ProcessPipeForVolumeInfo(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    AudioVolumeType GetVolumeTypeFromStreamDesc(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void AddOrUpdateVolumeInfo(std::vector<PipeDeviceVolumeInfo>& result,
+        AudioIOHandle pipeId, std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};

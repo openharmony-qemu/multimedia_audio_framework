@@ -15,6 +15,7 @@
 
 #include "audio_background_manager_unit_test.h"
 #include "audio_common_utils.h"
+#include "audio_unit_test.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -1329,6 +1330,8 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_052, TestSize.Leve
     audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid_1, appState.hasBackTask, true);
 
     int32_t pid_2 = 1;
+    int32_t uid_2 = 1;
+    audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid_2, uid_2, appState);
     audioBackgroundManagerTest_->WriteAvSessionChangeSysEvent(pid_2, appState.hasSession, true);
     audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid_2, appState.hasBackTask, true);
 
@@ -1342,6 +1345,35 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_052, TestSize.Leve
     EXPECT_EQ(state.hasBackTask, true);
 
     setuid(selfUid);
+}
+
+/**
+ * @tc.name  : Test FindKeyInMap API
+ * @tc.type  : FUNC
+ * @tc.number: AudioBackgroundManager_053
+ * @tc.desc  : Test FindKeyInMap
+ */
+HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_053, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+
+    AudioBackgroundManager* audioBackgroundManagerTest_ = nullptr;
+    audioBackgroundManagerTest_ = &AudioBackgroundManager::GetInstance();
+    ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
+
+    OHOS::AppExecFwk::AppMgrClient appManager;
+    std::vector<AppExecFwk::RunningProcessInfo> info;
+    appManager.GetAllRunningProcesses(info);
+
+    AppState appState;
+    audioBackgroundManagerTest_->appStatesMap_.clear();
+    for (const auto& proc : info) {
+        audioBackgroundManagerTest_->InsertIntoAppStatesMapWithoutUid(proc.pid_, appState);
+    }
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
+
+    MockNative::Resume();
 }
 } // namespace AudioStandard
 } // namespace OHOS
