@@ -1674,6 +1674,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_INTERPHONE;
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_CAMCORDER) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_CAMCORDER;
+        }
     } else if (pipeInfo->adapterName_ == "usb") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;

@@ -378,7 +378,8 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) ||
         (routeFlag & AUDIO_INPUT_FLAG_RAW_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_INTERPHONE) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
+        (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }

@@ -951,6 +951,26 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_008, TestSize.Lev
 }
 
 /**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_009
+ * @tc.type: FUNC
+ * @tc.desc: Test camcorder input flag maps to primary camcorder HDI id info
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_009, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::string idInfo;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_CAMCORDER;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, HDI_ID_INFO_CAMCORDER);
+}
+
+/**
  * @tc.name: Test UpdateAudioPipeVolume_001
  * @tc.desc: Test UpdateAudioPipeVolume with empty vector
  * @tc.type: FUNC

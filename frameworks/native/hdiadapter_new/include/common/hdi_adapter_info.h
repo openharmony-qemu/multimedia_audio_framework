@@ -67,6 +67,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_DP_FAST "dp_fast"
 #define HDI_ID_INFO_RAW_AI "raw_ai"
 #define HDI_ID_INFO_INTERPHONE "interphone"
+#define HDI_ID_INFO_CAMCORDER "camcorder"
 
 #define HDI_ID_INFO_PRIMARY_EXTRA_TYPEC "Typec_Speaker"
 #define HDI_ID_INFO_PRIMARY_EXTRA_WIRED "Wired_Speaker"
