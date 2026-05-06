@@ -40,6 +40,8 @@
 #include "hpae_policy_manager.h"
 #include "audio_policy_state_monitor.h"
 #include "audio_device_info.h"
+#include "audio_router_center.h"
+#include "wireless_conflict_handler.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
@@ -229,6 +231,28 @@ void IsConfigRouterStrategyFuzzTest(FuzzedDataProvider& fdp)
     AudioRouterCenter::GetAudioRouterCenter().IsConfigRouterStrategy(sourceType);
 }
 
+void RegisterConflictHandlersFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<ConflictHandler> handler = std::make_shared<WirelessConflictHandler>();
+    AudioRouterCenter::GetAudioRouterCenter().RegisterConflictHandlers(handler);
+}
+
+void ClearConflictHandlersFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioRouterCenter::GetAudioRouterCenter().ClearConflictHandlers();
+}
+
+void SetSplitModeReadyFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioRouterCenter::GetAudioRouterCenter().SetSplitModeReady();
+}
+
+void UpdateVehiclePriorityFuzzTest(FuzzedDataProvider& fdp)
+{
+    bool enable = GetData<uint32_t>() % NUM_2;
+    AudioRouterCenter::GetAudioRouterCenter().UpdateVehiclePriority(enable);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -241,6 +265,10 @@ void Test(FuzzedDataProvider& fdp)
     GetSplitInfoFuzzTest,
     NotifyDistributedOutputChangeFuzzTest,
     IsConfigRouterStrategyFuzzTest,
+    RegisterConflictHandlersFuzzTest,
+    ClearConflictHandlersFuzzTest,
+    SetSplitModeReadyFuzzTest,
+    UpdateVehiclePriorityFuzzTest,
     });
     func(fdp);
 }

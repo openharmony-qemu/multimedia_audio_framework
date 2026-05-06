@@ -270,5 +270,101 @@ HWTEST(FutexToolUnitTest, ProcessVolumeData_002, TestSize.Level1)
     audioLogUtils.ProcessVolumeData(logTag, vols, count);
     EXPECT_NE(count, -9);
 }
+
+HWTEST(FutexToolUnitTest, FutexWake_001, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_NOT_READY;
+    auto ret = FutexTool::FutexWake(&futexVar, IS_READY);
+    EXPECT_EQ(ret, FUTEX_SUCCESS);
+    EXPECT_EQ(futexVar.load(), IS_READY);
+}
+
+HWTEST(FutexToolUnitTest, FutexWake_002, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_READY;
+    auto ret = FutexTool::FutexWake(&futexVar, IS_READY);
+    EXPECT_EQ(ret, FUTEX_SUCCESS);
+}
+
+HWTEST(FutexToolUnitTest, FutexWake_003, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_PRE_EXIT;
+    auto ret = FutexTool::FutexWake(&futexVar, IS_READY);
+    EXPECT_EQ(ret, FUTEX_SUCCESS);
+}
+
+HWTEST(FutexToolUnitTest, FutexWake_004, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar(100);
+    auto ret = FutexTool::FutexWake(&futexVar, IS_READY);
+    EXPECT_EQ(ret, FUTEX_INVALID_PARAMS);
+}
+
+HWTEST(FutexToolUnitTest, FutexWake_005, TestSize.Level1)
+{
+    auto ret = FutexTool::FutexWake(nullptr, IS_READY);
+    EXPECT_EQ(ret, FUTEX_INVALID_PARAMS);
+}
+
+HWTEST(FutexToolUnitTest, FutexWake_006, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_NOT_READY;
+    std::thread thread([&futexVar] () {
+        futexVar.store(IS_READY);
+    });
+    thread.join();
+    auto ret = FutexTool::FutexWake(&futexVar, IS_READY);
+    EXPECT_EQ(ret, FUTEX_SUCCESS);
+}
+
+HWTEST(FutexToolUnitTest, FutexWake_007, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_NOT_READY;
+    auto ret = FutexTool::FutexWake(&futexVar, IS_PRE_EXIT);
+    EXPECT_EQ(ret, FUTEX_SUCCESS);
+    EXPECT_EQ(futexVar.load(), IS_PRE_EXIT);
+}
+
+HWTEST(FutexToolUnitTest, FutexWaitTimeout_001, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_READY;
+    auto ret = FutexTool::FutexWait(&futexVar, SHORT_TIMEOUT_IN_NS, [] () {
+        return false;
+    });
+    EXPECT_EQ(ret, FUTEX_TIMEOUT);
+}
+
+HWTEST(FutexToolUnitTest, FutexWaitTimeout_002, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_NOT_READY;
+    auto ret = FutexTool::FutexWait(&futexVar, SHORT_TIMEOUT_IN_NS, [] () {
+        return false;
+    });
+    EXPECT_EQ(ret, FUTEX_TIMEOUT);
+}
+
+HWTEST(FutexToolUnitTest, FutexWaitNegativeTimeout_001, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_READY;
+    auto ret = FutexTool::FutexWait(&futexVar, -1, [] () {
+        return false;
+    });
+    EXPECT_NE(ret, FUTEX_SUCCESS);
+}
+
+HWTEST(FutexToolUnitTest, FutexWakeDifferentValues_001, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar = IS_NOT_READY;
+    auto ret1 = FutexTool::FutexWake(&futexVar, IS_READY);
+    EXPECT_EQ(ret1, FUTEX_SUCCESS);
+    
+    futexVar.store(IS_NOT_READY);
+    auto ret2 = FutexTool::FutexWake(&futexVar, IS_NOT_READY);
+    EXPECT_EQ(ret2, FUTEX_SUCCESS);
+    
+    futexVar.store(IS_NOT_READY);
+    auto ret3 = FutexTool::FutexWake(&futexVar, IS_PRE_EXIT);
+    EXPECT_EQ(ret3, FUTEX_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

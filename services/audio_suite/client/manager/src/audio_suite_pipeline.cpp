@@ -362,7 +362,7 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
 
     bool isSupported;
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, &isSupported);
+    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, isSupported);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         (error == SUCCESS && isSupported), ERR_NOT_SUPPORTED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
@@ -1314,6 +1314,24 @@ void AudioSuitePipeline::CheckRenderFrameOverTimeCount()
 void AudioSuitePipeline::SetWorkGroupId(int32_t workGroupId)
 {
     workGroupId_ = workGroupId;
+}
+
+const std::unordered_map<uint32_t, std::shared_ptr<AudioNode>> &AudioSuitePipeline::GetNodeMap() const
+{
+    return nodeMap_;
+}
+const std::unordered_map<uint32_t, uint32_t> &AudioSuitePipeline::GetConnections() const
+{
+    return connections_;
+}
+const std::unordered_map<uint32_t, std::vector<uint32_t>> &AudioSuitePipeline::GetReverseConnections() const
+{
+    return reverseConnections_;
+}
+
+AudioSuitePipelineState AudioSuitePipeline::GetCurrentPipelineState() const
+{
+    return pipelineState_;
 }
 
 }  // namespace AudioSuite

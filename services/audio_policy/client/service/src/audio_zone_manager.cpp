@@ -82,6 +82,9 @@ public:
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) override;
+
+    int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos) override;
     
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId, const std::string &deviceTag) override;
@@ -397,6 +400,18 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetA
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, {}, "zoneId is invalid");
 
     return AudioPolicyManager::GetInstance().GetAudioInterruptForZone(zoneId);
+}
+
+int32_t AudioZoneManagerInner::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
+
+    int32_t result = AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfosForZone(zoneId, infos);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "GetCurrentRendererChangeInfosForZone result:%{public}d", result);
+    return result;
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(

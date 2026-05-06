@@ -542,6 +542,23 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetTempoAndPitch(
     return TemplateSetter(audioNode, &OHAudioSuiteEngine::SetTempoAndPitch, "SetTempoAndPitch", speed, pitch);
 }
 
+OH_AudioSuite_Result OH_AudioSuite_PrintInfo(
+    OH_AudioSuiteEngine *audioSuiteEngine, OH_AudioSuitePipeline *audioSuitePipeline, int fd)
+{
+    CHECK_AND_RETURN_RET_LOG(
+        audioSuiteEngine != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo audioSuiteEngine is nullptr");
+    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
+    CHECK_AND_RETURN_RET_LOG(
+        suiteEngine != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo suiteEngine is nullptr");
+    OHAudioSuitePipeline *pipeline = nullptr;  // ← 改用指针
+    if (audioSuitePipeline != nullptr) {
+        pipeline = ConvertAudioSuitePipeline(audioSuitePipeline);
+        CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo pipeline is nullptr");
+    }
+    int32_t error = suiteEngine->PrintInfo(pipeline, fd);  // ← 直接传指针
+    return ConvertError(error);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -1263,9 +1280,11 @@ int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool
 {
     CHECK_AND_RETURN_RET_LOG(
         isSupported != nullptr, ERR_INVALID_PARAM, "IsNodeTypeSupported function failed, isSupported is nullptr.");
+    bool tempIsSupported = false;
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().IsNodeTypeSupported(
-        static_cast<AudioNodeType>(nodeType), isSupported);
+        static_cast<AudioNodeType>(nodeType), tempIsSupported);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "IsNodeTypeSupported function failed, ret = %{public}d.", ret);
+    *isSupported = tempIsSupported;
     return ret;
 }
 
@@ -1344,6 +1363,17 @@ void OHAudioSuiteEngine::RemoveNode(OHAudioNode *node)
             pipeline->RemoveNode(node);
         }
     }
+}
+
+int32_t OHAudioSuiteEngine::PrintInfo(OHAudioSuitePipeline *pipeline, int32_t fd)
+{
+    uint32_t pipelineId = INVALID_PIPELINE_ID;
+    if (pipeline != nullptr) {
+        pipelineId = pipeline->GetPipelineId();
+    }
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().PrintInfo(pipelineId, fd);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PrintInfo failed, ret = %{public}d", ret);
+    return ret;
 }
 
 }  // namespace AudioStandard

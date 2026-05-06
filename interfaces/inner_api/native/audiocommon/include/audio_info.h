@@ -32,6 +32,7 @@
 #include <audio_interrupt_info.h>
 #include <audio_session_info.h>
 #include <audio_stream_info.h>
+#include <audio_volume_info.h>
 #include <audio_asr.h>
 #include "audio_shared_memory.h"
 #include "audio_pipe_types.h"
@@ -68,6 +69,9 @@ constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
+constexpr float MIN_STREAM_PITCH_LEVEL = 0.25f;
+constexpr float MAX_STREAM_PITCH_LEVEL = 4.0f;
+constexpr float PITCH_DEFAULT = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t UID_COCKPIT_SA = 1041;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
@@ -611,6 +615,34 @@ enum AudioLoopbackStatus {
     LOOPBACK_AVAILABLE_IDLE = 0,
     /** Audio loopback available and running.*/
     LOOPBACK_AVAILABLE_RUNNING = 1,
+};
+
+enum LoopbackType {
+    /** Normal loopback type, for single process usage.*/
+    LOOPBACK_TYPE_NORMAL = 0,
+    /** Global handler type, the main executor, system-wide unique.*/
+    LOOPBACK_TYPE_GLOBAL_HANDLER = 1,
+    /** Global control type, for sending control commands.*/
+    LOOPBACK_TYPE_GLOBAL_CONTROL = 2,
+};
+
+enum LoopbackCommand {
+    /** Enable command.*/
+    LOOPBACK_CMD_ENABLE = 1,
+    /** Disable command.*/
+    LOOPBACK_CMD_DISABLE = 2,
+};
+
+enum LoopBackError : int32_t {
+    ERROR_LOOPBACK_HANDLER_NOT_EXIST = 0,
+    ERROR_LOOPBACK_HANDLER_ALREADY_EXIST,
+    ERROR_LOOPBACK_OPERATION_NOT_SUPPORTED,
+    ERROR_LOOPBACK_PERMISSION_DENIED,
+};
+
+enum LoopbackStatusReason {
+    /** Handler process died.*/
+    LOOPBACK_REASON_HANDLER_DIED = 0,
 };
 
 enum AudioLoopbackState {

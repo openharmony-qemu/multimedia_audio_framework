@@ -719,7 +719,7 @@ AudioInterruptResult AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
 }
 
 AudioInterruptResult AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
-    const AudioInterrupt &audioInterrupt)
+    const AudioInterrupt &audioInterrupt, bool isRemoveFocusHis)
 {
     AudioInterruptResult result;
     result.retCode = ERROR;
@@ -739,7 +739,7 @@ AudioInterruptResult AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_,
         AudioZoneInterruptReason::REMOTE_INJECT);
-    result = tmp->DeactivateAudioInterrupt(zoneId, audioInterrupt);
+    result = tmp->DeactivateAudioInterrupt(zoneId, audioInterrupt, isRemoveFocusHis);
     for (auto &report : reporters) {
         report->ReportInterrupt();
     }

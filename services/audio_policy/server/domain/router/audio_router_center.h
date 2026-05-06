@@ -48,7 +48,6 @@ public:
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
-    void SetAlarmFollowRingRouter(const bool flag);
 
     int32_t GetSplitInfo(std::string &splitInfo);
 

@@ -28,6 +28,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
 #include "audio_bundle_manager.h"
+#include "parameters.h"
 
 #include <algorithm>
 #include "hisysevent.h"
@@ -38,6 +39,8 @@
 #include "audio_router_select_strategy.h"
 #include "audio_router_infra.h"
 #include "audio_route_select_info.h"
+#include "sco_audio_scene_manager.h"
+#include "audio_interrupt_custom.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -52,6 +55,8 @@ static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+static const bool IS_DEVICE_ENHANCED_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const std::string CHECK_VIDEO_COMM_SELECTION = "audio_video_comm_fast_blocklist";
@@ -62,6 +67,15 @@ static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
+static const std::unordered_set<SourceType> VOIP_PRIVACY_MUTE_TARGET_SOURCES = {
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_WAKEUP,
+};
 
 static const std::set<AudioSamplingRate> DIRECT_SUPPORTED_SAMPLE_RATES = {
     SAMPLE_RATE_48000,
@@ -1083,7 +1097,16 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     bool isScoDevice = !streamDesc->newDeviceDescs_.empty() &&
         streamDesc->newDeviceDescs_[0] != nullptr &&
         streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
-    if (isScoDevice) {
+    if (isScoDevice && IS_DEVICE_ENHANCED_SUPPORTED) {
+        TrackScoStreamAudioScene(streamDesc, true);
+        bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+        bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
+        bool isScoSelected = hasScoPlay || hasScoRecord;
+        if (isScoSelected) {
+            AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
+            Bluetooth::AudioHfpManager::UpdateAudioScene(highestScene, true);
+        }
+    } else if (isScoDevice) {
         bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
         bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
         bool isScoSelected = hasScoPlay || hasScoRecord;
@@ -1098,6 +1121,43 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
+    }
+}
+
+void AudioCoreService::TrackScoStreamAudioScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isAdd)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    
+    uint32_t streamId = streamDesc->sessionId_;
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+    bool isRecognition = false;
+    
+    if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+        if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            audioScene = AUDIO_SCENE_PHONE_CALL;
+        } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                   streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+            audioScene = AUDIO_SCENE_PHONE_CHAT;
+        } else if (streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+            audioScene = AUDIO_SCENE_VOICE_RINGING;
+        } else if (streamUsage == STREAM_USAGE_RINGTONE) {
+            audioScene = AUDIO_SCENE_RINGING;
+        }
+    } else if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+        SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+        isRecognition = (sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+                         sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION);
+    }
+    
+    if (isAdd) {
+        ScoAudioSceneManager::GetInstance().AddScoStream(streamId, audioScene,
+            streamDesc->callerUid_, isRecognition);
+        AUDIO_INFO_LOG("Track SCO stream %{public}u, audioScene %{public}d, isRecognition %{public}d",
+            streamId, audioScene, isRecognition);
+    } else {
+        ScoAudioSceneManager::GetInstance().RemoveScoStream(streamId);
+        AUDIO_INFO_LOG("Untrack SCO stream %{public}u", streamId);
     }
 }
 
@@ -1526,9 +1586,10 @@ int32_t AudioCoreService::SetInputDevice(const DeviceType deviceType, const uint
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
+    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid, const uint32_t streamId)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
+    RouterType bypassType = RouterType::ROUTER_TYPE_NONE;
     if (rendererInfo.streamUsage <= STREAM_USAGE_UNKNOWN ||
         rendererInfo.streamUsage > STREAM_USAGE_MAX) {
         AUDIO_WARNING_LOG("Invalid usage[%{public}d], return current device.", rendererInfo.streamUsage);
@@ -1539,15 +1600,26 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         return deviceList;
     }
     if (networkId == LOCAL_NETWORK_ID) {
-        FetchDeviceInfo info = { rendererInfo.streamUsage, "GetPreferredOutputDeviceDescInner" };
+        FetchDeviceInfo info = { rendererInfo.streamUsage, "GetPreferredOutputDeviceDescInner_1", bypassType };
+        info.streamId = streamId;
         info.clientUID = uid;
-        vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(info);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(info);
+        for (size_t i = 0; i < descs.size(); i++) {
+            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
+            deviceList.push_back(devDesc);
+        }
+
+        info = { rendererInfo.streamUsage, rendererInfo.streamUsage, uid,
+            bypassType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC };
+        info.caller = "GetPreferredOutputDeviceDescInner_2";
+        info.streamId = streamId;
+        descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
         }
     } else {
-        vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
         for (const auto &desc : descs) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
             deviceList.push_back(devDesc);
@@ -1558,7 +1630,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferredInputDeviceDescInner(
-    AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId)
+    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid, const uint32_t streamId)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
     if (captureInfo.sourceType <= SOURCE_TYPE_INVALID ||
@@ -1847,7 +1919,7 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     auto sessionId = mode == AUDIO_MODE_RECORD ?
         streamChangeInfo.audioCapturerChangeInfo.sessionId : streamChangeInfo.audioRendererChangeInfo.sessionId;
     auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "streamDesc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
     auto uid = GetRealUid(streamDesc);
     if (mode == AUDIO_MODE_RECORD) {
         audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
@@ -2332,6 +2404,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
     }
 #endif
     int32_t ret = FetchCapturerPipesAndExecute(inputStreamDescs);
+    ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::FetchOutputDeviceAndRoute");
     return ret;
 }
 
@@ -2449,6 +2522,140 @@ void AudioCoreService::ReEvaluateVoipBypassByAppMuteHint()
     streamCollector_.GetCurrentCapturerChangeInfos(currentCapturerInfos);
     audioEffectService_.PruneInvalidAppMuteHintState(currentCapturerInfos);
     audioEffectService_.EvaluateVoipBypassByAppMuteHint(currentCapturerInfos);
+}
+
+bool AudioCoreService::IsVoipPrivacyMuteCandidateSource(SourceType sourceType) const
+{
+    bool isTarget = VOIP_PRIVACY_MUTE_TARGET_SOURCES.count(sourceType) > 0;
+    return isTarget;
+}
+
+bool AudioCoreService::IsVoipPrivacyBypassedByBehavior(const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    bool enabled = streamDesc->voipNoPrivacyFlag_.load();
+    if (enabled) {
+    }
+    return enabled;
+}
+
+bool AudioCoreService::IsVoipPrivacyMuteBypassedForUltrasonic(SourceType sourceType) const
+{
+    AudioInterruptCustom interruptCustom;
+    bool isExempt = interruptCustom.IsUltrasonicConcurrentScene(SOURCE_TYPE_VOICE_COMMUNICATION, sourceType);
+    if (isExempt) {
+        return true;
+    }
+    return false;
+}
+
+bool AudioCoreService::ShouldMuteCapturerByVoipPrivacy(
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool hasActivePrivacyVoipCapturer) const
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "VoipPrivacy streamDesc is nullptr");
+    uint32_t sessionId = streamDesc->GetSessionId();
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+    if (!IsVoipPrivacyMuteCandidateSource(sourceType)) {
+        return false;
+    }
+    if (!hasActivePrivacyVoipCapturer) {
+        return false;
+    }
+    if (IsVoipPrivacyMuteBypassedForUltrasonic(sourceType)) {
+        return false;
+    }
+    return true;
+}
+
+bool AudioCoreService::UpdateVoipPrivacyMuteForSession(uint32_t sessionId, bool mute)
+{
+    int32_t ret = audioPolicyManager_.SetSourceOutputStreamMuteByStreamId(static_cast<int32_t>(sessionId), mute);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false,
+        "SetSourceOutputStreamMuteByStreamId failed, sessionId:%{public}u "
+        "mute:%{public}d, ret:%{public}d",
+        sessionId, mute, ret);
+    return true;
+}
+
+void AudioCoreService::EvaluateActivePrivacyVoipPresence(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
+    bool &hasActivePrivacyVoipCapturer) const
+{
+    hasActivePrivacyVoipCapturer = false;
+    for (const auto &streamDesc : allCapturerStreamDescs) {
+        if (streamDesc == nullptr || !streamDesc->IsRunning()) {
+            continue;
+        }
+        uint32_t sessionId = streamDesc->GetSessionId();
+        bool voipMuted = streamDesc->voipPriorityLowered_.load();
+        if (streamDesc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION || voipMuted) {
+            continue;
+        }
+        if (IsVoipPrivacyBypassedByBehavior(streamDesc)) {
+            continue;
+        }
+        hasActivePrivacyVoipCapturer = true;
+    }
+}
+
+void AudioCoreService::CollectSessionsToMuteByVoipPrivacy(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
+    bool hasActivePrivacyVoipCapturer,
+    std::unordered_set<uint32_t> &targetMuteSessions) const
+{
+    targetMuteSessions.clear();
+    for (const auto &streamDesc : allCapturerStreamDescs) {
+        if (streamDesc == nullptr || !streamDesc->IsRunning()) {
+            continue;
+        }
+
+        uint32_t sessionId = streamDesc->GetSessionId();
+        if (ShouldMuteCapturerByVoipPrivacy(streamDesc, hasActivePrivacyVoipCapturer)) {
+            targetMuteSessions.insert(sessionId);
+            continue;
+        }
+    }
+}
+
+void AudioCoreService::SyncVoipPrivacyMuteState(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
+    const std::unordered_set<uint32_t> &targetMuteSessions)
+{
+    for (const auto &streamDesc : allCapturerStreamDescs) {
+        if (streamDesc == nullptr) {
+            continue;
+        }
+        uint32_t sessionId = streamDesc->GetSessionId();
+        bool targetMute = targetMuteSessions.count(sessionId) > 0;
+        bool currentMute = streamDesc->voipPrivacyMuted_.load();
+        if (targetMute == currentMute) {
+            continue;
+        }
+        if (UpdateVoipPrivacyMuteForSession(sessionId, targetMute)) {
+            streamDesc->voipPrivacyMuted_.store(targetMute);
+            AUDIO_INFO_LOG("SyncVoipPrivacyMuteState update sessionId:%{public}u mute:%{public}d",
+                sessionId, targetMute);
+        }
+    }
+}
+
+void AudioCoreService::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr,
+        "ReEvaluateVoipPrivacyMuteForCapturers pipeManager_ is nullptr");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> allCapturerStreamDescs =
+        pipeManager_->GetAllCapturerStreamDescs();
+    AUDIO_INFO_LOG("ReEvaluateVoipPrivacyMuteForCapturers reason:%{public}s descCount:%{public}zu",
+        reason.c_str(), allCapturerStreamDescs.size());
+
+    bool hasActivePrivacyVoipCapturer = false;
+    EvaluateActivePrivacyVoipPresence(allCapturerStreamDescs, hasActivePrivacyVoipCapturer);
+
+    std::unordered_set<uint32_t> targetMuteSessions;
+    CollectSessionsToMuteByVoipPrivacy(allCapturerStreamDescs, hasActivePrivacyVoipCapturer,
+        targetMuteSessions);
+    SyncVoipPrivacyMuteState(allCapturerStreamDescs, targetMuteSessions);
 }
 
 void AudioCoreService::SetFirstScreenOn()
@@ -3101,6 +3308,15 @@ bool AudioCoreService::HandleNormalInputPipes(const std::vector<std::shared_ptr<
                 continue;
             }
 
+            // Check voipPriorityLowered flag: if true, treat VoIP stream as non-running
+            // so it won't be counted in priority comparison
+            if (stream->voipPriorityLowered_.load() &&
+                stream->GetSourceType() == SOURCE_TYPE_VOICE_COMMUNICATION) {
+                AUDIO_INFO_LOG("VoIP stream %{public}u is excluded from priority comparison due to mute callback",
+                    stream->GetSessionId());
+                continue;
+            }
+
             if (IsHigherPrioritySourceType(
                 stream->capturerInfo_.sourceType,
                 runningSessionInfo.capturerInfo_.sourceType)) {
@@ -3149,7 +3365,7 @@ int32_t AudioCoreService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
         return SUCCESS;
     }
-    sessionSourceTypeMap_[sessionID] = sessionInfo.sourceType;
+
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = pipeManager_->GetPipeList();
     std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->FindPipeBySessionId(pipeList, sessionID);
     if (pipeInfo != nullptr && IsPipeInSourceStrategyMap(pipeInfo, sessionID)) {
@@ -3158,7 +3374,7 @@ int32_t AudioCoreService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo
             sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;
             return SUCCESS;
     }
-
+    sessionSourceTypeMap_[sessionID] = sessionInfo.sourceType;
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         if (GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before -- it should not be happen!!
@@ -3207,19 +3423,83 @@ int32_t AudioCoreService::ReloadCaptureSessionSoftLink()
     return SUCCESS;
 }
 
+void AudioCoreService::NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered)
+{
+    AUDIO_INFO_LOG("NotifyVoipPriorityLoweredByMute: streamId %{public}u, lowered %{public}d",
+        streamId, lowered);
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+
+    auto streamDesc = pipeManager_->GetStreamDescById(streamId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "stream descriptor is nullptr for streamId %{public}u", streamId);
+
+    streamDesc->voipPriorityLowered_.store(lowered);
+    TriggerVoipPriorityReload(streamDesc, lowered);
+}
+
+void AudioCoreService::UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled)
+{
+    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
+        sessionId, enabled);
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "stream descriptor is nullptr for sessionId %{public}u", sessionId);
+    streamDesc->voipNoPrivacyFlag_.store(enabled);
+}
+
+void AudioCoreService::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled)
+{
+    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
+        callerPid, enabled);
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    CHECK_AND_RETURN_LOG(callerPid > 0, "callerPid is invalid");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> allCapturerStreamDescs =
+        pipeManager_->GetAllCapturerStreamDescs();
+    size_t updateCount = 0;
+    for (const auto &streamDesc : allCapturerStreamDescs) {
+        if (streamDesc == nullptr) {
+            continue;
+        }
+        int32_t streamCallerPid = streamDesc->callerPid_ > 0 ? streamDesc->callerPid_ : streamDesc->appInfo_.appPid;
+        if (streamCallerPid != callerPid) {
+            continue;
+        }
+        streamDesc->voipNoPrivacyFlag_.store(enabled);
+        ++updateCount;
+    }
+    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid done callerPid:%{public}d updateCount:%{public}zu",
+        callerPid, updateCount);
+}
+
+void AudioCoreService::TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    AUDIO_INFO_LOG("TriggerVoipPriorityReload: sessionId %{public}u, lowered %{public}d",
+        streamDesc->GetSessionId(), lowered);
+    if (!streamDesc->IsRunning()) {
+        AUDIO_INFO_LOG("streamId %{public}u is not started, skip reload", streamDesc->GetSessionId());
+        return;
+    }
+
+    SessionOperation operation = lowered ? SESSION_OPERATION_PAUSE : SESSION_OPERATION_START;
+    (void)ReloadCaptureSession(streamDesc->GetSessionId(), operation);
+}
+
 bool AudioCoreService::HasNormalTypeCapturerSession(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList)
 {
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    if (sourceStrategyMap == nullptr) {
+        sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    }
     for (const auto &pipe : pipeList) {
         if (pipe == nullptr) {
             continue;
         }
 
         for (const auto &stream : pipe->streamDescriptors_) {
-            CHECK_AND_RETURN_RET_LOG(stream == nullptr || !stream->IsRecording() ||
-                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0, true,
-                "stream not valid for normal capture");
-            return true;
+            CHECK_AND_RETURN_RET(stream == nullptr || !stream->IsRecording() ||
+                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0 ||
+                sourceStrategyMap->count(stream->capturerInfo_.sourceType) > 0, true);
         }
     }
     return false;
@@ -3234,8 +3514,9 @@ void AudioCoreService::OnCapturerSessionRemoved(uint64_t sessionID)
         SourceType sourceType = it->second;
         sessionSourceTypeMap_.erase(it);
         if (specialSourceTypeSet_.count(sourceType) > 0) {
-            CHECK_AND_RETURN_LOG(sourceType != SOURCE_TYPE_REMOTE_CAST, "Special source type");
-            HandleRemoteCastDevice(false);
+            if (sourceType == SOURCE_TYPE_REMOTE_CAST) {
+                HandleRemoteCastDevice(false);
+            }
             return;
         } else {
             if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {

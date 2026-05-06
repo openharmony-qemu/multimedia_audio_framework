@@ -1261,6 +1261,37 @@ HWTEST_F(HpaeSourceInputNodeTest, DoProcess_MICREF_Type_ReplyCheckFail, TestSize
     size_t remainSizeAfter = historyRemain->second;
     EXPECT_EQ(remainSizeAfter, remainSizeBefore);
 }
+
+/**
+ * @tc.name  : FaultCode_ReadDataFromSource_CaptureFrameFail
+ * @tc.type  : FUNC
+ * @tc.desc  : Test ReadDataFromSource when CaptureFrame fails and replyBytes is 0,
+ *             covering early return path in DoProcessMicInner.
+ */
+HWTEST_F(HpaeSourceInputNodeTest, FaultCode_ReadDataFromSource_CaptureFrameFail, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    std::shared_ptr<HpaeSourceInputNode> node = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    node->audioCapturerSource_ = mockSource;
+    EXPECT_NE(node->audioCapturerSource_, nullptr);
+
+    EXPECT_CALL(*mockSource, CaptureFrame(_, _, _))
+        .WillRepeatedly([](char *frame, uint64_t requestBytes, uint64_t &replyBytes) {
+            replyBytes = 0;
+            return ERROR;
+        });
+    uint64_t reply = 0;
+    node->ReadDataFromSource(nodeInfo.sourceBufferType, reply);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

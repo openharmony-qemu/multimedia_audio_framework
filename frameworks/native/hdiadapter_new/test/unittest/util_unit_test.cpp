@@ -104,7 +104,7 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_003, TestSize.Level1)
     SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_AI, pipeName);
     uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
         HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_AI);
-    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT));
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT));
 }
 
 /**
@@ -120,7 +120,7 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_004, TestSize.Level1)
     SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_UNPROCESS, pipeName);
     uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
         HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_UNPROCESS);
-    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS));
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS));
 }
 
 /**
@@ -136,7 +136,7 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_005, TestSize.Level1)
     SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_NORMAL, pipeName);
     uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
         HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_NORMAL);
-    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
 }
 
 /**
@@ -151,7 +151,49 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_006, TestSize.Level1)
 
     uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_VOICE_CALL,
         HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_NORMAL);
-    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_007
+ * @tc.desc   : Test fast primary capture id selection action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_007, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_MIC,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_FAST);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT));
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_008
+ * @tc.desc   : Test fast voip capture id selection action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_008, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_VOICE_COMMUNICATION,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP));
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_009
+ * @tc.desc   : Test fast usb capture id selection action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_009, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("usb", SOURCE_TYPE_MIC,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_FAST);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB));
 }
 
 /**
@@ -372,6 +414,50 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_008, TestSize.Level1)
     
     info = idHandler.ParseInfo(btId);
     EXPECT_EQ(info, "BT_Speaker");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_010
+ * @tc.desc   : Test primary_mmap_voip capture id selection for VOIP low latency path
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_010, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary_mmap_voip", SOURCE_TYPE_MIC);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP));
+    
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_CAPTURE);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_FAST);
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, "voip");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_011
+ * @tc.desc   : Test primary_mmap capture id selection for normal low latency path
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_011, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary_mmap", SOURCE_TYPE_MIC);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT));
+    
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_CAPTURE);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_FAST);
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, "default");
 }
 
 } // namespace AudioStandard

@@ -30,7 +30,7 @@ public:
     virtual int32_t CreateStream(const HpaeStreamInfo &streamInfo) = 0;
     virtual int32_t DestroyStream(uint32_t sessionId) = 0;
     virtual int32_t Start(uint32_t sessionId) = 0;
-    virtual int32_t Pause(uint32_t sessionId) = 0;
+    virtual int32_t Pause(uint32_t sessionId, bool isStandby = false) = 0;
     virtual int32_t Flush(uint32_t sessionId) = 0;
     virtual int32_t Drain(uint32_t sessionId) = 0;
     virtual int32_t Stop(uint32_t sessionId) = 0;

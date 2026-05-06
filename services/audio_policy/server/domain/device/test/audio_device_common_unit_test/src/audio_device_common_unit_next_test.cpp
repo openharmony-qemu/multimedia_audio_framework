@@ -28,66 +28,6 @@ void AudioDeviceCommonUnitNextTest::SetUp(void) {}
 void AudioDeviceCommonUnitNextTest::TearDown(void) {}
 
 /**
-* @tc.name  : Test GetPreferredInputDeviceDescInner.
-* @tc.number: GetPreferredInputDeviceDescInner_001
-* @tc.desc  : Test GetPreferredInputDeviceDescInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_001, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    AudioCapturerInfo captureInfo;
-    captureInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    std::string networkId = LOCAL_NETWORK_ID;
-    RouterType routerType = ROUTER_TYPE_NONE;
-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(
-        captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
-        audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
-    EXPECT_NE(deviceList.size(), 0);
-}
-
-/**
-* @tc.name  : Test GetPreferredInputDeviceDescInner.
-* @tc.number: GetPreferredInputDeviceDescInner_002
-* @tc.desc  : Test GetPreferredInputDeviceDescInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_002, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    AudioCapturerInfo captureInfo;
-    captureInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    std::string networkId = REMOTE_NETWORK_ID;
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
-        audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
-    EXPECT_EQ(deviceList.size(), 0);
-}
-
-/**
-* @tc.name  : Test GetPreferredInputDeviceDescInner.
-* @tc.number: GetPreferredInputDeviceDescInner_003
-* @tc.desc  : Test GetPreferredInputDeviceDescInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, GetPreferredInputDeviceDescInner_003, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    AudioCapturerInfo captureInfo;
-    captureInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    std::string networkId = LOCAL_NETWORK_ID;
-    RouterType routerType = ROUTER_TYPE_NONE;
-    audioDeviceCommon.audioRouterCenter_.FetchInputDevice(
-        captureInfo.sourceType, -1, routerType)->deviceType_ = DEVICE_TYPE_NONE;
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
-        audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
-    EXPECT_NE(deviceList.size(), 0);
-}
-
-/**
 * @tc.name  : Test UpdateDeviceInfo.
 * @tc.number: UpdateDeviceInfo_001
 * @tc.desc  : Test UpdateDeviceInfo interface.

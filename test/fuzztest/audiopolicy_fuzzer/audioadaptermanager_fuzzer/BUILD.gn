@@ -46,6 +46,7 @@ ohos_fuzztest("AudioAdapterManagerFuzzTest") {
     "data_share:datashare_consumer",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
   ]

@@ -36,11 +36,15 @@
 #include "ipc_skeleton.h"
 #include "audio_volume.h"
 #include "audio_bundle_manager.h"
+#include "parameters.h"
+#include "sco_audio_scene_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 static const int32_t MEDIA_SERVICE_UID = 1013;
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+static const bool IS_DEVICE_ENHANCED_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
 const uid_t MCU_UID = 7500;
@@ -295,6 +299,27 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     // Update a2dp offload flag here because UpdateActiveRoute() need actual flag.
     CHECK_AND_RETURN_RET_LOG(audioA2dpOffloadManager_ != nullptr, ERROR, "audioA2dpOffloadManager_ is nullptr");
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+
+    // Check if we need to stop fast sink before creating offload pipe
+    // This is to prevent concurrency between fast and offload when fast is in delayed switch state
+    bool hasNewOffloadPipe = false;
+    for (auto &pipeInfo : pipeInfos) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW && pipeInfo->IsRouteOffload()) {
+            hasNewOffloadPipe = true;
+            AUDIO_INFO_LOG("Found new offload pipe to create: %{public}s", pipeInfo->name_.c_str());
+            break;
+        }
+    }
+
+    if (hasNewOffloadPipe && pipeManager_->HasPausedFastPipeInDelayedSwitch()) {
+        std::string fastModuleName = pipeManager_->GetPausedFastPipeModuleNameInDelayedSwitch();
+        if (!fastModuleName.empty()) {
+            AUDIO_INFO_LOG("Stopping fast sink %{public}s before creating offload to prevent concurrency",
+                fastModuleName.c_str());
+            audioPolicyManager_.StopAudioPort(fastModuleName);
+        }
+    }
 
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
@@ -1642,6 +1667,13 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
     AUDIO_DEBUG_LOG("[PipeExecInfo] Update route streamUsage:%{public}d, devicetype:[%{public}s]",
         streamUsage, streamDesc->GetNewDevicesTypeString().c_str());
+    
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        AudioScene pipeScene = CalculatePipeAudioScene(pipeId);
+        AudioServerProxy::GetInstance().SetAudioSceneForPipeProxy(pipeId, pipeScene, false);
+        AUDIO_INFO_LOG("Set AudioScene %{public}d for pipe %{public}u in multi-device mode", pipeScene, pipeId);
+    }
+    
     // for collaboration, the route should be updated
     UpdateRouteForCollaboration(deviceType, streamDesc->sessionId_);
     shouldUpdateDeviceDueToDualTone_ = false;
@@ -1670,6 +1702,55 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
                 pipeId, streamDesc->newDeviceDescs_.front()->networkId_);
         }
     }
+}
+
+AudioScene AudioCoreService::CalculatePipeAudioScene(uint32_t pipeId)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = nullptr;
+    auto pipeList = pipeManager_->GetPipeList();
+    for (auto &pipe : pipeList) {
+        if (pipe != nullptr && pipe->id_ == pipeId) {
+            pipeInfo = pipe;
+            break;
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, AUDIO_SCENE_DEFAULT, "Pipe %{public}u not found", pipeId);
+
+    AudioScene highestScene = AUDIO_SCENE_DEFAULT;
+    ScoAudioScenePriority highestPriority = SCO_PRIORITY_DEFAULT;
+    for (auto &streamDesc : pipeInfo->streamDescriptors_) {
+        if (streamDesc == nullptr || streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+            continue;
+        }
+        AudioScene streamScene = AUDIO_SCENE_DEFAULT;
+        bool isRecognition = false;
+        if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+            StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+            if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+                streamScene = AUDIO_SCENE_PHONE_CALL;
+            } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                       streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+                streamScene = AUDIO_SCENE_PHONE_CHAT;
+            } else if (streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+                streamScene = AUDIO_SCENE_VOICE_RINGING;
+            } else if (streamUsage == STREAM_USAGE_RINGTONE) {
+                streamScene = AUDIO_SCENE_RINGING;
+            }
+        } else if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+            SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+            isRecognition = (sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+                             sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION);
+        }
+        ScoAudioScenePriority streamPriority = ScoAudioSceneManager::GetInstance().GetAudioScenePriority(
+            streamScene, isRecognition);
+        if (streamPriority < highestPriority) {
+            highestPriority = streamPriority;
+            highestScene = streamScene;
+        }
+    }
+    AUDIO_INFO_LOG("Pipe %{public}u highest AudioScene %{public}d, priority %{public}d",
+        pipeId, highestScene, highestPriority);
+    return highestScene;
 }
 
 void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,

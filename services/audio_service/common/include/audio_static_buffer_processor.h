@@ -20,11 +20,13 @@
 #include "oh_audio_buffer.h"
 #include "audio_service_log.h"
 #include "audio_speed.h"
+#include "audio_pitch_processor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 static const int32_t MAX_SPEED_BUFFER_FACTOR = 3;
+static constexpr float PITCH_NORMAL = 1.0f;
 
 class AudioStaticBufferProcessor {
 public:
@@ -34,18 +36,24 @@ public:
         AudioStreamInfo streamInfo, bool isFadeOut);
 
     AudioStaticBufferProcessor(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
+    ~AudioStaticBufferProcessor();
 
-    int32_t ProcessBuffer(AudioRendererRate renderRate);
+    int32_t ProcessBufferSpeed(float speed);
+    int32_t ProcessBufferPitch(float pitch);
     int32_t GetProcessedBuffer(uint8_t **bufferBase, size_t &bufferSize);
     void SaveProcessBuffer();
 
 private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
-    std::unique_ptr<uint8_t[]> speedBuffer_ = nullptr;
-    std::unique_ptr<uint8_t[]> processBuffer_ = nullptr;
+    std::shared_ptr<AudioPitchProcessor> pitchProcessor_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> sharedBuffer_ = nullptr;
-    size_t speedBufferSize_ = 0;
-    float curSpeed_ = 1.0f;
+    AudioStreamInfo streamInfo_;
+    
+    std::unique_ptr<uint8_t[]> tempBuffer_ = nullptr;
+    size_t tempBufferSize_ = 0;
+    
+    std::unique_ptr<uint8_t[]> processBuffer_ = nullptr;
+    size_t processedBufferSize_ = 0;
 };
 
 } // namespace AudioStandard

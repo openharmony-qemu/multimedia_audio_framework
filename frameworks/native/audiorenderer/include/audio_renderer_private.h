@@ -145,6 +145,7 @@ public:
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
+    int32_t SetPitch(float pitch) override;
     void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override;
     int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
     bool IsFastRenderer() override;
@@ -246,6 +247,7 @@ private:
         IAudioStream::SwitchInfo &info);
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream, RestoreInfo restoreInfo,
         RendererState previousState, IAudioStream::SwitchInfo &switchInfo);
+    void UpdateFlagForSwitchInfo(IAudioStream::SwitchInfo &switchInfo, IAudioStream::StreamClass targetClass);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();
@@ -266,7 +268,7 @@ private:
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
-    int32_t SetPitch(float pitch);
+    int32_t SetSonicPitch(float pitch);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);

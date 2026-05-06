@@ -133,11 +133,17 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
     return callingUid_;
 }
 
-void AudioInterruptService::SetLatestMuteState(const uint32_t &streamId, bool muteFlag)
+void AudioInterruptService::SetLatestMuteState(const AudioInterrupt &audioInterrupt, bool muteFlag)
 {
+    uint32_t streamId = audioInterrupt.streamId;
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
     streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
     policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
+
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        policyServer_->NotifyVoipPriorityLoweredByMute(streamId, muteFlag);
+    }
+    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::SetLatestMuteState");
 }
 
 int32_t AudioInterruptService::ProcessActiveStreamFocus(
@@ -149,6 +155,9 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
     activeInterrupt = audioFocusInfoList.end();
 
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
+        if (iterActive->second == AudioFocuState::STANDBY) {
+            continue;
+        }
         activeInterrupt = iterActive;
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
         // if peeling is the incomming interrupt while at the momount there are already some existing recordings
@@ -508,6 +517,7 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
     SendInterruptEventCallback(forceUnmute, sessionId, audioInterrupt);
     AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
     streamCollector_.CapturerMutedFlagChange(sessionId, 0);
+    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::ResetInterruptMuteState");
 }
 
 int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
@@ -517,17 +527,17 @@ int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, 
     return sessionService_.SetAudioSessionBehavior(callerPid, behavior, callerUid);
 }
  
-void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)
+void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audioInterrupt, bool muteFlag)
 {
     if (audioInterrupt.isAudioSessionInterrupt) {
         AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
             audioInterrupt.pid, muteFlag);
-        const auto &interruptsInSession = sessionService_.GetStreams(audioInterrupt.pid);
-        for (auto &interrupt : interruptsInSession) {
+        const auto &interruptsInSessionPair = sessionService_.GetStreams(audioInterrupt.pid);
+        for (const auto &[interrupt, state] : interruptsInSessionPair) {
             SetNonInterruptMute(interrupt.streamId, muteFlag);
         }
     } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-        SetLatestMuteState(audioInterrupt.streamId, muteFlag);
+        SetLatestMuteState(audioInterrupt, muteFlag);
     } else {
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
     }

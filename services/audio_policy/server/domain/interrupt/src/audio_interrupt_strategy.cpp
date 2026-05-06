@@ -195,6 +195,19 @@ void AudioInterruptStrategy::UpdateInterPhoneStrategy(const AudioInterrupt &curr
     }
 }
 
+void AudioInterruptStrategy::UpdateAIBaseFocusStrategy(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    if (((currentInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) ||
+        (currentInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION)) &&
+        incomingInterrupt.behaviorFlags_.aibaseMuteVoip) {
+        AUDIO_INFO_LOG("Input method MIC mutes VoIP stream due to AI-based focus strategy");
+        focusEntry.actionOn = CURRENT;
+        focusEntry.hintType = INTERRUPT_HINT_MUTE;
+        focusEntry.isReject = false;
+    }
+}
+
 void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
@@ -219,6 +232,7 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateInterPhoneStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
 
 int32_t AudioInterruptStrategy::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)

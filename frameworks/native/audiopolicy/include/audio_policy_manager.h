@@ -240,7 +240,8 @@ public:
 
     int32_t SetAppSilentOnDisplay(const int32_t displayId = -1);
 
-    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
+        bool isRemoveFocusHis = false);
 
     int32_t ActivatePreemptMode(void);
 
@@ -386,10 +387,14 @@ public:
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback, const int32_t uid = INVALID_UID);
 
     int32_t UnsetPreferredOutputDeviceChangeCallback(
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr,
+        const AudioRendererInfo &rendererInfo = {},
+        const int32_t uid = INVALID_UID);
 
     int32_t UnsetPreferredInputDeviceChangeCallback(
-        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr);
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr,
+        const AudioCapturerInfo &capturerInfo = {},
+        const int32_t uid = INVALID_UID);
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0);
@@ -437,6 +442,8 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
     int32_t GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
+
+    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 
@@ -589,6 +596,9 @@ public:
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
 
+    int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId, const std::string &deviceTag);
 
@@ -680,6 +690,9 @@ public:
     bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
     bool SetLoopbackVolume(float volume);
     float GetLoopbackVolume();
+    int32_t CreateLoopback(AudioLoopbackMode mode, LoopbackType type,
+        const sptr<IRemoteObject> &callback, sptr<IRemoteObject> &loopback);
+    int32_t DestroyLoopback(LoopbackType type);
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
     int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 

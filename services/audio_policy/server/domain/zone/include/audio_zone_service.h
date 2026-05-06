@@ -89,7 +89,8 @@ public:
 
     AudioInterruptResult ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isRemoveFocusHis = false);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,

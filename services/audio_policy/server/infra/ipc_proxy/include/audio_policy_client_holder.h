@@ -39,9 +39,9 @@ public:
     void OnSystemAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent);
     void OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent);
-    void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+    void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo, int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
-    void OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+    void OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo, int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     void OnRendererStateChange(
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);

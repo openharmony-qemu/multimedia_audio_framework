@@ -46,6 +46,10 @@ BluetoothAudioCaptureSource::BluetoothAudioCaptureSource(const uint32_t captureI
 
 BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
 {
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
     if (sourceInited_) {
         DeInit();
     }
@@ -162,13 +166,16 @@ int32_t BluetoothAudioCaptureSource::Stop(void)
     Trace trace("BluetoothAudioCaptureSource::Stop");
     std::promise<void> promiseEnsureLock;
     auto futurePromiseEnsureLock = promiseEnsureLock.get_future();
-    std::thread stopThread([&promiseEnsureLock, this] {
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
+    stopThread_ = std::make_unique<std::thread>([&promiseEnsureLock, this] {
         std::lock_guard<std::mutex> lock(statusMutex_);
         promiseEnsureLock.set_value();
         DoStop();
     });
     futurePromiseEnsureLock.get();
-    stopThread.detach();
     return SUCCESS;
 }
 

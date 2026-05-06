@@ -320,4 +320,106 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_005, Te
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
 }
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_EmptyInputs
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_SignalProcess_EmptyInputs
+ * @tc.desc  : Test SignalProcess with empty inputs vector,
+ *             should return &silenceData_.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_EmptyInputs, TestSize.Level1)
+{
+    HpaeNodeInfo preNodeInfo;
+    preNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
+    HpaeNodeInfo outputNodeInfo;
+    outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    outputNodeInfo.channels = STEREO;
+
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
+    std::vector<HpaePcmBuffer *> inputs;
+    HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_NullFirstInput
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_SignalProcess_NullFirstInput
+ * @tc.desc  : Test SignalProcess with nullptr as first input,
+ *             should return &silenceData_.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_NullFirstInput, TestSize.Level1)
+{
+    HpaeNodeInfo preNodeInfo;
+    preNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
+    HpaeNodeInfo outputNodeInfo;
+    outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    outputNodeInfo.channels = STEREO;
+
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
+    std::vector<HpaePcmBuffer *> inputs = {nullptr};
+    HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_NullResampler
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_SignalProcess_NullResampler
+ * @tc.desc  : Test SignalProcess when resampler_ is null,
+ *             should report FAULT_STATE_INCONSISTENT/PLAY/QUERY/ERR_NULL_POINTER fault code.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_NullResampler, TestSize.Level1)
+{
+    HpaeNodeInfo preNodeInfo;
+    preNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
+    HpaeNodeInfo outputNodeInfo;
+    outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    outputNodeInfo.channels = STEREO;
+
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
+    // Force resampler_ to null to test the fault path
+    converterNode->resampler_.reset();
+
+    PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_44100);
+    HpaePcmBuffer input(pcmBufferInfo);
+    input.GetPcmDataBuffer();
+    std::vector<HpaePcmBuffer *> inputs = {&input};
+    HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : FaultCode_CheckUpdateOutInfo_SetOutChannelInfoFail
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_CheckUpdateOutInfo_SetOutChannelInfoFail
+ * @tc.desc  : Test CheckUpdateOutInfo when SetOutChannelInfo fails,
+ *             should report PLAY_SEND_STATE_ILLEGAL fault code.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_CheckUpdateOutInfo_SetOutChannelInfoFail, TestSize.Level1)
+{
+    HpaeNodeInfo preNodeInfo;
+    preNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
+    HpaeNodeInfo outputNodeInfo;
+    outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    outputNodeInfo.channels = STEREO;
+
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
+    // nodeFormatInfoCallback_ is null by default, so CheckUpdateOutInfo returns false
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_EQ(result, false);
+}
 }

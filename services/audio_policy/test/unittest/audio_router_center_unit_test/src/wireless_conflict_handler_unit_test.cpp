@@ -346,31 +346,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_012, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test WirelessConflictHandler IsSameWirelessDevicePair.
- * @tc.number: WirelessConflictHandler_013
- * @tc.desc  : Test IsSameWirelessDevicePair interface.
- */
-HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_013, TestSize.Level1)
-{
-    WirelessConflictHandler handler;
-    
-    auto device1 = std::make_shared<AudioDeviceDescriptor>();
-    device1->macAddress_ = "00:11:22:33:44:55";
-    
-    auto device2 = std::make_shared<AudioDeviceDescriptor>();
-    device2->macAddress_ = "00:11:22:33:44:55";
-    
-    auto device3 = std::make_shared<AudioDeviceDescriptor>();
-    device3->macAddress_ = "00:11:22:33:44:66";
-    
-    EXPECT_TRUE(handler.IsSameWirelessDevicePair(device1, device2));
-    EXPECT_FALSE(handler.IsSameWirelessDevicePair(device1, device3));
-    EXPECT_FALSE(handler.IsSameWirelessDevicePair(nullptr, device1));
-    EXPECT_FALSE(handler.IsSameWirelessDevicePair(device1, nullptr));
-    EXPECT_FALSE(handler.IsSameWirelessDevicePair(nullptr, nullptr));
-}
-
-/**
  * @tc.name  : Test WirelessConflictHandler Detect conflict with different wireless device.
  * @tc.number: WirelessConflictHandler_014
  * @tc.desc  : Test Detect when output tries to select different wireless device from input.

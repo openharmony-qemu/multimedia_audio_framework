@@ -1303,6 +1303,20 @@ public:
         return 0;
     };
 
+    /**
+     * @brief Set the pitch for audio renderer.
+     * Only can be set when the renderState is not RUNNING.
+     *
+     * @param pitch The pitch to be set. Value range: [0.25, 4.0], default is 1.0.
+     * @return Returns {@link SUCCESS} if pitch is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * - ERR_INVALID_PARAM: pitch value out of valid range.
+     * - ERR_NOT_SUPPORTED: not in RENDER_MODE_STATIC mode.
+     * - ERR_ILLEGAL_STATE: renderer is in playback state.
+     * @since 26
+     */
+    virtual int32_t SetPitch(float pitch) { return 0; };
+
     virtual void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) { return; }
 private:
     virtual int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }

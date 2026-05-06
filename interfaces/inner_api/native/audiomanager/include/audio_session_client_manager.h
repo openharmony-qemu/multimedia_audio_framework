@@ -18,6 +18,7 @@
 
 #include "audio_policy_interface.h"
 #include "audio_session_device_info.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -359,6 +360,8 @@ public:
     int32_t SetCapturerMuteHint(bool mute);
 
     void SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag);
+
+    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
 private:
     AudioSessionClientManager() = default;
     ~AudioSessionClientManager() = default;
@@ -381,6 +384,9 @@ private:
     bool stateChangeCallbackByIpcFlag_ = false;
     bool audioSessionSceneFlag_ = false;
     bool isFirstActivateV2_ = true;
+
+    static std::mutex callbackRegisteredMutex_;
+    static bool callbackRegistered_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

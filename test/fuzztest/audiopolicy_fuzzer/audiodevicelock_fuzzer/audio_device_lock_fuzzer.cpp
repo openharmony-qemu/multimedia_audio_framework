@@ -226,18 +226,6 @@ void SetAudioSceneFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    if (audioDeviceLock == nullptr) {
-        return;
-    }
-    AudioRendererInfo rendererInfo;
-    std::string networkId = "test_network_id";
-    audioDeviceLock->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
-    OnStop();
-}
-
 void AudioDeviceLockGetDevicesFuzzTest(FuzzedDataProvider& fdp)
 {
     vector<DeviceFlag> testDeviceFlags = {
@@ -257,18 +245,6 @@ void AudioDeviceLockGetDevicesFuzzTest(FuzzedDataProvider& fdp)
     }
     DeviceFlag deviceFlag = testDeviceFlags[GetData<uint32_t>() % testDeviceFlags.size()];
     audioDeviceLock->GetDevices(deviceFlag);
-    OnStop();
-}
-
-void AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    if (audioDeviceLock == nullptr) {
-        return;
-    }
-    AudioCapturerInfo captureInfo;
-    std::string networkId = "test_network_id";
-    audioDeviceLock->GetPreferredInputDeviceDescriptors(captureInfo, networkId);
     OnStop();
 }
 
@@ -369,8 +345,6 @@ void Test(FuzzedDataProvider& fdp)
     GetVolumeGroupInfosFuzzTest,
     SetAudioSceneFuzzTest,
     AudioDeviceLockGetDevicesFuzzTest,
-    AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest,
-    AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest,
     AudioDeviceLockUpdateAppVolumeFuzzTest,
     AudioDeviceLockOnDeviceInfoUpdatedFuzzTest,
     AudioDeviceLockOnDeviceStatusUpdatedFuzzTest,

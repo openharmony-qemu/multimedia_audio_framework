@@ -25,18 +25,24 @@
 #include <cinttypes>
 #include "i_hpae_manager.h"
 #include "audio_engine_log.h"
+#include "audio_stream_enum.h"
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 static SafeMap<void *, std::weak_ptr<HpaeCapturerStreamImpl>> paCapturerMap_;
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 2;
-const int32_t TENMS_PER_SEC = 100;
+const int32_t FRAME_LEN_20MS = 20;
+const int32_t FRAME_LEN_5MS = 5;
 
 HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * processConfig.streamInfo.samplingRate / TENMS_PER_SEC;
+    spanSizeInFrame_ = FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+    if (processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP &&
+        processConfig_.isInnerCapturer == false) {
+        spanSizeInFrame_ = FRAME_LEN_5MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+        AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
+    }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;

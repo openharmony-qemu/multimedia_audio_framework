@@ -42,7 +42,7 @@ public:
         return instance;
     }
 
-    int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool* isSupported);
+    int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported);
     int32_t GetNodeParameter(AudioNodeType nodeType, NodeParameter &nodeParameter);
 
 private:
@@ -69,6 +69,26 @@ private:
     int32_t LoadTempoPitchCapability(NodeParameter &np);
     std::unordered_map<AudioNodeType, NodeParameter> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;
+};
+
+class DlHandleGuard {
+public:
+    explicit DlHandleGuard(void* handle = nullptr) : handle_(handle) {}
+    ~DlHandleGuard()
+    {
+        if (handle_) {
+            dlclose(handle_);
+        }
+    }
+    
+    DlHandleGuard(const DlHandleGuard&) = delete;
+    DlHandleGuard& operator=(const DlHandleGuard&) = delete;
+    
+    void* get() const { return handle_; }
+    operator bool() const { return handle_ != nullptr; }
+    
+private:
+    void* handle_;
 };
 }
 }

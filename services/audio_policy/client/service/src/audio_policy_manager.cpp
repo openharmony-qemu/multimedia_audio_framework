@@ -1233,11 +1233,12 @@ int32_t AudioPolicyManager::SetAppSilentOnDisplay(const int32_t displayId)
     return gsp->SetAppSilentOnDisplay(displayId);
 }
 
-int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID,
+    bool isRemoveFocusHis)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    return gsp->DeactivateAudioInterrupt(audioInterrupt, zoneID, isRemoveFocusHis);
 }
 
 int32_t AudioPolicyManager::ActivatePreemptMode()
@@ -1788,6 +1789,19 @@ int32_t AudioPolicyManager::GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo
     CHECK_AND_RETURN_RET_LOG(audioDebugInfoPtr != nullptr, ERR_OPERATION_FAILED,
         "GetAudioDebugInfo failed: audioDebugInfo is nullptr");
     audioDebugInfo = *audioDebugInfoPtr;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    std::shared_ptr<AudioSessionDebugInfo> sessionDebugInfoPtr = nullptr;
+    int32_t ret = gsp->GetSessionDebugInfo(sessionDebugInfoPtr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSessionDebugInfo failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(sessionDebugInfoPtr != nullptr, ERR_OPERATION_FAILED,
+        "GetSessionDebugInfo failed: sessionDebugInfo is nullptr");
+    sessionDebugInfo = *sessionDebugInfoPtr;
     return SUCCESS;
 }
 
@@ -3215,6 +3229,25 @@ float AudioPolicyManager::GetLoopbackVolume()
     gsp->GetLoopbackVolume(volume, ret);
     CHECK_AND_RETURN_RET_LOG(ret, 0.0f, "GetLoopbackVolume failed");
     return volume;
+}
+
+int32_t AudioPolicyManager::CreateLoopback(AudioLoopbackMode mode, LoopbackType type,
+    const sptr<IRemoteObject> &callback, sptr<IRemoteObject> &loopback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    int32_t result = SUCCESS;
+    gsp->CreateLoopback(static_cast<int32_t>(mode), static_cast<int32_t>(type), callback, loopback, result);
+    return result;
+}
+
+int32_t AudioPolicyManager::DestroyLoopback(LoopbackType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    int32_t result = SUCCESS;
+    gsp->DestroyLoopback(static_cast<int32_t>(type), result);
+    return result;
 }
 
 bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType)

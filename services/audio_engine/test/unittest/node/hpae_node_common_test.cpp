@@ -987,6 +987,338 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_062, TestSize.Level0)
     invalidSourceInfo2.frameLen = 38401;
     EXPECT_EQ(CheckSourceInfoFramelen(invalidSourceInfo2), ERROR);
 }
+
+/**
+ * @tc.name: TestHpaeNodeCommon_063
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_063
+ * @tc.desc: Test IsCollabRecordSupported with supported and unsupported source types
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_063, TestSize.Level0)
+{
+    EXPECT_TRUE(IsCollabRecordSupported(SOURCE_TYPE_LIVE));
+    EXPECT_FALSE(IsCollabRecordSupported(SOURCE_TYPE_MIC));
+    EXPECT_FALSE(IsCollabRecordSupported(SOURCE_TYPE_CAMCORDER));
+    EXPECT_FALSE(IsCollabRecordSupported(SOURCE_TYPE_VOICE_CALL));
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_064
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_064
+ * @tc.desc: Test TransNodeInfoForCollaboration with non-movie scene when collaboration enabled
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_064, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    
+    TransNodeInfoForCollaboration(nodeInfo, true);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
+    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_065
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_065
+ * @tc.desc: Test RecoverNodeInfoForCollaboration with non-collaborative scene
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_065, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_OTHERS;
+    
+    RecoverNodeInfoForCollaboration(nodeInfo);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_066
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_066
+ * @tc.desc: Test ConvertHpaeToRendererState with invalid session state
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_066, TestSize.Level0)
+{
+    HpaeSessionState invalidState = static_cast<HpaeSessionState>(999);
+    RendererState result = ConvertHpaeToRendererState(invalidState);
+    EXPECT_EQ(result, RENDERER_INVALID);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_067
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_067
+ * @tc.desc: Test ConvertHpaeToCapturerState with invalid session state
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_067, TestSize.Level0)
+{
+    HpaeSessionState invalidState = static_cast<HpaeSessionState>(999);
+    CapturerState result = ConvertHpaeToCapturerState(invalidState);
+    EXPECT_EQ(result, CAPTURER_INVALID);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_068
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_068
+ * @tc.desc: Test ConvertHpaeToRendererState with valid session states
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_068, TestSize.Level0)
+{
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_INVALID), RENDERER_INVALID);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_NEW), RENDERER_NEW);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_PREPARED), RENDERER_PREPARED);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_RUNNING), RENDERER_RUNNING);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_PAUSING), RENDERER_PAUSED);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_PAUSED), RENDERER_PAUSED);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_STOPPING), RENDERER_STOPPED);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_STOPPED), RENDERER_STOPPED);
+    EXPECT_EQ(ConvertHpaeToRendererState(HPAE_SESSION_RELEASED), RENDERER_RELEASED);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_069
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_069
+ * @tc.desc: Test ConvertHpaeToCapturerState with valid session states
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_069, TestSize.Level0)
+{
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_INVALID), CAPTURER_INVALID);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_NEW), CAPTURER_NEW);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_PREPARED), CAPTURER_PREPARED);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_RUNNING), CAPTURER_RUNNING);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_PAUSING), CAPTURER_PAUSED);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_PAUSED), CAPTURER_PAUSED);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_STOPPING), CAPTURER_STOPPED);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_STOPPED), CAPTURER_STOPPED);
+    EXPECT_EQ(ConvertHpaeToCapturerState(HPAE_SESSION_RELEASED), CAPTURER_RELEASED);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_070
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_070
+ * @tc.desc: Test ConfigNodeInfo with valid stream info
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_070, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.frameLen = 1024;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.sessionId = 100;
+    streamInfo.customSampleRate = 0;
+    streamInfo.channelLayout = CH_LAYOUT_STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.effectInfo.effectScene = SCENE_MUSIC;
+    streamInfo.fadeType = NONE_FADE;
+    streamInfo.sourceType = SOURCE_TYPE_MIC;
+    streamInfo.keepRunning = false;
+    
+    ConfigNodeInfo(nodeInfo, streamInfo);
+    
+    EXPECT_EQ(nodeInfo.channels, STEREO);
+    EXPECT_EQ(nodeInfo.format, SAMPLE_S16LE);
+    EXPECT_EQ(nodeInfo.frameLen, 1024);
+    EXPECT_EQ(nodeInfo.streamType, STREAM_MUSIC);
+    EXPECT_EQ(nodeInfo.sessionId, 100);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_071
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_071
+ * @tc.desc: Test ConvertDeviceClassToPipe with voip and direct device classes
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_071, TestSize.Level0)
+{
+    EXPECT_EQ(ConvertDeviceClassToPipe("voip"), PIPE_TYPE_OUT_DIRECT_NORMAL);
+    EXPECT_EQ(ConvertDeviceClassToPipe("direct"), PIPE_TYPE_OUT_DIRECT_NORMAL);
+}
+
+/**
+ * @tc.name: FaultCode_TransModuleInfoToHpaeSourceInfo_InvalidFormat
+ * @tc.type: FUNC
+ * @tc.number: FaultCode_TransModuleInfoToHpaeSourceInfo_InvalidFormat
+ * @tc.desc: Test TransModuleInfoToHpaeSourceInfo with invalid format,
+ *           should report FAULT_NO_SOUND/RECORD/CREATE/ERR_INVALID_PARAM
+ *           or return ERROR.
+ */
+HWTEST_F(HpaeNodeCommonTest,
+    FaultCode_TransModuleInfoToHpaeSourceInfo_InvalidFormat, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "invalid_format";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "3";
+    moduleInfo.deviceType = "1";
+
+    HpaeSourceInfo sourceInfo;
+    int32_t ret = TransModuleInfoToHpaeSourceInfo(moduleInfo, sourceInfo);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name: FaultCode_TransModuleInfoToHpaeSourceInfo_InvalidChannels
+ * @tc.type: FUNC
+ * @tc.number: FaultCode_TransModuleInfoToHpaeSourceInfo_InvalidChannels
+ * @tc.desc: Test TransModuleInfoToHpaeSourceInfo with invalid channels,
+ *           should report FAULT_NO_SOUND/RECORD/SEND/ERR_INVALID_PARAM
+ *           fault code.
+ */
+HWTEST_F(HpaeNodeCommonTest,
+    FaultCode_TransModuleInfoToHpaeSourceInfo_InvalidChannels, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "0";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "0";
+    moduleInfo.deviceType = "1";
+
+    HpaeSourceInfo sourceInfo;
+    int32_t ret = TransModuleInfoToHpaeSourceInfo(moduleInfo, sourceInfo);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_072
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_072
+ * @tc.desc: Test CheckSourceInfoIsDifferent with same source info
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_072, TestSize.Level0)
+{
+    HpaeSourceInfo info1;
+    info1.deviceNetId = "local";
+    info1.deviceClass = "primary";
+    info1.adapterName = "adapter";
+    info1.sourceName = "source";
+    info1.sourceType = SOURCE_TYPE_MIC;
+    info1.filePath = "/path";
+    info1.deviceName = "device";
+    info1.frameLen = 960;
+    info1.samplingRate = SAMPLE_RATE_48000;
+    info1.format = SAMPLE_S16LE;
+    info1.channels = STEREO;
+    info1.channelLayout = CH_LAYOUT_STEREO;
+    info1.deviceType = 1;
+    info1.volume = 1.0f;
+    info1.openMicSpeaker = 0;
+    info1.ecType = HPAE_EC_TYPE_NONE;
+    info1.ecFrameLen = 960;
+    info1.ecSamplingRate = SAMPLE_RATE_48000;
+    info1.ecFormat = SAMPLE_S16LE;
+    info1.ecChannels = STEREO;
+    info1.micRef = HPAE_REF_OFF;
+    info1.micRefFrameLen = 960;
+    info1.micRefSamplingRate = SAMPLE_RATE_48000;
+    info1.micRefFormat = SAMPLE_S16LE;
+    info1.micRefChannels = STEREO;
+    info1.micInSamplingRate = SAMPLE_RATE_48000;
+    info1.micInFormat = SAMPLE_S16LE;
+    info1.micInChannels = STEREO;
+    info1.routeFlag = 0;
+    
+    HpaeSourceInfo info2 = info1;
+    
+    EXPECT_FALSE(CheckSourceInfoIsDifferent(info1, info2));
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_073
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_073
+ * @tc.desc: Test CheckSourceInfoIsDifferent with different source info
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_073, TestSize.Level0)
+{
+    HpaeSourceInfo info1;
+    info1.deviceNetId = "local";
+    info1.frameLen = 960;
+    
+    HpaeSourceInfo info2;
+    info2.deviceNetId = "remote";
+    info2.frameLen = 960;
+    
+    EXPECT_TRUE(CheckSourceInfoIsDifferent(info1, info2));
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_074
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_074
+ * @tc.desc: Test TransSinkInfoToNodeInfo with valid sink info
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_074, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.channels = STEREO;
+    sinkInfo.format = SAMPLE_S16LE;
+    sinkInfo.frameLen = 1024;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.deviceNetId = "local";
+    sinkInfo.deviceClass = "primary";
+    
+    std::weak_ptr<INodeCallback> statusCallback;
+    HpaeNodeInfo nodeInfo;
+    
+    TransSinkInfoToNodeInfo(sinkInfo, statusCallback, nodeInfo);
+    
+    EXPECT_EQ(nodeInfo.channels, STEREO);
+    EXPECT_EQ(nodeInfo.format, SAMPLE_S16LE);
+    EXPECT_EQ(nodeInfo.frameLen, 1024);
+    EXPECT_EQ(nodeInfo.samplingRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_EFFECT_OUT);
+    EXPECT_EQ(nodeInfo.deviceNetId, "local");
+    EXPECT_EQ(nodeInfo.deviceClass, "primary");
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_075
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_075
+ * @tc.desc: Test TransStreamInfoToStreamDumpInfo with valid stream info map
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_075, TestSize.Level0)
+{
+    std::unordered_map<uint32_t, HpaeSessionInfo> streamInfoMap;
+    HpaeSessionInfo sessionInfo;
+    sessionInfo.streamInfo.sessionId = 100;
+    sessionInfo.streamInfo.deviceName = "Speaker";
+    sessionInfo.streamInfo.uid = 1000;
+    sessionInfo.streamInfo.pid = 1001;
+    sessionInfo.streamInfo.tokenId = 1002;
+    sessionInfo.offloadEnable = false;
+    sessionInfo.streamInfo.privacyType = PRIVACY_TYPE_PUBLIC;
+    sessionInfo.state = HPAE_SESSION_RUNNING;
+    sessionInfo.startTime = 0;
+    
+    streamInfoMap[100] = sessionInfo;
+    
+    std::vector<HpaeInputOutputInfo> dumpInfo;
+    TransStreamInfoToStreamDumpInfo(streamInfoMap, dumpInfo);
+    
+    EXPECT_EQ(dumpInfo.size(), 1);
+    EXPECT_EQ(dumpInfo[0].sessionId, 100);
+    EXPECT_EQ(dumpInfo[0].deviceName, "Speaker");
+    EXPECT_EQ(dumpInfo[0].uid, 1000);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

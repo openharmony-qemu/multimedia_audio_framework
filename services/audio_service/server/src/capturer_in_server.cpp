@@ -90,7 +90,7 @@ CapturerInServer::~CapturerInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
-    if (needCheckBackground_) {
+    if (isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     TurnOffRemoteMicIndicator();
@@ -453,6 +453,8 @@ int32_t CapturerInServer::CheckForReadData(size_t length, uint64_t currentWriteF
 // LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
+    // Loopback should not copy data to the buffer
+    CHECK_AND_RETURN(!processConfig_.capturerInfo.isLoopback);
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     int32_t ret = CheckForReadData(length, currentWriteFrame);
     CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
@@ -539,6 +541,8 @@ int32_t CapturerInServer::CheckForOnReadData(size_t requestDataLen, uint64_t cur
 // LCOV_EXCL_START
 int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
+    // Loopback should not copy data to the buffer
+    CHECK_AND_RETURN_RET(!processConfig_.capturerInfo.isLoopback, SUCCESS);
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     int32_t ret = CheckForOnReadData(requestDataLen, currentWriteFrame);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret == ERR_READ_FAILED ? ERR_READ_FAILED : ERR_WRITE_FAILED,
@@ -720,13 +724,15 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, streamIndex_),
-            false,
+        bool ret = RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, streamIndex_);
+        if (!ret) {
+            AUDIO_ERR_LOG("NotifyPrivacyStop failed!");
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_STOP_ILLEGAL_STATE, "NotifyPrivacyStop failed", false),
-            "NotifyPrivacyStop failed!");
+                RECORD_STOP_ILLEGAL_STATE, "NotifyPrivacyStop failed", false);
+        }
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = false;
+        return ret;
     } else {
         AUDIO_WARNING_LOG("MicIndicator:already off, Stream:%{public}u", streamIndex_);
     }
@@ -773,7 +779,9 @@ int32_t CapturerInServer::StartInner()
         return ERR_ILLEGAL_STATE;
     }
 
-    if (!needCheckBackground_ && PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid,
+    // Loopback capturer should bypass background recording permission check (hardware passthrough)
+    if (!needCheckBackground_ && !processConfig_.capturerInfo.isLoopback &&
+        PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid,
         processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
@@ -1013,6 +1021,11 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     }
     status_ = I_STATUS_RELEASED;
 
+    if (processConfig_.capturerInfo.isLoopback) {
+        AudioService::GetInstance()->SetDecMaxLoopbackStreamCnt(processConfig_.audioMode);
+        AudioService::GetInstance()->DisableLoopback();
+    }
+
     CapturerClockManager::GetInstance().DeleteCapturerClock(streamIndex_);
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
@@ -1069,7 +1082,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION && usg != STREAM_USAGE_VOICE_MESSAGE) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
             continue;
         }
 

@@ -196,6 +196,7 @@ public:
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
+    virtual int32_t SetSonicPitch(float pitch) { return ERR_NOT_SUPPORTED; }
     virtual float GetSpeed() = 0;
     virtual int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) { return SUCCESS; }
 

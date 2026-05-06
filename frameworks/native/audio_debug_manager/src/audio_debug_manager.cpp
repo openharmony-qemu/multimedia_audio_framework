@@ -27,6 +27,7 @@
 
 #include "audio_errors.h"
 #include "audio_renderer_log.h"
+#include "audio_interrupt_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -297,6 +298,61 @@ std::string EqualizerPresetToString(AudioLoopbackEqualizerPreset preset)
 {
     return EnumToString(EQUALIZER_PRESET_MAP, preset);
 }
+
+const std::map<AudioSessionState, std::string> AUDIO_SESSION_STATE_MAP = {
+    {AudioSessionState::SESSION_INVALID, "SESSION_INVALID"},
+    {AudioSessionState::SESSION_NEW, "SESSION_NEW"},
+    {AudioSessionState::SESSION_ACTIVE, "SESSION_ACTIVE"},
+    {AudioSessionState::SESSION_DEACTIVE, "SESSION_DEACTIVE"},
+    {AudioSessionState::SESSION_RELEASED, "SESSION_RELEASED"},
+};
+ 	 
+const std::map<AudioConcurrencyMode, std::string> AUDIO_CONCURRENCY_MODE_MAP = {
+    {AudioConcurrencyMode::INVALID, "INVALID"},
+    {AudioConcurrencyMode::DEFAULT, "DEFAULT"},
+    {AudioConcurrencyMode::MIX_WITH_OTHERS, "MIX_WITH_OTHERS"},
+    {AudioConcurrencyMode::DUCK_OTHERS, "DUCK_OTHERS"},
+    {AudioConcurrencyMode::PAUSE_OTHERS, "PAUSE_OTHERS"},
+    {AudioConcurrencyMode::SILENT, "SILENT"},
+    {AudioConcurrencyMode::STANDALONE, "STANDALONE"},
+};
+
+const std::map<AudioFocuState, std::string> AUDIO_FOCUS_STATE_MAP = {
+    {AudioFocuState::ACTIVE, "ACTIVE"},
+    {AudioFocuState::MUTED, "MUTED"},
+    {AudioFocuState::DUCK, "DUCK"},
+    {AudioFocuState::PAUSE, "PAUSE"},
+    {AudioFocuState::STOP, "STOP"},
+    {AudioFocuState::PLACEHOLDER, "PLACEHOLDER"},
+    {AudioFocuState::PAUSEDBYREMOTE, "PAUSEDBYREMOTE"},
+};
+
+const std::map<AudioSessionScene, std::string> AUDIO_SESSION_SCENE_MAP = {
+    {AudioSessionScene::INVALID, "INVALID"},
+    {AudioSessionScene::MEDIA, "MEDIA"},
+    {AudioSessionScene::GAME, "GAME"},
+    {AudioSessionScene::VOICE_COMMUNICATION, "VOICE_COMMUNICATION"},
+};
+
+std::string AudioSessionStateToString(AudioSessionState state)
+{
+    return EnumToString(AUDIO_SESSION_STATE_MAP, state);
+}
+
+std::string AudioConcurrencyModeToString(AudioConcurrencyMode mode)
+{
+    return EnumToString(AUDIO_CONCURRENCY_MODE_MAP, mode);
+}
+
+std::string AudioFocuStateToString(AudioFocuState state)
+{
+    return EnumToString(AUDIO_FOCUS_STATE_MAP, state);
+}
+
+std::string AudioSessionSceneToString(AudioSessionScene scene)
+{
+    return EnumToString(AUDIO_SESSION_SCENE_MAP, scene);
+}
 } // namespace
 
 AudioDebugManager &AudioDebugManager::GetInstance()
@@ -344,6 +400,7 @@ int32_t AudioDebugManagerPrivate::PrintAppAudioDebugInfo(int32_t fd) const
     ret = PrintAllAudioRenderersDebugInfo(fd) != SUCCESS ? ERR_OPERATION_FAILED : ret;
     ret = PrintAllAudioCapturersDebugInfo(fd) != SUCCESS ? ERR_OPERATION_FAILED : ret;
     ret = PrintAllAudioLoopbacksDebugInfo(fd) != SUCCESS ? ERR_OPERATION_FAILED : ret;
+    ret = PrintAudioSessionDebugInfo(fd) != SUCCESS ? ERR_OPERATION_FAILED : ret;
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Print app audio debug info finished with partial failure");
     }
@@ -696,6 +753,78 @@ int32_t AudioDebugManagerPrivate::PrintAllAudioLoopbacksDebugInfo(int32_t fd) co
         }
     }
     return ret;
+}
+
+int32_t AudioDebugManagerPrivate::GetAudioSessionDebugInfo(AudioSessionDebugInfo &debugInfo) const
+{
+    std::shared_ptr<AudioSessionDebugCallback> debugCallback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(sessionMutex_);
+        if (audioSessionDebugCallback_ == nullptr) {
+            AUDIO_WARNING_LOG("Get session debug info failed: callback not registered");
+            return ERR_ILLEGAL_STATE;
+        }
+        debugCallback = audioSessionDebugCallback_;
+    }
+    int32_t ret = debugCallback->GetSessionDebugInfo(debugInfo);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("Get session debug info failed, ret:%{public}d", ret);
+    }
+    return ret;
+}
+
+std::string AudioDebugManagerPrivate::ParserAudioSessionDebugInfo(
+    const AudioSessionDebugInfo &debugInfo)
+{
+    std::stringstream ss;
+    ss << "audioSession {\n"
+    << "  strategy: " << AudioConcurrencyModeToString(debugInfo.strategy.concurrencyMode) << "\n"
+    << "  audioSessionScene: " << AudioSessionSceneToString(debugInfo.audioSessionScene) << ",\n"
+    << "  defaultDeviceType: " << DeviceTypeToString(debugInfo.defaultDeviceType) << "\n"
+    << "  state: " << AudioSessionStateToString(debugInfo.state) << ",\n"
+    << "  streamUsage: " << StreamUsageToString(debugInfo.streamUsage) << ",\n"
+    << "  focusState: " << AudioFocuStateToString(debugInfo.focusState) << "\n"
+    << "  pid: " << debugInfo.pid << ",\n"
+    << "  uid: " << debugInfo.uid << "\n"
+    << "  streams: [\n";
+    for (const auto &stream : debugInfo.streamInfos) {
+        ss << "    {\n"
+        << "      streamId: " << stream.streamId << ",\n"
+        << "      streamType: " << AudioStreamTypeToString(stream.streamType) << ",\n"
+        << "      sourceType: " << SourceTypeToString(stream.sourceType) << "\n"
+        << "    },\n";
+    }
+    ss << "  ]\n"
+    << "}";
+    return ss.str();
+}
+
+int32_t AudioDebugManagerPrivate::SetAudioSessionCallback(
+    const std::shared_ptr<AudioSessionDebugCallback> &debugCallback)
+{
+    if (debugCallback == nullptr) {
+        AUDIO_ERR_LOG("Set session callback failed: debugCallback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    audioSessionDebugCallback_ = debugCallback;
+    return SUCCESS;
+}
+
+int32_t AudioDebugManagerPrivate::PrintAudioSessionDebugInfo(int32_t fd) const
+{
+    AudioSessionDebugInfo debugInfo;
+    if (GetAudioSessionDebugInfo(debugInfo) != SUCCESS) {
+        AUDIO_WARNING_LOG("Print session debug info failed: get info failed");
+        return ERR_ILLEGAL_STATE;
+    }
+    const std::string parsedDebugInfo = ParserAudioSessionDebugInfo(debugInfo);
+    if (PrintfAudioDebugInfo(fd, parsedDebugInfo) != SUCCESS) {
+        AUDIO_WARNING_LOG("Print session debug info failed: output failed");
+        return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

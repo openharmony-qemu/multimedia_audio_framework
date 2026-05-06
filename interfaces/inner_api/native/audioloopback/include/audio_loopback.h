@@ -37,6 +37,19 @@ public:
 };
 
 /**
+ * @brief ILoopbackCB callback interface for IPC callback.
+ * @since 20
+ */
+class ILoopbackCB {
+public:
+    virtual ~ILoopbackCB() = default;
+
+    virtual void OnCommandResult(int command, bool success, int errorCode) = 0;
+
+    virtual void OnStatusChange(int status, int reason) = 0;
+};
+
+/**
  * @brief audio loopback
  * @since 20
  */
@@ -52,6 +65,9 @@ public:
     */
     static std::shared_ptr<AudioLoopback> CreateAudioLoopback(AudioLoopbackMode mode,
         const AppInfo &appInfo = AppInfo());
+
+    static std::shared_ptr<AudioLoopback> CreateAudioLoopback(AudioLoopbackMode mode,
+        LoopbackType type, int32_t &result, const AppInfo &appInfo = AppInfo());
 
     virtual bool Enable(bool enable) = 0;
 

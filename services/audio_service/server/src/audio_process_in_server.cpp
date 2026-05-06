@@ -156,7 +156,7 @@ AudioProcessInServer::~AudioProcessInServer()
     convertedBuffer_.buffer = nullptr;
     
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     TurnOffRemoteMicIndicator();
@@ -425,10 +425,13 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
-        CHECK_AND_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, sessionId_),
-            false, "NotifyPrivacyStop failed!");
+        bool ret = RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, sessionId_);
+        if (!ret) {
+            AUDIO_ERR_LOG("NotifyPrivacyStop failed!");
+        }
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = false;
+        return ret;
     } else {
         AUDIO_WARNING_LOG("MicIndicator:already off, Stream:%{public}u", sessionId_);
     }
@@ -1505,6 +1508,8 @@ int32_t AudioProcessInServer::SetStaticRenderRate(uint32_t renderRate)
     CHECK_AND_RETURN_RET_LOG(processBuffer_->GetStaticMode(), ERR_INCORRECT_MODE, "not in static Mode");
     CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(renderRate), SUCCESS);
     audioRenderRate_ = static_cast<AudioRendererRate>(renderRate);
+    speed_ = ConvertAudioRenderRateToSpeed(audioRenderRate_);
+    pitch_ = speed_;
     CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
         "ProcessAndSetStaticBuffer fail!");
     return SUCCESS;
@@ -1514,14 +1519,21 @@ int32_t AudioProcessInServer::ProcessAndSetStaticBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
         ERR_OPERATION_FAILED, "staticBuffer not inited");
-    int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
+    
+    int32_t ret = staticBufferProcessor_->ProcessBufferSpeed(speed_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferSpeed fail!");
+    
+    ret = staticBufferProcessor_->ProcessBufferPitch(pitch_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferPitch fail!");
+    
+    staticBufferProcessor_->SaveProcessBuffer();
+    
     uint8_t *bufferBase = nullptr;
     size_t bufferSize = 0;
     ret = staticBufferProcessor_->GetProcessedBuffer(&bufferBase, bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
+    
     staticBufferProvider_->SetProcessedBuffer(&bufferBase, bufferSize);
-    staticBufferProcessor_->SaveProcessBuffer();
     return SUCCESS;
 }
 
@@ -1663,6 +1675,18 @@ int32_t AudioProcessInServer::SetMuteHint(bool mute)
         return ERR_NOT_SUPPORTED;
     }
     return CoreServiceHandler::GetInstance().SetCapturerMuteHint(sessionId_, mute);
+}
+
+int32_t AudioProcessInServer::SetStaticPitch(float pitch)
+{
+    CHECK_AND_RETURN_RET_LOG(pitch >= MIN_STREAM_PITCH_LEVEL && pitch <= MAX_STREAM_PITCH_LEVEL,
+        ERR_INVALID_PARAM, "Invalid pitch: %{public}f", pitch);
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
+    CHECK_AND_RETURN_RET_LOG(processBuffer_->GetStaticMode(), ERR_INCORRECT_MODE, "not in static Mode");
+    pitch_ = pitch;
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
+        "ProcessAndSetStaticBuffer fail!");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

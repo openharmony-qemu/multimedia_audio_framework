@@ -20,6 +20,8 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "hpae_capturer_manager.h"
+#include "hpae_fast_capturer_manager.h"
+#include "i_hpae_capturer_manager.h"
 #include "hpae_node_common.h"
 
 using namespace OHOS;
@@ -220,6 +222,90 @@ static void StateControlTest(std::shared_ptr<HpaeCapturerManager> &capturerManag
     EXPECT_EQ(
         capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == ERR_INVALID_OPERATION, true);
     EXPECT_EQ(capturerManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager Pause API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerManagerPauseWithStandby_001
+ * @tc.desc  : Test Pause with isStandby=true for normal session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerPauseWithStandby_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    std::shared_ptr<ReadDataCb> readDataCb =
+        std::make_shared<ReadDataCb>(g_rootCapturerPath);
+    EXPECT_EQ(capturerManager->RegisterReadCallback(streamInfo.sessionId, readDataCb), SUCCESS);
+
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(capturerManager->IsRunning(), true);
+
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId, true) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager Pause API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerManagerPauseWithStandby_002
+ * @tc.desc  : Test Pause with isStandby=false for normal session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerPauseWithStandby_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    std::shared_ptr<ReadDataCb> readDataCb =
+        std::make_shared<ReadDataCb>(g_rootCapturerPath);
+    EXPECT_EQ(capturerManager->RegisterReadCallback(streamInfo.sessionId, readDataCb), SUCCESS);
+
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId, false) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
 }
 
 /*
@@ -3004,6 +3090,29 @@ HWTEST_F(HpaeCapturerManagerTest, Pause_NonInterphone_001, TestSize.Level1)
     EXPECT_EQ(capturerManager->IsInit(), false);
 }
 
+/**
+ * @tc.name  : FaultCode_CaptureEffectCreate_InvalidSceneType
+ * @tc.type  : FUNC
+ * @tc.desc  : Test CaptureEffectCreate returns ERROR when sceneType is not supported,
+ *             covering FAULT_NO_SOUND/RECORD/CREATE/ERR_INVALID_PARAM fault code path.
+ */
+HWTEST_F(HpaeCapturerManagerTest, FaultCode_CaptureEffectCreate_InvalidSceneType,
+    TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+
+    static constexpr AudioEnhanceScene INVALID_ENHANCE_SCENE = static_cast<AudioEnhanceScene>(9999);
+    int32_t ret = capturerManager->CaptureEffectCreate(
+        HPAE_SCENE_DEFAULT, INVALID_ENHANCE_SCENE);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

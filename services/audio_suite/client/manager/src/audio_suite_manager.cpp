@@ -972,9 +972,12 @@ int32_t AudioSuiteManager::GetEqualizerFrequencyBandGains(uint32_t nodeId,
     CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
         HILOG_COMM_ERROR("[GetEqualizerFrequencyBandGains]engine GetOptions failed, getOptionsResult_ = %{public}d",
         getOptionsResult_));
-    int32_t parseValue[EQUALIZER_BAND_NUM] = {0};
+    std::vector<int32_t> parseValue;
+    parseValue.reserve(EQUALIZER_BAND_NUM);
     ParseValue(value, parseValue);
-    for (size_t idx = 0; idx < sizeof(parseValue) / sizeof(parseValue[0]); idx++) {
+    CHECK_AND_RETURN_RET_LOG(parseValue.size() <= EQUALIZER_BAND_NUM, ERROR,
+        "GetEqualizerFrequencyBandGains ParseValue error");
+    for (size_t idx = 0; idx < parseValue.size(); idx++) {
         frequencyBandGains.gains[idx] = parseValue[idx];
     }
     return SUCCESS;
@@ -1015,29 +1018,27 @@ int32_t AudioSuiteManager::GetVoiceBeautifierType(uint32_t nodeId,
 int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag)
 {
-    std::mutex* pipelineLock = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
-            ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
+    std::unique_lock<std::mutex> lk(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
+        ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
-        auto it = pipelineLockMap_.find(pipelineId);
-        CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-                                 "pipeline lock not exist");
-        pipelineLock = it->second.get();
-        CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-                                 "pipeline lock is null");
-    }
+    auto it = pipelineLockMap_.find(pipelineId);
+    CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock not exist");
+    std::mutex *pipelineLock = it->second.get();
+    CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock is null");
 
-    std::lock_guard<std::mutex> lock(*pipelineLock);
+    std::lock_guard<std::mutex> pipelineLockGuard(*pipelineLock);
     auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
+    lk.unlock();
 
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
     isFinishRenderFrameMap_[pipelineId] = false;
     int32_t ret = suiteEngine_->RenderFrame(pipelineId, audioData, frameSize, writeLen, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine RenderFrame failed, ret = %{public}d", ret);
 
-    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     bool stopWaiting = callbackCV->wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS),
         [this, pipelineId] { return isFinishRenderFrameMap_[pipelineId]; });
     if (!stopWaiting) {
@@ -1052,21 +1053,21 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
 int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
 {
-    std::mutex* pipelineLock = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(lock_);
-        CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
-            ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    std::unique_lock<std::mutex> lk(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
+        ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
-        auto it = pipelineLockMap_.find(pipelineId);
-        CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-                                 "pipeline lock not exist");
-        pipelineLock = it->second.get();
-        CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-                                 "pipeline lock is null");
-    }
+    auto it = pipelineLockMap_.find(pipelineId);
+    CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock not exist");
+    std::mutex *pipelineLock = it->second.get();
+    CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock is null");
+
     std::lock_guard<std::mutex> lock(*pipelineLock);
     auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
+    lk.unlock();
 
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
     isFinishMultiRenderFrameMap_[pipelineId] = false;
@@ -1074,7 +1075,6 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
         pipelineId, audioDataArray, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine RenderFrame failed, ret = %{public}d", ret);
 
-    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     bool stopWaiting = callbackCV->wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS),
         [this, pipelineId] { return isFinishMultiRenderFrameMap_[pipelineId]; });
     if (!stopWaiting) {
@@ -1086,12 +1086,12 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     return multiRenderFrameResultMap_[pipelineId];
 }
 
-int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool *isSupported)
+int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool &isSupported)
 {
     AUDIO_DEBUG_LOG("isNodeTypeSupported enter.");
     if (nodeType == NODE_TYPE_AUDIO_MIXER) {
         AUDIO_INFO_LOG("MixerNode is supported on all device.");
-        *isSupported = true;
+        isSupported = true;
         return SUCCESS;
     }
 
@@ -1101,7 +1101,7 @@ int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool *is
         AUDIO_INFO_LOG("nodeType: %{public}d is supported  on this device.", nodeType);
     } else {
         HILOG_COMM_ERROR("[IsNodeTypeSupported]engine failed, Wrong effect nodeType: %{public}d", nodeType);
-        *isSupported = false;
+        isSupported = false;
     }
     return SUCCESS;
 }
@@ -1312,6 +1312,37 @@ void AudioSuiteManager::OnGetOptions(int32_t result)
     callbackCV_.notify_all();
 }
 
+int32_t AudioSuiteManager::PrintInfo(uint32_t pipelineId, int32_t fd)
+{
+    AUDIO_DEBUG_LOG("PrintInfo enter.");
+
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishPrintInfo_ = false;
+    int32_t ret = suiteEngine_->PrintInfo(pipelineId, fd);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine PrintInfo failed, ret = %{public}d", ret);
+
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishPrintInfo_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "PrintInfo timeout");
+
+    AUDIO_DEBUG_LOG("PrintInfo leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(printInfoResult_ == SUCCESS,
+        printInfoResult_,
+        HILOG_COMM_ERROR("[PrintInfo]engine failed, printInfoResult_ = %{public}d", printInfoResult_));
+    return printInfoResult_;
+}
+
+void AudioSuiteManager::OnPrintInfo(int32_t result)
+{
+    std::lock_guard<std::mutex> lock(callbackMutex_);
+    printInfoResult_ = result;
+    isFinishPrintInfo_ = true;
+    callbackCV_.notify_one();
+}
+
 void AudioSuiteManager::OnSetOptions(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -1394,19 +1425,17 @@ void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option)
     char comma;
     int32_t genderInt;
     int32_t typeInt;
-    iss >> genderInt >> comma >> typeInt;
+    float pitch;
+    iss >> genderInt >> comma >> typeInt >> comma >> pitch;
     option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(genderInt);
     option.optionType = static_cast<AudioPureVoiceChangeType>(typeInt);
+    option.pitch = pitch;
 }
 
-void ParseValue(const std::string &valueStr, int32_t *result)
+void ParseValue(const std::string &valueStr, std::vector<int32_t> &result)
 {
-    if (result == nullptr) {
-        return;
-    }
     std::istringstream iss(valueStr);
     std::string token;
-    std::vector<int32_t> temp;
 
     while (std::getline(iss, token, ':')) {
         token.erase(0, token.find_first_not_of(' ')); // Remove leading spaces
@@ -1421,12 +1450,8 @@ void ParseValue(const std::string &valueStr, int32_t *result)
                 val < INT32_MIN || val > INT32_MAX) { // Out of int32_t range
                 return; // Conversion failed, return immediately
             }
-            temp.push_back(static_cast<int32_t>(val));
+            result.push_back(static_cast<int32_t>(val));
         }
-    }
-
-    for (size_t i = 0; i < temp.size(); ++i) {
-        result[i] = temp[i];
     }
 }
 

@@ -20,6 +20,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr int32_t NUM5 = 5;
+static constexpr uint32_t TEST_SESSION_ID = 100001;
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_001
@@ -1099,6 +1100,161 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_004, TestSize.Leve
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
+
+/**
+ * @tc.name  : TriggerVoipPriorityReload_001
+ * @tc.number: TriggerVoipPriorityReload_001
+ * @tc.desc  : Test EventEntry::TriggerVoipPriorityReload with a started stream.
+ */
+HWTEST(AudioCoreServiceEntryTest, TriggerVoipPriorityReload_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(false);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    ASSERT_NE(eventEntry, nullptr);
+
+    EXPECT_NO_THROW(eventEntry->TriggerVoipPriorityReload(TEST_SESSION_ID, true));
+    auto streamDescAfter = pipeManager->GetStreamDescById(TEST_SESSION_ID);
+    ASSERT_NE(streamDescAfter, nullptr);
+    EXPECT_TRUE(streamDescAfter->voipPriorityLowered_.load());
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : TriggerVoipPriorityReload_002
+ * @tc.number: TriggerVoipPriorityReload_002
+ * @tc.desc  : Test EventEntry::TriggerVoipPriorityReload skips reload for a non-running stream.
+ */
+HWTEST(AudioCoreServiceEntryTest, TriggerVoipPriorityReload_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+    constexpr uint32_t sentinelSessionId = 100099;
+    audioCoreService->SetOpenedNormalSourceSessionId(sentinelSessionId);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->voipPriorityLowered_.store(true);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    ASSERT_NE(eventEntry, nullptr);
+
+    EXPECT_NO_THROW(eventEntry->TriggerVoipPriorityReload(TEST_SESSION_ID, false));
+    auto streamDescAfter = pipeManager->GetStreamDescById(TEST_SESSION_ID);
+    ASSERT_NE(streamDescAfter, nullptr);
+    EXPECT_FALSE(streamDescAfter->voipPriorityLowered_.load());
+    EXPECT_EQ(audioCoreService->GetOpenedNormalSourceSessionId(), sentinelSessionId);
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : UpdateVoipNoPrivacyFlagBySessionId_001
+ * @tc.number: UpdateVoipNoPrivacyFlagBySessionId_001
+ * @tc.desc  : Test EventEntry::UpdateVoipNoPrivacyFlagBySessionId updates descriptor state.
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateVoipNoPrivacyFlagBySessionId_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID + 1;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    ASSERT_NE(eventEntry, nullptr);
+
+    eventEntry->UpdateVoipNoPrivacyFlagBySessionId(streamDesc->GetSessionId(), true,
+        "AudioCoreServiceEntryTest::UpdateVoipNoPrivacyFlagBySessionId_001");
+    EXPECT_TRUE(streamDesc->voipNoPrivacyFlag_.load());
+    EXPECT_FALSE(streamDesc->voipPrivacyMuted_.load());
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : UpdateVoipNoPrivacyFlagByPid_001
+ * @tc.number: UpdateVoipNoPrivacyFlagByPid_001
+ * @tc.desc  : Test EventEntry::UpdateVoipNoPrivacyFlagByPid updates matched descriptor only.
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateVoipNoPrivacyFlagByPid_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto firstStreamDesc = std::make_shared<AudioStreamDescriptor>();
+    firstStreamDesc->sessionId_ = TEST_SESSION_ID + 2;
+    firstStreamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    firstStreamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    firstStreamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    firstStreamDesc->callerPid_ = 830101;
+
+    auto secondStreamDesc = std::make_shared<AudioStreamDescriptor>();
+    secondStreamDesc->sessionId_ = TEST_SESSION_ID + 3;
+    secondStreamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    secondStreamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    secondStreamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    secondStreamDesc->callerPid_ = 830102;
+
+    pipeInfo->streamDescriptors_.push_back(firstStreamDesc);
+    pipeInfo->streamDescriptors_.push_back(secondStreamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    ASSERT_NE(eventEntry, nullptr);
+
+    eventEntry->UpdateVoipNoPrivacyFlagByPid(830101, true,
+        "AudioCoreServiceEntryTest::UpdateVoipNoPrivacyFlagByPid_001");
+    EXPECT_TRUE(firstStreamDesc->voipNoPrivacyFlag_.load());
+    EXPECT_FALSE(secondStreamDesc->voipNoPrivacyFlag_.load());
+
+    pipeManager->curPipeList_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS

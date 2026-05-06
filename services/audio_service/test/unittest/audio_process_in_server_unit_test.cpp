@@ -1250,6 +1250,32 @@ HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_002, TestSize.Level2)
 }
 
 /**
+ * @tc.name  : Test TurnOffMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOffMicIndicator_003
+ * @tc.desc  : Test TurnOffMicIndicator clears local state when NotifyPrivacyStop fails.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_003, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.appInfo.appTokenId = 0;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PAUSED;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+    RecordPrivacyManager::GetInstance().tokenIdRecordMap_.clear();
+    RecordPrivacyManager::GetInstance().tokenIdRecordMap_[0] = {audioProcessInServerRet.GetSessionId()};
+
+    bool ret = audioProcessInServerRet.TurnOffMicIndicator(capturerState);
+    EXPECT_FALSE(ret);
+    EXPECT_FALSE(audioProcessInServerRet.isMicIndicatorOn_);
+    EXPECT_EQ(RecordPrivacyManager::GetInstance().tokenIdRecordMap_.count(0), 0);
+    ret = audioProcessInServerRet.TurnOnMicIndicator();
+    EXPECT_FALSE(ret);
+    RecordPrivacyManager::GetInstance().tokenIdRecordMap_.clear();
+}
+
+/**
  * @tc.name  : Test GetInnerCapState API
  * @tc.type  : FUNC
  * @tc.number: GetInnerCapState_001
@@ -2886,6 +2912,10 @@ HWTEST(AudioProcessInServerUnitTest, RecordPrivacyManager_001, TestSize.Level1)
 
     manager.tokenIdRecordMap_.clear();
     EXPECT_TRUE(manager.NotifyPrivacyStop(tokenId, sessionIdA));
+
+    manager.tokenIdRecordMap_[0] = {sessionIdA};
+    EXPECT_FALSE(manager.NotifyPrivacyStop(0, sessionIdA));
+    EXPECT_EQ(manager.tokenIdRecordMap_.count(0), 0);
 }
 
 /**
@@ -3212,6 +3242,69 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_Destructor_LoopBackEff
         ASSERT_NE(audioProcessInServer, nullptr);
         audioProcessInServer = nullptr;
     }
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_001
+ * @tc.desc  : Test UpdateUnderrunInfo when infoType == UNDERRUN_TYPE_ISTIMEOUT is true
+ */
+HWTEST(AudioProcessInServerUnitTest, UpdateUnderrunInfo_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    ASSERT_NE(audioProcessInServer, nullptr);
+
+    // Test when infoType == UNDERRUN_TYPE_ISTIMEOUT
+    uint32_t underrunInfoKey = UNDERRUN_TYPE_ISTIMEOUT;
+    int32_t underrunInfoVal = 1; // true
+    int32_t ret = audioProcessInServer->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_002
+ * @tc.desc  : Test UpdateUnderrunInfo when infoType == UNDERRUN_TYPE_ISUSEARK is true
+ */
+HWTEST(AudioProcessInServerUnitTest, UpdateUnderrunInfo_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    ASSERT_NE(audioProcessInServer, nullptr);
+
+    // Test when infoType == UNDERRUN_TYPE_ISUSEARK
+    uint32_t underrunInfoKey = UNDERRUN_TYPE_ISUSEARK;
+    int32_t underrunInfoVal = 1; // true
+    int32_t ret = audioProcessInServer->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateUnderrunInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateUnderrunInfo_003
+ * @tc.desc  : Test UpdateUnderrunInfo when infoType is unknown
+ */
+HWTEST(AudioProcessInServerUnitTest, UpdateUnderrunInfo_003, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    ASSERT_NE(audioProcessInServer, nullptr);
+
+    // Test when infoType is unknown
+    uint32_t underrunInfoKey = UNDERRUN_TYPE_MAX; // invalid type
+    int32_t underrunInfoVal = 1;
+    int32_t ret = audioProcessInServer->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

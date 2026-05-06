@@ -25,6 +25,7 @@ group("audio_suite_packages") {
 config("audio_suite_public_config") {
   include_dirs = [
     "client/manager/include",
+    "client/converter/include",
     "client/config/include",
     "client/node/include",
     "client/utils/include",
@@ -76,6 +77,7 @@ audio_ohos_library("audio_suite") {
       "client/manager/src/audio_suite_engine.cpp",
       "client/manager/src/audio_suite_manager.cpp",
       "client/manager/src/audio_suite_pipeline.cpp",
+      "client/manager/src/audio_suite_mixer_processor.cpp",
       "client/node/src/audio_suite_input_node.cpp",
       "client/node/src/audio_suite_output_node.cpp",
       "client/node/src/audio_suite_process_node.cpp",
@@ -88,6 +90,7 @@ audio_ohos_library("audio_suite") {
       "client/node/src/audio_suite_tempo_pitch_node.cpp",
       "client/node/src/audio_suite_node.cpp",
       "client/node/src/audio_suite_space_render_node.cpp",
+      "client/node/src/audio_suite_mixer_processor_node.cpp",
       "client/utils/src/audio_suite_manager_thread.cpp",
       "client/utils/src/audio_suite_common.cpp",
       "client/utils/src/audio_suite_pcm_buffer.cpp",
@@ -108,6 +111,7 @@ audio_ohos_library("audio_suite") {
       "client/config/src/audio_suite_capabilities_parser.cpp",
       "client/config/src/audio_suite_capabilities.cpp",
       "client/converter/src/audio_format_converter_impl.cpp",
+      "client/converter/src/audio_suite_raw_format_conversion.cpp",
     ]
 
     deps = [

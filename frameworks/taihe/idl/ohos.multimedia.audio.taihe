@@ -56,6 +56,12 @@ enum AudioLoopbackMode: i32 {
   HARDWARE = 0,
 }
 
+enum LoopbackType: i32 {
+  NORMAL = 0,
+  GLOBAL_HANDLER = 1,
+  GLOBAL_CONTROL = 2,
+}
+
 enum AudioLoopbackStatus: i32 {
   UNAVAILABLE_DEVICE = -2,
   UNAVAILABLE_SCENE = -1,
@@ -1473,6 +1479,9 @@ union AudioLpback {
 
 @gen_promise("createAudioLoopback")
 function CreateAudioLoopbackSync(mode: AudioLoopbackMode): AudioLpback;
+
+@gen_promise("createGlobalAudioLoopback")
+function CreateGlobalAudioLoopbackSync(mode: AudioLoopbackMode, isController: bool): AudioLpback;
 
 interface AudioCollaborativeManager {
   IsCollaborativePlaybackSupported(): bool;

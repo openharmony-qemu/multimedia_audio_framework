@@ -32,6 +32,7 @@
 #include "volume_tools.h"
 #include "callback_handler.h"
 #include "audio_speed.h"
+#include "audio_pitch_processor.h"
 #include "audio_spatial_channel_converter.h"
 #include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
@@ -97,6 +98,7 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
+    int32_t SetSonicPitch(float pitch) override;
     float GetSpeed() override;
     int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) override;
 
@@ -248,6 +250,12 @@ public:
     bool ResetStaticPlayPosition() override;
     void ReportExceptionForInterval();
     void CheckAndReportTimestamp();
+
+    bool IsFastStream() const
+    {
+        return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
+    }
+    void CheckAndProcessPendingSpanSize();
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -276,11 +284,16 @@ private:
 
     void SetCacheSize(uint32_t cacheSizeInFrame);
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    bool IsLowLatencyRenderer() const;
+    uint64_t GetDefaultCallbackBufferDurationInUs() const;
+    int32_t GetBufferWaitTimeoutInMs() const;
     void CallClientHandle();
     bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
+    bool ProcessPitch(uint8_t *&buffer, size_t &bufferSize, bool &pitchCached);
+    int32_t ProcessBufferAndWriteCache(uint8_t *buffer, size_t bufferSize, size_t oriBufferSize);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
@@ -390,6 +403,7 @@ private:
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
     uint32_t bufferSizeInMsec_ = 20; // 20ms
+    bool isBufferSizeInMsecSet_ = false;
     std::string dumpOutFile_ = "";
     FILE *dumpOutFd_ = nullptr;
     mutable int64_t volumeDataCount_ = 0;
@@ -486,6 +500,11 @@ private:
     std::atomic<bool> speedEnable_ = false;
     std::atomic<bool> isHdiSpeed_ = false;
     std::mutex speedMutex_;
+
+    std::shared_ptr<AudioPitchProcessor> pitchProcessor_ = nullptr;
+    std::unique_ptr<uint8_t[]> pitchBuffer_ {nullptr};
+    float curPitch_ = 1.0f;
+    std::mutex pitchMutex_;
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 

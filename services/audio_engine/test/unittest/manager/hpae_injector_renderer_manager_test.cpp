@@ -888,4 +888,155 @@ HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_006, TestSiz
     EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_->IsRunning(), true);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
 }
+
+/**
+ * @tc.name  : FaultCode_Release_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Release returns ERROR when sessionId not found,
+ *             covering PLAY_RELEASE_INSTANCE_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_Release_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    int32_t ret = hpaeRendererManager->Release(INVALID_STREAM_ID);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_ConnectInputSession_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test ConnectInputSession returns ERR_INVALID_PARAM when session not found,
+ *             covering PLAY_START_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_ConnectInputSession_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    int32_t ret = hpaeRendererManager->ConnectInputSession(INVALID_STREAM_ID);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+
+/**
+ * @tc.name  : FaultCode_SetSessionFade_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetSessionFade returns false when session not found in sinkInputNodeMap_,
+ *             covering PLAY_SEND_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_SetSessionFade_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    bool ret = hpaeRendererManager->SetSessionFade(INVALID_STREAM_ID, OPERATION_STARTED);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager Pause API with isStandby
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorPauseWithStandby_001
+ * @tc.desc  : Test Pause with isStandby=true for injector renderer
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorPauseWithStandby_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeSinkInputInfo sinkInputInfo;
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId, true) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager Pause API with isStandby=false
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorPauseWithStandby_002
+ * @tc.desc  : Test Pause with isStandby=false for injector renderer
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorPauseWithStandby_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeSinkInputInfo sinkInputInfo;
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId, false) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager SetIsLowLatency
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorSetIsLowLatency_001
+ * @tc.desc  : Test SetIsLowLatency is called with false during AddSingleNodeToSink
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorSetIsLowLatency_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    auto it = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    ASSERT_EQ(it != hpaeRendererManager->sinkInputNodeMap_.end(), true);
+    auto node = it->second;
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->GetIsLowLatency(), false);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
+ * @tc.name  : FaultCode_DisConnectInputSession_SessionNotFound
+ * @tc.type  : FUNC
+ * @tc.desc  : Test DisConnectInputSession returns ERR_INVALID_PARAM when session not found,
+ *             covering PLAY_STOP_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, FaultCode_DisConnectInputSession_SessionNotFound, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+
+    int32_t ret = hpaeRendererManager->DisConnectInputSession(INVALID_STREAM_ID);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
 }  // namespace

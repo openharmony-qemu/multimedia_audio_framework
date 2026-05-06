@@ -44,6 +44,7 @@ private:
         bool isTrue;
         int32_t intValue;
         int32_t loopbackMode;
+        int32_t loopbackType;
         double volLevel;
         bool enable;
         AudioLoopbackStatus loopbackStatus;
@@ -52,7 +53,9 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioLoopbackWrapper(napi_env env, AudioLoopbackMode audioLoopbackMode);
+    static napi_value CreateGlobalAudioLoopbackWrapper(napi_env env, AudioLoopbackMode mode, LoopbackType type);
     static napi_value CreateAudioLoopback(napi_env env, napi_callback_info info);
+    static napi_value CreateGlobalAudioLoopback(napi_env env, napi_callback_info info);
     static napi_value GetStatus(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
     static napi_value GetVolume(napi_env env, napi_callback_info info);
@@ -84,6 +87,7 @@ private:
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
     static AudioLoopbackMode sLoopbackMode_;
+    static LoopbackType sLoopbackType_;
 
     napi_env env_;
     std::shared_ptr<AudioLoopbackCallback> callbackNapi_ = nullptr;

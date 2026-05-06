@@ -608,6 +608,7 @@ void AudioSettingProvider::GetIntValuesInner(std::vector<IntValueInfo> &infos, s
         int32_t ret = GetIntValueInner(helper, info.key, tableType, res);
         CHECK_AND_CONTINUE(ret == SUCCESS);
         info.value = res;
+        info.loadFlag = true;
     }
     ReleaseDataShareHelper(helper);
 }
@@ -709,6 +710,7 @@ void AudioSettingProvider::GetBoolValuesInner(std::vector<BoolValueInfo> &infos,
         int32_t ret = GetBoolValueInner(helper, info.key, tableType, res);
         CHECK_AND_CONTINUE(ret == SUCCESS);
         info.value = res;
+        info.loadFlag = true;
     }
     ReleaseDataShareHelper(helper);
 }

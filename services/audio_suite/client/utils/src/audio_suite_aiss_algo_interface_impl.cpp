@@ -182,11 +182,11 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::CheckFilePath(std::string &filePath)
     char buffer[PATH_MAX] = {0};
     char *path = realpath(filePath.c_str(), buffer);
     if (path == nullptr) {
-        AUDIO_ERR_LOG("Invalid file path: %s", filePath.c_str());
+        AUDIO_ERR_LOG("Invalid file path: %{private}s", filePath.c_str());
         return ERROR;
     }
     filePath = buffer;
-    AUDIO_DEBUG_LOG("Check file path success, path: %s", filePath.c_str());
+    AUDIO_DEBUG_LOG("Check file path success, path: %{private}s", filePath.c_str());
     return SUCCESS;
 }
 

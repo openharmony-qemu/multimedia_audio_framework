@@ -40,6 +40,7 @@ ohos_fuzztest("AudioProresamplerProcessFuzzTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "os_account:os_account_innerkits",
   ]

@@ -515,7 +515,9 @@ void AudioRoutingManagerImpl::OnPreferredInputDeviceChangeForCapturerInfo(AudioC
     callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
-    RegisterPreferredInputDeviceChangeCallback(capturerInfo, cacheCallback, PREFERRED_INPUT_DEVICE_CALLBACK_NAME, this);
+    int32_t appUid = static_cast<int32_t>(getuid());
+    RegisterPreferredInputDeviceChangeCallback(capturerInfo, cacheCallback, PREFERRED_INPUT_DEVICE_CALLBACK_NAME, this,
+        appUid);
 }
 
 void AudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(AudioCapturerInfo const &capturerInfo,
@@ -543,20 +545,15 @@ void AudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(AudioCa
 
     cb->SaveCallbackReference(callback);
 
+    int32_t registerUid = (uid != -1) ? uid : static_cast<int32_t>(getuid());
     int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->SetPreferredInputDeviceChangeCallback(
-        captureInfo, cb, uid);
+        captureInfo, cb, registerUid);
     CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowError(ret),
         "Registering Preferred Input Device Change Callback Failed %{public}d", ret);
 
-    AddPreferredInputDeviceChangeCallback(audioRoutingManagerImpl, cb);
-}
-
-void AudioRoutingManagerImpl::AddPreferredInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-    std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb)
-{
-    CHECK_AND_RETURN_LOG(audioRoutingManagerImpl != nullptr, "audioRoutingManagerImpl is nullptr");
+    PreferredInputCallbackInfo info = {registerUid, captureInfo.sourceType};
     std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredInputDeviceMutex_);
-    audioRoutingManagerImpl->preferredInputDeviceCallbacks_.push_back(cb);
+    audioRoutingManagerImpl->preferredInputDeviceCallbackList_.push_back(std::make_pair(cb, info));
 }
 
 void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
@@ -602,12 +599,15 @@ void AudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeByFilterCallbac
 
     cb->SaveCallbackReference(callback);
 
+    int32_t filterUid = audioRendererFilter->uid;
     int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
-        audioRendererFilter->rendererInfo, cb, audioRendererFilter->uid);
+        audioRendererFilter->rendererInfo, cb, filterUid);
     CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowError(ret),
         "Registering Preferred Output Device Change By Filter Callback Failed %{public}d", ret);
 
-    AddPreferredOutputDeviceChangeCallback(audioRoutingManagerImpl, cb);
+    PreferredOutputCallbackInfo info = {filterUid, audioRendererFilter->rendererInfo.streamUsage};
+    std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredOutputDeviceMutex_);
+    audioRoutingManagerImpl->preferredOutputDeviceCallbackList_.push_back(std::make_pair(cb, info));
 }
 
 void AudioRoutingManagerImpl::OnPreferredInputDeviceChangeByFilter(
@@ -666,10 +666,21 @@ void AudioRoutingManagerImpl::UnregisterPreferredInputDeviceChangeCallback(std::
         std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb =
             GetTaihePrefInputDeviceChangeCb(callback, audioRoutingManagerImpl);
         CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioPreferredInputDeviceChangeCallback is nullptr");
-        int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(cb);
-        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnsetPreferredInputDeviceChangeCallback Failed");
+        
+        std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredInputDeviceMutex_);
+        auto it = std::find_if(audioRoutingManagerImpl->preferredInputDeviceCallbackList_.begin(),
+                               audioRoutingManagerImpl->preferredInputDeviceCallbackList_.end(),
+                               [&cb](const auto &pair) { return pair.first == cb; });
+        if (it != audioRoutingManagerImpl->preferredInputDeviceCallbackList_.end()) {
+            OHOS::AudioStandard::AudioCapturerInfo capturerInfo = {};
+            capturerInfo.sourceType = it->second.sourceType;
+            int32_t uid = it->second.uid;
+            int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(
+                cb, capturerInfo, uid);
+            CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnsetPreferredInputDeviceChangeCallback Failed");
+            audioRoutingManagerImpl->preferredInputDeviceCallbackList_.erase(it);
+        }
 
-        RemovePreferredInputDeviceChangeCallback(audioRoutingManagerImpl, cb);
         return;
     }
 
@@ -688,10 +699,22 @@ void AudioRoutingManagerImpl::UnregisterPreferredOutputDeviceChangeCallback(std:
         std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb =
             GetTaihePrefOutputDeviceChangeCb(callback, audioRoutingManagerImpl);
         CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioPreferredOutputDeviceChangeCallback is nullptr");
-        int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(cb);
-        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnsetPreferredOutputDeviceChangeCallback Failed");
+        
+        std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredOutputDeviceMutex_);
+        auto it = std::find_if(audioRoutingManagerImpl->preferredOutputDeviceCallbackList_.begin(),
+                               audioRoutingManagerImpl->preferredOutputDeviceCallbackList_.end(),
+                               [&cb](const auto &pair) { return pair.first == cb; });
+        if (it != audioRoutingManagerImpl->preferredOutputDeviceCallbackList_.end()) {
+            OHOS::AudioStandard::AudioRendererInfo rendererInfo = {};
+            rendererInfo.streamUsage = it->second.streamUsage;
+            int32_t uid = it->second.uid;
+            int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(
+                cb, rendererInfo, uid);
+            CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+                "UnsetPreferredOutputDeviceChangeCallback Failed");
+            audioRoutingManagerImpl->preferredOutputDeviceCallbackList_.erase(it);
+        }
 
-        RemovePreferredOutputDeviceChangeCallback(audioRoutingManagerImpl, cb);
         return;
     }
 
@@ -704,32 +727,16 @@ std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> AudioRoutingManage
     CHECK_AND_RETURN_RET_LOG(audioRoutingManagerImpl != nullptr, nullptr, "audioRoutingManagerImpl is nullptr");
     std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredInputDeviceMutex_);
     std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb = nullptr;
-    for (auto &iter : audioRoutingManagerImpl->preferredInputDeviceCallbacks_) {
-        if (iter == nullptr) {
-            AUDIO_ERR_LOG("iter is null");
+    for (auto &pair : audioRoutingManagerImpl->preferredInputDeviceCallbackList_) {
+        if (pair.first == nullptr) {
+            AUDIO_ERR_LOG("pair.first is null");
             continue;
         }
-        if (iter->ContainSameJsCallback(callback)) {
-            cb = iter;
+        if (pair.first->ContainSameJsCallback(callback)) {
+            cb = pair.first;
         }
     }
     return cb;
-}
-
-void AudioRoutingManagerImpl::RemovePreferredInputDeviceChangeCallback(
-    AudioRoutingManagerImpl *audioRoutingManagerImpl, std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb)
-{
-    CHECK_AND_RETURN_LOG(audioRoutingManagerImpl != nullptr, "audioRoutingManagerImpl is nullptr");
-    std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredInputDeviceMutex_);
-    audioRoutingManagerImpl->preferredInputDeviceCallbacks_.remove(cb);
-}
-
-void AudioRoutingManagerImpl::RemovePreferredOutputDeviceChangeCallback(
-    AudioRoutingManagerImpl *audioRoutingManagerImpl, std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb)
-{
-    CHECK_AND_RETURN_LOG(audioRoutingManagerImpl != nullptr, "audioRoutingManagerImpl is nullptr");
-    std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredOutputDeviceMutex_);
-    audioRoutingManagerImpl->preferredOutputDeviceCallbacks_.remove(cb);
 }
 
 void AudioRoutingManagerImpl::RemoveAllPrefInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl)
@@ -738,12 +745,16 @@ void AudioRoutingManagerImpl::RemoveAllPrefInputDeviceChangeCallback(AudioRoutin
     CHECK_AND_RETURN_LOG(audioRoutingManagerImpl->audioRoutingMngr_ != nullptr,
         "audioRoutingManagerImpl->audioRoutingMngr_ is nullptr");
     std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredInputDeviceMutex_);
-    for (auto &iter : audioRoutingManagerImpl->preferredInputDeviceCallbacks_) {
-        int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(iter);
+    for (auto &pair : audioRoutingManagerImpl->preferredInputDeviceCallbackList_) {
+        OHOS::AudioStandard::AudioCapturerInfo capturerInfo = {};
+        capturerInfo.sourceType = pair.second.sourceType;
+        int32_t uid = pair.second.uid;
+        int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(
+            pair.first, capturerInfo, uid);
         CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowError(ret),
             "Unset one of preferred input device change callback failed!");
     }
-    audioRoutingManagerImpl->preferredInputDeviceCallbacks_.clear();
+    audioRoutingManagerImpl->preferredInputDeviceCallbackList_.clear();
 }
 
 void AudioRoutingManagerImpl::RemoveAllPrefOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl)
@@ -752,12 +763,16 @@ void AudioRoutingManagerImpl::RemoveAllPrefOutputDeviceChangeCallback(AudioRouti
     CHECK_AND_RETURN_LOG(audioRoutingManagerImpl->audioRoutingMngr_ != nullptr,
         "audioRoutingManagerImpl->audioRoutingMngr_ is nullptr");
     std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredOutputDeviceMutex_);
-    for (auto &iter : audioRoutingManagerImpl->preferredOutputDeviceCallbacks_) {
-        int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(iter);
+    for (auto &pair : audioRoutingManagerImpl->preferredOutputDeviceCallbackList_) {
+        OHOS::AudioStandard::AudioRendererInfo rendererInfo = {};
+        rendererInfo.streamUsage = pair.second.streamUsage;
+        int32_t uid = pair.second.uid;
+        int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(
+            pair.first, rendererInfo, uid);
         CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowError(ret),
             "Unset one of preferred output device change callback failed!");
     }
-    audioRoutingManagerImpl->preferredOutputDeviceCallbacks_.clear();
+    audioRoutingManagerImpl->preferredOutputDeviceCallbackList_.clear();
 }
 
 void AudioRoutingManagerImpl::OnMicBlockStatusChanged(callback_view<void(DeviceBlockStatusInfo const&)> callback)
@@ -1020,20 +1035,15 @@ void AudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(AudioR
 
     cb->SaveCallbackReference(callback);
 
+    int32_t appUid = static_cast<int32_t>(getuid());
     int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
-        renderInfo, cb);
+        renderInfo, cb, appUid);
     CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowError(ret),
         "Registering Preferred Output Device Change Callback Failed %{public}d", ret);
 
-    AddPreferredOutputDeviceChangeCallback(audioRoutingManagerImpl, cb);
-}
-
-void AudioRoutingManagerImpl::AddPreferredOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-    std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb)
-{
-    CHECK_AND_RETURN_LOG(audioRoutingManagerImpl != nullptr, "audioRoutingManagerImpl is nullptr");
+    PreferredOutputCallbackInfo info = {appUid, renderInfo.streamUsage};
     std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredOutputDeviceMutex_);
-    audioRoutingManagerImpl->preferredOutputDeviceCallbacks_.push_back(cb);
+    audioRoutingManagerImpl->preferredOutputDeviceCallbackList_.push_back(std::make_pair(cb, info));
 }
 
 std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback>AudioRoutingManagerImpl::GetTaihePrefOutputDeviceChangeCb(
@@ -1042,13 +1052,13 @@ std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback>AudioRoutingManage
     CHECK_AND_RETURN_RET_LOG(audioRoutingManagerImpl != nullptr, nullptr, "audioRoutingManagerImpl is nullptr");
     std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->preferredOutputDeviceMutex_);
     std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb = nullptr;
-    for (auto &iter : audioRoutingManagerImpl->preferredOutputDeviceCallbacks_) {
-        if (iter == nullptr) {
-            AUDIO_ERR_LOG("iter is null");
+    for (auto &pair : audioRoutingManagerImpl->preferredOutputDeviceCallbackList_) {
+        if (pair.first == nullptr) {
+            AUDIO_ERR_LOG("pair.first is null");
             continue;
         }
-        if (iter->ContainSameJsCallback(callback)) {
-            cb = iter;
+        if (pair.first->ContainSameJsCallback(callback)) {
+            cb = pair.first;
         }
     }
     return cb;

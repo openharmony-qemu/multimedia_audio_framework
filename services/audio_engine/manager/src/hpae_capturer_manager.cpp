@@ -27,10 +27,12 @@
 #include "audio_engine_log.h"
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
 const std::string DEFAULT_DEVICE_CLASS = "primary";
 const std::string DEFAULT_DEVICE_NETWORKID = "LocalDevice";
 const std::string REMOTE_DEVICE_CLASS = "remote";
@@ -59,14 +61,14 @@ HpaeCapturerManager::~HpaeCapturerManager()
 int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &processorType,
     const AudioEnhanceScene &sceneType)
 {
-    // DEVICE_TYPE_ACCESSORY effect move to HAL
-    CHECK_AND_RETURN_RET_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY, SUCCESS,
-        "captureId_ %{public}d needn't create effect", captureId_);
     const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
         GetEnhanceSupportedSceneType();
     auto item = audioEnhanceSupportedSceneTypes.find(sceneType);
-    CHECK_AND_RETURN_RET_LOG(item != audioEnhanceSupportedSceneTypes.end(), ERROR,
-        "sceneType %{public}d not supported", sceneType);
+    CHECK_AND_RETURN_RET(item != audioEnhanceSupportedSceneTypes.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::CREATE, ERR_INVALID_PARAM),
+        "sceneType not supported", false), ERROR));
     uint64_t sceneCode = static_cast<uint64_t>(sceneType);
     uint64_t sceneKeyCode = 0;
     sceneKeyCode = (sceneCode << SCENE_TYPE_OFFSET) + (captureId_ << CAPTURER_ID_OFFSET) + renderId_;
@@ -80,7 +82,11 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     attr.micRefChannels = static_cast<uint32_t>(sourceInfo_.micRefChannels);
     
     int32_t ret = sceneClusterMap_[processorType]->CaptureEffectCreate(sceneKeyCode, attr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "sceneType[%{public}u] create failed", sceneType);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "sceneType create failed", false), ERROR));
     return SUCCESS;
 }
 
@@ -139,6 +145,10 @@ void HpaeCapturerManager::UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clus
 void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioEnhanceScene enhanceScene)
 {
     CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && !SafeGetMap(sceneClusterMap_, sceneType));
+    // DEVICE_TYPE_ACCESSORY effect move to HAL
+    CHECK_AND_RETURN_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY,
+        "deviceType %{public}d needn't create effect", sourceInfo_.deviceType);
+
     // todo: algorithm instance count control
     HpaeNodeInfo clusterNodeInfo;
     clusterNodeInfo.channels = sourceInfo_.channels;
@@ -163,7 +173,11 @@ int32_t HpaeCapturerManager::CaptureEffectRelease(const HpaeProcessorType &scene
     uint64_t sceneKeyCode = 0;
     sceneKeyCode = (sceneCode << SCENE_TYPE_OFFSET) + (captureId_ << CAPTURER_ID_OFFSET) + renderId_;
     int32_t ret = sceneClusterMap_[sceneType]->CaptureEffectRelease(sceneKeyCode);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "sceneType[%{public}u] release failed", sceneType);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::RELEASE, ERR_OPERATION_FAILED),
+        "sceneType release failed", false), ERROR));
     return SUCCESS;
 }
 
@@ -295,25 +309,54 @@ int32_t HpaeCapturerManager::DestroyStream(uint32_t sessionId)
 bool HpaeCapturerManager::CheckEcCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &ecNodeInfo,
     HpaeSourceInputNodeType &ecNodeType)
 {
-    CHECK_AND_RETURN_RET_LOG(sourceInfo_.ecType != HPAE_EC_TYPE_NONE, false, "source not need ec");
-    CHECK_AND_RETURN_RET_LOG(CheckSceneTypeNeedEc(sceneType), false, "scene not need ec");
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
+    CHECK_AND_RETURN_RET(sourceInfo_.ecType != HPAE_EC_TYPE_NONE,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_INVALID_PARAM), "source not need ec", false), false));
+    CHECK_AND_RETURN_RET(CheckSceneTypeNeedEc(sceneType),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_INVALID_PARAM),
+        "scene not need ec", false), false));
+    CHECK_AND_RETURN_RET(SafeGetMap(sceneClusterMap_, sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(ecNodeInfo, HPAE_SOURCE_BUFFER_TYPE_EC),
-        false, "capture effect node has no ec config");
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_NULL_POINTER),
+        "capture effect node has no ec config", false), false));
     ecNodeType = sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER ? mainMicType_ : HPAE_SOURCE_EC;
     AUDIO_INFO_LOG("resolve connect or disconnect for ecNode type[%{public}u]", ecNodeType);
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, ecNodeType), false, "ec node is null");
+    CHECK_AND_RETURN_RET(SafeGetMap(sourceInputClusterMap_, ecNodeType),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_NULL_POINTER),
+        "ec node is null", false), false));
     return true;
 }
 
 bool HpaeCapturerManager::CheckMicRefCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &micRefNodeInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(sourceInfo_.micRef == HPAE_REF_ON, false, "source not need micref");
-    CHECK_AND_RETURN_RET_LOG(CheckSceneTypeNeedMicRef(sceneType), false, "scene not need micref");
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
+    CHECK_AND_RETURN_RET(sourceInfo_.micRef == HPAE_REF_ON,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_INVALID_PARAM),
+        "source not need micref", false), false));
+    CHECK_AND_RETURN_RET(CheckSceneTypeNeedMicRef(sceneType),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_INVALID_PARAM),
+        "scene not need micref", false), false));
+    CHECK_AND_RETURN_RET(SafeGetMap(sceneClusterMap_, sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micRefNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MICREF),
-        false, "capture effect node has no micref config");
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF), false, "micref node is null");
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_NULL_POINTER),
+        "capture effect node has no micref config", false), false));
+    CHECK_AND_RETURN_RET(SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_NULL_POINTER),
+        "micref node is null", false), false));
     return true;
 }
 
@@ -335,8 +378,12 @@ void HpaeCapturerManager::ConnectProcessClusterWithMicRef(HpaeProcessorType &sce
 int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
 {
     auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET_LOG(sourceOutputNode, ERR_INVALID_PARAM,
-        "ConnectOutputSession error, sessionId %{public}u can not find in sourceOutputNodeMap.\n", sessionId);
+    CHECK_AND_RETURN_RET(sourceOutputNode,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::CREATE, ERR_INVALID_PARAM),
+        "ConnectOutputSession error, sessionId can not find in sourceOutputNodeMap",
+        false), ERR_INVALID_PARAM));
     
     HpaeProcessorType sceneType = GetEffectiveSceneType(sessionId);
     auto scnenCluster = SafeGetMap(sceneClusterMap_, sceneType);
@@ -373,32 +420,51 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::CapturerSourceStart()
 {
-    CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_], ERR_ILLEGAL_STATE,
-        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
-    CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_]->GetSourceState() != STREAM_MANAGER_RUNNING,
-        SUCCESS, "capturer source is already opened");
+    CHECK_AND_RETURN_RET(sourceInputClusterMap_[mainMicType_],
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                ERR_NULL_POINTER), "sourceInputClusterMap_ is nullptr", false), ERR_ILLEGAL_STATE));
+    CHECK_AND_RETURN_RET(sourceInputClusterMap_[mainMicType_]->GetSourceState() != STREAM_MANAGER_RUNNING,
+        SUCCESS);
     UpdateAppsUidAndSessionId();
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceStart();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capturer source start error, ret = %{public}d.", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                ERR_OPERATION_FAILED), "capturer source start error", false), ret));
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
-        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_EC], ERR_ILLEGAL_STATE,
-            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_EC);
+        CHECK_AND_RETURN_RET(sourceInputClusterMap_[HPAE_SOURCE_EC],
+            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                    ERR_NULL_POINTER), "sourceInputClusterMap_ EC is nullptr", false), ERR_ILLEGAL_STATE));
         ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceStart();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source start error, ret = %{public}d.", ret);
+        CHECK_AND_RETURN_RET(ret == SUCCESS,
+            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                    ERR_OPERATION_FAILED), "ec capturer source start error", false), ret));
     }
     if (sourceInfo_.micRef == HPAE_REF_ON) {
-        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_MICREF], ERR_ILLEGAL_STATE,
-            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_MICREF);
+        CHECK_AND_RETURN_RET(sourceInputClusterMap_[HPAE_SOURCE_MICREF],
+            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                    ERR_NULL_POINTER), "sourceInputClusterMap_ MICREF is nullptr", false), ERR_ILLEGAL_STATE));
         ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStart();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "micref capturer source start error, ret = %{public}d.", ret);
+        CHECK_AND_RETURN_RET(ret == SUCCESS,
+            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                    ERR_OPERATION_FAILED), "micref capturer source start error", false), ret));
     }
     if (!activeCollabSourceTypes_.empty()) {
         auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
-        CHECK_AND_RETURN_RET_LOG(collabInputCluster, ERR_ILLEGAL_STATE,
-            "sourceInputCLusterMap_[%{public}d] is nullptr", HPAE_SOURCE_DEFAULT);
+        CHECK_AND_RETURN_RET(collabInputCluster,
+            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                    ERR_NULL_POINTER), "sourceInputClusterMap_ DEFAULT is nullptr", false), ERR_ILLEGAL_STATE));
         ret = collabInputCluster->CapturerSourceStart();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-            "collaborative capturer source start error, ret = %{public}d.", ret);
+        CHECK_AND_RETURN_RET(ret == SUCCESS,
+            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START,
+                    ERR_OPERATION_FAILED), "collaborative capturer source start error", false), ret));
     }
     return SUCCESS;
 }
@@ -439,7 +505,7 @@ int32_t HpaeCapturerManager::DisConnectOutputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
+int32_t HpaeCapturerManager::Pause(uint32_t sessionId, bool isStandby)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Pause");
@@ -514,8 +580,11 @@ void HpaeCapturerManager::CapturerSourceStopForRemote()
 
 int32_t HpaeCapturerManager::CapturerSourceStop()
 {
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_), ERR_ILLEGAL_STATE,
-        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+    CHECK_AND_RETURN_RET(SafeGetMap(sourceInputClusterMap_, mainMicType_),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::STOP, ERR_NULL_POINTER),
+        "sourceInputClusterMap_ is nullptr", false), ERR_ILLEGAL_STATE));
 
     // If remote source has no running stream, stop source
     CapturerSourceStopForRemote();
@@ -720,8 +789,11 @@ int32_t HpaeCapturerManager::InitCapturer()
     UpdateSourceAttr(attr);
     
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceInit(attr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
-        "init mic source input node err, , ret = %{public}d.\n", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "init mic source input node err", false), ERR_INVALID_OPERATION));
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
         IAudioSourceAttr attrEc;
         attrEc.sourceType = SOURCE_TYPE_EC;
@@ -885,11 +957,17 @@ int32_t HpaeCapturerManager::InitCapturerManager()
         sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType,
         sourceInfo_.sourceName, sourceInfo_.busAddress);
     captureId_ = sourceInputClusterMap_[mainMicType_]->GetCaptureId();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get mic capturer soruce instance error, ret = %{public}d.\n", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_OPERATION_FAILED), "get mic capturer source instance error", false), ret));
     PrepareCapturerEc(ecNodeInfo);
     PrepareCapturerMicRef(micRefNodeInfo);
     ret = InitCapturer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "init main capturer error");
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                ERR_OPERATION_FAILED), "init main capturer error", false), ret));
     isInit_.store(true);
     return SUCCESS;
 }
@@ -923,8 +1001,11 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
     for (auto outputNode : sourceOutputNodeMap_) {
         outputNode.second->ResetAll();
     }
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_), ERR_INVALID_OPERATION,
-        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+    CHECK_AND_RETURN_RET(SafeGetMap(sourceInputClusterMap_, mainMicType_),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::RELEASE, ERR_NULL_POINTER),
+        "sourceInputClusterMap_ is nullptr", false), ERR_INVALID_OPERATION));
     CapturerSourceStop();
     sourceInputClusterMap_[mainMicType_]->CapturerSourceDeInit();
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
@@ -1352,7 +1433,11 @@ void HpaeCapturerManager::GetCollaborativeSourceInfo(IAudioSourceAttr &attr, Hpa
 
 int32_t HpaeCapturerManager::OpenCollaborativePrimary()
 {
-    CHECK_AND_RETURN_RET_LOG(IsRunning(), ERROR, "source not running");
+    CHECK_AND_RETURN_RET(IsRunning(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::START, ERR_ILLEGAL_STATE),
+        "source not running", false), ERROR));
     IAudioSourceAttr primaryAttr;
     HpaeNodeInfo primaryNodeInfo;
     std::string primarySourceName = PRIMARY_MIC;
@@ -1361,9 +1446,17 @@ int32_t HpaeCapturerManager::OpenCollaborativePrimary()
 
     int32_t ret = collabInput->GetCapturerSourceInstance(primaryNodeInfo.deviceClass, primaryAttr.deviceNetworkId,
         static_cast<SourceType>(primaryAttr.sourceType), primarySourceName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get collaborative source instance fail");
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "get collaborative source instance fail", false), ret));
     ret = collabInput->CapturerSourceInit(primaryAttr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "collaborative source init fail");
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "collaborative source init fail", false), ret));
     sourceInputClusterMap_[primaryNodeInfo.sourceInputNodeType] = collabInput;
     AUDIO_INFO_LOG("collaborative source init success");
     return SUCCESS;
