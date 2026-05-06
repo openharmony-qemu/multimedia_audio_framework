@@ -173,7 +173,8 @@ private:
     mutable int64_t volumeDataCount_ = 0;
     // for ec and mic_ref
     std::unique_ptr<std::thread> captureThread_ = nullptr;
-    bool isCaptureThreadRunning_ = false;
+    std::unique_ptr<std::thread> stopThread_ = nullptr;
+    std::atomic<bool> isCaptureThreadRunning_ = false;
     std::shared_ptr<RingBufferHandler> ringBufferHandler_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;

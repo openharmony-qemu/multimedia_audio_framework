@@ -71,19 +71,9 @@ void HpaeAudioServiceCallbackUnitTest::OnSetSourceOutputMuteCb(int32_t result)
     setSourceOutputMuteResult_ = result;
 }
  
-void HpaeAudioServiceCallbackUnitTest::OnGetAudioEffectPropertyCbV3(int32_t result)
-{
-    getAudioEffectPropertyResult_ = result;
-}
- 
 void HpaeAudioServiceCallbackUnitTest::OnGetAudioEffectPropertyCb(int32_t result)
 {
     getAudioEffectPropertyResult_ = result;
-}
- 
-void HpaeAudioServiceCallbackUnitTest::OnGetAudioEnhancePropertyCbV3(int32_t result)
-{
-    getAudioEnhancePropertyResult_ = result;
 }
  
 void HpaeAudioServiceCallbackUnitTest::OnGetAudioEnhancePropertyCb(int32_t result)

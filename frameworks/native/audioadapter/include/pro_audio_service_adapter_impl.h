@@ -53,11 +53,8 @@ public:
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
     int32_t MoveSourceOutputByIndexOrName(
         uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
@@ -82,9 +79,7 @@ public:
     virtual void OnMoveSinkInputByIndexOrNameCb(int32_t result) override;
     virtual void OnMoveSourceOutputByIndexOrNameCb(int32_t result) override;
 
-    virtual void OnGetAudioEffectPropertyCbV3(int32_t result) override;
     virtual void OnGetAudioEffectPropertyCb(int32_t result) override;
-    virtual void OnGetAudioEnhancePropertyCbV3(int32_t result) override;
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
@@ -121,9 +116,7 @@ private:
     bool isFinishSetSourceOutputMute_ = false;
     bool isFinishSetSinkMute_ = false;
 
-    bool isFinishGetAudioEffectPropertyV3_ = false;
     bool isFinishGetAudioEffectProperty_ = false;
-    bool isFinishGetAudioEnhancePropertyV3_ = false;
     bool isFinishGetAudioEnhanceProperty_ = false;
     bool isFinishCollaborativeUpdate_ = false;
     int32_t collaborativeUpdateResult_ = -1;

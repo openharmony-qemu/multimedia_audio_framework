@@ -1092,13 +1092,13 @@ void AudioInterruptServiceIsMicSourceFuzzTest(const uint8_t *rawData, size_t siz
         return;
     }
 
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptStrategy> audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    if (audioInterruptStrategy == nullptr) {
         return;
     }
     SourceType sourceType = *reinterpret_cast<const SourceType *>(rawData);
 
-    interruptService->IsMicSource(sourceType);
+    audioInterruptStrategy->IsMicSource(sourceType);
 }
 
 void AudioInterruptServiceProcessFocusEntryFuzzTest(const uint8_t *rawData, size_t size)
@@ -1255,9 +1255,10 @@ void SetLatestMuteStateFuzzTest(const uint8_t *rawData, size_t size)
     if (interruptService == nullptr) {
         return;
     }
-    uint32_t streamId = *reinterpret_cast<const uint32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = *reinterpret_cast<const uint32_t *>(rawData);
     bool muteFlag = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
-    interruptService->SetLatestMuteState(streamId, muteFlag);
+    interruptService->SetLatestMuteState(audioInterrupt, muteFlag);
 }
  
 void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
@@ -1265,15 +1266,15 @@ void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptStrategy> audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    if (audioInterruptStrategy == nullptr) {
         return;
     }
     AudioInterrupt currentInterrupt;
     AudioInterrupt incomingInterrupt;
     AudioFocusEntry focusEntry;
     focusEntry.hintType = INTERRUPT_HINT_DUCK;
-    interruptService->UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    audioInterruptStrategy->UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
  
 void ReportRecordGetFocusFailFuzzTest(const uint8_t *rawData, size_t size)

@@ -18,6 +18,7 @@
 #include "capturer_in_client.h"
 
 #include <atomic>
+#include <cstdio>
 #include <cinttypes>
 #include <condition_variable>
 #include <sstream>
@@ -97,6 +98,7 @@ public:
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
+    int32_t SetSonicPitch(float pitch) override;
     float GetSpeed() override;
     int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) override;
 
@@ -254,6 +256,7 @@ private:
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
     int32_t FlushCbBuffer();
+    void InitDfxOperation();
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
 
@@ -273,6 +276,7 @@ private:
 
     void FillCapturerClientOnlyInfo(AudioDebugInfo &debugInfo);
     void FillCapturerDeviceInfo(AudioDebugInfo &debugInfo, uint32_t sessionId);
+    int32_t CheckForSetAudioStreamInfo(const AudioStreamParams info);
 
 private:
     AudioStreamType eStreamType_;
@@ -364,6 +368,8 @@ private:
 
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
+    std::string dumpInFile_ = "";
+    FILE *dumpInFd_ = nullptr;
 
     // Event handler
     bool runnerReleased_ = false;

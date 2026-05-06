@@ -26,6 +26,7 @@
 #include "audio_volume.h"
 #include "i_hpae_manager.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,8 +41,16 @@ uint32_t HpaeSoftLink::g_sessionId = FIRST_SESSIONID; // begin at 90000
 std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode)
 {
     std::shared_ptr<HpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(sinkIdx, sourceIdx, mode);
-    CHECK_AND_RETURN_RET_LOG(softLink != nullptr, nullptr, "new HpaeSoftLink failed");
-    CHECK_AND_RETURN_RET_LOG(softLink->Init() == SUCCESS, nullptr, "HpaeSoftLink init failed");
+    CHECK_AND_RETURN_RET(softLink != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::CREATE, ERR_NULL_POINTER),
+        "new HpaeSoftLink failed", false), nullptr));
+    CHECK_AND_RETURN_RET(softLink->Init() == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "HpaeSoftLink init failed", false), nullptr));
     return softLink;
 }
 
@@ -74,10 +83,21 @@ int32_t HpaeSoftLink::Init()
 {
     Trace trace("HpaeSoftLink::Init");
     AUDIO_INFO_LOG("init in");
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
-    CHECK_AND_RETURN_RET_LOG(state_.load() == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
-    CHECK_AND_RETURN_RET_LOG(sinkIdx_ != HDI_INVALID_ID && sourceIdx_ != HDI_INVALID_ID, ERR_INVALID_PARAM,
-        "invalid sinkIdx or capturerIdx");
+    CHECK_AND_RETURN_RET(state_.load() != HpaeSoftLinkState::PREPARED,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "softlink already inited", false), SUCCESS));
+    CHECK_AND_RETURN_RET(state_.load() == HpaeSoftLinkState::NEW,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "init error state", false), ERR_ILLEGAL_STATE));
+    CHECK_AND_RETURN_RET(sinkIdx_ != HDI_INVALID_ID && sourceIdx_ != HDI_INVALID_ID,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::CREATE, ERR_INVALID_PARAM),
+        "invalid sinkIdx or capturerIdx", false), ERR_INVALID_PARAM));
 
     int32_t ret = GetDeviceInfo();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED);
@@ -86,7 +106,11 @@ int32_t HpaeSoftLink::Init()
         FRAME_LEN_20MS * sinkInfo_.samplingRate / MS_PER_SECOND;
     size_t size = DEFAULT_RING_BUFFER_NUM * frameBytes;
     bufferQueue_ = AudioRingCache::Create(size);
-    CHECK_AND_RETURN_RET_LOG(bufferQueue_ != nullptr, ERR_OPERATION_FAILED, "bufferQueue create error");
+    CHECK_AND_RETURN_RET(bufferQueue_ != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::CREATE, ERR_NULL_POINTER),
+        "bufferQueue create error", false), ERR_OPERATION_FAILED));
     tempBuffer_.resize(frameBytes);
     ret = CreateStream();
     if (ret == SUCCESS) {
@@ -119,9 +143,21 @@ int32_t HpaeSoftLink::GetDeviceInfo()
         return (isDeviceOperationFinish_ & SOFTLINK_SINK_OPERATION) &&
             (isDeviceOperationFinish_ & SOFTLINK_SOURCE_OPERATION);
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "get device info timeout");
-    CHECK_AND_RETURN_RET_LOG(retGetSink == SUCCESS, ERROR, "get sink info failed");
-    CHECK_AND_RETURN_RET_LOG(retGetSource == SUCCESS, ERROR, "get source info failed");
+    CHECK_AND_RETURN_RET(stopWaiting,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+        "get device info timeout", false), ERROR));
+    CHECK_AND_RETURN_RET(retGetSink == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+            BusinessScenario::QUERY, ERR_OPERATION_FAILED),
+        "get sink info failed", false), ERROR));
+    CHECK_AND_RETURN_RET(retGetSource == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+            BusinessScenario::QUERY, ERR_OPERATION_FAILED),
+        "get source info failed", false), ERROR));
     return SUCCESS;
 }
 
@@ -193,9 +229,16 @@ int32_t HpaeSoftLink::CreateStream()
 int32_t HpaeSoftLink::SetVolume(float volume)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
-        "softlink already release");
+    CHECK_AND_RETURN_RET(state_.load() != HpaeSoftLinkState::NEW,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink not prepared", false), ERR_ILLEGAL_STATE));
+    CHECK_AND_RETURN_RET(state_.load() != HpaeSoftLinkState::RELEASED,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink already release", false), ERR_ILLEGAL_STATE));
     AudioVolume::GetInstance()->SetStreamVolume(rendererStreamInfo_.sessionId, volume);
     return SUCCESS;
 }
@@ -203,9 +246,16 @@ int32_t HpaeSoftLink::SetVolume(float volume)
 int32_t HpaeSoftLink::SetVolumeDuckFactor(float duckFactor)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
-        "softlink already release");
+    CHECK_AND_RETURN_RET(state_ != HpaeSoftLinkState::NEW,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink not prepared", false), ERR_ILLEGAL_STATE));
+    CHECK_AND_RETURN_RET(state_ != HpaeSoftLinkState::RELEASED,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink already release", false), ERR_ILLEGAL_STATE));
     AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(rendererStreamInfo_.sessionId, duckFactor);
     return SUCCESS;
 }
@@ -213,9 +263,16 @@ int32_t HpaeSoftLink::SetVolumeDuckFactor(float duckFactor)
 int32_t HpaeSoftLink::SetVolumeMute(bool isMute)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
-        "softlink already release");
+    CHECK_AND_RETURN_RET(state_ != HpaeSoftLinkState::NEW,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink not prepared", false), ERR_ILLEGAL_STATE));
+    CHECK_AND_RETURN_RET(state_ != HpaeSoftLinkState::RELEASED,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink already release", false), ERR_ILLEGAL_STATE));
     AudioVolume::GetInstance()->SetStreamVolumeMute(rendererStreamInfo_.sessionId, isMute);
     return SUCCESS;
 }
@@ -223,9 +280,16 @@ int32_t HpaeSoftLink::SetVolumeMute(bool isMute)
 int32_t HpaeSoftLink::SetVolumeLowPowerFactor(float lowPowerFactor)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
-        "softlink already release");
+    CHECK_AND_RETURN_RET(state_ != HpaeSoftLinkState::NEW,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink not prepared", false), ERR_ILLEGAL_STATE));
+    CHECK_AND_RETURN_RET(state_ != HpaeSoftLinkState::RELEASED,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+        "softlink already release", false), ERR_ILLEGAL_STATE));
     AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(rendererStreamInfo_.sessionId, lowPowerFactor);
     return SUCCESS;
 }
@@ -235,10 +299,17 @@ int32_t HpaeSoftLink::Start()
     Trace trace("HpaeSoftLink::Start");
     AUDIO_INFO_LOG("Start in");
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RUNNING, SUCCESS, "softlink already start");
-    CHECK_AND_RETURN_RET_LOG(
+    CHECK_AND_RETURN_RET(state_.load() != HpaeSoftLinkState::RUNNING,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::START, ERR_ILLEGAL_STATE),
+        "softlink already start", false), SUCCESS));
+    CHECK_AND_RETURN_RET(
         state_.load() == HpaeSoftLinkState::PREPARED || state_.load() == HpaeSoftLinkState::STOPPED,
-        ERR_ILLEGAL_STATE, "softlink not init");
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::START, ERR_ILLEGAL_STATE),
+        "softlink not init", false), ERR_ILLEGAL_STATE));
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isStreamOperationFinish_ = 0;
     IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
@@ -248,7 +319,11 @@ int32_t HpaeSoftLink::Start()
             (isStreamOperationFinish_ & SOFTLINK_CAPTURER_OPERATION);
     });
 
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "start timeout");
+    CHECK_AND_RETURN_RET(stopWaiting,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+            BusinessScenario::START, ERR_OPERATION_FAILED),
+        "start timeout", false), ERROR));
 
     if (streamStateMap_[rendererStreamInfo_.sessionId] != HpaeSoftLinkState::RUNNING) {
         AUDIO_ERR_LOG("start renderer[%{public}d] failed", rendererStreamInfo_.sessionId);
@@ -272,8 +347,16 @@ int32_t HpaeSoftLink::Stop()
     Trace trace("HpaeSoftLink::Stop");
     AUDIO_INFO_LOG("Stop in");
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::STOPPED, SUCCESS, "softlink already stop");
-    CHECK_AND_RETURN_RET_LOG(state_.load() == HpaeSoftLinkState::RUNNING, ERR_ILLEGAL_STATE, "softlink not init");
+    CHECK_AND_RETURN_RET(state_.load() != HpaeSoftLinkState::STOPPED,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+            BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
+        "softlink already stop", false), SUCCESS));
+    CHECK_AND_RETURN_RET(state_.load() == HpaeSoftLinkState::RUNNING,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+            BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
+        "softlink not init", false), ERR_ILLEGAL_STATE));
     StopInner();
     return SUCCESS;
 }
@@ -290,7 +373,11 @@ int32_t HpaeSoftLink::Release()
     Trace trace("HpaeSoftLink::Release");
     AUDIO_INFO_LOG("Release in");
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, SUCCESS, "softlink already release");
+    CHECK_AND_RETURN_RET(state_.load() != HpaeSoftLinkState::RELEASED,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+            BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
+        "softlink already release", false), SUCCESS));
     if (state_.load() == HpaeSoftLinkState::RUNNING) {
         AUDIO_INFO_LOG("softlink not stop, stop before release");
         StopInner();
@@ -343,8 +430,11 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
     int8_t *inputData = callbackStreamInfo.inputData;
     size_t requestDataLen = callbackStreamInfo.requestDataLen;
     OptResult result = bufferQueue_->GetReadableSize();
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
-        "ringBuffer get readable invalid size: %{public}zu", result.size);
+    CHECK_AND_RETURN_RET(result.ret == OPERATION_SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+            BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+        "ringBuffer get readable invalid size: " + std::to_string(result.size), false), ERROR));
     if (result.size == 0 || result.size < requestDataLen) {
         ++underRunCount_;
         AUDIO_DEBUG_LOG("underrun[%{public}d]!, readable size is invalid, result.size[%{public}zu],"
@@ -359,7 +449,11 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
     }
     AUDIO_DEBUG_LOG("readable size: %{public}zu, requestDataLen: %{public}zu", result.size, requestDataLen);
     result = bufferQueue_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringBuffer dequeue failed");
+    CHECK_AND_RETURN_RET(result.ret == OPERATION_SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+            BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+        "ringBuffer dequeue failed", false), ERROR));
     return SUCCESS;
 }
 
@@ -393,8 +487,11 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
         CopyRightToLeft(reinterpret_cast<uint8_t *>(outputData), requestDataLen, sinkInfo_.format);
     }
     OptResult result = bufferQueue_->GetWritableSize();
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
-        "ringBuffer get writeable invalid size: %{public}zu", result.size);
+    CHECK_AND_RETURN_RET(result.ret == OPERATION_SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+        "ringBuffer get writeable invalid size: " + std::to_string(result.size), false), ERR_READ_FAILED));
     if (result.size == 0 || result.size < requestDataLen) {
         ++overFlowCount_;
         AUDIO_DEBUG_LOG("overflow[%{public}d]!, writable size is invalid, result.size[%{public}zu],"
@@ -410,7 +507,11 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
     }
     AUDIO_DEBUG_LOG("writable size: %{public}zu, requestDataLen: %{public}zu", result.size, requestDataLen);
     result = bufferQueue_->Enqueue({reinterpret_cast<uint8_t *>(outputData), requestDataLen});
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringBuffer enqueue failed");
+    CHECK_AND_RETURN_RET(result.ret == OPERATION_SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+            BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+        "ringBuffer enqueue failed", false), ERROR));
     return SUCCESS;
 }
 
@@ -418,8 +519,11 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
 HpaeSoftLinkState HpaeSoftLink::GetStreamStateById(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(streamStateMap_.find(sessionId) != streamStateMap_.end(), HpaeSoftLinkState::INVALID,
-        "invalid param");
+    CHECK_AND_RETURN_RET(streamStateMap_.find(sessionId) != streamStateMap_.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+            BusinessScenario::QUERY, ERR_INVALID_PARAM),
+        "invalid param", false), HpaeSoftLinkState::INVALID));
     return streamStateMap_[sessionId];
 }
 
@@ -427,7 +531,11 @@ int32_t HpaeSoftLink::SetLoudnessGain(float loudnessGain)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
     int32_t ret = IHpaeManager::GetHpaeManager().SetLoudnessGain(rendererStreamInfo_.sessionId, loudnessGain);
-    CHECK_AND_RETURN_RET_LOG(ret == OPERATION_SUCCESS, ERROR, "SetLoudnessGain is error");
+    CHECK_AND_RETURN_RET(ret == OPERATION_SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+            BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+        "SetLoudnessGain is error", false), ERROR));
     return SUCCESS;
 }
 } // namespace HPAE

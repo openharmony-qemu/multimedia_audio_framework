@@ -231,6 +231,33 @@ int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitAr
     return coreService_->LoadSplitModule(splitArgs, networkId);
 }
 
+int32_t AudioCoreService::EventEntry::SetAudioRouteSelectorCallback(
+    const AudioPipeSelector::AudioRouteSelectorCallback &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return HandleSetAudioRouteSelectorCallback(callback);
+}
+
+int32_t AudioCoreService::EventEntry::UnsetAudioRouteSelectorCallback()
+{
+    return HandleUnsetAudioRouteSelectorCallback();
+}
+
+int32_t AudioCoreService::EventEntry::HandleSetAudioRouteSelectorCallback(
+    const AudioPipeSelector::AudioRouteSelectorCallback &callback)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    return coreService_->SetAudioRouteSelectorCallback(callback);
+}
+
+int32_t AudioCoreService::EventEntry::HandleUnsetAudioRouteSelectorCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    return coreService_->UnsetAudioRouteSelectorCallback();
+}
+
 // device status listener
 void AudioCoreService::EventEntry::OnDeviceStatusUpdated(
     DeviceType devType, bool isConnected, const std::string& macAddress,
@@ -374,14 +401,14 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
     AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, uid, networkId);
+    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId)
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, uid, networkId);
+    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
 }
 
 int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
@@ -676,6 +703,7 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     coreService_->pipeManager_->RemoveAudioPipeInfo(id);
     coreService_->audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
     coreService_->isOffloadInRelease_[type].store(false);
+    coreService_->audioPolicyManager_.RemoveAudioPipeVolume(id);
     return SUCCESS;
 }
 
@@ -735,11 +763,52 @@ int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
     return coreService_->CaptureConcurrentCheck(sessionId);
 }
 
+void AudioCoreService::EventEntry::NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyStandbyStatus(sessionId, standbyStatus);
+}
+
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
-    return coreService_->SetCapturerMuteHint(sessionId, mute);
+    int32_t ret = coreService_->SetCapturerMuteHint(sessionId, mute);
+    if (ret == SUCCESS) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(
+            "AudioCoreService::EventEntry::SetCapturerMuteHint");
+    }
+    return ret;
+}
+
+void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled,
+    const std::string &reason)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
+        sessionId, enabled);
+    coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled);
+    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+}
+
+void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled,
+    const std::string &reason)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
+        callerPid, enabled);
+    coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled);
+    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+}
+
+void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
 }
 
 void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
@@ -759,19 +828,18 @@ void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::strin
 }
 
 void AudioCoreService::EventEntry::ReloadSourceForEffect(
-    AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray)
+    const AudioEffectPropertyArray oldPropertyArray, const AudioEffectPropertyArray  propertyArray)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     coreService_->ReloadSourceForEffect(oldPropertyArray, propertyArray);
 }
 
-void AudioCoreService::EventEntry::ReloadSourceForEffectV3(
-    AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray)
+void AudioCoreService::EventEntry::TriggerVoipPriorityReload(uint32_t sessionId, bool lowered)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
-    coreService_->ReloadSourceForEffect(oldPropertyArray, propertyArray);
+    coreService_->NotifyVoipPriorityLoweredByMute(sessionId, lowered);
 }
 
 }

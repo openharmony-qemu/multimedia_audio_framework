@@ -122,7 +122,6 @@ void AppVolumeManager::ScheduleSystemAppVolumePersist()
     }
 
     auto action = std::make_shared<FlushSystemAppVolumeAction>(*this);
-    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
     desc.delayTimeMs = SYSTEM_APP_VOLUME_PERSIST_DELAY_MS;

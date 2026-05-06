@@ -214,6 +214,7 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     }
     pipeManager->RemoveAudioPipeInfo(activateDeviceIOHandle);
+    AudioAdapterManager::GetInstance().RemoveAudioPipeVolume(activateDeviceIOHandle);
 
     AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, context.audioStreamInfo);
     uint32_t paIndex = 0;

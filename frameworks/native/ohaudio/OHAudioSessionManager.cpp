@@ -663,6 +663,7 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionStateChangeCallback(
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
     sessionStateCallbacks_.emplace(callback, ohAudioSessionStateCallback);
+    audioSessionManager_->SetRegisterStateChangeCallbackFlag(true);
 
     return AUDIOCOMMON_RESULT_SUCCESS;
 }

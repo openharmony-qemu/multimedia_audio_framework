@@ -174,6 +174,7 @@ public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
+    static bool IsHap();
     static bool VerifyBluetoothPermission();
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool VerifyGeneralPermission(
@@ -223,6 +224,13 @@ void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b);
 void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b);
 void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
+
+int16_t ConvertSampleToS16(const uint8_t *samplePtr, AudioSampleFormat format);
+void ConvertSampleFromS16(int16_t s16Sample, uint8_t *outputPtr, AudioSampleFormat format);
+void ConvertBufferToS16(const uint8_t *input, uint32_t samples, int16_t *output, AudioSampleFormat format);
+void ConvertBufferFromS16(const int16_t *input, uint32_t samples, uint8_t *output, AudioSampleFormat format);
+
+float CapMax(float v);
 
 std::string GetEncryptStr(const std::string &str);
 std::string ConvertNetworkId(const std::string &networkId);
@@ -634,6 +642,10 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_HEARING_AID = 15,
     HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
     HDI_RENDER_OFFSET_INTERPHONE = 17,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC = 18,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED = 19,
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS = 20, // include bt_sco, a2dp_offload and nearlink
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

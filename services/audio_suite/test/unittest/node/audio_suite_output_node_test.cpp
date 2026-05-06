@@ -602,7 +602,10 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_CacheBufferOperations, TestSize.Lev
     EXPECT_FALSE(outputNode->CacheBufferEmpty());
     EXPECT_GT(outputNode->GetCacheBufferDataLen(), 0);
     
-    auto bufferData = outputNode->GetCacheBufferData(0);
+    auto bufferData = outputNode->GetCacheBufferData(100);
+    EXPECT_EQ(bufferData, nullptr);
+
+    bufferData = outputNode->GetCacheBufferData(0);
     EXPECT_NE(bufferData, nullptr);
 }
 

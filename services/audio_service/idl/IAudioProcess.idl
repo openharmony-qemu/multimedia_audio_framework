@@ -47,4 +47,5 @@ interface IAudioProcess {
     void ResetStaticPlayPosition();
     void SetMuteHint([in] boolean mute);
     void UpdateUnderrunInfo([in] unsigned int underrunInfoKey, [in] int underrunInfoVal);
+    void SetStaticPitch([in] float pitch);
 }

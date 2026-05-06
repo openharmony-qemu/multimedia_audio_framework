@@ -21,6 +21,7 @@
 #include <utility>
 #include "audio_info.h"
 #include "audio_interrupt_info.h"
+#include "audio_stream_change_info.h"
 #include "audio_zone_info.h"
 #include "audio_device_descriptor.h"
 
@@ -121,6 +122,9 @@ public:
 
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) = 0;
+
+    virtual int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos) = 0;
     
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId, const std::string &deviceTag) = 0;

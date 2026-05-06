@@ -39,6 +39,7 @@ public:
     virtual void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) = 0;
     virtual void OnGetOptions(int32_t result) = 0;
     virtual void OnSetOptions(int32_t result) = 0;
+    virtual void OnPrintInfo(int32_t result) = 0;
 
     virtual ~AudioSuiteManagerCallback() = default;
 };

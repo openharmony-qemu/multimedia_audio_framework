@@ -43,6 +43,7 @@ struct AudioSessionDeactiveEvent {
 struct AudioSessionActiveBehaviors {
     bool voipNoPrivacyFlag = false;   // VOIP_PRIVACY_TYPE_PUBLIC
     bool muteWhenInterruptFlag = false;  // MUTE_WHEN_INTERRUPT
+    bool aibaseMuteVoip = false;
 };
 
 enum class AudioSessionType {
@@ -200,10 +201,12 @@ enum class AudioSessionBehaviorFlags {
      */
     MUTE_WHEN_INTERRUPTED = 0x00000002,
 
+    AIBASE_MUTE_VOIP = 0x80000000,
+
     /**
      * Behavior validation mask.
      */
-    MASK_VALID_BEHAVIOR = 0x00000003,
+    MASK_VALID_BEHAVIOR = 0x80000003,
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -19,6 +19,18 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
+namespace {
+constexpr int32_t ULTRA_FAST_DEVICE_TYPE_SPEAKER = 1;
+constexpr int32_t ULTRA_FAST_DEVICE_TYPE_EARPIECE = 2;
+static const std::set<int32_t> gHpaeUltraFastDevicesSet = {
+    ULTRA_FAST_DEVICE_TYPE_SPEAKER,
+    ULTRA_FAST_DEVICE_TYPE_EARPIECE
+};
+static const std::set<std::string> gHpaeUltraFastBundleSet = {
+};
+}
+
 enum HpaeStreamClassType {
     HPAE_STREAM_CLASS_TYPE_INVALID = -1,
     HPAE_STREAM_CLASS_TYPE_PLAY,
@@ -99,6 +111,8 @@ struct HpaeStreamInfo {
     HpaeEffectInfo effectInfo;
     std::string deviceName;
     bool isMoveAble = true;
+    bool keepRunning = false;
+    bool isLoopback = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     bool mixWithWakeUp = false;
 };
@@ -129,6 +143,8 @@ struct HpaeSinkInfo {
     bool needEmptyChunk = true;
     bool auxSinkEnable = false;
     uint32_t routeFlag = 0;
+    bool isLoopback = false;
+    bool isUltraFast = false;
 };
 
 enum HpaeEcType {

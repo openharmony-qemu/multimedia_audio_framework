@@ -447,6 +447,11 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceDescriptors, audioDeviceSelectMode);
 }
 
+int32_t AudioSystemManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) const
+{
+    return AudioDevicesClientManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
+}
+
 int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {

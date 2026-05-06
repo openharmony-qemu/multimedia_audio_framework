@@ -202,11 +202,6 @@ int32_t IpcStreamInServer::Start()
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::Standby()
-{
-    return rendererInServer_->Standby();
-}
-
 int32_t IpcStreamInServer::Pause()
 {
     {
@@ -578,6 +573,13 @@ int32_t IpcStreamInServer::SetSpeed(float speed)
     CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
         "mode is not playback or renderer is null");
     return rendererInServer_->SetSpeed(speed);
+}
+
+int32_t IpcStreamInServer::SetPitch(float pitch)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "mode is not playback or renderer is null");
+    return rendererInServer_->SetPitch(pitch);
 }
 
 int32_t IpcStreamInServer::SetOffloadDataCallbackState(int32_t state)

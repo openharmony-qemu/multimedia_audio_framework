@@ -16,6 +16,7 @@
 #ifndef AUDIO_SERVER_UNIT_TEST_H
 #define AUDIO_SERVER_UNIT_TEST_H
 
+#include "audio_server.h"
 #include "gtest/gtest.h"
 #include "source/i_audio_capture_source.h"
 
@@ -65,6 +66,8 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 };
+
+extern sptr<AudioServer> audioServer;
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SERVER_UNIT_TEST_H

@@ -190,5 +190,100 @@ HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothSourceUnitTest_008, TestS
     EXPECT_FALSE(source_->IsInited());
 }
 
+/**
+ * @tc.name   : Test Multiple Stop Call
+ * @tc.number : BluetoothMultipleStopCall_001
+ * @tc.desc   : Test multiple Stop() calls to verify stopThread_ join logic
+ */
+HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothMultipleStopCall_001, TestSize.Level1)
+{
+    EXPECT_TRUE(source_);
+    int32_t ret = source_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = source_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test Multiple Stop Call
+ * @tc.number : BluetoothMultipleStopCall_002
+ * @tc.desc   : Test multiple Stop() calls after Start to verify stopThread_ handling
+ */
+HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothMultipleStopCall_002, TestSize.Level1)
+{
+    EXPECT_TRUE(source_);
+    (void)source_->Init(attr_);
+    if (source_->IsInited()) {
+        int32_t ret = source_->Start();
+        if (ret == SUCCESS) {
+            ret = source_->Stop();
+            EXPECT_EQ(ret, SUCCESS);
+            ret = source_->Stop();
+            EXPECT_EQ(ret, SUCCESS);
+        }
+        source_->DeInit();
+    }
+}
+
+/**
+ * @tc.name   : Test Destructor Thread Safety
+ * @tc.number : BluetoothDestructorThreadSafety_001
+ * @tc.desc   : Test destructor handles stopThread_ safely without crash
+ */
+HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothDestructorThreadSafety_001, TestSize.Level1)
+{
+    auto btSource = HdiAdapterManager::GetInstance().GetCaptureSource(id_, true);
+    EXPECT_NE(btSource, nullptr);
+    btSource = nullptr;
+    EXPECT_EQ(btSource, nullptr);
+}
+
+/**
+ * @tc.name   : Test Destructor StopThread Joinable
+ * @tc.number : BluetoothDestructorStopThreadJoinable_001
+ * @tc.desc   : Test destructor joins stopThread_ when Stop() returned but thread still joinable
+ */
+HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothDestructorStopThreadJoinable_001, TestSize.Level1)
+{
+    auto btSource = HdiAdapterManager::GetInstance().GetCaptureSource(id_, true);
+    EXPECT_NE(btSource, nullptr);
+    (void)btSource->Init(attr_);
+    if (btSource->IsInited()) {
+        int32_t ret = btSource->Start();
+        if (ret == SUCCESS) {
+            ret = btSource->Stop();
+            EXPECT_EQ(ret, SUCCESS);
+            btSource = nullptr;
+            EXPECT_EQ(btSource, nullptr);
+            return;
+        }
+        btSource->DeInit();
+    }
+    btSource = nullptr;
+    EXPECT_EQ(btSource, nullptr);
+}
+
+/**
+ * @tc.name   : Test Destructor After DeInit
+ * @tc.number : BluetoothDestructorAfterDeInit_001
+ * @tc.desc   : Test destructor when DeInit called before, stopThread_ should be nullptr
+ */
+HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothDestructorAfterDeInit_001, TestSize.Level1)
+{
+    auto btSource = HdiAdapterManager::GetInstance().GetCaptureSource(id_, true);
+    EXPECT_NE(btSource, nullptr);
+    (void)btSource->Init(attr_);
+    if (btSource->IsInited()) {
+        int32_t ret = btSource->Start();
+        if (ret == SUCCESS) {
+            ret = btSource->Stop();
+            EXPECT_EQ(ret, SUCCESS);
+        }
+        btSource->DeInit();
+    }
+    btSource = nullptr;
+    EXPECT_EQ(btSource, nullptr);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

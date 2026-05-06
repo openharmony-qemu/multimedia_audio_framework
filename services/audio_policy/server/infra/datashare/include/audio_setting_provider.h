@@ -38,12 +38,14 @@ struct IntValueInfo {
     int32_t defaultValue;
     int32_t value;
     int32_t maxValue;
+    bool loadFlag;
 };
 
 struct BoolValueInfo {
     std::string key;
     bool defaultValue;
     bool value;
+    bool loadFlag;
 };
 
 class AudioSettingObserver : public AAFwk::DataAbilityObserverStub {

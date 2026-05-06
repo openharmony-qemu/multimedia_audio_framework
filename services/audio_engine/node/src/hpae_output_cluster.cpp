@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -265,8 +266,11 @@ int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)
 
 int32_t HpaeOutputCluster::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    CHECK_AND_RETURN_RET_LOG(hpaeSinkOutputNode_ != nullptr, ERROR,
-        "sinkOutputNode is null");
+    CHECK_AND_RETURN_RET(hpaeSinkOutputNode_ != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "sinkOutputNode is null", false), ERROR));
     return hpaeSinkOutputNode_->SetAuxiliarySinkEnable(isEnabled);
 }
 

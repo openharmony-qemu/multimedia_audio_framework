@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
 void IAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);

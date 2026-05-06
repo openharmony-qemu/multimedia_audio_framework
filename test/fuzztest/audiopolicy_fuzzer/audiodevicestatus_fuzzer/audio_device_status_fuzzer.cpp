@@ -342,16 +342,6 @@ void UpdateDeviceListFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void CheckAndActiveHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioDeviceDescriptor desc;
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    desc.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.CheckAndActiveHfpDevice(desc);
-    OnStop();
-}
-
 void TriggerDeviceChangedCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
@@ -598,7 +588,6 @@ void Test(FuzzedDataProvider& fdp)
     HandleDistributedDeviceUpdateFuzzTest,
     UpdateDeviceListFuzzTest,
     OnPreferredStateUpdatedFuzzTest,
-    CheckAndActiveHfpDeviceFuzzTest,
     TriggerAvailableDeviceChangedCallbackFuzzTest,
     TriggerDeviceChangedCallbackFuzzTest,
     HandleDpDeviceFuzzTest,

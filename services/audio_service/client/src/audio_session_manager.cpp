@@ -192,5 +192,10 @@ int32_t AudioSessionManager::SetAudioSessionBehavior(const uint32_t behavior)
     return AudioSessionClientManager::GetInstance().SetAudioSessionBehavior(behavior);
 }
 
+void AudioSessionManager::SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag)
+{
+    AudioSessionClientManager::GetInstance().SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

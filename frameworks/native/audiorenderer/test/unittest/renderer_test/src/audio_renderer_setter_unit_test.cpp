@@ -2581,5 +2581,70 @@ HWTEST(AudioRendererUnitTest, SetIndependentAudioSessionStrategy_001, TestSize.L
     res = audioRendererPrivate->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
     EXPECT_TRUE(res);
 }
+
+/**
+ * @tc.name  : Test SetMainUseArk
+ * @tc.number: SetMainUseArk_001
+ * @tc.desc  : Test SetMainUseArk interface when isFirstSetMainUseArk_ is true
+ */
+HWTEST(AudioRendererUnitTest, SetMainUseArk_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRendererPrivate->audioStream_ = testAudioStreamStub;
+
+    // Test when isFirstSetMainUseArk_ is true (default)
+    EXPECT_TRUE(audioRendererPrivate->isFirstSetMainUseArk_);
+    int32_t ret = audioRendererPrivate->SetMainUseArk(true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(audioRendererPrivate->isFirstSetMainUseArk_);
+}
+
+/**
+ * @tc.name  : Test SetMainUseArk
+ * @tc.number: SetMainUseArk_002
+ * @tc.desc  : Test SetMainUseArk interface when isFirstSetMainUseArk_ is false
+ */
+HWTEST(AudioRendererUnitTest, SetMainUseArk_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRendererPrivate->audioStream_ = testAudioStreamStub;
+
+    // First call - set isFirstSetMainUseArk_ to false
+    int32_t ret = audioRendererPrivate->SetMainUseArk(true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(audioRendererPrivate->isFirstSetMainUseArk_);
+
+    // Second call - should return ERROR_ILLEGAL_STATE
+    ret = audioRendererPrivate->SetMainUseArk(true);
+    EXPECT_EQ(ret, ERROR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test SetMainUseArk
+ * @tc.number: SetMainUseArk_003
+ * @tc.desc  : Test SetMainUseArk interface when audioStream_ is nullptr
+ */
+HWTEST(AudioRendererUnitTest, SetMainUseArk_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+
+    // Test when audioStream_ is nullptr
+    audioRendererPrivate->audioStream_ = nullptr;
+    int32_t ret = audioRendererPrivate->SetMainUseArk(true);
+    EXPECT_EQ(ret, ERROR_ILLEGAL_STATE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

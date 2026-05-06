@@ -44,7 +44,7 @@ std::string GetAudioEventInfo(const AudioEvent audioEvent)
         return event;
     }
     ret = snprintf_s(event, AUDIO_PNP_INFO_LEN_MAX, AUDIO_PNP_INFO_LEN_MAX - 1,
-        "EVENT_TYPE=%u;DEVICE_TYPE=%u;DEVICE_ROLE=%d;EVENT_NAME=%s;DEVICE_ADDRESS=%s;ANAHS_NAME=%s",
+        "EVENT_TYPE=%u;DEVICE_TYPE=%u;DEVICE_ROLE=%d;EVENT_NAME=%s;DEVICE_ADDRESS=%s;ANAHS_NAME=%s;",
             audioEvent.eventType, audioEvent.deviceType, audioEvent.deviceRole, audioEvent.name.c_str(),
                 audioEvent.address.c_str(), audioEvent.anahsName.c_str());
     if (ret < 0) {

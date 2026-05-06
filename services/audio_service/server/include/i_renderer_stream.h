@@ -31,6 +31,8 @@ public:
     virtual int32_t OnWriteData(size_t length) = 0;
     virtual int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) = 0;
     virtual int32_t GetAvailableSize(size_t &length) = 0;
+    virtual int32_t OnWriteDataNoWake(int8_t *inputData, size_t requestDataLen) { return 0; }
+    virtual void WakeClientFutex() {}
 };
 
 class IStreamCallback {
@@ -38,6 +40,7 @@ public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
     virtual bool OnQueryUnderrun() { return false; };
     virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos){};
+    virtual void TriggerClientWake() {}
 };
 
 class IRendererStream : public IStream {
@@ -88,6 +91,7 @@ public:
         return ERR_NOT_SUPPORTED;
     }
     virtual void TriggerAppsUidUpdate() { return; }
+    virtual uint32_t GetRouteFlag() const noexcept { return 0; }
 };
 
 struct CaptureInfo {

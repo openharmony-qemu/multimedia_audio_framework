@@ -15,6 +15,9 @@
 #ifndef AUDIO_PIPE_SELECTOR_H
 #define AUDIO_PIPE_SELECTOR_H
 
+#include <functional>
+#include <mutex>
+#include <unordered_set>
 #include <vector>
 #include "audio_pipe_manager.h"
 #include "audio_stream_info.h"
@@ -23,9 +26,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
+struct AudioRouteSelectInfo;
 
 class AudioPipeSelector {
 public:
+    using AudioRouteSelectorCallback = std::function<int32_t(
+        const std::shared_ptr<AudioRouteSelectInfo> &, int32_t &)>;
+
     AudioPipeSelector();
     ~AudioPipeSelector() = default;
 
@@ -36,17 +43,32 @@ public:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
+    int32_t SetAudioRouteSelectorCallback(const AudioRouteSelectorCallback &callback);
+    int32_t UnsetAudioRouteSelectorCallback();
 
 private:
+    std::shared_ptr<AudioRouteSelectInfo> BuildRouteSelectInfo(
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const;
     void UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
-    void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
+    bool ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool ApplyRouteSelectDecision(std::shared_ptr<AudioStreamDescriptor> streamDesc, bool allowRejectCreate);
+    int32_t NotifyAudioRouteSelect(std::shared_ptr<AudioStreamDescriptor> streamDesc, int32_t &selectResult);
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
+    void HandleConcedeIncoming(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream);
+    bool HandleConcedeExisting(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream,
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
+    bool HandleConcedeBoth(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream,
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
     uint32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    std::string GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::string &adapterName, std::string &pipeName);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     AudioStreamAction JudgeStreamAction(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
@@ -86,7 +108,8 @@ private:
     void ProcessModemCommunicationConcurrency(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal);
     void SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        ConcurrencyAction action);
     bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
     bool FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,
@@ -106,7 +129,7 @@ private:
     void UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
         AudioModuleInfo &moduleInfo);
     bool IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName, const std::string &pipeName);
     ConcurrencyAction DetermineConcurrencyAction(std::shared_ptr<AudioStreamDescriptor> &existingStream,
         std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     void GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
@@ -120,8 +143,14 @@ private:
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
     bool GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
+    bool IsMultiStreamPrimary(const std::string &pipeName);
     
+    void UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
+
     std::shared_ptr<AudioPipeManager> pipeManager_;
+    std::mutex callbackMutex_;
+    AudioRouteSelectorCallback audioRouteSelectorCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

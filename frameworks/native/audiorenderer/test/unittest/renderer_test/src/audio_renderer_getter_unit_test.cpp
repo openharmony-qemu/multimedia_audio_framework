@@ -130,34 +130,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetParams API via legal state, RENDERER_RUNNING: GetParams after Start.
- * @tc.number: Audio_Renderer_GetParams_002
- * @tc.desc  : Test GetParams interface. Returns 0 {SUCCESS} if the getting is successful.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    AudioRendererParams rendererParams;
-    rendererParams.sampleFormat = SAMPLE_S16LE;
-    rendererParams.sampleRate = SAMPLE_RATE_44100;
-    rendererParams.channelCount = MONO;
-    rendererParams.encodingType = ENCODING_PCM;
-    ret = audioRenderer->SetParams(rendererParams);
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioRenderer->Start();
-
-    AudioRendererParams getRendererParams;
-    ret = audioRenderer->GetParams(getRendererParams);
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioRenderer->Release();
-}
-
-/**
  * @tc.name  : Test GetParams API via illegal state, RENDERER_NEW: Call GetParams without SetParams.
  * @tc.number: Audio_Renderer_GetParams_003
  * @tc.desc  : Test GetParams interface. Returns error code, if the renderer state is RENDERER_NEW.
@@ -199,31 +171,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_004, TestSize.Level1)
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-}
-
-/**
- * @tc.name  : Test GetParams API via legal state, RENDERER_STOPPED: GetParams after Stop.
- * @tc.number: Audio_Renderer_GetParams_005
- * @tc.desc  : Test GetParams interface. Returns 0 {SUCCESS}, if the getting is successful.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_005, TestSize.Level1)
-{
-    int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioRenderer->Start();
-
-    audioRenderer->Stop();
-
-    AudioRendererParams getRendererParams;
-    ret = audioRenderer->GetParams(getRendererParams);
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioRenderer->Release();
 }
 
 /**

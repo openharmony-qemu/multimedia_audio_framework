@@ -20,6 +20,7 @@
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,7 +67,7 @@ static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneType
     {SOURCE_TYPE_VOICE_RECOGNITION, HPAE_SCENE_RECOGNITION}
 };
 
-// 支持协同拾音的 sourceType，激活后映射到 HPAE_SCENE_COLLABORATIVE
+// 支持协同拾音的 sourceType，激活后映射到 HPAE_SCENE_COLLABORATIVE_RECORD
 static std::set<SourceType> g_collabRecordSupportedSourceTypes = {
     SOURCE_TYPE_LIVE,
 };
@@ -89,7 +90,7 @@ static std::unordered_map<HpaeProcessorType, AudioEnhanceScene> g_processorTypeT
     {HPAE_SCENE_PRE_ENHANCE, SCENE_PRE_ENHANCE},
     {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE},
     {HPAE_SCENE_RECOGNITION, SCENE_RECOGNITION},
-    {HPAE_SCENE_COLLABORATIVE, SCENE_COLLABORATIVE_RECORD},
+    {HPAE_SCENE_COLLABORATIVE_RECORD, SCENE_COLLABORATIVE_RECORD},
 };
 
 static std::unordered_map<HpaeSessionState, std::string> g_sessionStateToStrMap = {
@@ -135,6 +136,8 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"remote", PIPE_TYPE_OUT_NORMAL},
     {"dp", PIPE_TYPE_OUT_NORMAL},
     {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
+    {"voip", PIPE_TYPE_OUT_DIRECT_NORMAL},
+    {"direct", PIPE_TYPE_OUT_DIRECT_NORMAL},
 };
 
 static std::map<HpaeSessionState, RendererState> g_hapeToRendererStateMap = {
@@ -165,8 +168,11 @@ static long StringToNum(const std::string &str)
 {
     char *endptr;
     long num = strtol(str.c_str(), &endptr, BASE_TEN);
-    CHECK_AND_RETURN_RET_LOG(endptr != nullptr && *endptr == '\0', 0,
-        "trans str \"%{public}s\" to num failed", str.c_str());
+    CHECK_AND_RETURN_RET(endptr != nullptr && *endptr == '\0',
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+            "trans str to num failed", false), 0));
     return num;
 }
 
@@ -274,15 +280,18 @@ std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType)
 
 bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInfo)
 {
+    uint32_t preEffectiveRate = preNodeInfo.GetEffectiveSampleRate();
+    uint32_t curEffectiveRate = curNodeInfo.GetEffectiveSampleRate();
     return preNodeInfo.channels == curNodeInfo.channels &&  //&& preNodeInfo.format == curNodeInfo.format todo
-           preNodeInfo.samplingRate == curNodeInfo.samplingRate &&
+           preEffectiveRate == curEffectiveRate &&
            preNodeInfo.channelLayout == curNodeInfo.channelLayout;
 }
 
 std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
 {
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
     std::string nodeKey = std::to_string(nodeInfo.sourceBufferType) + "_" +
-                          std::to_string(nodeInfo.samplingRate) + "_" +
+                          std::to_string(effectiveRate) + "_" +
                           std::to_string(nodeInfo.channels) + "_" +
                           std::to_string(nodeInfo.format) + "_" +
                           std::to_string(nodeInfo.channelLayout);
@@ -300,19 +309,21 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
-    return usTime * nodeInfo.samplingRate / TIME_US_PER_S / nodeInfo.frameLen;
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    return usTime * effectiveRate / TIME_US_PER_S / nodeInfo.frameLen;
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
 {
-    if (nodeInfo.channels == 0 || GetSizeFromFormat(nodeInfo.format) == 0 || nodeInfo.samplingRate == 0) {
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    if (nodeInfo.channels == 0 || GetSizeFromFormat(nodeInfo.format) == 0 || effectiveRate == 0) {
         AUDIO_ERR_LOG("invalid nodeInfo");
         return 0;
     }
 
     double samples = static_cast<double>(bufferSize) /
                      (nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
-    double seconds = samples / static_cast<int32_t>(nodeInfo.samplingRate);
+    double seconds = samples / static_cast<double>(effectiveRate);
     double microseconds = seconds * TIME_US_PER_S;
 
     return static_cast<uint64_t>(microseconds);
@@ -345,8 +356,11 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
-    CHECK_AND_RETURN_RET_LOG(sinkInfo.channels != CHANNEL_UNKNOW && sinkInfo.format != INVALID_WIDTH, ERROR,
-        "channels or format is invalid");
+    CHECK_AND_RETURN_RET(sinkInfo.channels != CHANNEL_UNKNOW && sinkInfo.format != INVALID_WIDTH,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+            "sink channels or format is invalid", false), ERROR));
     sinkInfo.frameLen = static_cast<size_t>(bufferSize) / (sinkInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
     sinkInfo.channelLayout = static_cast<uint64_t>(StringToNum(audioModuleInfo.channelLayout));
@@ -359,12 +373,14 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
     sinkInfo.routeFlag = audioModuleInfo.routeFlag;
+    sinkInfo.isUltraFast = (audioModuleInfo.className == "ultra_fast");
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }
-    AUDIO_INFO_LOG("sink info ch: %{public}u, channelLayout: %{public}" PRIu64,
+    AUDIO_INFO_LOG("sink info ch: %{public}u, channelLayout: %{public}" PRIu64 ", routeFlag: %{public}u",
         sinkInfo.channels,
-        sinkInfo.channelLayout);
+        sinkInfo.channelLayout,
+        sinkInfo.routeFlag);
     return SUCCESS;
 }
 
@@ -385,8 +401,11 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
     sourceInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
-    CHECK_AND_RETURN_RET_LOG(sourceInfo.channels != CHANNEL_UNKNOW && sourceInfo.format != INVALID_WIDTH, ERROR,
-        "channels or format is invalid");
+    CHECK_AND_RETURN_RET(sourceInfo.channels != CHANNEL_UNKNOW && sourceInfo.format != INVALID_WIDTH,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+            "source channels or format is invalid", false), ERROR));
     sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.rate));
@@ -482,8 +501,11 @@ void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)
 
 std::string TransFormatFromEnumToString(AudioSampleFormat format)
 {
-    CHECK_AND_RETURN_RET_LOG(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
-        "", "error param format");
+    CHECK_AND_RETURN_RET(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+            "error param format", false), ""));
     return g_formatFromParserEnumToStr[format];
 }
 
@@ -569,6 +591,7 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
+    nodeInfo.keepRunning = streamInfo.keepRunning;
 }
 
 void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,

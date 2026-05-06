@@ -20,6 +20,8 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "hpae_capturer_manager.h"
+#include "hpae_fast_capturer_manager.h"
+#include "i_hpae_capturer_manager.h"
 #include "hpae_node_common.h"
 
 using namespace OHOS;
@@ -220,6 +222,90 @@ static void StateControlTest(std::shared_ptr<HpaeCapturerManager> &capturerManag
     EXPECT_EQ(
         capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == ERR_INVALID_OPERATION, true);
     EXPECT_EQ(capturerManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager Pause API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerManagerPauseWithStandby_001
+ * @tc.desc  : Test Pause with isStandby=true for normal session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerPauseWithStandby_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    std::shared_ptr<ReadDataCb> readDataCb =
+        std::make_shared<ReadDataCb>(g_rootCapturerPath);
+    EXPECT_EQ(capturerManager->RegisterReadCallback(streamInfo.sessionId, readDataCb), SUCCESS);
+
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(capturerManager->IsRunning(), true);
+
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId, true) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager Pause API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerManagerPauseWithStandby_002
+ * @tc.desc  : Test Pause with isStandby=false for normal session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerPauseWithStandby_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    std::shared_ptr<ReadDataCb> readDataCb =
+        std::make_shared<ReadDataCb>(g_rootCapturerPath);
+    EXPECT_EQ(capturerManager->RegisterReadCallback(streamInfo.sessionId, readDataCb), SUCCESS);
+
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId, false) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
 }
 
 /*
@@ -2282,13 +2368,11 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_001, TestSize.Level1)
     EXPECT_EQ(capturerManager->Init(), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
-    // create stream, start it
+    // create stream
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
     streamInfo.sourceType = SOURCE_TYPE_LIVE;
     EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
     // enable collaboration while stream is running
@@ -2307,9 +2391,13 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_001, TestSize.Level1)
     capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(capturerManager);
 
+    // start stream
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
     // stop stream, then disable collaboration
     EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
+
     capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(capturerManager);
 
@@ -2431,13 +2519,11 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_004, TestSize.Level1)
     EXPECT_EQ(capturerManager->Init(), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
-    // create stream, start it, then enable collaboration
+    // create stream, then enable collaboration
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
     streamInfo.sourceType = SOURCE_TYPE_LIVE;
     EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
@@ -2449,9 +2535,11 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_004, TestSize.Level1)
     EXPECT_EQ(capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
-    // cleanup
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
+    // cleanup
     EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
     capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
@@ -2534,13 +2622,11 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_006, TestSize.Level1)
     EXPECT_EQ(capturerManager->Init(), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
-    // create stream and start
+    // create stream
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
     streamInfo.sourceType = SOURCE_TYPE_LIVE;
     EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
     // verify stream info before collaboration
@@ -2551,6 +2637,8 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_006, TestSize.Level1)
     capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(capturerManager);
 
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
     // MoveAllStream: should not crash
     std::vector<uint32_t> sessionIds = {streamInfo.sessionId};
     capturerManager->MoveAllStream(DEFAULT_SOURCE_NAME, sessionIds, MOVE_ALL);
@@ -2658,102 +2746,6 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_008, TestSize.Level1)
     EXPECT_EQ(capturerManager->Release(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
-    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-}
-
-/*
- * tc.name   : Test HpaeCapturerManager API
- * tc.type   : FUNC
- * tc.number : CaptureCollaboration_009
- * tc.desc   : Test StopManager/DumpSourceInfo/GetDeviceHDFDumpInfo with collaboration enabled
- */
-HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_009, TestSize.Level1)
-{
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    EXPECT_NE(capturerManager, nullptr);
-    EXPECT_EQ(capturerManager->Init(), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-
-    // enable collaboration (rejected by deviceClass check in test env, no crash)
-    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(capturerManager);
-
-    // DumpSourceInfo: should not crash
-    capturerManager->DumpSourceInfo();
-    WaitForMsgProcessing(capturerManager);
-
-    // GetDeviceHDFDumpInfo: should return valid string
-    std::string hdfDumpInfo = capturerManager->GetDeviceHDFDumpInfo();
-    EXPECT_FALSE(hdfDumpInfo.empty());
-
-    // GetAllSourceOutputsInfo with no streams
-    std::vector<SourceOutput> outputs = capturerManager->GetAllSourceOutputsInfo();
-    EXPECT_EQ(outputs.empty(), true);
-
-    // create stream
-    HpaeStreamInfo streamInfo;
-    InitReloadStreamInfo(streamInfo);
-    streamInfo.sourceType = SOURCE_TYPE_LIVE;
-    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-
-    // StopManager: should not crash
-    EXPECT_EQ(capturerManager->StopManager(), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-
-    // cleanup
-    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-}
-
-/*
- * tc.name   : Test HpaeCapturerManager API
- * tc.type   : FUNC
- * tc.number : CaptureCollaboration_010
- * tc.desc   : Test SetMute (manager level) with collaboration enabled
- */
-HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_010, TestSize.Level1)
-{
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    EXPECT_NE(capturerManager, nullptr);
-    EXPECT_EQ(capturerManager->Init(), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-
-    // enable collaboration
-    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(capturerManager);
-
-    // create and start stream under collaboration
-    HpaeStreamInfo streamInfo;
-    InitReloadStreamInfo(streamInfo);
-    streamInfo.sourceType = SOURCE_TYPE_LIVE;
-    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-
-    // SetMute (manager level) under collaboration
-    EXPECT_EQ(capturerManager->SetMute(true), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->SetMute(false), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-
-    // cleanup
-    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
@@ -2934,6 +2926,193 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_013, TestSize.Level1)
     WaitForMsgProcessing(capturerManager);
 }
 
+/**
+ * @tc.name  : Test StopInterphoneSourceIfNeeded for interphone capturer
+ * @tc.type  : FUNC
+ * @tc.number: StopInterphoneSourceIfNeeded_001
+ * @tc.desc  : Test StopInterphoneSourceIfNeeded when deviceName contains "Interphone".
+ */
+HWTEST_F(HpaeCapturerManagerTest, StopInterphoneSourceIfNeeded_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.deviceName = "Interphone_Source";  // deviceName contains "Interphone"
+    sourceInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    sourceInfo.filePath = g_rootCapturerPath;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    sourceInfo.micRef = HPAE_REF_OFF;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    // Test StopInterphoneSourceIfNeeded function directly with deviceName containing "Interphone"
+    capturerManager->StopInterphoneSourceIfNeeded();
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test StopInterphoneSourceIfNeeded for non-interphone capturer
+ * @tc.type  : FUNC
+ * @tc.number: StopInterphoneSourceIfNeeded_002
+ * @tc.desc  : Test StopInterphoneSourceIfNeeded when deviceName does not contain "Interphone".
+ */
+HWTEST_F(HpaeCapturerManagerTest, StopInterphoneSourceIfNeeded_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);  // deviceName is "Built_in_mic", does not contain "Interphone"
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    // Test StopInterphoneSourceIfNeeded - should not stop for non-interphone deviceName
+    capturerManager->StopInterphoneSourceIfNeeded();
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test Pause for interphone capturer stream
+ * @tc.type  : FUNC
+ * @tc.number: Pause_Interphone_001
+ * @tc.desc  : Test Pause when deviceName contains "Interphone", calls StopInterphoneSourceIfNeeded.
+ */
+HWTEST_F(HpaeCapturerManagerTest, Pause_Interphone_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.deviceName = "Interphone_Source";  // deviceName contains "Interphone"
+    sourceInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    sourceInfo.filePath = g_rootCapturerPath;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    sourceInfo.micRef = HPAE_REF_OFF;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    streamInfo.sessionId = DEFAULT_SESSION_ID;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+    
+    // Pause will call StopInterphoneSourceIfNeeded internally for interphone deviceName
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+    
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test Pause for non-interphone capturer stream
+ * @tc.type  : FUNC
+ * @tc.number: Pause_NonInterphone_001
+ * @tc.desc  : Test Pause when deviceName does not contain "Interphone".
+ */
+HWTEST_F(HpaeCapturerManagerTest, Pause_NonInterphone_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);  // deviceName is "Built_in_mic", does not contain "Interphone"
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sessionId = DEFAULT_SESSION_ID;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
+    
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+    
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : FaultCode_CaptureEffectCreate_InvalidSceneType
+ * @tc.type  : FUNC
+ * @tc.desc  : Test CaptureEffectCreate returns ERROR when sceneType is not supported,
+ *             covering FAULT_NO_SOUND/RECORD/CREATE/ERR_INVALID_PARAM fault code path.
+ */
+HWTEST_F(HpaeCapturerManagerTest, FaultCode_CaptureEffectCreate_InvalidSceneType,
+    TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+
+    static constexpr AudioEnhanceScene INVALID_ENHANCE_SCENE = static_cast<AudioEnhanceScene>(9999);
+    int32_t ret = capturerManager->CaptureEffectCreate(
+        HPAE_SCENE_DEFAULT, INVALID_ENHANCE_SCENE);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

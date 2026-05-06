@@ -164,12 +164,6 @@ void AudioVolumeFuzzTest()
     audioVolume->SetStreamVolumeDuckFactor(sessionId, volume);
     audioVolume->SetStreamVolumeLowPowerFactor(sessionId, volume);
 
-    int32_t volumeType = GetData<int32_t>();
-    int32_t volumeLevel = GetData<int32_t>();
-    std::string deviceClass = "primary";
-    audioVolume->SetSystemVolume(volumeType, deviceClass, volume, volumeLevel);
-    audioVolume->SetSystemVolumeMute(volumeType, deviceClass, true);
-
     std::string streamType = "streamType";
     audioVolume->ConvertStreamTypeStrToInt(streamType);
 

@@ -85,6 +85,13 @@ enum class AsrNoiseSuppressionMode {
      * @since 24
      */
     NORMAL_REG_MODE = 8,
+    /**
+     * PHONE_CALL_MODE
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 26
+     */
+    PHONE_CALL_MODE = 9
 };
 
 /**

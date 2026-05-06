@@ -47,6 +47,7 @@
           "audio_framework_feature_audiosuite_support",
           "audio_framework_feature_multi_alarm_level",
           "audio_framework_feature_multi_bus",
+          "audio_framework_feature_input_independent_routing_rule",
           "audio_framework_feature_multi_zone"
         ],
         "adapted_system_type": [ "standard" ],
@@ -354,9 +355,10 @@
               "name": "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite",
               "header": {
                 "header_files": [
-                  "audio_suite_manager.h"
+                  "audio_suite_manager.h",
+                  "audio_format_converter.h"
                 ],
-                "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiosuite/include"
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosuite/include"
               }
             },
             {
@@ -377,6 +379,7 @@
             "//foundation/multimedia/audio_framework/test:audio_benchmark_test",
             "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_test_packages",
+            "//foundation/multimedia/audio_framework/frameworks/native/audioloopback:audio_loopback_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer_test",
             "//foundation/multimedia/audio_framework/services/audio_service:audio_service_test_packages",

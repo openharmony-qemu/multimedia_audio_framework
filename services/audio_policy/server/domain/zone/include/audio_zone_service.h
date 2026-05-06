@@ -28,8 +28,9 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioZone;
 class AudioZoneClientManager;
+class SessionTimeOutCallback;
 
-class AudioZoneService {
+class AudioZoneService : public SessionTimeOutCallback {
 public:
     static AudioZoneService &GetInstance();
 
@@ -88,7 +89,8 @@ public:
 
     AudioInterruptResult ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isRemoveFocusHis = false);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
@@ -111,6 +113,12 @@ public:
     void NotifyStreamSilentChange(uint32_t streamId);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     AudioScene GetAudioSceneFromAllZones();
+    AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+        const AudioSessionStrategy &strategy, const bool isStandalone = false,
+        const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID);
+    int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
+    // interfaces of SessionTimeOutCallback
+    void OnSessionTimeout(const int32_t pid) override;
 
 private:
     AudioZoneService()
@@ -123,6 +131,7 @@ private:
     AudioConnectedDevice &audioConnectedDevice_;
     std::shared_ptr<AudioInterruptService> interruptService_;
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
+    std::shared_ptr<SessionTimeOutCallback> sessionTimeoutCallbackPtr_;
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;

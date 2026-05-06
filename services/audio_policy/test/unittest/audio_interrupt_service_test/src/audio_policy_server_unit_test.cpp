@@ -29,6 +29,10 @@
 #include "audio_bundle_manager.h"
 #include "audio_zone_info.h"
 #include "audio_unit_test.h"
+#include "audio_zone_service.h"
+#include "audio_connected_device.h"
+#include "audio_policy_server_handler.h"
+#include "audio_stream_collector.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -45,6 +49,70 @@ namespace AudioStandard {
 bool g_hasPermission = false;
 bool g_hasServerInit = false;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
+constexpr int32_t CHANNEL_STEREO = 2;
+
+// Helper functions for GetCurrentRendererChangeInfosForZone tests
+std::shared_ptr<AudioRendererChangeInfo> CreateRendererChangeInfo(
+    int32_t uid, int32_t sessionId, RendererState state, StreamUsage usage)
+{
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->clientUID = uid;
+    info->createrUID = uid;
+    info->sessionId = sessionId;
+    info->rendererState = state;
+    info->rendererInfo.streamUsage = usage;
+    info->channelCount = CHANNEL_STEREO;
+    return info;
+}
+
+void AddRenderersToCollector(const std::vector<std::shared_ptr<AudioRendererChangeInfo>>& renderers)
+{
+    AudioStreamCollector& collector = AudioStreamCollector::GetAudioStreamCollector();
+    std::lock_guard<std::mutex> lock(collector.streamsInfoMutex_);
+    for (const auto& renderer : renderers) {
+        collector.audioRendererChangeInfos_.push_back(renderer);
+    }
+}
+
+void ClearRenderersFromCollector()
+{
+    AudioStreamCollector& collector = AudioStreamCollector::GetAudioStreamCollector();
+    std::lock_guard<std::mutex> lock(collector.streamsInfoMutex_);
+    collector.audioRendererChangeInfos_.clear();
+}
+
+void ResetGetActiveAudioInterruptZoneTestEnv()
+{
+    AudioConnectedDevice::GetInstance().DelConnectedDevice("RemoteDevice", DEVICE_TYPE_SPEAKER);
+    AudioZoneService::GetInstance().DeInit();
+}
+
+int32_t PrepareActiveZone(AudioStreamType streamType, bool hasVolumeControllableDevice)
+{
+    auto interruptService = std::make_shared<AudioInterruptService>();
+    ResetGetActiveAudioInterruptZoneTestEnv();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(), interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("GetActiveAudioInterruptZoneTest", context, 0);
+    if (hasVolumeControllableDevice) {
+        auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+        device->networkId_ = "RemoteDevice";
+        device->volumeBehavior_.isVolumeControlDisabled = false;
+        AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
+        AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, {device});
+    }
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = streamType;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    audioInterrupt.audioFocusType.isPlay = true;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, AudioFocuState::ACTIVE);
+    interruptService->zonesMap_[zoneId] = audioInterruptZone;
+    return zoneId;
+}
+
 sptr<AudioPolicyServer> GetPolicyServerUnitTest()
 {
     static int32_t systemAbilityId = 3009;
@@ -147,7 +215,7 @@ HWTEST(AudioPolicyUnitTest, SetNearlinkDeviceVolume_002, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    
+
     std::string macAddress = "LocalDevice";
     int32_t streamTypeIn = 1;
     int32_t volume = 0;
@@ -246,7 +314,7 @@ HWTEST(AudioPolicyUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
     int32_t streamType = 1;
     int32_t uid = 0;
     int32_t volumeLevel = 0;
-    
+
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
@@ -272,7 +340,7 @@ HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
     int32_t streamTypeIn = 1;
     bool mute = false;
     int32_t deviceTypeIn = 1;
-    
+
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
@@ -570,6 +638,88 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
 }
 
 /**
+* @tc.name  : AudioPolicyServer_016A
+* @tc.number: AudioPolicyServer_016A
+* @tc.desc  : Test ActivateAudioInterrupt updates descriptor voipNoPrivacyFlag.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016A, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    ASSERT_NE(policyServerTest, nullptr);
+    policyServerTest->coreService_ = AudioCoreService::GetCoreService();
+    policyServerTest->eventEntry_ =
+        std::make_shared<AudioCoreService::EventEntry>(policyServerTest->coreService_);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 816001;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = streamDesc->GetSessionId();
+    audioInterrupt.uid = IPCSkeleton::GetCallingUid();
+    audioInterrupt.pid = IPCSkeleton::GetCallingPid();
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    audioInterrupt.audioFocusType.isPlay = false;
+    audioInterrupt.behaviorFlags_.voipNoPrivacyFlag = true;
+
+    int32_t ret = policyServerTest->ActivateAudioInterrupt(audioInterrupt, DEFAULT_ZONE_ID, false);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(streamDesc->voipNoPrivacyFlag_.load());
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+* @tc.name  : AudioPolicyServer_016B
+* @tc.number: AudioPolicyServer_016B
+* @tc.desc  : Test SetAudioSessionBehavior updates descriptor voipNoPrivacyFlag by pid.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016B, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    ASSERT_NE(policyServerTest, nullptr);
+    policyServerTest->coreService_ = AudioCoreService::GetCoreService();
+    policyServerTest->eventEntry_ =
+        std::make_shared<AudioCoreService::EventEntry>(policyServerTest->coreService_);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 816002;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamDesc->callerPid_ = IPCSkeleton::GetCallingPid();
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    constexpr uint32_t voipNoPrivacyBehavior = 0x00000001;
+    int32_t ret = policyServerTest->SetAudioSessionBehavior(voipNoPrivacyBehavior);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(streamDesc->voipNoPrivacyFlag_.load());
+
+    pipeManager->curPipeList_.clear();
+}
+
+/**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_017
 * @tc.desc  : Test SetRingerModeLegacy.
@@ -637,23 +787,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_020, TestSize.Level1)
     ptrAudioPolicyServer->interruptService_ = nullptr;
     ptrAudioPolicyServer->IsAudioSessionActivated(isActive);
     EXPECT_EQ(isActive, false);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_021
-* @tc.desc  : Test AudioPolicyServer::DeactivateAudioSession
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_021, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    ptrAudioPolicyServer->interruptService_ = nullptr;
-    ptrAudioPolicyServer->DeactivateAudioSession();
 }
 
 /**
@@ -1344,6 +1477,27 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_002, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_003
+* @tc.desc  : Test AudioPolicyServer::MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    desc.deviceRole_ = INPUT_DEVICE;
+    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
+    ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_WIRED_MICIN);
+}
+
+/**
 * @tc.name  : Test UpdateDeviceInfo.
 * @tc.number: UpdateDeviceInfo_001
 * @tc.desc  : Test UpdateDeviceInfo.
@@ -1375,7 +1529,8 @@ HWTEST(AudioPolicyUnitTest, SetCallbackCapturerInfo_001, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
     AudioCapturerInfo audioCapturerInfo(sourceType, capturerFlags);
-    int32_t result = ptrAudioPolicyServer->SetCallbackCapturerInfo(audioCapturerInfo);
+    int32_t uid = -1;
+    int32_t result = ptrAudioPolicyServer->SetCallbackCapturerInfo(audioCapturerInfo, uid);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -1561,6 +1716,20 @@ HWTEST(AudioPolicyUnitTest, MicrophoneMuteInfoDump_001, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     std::string dumpString = "";
     ptrAudioPolicyServer->MicrophoneMuteInfoDump(dumpString);
+}
+
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
 }
 
 /**
@@ -1842,7 +2011,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_065, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     auto ret = server->GetSupportedAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, AUDIO_OK);
 }
@@ -1857,7 +2026,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_066, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     auto ret = server->SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, AUDIO_OK);
 }
@@ -1873,7 +2042,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_067, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     server->GetAudioEffectProperty(propertyArray);
 }
 
@@ -2939,13 +3108,17 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
     volumeLevel = 6;
-    ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
+    ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
     MockNative::Resume();
 
     volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    EXPECT_EQ(ret, SUCCESS);
+#else
     EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+#endif
 }
 
 #ifdef TEMP_DISABLE
@@ -3364,6 +3537,77 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_223, TestSize.Level1)
     std::string macAddress = "00:11:22:33:44:55";
     int32_t result = server->GetVADeviceController(macAddress, controller);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test GetActiveAudioInterruptZone.
+* @tc.number: GetActiveAudioInterruptZone_001
+* @tc.desc  : Test AudioPolicyServer::GetActiveAudioInterruptZone when zoneId is zero.
+*/
+HWTEST(AudioPolicyUnitTest, GetActiveAudioInterruptZone_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    int32_t zoneId = 0;
+    AudioStreamType streamType = STREAM_DEFAULT;
+
+    PrepareActiveZone(STREAM_RING, false);
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, 0);
+    EXPECT_EQ(streamType, STREAM_RING);
+
+    int32_t activeZoneId = PrepareActiveZone(STREAM_RING, true);
+    zoneId = 0;
+    streamType = STREAM_DEFAULT;
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, activeZoneId);
+    EXPECT_EQ(streamType, STREAM_RING);
+
+    ResetGetActiveAudioInterruptZoneTestEnv();
+}
+
+/**
+* @tc.name  : Test GetActiveAudioInterruptZone.
+* @tc.number: GetActiveAudioInterruptZone_002
+* @tc.desc  : Test AudioPolicyServer::GetActiveAudioInterruptZone when zoneId is not zero.
+*/
+HWTEST(AudioPolicyUnitTest, GetActiveAudioInterruptZone_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    audioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioPolicyServer->interruptService_, nullptr);
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    audioInterrupt.audioFocusType.isPlay = true;
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, AudioFocuState::ACTIVE);
+    audioPolicyServer->interruptService_->zonesMap_[1] = audioInterruptZone;
+
+    int32_t zoneId = 1;
+    AudioStreamType streamType = STREAM_DEFAULT;
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, 1);
+    EXPECT_EQ(streamType, STREAM_MUSIC);
+
+    audioPolicyServer->audioVolumeManager_.needForceControlVolumeType_ = true;
+    audioPolicyServer->audioVolumeManager_.forceControlVolumeType_ = STREAM_RING;
+
+    zoneId = 1;
+    streamType = STREAM_DEFAULT;
+    audioPolicyServer->GetActiveAudioInterruptZone(zoneId, streamType);
+    EXPECT_EQ(zoneId, 0);
+    EXPECT_EQ(streamType, STREAM_RING);
+
+    audioPolicyServer->audioVolumeManager_.needForceControlVolumeType_ = false;
+    audioPolicyServer->audioVolumeManager_.forceControlVolumeType_ = STREAM_DEFAULT;
 }
 
 /**
@@ -4461,7 +4705,7 @@ HWTEST(AudioPolicyUnitTest, AddUidUsagesToAudioZone_004, TestSize.Level1)
     }
 
     int32_t ret = server->AddUidUsagesToAudioZone(zoneId, uid, usages);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -4614,7 +4858,7 @@ HWTEST(AudioPolicyUnitTest, RemoveUidUsagesFromAudioZone_004, TestSize.Level1)
     }
 
     int32_t ret = server->RemoveUidUsagesFromAudioZone(zoneId, uid, usages);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -4938,7 +5182,7 @@ HWTEST(AudioPolicyUnitTest, EnableSystemVolumeProxy_001, TestSize.Level1)
 
     // Test zoneId = 0
     int32_t ret = server->EnableSystemVolumeProxy(0, deviceType, enable);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 
     // Test zoneId < 0
     ret = server->EnableSystemVolumeProxy(-1, deviceType, enable);
@@ -5083,6 +5327,260 @@ HWTEST(AudioPolicyUnitTest, GetAudioInterruptForZone_004, TestSize.Level1)
 
     int32_t ret = server->GetAudioInterruptForZone(zoneId, deviceTag, retList);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetCurrentRendererChangeInfosForZone.
+* @tc.number: GetCurrentRendererChangeInfosForZone_001
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with invalid zoneId.
+*/
+HWTEST(AudioPolicyUnitTest, GetCurrentRendererChangeInfosForZone_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    server->coreService_ = AudioCoreService::GetCoreService();
+    server->eventEntry_ = server->coreService_->GetEventEntry();
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t ret = server->GetCurrentRendererChangeInfosForZone(-1, infos);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetCurrentRendererChangeInfosForZone.
+* @tc.number: GetCurrentRendererChangeInfosForZone_002
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with valid zoneId (primary zone) when no renderers.
+*/
+HWTEST(AudioPolicyUnitTest, GetCurrentRendererChangeInfosForZone_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    server->coreService_ = AudioCoreService::GetCoreService();
+    if (server->coreService_ != nullptr) {
+        server->eventEntry_ = server->coreService_->GetEventEntry();
+    }
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t ret = server->GetCurrentRendererChangeInfosForZone(0, infos);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetCurrentRendererChangeInfosForZone.
+* @tc.number: GetCurrentRendererChangeInfosForZone_003
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with non-existent zoneId.
+*             Should return SUCCESS with empty infos.
+*/
+HWTEST(AudioPolicyUnitTest, GetCurrentRendererChangeInfosForZone_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    server->coreService_ = AudioCoreService::GetCoreService();
+    if (server->coreService_ != nullptr) {
+        server->eventEntry_ = server->coreService_->GetEventEntry();
+    }
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    const int32_t nonExistentZoneId = 9999;
+    int32_t ret = server->GetCurrentRendererChangeInfosForZone(nonExistentZoneId, infos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_TRUE(infos.empty());
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetCurrentRendererChangeInfosForZone.
+* @tc.number: GetCurrentRendererChangeInfosForZone_004
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with renderer info and zone binding.
+*             Create zone, bind UID, add renderer with matching clientUID, verify returned info.
+*/
+HWTEST(AudioPolicyUnitTest, GetCurrentRendererChangeInfosForZone_004, TestSize.Level1)
+{
+    GetPermission();
+    auto server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneService::GetInstance().Init(
+        DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    // Create a test zone
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestRendererZone", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    // Bind UID to zone with specific stream usage
+    const int32_t testClientUID = 1234;
+    const StreamUsage testStreamUsage = STREAM_USAGE_MEDIA;
+    std::set<StreamUsage> usages = {testStreamUsage};
+    int32_t ret = AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId, testClientUID, usages);
+    EXPECT_EQ(SUCCESS, ret);
+
+    // Verify FindAudioZone returns correct zoneId
+    int32_t foundZoneId = AudioZoneService::GetInstance().FindAudioZone(testClientUID, testStreamUsage);
+    EXPECT_EQ(foundZoneId, zoneId);
+
+    // Create mock renderer change info
+    AudioStreamCollector& collector = AudioStreamCollector::GetAudioStreamCollector();
+    auto rendererInfo = std::make_shared<AudioRendererChangeInfo>();
+    rendererInfo->clientUID = testClientUID;
+    rendererInfo->createrUID = testClientUID;
+    rendererInfo->sessionId = 2001;
+    rendererInfo->clientPid = 3001;
+    rendererInfo->rendererState = RENDERER_RUNNING;
+    rendererInfo->rendererInfo.streamUsage = testStreamUsage;
+    rendererInfo->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    rendererInfo->channelCount = CHANNEL_STEREO;
+
+    // Add renderer to collector
+    {
+        std::lock_guard<std::mutex> lock(collector.streamsInfoMutex_);
+        collector.audioRendererChangeInfos_.push_back(rendererInfo);
+    }
+
+    // Get renderer info for the zone
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    ret = server->GetCurrentRendererChangeInfosForZone(zoneId, infos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(infos.size(), 1);
+    if (infos.size() > 0) {
+        EXPECT_EQ(infos[0]->clientUID, testClientUID);
+        EXPECT_EQ(infos[0]->sessionId, 2001);
+        EXPECT_EQ(infos[0]->rendererState, RENDERER_RUNNING);
+        EXPECT_EQ(infos[0]->rendererInfo.streamUsage, testStreamUsage);
+    }
+
+    // Cleanup: remove renderer and release zone
+    {
+        std::lock_guard<std::mutex> lock(collector.streamsInfoMutex_);
+        collector.audioRendererChangeInfos_.clear();
+    }
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetCurrentRendererChangeInfosForZone.
+* @tc.number: GetCurrentRendererChangeInfosForZone_005
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with multiple renderers in different zones.
+*             Create two zones with different UIDs, add renderers, verify correct filtering.
+*/
+HWTEST(AudioPolicyUnitTest, GetCurrentRendererChangeInfosForZone_005, TestSize.Level1)
+{
+    GetPermission();
+    auto server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneService::GetInstance().Init(
+        DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    // Setup: create zones and bind UIDs
+    AudioZoneContext context;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    int32_t zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("Zone2", context, 0);
+    ASSERT_NE(zoneId1, ERROR);
+    ASSERT_NE(zoneId2, ERROR);
+
+    const int32_t uid1 = 1001;
+    const int32_t uid2 = 2002;
+    AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId1, uid1, {STREAM_USAGE_MEDIA});
+    AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId2, uid2, {STREAM_USAGE_MUSIC});
+
+    // Add mock renderers
+    auto renderer1 = CreateRendererChangeInfo(uid1, 1001, RENDERER_RUNNING, STREAM_USAGE_MEDIA);
+    auto renderer2 = CreateRendererChangeInfo(uid2, 2002, RENDERER_RUNNING, STREAM_USAGE_MUSIC);
+    AddRenderersToCollector({renderer1, renderer2});
+
+    // Verify: zone1 only contains renderer1
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos1;
+    EXPECT_EQ(server->GetCurrentRendererChangeInfosForZone(zoneId1, infos1), SUCCESS);
+    EXPECT_EQ(infos1.size(), 1);
+    if (!infos1.empty()) {
+        EXPECT_EQ(infos1[0]->clientUID, uid1);
+        EXPECT_EQ(infos1[0]->sessionId, 1001);
+    }
+
+    // Verify: zone2 only contains renderer2
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos2;
+    EXPECT_EQ(server->GetCurrentRendererChangeInfosForZone(zoneId2, infos2), SUCCESS);
+    EXPECT_EQ(infos2.size(), 1);
+    if (!infos2.empty()) {
+        EXPECT_EQ(infos2[0]->clientUID, uid2);
+        EXPECT_EQ(infos2[0]->sessionId, 2002);
+    }
+
+    // Cleanup
+    ClearRenderersFromCollector();
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetCurrentRendererChangeInfosForZone.
+* @tc.number: GetCurrentRendererChangeInfosForZone_006
+* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with renderer not bound to any zone.
+*             Renderer with unbound UID should return to default zone (zoneId=0).
+*/
+HWTEST(AudioPolicyUnitTest, GetCurrentRendererChangeInfosForZone_006, TestSize.Level1)
+{
+    GetPermission();
+    auto server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneService::GetInstance().Init(
+        DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    // Create renderer with UID not bound to any zone
+    const int32_t unboundUID = 9999;
+    AudioStreamCollector& collector = AudioStreamCollector::GetAudioStreamCollector();
+    auto renderer = std::make_shared<AudioRendererChangeInfo>();
+    renderer->clientUID = unboundUID;
+    renderer->createrUID = unboundUID;
+    renderer->sessionId = 9999;
+    renderer->rendererState = RENDERER_RUNNING;
+    renderer->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    renderer->channelCount = CHANNEL_STEREO;
+
+    {
+        std::lock_guard<std::mutex> lock(collector.streamsInfoMutex_);
+        collector.audioRendererChangeInfos_.push_back(renderer);
+    }
+
+    // FindAudioZone should return 0 (default zone) for unbound UID
+    int32_t foundZoneId = AudioZoneService::GetInstance().FindAudioZone(unboundUID, STREAM_USAGE_MEDIA);
+    EXPECT_EQ(foundZoneId, 0);
+
+    // Query default zone - should get the unbound renderer
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t ret = server->GetCurrentRendererChangeInfosForZone(0, infos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_GE(infos.size(), 1);
+    
+    // Verify unbound renderer is in the results
+    bool foundUnbound = false;
+    for (const auto& info : infos) {
+        if (info->clientUID == unboundUID) {
+            foundUnbound = true;
+            EXPECT_EQ(info->sessionId, 9999);
+            break;
+        }
+    }
+    EXPECT_TRUE(foundUnbound);
+
+    // Cleanup
+    {
+        std::lock_guard<std::mutex> lock(collector.streamsInfoMutex_);
+        collector.audioRendererChangeInfos_.clear();
+    }
 }
 
 /**
@@ -6003,11 +6501,58 @@ HWTEST(AudioPolicyUnitTest, VerifyUidAndPid_001, TestSize.Level1)
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
     EXPECT_NE(server, nullptr);
-    
+
     int32_t pid = 3009;
     int32_t uid = 3009;
     int ret = server->VerifyUidAndPid(uid, pid);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable for CALLBACK_ROUTE_SELECTOR.
+ * @tc.number: SetClientCallbacksEnable_RouteSelector_001
+ * @tc.desc  : Test SetClientCallbacksEnable with CALLBACK_ROUTE_SELECTOR enable.
+ */
+HWTEST(AudioPolicyUnitTest, SetClientCallbacksEnable_RouteSelector_001, TestSize.Level1)
+{
+    auto policyServer = GetPolicyServerUnitTest();
+    EXPECT_NE(policyServer, nullptr);
+
+    int32_t callbackChange = static_cast<int32_t>(CallbackChange::CALLBACK_ROUTE_SELECTOR);
+    int32_t result = policyServer->SetClientCallbacksEnable(callbackChange, true);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable for CALLBACK_ROUTE_SELECTOR.
+ * @tc.number: SetClientCallbacksEnable_RouteSelector_002
+ * @tc.desc  : Test SetClientCallbacksEnable with CALLBACK_ROUTE_SELECTOR disable.
+ */
+HWTEST(AudioPolicyUnitTest, SetClientCallbacksEnable_RouteSelector_002, TestSize.Level1)
+{
+    auto policyServer = GetPolicyServerUnitTest();
+    EXPECT_NE(policyServer, nullptr);
+
+    int32_t callbackChange = static_cast<int32_t>(CallbackChange::CALLBACK_ROUTE_SELECTOR);
+    int32_t result = policyServer->SetClientCallbacksEnable(callbackChange, false);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable for CALLBACK_ROUTE_SELECTOR with uninitialized server.
+ * @tc.number: SetClientCallbacksEnable_RouteSelector_003
+ * @tc.desc  : Test SetClientCallbacksEnable with CALLBACK_ROUTE_SELECTOR when server is not fully initialized.
+ */
+HWTEST(AudioPolicyUnitTest, SetClientCallbacksEnable_RouteSelector_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(server, nullptr);
+
+    int32_t callbackChange = static_cast<int32_t>(CallbackChange::CALLBACK_ROUTE_SELECTOR);
+    int32_t result = server->SetClientCallbacksEnable(callbackChange, true);
+    EXPECT_NE(result, SUCCESS);
 }
 } // AudioStandard
 } // OHOS

@@ -209,7 +209,7 @@ void AudioPolicyManagerTwoFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().GetAudioFocusInfoList(focusInfoList, zoneId);
     AudioPolicyManager::GetInstance().SetClientCallbacksEnable(callbackChange, enable, block);
     AudioPolicyManager::GetInstance().SetCallbackRendererInfo(rendererInfo);
-    AudioPolicyManager::GetInstance().SetCallbackCapturerInfo(capturerInfo);
+    AudioPolicyManager::GetInstance().SetCallbackCapturerInfo(capturerInfo, -1);
     AudioPolicyManager::GetInstance().RegisterFocusInfoChangeCallback(clientId, callback);
     AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
 }

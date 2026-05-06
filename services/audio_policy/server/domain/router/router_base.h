@@ -22,6 +22,7 @@
 #include "audio_state_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_router_select_strategy.h"
+#include "conflict_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -159,6 +160,30 @@ public:
         AUDIO_INFO_LOG("Wired cast, ALARM, NOTIFICATION, ENFORCED_TONE and VOICE_ASSISTANT sound on local device");
         return true;
     }
+
+    void RegisterConflictHandler(std::shared_ptr<ConflictHandler> handler)
+    {
+        handlers.push_back(handler);
+    }
+
+    void ClearConflictHandler()
+    {
+        handlers.clear();
+    }
+
+    bool CheckConflict(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
+        StreamUsage streamUsage, SourceType sourceType, bool isOutput)
+    {
+        for (auto &handler : handlers) {
+            if (handler != nullptr && handler->Detect(device, routerType, streamUsage, sourceType, isOutput)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
+    std::vector<std::shared_ptr<ConflictHandler>> handlers;
 };
 } // namespace AudioStandard
 } // namespace OHOS

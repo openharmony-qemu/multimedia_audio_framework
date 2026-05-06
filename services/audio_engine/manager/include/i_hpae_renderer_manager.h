@@ -40,7 +40,7 @@ public:
     {
         return Start(sessionId);
     }
-    virtual int32_t Pause(uint32_t sessionId) = 0;
+    virtual int32_t Pause(uint32_t sessionId, bool isStandby = false) = 0;
     virtual int32_t Flush(uint32_t sessionId) = 0;
     virtual int32_t Drain(uint32_t sessionId) = 0;
     virtual int32_t Stop(uint32_t sessionId) = 0;
@@ -78,6 +78,10 @@ public:
     virtual int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) = 0;
     virtual int32_t RefreshProcessClusterByDevice() = 0;
     virtual HpaeSinkInfo GetSinkInfo() = 0;
+    virtual int32_t GetSpanSizeInFrame(uint32_t sessionId, uint32_t &spanSizeInFrame)
+    {
+        return ERR_NOT_SUPPORTED;
+    }
     virtual int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) = 0;
     virtual int32_t AddAllNodesToSink(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) = 0;
@@ -112,8 +116,13 @@ public:
     virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
     virtual std::string GetDeviceHDFDumpInfo() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) {return 0;};
+    virtual void SetMuteForSwitchDevice(bool mute) {};
     virtual int32_t SetSinkVirtualOutputNode(const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode);
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; }
+    virtual float GetMaxAmplitude() { return 0.0f; }
+
+protected:
+    static bool AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNodeInfo &outNodeInfo);
 
 private:
 #ifdef ENABLE_HIDUMP_DFX

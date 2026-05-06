@@ -111,9 +111,19 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     // for collaboration
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     node->SetNodeInfo(nodeInfo);
+    node->SetIsLowLatency(false);
     uint32_t sessionId = nodeInfo.sessionId;
 
     sinkInputNodeMap_[sessionId] = node;
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = sinkInfo_.frameLen;
+    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
+    if (frameLenAdjusted) {
+        node->SetNodeInfo(nodeInfo);
+        TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
+            static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
+    }
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 #ifdef ENABLE_HIDUMP_DFX
@@ -842,24 +852,38 @@ void HpaeRendererManager::SetSessionState(uint32_t sessionId, HpaeSessionState r
     sessionNodeMap_[sessionId].state = renderState;
 }
 
-int32_t HpaeRendererManager::Pause(uint32_t sessionId)
+int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
 {
-    auto request = [this, sessionId]() {
+    auto request = [this, sessionId, isStandby]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Pause");
-        AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s",
-            sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str());
+        AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s,isStandb:%{public}d",
+            sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str(), isStandby);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
-        if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
+        if (isStandby) {
+            DisConnectInputSession(sessionId);
+        } else if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputSession(sessionId);
         }
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
+        
+        StopInterphoneSinkIfNeeded();
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeRendererManager::StopInterphoneSinkIfNeeded()
+{
+    if (sinkInfo_.deviceName.find("Interphone") != std::string::npos) {
+        AUDIO_INFO_LOG("Interphone stream paused, stopping output cluster immediately");
+        if (outputCluster_ != nullptr) {
+            outputCluster_->Stop();
+        }
+    }
 }
 
 int32_t HpaeRendererManager::Flush(uint32_t sessionId)
@@ -1278,8 +1302,13 @@ void HpaeRendererManager::Process()
     Trace trace("HpaeRendererManager::Process");
     if (outputCluster_ != nullptr && IsRunning()) {
         UpdateAppsUid();
-        // no stream running & over 3s need stop
+        // no stream running need stop
         if (appsUid_.empty() && !coBufferNodeIsConnected_) {
+            // For interphone stream, stop immediately without waiting 3s timeout
+            if (sinkInfo_.deviceName.find("Interphone") != std::string::npos) {
+                outputCluster_->Stop();
+                return;
+            }
             int64_t now = ClockTime::GetCurNano();
             noneStreamTime_ = noneStreamTime_ == 0 ? now : noneStreamTime_;
             if (now - noneStreamTime_ > SUSPEND_TIME_OUT_S * AUDIO_NS_PER_SECOND) {
@@ -1576,7 +1605,7 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     auto &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     struct VolumeValues volumes;
     auto audioVolume = AudioVolume::GetInstance();
-    float curVolume = audioVolume->GetVolume(sessionId, nodeInfo.streamType, sinkInfo_.deviceClass, &volumes);
+    float curVolume = audioVolume->GetVolume(sessionId, nodeInfo.streamType, sinkInfo_.sinkId, &volumes);
     auto isZeroVolume = audioVolume->IsSameVolume(0.0f, curVolume);
     AUDIO_INFO_LOG("session %{public}u, stream %{public}d, is zero volume %{public}d",
         sessionId, nodeInfo.streamType, isZeroVolume);

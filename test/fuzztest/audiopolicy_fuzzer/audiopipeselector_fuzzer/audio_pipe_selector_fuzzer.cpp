@@ -32,6 +32,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
+#include "audio_concurrency_parser.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
@@ -98,7 +99,9 @@ void GetAdapterNameByStreamDescFuzzTest(FuzzedDataProvider& fdp)
     streamDesc->streamInfo_.channels = AudioChannel::STEREO;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    std::string result = audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc);
+    std::string adapterName;
+    std::string pipeName;
+    audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc, adapterName, pipeName);
 }
 
 void ConvertStreamDescToPipeInfoFuzzTest(FuzzedDataProvider& fdp)
@@ -223,8 +226,9 @@ void ProcessRendererAndCapturerConcurrencyFuzzTest(FuzzedDataProvider& fdp)
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
+    ConcurrencyAction action = static_cast<ConcurrencyAction>(GetData<uint32_t>() % 4);
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc);
+    audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc, action);
 }
 
 void CheckFastStreamOverLimitToNormalFuzzTest(FuzzedDataProvider& fdp)
@@ -415,9 +419,10 @@ void IsPipeMatchFuzzTest(FuzzedDataProvider& fdp)
     pipeInfo->adapterName_ = "test_adapter";
 
     std::string adapterName = "test_adapter";
+    std::string pipeName = "primary_output";
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName);
+    audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName, pipeName);
 }
 
 void Test(FuzzedDataProvider& fdp)

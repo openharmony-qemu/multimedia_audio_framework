@@ -24,11 +24,11 @@
 #include "policy_handler.h"
 #include "audio_volume.h"
 #include "audio_sink_latency_fetcher.h"
+#include "util/id_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
-constexpr int32_t SECOND_TO_MILLISECOND = 1000;
 constexpr int32_t DEFAULT_BUFFER_MILLISECOND = 20;
 constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
 constexpr uint32_t DOUBLE_VALUE = 2;
@@ -739,8 +739,9 @@ void ProRendererStreamImpl::GetStreamVolume()
         return;
     }
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(DEVICE_NAME);
     bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType,
-        DEVICE_NAME, &volumes);
+        renderId, &volumes);
     bufferInfo_.volumeBg = volumes.volumeHistory;
     if (bufferInfo_.volumeBg != bufferInfo_.volumeEd) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, bufferInfo_.volumeEd);

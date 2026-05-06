@@ -17,11 +17,13 @@
 #endif
 
 #include "i_audio_stream.h"
+#include <unistd.h>
 #include <map>
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "stream_dfx_manager.h"
 #include "audio_policy_manager.h"
 #include "capturer_in_client.h"
 #include "renderer_in_client.h"
@@ -162,9 +164,14 @@ int32_t IAudioStream::CheckCapturerAudioStreamInfo(const AudioStreamParams info)
     if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
         !IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("Unsupported audio capturer parameter");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_INVALID_PARAM, "Unsupported audio capturer parameter", true);
         return ERR_NOT_SUPPORTED;
     }
-    CHECK_AND_RETURN_RET(IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout), ERR_NOT_SUPPORTED);
+    CHECK_AND_CALL_FUNC_RETURN_RET(IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout),
+        ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_INVALID_PARAM, "Invalid record channel info", true));
     return SUCCESS;
 }
 
@@ -324,8 +331,16 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     Trace trace("IAudioStream::GetPlaybackStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        HILOG_COMM_INFO("[GetPlaybackStream]Create fast playback stream");
-        return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
+        int32_t enableNewRoute = 0;
+        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+
+        if (enableNewRoute == 1) {
+            HILOG_COMM_INFO("[GetPlaybackStream]Create renderer in client for fast playback stream with new route");
+            return RendererInClient::GetInstance(eStreamType, appUid);
+        } else {
+            HILOG_COMM_INFO("[GetPlaybackStream]Create fast playback stream");
+            return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
+        }
 #else
         (void)params;
         HILOG_COMM_INFO("[GetPlaybackStream]Unsupport create fast playback stream, so create ipc playback stream");
@@ -346,8 +361,16 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     Trace trace("IAudioStream::GetRecordStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        HILOG_COMM_INFO("[GetRecordStream]Create fast record stream");
-        return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
+        int32_t enableNewRoute = 0;
+        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+
+        if (enableNewRoute == 1) {
+            HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for fast record stream with new route");
+            return CapturerInClient::GetInstance(eStreamType, appUid);
+        } else {
+            HILOG_COMM_INFO("[GetRecordStream]Create fast record stream");
+            return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
+        }
 #else
         (void)params;
         AUDIO_INFO_LOG("Unsupport create fast record stream, so create ipc record stream");

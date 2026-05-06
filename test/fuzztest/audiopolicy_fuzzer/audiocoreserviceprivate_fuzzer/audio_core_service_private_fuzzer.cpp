@@ -355,19 +355,6 @@ void CheckModemSceneFuzzTest()
     audioCoreService->CheckModemScene(modemDescs, reason);
 }
 
-void HandleAudioCaptureStateFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    constexpr int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
-    AudioMode mode = static_cast<AudioMode>(GetData<uint8_t>() % modeCount);
-    AudioStreamChangeInfo streamChangeInfo;
-    constexpr int32_t capturerStateCount = static_cast<int32_t>(CapturerState::CAPTURER_PAUSED) + 1;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState =
-        static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = GetData<SourceType>();
-    audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-}
-
 void IsSameDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -585,7 +572,8 @@ void AudioCoreServicePrivateUpdateOutputRouteFuzzTest()
     }
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioCoreService->UpdateOutputRoute(streamDesc);
+    uint32_t pipeId = GetData<uint32_t>();
+    audioCoreService->UpdateOutputRoute(streamDesc, pipeId);
 }
 
 void AudioCoreServicePrivateOnPreferredInputDeviceUpdatedFuzzTest()
@@ -951,9 +939,10 @@ void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
     if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
         return;
     }
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor);
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
-    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
+    uint32_t ioHandle = GetData<uint32_t>();
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor, ioHandle);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor, ioHandle);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor, ioHandle);
 }
 
 void AudioCoreServicePrivateNotifyRouteUpdate()

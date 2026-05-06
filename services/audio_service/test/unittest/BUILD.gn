@@ -396,16 +396,18 @@ ohos_unittest("audio_service_unit_test") {
   sources = [
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
-    "./client/audio_volume_client_manager_unit_test.cpp",
     "./client/audio_wakeup_manager_unit_test.cpp",
     "./client/audio_workgroup_manager_unit_test.cpp",
     "./client/audio_session_manager_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
-    "./common/audio_volume_unit_test.cpp",
+    "./common/audio_static_buffer_provider_unit_test.cpp",
+    "./common/futex_tool_unit_test.cpp",
     "./common/limiter_unit_test/audio_limiter_adapter_unit_test.cpp",
     "./common/limiter_unit_test/audio_limiter_manager_unit_test.cpp",
     "./common/limiter_unit_test/audio_limiter_unit_test.cpp",
+    "./common/oh_audio_buffer_base_unit_test.cpp",
+    "./common/oh_audio_buffer_unit_test.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
     "./client/i_audio_stream_unit_test.cpp",
@@ -485,6 +487,85 @@ ohos_unittest("audio_service_unit_test") {
   if (audio_framework_feature_multi_alarm_level) {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
+}
+
+ohos_unittest("audio_volume_unit_test") {
+  module_out_path = audio_policy_module_output_path
+
+  configs = [ ":module_private_config" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/src",
+  ]
+
+  sources = [
+    "./common/audio_volume_unit_test.cpp",
+  ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_common",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = [ "-std=c++20" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "safwk:system_ability_fwk",
+    "qos_manager:concurrent_task_client",
+    "eventhandler:libeventhandler",
+  ]
+
+  defines = []
+}
+
+ohos_unittest("audio_pitch_processor_unit_test") {
+  module_out_path = "audio_framework/audio_framework_common/pitch_processor"
+
+  configs = [ ":module_private_config" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [
+    "./common/audio_pitch_processor_unit_test.cpp",
+  ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_common",
+  ]
+
+  cflags = [
+    "-fno-access-control",
+  ]
+
+  cflags_cc = [ "-std=c++20" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+  ]
+
+  defines = []
 }
 
 ohos_unittest("pa_renderer_stream_impl_unit_test") {
@@ -669,6 +750,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gmock",
     "hilog:libhilog",
     "ipc:ipc_single",
@@ -1774,4 +1856,66 @@ ohos_unittest("audio_highpass_filter_unit_test") {
   ]
 
   defines = [ "TEST_COVERAGE=1" ]
+}
+
+ohos_unittest("audio_volume_client_manager_unit_test") {
+  module_out_path = audio_policy_module_output_path
+
+  configs = [ ":module_private_config" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/include/dfx",
+    "../../../../services/audio_service/client/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audiopolicy/include",
+    "../../../../services/audio_policy/server/include",
+  ]
+
+  sources = [ "./client/audio_volume_client_manager_unit_test.cpp" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_foundation",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_common",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = [ "-std=c++20" ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  defines = [ "TEST_COVERAGE=1" ]
+}
+
+group("audio_service_unittest") {
+  testonly = true
+  deps = [
+    ":audio_pitch_processor_unit_test",
+    "renderer_in_server_unit_test:renderer_in_server_unit_test",
+    "renderer_in_server_unit_test:renderer_in_server_second_unit_test",
+    "renderer_in_server_unit_test:renderer_in_server_third_unit_test",
+  ]
 }

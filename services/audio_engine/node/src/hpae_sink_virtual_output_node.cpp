@@ -24,6 +24,7 @@
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -112,7 +113,11 @@ int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &
     Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData " + GetTraceInfo());
     std::lock_guard<std::mutex> lock(mutex_);
     DoProcessInner();
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM, "Invalid nullptr buffer provided");
+    CHECK_AND_RETURN_RET(buffer != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+            "Invalid nullptr buffer provided", false), ERROR_INVALID_PARAM));
     memset_s(buffer, bufferSize, 0, bufferSize);
     size_t outputSizeInt = outputAudioBuffer_.DataSize() * static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) /
         sizeof(float);
@@ -194,7 +199,11 @@ StreamManagerState HpaeSinkVirtualOutputNode::GetState()
 
 int32_t HpaeSinkVirtualOutputNode::RenderSinkInit()
 {
-    CHECK_AND_RETURN_RET_LOG(ringCache_ != nullptr, ERR_INVALID_OPERATION, "init fail, ringcache is null");
+    CHECK_AND_RETURN_RET(ringCache_ != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "init fail, ringcache is null", false), ERR_INVALID_OPERATION));
     SetSinkState(STREAM_MANAGER_IDLE);
     return SUCCESS;
 }
@@ -257,8 +266,11 @@ uint32_t HpaeSinkVirtualOutputNode::GetLatency()
 bool HpaeSinkVirtualOutputNode::GetIsReadFinished()
 {
     OptResult result = ringCache_->GetWritableSize();
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, false,
-        "ringCache get writable invalid size : %{public}zu", result.size);
+    CHECK_AND_RETURN_RET(result.ret == OPERATION_SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+            "ringCache get writable invalid size", false), false));
     return result.size != 0;
 }
 

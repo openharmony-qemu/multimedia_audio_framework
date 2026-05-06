@@ -154,6 +154,13 @@ bool AudioSceneManager::IsHangUpScene()
         audioScene_ == AUDIO_SCENE_DEFAULT;
 }
 
+bool AudioSceneManager::IsCallEnded()
+{
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    return (lastAudioScene_ == AUDIO_SCENE_PHONE_CALL && audioScene_ != AUDIO_SCENE_PHONE_CALL) ||
+        (lastAudioScene_ == AUDIO_SCENE_PHONE_CHAT && audioScene_ != AUDIO_SCENE_PHONE_CHAT);
+}
+
 bool AudioSceneManager::IsPhoneCallOrChatSceneTriggeredByUid(int32_t uid) const
 {
     std::lock_guard<std::mutex> lock(sceneMutex_);

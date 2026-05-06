@@ -22,6 +22,9 @@
 #include <thread>
 #include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
+#ifdef MULTI_BUS_ENABLE
+#include "util/audio_playing_app_manager.h"
+#endif
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -35,7 +38,7 @@ struct DirectHdiCallback {
 
 class DirectAudioRenderSink : public IAudioRenderSink {
 public:
-    DirectAudioRenderSink() = default;
+    DirectAudioRenderSink();
     ~DirectAudioRenderSink();
 
     int32_t Init(const IAudioSinkAttr &attr) override;
@@ -76,6 +79,7 @@ private:
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
     int32_t CreateRender(void);
     void StartTestThread(void);
+    bool SetPlayingAppNameParam(const std::string &param);
 
 private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -105,6 +109,9 @@ private:
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;
+#endif
+#ifdef MULTI_BUS_ENABLE
+    AudioPlayingAppManager playingAppManager_;
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";

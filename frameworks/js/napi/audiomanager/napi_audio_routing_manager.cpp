@@ -31,6 +31,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+using PrefOutputDeviceCbList = std::vector<std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback>>;
+using PrefInputDeviceCbList = std::vector<std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback>>;
+} // namespace
 using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_routingManagerConstructor = nullptr;
@@ -92,6 +96,7 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getDevicesSync", GetDevicesSync),
         DECLARE_NAPI_FUNCTION("selectOutputDevice", SelectOutputDevice),
         DECLARE_NAPI_FUNCTION("selectOutputDeviceByFilter", SelectOutputDeviceByFilter),
+        DECLARE_NAPI_FUNCTION("restoreOutputDeviceByFilter", RestoreOutputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("selectInputDevice", SelectInputDevice),
         DECLARE_NAPI_FUNCTION("selectInputDeviceByFilter", SelectInputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("excludeOutputDevices", ExcludeOutputDevices),
@@ -114,6 +119,8 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getExcludedDevices", GetExcludedDevices),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+        DECLARE_NAPI_FUNCTION("onPreferredInputDeviceChangeByFilter", OnPreferredInputDeviceChangeByFilter),
+        DECLARE_NAPI_FUNCTION("offPreferredInputDeviceChangeByFilter", OffPreferredInputDeviceChangeByFilter),
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
         DECLARE_NAPI_FUNCTION("isMicBlockDetectionSupported", IsMicBlockDetectionSupported),
 #endif
@@ -347,6 +354,44 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SelectOutputDeviceByFilter", executor, complete);
+}
+
+napi_value NapiAudioRoutingManager::RestoreOutputDeviceByFilter(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("RestoreOutputDeviceByFilter failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        NapiParamUtils::GetAudioRendererFilter(env, context->audioRendererFilter,
+            context->bArgTransFlag, argv[PARAM0]);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRoutingManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
+            "context object state is error.");
+        if (!context->bArgTransFlag) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+        }
+        context->intValue = napiAudioRoutingManager->audioMngr_->RestoreOutputDevice(context->audioRendererFilter);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "RestoreOutputDeviceByFilter failed",
+            NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "RestoreOutputDeviceByFilter", executor, complete);
 }
 
 napi_value NapiAudioRoutingManager::SelectInputDevice(napi_env env, napi_callback_info info)
@@ -885,34 +930,28 @@ napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfoSync(n
 
 napi_value NapiAudioRoutingManager::GetPreferredInputDeviceByFilter(napi_env env, napi_callback_info info)
 {
-    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("GetPreferredInputDeviceByFilter failed : no memory");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invalid");
 
-    auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "Invalid arguments count.", NAPI_ERR_INVALID_PARAM);
-        context->status = NapiParamUtils::GetAudioCapturerFilter(env, context->audioCapturerFilter, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
-            "Parameter verification failed. AudioCapturerFilter abnormal.", NAPI_ERR_INVALID_PARAM);
-    };
-    context->GetCbInfo(env, info, inputParser);
+    sptr<AudioCapturerFilter> audioCapturerFilter;
+    napi_status status = NapiParamUtils::GetAudioCapturerFilter(env, audioCapturerFilter, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && audioCapturerFilter != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "Parameter verification failed. AudioCapturerFilter abnormal."), "audioCapturerFilter invalid");
 
-    auto executor = [context]() {
-        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRoutingManager = objectGuard.GetPtr();
-        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
-            "context object state is error.");
-        context->deviceDescriptors = napiAudioRoutingManager->audioMngr_->GetInputDevice(context->audioCapturerFilter);
-    };
-    auto complete = [env, context](napi_value &output) {
-        NapiParamUtils::SetDeviceDescriptors(env, context->deviceDescriptors, output);
-    };
-    return NapiAsyncWork::Enqueue(env, context, "GetPreferredInputDeviceByFilter", executor, complete);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
+        napiAudioRoutingManager->audioMngr_->GetInputDevice(audioCapturerFilter);
+
+    NapiParamUtils::SetDeviceDescriptors(env, deviceDescriptors, result);
+
+    return result;
 }
 
 napi_value NapiAudioRoutingManager::GetAvailableMicrophones(napi_env env, napi_callback_info info)
@@ -1079,20 +1118,25 @@ std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> NapiAudioRoutingMa
     napi_value args, NapiAudioRoutingManager *napiRoutingMgr)
 {
     std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredOutputDeviceMutex_);
-    std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> cb = nullptr;
-    for (auto &iter : napiRoutingMgr->preferredOutputDeviceCallbacks_) {
-        if (iter->ContainSameJsCallback(args)) {
-            cb = iter;
+    for (auto &pair : napiRoutingMgr->preferredOutputDeviceCallbackList_) {
+        if (pair.first->ContainSameJsCallback(args)) {
+            return pair.first;  // Return first match for duplicate detection
         }
     }
-    return cb;
+    return nullptr;
 }
 
-void NapiAudioRoutingManager::AddPreferredOutputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-    std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> cb)
+PrefOutputDeviceCbList NapiAudioRoutingManager::GetAllNapiPrefOutputDeviceChangeCb(
+    napi_value args, NapiAudioRoutingManager *napiRoutingMgr)
 {
     std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredOutputDeviceMutex_);
-    napiRoutingMgr->preferredOutputDeviceCallbacks_.push_back(cb);
+    std::vector<std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback>> result;
+    for (auto &pair : napiRoutingMgr->preferredOutputDeviceCallbackList_) {
+        if (pair.first->ContainSameJsCallback(args)) {
+            result.push_back(pair.first);
+        }
+    }
+    return result;
 }
 
 void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -1124,12 +1168,15 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
     cb->SaveCallbackReference(args[PARAM2]);
     cb->CreatePreferredOutTsfn(env);
     
+    int32_t appUid = static_cast<int32_t>(getuid());
     int32_t ret = napiRoutingMgr->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
-        rendererInfo, cb);
+        rendererInfo, cb, appUid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
         "Registering Preferred Output Device Change Callback Failed %{public}d", ret);
 
-    AddPreferredOutputDeviceChangeCallback(napiRoutingMgr, cb);
+    PreferredOutputCallbackInfo info = {appUid, rendererInfo.streamUsage};
+    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredOutputDeviceMutex_);
+    napiRoutingMgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(cb, info));
 }
 
 void NapiAudioRoutingManager::RegisterPreferredOutputDeviceByFilterChangeCallback(napi_env env, size_t argc,
@@ -1165,27 +1212,34 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceByFilterChangeCallbac
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
         "Registering Preferred Output Device By Filter Change Callback Failed %{public}d", ret);
 
-    AddPreferredOutputDeviceChangeCallback(napiRoutingMgr, cb);
+    PreferredOutputCallbackInfo info = {audioRendererFilter->uid, audioRendererFilter->rendererInfo.streamUsage};
+    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredOutputDeviceMutex_);
+    napiRoutingMgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(cb, info));
 }
 
 std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> NapiAudioRoutingManager::GetNapiPrefInputDeviceChangeCb(
     napi_value args, NapiAudioRoutingManager *napiRoutingMgr)
 {
     std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
-    std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb = nullptr;
-    for (auto &iter : napiRoutingMgr->preferredInputDeviceCallbacks_) {
-        if (iter->ContainSameJsCallback(args)) {
-            cb = iter;
+    for (auto &pair : napiRoutingMgr->preferredInputDeviceCallbackList_) {
+        if (pair.first->ContainSameJsCallback(args)) {
+            return pair.first;  // Return first match for duplicate detection
         }
     }
-    return cb;
+    return nullptr;
 }
 
-void NapiAudioRoutingManager::AddPreferredInputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-    std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb)
+PrefInputDeviceCbList NapiAudioRoutingManager::GetAllNapiPrefInputDeviceChangeCb(
+    napi_value args, NapiAudioRoutingManager *napiRoutingMgr)
 {
     std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
-    napiRoutingMgr->preferredInputDeviceCallbacks_.push_back(cb);
+    std::vector<std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback>> result;
+    for (auto &pair : napiRoutingMgr->preferredInputDeviceCallbackList_) {
+        if (pair.first->ContainSameJsCallback(args)) {
+            result.push_back(pair.first);
+        }
+    }
+    return result;
 }
 
 void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -1219,12 +1273,15 @@ void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_en
     cb->SaveCallbackReference(args[PARAM2]);
     cb->CreatePreferredInTsfn(env);
 
+    int32_t appUid = static_cast<int32_t>(getuid());
     int32_t ret = napiRoutingMgr->audioRoutingMngr_->SetPreferredInputDeviceChangeCallback(
-        captureInfo, cb);
+        captureInfo, cb, appUid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
         "Registering Preferred Input Device Change Callback Failed %{public}d", ret);
 
-    AddPreferredInputDeviceChangeCallback(napiRoutingMgr, cb);
+    PreferredInputCallbackInfo info = {appUid, captureInfo.sourceType};
+    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
+    napiRoutingMgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(cb, info));
 }
 
 void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -1388,76 +1445,88 @@ void NapiAudioRoutingManager::UnregisterDeviceChangeCallback(napi_env env, napi_
     }
 }
 
-void NapiAudioRoutingManager::RemovePreferredOutputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-    std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> cb)
-{
-    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredOutputDeviceMutex_);
-    napiRoutingMgr->preferredOutputDeviceCallbacks_.remove(cb);
-}
-
 void NapiAudioRoutingManager::RemoveAllPrefOutputDeviceChangeCallback(napi_env env,
     NapiAudioRoutingManager *napiRoutingMgr)
 {
     std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredOutputDeviceMutex_);
-    for (auto &iter : napiRoutingMgr->preferredOutputDeviceCallbacks_) {
-        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(iter);
+    for (auto &pair : napiRoutingMgr->preferredOutputDeviceCallbackList_) {
+        AudioRendererInfo rendererInfo = {};
+        rendererInfo.streamUsage = pair.second.streamUsage;
+        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(
+            pair.first, rendererInfo, pair.second.uid);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
-            "Unset one of preferred output device change callback failed!");
+            "Unset preferred output device change callback failed!");
     }
-    napiRoutingMgr->preferredOutputDeviceCallbacks_.clear();
+    napiRoutingMgr->preferredOutputDeviceCallbackList_.clear();
 }
 
 void NapiAudioRoutingManager::UnregisterPreferredOutputDeviceChangeCallback(napi_env env, napi_value callback,
     NapiAudioRoutingManager *napiRoutingMgr)
 {
-    if (callback != nullptr) {
-        std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> cb =
-            GetNapiPrefOutputDeviceChangeCb(callback, napiRoutingMgr);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "NapiPreferredOutputDeviceCallback is nullptr");
-        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(cb);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetPreferredOutputDeviceChangeCallback Failed");
-
-        RemovePreferredOutputDeviceChangeCallback(napiRoutingMgr, cb);
+    if (callback == nullptr) {
+        RemoveAllPrefOutputDeviceChangeCallback(env, napiRoutingMgr);
         return;
     }
 
-    RemoveAllPrefOutputDeviceChangeCallback(env, napiRoutingMgr);
-}
+    auto callbacks = GetAllNapiPrefOutputDeviceChangeCb(callback, napiRoutingMgr);
+    CHECK_AND_RETURN_LOG(!callbacks.empty(), "NapiPreferredOutputDeviceCallback not found");
 
-void NapiAudioRoutingManager::RemovePreferredInputDeviceChangeCallback(NapiAudioRoutingManager *napiRoutingMgr,
-    std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb)
-{
-    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
-    napiRoutingMgr->preferredInputDeviceCallbacks_.remove(cb);
+    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredOutputDeviceMutex_);
+    for (auto &cb : callbacks) {
+        auto it = std::find_if(napiRoutingMgr->preferredOutputDeviceCallbackList_.begin(),
+            napiRoutingMgr->preferredOutputDeviceCallbackList_.end(),
+            [&cb](const auto &pair) { return pair.first == cb; });
+        if (it == napiRoutingMgr->preferredOutputDeviceCallbackList_.end()) continue;
+
+        AudioRendererInfo rendererInfo = {};
+        rendererInfo.streamUsage = it->second.streamUsage;
+        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback(
+            cb, rendererInfo, it->second.uid);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetPreferredOutputDeviceChangeCallback failed");
+        napiRoutingMgr->preferredOutputDeviceCallbackList_.erase(it);
+    }
 }
 
 void NapiAudioRoutingManager::RemoveAllPrefInputDeviceChangeCallback(napi_env env,
     NapiAudioRoutingManager *napiRoutingMgr)
 {
     std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
-    for (auto &iter : napiRoutingMgr->preferredInputDeviceCallbacks_) {
-        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(iter);
+    for (auto &pair : napiRoutingMgr->preferredInputDeviceCallbackList_) {
+        AudioCapturerInfo capturerInfo = {};
+        capturerInfo.sourceType = pair.second.sourceType;
+        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(
+            pair.first, capturerInfo, pair.second.uid);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
-            "Unset one of preferred input device change callback failed!");
+            "Unset preferred input device change callback failed!");
     }
-    napiRoutingMgr->preferredInputDeviceCallbacks_.clear();
+    napiRoutingMgr->preferredInputDeviceCallbackList_.clear();
 }
 
 void NapiAudioRoutingManager::UnregisterPreferredInputDeviceChangeCallback(napi_env env, napi_value callback,
     NapiAudioRoutingManager *napiRoutingMgr)
 {
-    if (callback != nullptr) {
-        std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb =
-            GetNapiPrefInputDeviceChangeCb(callback, napiRoutingMgr);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "NapiPreferredInputDeviceCallback is nullptr");
-        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(cb);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetPreferredInputDeviceChangeCallback Failed");
-
-        RemovePreferredInputDeviceChangeCallback(napiRoutingMgr, cb);
+    if (callback == nullptr) {
+        RemoveAllPrefInputDeviceChangeCallback(env, napiRoutingMgr);
         return;
     }
 
-    RemoveAllPrefInputDeviceChangeCallback(env, napiRoutingMgr);
+    auto callbacks = GetAllNapiPrefInputDeviceChangeCb(callback, napiRoutingMgr);
+    CHECK_AND_RETURN_LOG(!callbacks.empty(), "NapiPreferredInputDeviceCallback not found");
+
+    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
+    for (auto &cb : callbacks) {
+        auto it = std::find_if(napiRoutingMgr->preferredInputDeviceCallbackList_.begin(),
+            napiRoutingMgr->preferredInputDeviceCallbackList_.end(),
+            [&cb](const auto &pair) { return pair.first == cb; });
+        if (it == napiRoutingMgr->preferredInputDeviceCallbackList_.end()) continue;
+
+        AudioCapturerInfo capturerInfo = {};
+        capturerInfo.sourceType = it->second.sourceType;
+        int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(
+            cb, capturerInfo, it->second.uid);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetPreferredInputDeviceChangeCallback failed");
+        napiRoutingMgr->preferredInputDeviceCallbackList_.erase(it);
+    }
 }
 
 void NapiAudioRoutingManager::UnregisterAvailableDeviceChangeCallback(napi_env env, napi_value callback,
@@ -1571,5 +1640,120 @@ napi_value NapiAudioRoutingManager::IsMicBlockDetectionSupported(napi_env env, n
     return NapiAsyncWork::Enqueue(env, context, "IsMicBlockDetectionSupported", executor, complete);
 }
 #endif
-}  // namespace AudioStandard
-}  // namespace OHOS
+
+napi_value NapiAudioRoutingManager::OnPreferredInputDeviceChangeByFilter(napi_env env, napi_callback_info info)
+{
+    const size_t requireArgc = ARGS_TWO;
+    size_t argc = requireArgc;
+    napi_value args[requireArgc] = { nullptr, nullptr };
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc == requireArgc,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect number of parameters: expected 2 parameters"),
+        "status or argc error");
+
+    NapiAudioRoutingManager *napiRoutingMgr = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiRoutingMgr));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiRoutingMgr != nullptr &&
+        napiRoutingMgr->audioRoutingMngr_ != nullptr,
+        NapiParamUtils::GetUndefinedValue(env), "Failed to retrieve audio routing manager napi instance.");
+
+    CHECK_AND_RETURN_RET_LOG(NapiParamUtils::CheckArgType(env, args[PARAM0], napi_object),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of filter must be object"), "filter invalid");
+
+    CHECK_AND_RETURN_RET_LOG(NapiParamUtils::CheckArgType(env, args[PARAM1], napi_function),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of callback must be function"), "callback invalid");
+
+    CHECK_AND_RETURN_RET_LOG(GetNapiPrefInputDeviceChangeCb(args[PARAM1], napiRoutingMgr) == nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "Do not allow duplicate registration of the same callback"), "duplicate callback");
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = nullptr;
+    status = NapiParamUtils::GetAudioCapturerFilter(env, audioCapturerFilter, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && audioCapturerFilter != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "Parameter verification failed. The audioCapturerFilter obj is NULL."), "filter parse error");
+
+    AudioCapturerInfo capturerInfo = audioCapturerFilter->capturerInfo;
+    CHECK_AND_RETURN_RET_LOG(capturerInfo.sourceType != SourceType::SOURCE_TYPE_INVALID,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "Parameter verification failed. Your source in AudioCapturerInfo is invalid."), "invalid sourceType");
+
+    std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb =
+        std::make_shared<NapiAudioPreferredInputDeviceChangeCallback>(env);
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY, "Memory allocation failed"), "no memory");
+
+    cb->SaveCallbackReference(args[PARAM1]);
+    cb->CreatePreferredInTsfn(env);
+
+    int32_t ret = napiRoutingMgr->audioRoutingMngr_->SetPreferredInputDeviceChangeCallback(
+        capturerInfo, cb, audioCapturerFilter->uid);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+        NapiAudioError::ThrowErrorAndReturn(env, ret,
+        "Registering Preferred Input Device By Filter Change Callback Failed"), "register failed");
+
+    PreferredInputCallbackInfo callbackInfo = {audioCapturerFilter->uid, capturerInfo.sourceType};
+    std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
+    napiRoutingMgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(cb, callbackInfo));
+    return NapiParamUtils::GetUndefinedValue(env);
+}
+
+napi_value NapiAudioRoutingManager::OffPreferredInputDeviceChangeByFilter(napi_env env, napi_callback_info info)
+{
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = { nullptr };
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiParamUtils::GetUndefinedValue(env), "napi_get_cb_info error");
+
+    NapiAudioRoutingManager *napiRoutingMgr = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiRoutingMgr));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiRoutingMgr != nullptr &&
+        napiRoutingMgr->audioRoutingMngr_ != nullptr,
+        NapiParamUtils::GetUndefinedValue(env), "Failed to retrieve audio routing manager napi instance.");
+
+    napi_value callback = nullptr;
+    if (argc > 0) {
+        napi_valuetype handler = napi_undefined;
+        napi_typeof(env, args[PARAM0], &handler);
+        if (handler != napi_function) {
+            NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+                "incorrect parameter types: The type of callback must be function");
+            return NapiParamUtils::GetUndefinedValue(env);
+        }
+        callback = args[PARAM0];
+    }
+
+    if (callback != nullptr) {
+        auto callbacks = GetAllNapiPrefInputDeviceChangeCb(callback, napiRoutingMgr);
+        CHECK_AND_RETURN_RET_LOG(!callbacks.empty(),
+            NapiParamUtils::GetUndefinedValue(env), "NapiPreferredInputDeviceCallback not found");
+
+        std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
+        for (auto &cb : callbacks) {
+            auto it = std::find_if(napiRoutingMgr->preferredInputDeviceCallbackList_.begin(),
+                napiRoutingMgr->preferredInputDeviceCallbackList_.end(),
+                [&cb](const auto &pair) { return pair.first == cb; });
+            if (it == napiRoutingMgr->preferredInputDeviceCallbackList_.end()) continue;
+
+            AudioCapturerInfo capturerInfo = {};
+            capturerInfo.sourceType = it->second.sourceType;
+            int32_t ret = napiRoutingMgr->audioRoutingMngr_->UnsetPreferredInputDeviceChangeCallback(
+                cb, capturerInfo, it->second.uid);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+                NapiParamUtils::GetUndefinedValue(env), "UnsetPreferredInputDeviceChangeCallback failed");
+            napiRoutingMgr->preferredInputDeviceCallbackList_.erase(it);
+        }
+    } else {
+        RemoveAllPrefInputDeviceChangeCallback(env, napiRoutingMgr);
+    }
+
+    return NapiParamUtils::GetUndefinedValue(env);
+}
+} // namespace AudioStandard
+} // namespace OHOS

@@ -37,30 +37,14 @@ const uint32_t DEFAULT_FORMAT = 2;
 const uint32_t DEFAULT_MICNUM = 2;
 const uint32_t DEFAULT_ECOFF_CH = 0;
 const uint32_t DEFAULT_MICREFOFF_CH = 0;
-const uint32_t DEFAULT_ECON_CH = 2;
-const uint32_t DEFAULT_MICREFON_CH = 4;
 const uint32_t BYTE_SIZE_SAMPLE_U8 = 1;
 const uint32_t BYTE_SIZE_SAMPLE_S16 = 2;
 const uint32_t BYTE_SIZE_SAMPLE_S24 = 3;
 const uint32_t BYTE_SIZE_SAMPLE_S32 = 4;
-const uint32_t DEFAULT_DEVICE_TYPE_CH = 4;
-const std::string DEFAULT_DEVICE_TYPE = "DEVICE_TYPE_MIC";
-
 const uint32_t CR_SAMPLE_RATE = 48000;
 const uint32_t CR_CHANNEL = 2;
 const uint32_t CR_FORMAT = 4; // f32
 
-const std::vector<std::string> NEED_EC_SCENE = {
-    "SCENE_VOIP_UP",
-    "SCENE_PRE_ENHANCE",
-    "SCENE_RECOGNITION",
-};
-
-const std::vector<std::string> NEED_MICREF_SCENE = {
-    "SCENE_VOIP_UP",
-    "SCENE_RECORD",
-    "SCENE_COLLABORATIVE_RECORD",
-};
 
 const std::map<uint32_t, AudioSampleFormat> FORMAT_CONVERT_MAP = {
     {BYTE_SIZE_SAMPLE_U8, SAMPLE_U8},
@@ -129,27 +113,22 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
         return InitCollabAudioEnhanceChain();
     }
 
-    if ((algoParam_.preDevice == DEFAULT_DEVICE_TYPE) && (deviceAttr_.micChannels < DEFAULT_DEVICE_TYPE_CH)) {
-        AUDIO_WARNING_LOG("mic channel[%{public}d] is set to 4", deviceAttr_.micChannels);
-        deviceAttr_.micChannels = DEFAULT_DEVICE_TYPE_CH;
-    }
-
     algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_FORMAT * BITLENGTH,
         deviceAttr_.micChannels, DEFAULT_ECOFF_CH, DEFAULT_MICREFOFF_CH, deviceAttr_.micChannels};
 
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
     algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
 
-    if (count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
+    if (deviceAttr_.needEc) {
         needEcFlag_ = true;
-        algoSupportedConfig_.ecNum = DEFAULT_ECON_CH;
+        algoSupportedConfig_.ecNum = deviceAttr_.ecChannels;
         algoAttr_.batchLen = deviceAttr_.micChannels + algoSupportedConfig_.ecNum;
         enhanceBuf_.ecBuffer.resize(deviceAttr_.ecChannels * byteLenPerFrame);
     }
 
-    if (count(NEED_MICREF_SCENE.begin(), NEED_MICREF_SCENE.end(), sceneType_)) {
+    if (deviceAttr_.needMicRef) {
         needMicRefFlag_ = true;
-        algoSupportedConfig_.micRefNum = DEFAULT_MICREFON_CH;
+        algoSupportedConfig_.micRefNum = deviceAttr_.micRefChannels;
         algoAttr_.batchLen += algoSupportedConfig_.micRefNum;
         enhanceBuf_.micRefBuffer.resize(deviceAttr_.micRefChannels * byteLenPerFrame);
     }

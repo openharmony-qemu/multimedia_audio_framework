@@ -56,6 +56,8 @@ public:
 
     bool softLinkFlag_ = false;
 
+    bool isRunning_ = false;
+
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> streamDescMap_ = {};
@@ -107,6 +109,11 @@ public:
         return (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
     }
 
+    bool IsRouteOffload() const
+    {
+        return (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
     bool IsRouteDirect() const
     {
         return routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT;
@@ -120,6 +127,11 @@ public:
     bool IsSameAdapter(const std::string &targetAdapterName) const
     {
         return adapterName_ == targetAdapterName;
+    }
+
+    bool IsSameName(const std::string &targetPipeName) const
+    {
+        return name_ == targetPipeName;
     }
 
     bool IsSameNetworkId(const std::string &targetNetworkId) const
@@ -157,6 +169,8 @@ public:
     bool GetUltraFastFlag() const;
 
     bool HasStream();
+
+    bool IsPipeMatch(const std::string adapterName, const uint32_t targetFlag);
 
 private:
     void DumpCommonAttrs(std::string &dumpString);

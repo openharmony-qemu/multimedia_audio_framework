@@ -55,6 +55,7 @@ const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
+constexpr int32_t MAX_MSG_PROCESSING_RETRY_COUNT = 50;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t DEFAULT_NODE_ID = 1;
@@ -163,8 +164,10 @@ void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererMan
     if (!hpaeRendererManager->IsInit()) {
         return;
     }
-    while (hpaeRendererManager->IsMsgProcessing()) {
+    int retry = 0;
+    while (hpaeRendererManager->IsMsgProcessing() && retry < MAX_MSG_PROCESSING_RETRY_COUNT) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+        retry += 1;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
 }
@@ -639,6 +642,94 @@ void EnableAndDisableCollaborationFuzzTest()
     rendererManager.DisableCollaboration();
 }
 
+void EnableCollaborationWithMovieSceneFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    streamInfo.effectInfo.effectScene = SCENE_MOVIE;
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->UpdateCollaborativeState(true);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->UpdateCollaborativeState(false);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void OnCollaborationFadeDoneFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->OnCollborationFadeDone(sessionId);
+    rendererManager->DeInit();
+}
+
+void OnFadeDoneWithActiveSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->OnFadeDone(streamInfo.sessionId);
+    rendererManager->DeInit();
+}
+
+void CoBufferConnectDisconnectSequenceFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    coBufferNode->SetNodeInfo(nodeInfo);
+    rendererManager->ConnectCoBufferNode(coBufferNode);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DisConnectCoBufferNode(coBufferNode);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void ConnectProcessClusterFullFlowFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[] = {
     UploadDumpSinkInfoFuzzTest,
@@ -673,6 +764,11 @@ TestFuncs g_testFuncs[] = {
     SetSpeedFuzzTest,
     ReConnectNodeForCollaborationFuzzTest,
     EnableAndDisableCollaborationFuzzTest,
+    EnableCollaborationWithMovieSceneFuzzTest,
+    OnCollaborationFadeDoneFuzzTest,
+    OnFadeDoneWithActiveSessionFuzzTest,
+    CoBufferConnectDisconnectSequenceFuzzTest,
+    ConnectProcessClusterFullFlowFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

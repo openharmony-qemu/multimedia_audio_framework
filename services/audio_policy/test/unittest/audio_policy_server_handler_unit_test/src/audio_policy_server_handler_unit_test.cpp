@@ -1114,8 +1114,8 @@ HWTEST(AudioPolicyServerHandlerUnitTest, GetCallbackCapturerInfoList_002, TestSi
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 123;
-    std::vector<AudioCapturerInfo> infoList = {AudioCapturerInfo()};
-    audioPolicyServerHandler_->clientCbCapturerInfoMap_[clientPid] = infoList;
+    std::vector<AudioCapturerFilter> filterList = {AudioCapturerFilter()};
+    audioPolicyServerHandler_->clientCbCapturerFilterMap_[clientPid] = filterList;
     audioPolicyServerHandler_->GetCallbackCapturerInfoList(clientPid);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
 }
@@ -1123,15 +1123,16 @@ HWTEST(AudioPolicyServerHandlerUnitTest, GetCallbackCapturerInfoList_002, TestSi
 /**
  * @tc.name  : SetCallbackCapturerInfo_001
  * @tc.number: SetCallbackCapturerInfo_001
- * @tc.desc  : Test SetCallbackCapturerInfo method when set audioCapturerInfo into clientCbCapturerInfoMap_.
+ * @tc.desc  : Test SetCallbackCapturerInfo method when set audioCapturerFilter into clientCbCapturerFilterMap_.
  */
 HWTEST(AudioPolicyServerHandlerUnitTest, SetCallbackCapturerInfo_001, TestSize.Level1)
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     AudioCapturerInfo audioCapturerInfo;
-    int32_t ret = audioPolicyServerHandler_->SetCallbackCapturerInfo(audioCapturerInfo);
-    EXPECT_EQ(ret, AUDIO_OK);
+    int32_t uid = -1;
+    int32_t ret = audioPolicyServerHandler_->SetCallbackCapturerInfo(audioCapturerInfo, uid);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -1145,7 +1146,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SetCallbackRendererInfo_001, TestSize.L
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     AudioRendererInfo audioRendererInfo;
     int32_t ret = audioPolicyServerHandler_->SetCallbackRendererInfo(audioRendererInfo);
-    EXPECT_EQ(ret, AUDIO_OK);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -1416,6 +1417,223 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_Test_001, TestS
     uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::DEVICE_CONFIG_CHANGED;
     audioPolicyServerHandler_->HandleOtherServiceSecondEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
+
+/**
+ * @tc.name  : HandleSystemAppVolumeChangeEvent_Normal
+ * @tc.number: HandleSystemAppVolumeChangeEvent_001
+ * @tc.desc  : Test HandleSystemAppVolumeChangeEvent when callback is enabled and client registered
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleSystemAppVolumeChangeEvent_Normal, TestSize.Level2)
+{
+    // Arrange: Setup test conditions
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->appUid = 1001;
+    eventContextObj->volumeEvent.volumeType = STREAM_MUSIC;
+    eventContextObj->volumeEvent.volume = 5;
+    eventContextObj->volumeEvent.updateUi = true;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT, eventContextObj);
+
+    auto volumeChangeCb = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_APP_VOLUME_CHANGE, true);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, volumeChangeCb);
+
+    // Act: Call the function under test
+    audioPolicyServerHandler_->HandleSystemAppVolumeChangeEvent(event);
+
+    // Assert: Verify client registered successfully
+    EXPECT_EQ(1, static_cast<int32_t>(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size()));
+
+    // Cleanup
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
+
+/**
+ * @tc.name  : HandleSystemAppVolumeChangeEvent_CallbackDisabled
+ * @tc.number: HandleSystemAppVolumeChangeEvent_002
+ * @tc.desc  : Test HandleSystemAppVolumeChangeEvent when callback is disabled
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleSystemAppVolumeChangeEvent_CallbackDisabled, TestSize.Level2)
+{
+    // Arrange: Setup test conditions
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->appUid = 1001;
+    eventContextObj->volumeEvent.volumeType = STREAM_MUSIC;
+    eventContextObj->volumeEvent.volume = 5;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT, eventContextObj);
+
+    auto volumeChangeCb = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_APP_VOLUME_CHANGE, false);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, volumeChangeCb);
+
+    // Act: Call the function under test
+    audioPolicyServerHandler_->HandleSystemAppVolumeChangeEvent(event);
+
+    // Assert: Verify client registered but callback is disabled
+    EXPECT_EQ(1, static_cast<int32_t>(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size()));
+
+    // Cleanup
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
+/**
+ * @tc.name  : HandlePreferredOutputDeviceUpdated_Deduplication_001
+ * @tc.number: HandlePreferredOutputDeviceUpdated_Deduplication_001
+ * @tc.desc  : Test deduplication - same device should not trigger duplicate callback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredOutputDeviceUpdated_Deduplication_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    int32_t clientPid = 1;
+    auto mockClientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    ASSERT_NE(mockClientHolder, nullptr);
+
+    // Setup client and enable callback
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, mockClientHolder);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
+
+    // First call - should send callback and record device
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+
+    // Second call with same device - should skip (deduplication)
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+
+    // Cleanup
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : HandlePreferredOutputDeviceUpdated_Deduplication_002
+ * @tc.number: HandlePreferredOutputDeviceUpdated_Deduplication_002
+ * @tc.desc  : Test deduplication - different device should trigger callback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredOutputDeviceUpdated_Deduplication_002, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    int32_t clientPid = 1;
+    auto mockClientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    ASSERT_NE(mockClientHolder, nullptr);
+
+    // Setup client and enable callback
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, mockClientHolder);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
+
+    // First call
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+
+    // Second call - should process (different device scenario)
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+
+    // Cleanup
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : HandlePreferredInputDeviceUpdated_Deduplication_001
+ * @tc.number: HandlePreferredInputDeviceUpdated_Deduplication_001
+ * @tc.desc  : Test deduplication - same input device should not trigger duplicate callback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredInputDeviceUpdated_Deduplication_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    int32_t clientPid = 1;
+    auto mockClientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    ASSERT_NE(mockClientHolder, nullptr);
+
+    // Setup client and enable callback
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, mockClientHolder);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, true);
+
+    // First call - should send callback and record device
+    audioPolicyServerHandler_->HandlePreferredInputDeviceUpdated();
+
+    // Second call with same device - should skip (deduplication)
+    audioPolicyServerHandler_->HandlePreferredInputDeviceUpdated();
+
+    // Cleanup
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : RemoveAudioPolicyClientProxyMap_ClearTracking_001
+ * @tc.number: RemoveAudioPolicyClientProxyMap_ClearTracking_001
+ * @tc.desc  : Test that RemoveAudioPolicyClientProxyMap clears tracking maps.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, RemoveAudioPolicyClientProxyMap_ClearTracking_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    int32_t clientPid = 1;
+    auto mockClientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, mockClientHolder);
+
+    // Setup tracking entries by calling the handler functions
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, true);
+    audioPolicyServerHandler_->HandlePreferredInputDeviceUpdated();
+
+    // Remove client - should clear tracking entries
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+
+    // Verify client is removed
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : IsSameDeviceDescPtr_Deduplication_001
+ * @tc.number: IsSameDeviceDescPtr_Deduplication_001
+ * @tc.desc  : Test IsSameDeviceDescPtr for device comparison in deduplication.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, IsSameDeviceDescPtr_Deduplication_001, TestSize.Level2)
+{
+    // Test same device type
+    auto deviceDesc1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto deviceDesc2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    EXPECT_TRUE(deviceDesc1->IsSameDeviceDescPtr(deviceDesc2));
+
+    // Test different device type
+    auto deviceDesc3 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    EXPECT_FALSE(deviceDesc1->IsSameDeviceDescPtr(deviceDesc3));
+
+    // Test same BT device with same macAddress
+    auto btDevice1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDevice1->macAddress_ = "00:11:22:33:44:55";
+    auto btDevice2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDevice2->macAddress_ = "00:11:22:33:44:55";
+    EXPECT_TRUE(btDevice1->IsSameDeviceDescPtr(btDevice2));
+
+    // Test same BT device with different macAddress
+    auto btDevice3 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDevice3->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    EXPECT_FALSE(btDevice1->IsSameDeviceDescPtr(btDevice3));
+
+    // Test null device descriptor
+    std::shared_ptr<AudioDeviceDescriptor> nullDevice = nullptr;
+    EXPECT_FALSE(deviceDesc1->IsSameDeviceDescPtr(nullDevice));
 }
 } // namespace AudioStandard
 } // namespace OHOS

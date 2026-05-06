@@ -41,7 +41,7 @@ public:
     int32_t DestroyStream(uint32_t sessionId) override;
 
     int32_t Start(uint32_t sessionId) override;
-    int32_t Pause(uint32_t sessionId) override;
+    int32_t Pause(uint32_t sessionId, bool isStandby = false) override;
     int32_t Flush(uint32_t sessionId) override;
     int32_t Drain(uint32_t sessionId) override;
     int32_t Stop(uint32_t sessionId) override;
@@ -129,6 +129,7 @@ private:
     void CloseCollaboration(SourceType sourceType);
     void GetCollaborativeSourceInfo(IAudioSourceAttr &attr, HpaeNodeInfo &nodeInfo);
     HpaeProcessorType GetEffectiveSceneType(uint32_t sessionId);
+    void StopInterphoneSourceIfNeeded();
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;

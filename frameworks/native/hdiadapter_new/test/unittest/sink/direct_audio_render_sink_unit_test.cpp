@@ -170,5 +170,40 @@ HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_004, TestSize.Level1)
     ret = sink_->GetVolume(left, right);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : DirectSinkUnitTest_006
+ * @tc.desc   : Test UpdateAppsUid with array input
+ */
+HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_006, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_ != nullptr);
+    int32_t appsUid[MAX_MIX_CHANNELS] = {1001, 1002};
+    size_t size = 2;
+    int32_t ret = sink_->UpdateAppsUid(appsUid, size);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : DirectSinkUnitTest_007
+ * @tc.desc   : Test UpdateAppsUid with vector input
+ */
+HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_007, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_ != nullptr);
+    std::vector<int32_t> appsUid = {1001, 1002, 1003};
+    int32_t ret = sink_->UpdateAppsUid(appsUid);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

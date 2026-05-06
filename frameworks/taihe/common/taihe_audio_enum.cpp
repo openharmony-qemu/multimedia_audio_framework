@@ -16,7 +16,6 @@
 #define LOG_TAG "TaiheAudioEnum"
 #endif
 
-#include "audio_utils.h"
 #include "taihe_audio_enum.h"
 #include "taihe_audio_error.h"
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
@@ -842,7 +841,7 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeTypeMore(OHOS::AudioStandard::Au
         case OHOS::AudioStandard::AudioStreamType::STREAM_NOTIFICATION:
         case OHOS::AudioStandard::AudioStreamType::STREAM_SYSTEM_ENFORCED:
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-            result = OHOS::AudioStandard::VolumeUtils::IsPCVolumeEnable() ?
+            result = OHOS::system::GetBoolParameter("const.audio.volume_apply_to_all", false) ?
                 TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::SYSTEM) :
                 TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::NOTIFICATION);
 #else

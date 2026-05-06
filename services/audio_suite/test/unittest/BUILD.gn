@@ -31,6 +31,7 @@ if (audio_framework_feature_audiosuite_support) {
     include_dirs = [
       "./tool",
       "../../client/manager/include",
+      "../../client/converter/include",
       "../../client/node/include",
       "../../client/utils/include",
       "../../../audio_engine/buffer",
@@ -40,6 +41,7 @@ if (audio_framework_feature_audiosuite_support) {
       "../../../../interfaces/inner_api/native/audiocommon/include",
       "../../../../interfaces/inner_api/native/audiosuite/include",
       "../../../audio_engine/node/include",
+      "./converter/include",
     ]
   }
 
@@ -93,6 +95,8 @@ if (audio_framework_feature_audiosuite_support) {
       "node/audio_suite_voice_beautifier_node_test.cpp",
       "node/audio_suite_tempo_pitch_node_test.cpp",
       "node/audio_suite_space_render_node_test.cpp",
+      "node/audio_suite_mixer_processor_node_test.cpp",
+      "converter/src/audio_suite_converter_test.cpp",
     ]
 
     sanitize = {

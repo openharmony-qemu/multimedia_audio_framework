@@ -251,41 +251,24 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevic
     return audioDeviceLock_.GetDevices(deviceFlag);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
-{
-    return audioDeviceLock_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, uid);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
-{
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescInner(
-    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
-{
-    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
-}
-
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(audioRendererFilter->rendererInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, result, "AudioCoreService is null");
+    return coreService->GetPreferredOutputDeviceDescInner(audioRendererFilter->rendererInfo,
         LOCAL_NETWORK_ID, audioRendererFilter->uid, audioRendererFilter->streamId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
-    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(audioCapturerFilter->capturerInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, result, "AudioCoreService is null");
+    return coreService->GetPreferredInputDeviceDescInner(audioCapturerFilter->capturerInfo,
         LOCAL_NETWORK_ID, audioCapturerFilter->uid, audioCapturerFilter->streamId);
-}
-
-shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveOutputDeviceDescriptor()
-{
-    return make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
 }
 
 void AudioPolicyService::OnUpdateAnahsSupport(std::string anahsShowType)
@@ -563,58 +546,120 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERROR, "AudioCoreService is null");
+    auto eventEntry = coreService->GetEventEntry();
+    CHECK_AND_RETURN_RET_LOG(eventEntry != nullptr, ERROR, "EventEntry is null");
+
     AudioSamplingRate samplingRate = config.streamInfo.samplingRate;
     AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    int32_t result = SUCCESS;
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-            AudioRendererInfo rendererInfo = config.rendererInfo;
-            std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-                (lockFlag ? audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID)
-                          : audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID));
-            int32_t type = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
-                preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_,
-                samplingRate);
-            deviceInfo.deviceRole_ = OUTPUT_DEVICE;
-            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
-        }
-        AudioDeviceDescriptor curOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
-        deviceInfo.deviceId_ = curOutputDeviceDesc.deviceId_;
-        deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
-        deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
-        deviceInfo.deviceRole_ = OUTPUT_DEVICE;
-        targetStreamInfo.format = curOutputDeviceDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ?
-            AudioCoreService::GetCoreService()->GetFastFormat() : SAMPLE_S16LE;
-
-        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
+        result = HandlePlaybackModeDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
     } else {
-        int32_t uid = GetRealUid(config);
-        if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            AudioCapturerInfo capturerInfo = config.capturerInfo;
-            std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-                (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID, uid)
-                : audioDeviceCommon_.GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID, uid));
-            int32_t type = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
-                preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_,
-                samplingRate);
-            deviceInfo.deviceRole_ = INPUT_DEVICE;
-            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
-        }
-        deviceInfo.deviceId_ = audioActiveDevice_.GetCurrentInputDevice(uid).deviceId_;
-        deviceInfo.networkId_ = audioActiveDevice_.GetCurrentInputDevice(uid).networkId_;
-        deviceInfo.deviceRole_ = INPUT_DEVICE;
-        deviceInfo.deviceType_ = audioActiveDevice_.GetCurrentInputDeviceType(uid);
+        result = HandleCaptureModeDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
+    }
+    if (result != SUCCESS) {
+        return result;
     }
 
-    // todo
-    // check process in routerMap, return target device for it
-    // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
-    // genarate the unique deviceid?
-    deviceInfo.audioStreamInfo_ = { targetStreamInfo };
+    deviceInfo.audioStreamInfo_ = {targetStreamInfo};
     deviceInfo.deviceName_ = "mmap_device";
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);
     deviceInfo.a2dpOffloadFlag_ = GetA2dpOffloadFlag();
     return SUCCESS;
+}
+
+bool AudioPolicyService::IsVoipStreamUsage(StreamUsage streamUsage)
+{
+    return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION;
+}
+
+void AudioPolicyService::SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
+    const AudioDeviceDescriptor &sourceDesc, DeviceRole role)
+{
+    deviceInfo.deviceId_ = sourceDesc.deviceId_;
+    deviceInfo.networkId_ = sourceDesc.networkId_;
+    deviceInfo.deviceType_ = sourceDesc.deviceType_;
+    deviceInfo.deviceRole_ = role;
+}
+
+int32_t AudioPolicyService::HandlePlaybackModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    if (IsVoipStreamUsage(config.rendererInfo.streamUsage)) {
+        return HandleVoipPlaybackDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
+    }
+
+    auto coreService = AudioCoreService::GetCoreService();
+    AudioDeviceDescriptor curOutputDeviceDesc = AudioRouterSelectStrategy::GetInstance()
+        .Get1stCurrentOutputDevice(config.appInfo.appUid);
+    SetCommonDeviceInfo(deviceInfo, curOutputDeviceDesc, OUTPUT_DEVICE);
+
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    targetStreamInfo.format = curOutputDeviceDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ?
+        coreService->GetFastFormat() : SAMPLE_S16LE;
+    deviceInfo.audioStreamInfo_ = {targetStreamInfo};
+
+    CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        return HandleVoipCaptureDeviceInfo(config, lockFlag, deviceInfo, samplingRate);
+    }
+
+    int32_t uid = GetRealUid(config);
+    deviceInfo.deviceId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).deviceId_;
+    deviceInfo.networkId_ = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(uid).networkId_;
+    deviceInfo.deviceRole_ = INPUT_DEVICE;
+    deviceInfo.deviceType_ = audioActiveDevice_.GetCurrentInputDeviceType(uid);
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    AudioRendererInfo rendererInfo = config.rendererInfo;
+    int32_t uid = GetRealUid(config);
+    auto coreService = AudioCoreService::GetCoreService();
+    auto eventEntry = coreService->GetEventEntry();
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+        (lockFlag ? eventEntry->GetPreferredOutputDeviceDescriptors(rendererInfo, uid, LOCAL_NETWORK_ID)
+                  : coreService->GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID, uid));
+
+    int32_t type = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
+        preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_,
+        samplingRate);
+
+    deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+}
+
+int32_t AudioPolicyService::HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate)
+{
+    AudioCapturerInfo capturerInfo = config.capturerInfo;
+    int32_t uid = GetRealUid(config);
+    auto coreService = AudioCoreService::GetCoreService();
+    auto eventEntry = coreService->GetEventEntry();
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+        (lockFlag ? eventEntry->GetPreferredInputDeviceDescriptors(capturerInfo, uid, LOCAL_NETWORK_ID)
+                  : coreService->GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID, uid));
+
+    int32_t type = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+        preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_,
+        samplingRate);
+
+    deviceInfo.deviceRole_ = INPUT_DEVICE;
+    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
 
 int32_t AudioPolicyService::GetRealUid(const AudioProcessConfig &config)
@@ -831,7 +876,9 @@ int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint6
 int32_t AudioPolicyService::NearlinkGetRenderPosition(uint32_t &delayValue)
 {
     Trace trace("AudioPolicyService::NearlinkGetRenderPosition");
-    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice({DEVICE_TYPE_NEARLINK});
+    AudioDeviceDescriptor curOutputDevice = !descs.empty() && *descs.begin() ?
+        *(*descs.begin()) : AudioDeviceDescriptor();
     AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d", curOutputDevice.deviceType_);
     int32_t ret = SUCCESS;
     delayValue = 0;
@@ -873,15 +920,15 @@ void AudioPolicyService::LoadHdiEffectModel()
     return AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
 }
 
-int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    AudioEffectPropertyArray effectPropertyArray = {};
     GetSupportedEffectProperty(effectPropertyArray);
     for (auto &effectItem : effectPropertyArray.property) {
         effectItem.flag = RENDER_EFFECT_FLAG;
         propertyArray.property.push_back(effectItem);
     }
-    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     GetSupportedEnhanceProperty(enhancePropertyArray);
     for (auto &enhanceItem : enhancePropertyArray.property) {
         enhanceItem.flag = CAPTURE_EFFECT_FLAG;
@@ -890,7 +937,7 @@ int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyA
     return AUDIO_OK;
 }
 
-void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
     audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
@@ -901,12 +948,12 @@ void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
         [](const std::pair<std::string, std::string>& p) {
-            return AudioEffectPropertyV3{p.first, p.second, RENDER_EFFECT_FLAG};
+            return AudioEffectProperty{p.first, p.second, RENDER_EFFECT_FLAG};
         });
     return;
 }
 
-void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
+void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
     audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
@@ -917,15 +964,15 @@ void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
         [](const std::pair<std::string, std::string>& p) {
-            return AudioEffectPropertyV3{p.first, p.second, CAPTURE_EFFECT_FLAG};
+            return AudioEffectProperty{p.first, p.second, CAPTURE_EFFECT_FLAG};
         });
     return;
 }
 
-int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectPropertyArray &propertyArray,
     const EffectFlag& flag)
 {
-    AudioEffectPropertyArrayV3 supportPropertyArray;
+    AudioEffectPropertyArray supportPropertyArray;
     if (flag == CAPTURE_EFFECT_FLAG) {
         GetSupportedEnhanceProperty(supportPropertyArray);
     } else {
@@ -940,11 +987,11 @@ int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectP
     return AUDIO_OK;
 }
 
-int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     int32_t ret = AUDIO_OK;
-    AudioEffectPropertyArrayV3 effectPropertyArray = {};
-    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    AudioEffectPropertyArray effectPropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     for (auto &item : propertyArray.property) {
         if (item.flag == CAPTURE_EFFECT_FLAG) {
             enhancePropertyArray.property.push_back(item);
@@ -957,13 +1004,13 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
     CHECK_AND_RETURN_RET_LOG(CheckSupportedAudioEffectProperty(effectPropertyArray, RENDER_EFFECT_FLAG) == AUDIO_OK,
         ERR_INVALID_PARAM, "check Audio Effect property failed");
     if (enhancePropertyArray.property.size() > 0) {
-        AudioEffectPropertyArrayV3 oldPropertyArray = {};
+        AudioEffectPropertyArray oldPropertyArray = {};
         ret = GetAudioEnhanceProperty(oldPropertyArray);
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
             audioActiveDevice_.GetCurrentInputDeviceType());
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
-        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffectV3(
+        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffect(
             oldPropertyArray, enhancePropertyArray);
     }
     if (effectPropertyArray.property.size() > 0) {
@@ -973,7 +1020,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
     return ret;
 }
 
-int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
+int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray)
 {
     int32_t ret = AUDIO_OK;
     int32_t engineFlag = GetEngineFlag();
@@ -994,62 +1041,6 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &
     return ret;
 }
 
-int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
-{
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
-    } else {
-        return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
-    }
-}
-
-int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    std::set<std::pair<std::string, std::string>> mergedSet = {};
-    audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptor = GetDevices(OUTPUT_DEVICES_FLAG);
-    for (auto &item : descriptor) {
-        audioEffectService_.AddSupportedAudioEffectPropertyByDevice(item->getType(), mergedSet);
-    }
-    propertyArray.property.reserve(mergedSet.size());
-    std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
-        [](const std::pair<std::string, std::string>& p) {
-            return AudioEffectProperty{p.first, p.second};
-        });
-    return AUDIO_OK;
-}
-
-int32_t AudioPolicyService::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    std::set<std::pair<std::string, std::string>> mergedSet = {};
-    audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptor = GetDevices(INPUT_DEVICES_FLAG);
-    for (auto &item : descriptor) {
-        audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(item->getType(), mergedSet);
-    }
-    propertyArray.property.reserve(mergedSet.size());
-    std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
-        [](const std::pair<std::string, std::string>& p) {
-            return AudioEnhanceProperty{p.first, p.second};
-        });
-    return AUDIO_OK;
-}
-
-int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
-{
-    AudioEffectPropertyArray supportPropertyArray;
-    std::vector<AudioEffectProperty>::iterator oIter;
-    (void)GetSupportedAudioEffectProperty(supportPropertyArray);
-    for (auto &item : propertyArray.property) {
-        oIter = std::find(supportPropertyArray.property.begin(), supportPropertyArray.property.end(), item);
-        CHECK_AND_RETURN_RET_LOG(oIter != supportPropertyArray.property.end(),
-            ERR_INVALID_PARAM, "set audio effect property not valid %{public}s:%{public}s",
-            item.effectClass.c_str(), item.effectProp.c_str());
-    }
-    return AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(propertyArray);
-}
-
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     int32_t engineFlag = GetEngineFlag();
@@ -1058,34 +1049,6 @@ int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &pro
     } else {
         return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
     }
-}
-
-int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    AudioEnhancePropertyArray supportPropertyArray;
-    std::vector<AudioEnhanceProperty>::iterator oIter;
-    (void)GetSupportedAudioEnhanceProperty(supportPropertyArray);
-    for (auto &item : propertyArray.property) {
-        oIter = std::find(supportPropertyArray.property.begin(), supportPropertyArray.property.end(), item);
-        CHECK_AND_RETURN_RET_LOG(oIter != supportPropertyArray.property.end(),
-            ERR_INVALID_PARAM, "set audio enhance property not valid %{public}s:%{public}s",
-            item.enhanceClass.c_str(), item.enhanceProp.c_str());
-    }
-    AudioEnhancePropertyArray oldPropertyArray = {};
-    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(oldPropertyArray);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
-
-    ret = AudioServerProxy::GetInstance().SetAudioEnhancePropertyProxy(propertyArray,
-        audioActiveDevice_.GetCurrentInputDeviceType());
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
-
-    AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffect(oldPropertyArray, propertyArray);
-    return ret;
-}
-
-int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray);
 }
 
 BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
@@ -1199,7 +1162,7 @@ int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
     return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
 }
 
-bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property)
+bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectProperty> &property)
 {
     bool ret = false;
     for (const auto &item : property) {
@@ -1233,7 +1196,7 @@ bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
     }
 
     if (ecEnableState_) { // is configed according to the product
-        AudioEffectPropertyArrayV3 propertyArray = {};
+        AudioEffectPropertyArray propertyArray = {};
         int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
         CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");
         ret = CheckVoipAnrOn(propertyArray.property);

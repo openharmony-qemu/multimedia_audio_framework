@@ -34,188 +34,47 @@ std::shared_ptr<AudioInterruptService> GetInterruptServiceTest()
 }
 
 /**
- * @tc.name: SetOffloadVolume_001
- * @tc.desc: Test SetOffloadVolume
+ * @tc.name: SetOffloadSessionId_001
+ * @tc.desc: Test SetOffloadSessionId with new signature
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_001, TestSize.Level4)
+HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadSessionId_001, TestSize.Level4)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_002
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_002, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_SPEECH;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_003
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_003, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_RING;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
+    
     uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
+        != audioAdapterManager->offloadSessionID_.end(), true);
+    EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_.find(ioHandle)
+        != audioAdapterManager->ioHandleSessionMap_.end(), true);
 }
 
 /**
- * @tc.name: SetOffloadVolume_004
- * @tc.desc: Test SetOffloadVolume
+ * @tc.name: SetOffloadSessionId_002
+ * @tc.desc: Test SetOffloadSessionId with remote adapter
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_004, TestSize.Level4)
+HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadSessionId_002, TestSize.Level4)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_RING;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "";
-    std::string networkId = "";
-    uint32_t sessionId = 1;
+    
+    uint32_t sessionId = MIN_STREAMID + 2;
+    uint32_t ioHandle = 200;
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_005
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_005, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "offload";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_006
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_006, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "remote";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_007
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_007, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "offload";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
-}
-
-/**
- * @tc.name: SetOffloadVolume_008
- * @tc.desc: Test SetOffloadVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_008, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    std::string deviceClass = "remote";
-    std::string networkId = "";
-    auto interruptServiceTest = GetInterruptServiceTest();
-    audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
-    OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
-    );
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_[sessionId], OFFLOAD_IN_REMOTE);
 }
 
 /**
  * @tc.name: ResetOffloadSessionId_001
- * @tc.desc: Test ResetOffloadSessionId
+ * @tc.desc: Test ResetOffloadSessionId with new signature
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
@@ -225,17 +84,31 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, ResetOffloadSessionId_001, TestSize.Lev
     EXPECT_NE(audioAdapterManager, nullptr);
 
     uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_[adapter].has_value(), false);
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
+    audioAdapterManager->ResetOffloadSessionId(sessionId);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
+        == audioAdapterManager->offloadSessionID_.end(), true);
+    EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_.find(ioHandle)
+        == audioAdapterManager->ioHandleSessionMap_.end(), true);
+}
 
-    adapter = OFFLOAD_IN_REMOTE;
-    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    audioAdapterManager->ResetOffloadSessionId(adapter);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_[adapter].has_value(), false);
+/**
+ * @tc.name: ResetOffloadSessionId_002
+ * @tc.desc: Test ResetOffloadSessionId when sessionId not exist
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, ResetOffloadSessionId_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+
+    uint32_t sessionId = MIN_STREAMID + 1;
+    audioAdapterManager->ResetOffloadSessionId(sessionId);
+    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
+        == audioAdapterManager->offloadSessionID_.end(), true);
 }
 
 /**

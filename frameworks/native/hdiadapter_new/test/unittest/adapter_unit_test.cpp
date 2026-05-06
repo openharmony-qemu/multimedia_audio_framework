@@ -222,5 +222,33 @@ HWTEST_F(AdapterUnitTest, ReportBundleNameEvent_003, TestSize.Level1)
     EXPECT_EQ(value, "output_mute=false");
 }
 
+/**
+ * @tc.name   : Test IsMultiStreamInfo API
+ * @tc.number : IsMultiStreamInfo_001
+ * @tc.desc   : Test IsMultiStreamInfo with valid multi-stream device names
+ */
+HWTEST_F(AdapterUnitTest, IsMultiStreamInfo_001, TestSize.Level1)
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    EXPECT_TRUE(fac.IsMultiStreamInfo("Typec_Speaker"));
+    EXPECT_TRUE(fac.IsMultiStreamInfo("Wired_Speaker"));
+    EXPECT_TRUE(fac.IsMultiStreamInfo("Hdmi_Speaker"));
+    EXPECT_TRUE(fac.IsMultiStreamInfo("Wireless_Speaker"));
+}
+
+/**
+ * @tc.name   : Test IsMultiStreamInfo API
+ * @tc.number : IsMultiStreamInfo_002
+ * @tc.desc   : Test IsMultiStreamInfo with invalid device names
+ */
+HWTEST_F(AdapterUnitTest, IsMultiStreamInfo_002, TestSize.Level1)
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    EXPECT_FALSE(fac.IsMultiStreamInfo("default"));
+    EXPECT_FALSE(fac.IsMultiStreamInfo("3rd_Speaker"));
+    EXPECT_FALSE(fac.IsMultiStreamInfo(""));
+    EXPECT_FALSE(fac.IsMultiStreamInfo("invalid"));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

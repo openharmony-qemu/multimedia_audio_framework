@@ -22,20 +22,48 @@
 #include "audio_service_log.h"
 #include "audio_policy_manager.h"
 #include "audio_session_info.h"
+#include "audio_debug_manager.h"
+#include "audio_debug_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
+std::mutex AudioSessionClientManager::callbackRegisteredMutex_;
+bool AudioSessionClientManager::callbackRegistered_ = false;
+
+class AudioSessionDebugCallbackImpl : public AudioSessionDebugCallback {
+public:
+    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &debugInfo) override
+    {
+        return AudioSessionClientManager::GetInstance().GetSessionDebugInfo(debugInfo);
+    }
+};
+
 using namespace std;
 AudioSessionClientManager &AudioSessionClientManager::GetInstance()
 {
     static AudioSessionClientManager audioSessionManager;
+    if (!callbackRegistered_) {
+        std::lock_guard<std::mutex> lock(callbackRegisteredMutex_);
+        if (!callbackRegistered_) {
+            static std::shared_ptr<AudioSessionDebugCallbackImpl> sessionDebugCallback =
+                std::make_shared<AudioSessionDebugCallbackImpl>();
+            AudioDebugManager::GetInstance().SetAudioSessionCallback(sessionDebugCallback);
+            callbackRegistered_ = true;
+        }
+    }
     return audioSessionManager;
 }
 
 int32_t AudioSessionClientManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
     AUDIO_INFO_LOG("Activate audio session with strategy: %{public}d", static_cast<int32_t>(strategy.concurrencyMode));
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy);
+    if (isFirstActivateV2_ && audioSessionSceneFlag_) {
+        if (!stateChangeCallbackFlag_) {
+            stateChangeCallbackByIpcFlag_ = true;
+        }
+        isFirstActivateV2_ = false;
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy, stateChangeCallbackFlag_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ActivateAudioSession failed, ret:%{public}d", ret);
 
     std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);
@@ -108,6 +136,7 @@ int32_t AudioSessionClientManager::SetAudioSessionScene(const AudioSessionScene 
 {
     AUDIO_INFO_LOG("Set audio session scene: %{public}d", static_cast<int32_t>(audioSessionScene));
 
+    audioSessionSceneFlag_ = true;
     int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionScene(audioSessionScene);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "SetAudioSessionScene failed, result:%{public}d", result);
 
@@ -340,6 +369,15 @@ int32_t AudioSessionClientManager::SetAudioSessionBehavior(const uint32_t behavi
     return result;
 }
 
+void AudioSessionClientManager::SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag)
+{
+    if (stateChangeCallbackByIpcFlag_) {
+        AudioPolicyManager::GetInstance().SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
+        stateChangeCallbackByIpcFlag_ = false;
+    }
+    stateChangeCallbackFlag_ = stateChangeCallbackFlag;
+}
+
 bool AudioSessionClientManager::Restore()
 {
     AUDIO_INFO_LOG("start restore audio session manager params.");
@@ -528,5 +566,9 @@ bool AudioSessionRestoreParams::RestoreParams()
     return true;
 }
 
+int32_t AudioSessionClientManager::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+{
+    return AudioPolicyManager::GetInstance().GetSessionDebugInfo(sessionDebugInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

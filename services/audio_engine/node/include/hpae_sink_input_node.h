@@ -49,6 +49,10 @@ public:
 
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
+    bool GetKeepRunning();
+
+    void SetIsLowLatency(bool isLowLatency);
+    bool GetIsLowLatency();
 
     void SetOffloadEnabled(bool offloadEnable);
     bool GetOffloadEnabled();
@@ -61,6 +65,10 @@ public:
     bool QueryUnderrun();
     int32_t OnStreamInfoChange(bool needata = true);
     void NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos);
+    void TriggerClientWake();
+    void SetDirect(bool isDirect);
+    bool GetDirect() const noexcept;
+    void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
 
     bool isConnected_ = false;
     HpaeProcessorType connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
@@ -90,6 +98,8 @@ private:
     std::atomic<uint64_t> hdiFramePosition_ = 0;
     std::atomic<uint64_t> rewindTime_ = 0;
     uint32_t standbyCounter_ = 0;
+    bool isLowLatency_ = false;
+    bool isDirect_ = false;
 };
 
 }  // namespace HPAE

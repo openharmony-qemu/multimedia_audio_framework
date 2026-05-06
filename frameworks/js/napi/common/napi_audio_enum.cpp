@@ -17,7 +17,6 @@
 #endif
 
 #include "napi_audio_enum.h"
-#include "audio_utils.h"
 #include "audio_renderer.h"
 #include "audio_errors.h"
 #include "audio_stream_manager.h"
@@ -470,7 +469,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"FULL_DUPLEX_NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD)},
     {"ASR_WHISPER_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::ASR_WHISPER_MODE)},
     {"TSE_DENOISE_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::TSE_DENOISE_MODE)},
-    {"NORMAL_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::NORMAL_REG_MODE)}
+    {"NORMAL_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::NORMAL_REG_MODE)},
+    {"PHONE_CALL_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::PHONE_CALL_MODE)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
@@ -1450,7 +1450,8 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
         case AudioStreamType::STREAM_NOTIFICATION:
         case AudioStreamType::STREAM_SYSTEM_ENFORCED:
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-            result = VolumeUtils::IsPCVolumeEnable() ? NapiAudioEnum::SYSTEM : NapiAudioEnum::NOTIFICATION;
+            result = system::GetBoolParameter("const.audio.volume_apply_to_all", false) ?
+                NapiAudioEnum::SYSTEM : NapiAudioEnum::NOTIFICATION;
 #else
             result = NapiAudioEnum::RINGTONE;
 #endif

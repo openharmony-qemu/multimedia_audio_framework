@@ -114,36 +114,20 @@ void GetInputDeviceTypeForReloadFuzzTest(FuzzedDataProvider& fdp)
     session.GetInputDeviceTypeForReload();
 }
 
-void GetEnhancePropByNameV3FuzzTest(FuzzedDataProvider& fdp)
+void GetEnhancePropByNameFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     std::string propName = "propName";
-    session.GetEnhancePropByNameV3(propertyArray, propName);
+    session.GetEnhancePropByName(propertyArray, propName);
 }
 
 void ReloadSourceForEffectFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyArrayV3 newPropertyArray;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectPropertyArray newPropertyArray;
     session.ReloadSourceForEffect(propertyArray, newPropertyArray);
-}
-
-void GetEnhancePropByNameFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEnhancePropertyArray propertyArray;
-    std::string propName = "propName";
-    session.GetEnhancePropByName(propertyArray, propName);
-}
-
-void ReloadSourceForEffectDifferentArgsFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEnhancePropertyArray oldPropertyArray;
-    AudioEnhancePropertyArray newPropertyArray;
-    session.ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
 }
 
 void GetTargetSessionForEcFuzzTest(FuzzedDataProvider& fdp)
@@ -314,10 +298,8 @@ void Test(FuzzedDataProvider& fdp)
     IsVoipDeviceChangedFuzzTest,
     SetInputDeviceTypeForReloadFuzzTest,
     GetInputDeviceTypeForReloadFuzzTest,
-    GetEnhancePropByNameV3FuzzTest,
-    ReloadSourceForEffectFuzzTest,
     GetEnhancePropByNameFuzzTest,
-    ReloadSourceForEffectDifferentArgsFuzzTest,
+    ReloadSourceForEffectFuzzTest,
     GetTargetSessionForEcFuzzTest,
     HandleIndependentInputpipeFuzzTest,
     IsStreamValidFuzzTest,

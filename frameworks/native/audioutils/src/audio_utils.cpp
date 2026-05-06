@@ -67,6 +67,7 @@ constexpr int32_t UID_AUDIO_BROKER = 5557;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
+constexpr int32_t UID_D2D_SA = 7040;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
@@ -80,6 +81,8 @@ constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
 constexpr size_t VISIBLE_LEN = 3;
+
+constexpr uint8_t UINT8_MID_VALUE = 128;
 
 const int32_t DATA_INDEX_0 = 0;
 const int32_t DATA_INDEX_1 = 1;
@@ -110,6 +113,7 @@ std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_MSDP_SA,
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
+    UID_D2D_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_TELEPHONY_SA, // used in distributed communication call
     UID_DMSDP_SA
@@ -571,6 +575,13 @@ bool PermissionUtil::VerifySystemPermission()
     CHECK_AND_RETURN_RET(!tmp, true);
 
     return false;
+}
+
+bool PermissionUtil::IsHap()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return tokenTypeFlag == Security::AccessToken::TOKEN_HAP;
 }
 
 bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_t tokenId)
@@ -1064,6 +1075,98 @@ void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 {
     for (; n > 0; n--) {
         *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
+    }
+}
+
+int16_t ConvertSampleToS16(const uint8_t *samplePtr, AudioSampleFormat format)
+{
+    if (samplePtr == nullptr) {
+        return 0;
+    }
+    switch (format) {
+        case SAMPLE_U8: {
+            uint8_t u8 = *samplePtr;
+            return static_cast<int16_t>((static_cast<int32_t>(u8) - UINT8_MID_VALUE) << BIT_8);
+        }
+        case SAMPLE_S16LE: {
+            return *reinterpret_cast<const int16_t*>(samplePtr);
+        }
+        case SAMPLE_S24LE: {
+            uint32_t value = samplePtr[DATA_INDEX_0] | (samplePtr[DATA_INDEX_1] << BIT_8) |
+                (samplePtr[DATA_INDEX_2] << BIT_16);
+            int32_t s24 = (static_cast<int32_t>(value) << BIT_8) >> BIT_8;
+            return static_cast<int16_t>(s24 >> BIT_8);
+        }
+        case SAMPLE_S32LE: {
+            int32_t s32 = *reinterpret_cast<const int32_t*>(samplePtr);
+            return static_cast<int16_t>((static_cast<double>(s32) / INT32_MAX) * INT16_MAX);
+        }
+        case SAMPLE_F32LE: {
+            float f32 = *reinterpret_cast<const float*>(samplePtr);
+            float capped = CapMax(f32);
+            return static_cast<int16_t>(capped * INT16_MAX);
+        }
+        default:
+            return 0;
+    }
+}
+
+void ConvertSampleFromS16(int16_t s16Sample, uint8_t *outputPtr, AudioSampleFormat format)
+{
+    if (outputPtr == nullptr) {
+        return;
+    }
+    switch (format) {
+        case SAMPLE_U8: {
+            int32_t temp = (s16Sample >> BIT_8) + UINT8_MID_VALUE;
+            *outputPtr = static_cast<uint8_t>(std::max(0, std::min(static_cast<int32_t>(UINT8_MAX), temp)));
+            break;
+        }
+        case SAMPLE_S16LE: {
+            *reinterpret_cast<int16_t*>(outputPtr) = s16Sample;
+            break;
+        }
+        case SAMPLE_S24LE: {
+            int32_t s24 = static_cast<int32_t>(s16Sample) << BIT_8;
+            outputPtr[DATA_INDEX_0] = s24 & 0xFF;
+            outputPtr[DATA_INDEX_1] = (s24 >> BIT_8) & 0xFF;
+            outputPtr[DATA_INDEX_2] = (s24 >> BIT_16) & 0xFF;
+            break;
+        }
+        case SAMPLE_S32LE: {
+            int32_t s32 = static_cast<int32_t>((static_cast<double>(s16Sample) / INT16_MAX) * INT32_MAX);
+            *reinterpret_cast<int32_t*>(outputPtr) = s32;
+            break;
+        }
+        case SAMPLE_F32LE: {
+            float f32 = static_cast<float>(s16Sample) * (1.0f / (1 << (BIT_16 - 1)));
+            *reinterpret_cast<float*>(outputPtr) = f32;
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void ConvertBufferToS16(const uint8_t *input, uint32_t samples, int16_t *output, AudioSampleFormat format)
+{
+    if (input == nullptr || output == nullptr || samples == 0) {
+        return;
+    }
+    uint32_t bytesPerSample = PcmFormatToBits(format);
+    for (uint32_t i = 0; i < samples; i++) {
+        output[i] = ConvertSampleToS16(input + i * bytesPerSample, format);
+    }
+}
+
+void ConvertBufferFromS16(const int16_t *input, uint32_t samples, uint8_t *output, AudioSampleFormat format)
+{
+    if (input == nullptr || output == nullptr || samples == 0) {
+        return;
+    }
+    uint32_t bytesPerSample = PcmFormatToBits(format);
+    for (uint32_t i = 0; i < samples; i++) {
+        ConvertSampleFromS16(input[i], output + i * bytesPerSample, format);
     }
 }
 
@@ -2247,7 +2350,7 @@ VolumeScale VolumeScale::Adjust(const VolumeScale &volume)
 {
     if (volume.volumeLevel_ == volumeLevel_) {
         int32_t oldVal = volumeDegree_;
-        if (valueType_ == VolumeKeyType::VOLUME_KEY_TYPE_LEVEL) {
+        if (valueType_ == VolumeKeyType::LEVEL) {
             volumeDegree_ = volume.volumeDegree_;
         }
 

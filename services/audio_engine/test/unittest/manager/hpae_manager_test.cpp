@@ -25,6 +25,8 @@
 #include "hpae_audio_service_dump_callback_unit_test.h"
 #include "hpae_manager_unit_test.h"
 #include "hpae_manager.h"
+#include "hpae_fast_renderer_manager.h"
+#include "hpae_fast_capturer_manager.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -1511,15 +1513,11 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->UpdateSpatialDeviceType(EARPHONE_TYPE_INEAR), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     
-    AudioEffectPropertyArrayV3 propertyV3;
-    EXPECT_EQ(hpaeManager_->GetAudioEffectProperty(propertyV3), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-
-    EXPECT_EQ(hpaeManager_->SetAudioEffectProperty(propertyV3), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-
     AudioEffectPropertyArray property;
     EXPECT_EQ(hpaeManager_->GetAudioEffectProperty(property), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    EXPECT_EQ(hpaeManager_->SetAudioEffectProperty(property), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
     hpaeManager_->UpdateEffectBtOffloadSupported(true);
@@ -1529,18 +1527,10 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->SetMicrophoneMuteInfo(false), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->GetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER), SUCCESS);
+    EXPECT_EQ(hpaeManager_->GetAudioEnhanceProperty(property, DEVICE_TYPE_SPEAKER), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    
-    AudioEnhancePropertyArray propertyEn;
-    EXPECT_EQ(hpaeManager_->GetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-
-    EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER), SUCCESS);
-    hpaeManager_->UpdateExtraSceneType("123", "456", "789");
+    EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(property, DEVICE_TYPE_SPEAKER), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 }
 
@@ -2442,5 +2432,45 @@ HWTEST_F(HpaeManagerUnitTest, CaptureCollaboration_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->CloseAudioPort(sourcePortId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, GetStreamSpanSize_001, TestSize.Level1)
+{
+    hpaeManager_->Init();
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
+        std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+
+    AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(sinkAudioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    uint32_t spanSizeInFrame = 0;
+    int32_t ret = hpaeManager_->GetStreamSpanSize(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId, spanSizeInFrame);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GT(spanSizeInFrame, 0);
+
+    EXPECT_EQ(hpaeManager_->DestroyStream(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->CloseAudioPort(callback->GetPortId()), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+hpaeManager_->DeInit();
+}
+
+HWTEST_F(HpaeManagerUnitTest, GetRendererManagerByDeviceClass_EmptyString_003, TestSize.Level1)
+{
+    hpaeManager_->Init();
+    sleep(1);
+
+    auto rendererManager = hpaeManager_->GetRendererManagerByDeviceClass("");
+    EXPECT_EQ(rendererManager, nullptr);
+
+    hpaeManager_->DeInit();
 }
 }  // namespace

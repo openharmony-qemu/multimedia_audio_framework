@@ -53,7 +53,7 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUs
 shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
     const uint32_t sessionID)
 {
-    auto id = AudioActiveDevice::GetInstance().GetCurrentOutputDevice().deviceId_;
+    auto id = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(clientUID).deviceId_;
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(id);
     CHECK_AND_RETURN_RET_LOG(desc, make_shared<AudioDeviceDescriptor>(), "desc is nullptr");
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;

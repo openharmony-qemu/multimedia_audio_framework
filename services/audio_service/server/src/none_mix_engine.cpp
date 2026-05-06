@@ -28,6 +28,7 @@
 #include "audio_volume.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_sink_latency_fetcher.h"
+#include "util/id_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -285,7 +286,7 @@ void NoneMixEngine::AdjustVoipVolume()
         AudioProcessConfig config = stream_->GetAudioProcessConfig();
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType,
-            std::string(SINK_ADAPTER_NAME), &volumes);
+            renderId_, &volumes);
         float volumeBg = volumes.volumeHistory;
         if ((!firstSetVolume_ && abs(volumeBg - volumeEd) > FLOAT_EPS) || firstSetVolume_) {
             AUDIO_INFO_LOG("Adjust voip volume");

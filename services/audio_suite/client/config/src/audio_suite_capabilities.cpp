@@ -139,24 +139,17 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeParameter &np)
 {
     AUDIO_INFO_LOG("loadSrCapability start.");
     std::string algoSoPath = np.soPath + np.soName;
-    void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
-    CHECK_AND_RETURN_RET_LOG(
-        libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
+    DlHandleGuard guard(algoLibrary_.LoadLibrary(algoSoPath));
+    CHECK_AND_RETURN_RET_LOG(guard, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
 
     using FunSpaceRenderGetSpeces = SpaceRenderSpeces (*)();
     FunSpaceRenderGetSpeces getSpecsFunc =
-        reinterpret_cast<FunSpaceRenderGetSpeces>(dlsym(libHandle, "SpaceRenderGetSpeces"));
-    if (getSpecsFunc == nullptr) {
-        dlclose(libHandle);
-        libHandle = nullptr;
-        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
-            algoSoPath.c_str(), "SpaceRenderGetSpeces");
-        return ERROR;
-    }
+        reinterpret_cast<FunSpaceRenderGetSpeces>(dlsym(guard.get(), "SpaceRenderGetSpeces"));
+    CHECK_AND_RETURN_RET_LOG(getSpecsFunc != nullptr,
+        ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
+        algoSoPath.c_str(), "SpaceRenderGetSpeces");
     SpaceRenderSpeces specs = getSpecsFunc();
     CHECK_AND_RETURN_RET_LOG(SetAudioParameters(np, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
-    dlclose(libHandle);
-    libHandle = nullptr;
     AUDIO_INFO_LOG("loadCapability end.");
     return SUCCESS;
 }
@@ -165,11 +158,10 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeParameter &np)
 {
     AUDIO_INFO_LOG("loadCapability start.");
     std::string algoSoPath = np.soPath + np.soName;
-    void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
-    CHECK_AND_RETURN_RET_LOG(
-        libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
+    DlHandleGuard guard(algoLibrary_.LoadLibrary(algoSoPath));
+    CHECK_AND_RETURN_RET_LOG(guard, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
     using GetFunc = AudioAinrSpecPointer (*)();
-    GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, "AudioAinrGetSpec"));
+    GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(guard.get(), "AudioAinrGetSpec"));
     CHECK_AND_RETURN_RET_LOG(getSpecsFunc != nullptr,
         ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
         algoSoPath.c_str(), "AudioAinrGetSpec");
@@ -184,8 +176,6 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeParameter &np)
     np.outSampleRate = specs->outSampleRate;
     np.outChannels = specs->outChannels;
     np.outFormat = specs->outFormat;
-    dlclose(libHandle);
-    libHandle = nullptr;
     AUDIO_INFO_LOG("loadCapability end.");
     return SUCCESS;
 }
@@ -194,11 +184,10 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeParameter &np)
 {
     AUDIO_INFO_LOG("LoadAissCapability start.");
     std::string algoSoPath = np.soPath + np.soName;
-    void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
-    CHECK_AND_RETURN_RET_LOG(
-        libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
+    DlHandleGuard guard(algoLibrary_.LoadLibrary(algoSoPath));
+    CHECK_AND_RETURN_RET_LOG(guard, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
     AudioEffectLibrary *audioEffectLibHandle =
-        static_cast<AudioEffectLibrary *>(dlsym(libHandle, AISS_LIBRARY_INFO_SYM_AS_STR.c_str()));
+        static_cast<AudioEffectLibrary *>(dlsym(guard.get(), AISS_LIBRARY_INFO_SYM_AS_STR.c_str()));
     CHECK_AND_RETURN_RET_LOG(audioEffectLibHandle != nullptr,
         ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
         algoSoPath.c_str(), AISS_LIBRARY_INFO_SYM_AS_STR.c_str());
@@ -206,8 +195,6 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeParameter &np)
     audioEffectLibHandle->supportEffect(&supportConfig);
     CHECK_AND_RETURN_RET_LOG(SetAudioParameters(np, supportConfig) == SUCCESS, ERROR, "SetAudioParameters failed.");
 
-    dlclose(libHandle);
-    libHandle = nullptr;
     AUDIO_INFO_LOG("LoadAissCapability end.");
     return SUCCESS;
 }
@@ -244,51 +231,35 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeParameter &np)
         "LoadTempoPitchCapability parse so name fail");
     // tempo
     std::string tempoSoPath = np.soPath + tempoSoName;
-    void *tempoSoHandle = algoLibrary_.LoadLibrary(tempoSoPath);
-    CHECK_AND_RETURN_RET_LOG(
-        tempoSoHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
+    DlHandleGuard tempoGuard(algoLibrary_.LoadLibrary(tempoSoPath));
+    CHECK_AND_RETURN_RET_LOG(tempoGuard, ERROR, "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
     using GET_SPEC_FUNC = AudioPVSpec(*)(void);
-    GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoSoHandle, "PVGetSpec"));
-    if (pvGetSpecFunc == nullptr) {
-        dlclose(tempoSoHandle);
-        tempoSoHandle = nullptr;
-        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
-            tempoSoPath.c_str(), "PVGetSpec");
-        return ERROR;
-    }
+    GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoGuard.get(), "PVGetSpec"));
+    CHECK_AND_RETURN_RET_LOG(pvGetSpecFunc != nullptr,
+        ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
+        tempoSoPath.c_str(), "PVGetSpec");
     AudioPVSpec specs = pvGetSpecFunc();
     CHECK_AND_RETURN_RET_LOG(SetAudioParameters(np, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
-    dlclose(tempoSoHandle);
-    tempoSoHandle = nullptr;
     // pitch
     std::string pitchSoPath = np.soPath + pitchSoName;
-    void *pitchSoHandle = algoLibrary_.LoadLibrary(pitchSoPath);
-    CHECK_AND_RETURN_RET_LOG(pitchSoHandle != nullptr, ERROR,
-        "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
+    DlHandleGuard pitchGuard(algoLibrary_.LoadLibrary(pitchSoPath));
+    CHECK_AND_RETURN_RET_LOG(pitchGuard, ERROR, "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
     AudioEffectLibrary *audioEffectLibHandle =
-        static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
-    if (audioEffectLibHandle == nullptr) {
-        dlclose(pitchSoHandle);
-        pitchSoHandle = nullptr;
-        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
-            pitchSoName.c_str(), PITCH_LIBRARY_INFO_SYM_AS_STR.c_str());
-        return ERROR;
-    }
+        static_cast<AudioEffectLibrary *>(dlsym(pitchGuard.get(), PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
+    CHECK_AND_RETURN_RET_LOG(audioEffectLibHandle != nullptr,
+        ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
+        pitchSoName.c_str(), PITCH_LIBRARY_INFO_SYM_AS_STR.c_str());
     struct AlgoSupportConfig supportConfig = {};
     audioEffectLibHandle->supportEffect(&supportConfig);
     np.supportedOnThisDevice &= supportConfig.isSupport;
-    dlclose(pitchSoHandle);
-    pitchSoHandle = nullptr;
     AUDIO_INFO_LOG("LoadTempoPitchCapability end.");
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool* isSupported)
+int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported)
 {
-    CHECK_AND_RETURN_RET_LOG(isSupported != nullptr,
-        ERR_INVALID_PARAM, "IsNodeTypeSupported isSupported is nullptr, nodeType: %{public}d.", nodeType);
     if (nodeType == NODE_TYPE_INPUT || nodeType == NODE_TYPE_OUTPUT || nodeType == NODE_TYPE_AUDIO_MIXER) {
-        *isSupported = true;
+        isSupported = true;
         return SUCCESS;
     }
     auto it = audioSuiteCapabilities_.find(nodeType);
@@ -302,24 +273,24 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
             std::getline(iss, pitchSoName);
             if (!(std::filesystem::exists(np.soPath + tempoSoName)) ||
                 !(std::filesystem::exists(np.soPath + pitchSoName))) {
-                *isSupported = false;
+                isSupported = false;
                 AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
                 return SUCCESS;
             }
         } else if (!(std::filesystem::exists(np.soPath + np.soName))) {
-            *isSupported = false;
+            isSupported = false;
             AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
             return SUCCESS;
         }
         if (np.general == "yes") {
             AUDIO_INFO_LOG("nodeType: %{public}d is general on all device.", nodeType);
-            *isSupported = true;
+            isSupported = true;
             return SUCCESS;
         } else {
             if (GetNodeParameter(nodeType, np) == SUCCESS) {
                 AUDIO_INFO_LOG("nodeType: %{public}d isSupported status is %{public}d on this device.",
                     nodeType, np.supportedOnThisDevice);
-                *isSupported = np.supportedOnThisDevice;
+                isSupported = np.supportedOnThisDevice;
                 return SUCCESS;
             } else {
                 AUDIO_ERR_LOG("GetNodeParameter failed for node type: %{public}d.", nodeType);

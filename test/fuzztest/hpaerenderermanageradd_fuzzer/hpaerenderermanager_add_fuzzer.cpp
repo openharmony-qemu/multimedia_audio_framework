@@ -451,6 +451,94 @@ void HpaeRendererManagerStartWithSyncIdFuzzTest()
     rendererManager->DeInit();
 }
 
+void EnableCollaborationWithMovieSceneFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    streamInfo.effectInfo.effectScene = SCENE_MOVIE;
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->UpdateCollaborativeState(true);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->UpdateCollaborativeState(false);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void OnCollborationFadeDoneFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->OnCollborationFadeDone(sessionId);
+    rendererManager->DeInit();
+}
+
+void OnFadeDoneWithActiveSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->OnFadeDone(streamInfo.sessionId);
+    rendererManager->DeInit();
+}
+
+void CoBufferConnectDisconnectSequenceFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    coBufferNode->SetNodeInfo(nodeInfo);
+    rendererManager->ConnectCoBufferNode(coBufferNode);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DisConnectCoBufferNode(coBufferNode);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void ConnectProcessClusterFullFlowFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[] = {
     HpaeRendererManagerSetPrivacyTypeFuzzTest,
@@ -470,6 +558,11 @@ TestFuncs g_testFuncs[] = {
     HpaeRendererManagerConnectCoBufferNodeFuzzTest,
     HpaeRendererManagerDisConnectCoBufferNodeFuzzTest,
     HpaeRendererManagerStartWithSyncIdFuzzTest,
+    EnableCollaborationWithMovieSceneFuzzTest,
+    OnCollborationFadeDoneFuzzTest,
+    OnFadeDoneWithActiveSessionFuzzTest,
+    CoBufferConnectDisconnectSequenceFuzzTest,
+    ConnectProcessClusterFullFlowFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

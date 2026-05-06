@@ -32,6 +32,12 @@ inline bool IsUsb(DeviceType deviceType)
         || deviceType == DEVICE_TYPE_LINE_DIGITAL;
 }
 
+inline bool IsBtDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP
+        || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+}
+
 inline bool IsNearlinkDevice(DeviceType deviceType)
 {
     return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
@@ -125,6 +131,10 @@ public:
 
     bool IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
 
+    bool IsSameBtDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
+
+    bool IsSameBtDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
+
     bool IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const;
 
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
@@ -138,6 +148,8 @@ public:
     bool IsRemote() const;
 
     bool IsRemoteDevice() const;
+
+    HdPlaybackMode GetHdPlaybackMode() const;
 
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedDevice = true) const;
 
@@ -240,7 +252,9 @@ public:
     VolumeBehavior volumeBehavior_;
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
+    bool hasStreamRunning_ = false;
     std::string dmDeviceInfo_ = "";
+    HdPlaybackMode hdPlaybackMode_ = HD_NOT_SUPPORTED;
 
     uint32_t glassesWearCount_ = 0;
     static constexpr int64_t TEN_YEARS_MS = 10LL*365*24*3600*1000;

@@ -37,22 +37,10 @@ constexpr int32_t ANCO_SERVICE_BROKER_UID = 5557;
 constexpr AudioDeviceUsage EXCLUDED_DEVICE_USAGES[] {
     MEDIA_OUTPUT_DEVICES, MEDIA_INPUT_DEVICES, CALL_OUTPUT_DEVICES, CALL_INPUT_DEVICES};
 
-void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    preferredCallCaptureDevice_ = deviceDescriptor;
-}
-
 void AudioStateManager::SetPreferredRingRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     preferredRingRenderDevice_ = deviceDescriptor;
-}
-
-void AudioStateManager::SetPreferredRecordCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    preferredRecordCaptureDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -61,24 +49,10 @@ void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<Audio
     preferredToneRenderDevice_ = deviceDescriptor;
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevice()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredCallCaptureDevice_);
-    return devDesc;
-}
-
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRingRenderDevice()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRingRenderDevice_);
-    return devDesc;
-}
-
-shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecordCaptureDevice()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRecordCaptureDevice_);
     return devDesc;
 }
 
@@ -99,18 +73,6 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecognitionCapt
 {
     lock_guard<std::mutex> lock(mutex_);
     return preferredRecognitionCaptureDevice_;
-}
-
-void AudioStateManager::UpdatePreferredCallCaptureDeviceConnectState(ConnectState state)
-{
-    CHECK_AND_RETURN_LOG(preferredCallCaptureDevice_ != nullptr, "preferredCallCaptureDevice_ is nullptr");
-    preferredCallCaptureDevice_->connectState_ = state;
-}
-
-void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state)
-{
-    CHECK_AND_RETURN_LOG(preferredRecordCaptureDevice_ != nullptr, "preferredRecordCaptureDevice_ is nullptr");
-    preferredRecordCaptureDevice_->connectState_ = state;
 }
 
 int32_t AudioStateManager::SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)

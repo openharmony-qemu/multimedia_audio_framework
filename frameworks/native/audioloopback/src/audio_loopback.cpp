@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_loopback_private.h"
+#include "audio_loopback_wrapper.h"
 #include "audio_manager_log.h"
 #include "audio_errors.h"
 #include "audio_stream_info.h"
@@ -82,14 +83,38 @@ static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopbac
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
-    if (mode == LOOPBACK_HARDWARE) {
-        static std::shared_ptr<AudioLoopbackPrivate> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
-        RegisterAudioLoopbackDebugManager(instance);
-        return instance;
+    int32_t result = SUCCESS;
+    return CreateAudioLoopback(mode, LOOPBACK_TYPE_NORMAL, result, appInfo);
+}
+
+std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, LoopbackType type,
+    int32_t &result, const AppInfo &appInfo)
+{
+    if (mode != LOOPBACK_HARDWARE) {
+        AUDIO_ERR_LOG("Invalid mode %{public}d", mode);
+        result = ERROR_PLATFORM_NOT_SUPPORT;
+        return nullptr;
     }
 
-    AUDIO_ERR_LOG("Invalid mode");
-    return nullptr;
+    auto wrapper = std::make_shared<AudioLoopbackWrapper>(mode, type, appInfo);
+    if (wrapper == nullptr) {
+        AUDIO_ERR_LOG("create AudioLoopbackWrapper failed");
+        result = ERR_UNKNOWN;
+        return nullptr;
+    }
+
+    result = wrapper->Init();
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("AudioLoopbackWrapper Init failed, result %{public}d", result);
+        return nullptr;
+    }
+
+    static bool registered = false;
+    if (!registered) {
+        RegisterAudioLoopbackDebugManager(wrapper);
+        registered = true;
+    }
+    return wrapper;
 }
 
 void AudioLoopbackPrivate::ReportAudioLoopbackException(const AudioLoopbackReportInfo &info)
@@ -106,8 +131,9 @@ void AudioLoopbackPrivate::ReportAudioLoopbackException(const AudioLoopbackRepor
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo)
+AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo, bool isGlobal)
 {
+    isGlobal_ = isGlobal;
     appInfo_ = appInfo;
     if (appInfo_.appPid == 0) {
         appInfo_.appPid = getpid();
@@ -305,13 +331,6 @@ AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
     return currentEqualizerPreset_;
 }
 
-int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
-{
-    (void)debugInfo;
-    AUDIO_INFO_LOG("GetLoopbackDebugInfo enter, mode:%{public}d, currentState:%{public}d",
-        static_cast<int32_t>(mode_), static_cast<int32_t>(currentState_));
-    return SUCCESS;
-}
 
 std::vector<AudioDevicePair> AudioLoopbackPrivate::GetSupportedDevicePairs()
 {
@@ -321,6 +340,59 @@ std::vector<AudioDevicePair> AudioLoopbackPrivate::GetSupportedDevicePairs()
 AudioDevicePair AudioLoopbackPrivate::GetPreferredDevicePair()
 {
     return AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
+}
+
+int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
+{
+    debugInfo = AudioLoopbackDebugInfo();
+
+    // Application information
+    debugInfo.appUid = appInfo_.appUid;
+    debugInfo.appName = AppBundleManager::GetSelfBundleName(appInfo_.appUid);
+
+    // Loopback status
+    debugInfo.mode = mode_;
+    {
+        std::lock_guard<std::mutex> lock(stateMutex_);
+        debugInfo.currentState = currentState_;
+    }
+
+    // Device information
+    debugInfo.activeOutputDevice = activeOutputDevice_;
+    debugInfo.activeInputDevice = activeInputDevice_;
+
+    // Audio effect information
+    debugInfo.reverbPreset = currentReverbPreset_;
+    debugInfo.equalizerPreset = currentEqualizerPreset_;
+
+    // Volume from karaokeParams_
+    {
+        std::lock_guard<std::mutex> lock(loopbackMutex_);
+        auto it = karaokeParams_.find("Karaoke_volume");
+        if (it != karaokeParams_.end() && !it->second.empty()) {
+            int32_t val = 0;
+            constexpr int32_t maxVolume = 100;
+            constexpr int32_t base = 10;
+            for (char c : it->second) {
+                if (c < '0' || c > '9') {
+                    val = 0;
+                    break;
+                }
+                val = val * base + (c - '0');
+                if (val > maxVolume) {
+                    val = maxVolume;
+                    break;
+                }
+            }
+            debugInfo.volume = val;
+        }
+    }
+
+    // Stream states
+    debugInfo.uplinkStreamState = rendererState_.load();
+    debugInfo.downlinkStreamState = capturerState_.load();
+
+    return SUCCESS;
 }
 
 bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)

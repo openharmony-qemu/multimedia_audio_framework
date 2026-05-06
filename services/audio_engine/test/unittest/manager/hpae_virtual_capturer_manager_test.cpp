@@ -701,6 +701,142 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerGetDeviceHDFD
     std::string ret = capturerManager->GetDeviceHDFDumpInfo();
     EXPECT_EQ(ret, info);
 }
+
+// FaultCode test constants
+static constexpr uint32_t INVALID_TEST_SESSION_ID = 9999;
+
+/**
+ * @tc.name  : Test HpaeVirtualCapturerManager Pause API with isStandby
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVirtualCapturerManagerPauseWithStandby_001
+ * @tc.desc  : Test Pause with isStandby=true for virtual capturer
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerPauseWithStandby_001, TestSize.Level0)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Pause(sessionId, true);
+    EXPECT_EQ(ret, SUCCESS);
+    HpaeCaptureMoveInfo stream = capturerManager->captureStream_[sessionId];
+    EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name  : Test HpaeVirtualCapturerManager Pause API with isStandby=false
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVirtualCapturerManagerPauseWithStandby_002
+ * @tc.desc  : Test Pause with isStandby=false for virtual capturer
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerPauseWithStandby_002, TestSize.Level0)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Pause(sessionId, false);
+    EXPECT_EQ(ret, SUCCESS);
+    HpaeCaptureMoveInfo stream = capturerManager->captureStream_[sessionId];
+    EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name  : FaultCode_Start_SessionNotExist
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Start with non-existent sessionId returns SUCCESS via SendAudioErrorEvent,
+ *             covering FAULT_NO_SOUND/RECORD/START/ERR_NULL_POINTER fault code path.
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, FaultCode_Start_SessionNotExist, TestSize.Level1)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    uint32_t invalidSessionId = INVALID_TEST_SESSION_ID;
+    int32_t ret = capturerManager->Start(invalidSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : FaultCode_Pause_SessionNotExist
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Pause with non-existent sessionId returns SUCCESS via SendAudioErrorEvent,
+ *             covering FAULT_STATE_INCONSISTENT/RECORD/PAUSE/ERR_NULL_POINTER fault code path.
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, FaultCode_Pause_SessionNotExist, TestSize.Level1)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    uint32_t invalidSessionId = INVALID_TEST_SESSION_ID;
+    int32_t ret = capturerManager->Pause(invalidSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : FaultCode_Stop_SessionNotExist
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Stop with non-existent sessionId returns SUCCESS via SendAudioErrorEvent,
+ *             covering FAULT_STATE_INCONSISTENT/RECORD/STOP/ERR_NULL_POINTER fault code path.
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, FaultCode_Stop_SessionNotExist, TestSize.Level1)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    uint32_t invalidSessionId = INVALID_TEST_SESSION_ID;
+    int32_t ret = capturerManager->Stop(invalidSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : FaultCode_MoveStream_SessionNotExist
+ * @tc.type  : FUNC
+ * @tc.desc  : Test MoveStream with non-existent sessionId returns SUCCESS via SendAudioErrorEvent,
+ *             covering FAULT_STATE_INCONSISTENT/RECORD/QUERY/ERR_NULL_POINTER fault code path.
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, FaultCode_MoveStream_SessionNotExist, TestSize.Level1)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    uint32_t invalidSessionId = INVALID_TEST_SESSION_ID;
+    std::string sourceName = DEFAULT_SOURCE_NAME;
+    int32_t ret = capturerManager->MoveStream(invalidSessionId, sourceName);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : FaultCode_SetStreamMute_SourceOutputNodeNull
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetStreamMute with session that has null sourceOutputNode,
+ *             covering CAP_QUERY_INSTANCE_NULL fault code path.
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, FaultCode_SetStreamMute_SourceOutputNodeNull, TestSize.Level1)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    uint32_t sessionId = DEFAULT_SESSION_ID;
+    HpaeCaptureMoveInfo moveInfo {};
+    // Insert a moveInfo with null sourceOutputNode
+    capturerManager->captureStream_.insert_or_assign(sessionId, moveInfo);
+
+    int32_t ret = capturerManager->SetStreamMute(sessionId, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

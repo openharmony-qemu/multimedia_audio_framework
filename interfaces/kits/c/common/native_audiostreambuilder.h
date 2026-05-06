@@ -461,6 +461,22 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerFastStatusChangeCallback(
     OH_AudioCapturer_OnFastStatusChange callback, void* userData);
 
 /**
+ * @brief Sets if the audio capturer can capture the audio data affected by loopback effect.
+ * When the same process enables reverb effect for audio loopback in hardware mode, and the
+ * target audio capturer is in {@link AUDIOSTREAM_LATENCY_MODE_FAST} mode, this function
+ * will take effect.
+ *
+ * @param builder reference provided by OH_AudioStreamBuilder_Create().
+ * @param enabled Whether application want to get audio data affected by loopback effect.
+ * @return function result code:
+ *     {@link AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} the param of builder is nullptr.
+ * @since 26.0.0
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerLoopbackEffectEnabled(
+    OH_AudioStreamBuilder* builder, bool enabled);
+
+/**
  * @brief Sets keep running flag for AudioRenderer stream.
  * By default, audio driver will enter standby mode when there is no audio data for a while, but some applications
  * want to disable auto standby to achieve lower audio starting latency.

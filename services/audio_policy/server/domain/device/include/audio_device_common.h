@@ -63,12 +63,6 @@ public:
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
         const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1,
-        const uint32_t streamId = INVALID_STREAM_ID);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1,
-        const uint32_t streamId = INVALID_STREAM_ID);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
@@ -95,7 +89,6 @@ public:
         ConnectState connectState, bool isVrSupported = true);
     std::vector<SourceOutput> GetSourceOutputs();
     void SetFirstScreenOn();
-    void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
     bool GetVirtualCall(pid_t uid);
@@ -118,7 +111,8 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         pipeManager_(AudioPipeManager::GetPipeManager()),
-        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
+        audioRouterSelectStrategy_(AudioRouterSelectStrategy::GetInstance()) {}
     ~AudioDeviceCommon() {}
 
     void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &updatedDesc,
@@ -187,6 +181,7 @@ private:
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
     AudioUsrSelectManager& audioUsrSelectManager_;
+    AudioRouterSelectStrategy& audioRouterSelectStrategy_;
 };
 
 }

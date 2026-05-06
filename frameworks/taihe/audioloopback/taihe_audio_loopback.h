@@ -34,6 +34,8 @@ public:
     ~AudioLoopbackImpl();
 
     static AudioLpback CreateAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode loopbackMode);
+    static AudioLpback CreateGlobalAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode mode,
+        OHOS::AudioStandard::LoopbackType type);
     AudioLoopbackStatus GetStatusSync();
     void SetVolumeSync(double volume);
     double GetVolume();
@@ -49,6 +51,7 @@ public:
     std::shared_ptr<OHOS::AudioStandard::AudioLoopback> loopback_;
 
     friend AudioLpback CreateAudioLoopbackSync(AudioLoopbackMode mode);
+    friend AudioLpback CreateGlobalAudioLoopbackSync(AudioLoopbackMode mode, bool isController);
 
 private:
     static void RegisterLoopbackCallback(std::shared_ptr<uintptr_t> &callback,
@@ -58,6 +61,7 @@ private:
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
     static OHOS::AudioStandard::AudioLoopbackMode sLoopbackMode_;
+    static OHOS::AudioStandard::LoopbackType sLoopbackType_;
     std::shared_ptr<OHOS::AudioStandard::AudioLoopbackCallback> callbackTaihe_ = nullptr;
 };
 } // namespace ANI::Audio

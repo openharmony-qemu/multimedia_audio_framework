@@ -344,6 +344,11 @@ public:
         return sharedAudioCapturer_->SetIndependentAudioSessionStrategy(strategy, behavior);
     }
 
+    int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const override
+    {
+        return sharedAudioCapturer_->GetCapturerDebugInfo(debugInfo);
+    }
+
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override
     {

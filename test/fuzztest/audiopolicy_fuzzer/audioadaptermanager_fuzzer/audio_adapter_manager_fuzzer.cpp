@@ -453,14 +453,6 @@ void AudioVolumeManagerInitializeFuzzTest(FuzzedDataProvider& fdp)
     audioAdapterManager->LoadMuteStatusMap();
 }
 
-void AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    CHECK_AND_RETURN(audioAdapterManager != nullptr);
-    int32_t sessionId = g_fuzzUtils.GetData<int32_t>();
-    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
-}
-
 void AudioVolumeManagerSetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
@@ -673,7 +665,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerNotifyAccountsChangedFuzzTest,
     AudioVolumeManagerSafeVolumeDumpFuzzTest,
     AudioVolumeManagerHandleRingerModeFuzzTest,
-    AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest,
     AudioVolumeManagerSetDataShareReadyFuzzTest,
     AudioVolumeManagerSendLoudVolumeModeToDspFuzzTest,
     AudioVolumeManagerSetAppRingMutedFuzzTest,

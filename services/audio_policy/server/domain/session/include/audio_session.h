@@ -17,21 +17,16 @@
 #define ST_AUDIO_SESSION_H
 
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum class AudioSessionState {
-    SESSION_INVALID = -1,
-    SESSION_NEW = 0,
-    SESSION_ACTIVE = 1,
-    SESSION_DEACTIVE = 2,
-    SESSION_RELEASED = 3,
-};
 
 class AudioSessionStateMonitor;
 class AudioDeviceManager;
@@ -49,9 +44,9 @@ public:
     bool IsSceneParameterSet();
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
     bool IsActivated();
-    std::vector<AudioInterrupt> GetStreams();
+    std::vector<std::pair<AudioInterrupt, AudioFocuState>> GetStreams();
     AudioStreamType GetFakeStreamType();
-    void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
+    void AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
     void RemoveStreamInfo(uint32_t streamId);
     void ClearStreamInfo(void);
     uint32_t GetFakeStreamId();
@@ -65,6 +60,8 @@ public:
     int32_t SetSessionDefaultOutputDevice(const DeviceType &deviceType, bool forceFetch = false);
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
+    int32_t UpdateStreamFocusState(uint32_t streamId, AudioFocuState focuState);
+    bool IsAllStreamsInState(AudioFocuState state);
     bool GetAndClearNeedToFetchFlag();
     bool IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
         const std::shared_ptr<AudioDeviceDescriptor> desc);
@@ -80,6 +77,10 @@ public:
     bool IsMuteSuggestionWhenMixEnabled();
     int32_t SetAudioSessionBehavior(const uint32_t behavior);
     AudioSessionActiveBehaviors GetSessionBehaviors();
+    void SetRegisterStateChangeCallbackFlag(const bool registerCallbackFlag,
+        const bool activatedRegisterCallbackFlag = false);
+    void GetStateChangeCallbackFlag(bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
+    void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
 
 private:
     StreamUsage GetStreamUsageInner();
@@ -99,7 +100,7 @@ private:
     AudioSessionStateMonitor &audioSessionStateMonitor_;
     AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     // These are streams included in audiosession focus.
-    std::vector<AudioInterrupt> streamsInSession_;
+    std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
     uint32_t fakeStreamId_ {0};
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
@@ -110,6 +111,8 @@ private:
     bool isSystemApp_ {false};
     bool isMuteSuggestionEnabled_ = false;
     AudioSessionActiveBehaviors behaviorFlags_ {};
+    bool registerCallbackFlag_ = false;
+    bool activatedRegisterCallbackFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

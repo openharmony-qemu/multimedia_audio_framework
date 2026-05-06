@@ -27,7 +27,6 @@
 #include "audio_device_status.h"
 #include "audio_pipe_manager.h"
 #include "audio_zone_service.h"
-#include "audio_active_device.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -886,7 +885,7 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
         case MEDIA_OUTPUT_DEVICES:
             if ((static_cast<uint32_t>(dev->deviceRole_) & OUTPUT_DEVICE) &&
                 (static_cast<uint32_t>(deviceInfo.deviceUsage) & MEDIA) &&
-                (dev->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
+                (dev->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || dev->deviceCategory_ == BT_WATCH)) {
                 audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             }
             break;
@@ -1609,10 +1608,6 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
 
 int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
-    if (AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId() != 0 &&
-        AudioZoneService::GetInstance().CheckDeviceInAudioZone(*desc)) {
-        return PRIORITY_APP;
-    }
     if (desc->deviceType_ == DEVICE_TYPE_DP && AudioZoneService::GetInstance().CheckDeviceInAudioZone(*desc)) {
         return PRIORITY_DISTRIBUTED;
     }

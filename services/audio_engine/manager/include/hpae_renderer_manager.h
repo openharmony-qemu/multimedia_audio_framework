@@ -43,7 +43,7 @@ public:
 
     int32_t Start(uint32_t sessionId) override;
     int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId) override;
-    int32_t Pause(uint32_t sessionId) override;
+    int32_t Pause(uint32_t sessionId, bool isStandby = false) override;
     int32_t Flush(uint32_t sessionId) override;
     int32_t Drain(uint32_t sessionId) override;
     int32_t Stop(uint32_t sessionId) override;
@@ -164,6 +164,7 @@ private:
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
+    void StopInterphoneSinkIfNeeded();
 
 private:
 

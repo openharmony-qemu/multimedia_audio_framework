@@ -62,8 +62,6 @@ public:
 
     int32_t Start() override;
 
-    int32_t Standby() override;
-
     int32_t Pause() override;
 
     int32_t Stop() override;
@@ -136,6 +134,8 @@ public:
     int32_t SetSourceDuration(int64_t duration) override;
 
     int32_t SetSpeed(float speed) override;
+
+    int32_t SetPitch(float pitch) override;
 
     int32_t SetOffloadDataCallbackState(int32_t state) override;
 
