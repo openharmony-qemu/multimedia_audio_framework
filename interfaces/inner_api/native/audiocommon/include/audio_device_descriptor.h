@@ -201,8 +201,6 @@ public:
         }
     };
 
-    
-
     void SetClientInfo(const ClientInfo &clientInfo) const;
 private:
     static void FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
