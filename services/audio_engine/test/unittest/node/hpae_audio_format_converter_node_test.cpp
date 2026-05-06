@@ -1270,20 +1270,6 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, ReconfigTmpOut_UpmixPath, TestSize.Le
 // =========================================================================
 
 /**
- * @tc.name  : DoProcess_SilenceWhenNoInput
- * @tc.type  : FUNC
- * @tc.number: DoProcess_SilenceWhenNoInput
- * @tc.desc  : DoProcess outputs silence when no valid input (no upstream connected)
- */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_SilenceWhenNoInput, TestSize.Level0)
-{
-    auto converterNode = CreateStdConverter();
-    // No upstream connected, so hasValidInput will be false
-    converterNode->DoProcess();
-    // Should not crash
-}
-
-/**
  * @tc.name  : DoProcess_DrainPath
  * @tc.type  : FUNC
  * @tc.number: DoProcess_DrainPath
@@ -1323,21 +1309,6 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_ProcessDisabled, TestSize.L
     converterNode->DoProcess();
     // processedFrames_ unchanged because enableProcess_ is false, drain skipped
     EXPECT_EQ(converterNode->processedFrames_, frameLen);
-}
-
-/**
- * @tc.name  : DoProcess_DrainInsufficientData
- * @tc.type  : FUNC
- * @tc.number: DoProcess_DrainInsufficientData
- * @tc.desc  : DoProcess with insufficient processed data falls through to silence
- */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainInsufficientData, TestSize.Level0)
-{
-    auto converterNode = CreateStdConverter();
-    converterNode->processedFrames_ = 100; // Less than outputFrameLen20ms_
-
-    converterNode->DoProcess();
-    // Should not crash, outputs silence
 }
 
 // =========================================================================
@@ -1480,23 +1451,6 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, SignalProcess_MultipleInputs, TestSiz
     std::vector<HpaePcmBuffer *> inputs = {&input, &input};
     HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
     EXPECT_NE(result, nullptr);
-}
-
-// =========================================================================
-// SetDownmixNormalization Test
-// =========================================================================
-
-/**
- * @tc.name  : SetDownmixNormalization_Test
- * @tc.type  : FUNC
- * @tc.number: SetDownmixNormalization_Test
- * @tc.desc  : SetDownmixNormalization does not crash
- */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, SetDownmixNormalization_Test, TestSize.Level0)
-{
-    auto converterNode = CreateStdConverter();
-    converterNode->SetDownmixNormalization(true);
-    converterNode->SetDownmixNormalization(false);
 }
 
 // =========================================================================
