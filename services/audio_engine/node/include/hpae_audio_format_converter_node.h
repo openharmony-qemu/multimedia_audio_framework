@@ -40,7 +40,6 @@ protected:
 private:
     bool CheckUpdateInInfo(HpaePcmBuffer *input);
     bool CheckUpdateOutInfo();
-    int32_t ConverterProcess(float *srcData, float *dstData, float *tmpData, HpaePcmBuffer *input);
     void CheckAndUpdateInfo(HpaePcmBuffer *input);
     void UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo);
 
@@ -58,6 +57,14 @@ private:
     void InitDualBuffer();
     int32_t ResampleWithChannelConversion(float *srcData, uint32_t inFrameLen,
         float *dstData, uint32_t outFrameLen, uint32_t resamplerChannels);
+
+    // --- Refactoring helpers (sub-50-line extraction targets) ---
+    void ProcessSameRateChannelConversion(uint32_t inCh, uint32_t outCh);
+    void ProcessDiffRateResample(uint32_t inCh, uint32_t outCh, uint32_t inRate, uint32_t outRate);
+    void AccumulateInputAndPullAhead(HpaePcmBuffer *input);
+    HpaePcmBuffer* ProcessAndExtractOutput(HpaePcmBuffer *input);
+    void ReconfigTmpOutForChannelConversion(uint32_t inCh, uint32_t outCh, uint32_t maxOutFrames);
+    bool UpdateOutChannelInfo(uint32_t numChannels, AudioChannelLayout channelLayout);
 
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer converterOutput_;
