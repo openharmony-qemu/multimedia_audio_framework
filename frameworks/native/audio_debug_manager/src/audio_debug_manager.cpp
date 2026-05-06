@@ -407,7 +407,7 @@ int32_t AudioDebugManagerPrivate::PrintAppAudioDebugInfo(int32_t fd) const
     return ret;
 }
 
-int32_t AudioDebugManagerPrivate::GetAudioRendererDebugInfo(uintptr_t rendererKey,
+int32_t AudioDebugManagerPrivate::GetAudioRendererDebugInfo(uint32_t rendererKey,
     AudioRendererDebugInfo &debugInfo) const
 {
     std::shared_ptr<AudioRendererDebugCallback> debugCallback = nullptr;
@@ -476,7 +476,7 @@ std::string AudioDebugManagerPrivate::ParserAudioRendererDebugInfo(
     return ss.str();
 }
 
-int32_t AudioDebugManagerPrivate::RegisterAudioRenderer(uintptr_t rendererKey,
+int32_t AudioDebugManagerPrivate::RegisterAudioRenderer(uint32_t rendererKey,
     const std::shared_ptr<AudioRendererDebugCallback> &debugCallback)
 {
     if (debugCallback == nullptr) {
@@ -489,14 +489,14 @@ int32_t AudioDebugManagerPrivate::RegisterAudioRenderer(uintptr_t rendererKey,
     return SUCCESS;
 }
 
-int32_t AudioDebugManagerPrivate::UnregisterAudioRenderer(uintptr_t rendererKey)
+int32_t AudioDebugManagerPrivate::UnregisterAudioRenderer(uint32_t rendererKey)
 {
     std::lock_guard<std::mutex> lock(rendererMutex_);
     audioRendererDebugCallbacks_.erase(rendererKey);
     return SUCCESS;
 }
 
-int32_t AudioDebugManagerPrivate::PrintAudioRendererDebugInfo(uintptr_t rendererKey, int32_t fd) const
+int32_t AudioDebugManagerPrivate::PrintAudioRendererDebugInfo(uint32_t rendererKey, int32_t fd) const
 {
     AudioRendererDebugInfo debugInfo;
     if (GetAudioRendererDebugInfo(rendererKey, debugInfo) != SUCCESS) {
@@ -513,7 +513,7 @@ int32_t AudioDebugManagerPrivate::PrintAudioRendererDebugInfo(uintptr_t renderer
 
 int32_t AudioDebugManagerPrivate::PrintAllAudioRenderersDebugInfo(int32_t fd) const
 {
-    std::set<uintptr_t> rendererKeys;
+    std::set<uint32_t> rendererKeys;
     {
         std::lock_guard<std::mutex> lock(rendererMutex_);
         for (const auto &item : audioRendererDebugCallbacks_) {
@@ -532,7 +532,7 @@ int32_t AudioDebugManagerPrivate::PrintAllAudioRenderersDebugInfo(int32_t fd) co
     return ret;
 }
 
-int32_t AudioDebugManagerPrivate::GetAudioCapturerDebugInfo(uintptr_t capturerKey,
+int32_t AudioDebugManagerPrivate::GetAudioCapturerDebugInfo(uint32_t capturerKey,
     AudioCapturerDebugInfo &debugInfo) const
 {
     std::shared_ptr<AudioCapturerDebugCallback> debugCallback = nullptr;
@@ -592,7 +592,7 @@ std::string AudioDebugManagerPrivate::ParserAudioCapturerDebugInfo(
     return ss.str();
 }
 
-int32_t AudioDebugManagerPrivate::RegisterAudioCapturer(uintptr_t capturerKey,
+int32_t AudioDebugManagerPrivate::RegisterAudioCapturer(uint32_t capturerKey,
     const std::shared_ptr<AudioCapturerDebugCallback> &debugCallback)
 {
     if (debugCallback == nullptr) {
@@ -605,14 +605,14 @@ int32_t AudioDebugManagerPrivate::RegisterAudioCapturer(uintptr_t capturerKey,
     return SUCCESS;
 }
 
-int32_t AudioDebugManagerPrivate::UnregisterAudioCapturer(uintptr_t capturerKey)
+int32_t AudioDebugManagerPrivate::UnregisterAudioCapturer(uint32_t capturerKey)
 {
     std::lock_guard<std::mutex> lock(capturerMutex_);
     audioCapturerDebugCallbacks_.erase(capturerKey);
     return SUCCESS;
 }
 
-int32_t AudioDebugManagerPrivate::PrintAudioCapturerDebugInfo(uintptr_t capturerKey, int32_t fd) const
+int32_t AudioDebugManagerPrivate::PrintAudioCapturerDebugInfo(uint32_t capturerKey, int32_t fd) const
 {
     AudioCapturerDebugInfo debugInfo;
     if (GetAudioCapturerDebugInfo(capturerKey, debugInfo) != SUCCESS) {
@@ -629,7 +629,7 @@ int32_t AudioDebugManagerPrivate::PrintAudioCapturerDebugInfo(uintptr_t capturer
 
 int32_t AudioDebugManagerPrivate::PrintAllAudioCapturersDebugInfo(int32_t fd) const
 {
-    std::set<uintptr_t> capturerKeys;
+    std::set<uint32_t> capturerKeys;
     {
         std::lock_guard<std::mutex> lock(capturerMutex_);
         for (const auto &item : audioCapturerDebugCallbacks_) {
@@ -648,7 +648,7 @@ int32_t AudioDebugManagerPrivate::PrintAllAudioCapturersDebugInfo(int32_t fd) co
     return ret;
 }
 
-int32_t AudioDebugManagerPrivate::GetAudioLoopbackDebugInfo(uintptr_t loopbackKey,
+int32_t AudioDebugManagerPrivate::GetAudioLoopbackDebugInfo(uint32_t loopbackKey,
     AudioLoopbackDebugInfo &debugInfo) const
 {
     std::shared_ptr<AudioLoopbackDebugCallback> debugCallback = nullptr;
@@ -692,14 +692,14 @@ std::string AudioDebugManagerPrivate::ParserAudioLoopbackDebugInfo(
        << "    volume: " << debugInfo.volume << "\n"
        << "  },\n"
        << "  streamInfo: {\n"
-       << "    uplinkStreamState: " << RendererStateToString(debugInfo.uplinkStreamState) << ",\n"
-       << "    downlinkStreamState: " << CapturerStateToString(debugInfo.downlinkStreamState) << "\n"
+       << "    uplinkStreamState: " << CapturerStateToString(debugInfo.uplinkStreamState) << ",\n"
+       << "    downlinkStreamState: " << RendererStateToString(debugInfo.downlinkStreamState) << "\n"
        << "  }\n"
        << "}";
     return ss.str();
 }
 
-int32_t AudioDebugManagerPrivate::RegisterAudioLoopback(uintptr_t loopbackKey,
+int32_t AudioDebugManagerPrivate::RegisterAudioLoopback(uint32_t loopbackKey,
     const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback)
 {
     if (debugCallback == nullptr) {
@@ -712,14 +712,14 @@ int32_t AudioDebugManagerPrivate::RegisterAudioLoopback(uintptr_t loopbackKey,
     return SUCCESS;
 }
 
-int32_t AudioDebugManagerPrivate::UnregisterAudioLoopback(uintptr_t loopbackKey)
+int32_t AudioDebugManagerPrivate::UnregisterAudioLoopback(uint32_t loopbackKey)
 {
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     audioLoopbackDebugCallbacks_.erase(loopbackKey);
     return SUCCESS;
 }
 
-int32_t AudioDebugManagerPrivate::PrintAudioLoopbackDebugInfo(uintptr_t loopbackKey, int32_t fd) const
+int32_t AudioDebugManagerPrivate::PrintAudioLoopbackDebugInfo(uint32_t loopbackKey, int32_t fd) const
 {
     AudioLoopbackDebugInfo debugInfo;
     if (GetAudioLoopbackDebugInfo(loopbackKey, debugInfo) != SUCCESS) {
@@ -736,7 +736,7 @@ int32_t AudioDebugManagerPrivate::PrintAudioLoopbackDebugInfo(uintptr_t loopback
 
 int32_t AudioDebugManagerPrivate::PrintAllAudioLoopbacksDebugInfo(int32_t fd) const
 {
-    std::set<uintptr_t> loopbackKeys;
+    std::set<uint32_t> loopbackKeys;
     {
         std::lock_guard<std::mutex> lock(loopbackMutex_);
         for (const auto &item : audioLoopbackDebugCallbacks_) {

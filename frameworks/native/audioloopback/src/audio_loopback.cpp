@@ -78,7 +78,7 @@ static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopbac
         return;
     }
     (void)AudioDebugManager::GetInstance().RegisterAudioLoopback(
-        reinterpret_cast<uintptr_t>(audioLoopback.get()), debugCallback);
+        reinterpret_cast<uint32_t>(audioLoopback.get()), debugCallback);
 }
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
@@ -165,7 +165,7 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
         stateLock.unlock();
         DestroyAudioLoopbackInner();
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(reinterpret_cast<uintptr_t>(this));
+    (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(reinterpret_cast<uint32_t>(this));
 }
 
 void AudioLoopbackPrivate::GetValidDevice()
@@ -389,8 +389,8 @@ int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debug
     }
 
     // Stream states
-    debugInfo.uplinkStreamState = rendererState_.load();
-    debugInfo.downlinkStreamState = capturerState_.load();
+    debugInfo.uplinkStreamState = capturerState_.load();
+    debugInfo.downlinkStreamState = rendererState_.load();
 
     return SUCCESS;
 }

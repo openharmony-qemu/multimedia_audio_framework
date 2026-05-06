@@ -167,7 +167,7 @@ static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRendere
         return;
     }
     (void)AudioDebugManager::GetInstance().RegisterAudioRenderer(
-        reinterpret_cast<uintptr_t>(audioRenderer.get()), debugCallback);
+        reinterpret_cast<uint32_t>(audioRenderer.get()), debugCallback);
 }
 
 std::mutex AudioRenderer::createRendererMutex_;
@@ -185,7 +185,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uint32_t>(this));
 
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
@@ -1801,7 +1801,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uint32_t>(this));
     SetReleaseFlagNoLock(false);
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback(audioStream_);

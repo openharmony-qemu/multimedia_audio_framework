@@ -77,7 +77,7 @@ OH_AudioCommon_Result OH_AudioDebugManager_PrintRendererInfo(
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
 
-    uintptr_t rendererKey = reinterpret_cast<uintptr_t>(ohRenderer->GetAudioRenderer());
+    uint32_t rendererKey = reinterpret_cast<uint32_t>(ohRenderer->GetAudioRenderer());
     return ConvertDebugManager(debugManager)->PrintAudioRendererDebugInfo(rendererKey, fd) == 0
         ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
 }
@@ -94,7 +94,7 @@ OH_AudioCommon_Result OH_AudioDebugManager_PrintCapturerInfo(
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
 
-    uintptr_t capturerKey = reinterpret_cast<uintptr_t>(ohCapturer->GetAudioCapturer());
+    uint32_t capturerKey = reinterpret_cast<uint32_t>(ohCapturer->GetAudioCapturer());
     return ConvertDebugManager(debugManager)->PrintAudioCapturerDebugInfo(capturerKey, fd) == 0
         ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
 }
@@ -106,7 +106,7 @@ OH_AudioCommon_Result OH_AudioDebugManager_PrintLoopbackInfo(
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    uintptr_t loopbackKey = reinterpret_cast<uintptr_t>(ConvertLoopback(loopback));
+    uint32_t loopbackKey = reinterpret_cast<uint32_t>(ConvertLoopback(loopback));
     return ConvertDebugManager(debugManager)->PrintAudioLoopbackDebugInfo(loopbackKey, fd) == 0
         ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
 }

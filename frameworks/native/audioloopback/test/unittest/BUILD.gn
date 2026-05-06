@@ -45,6 +45,7 @@ ohos_unittest("audio_loopback_unit_test") {
     "../../../audiocapturer:audio_capturer",
     "../../../audiorenderer:audio_renderer",
     "../../../audioloopback:audio_loopback",
+    "../../../audio_debug_manager:audio_debug_manager",
   ]
 
   external_deps = [
