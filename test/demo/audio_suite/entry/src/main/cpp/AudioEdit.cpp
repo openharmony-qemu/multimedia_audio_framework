@@ -156,6 +156,7 @@ struct WavFileInfo {
 };
 
 const int32_t SAMPLE_RATE_THRESHOLD_HIGH = 64000;
+const int32_t SAMPLE_RATE_THRESHOLD_MID = 32000;
 
 const int32_t WAV_RIFF_HEADER_SIZE = 12; // WAV RIFF: 12
 const int32_t WAV_CHUNK_HEADER_SIZE = 8; // WAV: 8
@@ -1496,10 +1497,12 @@ static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_inf
 // Calculate buffer size based on audio parameters
 static int32_t CalculateBufferSize()
 {
-    // Determine base size based on sampling rate
-    int32_t bufferSize = (g_inputSampleRate >= SAMPLE_RATE_THRESHOLD_HIGH)
+    // Determine base size based on output sampling rate (not input) to avoid large buffers for high compression ratios
+    int32_t bufferSize = (g_outputSampleRate >= SAMPLE_RATE_THRESHOLD_HIGH)
                         ? BASE_BUFFER_SIZE_HIGH
-                        : BASE_BUFFER_SIZE_LOW;
+                        : ((g_outputSampleRate >= SAMPLE_RATE_THRESHOLD_MID)
+                           ? BASE_BUFFER_SIZE_MID
+                           : BASE_BUFFER_SIZE_LOW);
 
     // Adjust buffer size based on channel count
     if (g_outputChannelCount > 0 && g_outputChannelCount != CHANNEL_COUNT_STEREO) {
