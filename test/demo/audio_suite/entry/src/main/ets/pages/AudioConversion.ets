@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2026 Huawei Device Co., Ltd. 2026-2026. All rights reserved.
-*/
+ * Copyright (c) 2026 Huawei Device Co., Ltd. 2026-2026. All rights reserved.
+ */
 
 
 import { Logger } from '../utils/Logger';
