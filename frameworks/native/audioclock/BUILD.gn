@@ -50,8 +50,6 @@ ohos_shared_library("audio_clock") {
     "./src/audio_primary_source_clock.cpp",
   ]
 
-  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
-
   external_deps = [
     "c_utils:utils",
     "hicollie:libhicollie",
@@ -59,6 +57,7 @@ ohos_shared_library("audio_clock") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
+    "bounds_checking_function:libsec_shared",
   ]
 
   defines = []

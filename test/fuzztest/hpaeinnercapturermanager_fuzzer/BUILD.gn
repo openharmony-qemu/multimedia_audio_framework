@@ -53,6 +53,12 @@ ohos_fuzztest("HpaeInnerCapturerManagerFuzzTest") {
     "../../../frameworks/native/audioschedule:audio_schedule",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   external_deps = [
     "ability_base:want",
     "ability_runtime:extension_manager",

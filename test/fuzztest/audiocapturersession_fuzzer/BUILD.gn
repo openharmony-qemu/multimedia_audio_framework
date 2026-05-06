@@ -52,6 +52,12 @@ ohos_fuzztest("AudioCapturerSessionFuzzTest") {
     "../../../services/audio_policy:audio_policy_service_static",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
