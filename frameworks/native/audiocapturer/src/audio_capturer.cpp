@@ -102,7 +102,7 @@ static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapture
         return;
     }
     (void)AudioDebugManager::GetInstance().RegisterAudioCapturer(
-        reinterpret_cast<uint32_t>(audioCapturer.get()), debugCallback);
+        reinterpret_cast<uintptr_t>(audioCapturer.get()), debugCallback);
 }
 
 AudioCapturer::~AudioCapturer() = default;
@@ -1745,7 +1745,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
-    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(reinterpret_cast<uint32_t>(this));
+    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(reinterpret_cast<uintptr_t>(this));
     if (capturerInfo_.loopBackEffectEnabled) {
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }

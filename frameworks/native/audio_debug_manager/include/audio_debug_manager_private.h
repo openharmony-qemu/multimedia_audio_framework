@@ -38,15 +38,15 @@ public:
     int32_t PrintAllAudioCapturersDebugInfo(int32_t fd) const override;
     int32_t PrintAllAudioLoopbacksDebugInfo(int32_t fd) const override;
 
-    int32_t RegisterAudioRenderer(uint32_t rendererKey,
+    int32_t RegisterAudioRenderer(uintptr_t rendererKey,
         const std::shared_ptr<AudioRendererDebugCallback> &debugCallback) override;
-    int32_t UnregisterAudioRenderer(uint32_t rendererKey) override;
-    int32_t PrintAudioRendererDebugInfo(uint32_t rendererKey, int32_t fd) const override;
+    int32_t UnregisterAudioRenderer(uintptr_t rendererKey) override;
+    int32_t PrintAudioRendererDebugInfo(uintptr_t rendererKey, int32_t fd) const override;
 
-    int32_t RegisterAudioCapturer(uint32_t capturerKey,
+    int32_t RegisterAudioCapturer(uintptr_t capturerKey,
         const std::shared_ptr<AudioCapturerDebugCallback> &debugCallback) override;
-    int32_t UnregisterAudioCapturer(uint32_t capturerKey) override;
-    int32_t PrintAudioCapturerDebugInfo(uint32_t capturerKey, int32_t fd) const override;
+    int32_t UnregisterAudioCapturer(uintptr_t capturerKey) override;
+    int32_t PrintAudioCapturerDebugInfo(uintptr_t capturerKey, int32_t fd) const override;
 
     int32_t RegisterAudioLoopback(uint32_t loopbackKey,
         const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback) override;
@@ -62,10 +62,10 @@ private:
     static int32_t WriteAudioDebugInfo(int32_t fd, const std::string &debugInfo);
     static int32_t PrintfAudioDebugInfo(int32_t fd, const std::string &debugInfo);
 
-    int32_t GetAudioRendererDebugInfo(uint32_t rendererKey, AudioRendererDebugInfo &debugInfo) const;
+    int32_t GetAudioRendererDebugInfo(uintptr_t rendererKey, AudioRendererDebugInfo &debugInfo) const;
     static std::string ParserAudioRendererDebugInfo(const AudioRendererDebugInfo &debugInfo);
 
-    int32_t GetAudioCapturerDebugInfo(uint32_t capturerKey, AudioCapturerDebugInfo &debugInfo) const;
+    int32_t GetAudioCapturerDebugInfo(uintptr_t capturerKey, AudioCapturerDebugInfo &debugInfo) const;
     static std::string ParserAudioCapturerDebugInfo(const AudioCapturerDebugInfo &debugInfo);
 
     int32_t GetAudioLoopbackDebugInfo(uint32_t loopbackKey, AudioLoopbackDebugInfo &debugInfo) const;
@@ -79,8 +79,8 @@ private:
     mutable std::mutex capturerMutex_;
     mutable std::mutex loopbackMutex_;
     mutable std::mutex sessionMutex_;
-    std::map<uint32_t, std::shared_ptr<AudioRendererDebugCallback>> audioRendererDebugCallbacks_;
-    std::map<uint32_t, std::shared_ptr<AudioCapturerDebugCallback>> audioCapturerDebugCallbacks_;
+    std::map<uintptr_t, std::shared_ptr<AudioRendererDebugCallback>> audioRendererDebugCallbacks_;
+    std::map<uintptr_t, std::shared_ptr<AudioCapturerDebugCallback>> audioCapturerDebugCallbacks_;
     std::map<uint32_t, std::shared_ptr<AudioLoopbackDebugCallback>> audioLoopbackDebugCallbacks_;
     std::shared_ptr<AudioSessionDebugCallback> audioSessionDebugCallback_;
 };

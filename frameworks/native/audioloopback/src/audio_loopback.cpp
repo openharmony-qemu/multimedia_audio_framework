@@ -165,7 +165,6 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
         stateLock.unlock();
         DestroyAudioLoopbackInner();
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(reinterpret_cast<uint32_t>(this));
 }
 
 void AudioLoopbackPrivate::GetValidDevice()

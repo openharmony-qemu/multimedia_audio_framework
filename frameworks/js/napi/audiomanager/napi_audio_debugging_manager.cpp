@@ -172,7 +172,7 @@ napi_value NapiAudioDebuggingManager::PrintRendererInfo(napi_env env, napi_callb
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    uint32_t rendererKey = reinterpret_cast<uint32_t>(napiRenderer->audioRenderer_.get());
+    uintptr_t rendererKey = reinterpret_cast<uintptr_t>(napiRenderer->audioRenderer_.get());
     if (AudioDebugManager::GetInstance().PrintAudioRendererDebugInfo(rendererKey, fd) != SUCCESS) {
         NapiAudioError::ThrowError(env, "PrintRendererInfo failed", NAPI_ERR_SYSTEM);
     }
@@ -202,7 +202,7 @@ napi_value NapiAudioDebuggingManager::PrintCapturerInfo(napi_env env, napi_callb
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    uint32_t capturerKey = reinterpret_cast<uint32_t>(napiCapturer->audioCapturer_.get());
+    uintptr_t capturerKey = reinterpret_cast<uintptr_t>(napiCapturer->audioCapturer_.get());
     if (AudioDebugManager::GetInstance().PrintAudioCapturerDebugInfo(capturerKey, fd) != SUCCESS) {
         NapiAudioError::ThrowError(env, "PrintCapturerInfo failed", NAPI_ERR_SYSTEM);
     }
