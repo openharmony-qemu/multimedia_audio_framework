@@ -246,5 +246,6 @@ HWTEST_F(AudioPolicyClientHolderUnitTest, OnPersonalizedSpatializationEnabledCha
     bool enabled = true;
     auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     clientHolder_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+}
 } // namespace AudioStandard
 } // namespace OHOS
