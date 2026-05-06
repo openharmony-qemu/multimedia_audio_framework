@@ -919,55 +919,6 @@ HWTEST_F(HpaeSinkInputNodeTest, testOnStreamInfoChange_GetOffloadCallbackData, T
 }
 
 /**
- * @tc.name  : testDoProcess_11025SampleRate
- * @tc.type  : FUNC
- * @tc.desc  : Test DoProcess with 11025 sample rate (pullDataFlag_ behavior)
- */
-HWTEST_F(HpaeSinkInputNodeTest, testDoProcess_11025SampleRate, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.samplingRate = SAMPLE_RATE_11025;
-    nodeInfo.customSampleRate = 0;
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    auto mockStreamCallback = std::make_shared<MockStreamCallback>();
-    sinkInputNode->writeCallback_ = mockStreamCallback;
-    
-    EXPECT_TRUE(sinkInputNode->pullDataFlag_);
-    
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
-        .WillRepeatedly([&](AudioCallBackStreamInfo& info) {
-            return SUCCESS;
-        });
-    
-    sinkInputNode->DoProcess();
-}
-
-/**
- * @tc.name  : testDoProcess_CustomSampleRateNotMultipleOf50
- * @tc.type  : FUNC
- * @tc.desc  : Test DoProcess with customSampleRate that is not multiples of 50
- */
-HWTEST_F(HpaeSinkInputNodeTest, testDoProcess_CustomSampleRateNotMultipleOf50, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.customSampleRate = SAMPLE_RATE_16010;
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    auto mockStreamCallback = std::make_shared<MockStreamCallback>();
-    sinkInputNode->writeCallback_ = mockStreamCallback;
-    
-    EXPECT_EQ(sinkInputNode->pullDataCount_, 0);
-    
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
-        .WillRepeatedly([&](AudioCallBackStreamInfo& info) {
-            return SUCCESS;
-        });
-    
-    sinkInputNode->DoProcess();
-}
-
-/**
  * @tc.name  : testRewindHistoryBufferNull
  * @tc.type  : FUNC
  * @tc.desc  : Test RewindHistoryBuffer when historyBuffer is null

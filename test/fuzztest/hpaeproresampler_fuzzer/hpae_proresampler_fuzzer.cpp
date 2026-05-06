@@ -36,6 +36,7 @@ const static std::vector<uint32_t>  TEST_CHANNELS = {MONO, STEREO, CHANNEL_6};
 
 constexpr uint32_t QUALITY_ONE = 1;
 constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr uint32_t FRAME_LEN_40MS = 40;
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t PROCESS_LOOP_COUNT = 10;
 template<class T>

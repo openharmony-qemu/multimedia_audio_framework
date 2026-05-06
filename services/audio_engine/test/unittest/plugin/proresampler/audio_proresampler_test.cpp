@@ -539,6 +539,22 @@ HWTEST_F(AudioProResamplerTest, ErrCodeToString_05, TestSize.Level0)
     std::string ret = resampler.ErrCodeToString(RESAMPLER_ERR_INVALID_ARG);
     ASSERT_STREQ(ret.c_str(), "RESAMPLER_ERR_INVALID_ARG");
 }
+
+/*
+ * @tc.name  : Test Process API.
+ * @tc.type  : FUNC
+ * @tc.number: ProcessTest_NullInBuffer.
+ * @tc.desc  : Test Process with null inBuffer returns RESAMPLER_ERR_INVALID_ARG.
+ */
+HWTEST_F(AudioProResamplerTest, ProcessTest_NullInBuffer, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    uint32_t outFrameLen = SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> out(outFrameLen * STEREO);
+
+    int32_t ret = resampler.Process(nullptr, 960, out.data(), outFrameLen);
+    EXPECT_EQ(ret, RESAMPLER_ERR_INVALID_ARG);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
