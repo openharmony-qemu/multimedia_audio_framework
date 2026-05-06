@@ -83,6 +83,37 @@ enum AudioChannelLayout {
   CH_LAYOUT_7POINT1_WIDE_BACK = 255
 }
 
+// WAV file constants
+const WAV_HEADER_SIZE = 44;
+const WAV_CHUNK_SIZE = 1024 * 1024; // 1MB
+const PROGRESS_UPDATE_INTERVAL = 10; // Update progress every 10 chunks
+const MAX_CHANNELS = 8;
+const BITS_PER_SAMPLE_8 = 8;
+const BITS_PER_SAMPLE_16 = 16;
+const BITS_PER_SAMPLE_24 = 24;
+const BITS_PER_SAMPLE_32 = 32;
+
+// WAV header offset constants
+const WAV_OFFSET_RIFF = 0;
+const WAV_OFFSET_FILE_SIZE = 4;
+const WAV_OFFSET_WAVE = 8;
+const WAV_OFFSET_FMT = 12;
+const WAV_OFFSET_FMT_CHUNK_SIZE = 16;
+const WAV_OFFSET_AUDIO_FORMAT = 20;
+const WAV_OFFSET_NUM_CHANNELS = 22;
+const WAV_OFFSET_SAMPLE_RATE = 24;
+const WAV_OFFSET_BYTE_RATE = 28;
+const WAV_OFFSET_BLOCK_ALIGN = 32;
+const WAV_OFFSET_BITS_PER_SAMPLE = 34;
+const WAV_OFFSET_DATA = 36;
+const WAV_OFFSET_DATA_SIZE = 40;
+
+// WAV audio format constants
+const WAV_AUDIO_FORMAT_PCM = 1;
+const WAV_AUDIO_FORMAT_IEEE_FLOAT = 3;
+const WAV_FMT_CHUNK_SIZE = 16;
+const WAV_DATA_CHUNK_HEADER_SIZE = 36;
+
 // Audio converter format
 interface AudioConverterFormat {
   encodingType: number;
@@ -793,7 +824,7 @@ export struct AudioConversion {
       Logger.info(TAG, `Temp file size: ${tempFileSize} bytes`);
 
       const dataSize = tempFileSize;
-      const totalSize = dataSize + 44; // WAV header is 44 bytes
+      const totalSize = dataSize + WAV_HEADER_SIZE; // WAV header is 44 bytes
 
       // Create WAV header
       const header = this.createWavHeader(
@@ -807,12 +838,11 @@ export struct AudioConversion {
       fs.writeSync(outputFile.fd, header);
 
       // Copy PCM data in chunks to avoid blocking UI
-      const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
-      const buffer = new ArrayBuffer(CHUNK_SIZE);
+      const buffer = new ArrayBuffer(WAV_CHUNK_SIZE);
       let totalRead = 0;
 
       while (totalRead < tempFileSize) {
-        const readSize = Math.min(CHUNK_SIZE, tempFileSize - totalRead);
+        const readSize = Math.min(WAV_CHUNK_SIZE, tempFileSize - totalRead);
         const bytesRead = fs.readSync(tempFile.fd, buffer, { length: readSize });
         if (bytesRead === 0) break;
 
@@ -820,7 +850,7 @@ export struct AudioConversion {
         totalRead += bytesRead;
 
         // Yield to UI thread periodically
-        if (totalRead % (10 * CHUNK_SIZE) === 0) {
+        if (totalRead % (PROGRESS_UPDATE_INTERVAL * WAV_CHUNK_SIZE) === 0) {
           await new Promise<void>(resolve => setTimeout(resolve, 0));
           Logger.info(TAG, `Progress: ${totalRead}/${tempFileSize} bytes (${((totalRead / tempFileSize) * 100).toFixed(1)}%)`);
         }
@@ -898,22 +928,22 @@ export struct AudioConversion {
   private getBitsPerSample(sampleFormat: number): number {
     switch (sampleFormat) {
       case AudioSampleFormat.AUDIO_SAMPLE_U8:
-        return 8;
+        return BITS_PER_SAMPLE_8;
       case AudioSampleFormat.AUDIO_SAMPLE_S16LE:
-        return 16;
+        return BITS_PER_SAMPLE_16;
       case AudioSampleFormat.AUDIO_SAMPLE_S24LE:
-        return 24;
+        return BITS_PER_SAMPLE_24;
       case AudioSampleFormat.AUDIO_SAMPLE_S32LE:
       case AudioSampleFormat.AUDIO_SAMPLE_F32LE:
-        return 32;
+        return BITS_PER_SAMPLE_32;
       default:
-        return 16;
+        return BITS_PER_SAMPLE_16;
     }
   }
 
   private validateWavParameters(channels: number, sampleRate: number, bitsPerSample: number): void {
-    if (channels <= 0 || channels > 8) {
-      Logger.error(TAG, `unknown channel: ${channels}, WAV Supports 1~8 channels.`);
+    if (channels <= 0 || channels > MAX_CHANNELS) {
+      Logger.error(TAG, `unknown channel: ${channels}, WAV Supports 1~${MAX_CHANNELS} channels.`);
       throw new Error(`Invalid channel count: ${channels}`);
     }
 
@@ -922,15 +952,16 @@ export struct AudioConversion {
       throw new Error(`Invalid sample rate: ${sampleRate}`);
     }
 
-    if (bitsPerSample !== 8 && bitsPerSample !== 16 && bitsPerSample !== 24 && bitsPerSample !== 32) {
-      Logger.error(TAG, `unknown bitsPerSample: ${bitsPerSample}, Supports 8,16,24,32-bit.`);
+    if (bitsPerSample !== BITS_PER_SAMPLE_8 && bitsPerSample !== BITS_PER_SAMPLE_16 &&
+        bitsPerSample !== BITS_PER_SAMPLE_24 && bitsPerSample !== BITS_PER_SAMPLE_32) {
+      Logger.error(TAG, `unknown bitsPerSample: ${bitsPerSample}, Supports ${BITS_PER_SAMPLE_8},${BITS_PER_SAMPLE_16},${BITS_PER_SAMPLE_24},${BITS_PER_SAMPLE_32}-bit.`);
       throw new Error(`Unsupported bits per sample: ${bitsPerSample}`);
     }
   }
 
   private createWavHeader(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
     bitsPerSample: number, sampleFormat: number): ArrayBuffer {
-    const header = new ArrayBuffer(44);
+    const header = new ArrayBuffer(WAV_HEADER_SIZE);
     const dv = new DataView(header);
 
     const writeString = (dv: DataView, offset: number, string: string) => {
@@ -939,32 +970,32 @@ export struct AudioConversion {
       }
     };
 
-    writeString(dv, 0, 'RIFF');
-    const totalDataLen = pcmBuffer.byteLength + 36;
-    dv.setUint32(4, totalDataLen, true);
-    writeString(dv, 8, 'WAVE');
+    writeString(dv, WAV_OFFSET_RIFF, 'RIFF');
+    const totalDataLen = pcmBuffer.byteLength + WAV_DATA_CHUNK_HEADER_SIZE;
+    dv.setUint32(WAV_OFFSET_FILE_SIZE, totalDataLen, true);
+    writeString(dv, WAV_OFFSET_WAVE, 'WAVE');
 
-    writeString(dv, 12, 'fmt ');
-    dv.setUint32(16, 16, true);
+    writeString(dv, WAV_OFFSET_FMT, 'fmt ');
+    dv.setUint32(WAV_OFFSET_FMT_CHUNK_SIZE, WAV_FMT_CHUNK_SIZE, true);
 
-    if (bitsPerSample === 32 && sampleFormat === AudioSampleFormat.AUDIO_SAMPLE_F32LE) {
-      dv.setUint16(20, 3, true);
+    if (bitsPerSample === BITS_PER_SAMPLE_32 && sampleFormat === AudioSampleFormat.AUDIO_SAMPLE_F32LE) {
+      dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_IEEE_FLOAT, true);
     } else {
-      dv.setUint16(20, 1, true);
+      dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_PCM, true);
     }
 
-    dv.setUint16(22, channels, true);
-    dv.setUint32(24, sampleRate, true);
+    dv.setUint16(WAV_OFFSET_NUM_CHANNELS, channels, true);
+    dv.setUint32(WAV_OFFSET_SAMPLE_RATE, sampleRate, true);
 
     const byteRate = sampleRate * channels * (bitsPerSample / 8);
-    dv.setUint32(28, byteRate, true);
+    dv.setUint32(WAV_OFFSET_BYTE_RATE, byteRate, true);
 
     const blockAlign = channels * (bitsPerSample / 8);
-    dv.setUint16(32, blockAlign, true);
-    dv.setUint16(34, bitsPerSample, true);
+    dv.setUint16(WAV_OFFSET_BLOCK_ALIGN, blockAlign, true);
+    dv.setUint16(WAV_OFFSET_BITS_PER_SAMPLE, bitsPerSample, true);
 
-    writeString(dv, 36, 'data');
-    dv.setUint32(40, pcmBuffer.byteLength, true);
+    writeString(dv, WAV_OFFSET_DATA, 'data');
+    dv.setUint32(WAV_OFFSET_DATA_SIZE, pcmBuffer.byteLength, true);
 
     return header;
   }
