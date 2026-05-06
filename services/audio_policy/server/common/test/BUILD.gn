@@ -22,6 +22,7 @@ group("audio_policy_server_common_unittest_packages") {
   testonly = true
   deps = [
     ":audio_group_handle_unit_test",
+    ":multi_condition_waiter_unit_test",
     ":audio_secure_hash_unit_test",
   ]
 }
@@ -114,6 +115,36 @@ ohos_unittest("audio_secure_hash_unit_test") {
 
   sources = [
     "./unittest/audio_secure_hash_unit_test/audio_secure_hash_unit_test.cpp",
+  ]
+
+  deps = [
+    "../../../../audio_service/idl:audio_framework_interface",
+    "../../../../audio_policy:audio_policy_service",
+  ]
+}
+
+ohos_unittest("multi_condition_waiter_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../../include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "hilog:libhilog",
+  ]
+
+  sources = [
+    "../src/multi_condition_waiter.cpp",
+    "./unittest/multi_condition_waiter_unit_test/multi_condition_waiter_unit_test.cpp",
   ]
 
   deps = [
