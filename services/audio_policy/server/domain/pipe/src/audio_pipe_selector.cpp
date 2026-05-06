@@ -988,6 +988,43 @@ static bool IsMultiStreamPrimary(const std::string &pipeName)
            pipeName == "primary_hdmi_output" || pipeName == "primary_wireless_output";
 }
 
+static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (pipeInfoPtr->name_ == "fast_a2dp_output") {
+        info.moduleInfo_.className = "a2dp_fast";
+        info.moduleInfo_.fileName = "a2dp_fast_dump_file";
+        info.moduleInfo_.name = "FastA2DPRendererSink";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
+        info.moduleInfo_.bufferSize = "3840";
+    } else if (pipeInfoPtr->name_ == "fast_input") {
+        info.moduleInfo_.className = "primary_mmap";
+        info.moduleInfo_.fileName = "fast_source_dump_file";
+        info.moduleInfo_.name = "FastCapturerSource";
+        info.moduleInfo_.lib = "libmodule-hdi-source.z.so";
+        info.moduleInfo_.role = "source";
+    } else if (pipeInfoPtr->name_ == "voip_fast_input") {
+        info.moduleInfo_.className = "primary_mmap_voip";
+        info.moduleInfo_.fileName = "fast_voip_source_dump_file";
+        info.moduleInfo_.name = "FastVOIPCapturerSource";
+        info.moduleInfo_.lib = "libmodule-hdi-source.z.so";
+        info.moduleInfo_.role = "source";
+    } else if (pipeInfoPtr->name_ == "direct_output") {
+        info.moduleInfo_.className = "primary_direct";
+        info.moduleInfo_.fileName = "direct_dump_file";
+        info.moduleInfo_.lib = "libmodule-hdi=-sink.z.so";
+        info.moduleInfo_.name = "direct";
+        info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "voip_direct_output") {
+        info.moduleInfo_.className = "primary_direct_voip";
+        info.moduleInfo_.fileName = "direct_dump_file";
+        info.moduleInfo_.lib = "libmodule-hdi=-sink.z.so";
+        info.moduleInfo_.name = "voip";
+        info.moduleInfo_.role = "sink";
+    }
+}
+
 static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
     std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
 {
@@ -1017,10 +1054,20 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.name =
             AudioPolicyUtils::GetInstance().GetRemoteModuleName(streamDesc->newDeviceDescs_[0]->networkId_,
             AudioPolicyUtils::GetInstance().GetDeviceRole(streamDesc->newDeviceDescs_[0]->deviceType_)) + "_offload";
-    } else if (IsMultiStreamPrimary(pipeInfoPtr->name_)) {
-        info.moduleInfo_.className = "primary_extra";
-        // engine uses networkId to distinguish different renders
-        info.moduleInfo_.networkId = info.moduleInfo_.name;
+    } else if (pipeInfoPtr->name_ == "fast_output") {
+        info.moduleInfo_.className = info.GetUltraFastFlag() ? "ultra_fast" : "primary_mmap";
+        info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "ultra_fast_dump_file" : "fast_dump_file";
+        info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastRendererSink" : "FastRendererSink";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "voip_fast_output") {
+        info.moduleInfo_.className = "primary_mmap_voip";
+        info.moduleInfo_.fileName = "fast_voip_dump_file";
+        info.moduleInfo_.name = "FastVOIPRendererSink";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
+    } else {
+        FillSpecialPipeInfoExt(info, pipeInfoPtr, streamDesc, streamPropInfo);
     }
 }
 
@@ -1111,13 +1158,9 @@ AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
     CHECK_AND_RETURN_RET(!IsRemoteOffloadNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
-    CHECK_AND_RETURN_RET(!IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
 
     if (AudioPipeManager::GetPipeManager()->IsSamePipe(newPipe, oldPipe)) {
         return AUDIO_STREAM_ACTION_DEFAULT;
-    }
-    if (oldPipe->IsRouteFast() || newPipe->IsRouteFast() || oldPipe->IsRouteDirect() || newPipe->IsRouteDirect()) {
-        return AUDIO_STREAM_ACTION_RECREATE;
     }
     return AUDIO_STREAM_ACTION_MOVE;
 }

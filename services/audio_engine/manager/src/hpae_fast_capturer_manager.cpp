@@ -26,6 +26,7 @@
 #include "hpae_message_queue_monitor.h"
 #include "hpae_node_common.h"
 #include "hpae_stream_move_monitor.h"
+#include "safe_map.h"
 #include "audio_stream_enum.h"
 
 namespace OHOS {
@@ -328,7 +329,7 @@ int32_t HpaeFastCapturerManager::Start(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeFastCapturerManager::Pause(uint32_t sessionId)
+int32_t HpaeFastCapturerManager::Pause(uint32_t sessionId, bool isStandby)
 {
     auto request = [this, sessionId]() {
         auto node = SafeGetMap(sourceOutputNodeMap_, sessionId);

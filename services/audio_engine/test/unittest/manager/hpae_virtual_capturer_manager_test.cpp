@@ -706,6 +706,54 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerGetDeviceHDFD
 static constexpr uint32_t INVALID_TEST_SESSION_ID = 9999;
 
 /**
+ * @tc.name  : Test HpaeVirtualCapturerManager Pause API with isStandby
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVirtualCapturerManagerPauseWithStandby_001
+ * @tc.desc  : Test Pause with isStandby=true for virtual capturer
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerPauseWithStandby_001, TestSize.Level0)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Pause(sessionId, true);
+    EXPECT_EQ(ret, SUCCESS);
+    HpaeCaptureMoveInfo stream = capturerManager->captureStream_[sessionId];
+    EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name  : Test HpaeVirtualCapturerManager Pause API with isStandby=false
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVirtualCapturerManagerPauseWithStandby_002
+ * @tc.desc  : Test Pause with isStandby=false for virtual capturer
+ */
+HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerPauseWithStandby_002, TestSize.Level0)
+{
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Pause(sessionId, false);
+    EXPECT_EQ(ret, SUCCESS);
+    HpaeCaptureMoveInfo stream = capturerManager->captureStream_[sessionId];
+    EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
  * @tc.name  : FaultCode_Start_SessionNotExist
  * @tc.type  : FUNC
  * @tc.desc  : Test Start with non-existent sessionId returns SUCCESS via SendAudioErrorEvent,

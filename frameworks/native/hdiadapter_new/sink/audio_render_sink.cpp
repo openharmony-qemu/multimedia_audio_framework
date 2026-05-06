@@ -624,6 +624,11 @@ void AudioRenderSink::RegisterCurrentDeviceCallback(const std::function<void(boo
     deviceCallback_ = callback;
 }
 
+DeviceType AudioRenderSink::GetCurrentOutputDevice()
+{
+    return currentActiveDevice_;
+}
+
 void AudioRenderSink::HandleDeviceCallback(const bool state)
 {
     if (deviceCallback_ != nullptr) {

@@ -415,6 +415,11 @@ int32_t MultichannelAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> 
     return SUCCESS;
 }
 
+DeviceType MultichannelAudioRenderSink::GetCurrentOutputDevice()
+{
+    return currentActiveDevice_;
+}
+
 void MultichannelAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
 {
     if (currentActiveDevice_ == device) {

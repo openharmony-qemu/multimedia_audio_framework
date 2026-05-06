@@ -26,6 +26,7 @@ namespace HPAE {
 typedef std::chrono::high_resolution_clock::time_point TimePoint;
 enum HpaeMsgCode {
     UPDATE_STATUS,
+    UPDATE_SPAN_SIZE,
     INIT_DEVICE_RESULT,
     MOVE_SINK_INPUT,
     MOVE_ALL_SINK_INPUT,
@@ -141,6 +142,7 @@ struct HpaeDfxNodeInfo {
     std::string nodeName;
     SourceType sourceType;
     uint32_t routeFlag = 0;
+    bool keepRunning = false;
 
     uint32_t GetEffectiveSampleRate() const
     {

@@ -136,6 +136,8 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"remote", PIPE_TYPE_OUT_NORMAL},
     {"dp", PIPE_TYPE_OUT_NORMAL},
     {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
+    {"voip", PIPE_TYPE_OUT_DIRECT_NORMAL},
+    {"direct", PIPE_TYPE_OUT_DIRECT_NORMAL},
 };
 
 static std::map<HpaeSessionState, RendererState> g_hapeToRendererStateMap = {
@@ -371,12 +373,14 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
     sinkInfo.routeFlag = audioModuleInfo.routeFlag;
+    sinkInfo.isUltraFast = (audioModuleInfo.className == "ultra_fast");
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }
-    AUDIO_INFO_LOG("sink info ch: %{public}u, channelLayout: %{public}" PRIu64,
+    AUDIO_INFO_LOG("sink info ch: %{public}u, channelLayout: %{public}" PRIu64 ", routeFlag: %{public}u",
         sinkInfo.channels,
-        sinkInfo.channelLayout);
+        sinkInfo.channelLayout,
+        sinkInfo.routeFlag);
     return SUCCESS;
 }
 
@@ -587,6 +591,7 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
+    nodeInfo.keepRunning = streamInfo.keepRunning;
 }
 
 void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,

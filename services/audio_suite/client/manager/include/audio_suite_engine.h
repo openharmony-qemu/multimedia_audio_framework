@@ -80,6 +80,7 @@ public:
     // async interface
     int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) override;
     int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) override;
+    int32_t PrintInfo(uint32_t pipelineId, int32_t fd) override;
 
     // for queue and thread
     bool IsRunning(void) override;
@@ -107,6 +108,13 @@ private:
     void HandleMultiRenderFrame(int32_t result, uint32_t pipelineId);
     void HandleGetOptions(int32_t result);
     void HandleSetOptions(int32_t result);
+    void HandlePrintInfo(int32_t result, int32_t fd);
+
+private:
+    std::string GenerateTextSnapshot(uint32_t pipelineId, std::shared_ptr<IAudioSuitePipeline> targetPipeline);
+    void PrintPipelineSnapshotText(std::shared_ptr<IAudioSuitePipeline> pipeline, std::stringstream &ss);
+    void PrintNodeSnapshotText(std::shared_ptr<AudioNode> node, std::stringstream &ss);
+    int32_t WriteOutput(const std::string &content, int32_t fd);
 
 private:
     std::atomic<bool> isInit_ = false;

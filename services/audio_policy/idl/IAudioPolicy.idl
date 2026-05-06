@@ -344,4 +344,7 @@ interface IAudioPolicy {
     void SetRegisterStateChangeCallbackFlag([in] boolean stateChangeCallbackFlag);
     void GetSessionDebugInfo([out] sharedptr<AudioSessionDebugInfo> sessionDebugInfo);
     void GetCurrentRendererChangeInfosForZone([in] int zoneId, [out] List<sharedptr<AudioRendererChangeInfo>> infos);
+    void CreateLoopback([in] int mode, [in] int type, [in] IRemoteObject cbObject, [out] IRemoteObject loopback,
+        [out] int ret);
+    void DestroyLoopback([in] int type, [out] int ret);
 }

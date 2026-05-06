@@ -42,6 +42,22 @@ static const std::map<std::pair<SourceType, SourceType>, InterruptHint> ULTRASON
     {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, INTERRUPT_HINT_NONE}
 };
 
+bool AudioInterruptCustom::IsUltrasonicConcurrentScene(SourceType firstSourceType,
+    SourceType secondSourceType) const
+{
+    if (firstSourceType != SOURCE_TYPE_ULTRASONIC && secondSourceType != SOURCE_TYPE_ULTRASONIC) {
+        return false;
+    }
+    if (!SolePipe::IsSolePipeSource(SOURCE_TYPE_ULTRASONIC)) {
+        return false;
+    }
+
+    std::pair<SourceType, SourceType> ultraSonicFocus = {firstSourceType, secondSourceType};
+    bool isConcurrentScene = ULTRASONIC_MAP.find(ultraSonicFocus) != ULTRASONIC_MAP.end() ||
+        ULTRASONIC_STRATEGY_MAP.find(ultraSonicFocus) != ULTRASONIC_STRATEGY_MAP.end();
+    return isConcurrentScene;
+}
+
 void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {

@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_loopback_private.h"
+#include "audio_loopback_wrapper.h"
 #include "audio_manager_log.h"
 #include "audio_errors.h"
 #include "audio_stream_info.h"
@@ -82,18 +83,38 @@ static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopbac
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
-    if (mode == LOOPBACK_HARDWARE) {
-        static std::shared_ptr<AudioLoopbackPrivate> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
-        static bool registered = false;
-        if (!registered) {
-            RegisterAudioLoopbackDebugManager(instance);
-            registered = true;
-        }
-        return instance;
+    int32_t result = SUCCESS;
+    return CreateAudioLoopback(mode, LOOPBACK_TYPE_NORMAL, result, appInfo);
+}
+
+std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, LoopbackType type,
+    int32_t &result, const AppInfo &appInfo)
+{
+    if (mode != LOOPBACK_HARDWARE) {
+        AUDIO_ERR_LOG("Invalid mode %{public}d", mode);
+        result = ERROR_PLATFORM_NOT_SUPPORT;
+        return nullptr;
     }
 
-    AUDIO_ERR_LOG("Invalid mode");
-    return nullptr;
+    auto wrapper = std::make_shared<AudioLoopbackWrapper>(mode, type, appInfo);
+    if (wrapper == nullptr) {
+        AUDIO_ERR_LOG("create AudioLoopbackWrapper failed");
+        result = ERR_UNKNOWN;
+        return nullptr;
+    }
+
+    result = wrapper->Init();
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("AudioLoopbackWrapper Init failed, result %{public}d", result);
+        return nullptr;
+    }
+
+    static bool registered = false;
+    if (!registered) {
+        RegisterAudioLoopbackDebugManager(wrapper);
+        registered = true;
+    }
+    return wrapper;
 }
 
 void AudioLoopbackPrivate::ReportAudioLoopbackException(const AudioLoopbackReportInfo &info)
@@ -110,8 +131,9 @@ void AudioLoopbackPrivate::ReportAudioLoopbackException(const AudioLoopbackRepor
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo)
+AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo, bool isGlobal)
 {
+    isGlobal_ = isGlobal;
     appInfo_ = appInfo;
     if (appInfo_.appPid == 0) {
         appInfo_.appPid = getpid();

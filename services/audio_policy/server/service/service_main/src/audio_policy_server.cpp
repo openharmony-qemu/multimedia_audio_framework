@@ -197,6 +197,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
+    loopbackManager_ = std::make_shared<AudioLoopbackManager>();
+
     powerStateCallbackRegister_ = false;
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
     screenOffAdjustVolumeEnable_ = system::GetBoolParameter("const.audio.screenoff_adjust_volume_enable", false);
@@ -1542,7 +1544,8 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
     AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
         streamType, mute, isUpdateUi);
 
-    if (streamType == STREAM_NOTIFICATION && audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION &&
+        audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
         AUDIO_INFO_LOG("Cannot unmute the notification volume because of the SILENT or VIBRATE mode");
         return ERR_OPERATION_FAILED;
     }
@@ -2738,6 +2741,11 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     } else {
         ret = UpdateAudioSceneAfterActivateInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
     }
+    if (ret == SUCCESS && eventEntry_ != nullptr) {
+        eventEntry_->UpdateVoipNoPrivacyFlagBySessionId(audioInterrupt.streamId,
+            audioInterrupt.behaviorFlags_.voipNoPrivacyFlag,
+            "AudioPolicyServer::ActivateAudioInterrupt");
+    }
     if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
@@ -3306,6 +3314,8 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
 
     // Keep mute-hint state and bypass decision consistent with stream cleanup after tracker death.
     coreService_->ReEvaluateVoipBypassByAppMuteHint();
+    CHECK_AND_RETURN_LOG(eventEntry_ != nullptr, "eventEntry_ is nullptr");
+    eventEntry_->ReEvaluateVoipPrivacyMuteForCapturers("AudioPolicyServer::RegisteredTrackerClientDied");
 }
 
 void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
@@ -3564,6 +3574,8 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
         for (const auto &sessionID : sessionIDSet) {
             AudioServerProxy::GetInstance().SetLatestMuteState(sessionID, targetMuteState);
         }
+        server_->ReEvaluateVoipPrivacyMuteForCapturers(
+            "AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallback");
     }
 }
 
@@ -5140,6 +5152,12 @@ int32_t AudioPolicyServer::SetAudioSessionCapturerMuteHint(bool mute)
     return sessionService_.SetAudioSessionCapturerMuteHint(callerPid, mute);
 }
 
+void AudioPolicyServer::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
+{
+    CHECK_AND_RETURN_LOG(eventEntry_ != nullptr, "eventEntry_ is nullptr");
+    eventEntry_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+}
+
 int32_t AudioPolicyServer::GetDefaultOutputDevice(int32_t &deviceType)
 {
     if (eventEntry_ == nullptr) {
@@ -5851,7 +5869,15 @@ int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t callerUid = IPCSkeleton::GetCallingUid();
-    return interruptService_->SetAudioSessionBehavior(callerPid, behavior, callerUid);
+    int32_t ret = interruptService_->SetAudioSessionBehavior(callerPid, behavior, callerUid);
+    if (ret == SUCCESS) {
+        bool enabled = (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) != 0;
+        AUDIO_INFO_LOG("VoipPrivacy SetAudioSessionBehavior update descriptor pid:%{public}d enabled:%{public}d",
+            callerPid, enabled);
+        eventEntry_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled,
+            "AudioPolicyServer::SetAudioSessionBehavior");
+    }
+    return ret;
 }
 
 int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
@@ -5878,6 +5904,35 @@ int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
     for (const auto &zone : audioZones) {
         audioVolumeManager_.TriggerAudioZoneVolumeSync(zone->zoneId_);
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::CreateLoopback(int32_t mode, int32_t type,
+    const sptr<IRemoteObject> &cbObject, sptr<IRemoteObject> &loopback, int32_t &ret)
+{
+    ret = ERR_INVALID_PARAM;
+    CHECK_AND_RETURN_RET_LOG(loopbackManager_ != nullptr, SUCCESS, "loopbackManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(cbObject != nullptr, SUCCESS, "cbObject is nullptr");
+
+    sptr<ILoopbackCallback> callbackProxy = iface_cast<ILoopbackCallback>(cbObject);
+    CHECK_AND_RETURN_RET_LOG(callbackProxy != nullptr, SUCCESS, "iface_cast ILoopbackCallback failed");
+
+    LoopbackType loopbackType = static_cast<LoopbackType>(type);
+    if (loopbackType != LOOPBACK_TYPE_NORMAL) {
+        ret = ERR_SYSTEM_PERMISSION_DENIED;
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), SUCCESS, "no system permission");
+    }
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    ret = loopbackManager_->CreateLoopback(static_cast<AudioLoopbackMode>(mode),
+        loopbackType, callbackProxy, loopback, pid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::DestroyLoopback(int32_t type, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(loopbackManager_ != nullptr, ERR_NULL_POINTER, "loopbackManager is nullptr");
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    ret = loopbackManager_->DestroyLoopback(static_cast<LoopbackType>(type), pid);
     return SUCCESS;
 }
 } // namespace AudioStandard

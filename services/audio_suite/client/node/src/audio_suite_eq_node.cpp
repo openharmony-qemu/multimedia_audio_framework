@@ -83,6 +83,16 @@ int32_t AudioSuiteEqNode::DeInit()
     return ERROR;
 }
 
+int32_t AudioSuiteEqNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    std::string optionValue = "";
+    int32_t ret = GetOptions("AudioEqualizerFrequencyBandGains", optionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !optionValue.empty()), ERROR, "GetOptions Error");
+    nodeInfo = "    Gains: " +
+        AudioSuiteUtil::FormatOptionsValue("AudioEqualizerFrequencyBandGains", optionValue) + "\n";
+    return SUCCESS;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS

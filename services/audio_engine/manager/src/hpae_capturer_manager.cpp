@@ -505,7 +505,7 @@ int32_t HpaeCapturerManager::DisConnectOutputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
+int32_t HpaeCapturerManager::Pause(uint32_t sessionId, bool isStandby)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Pause");

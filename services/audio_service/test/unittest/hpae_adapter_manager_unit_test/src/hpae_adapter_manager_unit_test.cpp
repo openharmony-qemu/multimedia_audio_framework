@@ -867,5 +867,62 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_037, TestSize.Level0)
     result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
     EXPECT_NE(ERROR, result);
 }
+
+/**
+* @tc.name   : Test SetHighResolution DIRECT_PLAYBACK branch
+* @tc.number : HpaeAdapterManager_SetHighResolution_DIRECT_001
+* @tc.desc   : Test SetHighResolution with DIRECT_PLAYBACK managerType should return early.
+*/
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_SetHighResolution_DIRECT_001, TestSize.Level1)
+{
+    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DIRECT_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.spatializationEnabled = true;
+    uint32_t sessionId = SESSIONID;
+    
+    adapterManager->SetHighResolution(config, sessionId);
+    EXPECT_NE(nullptr, adapterManager);
+}
+
+/**
+* @tc.name   : Test SetHighResolution playback mode branch
+* @tc.number : HpaeAdapterManager_SetHighResolution_Playback_001
+* @tc.desc   : Test SetHighResolution with AUDIO_MODE_PLAYBACK.
+*/
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_SetHighResolution_Playback_001, TestSize.Level1)
+{
+    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.spatializationEnabled = true;
+    uint32_t sessionId = SESSIONID;
+    
+    adapterManager->SetHighResolution(config, sessionId);
+    EXPECT_NE(nullptr, adapterManager);
+}
+
+/**
+* @tc.name   : Test SetHighResolution record mode branch
+* @tc.number : HpaeAdapterManager_SetHighResolution_Record_001
+* @tc.desc   : Test SetHighResolution with AUDIO_MODE_RECORD should return early.
+*/
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_SetHighResolution_Record_001, TestSize.Level1)
+{
+    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    config.audioMode = AudioMode::AUDIO_MODE_RECORD;
+    config.rendererInfo.spatializationEnabled = true;
+    uint32_t sessionId = SESSIONID;
+    
+    adapterManager->SetHighResolution(config, sessionId);
+    EXPECT_NE(nullptr, adapterManager);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -4036,5 +4036,255 @@ HWTEST_F(RendererInServerUnitTest, UpdateUnderrunInfo_003, TestSize.Level1)
     ret = rendererInServer->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OnStatusUpdate OPERATION_UPDATE_SPANSIZE
+ * @tc.type  : FUNC
+ * @tc.number: OnStatusUpdate_UpdateSpanSize_001
+ * @tc.desc  : Test OnStatusUpdate with OPERATION_UPDATE_SPANSIZE operation.
+ */
+HWTEST_F(RendererInServerUnitTest, OnStatusUpdate_UpdateSpanSize_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->OnStatusUpdate(OPERATION_UPDATE_SPANSIZE);
+    EXPECT_NE(nullptr, rendererInServer);
+}
+
+/**
+ * @tc.name  : Test RefreshServerBufferForSpanSizeUpdate
+ * @tc.type  : FUNC
+ * @tc.number: RefreshServerBufferForSpanSizeUpdate_001
+ * @tc.desc  : Test RefreshServerBufferForSpanSizeUpdate with normal stream.
+ */
+HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate();
+    EXPECT_NE(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamStatusByRendererState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStreamStatusByRendererState_001
+ * @tc.desc  : Test UpdateStreamStatusByRendererState with started state.
+ */
+HWTEST_F(RendererInServerUnitTest, UpdateStreamStatusByRendererState_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->status_ = I_STATUS_STARTED;
+    rendererInServer->UpdateStreamStatusByRendererState();
+    EXPECT_NE(nullptr, rendererInServer);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamStatusByRendererState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStreamStatusByRendererState_002
+ * @tc.desc  : Test UpdateStreamStatusByRendererState with paused state.
+ */
+HWTEST_F(RendererInServerUnitTest, UpdateStreamStatusByRendererState_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->status_ = I_STATUS_PAUSED;
+    rendererInServer->UpdateStreamStatusByRendererState();
+    EXPECT_NE(nullptr, rendererInServer);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamStatusByRendererState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStreamStatusByRendererState_003
+ * @tc.desc  : Test UpdateStreamStatusByRendererState with stopped state.
+ */
+HWTEST_F(RendererInServerUnitTest, UpdateStreamStatusByRendererState_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->status_ = I_STATUS_STOPPED;
+    rendererInServer->UpdateStreamStatusByRendererState();
+    EXPECT_NE(nullptr, rendererInServer);
+}
+
+/**
+ * @tc.name  : Test OnWriteDataNoWake API
+ * @tc.type  : FUNC
+ * @tc.number: OnWriteDataNoWake_001
+ * @tc.desc  : Test OnWriteDataNoWake interface.
+ */
+HWTEST_F(RendererInServerUnitTest, OnWriteDataNoWake_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    int8_t data[1024] = {0};
+    ret = rendererInServer->OnWriteDataNoWake(data, 1024);
+    EXPECT_NE(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test WakeClientFutex API
+ * @tc.type  : FUNC
+ * @tc.number: WakeClientFutex_001
+ * @tc.desc  : Test WakeClientFutex with audioServerBuffer.
+ */
+HWTEST_F(RendererInServerUnitTest, WakeClientFutex_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->WakeClientFutex();
+    EXPECT_NE(nullptr, rendererInServer);
+}
+
+/**
+ * @tc.name  : Test WakeClientFutex without buffer
+ * @tc.type  : FUNC
+ * @tc.number: WakeClientFutex_002
+ * @tc.desc  : Test WakeClientFutex when audioServerBuffer is null.
+ */
+HWTEST_F(RendererInServerUnitTest, WakeClientFutex_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->audioServerBuffer_ = nullptr;
+    rendererInServer->WakeClientFutex();
+    EXPECT_NE(nullptr, rendererInServer);
+}
+
+/**
+ * @tc.name  : Test GetLatency with enableNewRoute
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_NewRoute_001
+ * @tc.desc  : Test GetLatency when enableNewRoute is enabled.
+ */
+HWTEST_F(RendererInServerUnitTest, GetLatency_NewRoute_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->managerType_ = DIRECT_PLAYBACK;
+    uint64_t latency = 0;
+    ret = rendererInServer->GetLatency(latency);
+    EXPECT_NE(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test Release with loopback renderer
+ * @tc.type  : FUNC
+ * @tc.number: Release_Loopback_001
+ * @tc.desc  : Test Release with loopback renderer info.
+ */
+HWTEST_F(RendererInServerUnitTest, Release_Loopback_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.isLoopback = true;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->Release();
+    EXPECT_NE(nullptr, rendererInServer);
+}
+
+/**
+ * @tc.name  : Test StartInner with FAST stream
+ * @tc.type  : FUNC
+ * @tc.number: StartInner_FastBypass_001
+ * @tc.desc  : Test StartInner bypasses WaitForDataConnection for FAST stream.
+ */
+HWTEST_F(RendererInServerUnitTest, StartInner_FastBypass_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->status_ = I_STATUS_PAUSED;
+    ret = rendererInServer->Start();
+    EXPECT_NE(SUCCESS, ret);
+}
+
+HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_ZeroSpan_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    rendererInServer->spanSizeInFrame_ = 0;
+    rendererInServer->RefreshServerBufferForSpanSizeUpdate();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -322,8 +322,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released!");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG((stateListener != nullptr && playerDfx_ != nullptr), "nullptr");
-    CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
-        "stream status is nullptr");
+    CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, "stream status is nullptr");
     switch (operation) {
         case OPERATION_STARTED:
             HandleOperationStarted();
@@ -337,11 +336,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 CheckAndWriterRenderStreamStandbySysEvent(true);
                 return;
             }
-            status_ = I_STATUS_PAUSED;
-            stateListener->OnOperationHandled(PAUSE_STREAM, 0);
-            audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
-            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
-            OnCheckActiveMusicTime("Paused");
+            HandleOperationPaused(stateListener);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
@@ -349,6 +344,9 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
             HandleOperationStopped(RENDERER_STAGE_STOP_OK);
             OnCheckActiveMusicTime("Stopped");
+            break;
+        case OPERATION_UPDATE_SPANSIZE:
+            RefreshServerBufferForSpanSizeUpdate();
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -614,6 +612,15 @@ int32_t RendererInServer::GetStandbyStatus(bool &isStandby, int64_t &enterStandb
         enterStandbyTime = 0;
     }
     return SUCCESS;
+}
+
+void RendererInServer::HandleOperationPaused(std::shared_ptr<IStreamListener> stateListener)
+{
+    status_ = I_STATUS_PAUSED;
+    stateListener->OnOperationHandled(PAUSE_STREAM, 0);
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+    playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
+    OnCheckActiveMusicTime("Paused");
 }
 
 void RendererInServer::HandleOperationFlushed()
@@ -928,6 +935,9 @@ int32_t RendererInServer::WriteData()
         ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
         uint64_t nextReadFrame = currentReadFrame + (ringBufferDesc.dataLength / byteSizePerFrame_);
+        Trace::Count(traceTag_ + " CurrentReadFrame", static_cast<int64_t>(currentReadFrame));
+        Trace::Count(traceTag_ + " NextReadFrame", static_cast<int64_t>(nextReadFrame));
+        Trace::Count(traceTag_ + " CurrentWriteFrame", static_cast<int64_t>(currentWriteFrame));
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
     standByCounter_ = 0;
@@ -1006,7 +1016,7 @@ void RendererInServer::DetectLatency(uint8_t *inputData, size_t requestDataLen)
     LatencyMonitor::GetInstance().UpdateRendererInServerTime(signalDetectAgent_->lastPeakBufferTime_);
 }
 
-int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
+int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen, bool wakeFutex)
 {
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
 
@@ -1041,7 +1051,7 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
     CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
     ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
     uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
-    audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+    audioServerBuffer_->SetCurReadFrame(nextReadFrame, wakeFutex);
 
     return SUCCESS;
 }
@@ -1243,6 +1253,79 @@ int32_t RendererInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
     return SUCCESS;
 }
 
+void RendererInServer::UpdateStreamStatusByRendererState()
+{
+    CHECK_AND_RETURN(audioServerBuffer_ != nullptr && audioServerBuffer_->GetStreamStatus() != nullptr);
+    switch (status_.load()) {
+        case I_STATUS_STARTED:
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+            break;
+        case I_STATUS_PAUSED:
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+            break;
+        case I_STATUS_STOPPED:
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
+            break;
+        default:
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_IDEL);
+            break;
+    }
+}
+
+int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
+{
+    std::lock_guard<std::mutex> lock(writeLock_);
+    AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate begin, sessionId:%{public}u oldSpan:%{public}zu",
+        streamIndex_, spanSizeInFrame_);
+    
+    size_t newSpanSizeInFrame = 0;
+    stream_->GetSpanSizePerFrame(newSpanSizeInFrame);
+    stream_->GetByteSizePerFrame(byteSizePerFrame_);
+    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu", newSpanSizeInFrame);
+    
+    size_t newEngineSizeInFrame = newSpanSizeInFrame;
+    if (processConfig_.rendererInfo.rendererFlags != AUDIO_FLAG_MMAP &&
+        processConfig_.rendererInfo.rendererFlags != AUDIO_FLAG_VOIP_FAST) {
+        newEngineSizeInFrame = newSpanSizeInFrame * DEFAULT_SPAN_SIZE;
+    }
+    
+    uint32_t newRouteFlag = stream_->GetRouteFlag();
+    
+    if (audioServerBuffer_ != nullptr && newSpanSizeInFrame > 0) {
+        AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
+            "routeFlag:%{public}u isLowLatency:%{public}d",
+            streamIndex_, newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag,
+            processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_MMAP ||
+            processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST);
+        audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
+    }
+    
+    if (newRouteFlag != 0 && newRouteFlag != processConfig_.rendererInfo.rendererFlags) {
+        AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
+            processConfig_.rendererInfo.rendererFlags, newRouteFlag);
+        processConfig_.rendererInfo.rendererFlags = newRouteFlag;
+    }
+    
+    spanSizeInFrame_ = newSpanSizeInFrame;
+    engineTotalSizeInFrame_ = newEngineSizeInFrame;
+    spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
+    
+    if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+        (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
+        bufferTotalSizeInFrame_ = (spanSizeInByte_ + AVS3METADATA_SIZE) * DEFAULT_SPAN_SIZE;
+    }
+    
+    uint32_t sampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
+        processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
+    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND / sampleRate;
+    audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
+    
+    AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate success, sessionId:%{public}u newSpan:%{public}zu "
+        "engineTotal:%{public}zu spanByte:%{public}zu audioCheckFreq:%{public}u",
+        streamIndex_, spanSizeInFrame_, engineTotalSizeInFrame_, spanSizeInByte_, audioCheckFreq_);
+    return SUCCESS;
+}
+
 int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetSessionId failed, stream_ is null");
@@ -1381,11 +1464,13 @@ int32_t RendererInServer::StartInner()
             PLAY_START_OPERATION_FAILED, "Policy start client failed", false),
         HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
 
-    // Bluetooth connection may take a long time, which may cause the data before and after the connection
-    // are not continuous, resulting in pop sounds. To avoid the problem,
-    // WaitForDataConnection() needs to be called after UpdateSessionOperation(), where device is activated,
-    // and also before stream_->Start(), where the stream is actually started.
-    WaitForDataConnection();
+    if (!(processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST)) {
+        // Bluetooth connection may take a long time, which may cause the data before and after the connection
+        // are not continuous, resulting in pop sounds. To avoid the problem,
+        // WaitForDataConnection() needs to be called after UpdateSessionOperation(), where device is activated,
+        // and also before stream_->Start(), where the stream is actually started.
+        WaitForDataConnection();
+    }
 
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK ||
         managerType_ == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) ?
@@ -1786,6 +1871,10 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
+    if (processConfig_.rendererInfo.isLoopback) {
+        AudioService::GetInstance()->SetDecMaxLoopbackStreamCnt(processConfig_.audioMode);
+        AudioService::GetInstance()->DisableLoopback();
+    }
 
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
@@ -1877,7 +1966,9 @@ int32_t RendererInServer::GetSpeedPosition(uint64_t &framePos, uint64_t &timesta
 int32_t RendererInServer::GetLatency(uint64_t &latency)
 {
     std::unique_lock<std::mutex> lock(statusLock_);
-    if (managerType_ == DIRECT_PLAYBACK) {
+    int32_t enableNewRoute = 0;
+    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    if (managerType_ == DIRECT_PLAYBACK && enableNewRoute == 0) {
         latency = IStreamManager::GetPlaybackManager(managerType_).GetLatency();
         return SUCCESS;
     }
@@ -3122,8 +3213,18 @@ void RendererInServer::WaitForDataConnection()
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
+    return OnWriteDataInternal(inputData, requestDataLen, true);
+}
+
+int32_t RendererInServer::OnWriteDataNoWake(int8_t *inputData, size_t requestDataLen)
+{
+    return OnWriteDataInternal(inputData, requestDataLen, false);
+}
+
+int32_t RendererInServer::OnWriteDataInternal(int8_t *inputData, size_t requestDataLen, bool wakeFutex)
+{
     writeCount_.fetch_add(1);
-    int32_t ret = SelectModeAndWriteData(inputData, requestDataLen);
+    int32_t ret = SelectModeAndWriteData(inputData, requestDataLen, wakeFutex);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     DetectLatency(reinterpret_cast<uint8_t*>(inputData), requestDataLen);
 
@@ -3143,6 +3244,13 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 
     OnWriteDataFinish();
     return SUCCESS;
+}
+
+void RendererInServer::WakeClientFutex()
+{
+    if (audioServerBuffer_ != nullptr) {
+        audioServerBuffer_->WakeFutex();
+    }
 }
 
 int32_t RendererInServer::UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal)
@@ -3190,12 +3298,12 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
     return SUCCESS;
 }
 
-int32_t RendererInServer::SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen)
+int32_t RendererInServer::SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen, bool wakeFutex)
 {
     if (processConfig_.rendererInfo.isStatic) {
         return WriteDataInStaticMode(inputData, requestDataLen);
     } else {
-        return WriteData(inputData, requestDataLen);
+        return WriteData(inputData, requestDataLen, wakeFutex);
     }
 }
 

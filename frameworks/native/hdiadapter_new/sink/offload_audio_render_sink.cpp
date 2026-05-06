@@ -853,6 +853,11 @@ int32_t OffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outp
     return ret;
 }
 
+DeviceType OffloadAudioRenderSink::GetCurrentOutputDevice()
+{
+    return currentActiveDevice_;
+}
+
 bool OffloadAudioRenderSink::IsInA2dpOffload()
 {
     return currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP;

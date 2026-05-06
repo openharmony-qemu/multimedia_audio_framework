@@ -923,6 +923,7 @@ IAudioStream::StreamClass AudioCapturerPrivate::DecideStreamClassAndUpdateCaptur
             capturerInfo_.pipeType = PIPE_TYPE_IN_VOIP;
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
+            capturerInfo_.originalFlag = AUDIO_FLAG_MMAP;
             capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
             capturerInfo_.pipeType = PIPE_TYPE_IN_LOWLATENCY;
             ret = IAudioStream::StreamClass::FAST_STREAM;
@@ -2699,13 +2700,16 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     targetClass = DecideStreamClassAndUpdateCapturerInfo(flag);
     if (targetClass == IAudioStream::VOIP_STREAM) {
         switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+        switchInfo.capturerInfo.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+    } else if (targetClass == IAudioStream::FAST_STREAM) {
+        switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
+        switchInfo.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
     }
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(newAudioStream != nullptr, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_NULL_POINTER, "GetRecordStream failed", true),
-        "GetRecordStream failed.");
+        RECORD_DEVICE_SWITCH_NULL_POINTER, "GetRecordStream failed", true), "GetRecordStream failed.");
 
     // set new stream info
     int32_t initResult = SetSwitchInfo(switchInfo, newAudioStream);
@@ -2713,7 +2717,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(FallbackToNormalStreamForGenerateNewStream(restoreInfo, streamDesc, flag,
             switchInfo, newAudioStream), false,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_DEVICE_SWITCH_OPERATION_FAILED, "FallbackToNormalStreamForGenerateNewStream failed", true),
+            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "FallbackToNormalStreamForGenerateNewStream failed", true),
             "FallbackToNormalStreamForGenerateNewStream failed");
     }
 
@@ -2725,13 +2729,12 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     auto checkRet = CheckForGenerateNewStream();
     CHECK_AND_CALL_FUNC_RETURN_RET(checkRet == true, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "UpdatePlaybackCaptureConfig Failed", true));
+        RECORD_DEVICE_SWITCH_OPERATION_FAILED, "UpdatePlaybackCaptureConfig Failed", true));
 
     bool restartResult = RestartAudioStream(newAudioStream, previousState);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(restartResult, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "start new stream failed", true),
-        "start new stream failed.");
+        RECORD_DEVICE_SWITCH_OPERATION_FAILED, "start new stream failed", true), "start new stream failed.");
     return true;
 }
 

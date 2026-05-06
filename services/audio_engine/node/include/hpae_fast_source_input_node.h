@@ -27,6 +27,7 @@
 #include "hpae_pcm_buffer.h"
 #include "linear_pos_time_model.h"
 #include "manager/hdi_adapter_manager.h"
+#include "oh_audio_buffer.h"
 #include "source/i_audio_capture_source.h"
 
 namespace OHOS {

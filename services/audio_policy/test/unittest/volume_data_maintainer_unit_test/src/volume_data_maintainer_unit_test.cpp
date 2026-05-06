@@ -116,7 +116,6 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     int32_t zoneId = 0;
 
     volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume, zoneId);
-    EXPECT_EQ(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
 
     int32_t retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, STREAM_ALL, zoneId);
     EXPECT_NE(retVolumeDegree, volumeDegree);
@@ -128,7 +127,6 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
 
     volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume, zoneId);
-    EXPECT_GT(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
 
     volumeDataMaintainer->SaveVolumeToMap(device, STREAM_MUSIC, volume, zoneId);
     retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, streamType, zoneId);
@@ -265,32 +263,32 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_016, TestSize.
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     DeviceType deviceTypeRet = DEVICE_TYPE_BLUETOOTH_SCO;
 
-    auto ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    auto ret = volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
     std::string typeRet = "_wireless";
     EXPECT_EQ(ret, typeRet);
 
     deviceTypeRet = DEVICE_TYPE_USB_ARM_HEADSET;
-    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    ret = volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
     typeRet = "_wired";
     EXPECT_EQ(ret, typeRet);
 
     deviceTypeRet = DEVICE_TYPE_REMOTE_CAST;
-    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    ret = volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
     typeRet = "_remote_cast";
     EXPECT_EQ(ret, typeRet);
     
     deviceTypeRet = DEVICE_TYPE_NEARLINK;
-    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    ret = volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
     typeRet = "_wireless";
     EXPECT_EQ(ret, typeRet);
 
     deviceTypeRet = DEVICE_TYPE_NONE;
-    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    ret = volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
     typeRet = "";
     EXPECT_EQ(ret, typeRet);
 
     deviceTypeRet = DEVICE_TYPE_HEARING_AID;
-    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    ret = volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
     typeRet = "_hearing_aid";
     EXPECT_EQ(ret, typeRet);
 }
@@ -403,7 +401,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetMuteAffectedToMuteStatusDataBase_001, Te
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -421,7 +418,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_002, TestSize.Level1)
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -441,7 +437,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_003, TestSize.Level1)
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -460,7 +455,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_004, TestSize.Level1)
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -479,7 +473,6 @@ HWTEST(VolumeDataMaintainerUnitTest, GetRestoreVolumeLevel_001, TestSize.Level1)
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -498,7 +491,6 @@ HWTEST(VolumeDataMaintainerUnitTest, GetRestoreVolumeLevel_002, TestSize.Level1)
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 

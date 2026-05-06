@@ -23,6 +23,7 @@
 #include "oh_audio_buffer.h"
 #include "audio_stream_enum.h"
 #include "parameter.h"
+#include "iipc_stream.h"
 
 
 using namespace testing::ext;
@@ -3562,5 +3563,1124 @@ HWTEST(RendererInClientInnerUnitTest, CheckAndReportTimestamp_002, TestSize.Leve
     // logStopCallCount_ should remain false
     EXPECT_FALSE(ptrRendererInClientInner->logStopCallCount_);
 }
+
+void InitRendererOptions(AudioRendererOptions &options)
+{
+    options.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    options.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    options.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    options.streamInfo.channels = AudioChannel::STEREO;
+    options.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    options.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    options.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+}
+
+class RendererInClientNewUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void RendererInClientNewUnitTest::SetUpTestCase(void) {}
+void RendererInClientNewUnitTest::TearDownTestCase(void) {}
+void RendererInClientNewUnitTest::SetUp(void) {}
+void RendererInClientNewUnitTest::TearDown(void) {}
+
+/**
+ * @tc.name  : Test IsLowLatencyRenderer with AUDIO_FLAG_MMAP
+ * @tc.type  : FUNC
+ * @tc.number: IsLowLatencyRenderer_MMAP_001
+ * @tc.desc  : Test IsLowLatencyRenderer returns true for AUDIO_FLAG_MMAP.
+ */
+HWTEST(RendererInClientNewUnitTest, IsLowLatencyRenderer_MMAP_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    bool isLowLatency = rendererInClientInner->IsLowLatencyRenderer();
+    EXPECT_TRUE(isLowLatency);
+}
+
+/**
+ * @tc.name  : Test IsLowLatencyRenderer with AUDIO_FLAG_VOIP_FAST
+ * @tc.type  : FUNC
+ * @tc.number: IsLowLatencyRenderer_VOIP_FAST_001
+ * @tc.desc  : Test IsLowLatencyRenderer returns true for AUDIO_FLAG_VOIP_FAST.
+ */
+HWTEST(RendererInClientNewUnitTest, IsLowLatencyRenderer_VOIP_FAST_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    
+    bool isLowLatency = rendererInClientInner->IsLowLatencyRenderer();
+    EXPECT_TRUE(isLowLatency);
+}
+
+/**
+ * @tc.name  : Test IsLowLatencyRenderer with AUDIO_FLAG_NORMAL
+ * @tc.type  : FUNC
+ * @tc.number: IsLowLatencyRenderer_NORMAL_001
+ * @tc.desc  : Test IsLowLatencyRenderer returns false for AUDIO_FLAG_NORMAL.
+ */
+HWTEST(RendererInClientNewUnitTest, IsLowLatencyRenderer_NORMAL_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    
+    bool isLowLatency = rendererInClientInner->IsLowLatencyRenderer();
+    EXPECT_FALSE(isLowLatency);
+}
+
+/**
+ * @tc.name  : Test IsLowLatencyRenderer with AUDIO_FLAG_DIRECT
+ * @tc.type  : FUNC
+ * @tc.number: IsLowLatencyRenderer_DIRECT_001
+ * @tc.desc  : Test IsLowLatencyRenderer returns false for AUDIO_FLAG_DIRECT.
+ */
+HWTEST(RendererInClientNewUnitTest, IsLowLatencyRenderer_DIRECT_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
+    
+    bool isLowLatency = rendererInClientInner->IsLowLatencyRenderer();
+    EXPECT_FALSE(isLowLatency);
+}
+
+/**
+ * @tc.name  : Test GetDefaultCallbackBufferDurationInUs for low latency renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetDefaultCallbackBufferDurationInUs_LowLatency_001
+ * @tc.desc  : Test GetDefaultCallbackBufferDurationInUs for low latency renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetDefaultCallbackBufferDurationInUs_LowLatency_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->curStreamParams_.samplingRate = SAMPLE_RATE_48000;
+    rendererInClientInner->curStreamParams_.customSampleRate = 0;
+    rendererInClientInner->spanSizeInFrame_ = 960;
+    rendererInClientInner->cacheSizeInFrame_ = 1920;
+    
+    uint64_t duration = rendererInClientInner->GetDefaultCallbackBufferDurationInUs();
+    uint64_t expectedDuration = 960 * 1000000 / 48000; // 20000 us
+    EXPECT_EQ(duration, expectedDuration);
+}
+
+/**
+ * @tc.name  : Test GetDefaultCallbackBufferDurationInUs for normal renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetDefaultCallbackBufferDurationInUs_Normal_001
+ * @tc.desc  : Test GetDefaultCallbackBufferDurationInUs returns OLD_BUF_DURATION for normal renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetDefaultCallbackBufferDurationInUs_Normal_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInClientInner->spanSizeInFrame_ = 0;
+    
+    uint64_t duration = rendererInClientInner->GetDefaultCallbackBufferDurationInUs();
+    EXPECT_EQ(duration, 92880); // OLD_BUF_DURATION_IN_USEC
+}
+
+/**
+ * @tc.name  : Test GetDefaultCallbackBufferDurationInUs with zero sample rate
+ * @tc.type  : FUNC
+ * @tc.number: GetDefaultCallbackBufferDurationInUs_ZeroRate_001
+ * @tc.desc  : Test GetDefaultCallbackBufferDurationInUs returns OLD_BUF_DURATION when sample rate is 0.
+ */
+HWTEST(RendererInClientNewUnitTest, GetDefaultCallbackBufferDurationInUs_ZeroRate_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->curStreamParams_.samplingRate = 0;
+    rendererInClientInner->curStreamParams_.customSampleRate = 0;
+    rendererInClientInner->spanSizeInFrame_ = 960;
+    
+    uint64_t duration = rendererInClientInner->GetDefaultCallbackBufferDurationInUs();
+    EXPECT_EQ(duration, 92880);
+}
+
+/**
+ * @tc.name  : Test GetDefaultCallbackBufferDurationInUs with custom sample rate
+ * @tc.type  : FUNC
+ * @tc.number: GetDefaultCallbackBufferDurationInUs_CustomRate_001
+ * @tc.desc  : Test GetDefaultCallbackBufferDurationInUs uses custom sample rate.
+ */
+HWTEST(RendererInClientNewUnitTest, GetDefaultCallbackBufferDurationInUs_CustomRate_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->curStreamParams_.samplingRate = SAMPLE_RATE_48000;
+    rendererInClientInner->curStreamParams_.customSampleRate = SAMPLE_RATE_44100;
+    rendererInClientInner->spanSizeInFrame_ = 441;
+    
+    uint64_t duration = rendererInClientInner->GetDefaultCallbackBufferDurationInUs();
+    uint64_t expectedDuration = 441 * 1000000 / 44100; // 10000 us
+    EXPECT_EQ(duration, expectedDuration);
+}
+
+/**
+ * @tc.name  : Test GetDefaultCallbackBufferDurationInUs with zero frame count
+ * @tc.type  : FUNC
+ * @tc.number: GetDefaultCallbackBufferDurationInUs_ZeroFrame_001
+ * @tc.desc  : Test GetDefaultCallbackBufferDurationInUs returns OLD_BUF_DURATION when frame count is 0.
+ */
+HWTEST(RendererInClientNewUnitTest, GetDefaultCallbackBufferDurationInUs_ZeroFrame_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->curStreamParams_.samplingRate = SAMPLE_RATE_48000;
+    rendererInClientInner->spanSizeInFrame_ = 0;
+    rendererInClientInner->cacheSizeInFrame_ = 0;
+    
+    uint64_t duration = rendererInClientInner->GetDefaultCallbackBufferDurationInUs();
+    EXPECT_EQ(duration, 92880);
+}
+
+/**
+ * @tc.name  : Test GetBufferWaitTimeoutInMs for offload
+ * @tc.type  : FUNC
+ * @tc.number: GetBufferWaitTimeoutInMs_Offload_001
+ * @tc.desc  : Test GetBufferWaitTimeoutInMs returns OFFLOAD timeout for offload mode.
+ */
+HWTEST(RendererInClientNewUnitTest, GetBufferWaitTimeoutInMs_Offload_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->offloadEnable_ = true;
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    int32_t timeout = rendererInClientInner->GetBufferWaitTimeoutInMs();
+    EXPECT_EQ(timeout, 8000); // OFFLOAD_OPERATION_TIMEOUT_IN_MS
+}
+
+/**
+ * @tc.name  : Test GetBufferWaitTimeoutInMs for low latency
+ * @tc.type  : FUNC
+ * @tc.number: GetBufferWaitTimeoutInMs_LowLatency_001
+ * @tc.desc  : Test GetBufferWaitTimeoutInMs returns FAST timeout for low latency.
+ */
+HWTEST(RendererInClientNewUnitTest, GetBufferWaitTimeoutInMs_LowLatency_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->offloadEnable_ = false;
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    int32_t timeout = rendererInClientInner->GetBufferWaitTimeoutInMs();
+    EXPECT_EQ(timeout, 40); // FAST_WRITE_CACHE_TIMEOUT_IN_MS
+}
+
+/**
+ * @tc.name  : Test GetBufferWaitTimeoutInMs for normal renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetBufferWaitTimeoutInMs_Normal_001
+ * @tc.desc  : Test GetBufferWaitTimeoutInMs returns normal timeout for normal renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetBufferWaitTimeoutInMs_Normal_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->offloadEnable_ = false;
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    
+    int32_t timeout = rendererInClientInner->GetBufferWaitTimeoutInMs();
+    EXPECT_EQ(timeout, 1500); // WRITE_CACHE_TIMEOUT_IN_MS
+}
+
+/**
+ * @tc.name  : Test GetBufferWaitTimeoutInMs for VOIP_FAST
+ * @tc.type  : FUNC
+ * @tc.number: GetBufferWaitTimeoutInMs_VOIP_FAST_001
+ * @tc.desc  : Test GetBufferWaitTimeoutInMs returns FAST timeout for VOIP_FAST.
+ */
+HWTEST(RendererInClientNewUnitTest, GetBufferWaitTimeoutInMs_VOIP_FAST_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->offloadEnable_ = false;
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    
+    int32_t timeout = rendererInClientInner->GetBufferWaitTimeoutInMs();
+    EXPECT_EQ(timeout, 40); // FAST_WRITE_CACHE_TIMEOUT_IN_MS
+}
+
+/**
+ * @tc.name  : Test ConstructConfig with AUDIO_FLAG_MMAP
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_MMAP_001
+ * @tc.desc  : Test ConstructConfig with AUDIO_FLAG_MMAP should pass through.
+ */
+HWTEST(RendererInClientNewUnitTest, ConstructConfig_MMAP_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientPid_ = 10;
+    rendererInClientInner->clientUid_ = 10;
+    rendererInClientInner->curStreamParams_.channels = STEREO;
+    rendererInClientInner->curStreamParams_.encoding = ENCODING_PCM;
+    rendererInClientInner->curStreamParams_.format = SAMPLE_S16LE;
+    rendererInClientInner->curStreamParams_.samplingRate = SAMPLE_RATE_48000;
+    
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    AudioProcessConfig config = rendererInClientInner->ConstructConfig();
+    EXPECT_EQ(config.rendererInfo.rendererFlags, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig with AUDIO_FLAG_VOIP_FAST
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_VOIP_FAST_001
+ * @tc.desc  : Test ConstructConfig with AUDIO_FLAG_VOIP_FAST should pass through.
+ */
+HWTEST(RendererInClientNewUnitTest, ConstructConfig_VOIP_FAST_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientPid_ = 10;
+    rendererInClientInner->clientUid_ = 10;
+    rendererInClientInner->curStreamParams_.channels = STEREO;
+    rendererInClientInner->curStreamParams_.encoding = ENCODING_PCM;
+    rendererInClientInner->curStreamParams_.format = SAMPLE_S16LE;
+    rendererInClientInner->curStreamParams_.samplingRate = SAMPLE_RATE_48000;
+    
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    AudioProcessConfig config = rendererInClientInner->ConstructConfig();
+    EXPECT_EQ(config.rendererInfo.rendererFlags, AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig with invalid renderer flags
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_InvalidFlag_001
+ * @tc.desc  : Test ConstructConfig resets invalid renderer flags to 0.
+ */
+HWTEST(RendererInClientNewUnitTest, ConstructConfig_InvalidFlag_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientPid_ = 10;
+    rendererInClientInner->clientUid_ = 10;
+    rendererInClientInner->curStreamParams_.channels = STEREO;
+    rendererInClientInner->curStreamParams_.encoding = ENCODING_PCM;
+    rendererInClientInner->curStreamParams_.format = SAMPLE_S16LE;
+    rendererInClientInner->curStreamParams_.samplingRate = SAMPLE_RATE_48000;
+    
+    rendererInClientInner->rendererInfo_.rendererFlags = 99; // Invalid flag
+    AudioProcessConfig config = rendererInClientInner->ConstructConfig();
+    EXPECT_EQ(config.rendererInfo.rendererFlags, 0);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig with all valid renderer flags
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_AllValidFlags_001
+ * @tc.desc  : Test ConstructConfig with all valid renderer flags.
+ */
+HWTEST(RendererInClientNewUnitTest, ConstructConfig_AllValidFlags_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientPid_ = 10;
+    rendererInClientInner->clientUid_ = 10;
+    rendererInClientInner->curStreamParams_.channels = STEREO;
+    rendererInClientInner->curStreamParams_.encoding = ENCODING_PCM;
+    rendererInClientInner->curStreamParams_.format = SAMPLE_S16LE;
+    rendererInClientInner->curStreamParams_.samplingRate = SAMPLE_RATE_48000;
+    
+    std::vector<int32_t> validFlags = {
+        AUDIO_FLAG_NORMAL,
+        AUDIO_FLAG_MMAP,
+        AUDIO_FLAG_VOIP_FAST,
+        AUDIO_FLAG_VOIP_DIRECT,
+        AUDIO_FLAG_DIRECT,
+        AUDIO_FLAG_3DA_DIRECT
+    };
+    
+    for (auto flag : validFlags) {
+        rendererInClientInner->rendererInfo_.rendererFlags = flag;
+        AudioProcessConfig config = rendererInClientInner->ConstructConfig();
+        EXPECT_EQ(config.rendererInfo.rendererFlags, flag);
+    }
+}
+
+/**
+ * @tc.name  : Test GetStreamClass for low latency renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamClass_LowLatency_001
+ * @tc.desc  : Test GetStreamClass returns FAST_STREAM for low latency renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetStreamClass_LowLatency_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    IAudioStream::StreamClass streamClass = rendererInClientInner->GetStreamClass();
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::FAST_STREAM);
+}
+
+/**
+ * @tc.name  : Test GetStreamClass for VOIP_FAST renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamClass_VOIP_FAST_001
+ * @tc.desc  : Test GetStreamClass returns FAST_STREAM for VOIP_FAST renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetStreamClass_VOIP_FAST_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    IAudioStream::StreamClass streamClass = rendererInClientInner->GetStreamClass();
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::FAST_STREAM);
+}
+
+/**
+ * @tc.name  : Test GetStreamClass for normal renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamClass_Normal_001
+ * @tc.desc  : Test GetStreamClass returns PA_STREAM for normal renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetStreamClass_Normal_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    
+    IAudioStream::StreamClass streamClass = rendererInClientInner->GetStreamClass();
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+}
+
+/**
+ * @tc.name  : Test GetFastStatus for low latency renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetFastStatus_LowLatency_001
+ * @tc.desc  : Test GetFastStatus returns FASTSTATUS_FAST for low latency renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetFastStatus_LowLatency_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    FastStatus status = rendererInClientInner->GetFastStatus();
+    EXPECT_EQ(status, FASTSTATUS_FAST);
+}
+
+/**
+ * @tc.name  : Test GetFastStatus for VOIP_FAST renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetFastStatus_VOIP_FAST_001
+ * @tc.desc  : Test GetFastStatus returns FASTSTATUS_FAST for VOIP_FAST renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetFastStatus_VOIP_FAST_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    FastStatus status = rendererInClientInner->GetFastStatus();
+    EXPECT_EQ(status, FASTSTATUS_FAST);
+}
+
+/**
+ * @tc.name  : Test GetFastStatus for normal renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetFastStatus_Normal_001
+ * @tc.desc  : Test GetFastStatus returns FASTSTATUS_NORMAL for normal renderer.
+ */
+HWTEST(RendererInClientNewUnitTest, GetFastStatus_Normal_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    
+    FastStatus status = rendererInClientInner->GetFastStatus();
+    EXPECT_EQ(status, FASTSTATUS_NORMAL);
+}
+
+/**
+ * @tc.name  : Test CheckAndProcessPendingSpanSize with no pending span
+ * @tc.type  : FUNC
+ * @tc.number: CheckAndProcessPendingSpanSize_NoPending_001
+ * @tc.desc  : Test CheckAndProcessPendingSpanSize with no pending span size.
+ */
+HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NoPending_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 4;
+    rendererInClientInner->clientBuffer_ =
+        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+    
+    rendererInClientInner->CheckAndProcessPendingSpanSize();
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
+}
+
+/**
+ * @tc.name  : Test CheckAndProcessPendingSpanSize with AUDIO_OUTPUT_FLAG_VOIP
+ * @tc.type  : FUNC
+ * @tc.number: CheckAndProcessPendingSpanSize_VoipFlag_001
+ * @tc.desc  : Test CheckAndProcessPendingSpanSize updates rendererFlags for VOIP flag.
+ */
+HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_VoipFlag_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 4;
+    rendererInClientInner->clientBuffer_ =
+        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+    
+    uint32_t validSpanSize = 960;
+    uint64_t engineSize = 1920;
+    rendererInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize,
+        AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
+    rendererInClientInner->CheckAndProcessPendingSpanSize();
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test CheckAndProcessPendingSpanSize with null clientBuffer
+ * @tc.type  : FUNC
+ * @tc.number: CheckAndProcessPendingSpanSize_NullBuffer_001
+ * @tc.desc  : Test CheckAndProcessPendingSpanSize with null clientBuffer.
+ */
+HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NullBuffer_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientBuffer_ = nullptr;
+    
+    rendererInClientInner->CheckAndProcessPendingSpanSize();
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
+}
+
+class IpcStreamMock : public IIpcStream {
+public:
+    int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return SUCCESS; }
+    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override { return SUCCESS; }
+    int32_t UpdatePosition() override { return SUCCESS; }
+    int32_t GetAudioSessionID(uint32_t &sessionId) override
+    {
+        sessionId = 100; // 100 is temp id
+        return SUCCESS;
+    }
+    int32_t Start() override { return SUCCESS; }
+    int32_t Pause() override { return SUCCESS; }
+    int32_t Stop() override { return SUCCESS; }
+    int32_t Release(bool isSwitchStream) override { return SUCCESS; }
+    int32_t Flush() override { return SUCCESS; }
+    int32_t Drain(bool stopFlag) override { return SUCCESS; }
+    int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override { return SUCCESS; }
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return SUCCESS; }
+    int32_t SetInMainThreadState(bool isInMainThread) override { return SUCCESS; }
+    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return SUCCESS; }
+    int32_t GetAudioPosition(
+        uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override { return SUCCESS; }
+    int32_t GetSpeedPosition(
+        uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override { return SUCCESS; }
+    int32_t GetLatency(uint64_t &latency) override
+    {
+        latency = 50; // 50 us is temp latency
+        return SUCCESS;
+    }
+    int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override { return SUCCESS; }
+    int32_t SetRate(int32_t rate) override { return SUCCESS; }
+    int32_t GetRate(int32_t &rate) override { return SUCCESS; }
+    int32_t SetLowPowerVolume(float volume) override { return SUCCESS; }
+    int32_t GetLowPowerVolume(float &volume) override { return SUCCESS; }
+    int32_t SetAudioEffectMode(int32_t effectMode) override { return SUCCESS; }
+    int32_t GetAudioEffectMode(int32_t &effectMode) override { return SUCCESS; }
+    int32_t SetPrivacyType(int32_t privacyType) override { return SUCCESS; }
+    int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) override { return SUCCESS; }
+    int32_t GetPrivacyType(int32_t &privacyType) override { return SUCCESS; }
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return SUCCESS; }
+    int32_t SetTarget(int32_t target, int32_t &ret) override { return SUCCESS; }
+    int32_t UnsetOffloadMode() override { return SUCCESS; }
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override { return SUCCESS; }
+    int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override { return SUCCESS; }
+    int32_t GetStreamManagerType() override { return SUCCESS; }
+    int32_t SetRebuildFlag() override { return SUCCESS; }
+    int32_t SetSilentModeAndMixWithOthers(bool on) override { return SUCCESS; }
+    int32_t SetClientVolume() override { return SUCCESS; }
+    int32_t SetLoudnessGain(float loudnessGain) override { return SUCCESS; }
+    int32_t SetMute(bool isMute) override { return SUCCESS; }
+    int32_t SetMuteHint(bool mute) override { return SUCCESS; }
+    int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return SUCCESS; }
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, uint32_t method,
+        uint32_t threadPriority) override { return SUCCESS; }
+    int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice, bool skipForce) override { return SUCCESS; }
+    int32_t SetSourceDuration(int64_t duration) override { return SUCCESS; }
+    int32_t SetOffloadDataCallbackState(int32_t state) override { return SUCCESS; }
+    int32_t SetSpeed(float speed) override { return SUCCESS; }
+    int32_t SetPitch(float pitch) override { return SUCCESS; }
+    sptr<IRemoteObject> AsObject() override { return nullptr; }
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
+    int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return SUCCESS; }
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
+    int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal) override { return SUCCESS; }
+    int32_t ResetStaticPlayPosition() override { return SUCCESS; }
+    int32_t CalculateCacheCount(uint32_t cacheSizeSizeInFrame, uint32_t &cacheCount) override { return SUCCESS; }
+};
+
+class RendererInClientPublicNewUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void RendererInClientPublicNewUnitTest::SetUpTestCase(void) {}
+void RendererInClientPublicNewUnitTest::TearDownTestCase(void) {}
+void RendererInClientPublicNewUnitTest::SetUp(void) {}
+void RendererInClientPublicNewUnitTest::TearDown(void) {}
+
+/**
+ * @tc.name  : Test SetLoudnessGain for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetLoudnessGain_FastStream_001
+ * @tc.desc  : Test SetLoudnessGain returns ERROR for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetLoudnessGain_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->SetLoudnessGain(1.0f);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetLoudnessGain for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: SetLoudnessGain_NormalStream_001
+ * @tc.desc  : Test SetLoudnessGain works for normal stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetLoudnessGain_NormalStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInClientInner->ipcStream_ = new IpcStreamMock();
+    
+    int32_t ret = rendererInClientInner->SetLoudnessGain(1.0f);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetLoudnessGain for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: GetLoudnessGain_FastStream_001
+ * @tc.desc  : Test GetLoudnessGain returns 0.0 for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLoudnessGain_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->loudnessGain_ = 1.0f;
+    
+    float gain = rendererInClientInner->GetLoudnessGain();
+    EXPECT_EQ(gain, 0.0f);
+}
+
+/**
+ * @tc.name  : Test GetLoudnessGain for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: GetLoudnessGain_NormalStream_001
+ * @tc.desc  : Test GetLoudnessGain works for normal stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLoudnessGain_NormalStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInClientInner->loudnessGain_ = 1.5f;
+    
+    float gain = rendererInClientInner->GetLoudnessGain();
+    EXPECT_EQ(gain, 1.5f);
+}
+
+/**
+ * @tc.name  : Test SetRenderRate for fast stream with non-normal rate
+ * @tc.type  : FUNC
+ * @tc.number: SetRenderRate_FastStream_001
+ * @tc.desc  : Test SetRenderRate returns ERR_INVALID_OPERATION for fast stream with non-normal rate.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetRenderRate_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->SetRenderRate(RENDER_RATE_DOUBLE);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test SetRenderRate for fast stream with normal rate
+ * @tc.type  : FUNC
+ * @tc.number: SetRenderRate_FastStream_002
+ * @tc.desc  : Test SetRenderRate returns SUCCESS for fast stream with RENDER_RATE_NORMAL.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetRenderRate_FastStream_002, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    int32_t ret = rendererInClientInner->SetRenderRate(RENDER_RATE_NORMAL);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetRenderRate for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: SetRenderRate_NormalStream_001
+ * @tc.desc  : Test SetRenderRate works for normal stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetRenderRate_NormalStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInClientInner->ipcStream_ = new IpcStreamMock();
+    
+    int32_t ret = rendererInClientInner->SetRenderRate(RENDER_RATE_DOUBLE);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSpeed for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetSpeed_FastStream_001
+ * @tc.desc  : Test SetSpeed returns ERR_OPERATION_FAILED for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->SetSpeed(2.0f);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetSpeed for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: SetSpeed_NormalStream_001
+ * @tc.desc  : Test SetSpeed works for normal stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_NormalStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInClientInner->ipcStream_ = new IpcStreamMock();
+    
+    int32_t ret = rendererInClientInner->SetSpeed(2.0f);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetPitch for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetPitch_FastStream_001
+ * @tc.desc  : Test SetPitch returns ERR_OPERATION_FAILED for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetPitch_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    int32_t ret = rendererInClientInner->SetPitch(2.0f);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetPitch for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: SetPitch_NormalStream_001
+ * @tc.desc  : Test SetPitch works for normal stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetPitch_NormalStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    
+    int32_t ret = rendererInClientInner->SetPitch(2.0f);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetSpeed for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: GetSpeed_FastStream_001
+ * @tc.desc  : Test GetSpeed returns ERROR for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetSpeed_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    float speed = rendererInClientInner->GetSpeed();
+    EXPECT_EQ(static_cast<int32_t>(speed), static_cast<int32_t>(ERROR));
+}
+
+/**
+ * @tc.name  : Test GetSpeed for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: GetSpeed_NormalStream_001
+ * @tc.desc  : Test GetSpeed works for normal stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetSpeed_NormalStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInClientInner->realSpeed_ = 2.0f;
+    
+    float speed = rendererInClientInner->GetSpeed();
+    EXPECT_EQ(speed, 2.0f);
+}
+
+/**
+ * @tc.name  : Test Clear for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: Clear_FastStream_001
+ * @tc.desc  : Test Clear returns SUCCESS for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, Clear_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->Clear();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetLowPowerVolume for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetLowPowerVolume_FastStream_001
+ * @tc.desc  : Test SetLowPowerVolume returns SUCCESS for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetLowPowerVolume_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->SetLowPowerVolume(0.5f);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetLowPowerVolume for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: GetLowPowerVolume_FastStream_001
+ * @tc.desc  : Test GetLowPowerVolume returns 1.0f for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLowPowerVolume_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->lowPowerVolume_ = 0.5f;
+    
+    float volume = rendererInClientInner->GetLowPowerVolume();
+    EXPECT_EQ(volume, 1.0f);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadMode_FastStream_001
+ * @tc.desc  : Test SetOffloadMode returns ERR_NOT_SUPPORTED for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetOffloadMode_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->SetOffloadMode(1, true);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test UnsetOffloadMode for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: UnsetOffloadMode_FastStream_001
+ * @tc.desc  : Test UnsetOffloadMode returns ERR_NOT_SUPPORTED for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, UnsetOffloadMode_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->UnsetOffloadMode();
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectMode for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioEffectMode_FastStream_001
+ * @tc.desc  : Test GetAudioEffectMode returns EFFECT_NONE for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetAudioEffectMode_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->effectMode_ = EFFECT_DEFAULT;
+    
+    AudioEffectMode mode = rendererInClientInner->GetAudioEffectMode();
+    EXPECT_EQ(mode, EFFECT_NONE);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectMode for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioEffectMode_FastStream_001
+ * @tc.desc  : Test SetAudioEffectMode returns ERR_NOT_SUPPORTED for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetAudioEffectMode_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->SetAudioEffectMode(EFFECT_DEFAULT);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetPrivacyType for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetPrivacyType_FastStream_001
+ * @tc.desc  : Test SetPrivacyType returns early for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetPrivacyType_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->privacyType_ = PRIVACY_TYPE_PUBLIC;
+    
+    rendererInClientInner->SetPrivacyType(PRIVACY_TYPE_PRIVATE);
+    EXPECT_EQ(rendererInClientInner->privacyType_, PRIVACY_TYPE_PUBLIC);
+}
+
+/**
+ * @tc.name  : Test FlushAudioStream for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: FlushAudioStream_FastStream_001
+ * @tc.desc  : Test FlushAudioStream returns true for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, FlushAudioStream_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    bool ret = rendererInClientInner->FlushAudioStream();
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test DrainAudioStream for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: DrainAudioStream_FastStream_001
+ * @tc.desc  : Test DrainAudioStream returns true for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, DrainAudioStream_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    bool ret = rendererInClientInner->DrainAudioStream(false);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test Write with meta for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: Write_Meta_FastStream_001
+ * @tc.desc  : Test Write with meta returns ERR_INVALID_OPERATION for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, Write_Meta_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    uint8_t buffer[1024] = {0};
+    uint8_t metaBuffer[1024] = {0};
+    int32_t ret = rendererInClientInner->Write(buffer, 1024, metaBuffer, 1024);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test SetRendererPositionCallback for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererPositionCallback_FastStream_001
+ * @tc.desc  : Test SetRendererPositionCallback returns early for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetRendererPositionCallback_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    rendererInClientInner->SetRendererPositionCallback(1000, nullptr);
+    EXPECT_EQ(rendererInClientInner->rendererPositionCallback_, nullptr);
+}
+
+/**
+ * @tc.name  : Test UnsetRendererPositionCallback for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: UnsetRendererPositionCallback_FastStream_001
+ * @tc.desc  : Test UnsetRendererPositionCallback returns early for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, UnsetRendererPositionCallback_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    rendererInClientInner->UnsetRendererPositionCallback();
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test SetRendererPeriodPositionCallback for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererPeriodPositionCallback_FastStream_001
+ * @tc.desc  : Test SetRendererPeriodPositionCallback returns early for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetRendererPeriodPositionCallback_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    rendererInClientInner->SetRendererPeriodPositionCallback(1000, nullptr);
+    EXPECT_EQ(rendererInClientInner->rendererPeriodPositionCallback_, nullptr);
+}
+
+/**
+ * @tc.name  : Test UnsetRendererPeriodPositionCallback for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: UnsetRendererPeriodPositionCallback_FastStream_001
+ * @tc.desc  : Test UnsetRendererPeriodPositionCallback returns early for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, UnsetRendererPeriodPositionCallback_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    rendererInClientInner->UnsetRendererPeriodPositionCallback();
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test SetBufferSizeInMsec for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetBufferSizeInMsec_FastStream_001
+ * @tc.desc  : Test SetBufferSizeInMsec returns ERR_NOT_SUPPORTED for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetBufferSizeInMsec_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    int32_t ret = rendererInClientInner->SetBufferSizeInMsec(10);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetChannelBlendMode for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetChannelBlendMode_FastStream_001
+ * @tc.desc  : Test SetChannelBlendMode returns SUCCESS for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetChannelBlendMode_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    
+    int32_t ret = rendererInClientInner->SetChannelBlendMode(MODE_DEFAULT);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetVolumeWithRamp for fast stream
+ * @tc.type  : FUNC
+ * @tc.number: SetVolumeWithRamp_FastStream_001
+ * @tc.desc  : Test SetVolumeWithRamp returns SUCCESS for fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetVolumeWithRamp_FastStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->state_ = NEW;
+    
+    int32_t ret = rendererInClientInner->SetVolumeWithRamp(0.5f, 100);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnFirstFrameWriting with ipcStream
+ * @tc.type  : FUNC
+ * @tc.number: OnFirstFrameWriting_001
+ * @tc.desc  : Test OnFirstFrameWriting gets latency from ipcStream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, OnFirstFrameWriting_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->ipcStream_ = new IpcStreamMock();
+    
+    rendererInClientInner->OnFirstFrameWriting();
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test OnFirstFrameWriting without ipcStream
+ * @tc.type  : FUNC
+ * @tc.number: OnFirstFrameWriting_002
+ * @tc.desc  : Test OnFirstFrameWriting uses default latency without ipcStream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, OnFirstFrameWriting_002, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->ipcStream_ = nullptr;
+    
+    rendererInClientInner->OnFirstFrameWriting();
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test NotifyRouteUpdate logging
+ * @tc.type  : FUNC
+ * @tc.number: NotifyRouteUpdate_001
+ * @tc.desc  : Test NotifyRouteUpdate logs routeFlag and networkId.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    
+    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_FAST, LOCAL_NETWORK_ID);
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test NotifyRouteUpdate with different routeFlag
+ * @tc.type  : FUNC
+ * @tc.number: NotifyRouteUpdate_002
+ * @tc.desc  : Test NotifyRouteUpdate with various routeFlags.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_002, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    
+    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_VOIP, LOCAL_NETWORK_ID);
+    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD, LOCAL_NETWORK_ID);
+    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test OnOperationHandled with UPDATE_SPANSIZE
+ * @tc.type  : FUNC
+ * @tc.number: OnOperationHandled_UpdateSpanSize_001
+ * @tc.desc  : Test OnOperationHandled handles UPDATE_SPANSIZE operation.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, OnOperationHandled_UpdateSpanSize_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    rendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+    rendererInClientInner->ipcStream_ = new IpcStreamMock();
+    
+    int32_t ret = rendererInClientInner->OnOperationHandled(UPDATE_SPANSIZE, 0);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

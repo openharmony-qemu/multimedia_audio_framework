@@ -136,9 +136,18 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
         nodeInfo.customSampleRate : nodeInfo.samplingRate) / nodeInfo.frameLen;
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
+    node->SetIsLowLatency(false);
     uint32_t sessionId = nodeInfo.sessionId;
     HILOG_COMM_INFO("[FinishMove] session:%{public}u to sink:offload", sessionId);
     AddNodeToMap(node);
+    CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sinkOutputNode_ is nullptr");
+    const auto outNodeInfo = sinkOutputNode_->GetNodeInfo();
+    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
+    if (frameLenAdjusted) {
+        node->SetNodeInfo(nodeInfo);
+        TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
+            static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
+    }
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
@@ -336,7 +345,7 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
+int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::Pause");

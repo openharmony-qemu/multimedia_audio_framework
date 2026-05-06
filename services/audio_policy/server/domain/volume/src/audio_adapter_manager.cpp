@@ -65,15 +65,19 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
 
 namespace {
 const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP = {
-    {DEVICE_TYPE_SPEAKER, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, REMOTE_CLASS}},
-    {DEVICE_TYPE_USB_HEADSET, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, DP_CLASS, DP_MCH_CLASS}},
-    {DEVICE_TYPE_BLUETOOTH_A2DP, {A2DP_CLASS, PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, DP_CLASS, DP_MCH_CLASS}},
-    {DEVICE_TYPE_BLUETOOTH_SCO, {PRIMARY_CLASS, MCH_CLASS, DP_CLASS, DP_MCH_CLASS}},
-    {DEVICE_TYPE_NEARLINK, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, DP_CLASS, DP_MCH_CLASS}},
-    {DEVICE_TYPE_EARPIECE, {PRIMARY_CLASS, MCH_CLASS}},
-    {DEVICE_TYPE_WIRED_HEADSET, {PRIMARY_CLASS, MCH_CLASS, DP_CLASS, DP_MCH_CLASS}},
-    {DEVICE_TYPE_WIRED_HEADPHONES, {PRIMARY_CLASS, MCH_CLASS, DP_CLASS, DP_MCH_CLASS}},
-    {DEVICE_TYPE_USB_ARM_HEADSET, {PRIMARY_CLASS, USB_CLASS, DP_CLASS, DP_MCH_CLASS}},
+    {DEVICE_TYPE_SPEAKER, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, REMOTE_CLASS, MMAP_CLASS, MMAP_VOIP_CLASS,
+        DIRECT_VOIP_CLASS}},
+    {DEVICE_TYPE_USB_HEADSET, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, DP_CLASS, DP_MCH_CLASS, MMAP_CLASS,
+        MMAP_VOIP_CLASS, DIRECT_VOIP_CLASS, DIRECT_CLASS}},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, {A2DP_CLASS, PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, DP_CLASS, DP_MCH_CLASS,
+        MMAP_CLASS}},
+    {DEVICE_TYPE_BLUETOOTH_SCO, {PRIMARY_CLASS, MCH_CLASS, DP_CLASS, DP_MCH_CLASS, MMAP_CLASS, MMAP_VOIP_CLASS}},
+    {DEVICE_TYPE_NEARLINK, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, DP_CLASS, DP_MCH_CLASS, MMAP_CLASS,
+        MMAP_VOIP_CLASS}},
+    {DEVICE_TYPE_EARPIECE, {PRIMARY_CLASS, MCH_CLASS, MMAP_CLASS, MMAP_VOIP_CLASS, MMAP_VOIP_CLASS}},
+    {DEVICE_TYPE_WIRED_HEADSET, {PRIMARY_CLASS, MCH_CLASS, DP_CLASS, DP_MCH_CLASS, MMAP_CLASS, MMAP_VOIP_CLASS}},
+    {DEVICE_TYPE_WIRED_HEADPHONES, {PRIMARY_CLASS, MCH_CLASS, DP_CLASS, DP_MCH_CLASS, MMAP_CLASS, MMAP_VOIP_CLASS}},
+    {DEVICE_TYPE_USB_ARM_HEADSET, {PRIMARY_CLASS, USB_CLASS, DP_CLASS, DP_MCH_CLASS, MMAP_CLASS}},
     {DEVICE_TYPE_REMOTE_CAST, {REMOTE_CAST_INNER_CAPTURER_SINK_NAME}},
     {DEVICE_TYPE_DP, {DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
@@ -120,7 +124,7 @@ bool AudioAdapterManager::Init()
     volumeDataMaintainer_.SetVolumeList(defaultVolumeTypeList_);
     if (!lret) {
         AUDIO_INFO_LOG("Audio Volume Config Load Configuration successfully");
-        useNonlinearAlgo_ = 1;
+        useNonlinearAlgo_ = true;
         UpdateVolumeMapIndex();
     }
 
@@ -236,15 +240,7 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         CloneSystemSoundUrl();
     }
 
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-#ifdef FEATURE_AUDIO_ZONE
-        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
-            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
-        }
-#endif
-    }
+    LoadVolumeValueMapFromDb();
     UpdateVolumeForAllPipes();
 
     if (!isNeedCopyVolumeData_ && !isNeedCopyMuteData_ && !isNeedCopyRingerModeData_ && !isNeedCopySystemUrlData_) {
@@ -261,6 +257,33 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         InitSafeTime(true);
         AUDIO_INFO_LOG("Copy audio_policy private database success to settings database, delete private database...");
         DeleteAudioPolicyKvStore();
+    }
+}
+
+void AudioAdapterManager::LoadVolumeValueMapFromDb()
+{
+    const std::list<DeviceType> DEVICE_TYPE_LIST_FOR_EACH_GROUP = {
+        // one device for each DeviceGroupType.
+        DEVICE_TYPE_EARPIECE,
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_DP,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_HEARING_AID,
+        DEVICE_TYPE_WIRED_HEADSET,
+        DEVICE_TYPE_REMOTE_CAST,
+        DEVICE_TYPE_LINE_DIGITAL
+    };
+
+    for (auto deviceType : DEVICE_TYPE_LIST_FOR_EACH_GROUP) {
+        auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+        volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::LEVEL, false);
+        volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::MUTE, false);
+        UpdateVolumeWhenDeviceConnect(desc);
+#ifdef FEATURE_AUDIO_ZONE
+        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
+            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
+        }
+#endif
     }
 }
 
@@ -1037,7 +1060,6 @@ bool AudioAdapterManager::GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceD
     AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
-    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
     if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
         AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
         return false;
@@ -1297,15 +1319,23 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
     return ringerMode_.load();
 }
 
-bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
+ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 {
-    if ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
-        (routeFlag & AUDIO_INPUT_FLAG_FAST)) {
+    int32_t enableNewRoute = 0;
+    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    if (IsLowLatencyRoute(routeFlag) || IsDirectRoute(routeFlag)) {
+        return enableNewRoute == 1;
+    }
+    if ((routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING)) {
         return false;
     }
     return true;
+}
+
+bool AudioAdapterManager::IsLowLatencyRoute(uint32_t routeFlag)
+{
+    return (routeFlag & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag & AUDIO_OUTPUT_FLAG_VOIP_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_FAST) || (routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST);
 }
 
 void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
@@ -1439,29 +1469,69 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
     return OpenNotPaAudioPort(pipeInfo, paIndex);
 }
 
+bool AudioAdapterManager::IsDirectRoute(uint32_t routeFlag) const
+{
+    return (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT);
+}
+
+int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeInfo, AudioIOHandle & ioHandle)
+{
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t result = SUCCESS;
+    if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
+        IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
+        if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
+            std::string idInfo = HDI_ID_INFO_DEFAULT;
+            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
+            GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
+            if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) ||
+                (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP_FAST)) {
+                AUDIO_INFO_LOG("Use voip mmap");
+                attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+            } else {
+                attr.audioStreamFlag = AUDIO_FLAG_MMAP;
+            }
+            result = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
+        } else if (IsDirectRoute(pipeInfo->routeFlag_)) {
+            std::string idInfo = HDI_ID_INFO_DEFAULT;
+            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
+            GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
+            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
+                AUDIO_INFO_LOG("Use voip mmap");
+                attr.audioStreamFlag = AUDIO_FLAG_VOIP_DIRECT;
+            } else {
+                attr.audioStreamFlag = AUDIO_FLAG_DIRECT;
+            }
+            audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
+        } else {
+            std::string idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
+            result = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
+        }
+    } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
+        std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
+        IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
+        if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
+            if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP)) {
+                AUDIO_INFO_LOG("Use voip mmap");
+                attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+            } else {
+                attr.audioStreamFlag = AUDIO_FLAG_MMAP;
+            }
+        }
+        attr.routeFlag = pipeInfo->routeFlag_;
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
+        result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
+    }
+    IPCSkeleton::SetCallingIdentity(identity);
+    return result;
+}
+
 AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex,
     std::string moduleArgs)
 {
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t result = SUCCESS;
-    if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
-        std::string idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
-        IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
-        attr.routeFlag = pipeInfo->routeFlag_;
-        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
-        result = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
-    } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
-        std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
-        IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
-        attr.routeFlag = pipeInfo->routeFlag_;
-        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
-        result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
-    } else {
-        AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);
-    }
-    IPCSkeleton::SetCallingIdentity(identity);
+    int32_t result = CreateHdiPort(pipeInfo, ioHandle);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ioHandle, "Call audioServer open port failed:%{public}d", result);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
@@ -1507,8 +1577,9 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
         HdiIdType idType = HDI_ID_TYPE_PRIMARY;
         GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
         IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
-        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
-            if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
+        if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
+            if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) ||
+                (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP_FAST)) {
                 AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
             } else {
@@ -3334,10 +3405,7 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     AudioRingerMode ringerMode = ringerMode_.load();
     volumeDataMaintainer_.GetRingerMode(ringerMode);
     ringerMode_.store(ringerMode);
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-    }
+    LoadVolumeValueMapFromDb();
     LoadMuteStatusMap();
     UpdateVolumeForAllPipes();
     DealDoNotDisturbStatus();

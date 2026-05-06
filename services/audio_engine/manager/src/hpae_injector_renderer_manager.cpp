@@ -93,7 +93,7 @@ int32_t HpaeInjectorRendererManager::Start(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeInjectorRendererManager::Pause(uint32_t sessionId)
+int32_t HpaeInjectorRendererManager::Pause(uint32_t sessionId, bool isStandby)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Pause");
@@ -432,6 +432,7 @@ void HpaeInjectorRendererManager::AddSingleNodeToSink(const std::shared_ptr<Hpae
     nodeInfo.historyFrameCount = 0;
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
+    node->SetIsLowLatency(false);
     uint32_t sessionId = nodeInfo.sessionId;
     
     sinkInputNodeMap_[sessionId] = node;

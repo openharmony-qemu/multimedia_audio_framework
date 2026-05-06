@@ -1613,5 +1613,79 @@ std::vector<PipeDeviceVolumeInfo> AudioPipeManager::GetPipeDeviceVolumeInfoForDe
     
     return pipeDeviceVolumeInfo;
 }
+
+bool AudioPipeManager::HasPausedFastPipeInDelayedSwitch()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_lock<std::shared_mutex> sLock(switchStreamMapLock_);
+    
+    if (switchStreamMap_.empty()) {
+        return false;
+    }
+    
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (!pipeInfo->IsRouteFast()) {
+            continue;
+        }
+        
+        bool hasDelayedSwitchStream = false;
+        bool allStreamsPaused = true;
+        
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (switchStreamMap_.count(desc->sessionId_) > 0) {
+                hasDelayedSwitchStream = true;
+            }
+            if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                allStreamsPaused = false;
+            }
+        }
+        
+        if (hasDelayedSwitchStream && allStreamsPaused && !pipeInfo->streamDescriptors_.empty()) {
+            AUDIO_INFO_LOG("Found paused fast pipe in delayed switch, pipe: %{public}s",
+                pipeInfo->name_.c_str());
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string AudioPipeManager::GetPausedFastPipeModuleNameInDelayedSwitch()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_lock<std::shared_mutex> sLock(switchStreamMapLock_);
+    
+    if (switchStreamMap_.empty()) {
+        return "";
+    }
+    
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (!pipeInfo->IsRouteFast()) {
+            continue;
+        }
+        
+        bool hasDelayedSwitchStream = false;
+        bool allStreamsPaused = true;
+        
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (switchStreamMap_.count(desc->sessionId_) > 0) {
+                hasDelayedSwitchStream = true;
+            }
+            if (desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                allStreamsPaused = false;
+            }
+        }
+        
+        if (hasDelayedSwitchStream && allStreamsPaused && !pipeInfo->streamDescriptors_.empty()) {
+            AUDIO_INFO_LOG("Get paused fast pipe module name in delayed switch: %{public}s",
+                pipeInfo->moduleInfo_.name.c_str());
+            return pipeInfo->moduleInfo_.name;
+        }
+    }
+    return "";
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -144,6 +144,41 @@ static std::shared_ptr<PipeStreamPropInfo> CreatePipeStreamPropInfoForDevice(
     return streamPropInfo;
 }
 
+static std::shared_ptr<AudioStreamDescriptor> CreateCapturerStreamDescriptorForVoipPrivacy(
+    uint32_t sessionId, SourceType sourceType, AudioStreamStatus status = STREAM_STATUS_STARTED,
+    int32_t callerPid = 0)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = sessionId;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = status;
+    streamDesc->capturerInfo_.sourceType = sourceType;
+    streamDesc->callerPid_ = callerPid;
+    streamDesc->appInfo_.appPid = callerPid;
+    return streamDesc;
+}
+
+static void AddCapturerStreamsToPipeManager(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_LOG(pipeManager != nullptr, "pipeManager is nullptr");
+    pipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    pipeInfo->streamDescriptors_ = streamDescs;
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+}
+
+static void ClearCapturerStreamsFromPipeManager()
+{
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_LOG(pipeManager != nullptr, "pipeManager is nullptr");
+    pipeManager->curPipeList_.clear();
+}
+
 void AudioCoreServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::SetUpTestCase start-end");
@@ -7940,6 +7975,189 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_004, TestSize
     EXPECT_EQ(audioCoreService->GetOpenedNormalSourceSessionId(), sentinelSessionId);
 
     pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : IsVoipPrivacyBypassedByBehavior_001
+ * @tc.number: IsVoipPrivacyBypassedByBehavior_001
+ * @tc.desc  : Test descriptor-based voipNoPrivacyFlag check.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsVoipPrivacyBypassedByBehavior_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto streamDesc = CreateCapturerStreamDescriptorForVoipPrivacy(710101,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    ASSERT_NE(streamDesc, nullptr);
+
+    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(nullptr));
+    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
+
+    streamDesc->voipNoPrivacyFlag_.store(true);
+    EXPECT_TRUE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
+}
+
+/**
+ * @tc.name  : UpdateVoipNoPrivacyFlagBySessionId_001
+ * @tc.number: UpdateVoipNoPrivacyFlagBySessionId_001
+ * @tc.desc  : Test UpdateVoipNoPrivacyFlagBySessionId updates descriptor flag.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateVoipNoPrivacyFlagBySessionId_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto streamDesc = CreateCapturerStreamDescriptorForVoipPrivacy(710102,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    AddCapturerStreamsToPipeManager({streamDesc});
+
+    audioCoreService->UpdateVoipNoPrivacyFlagBySessionId(streamDesc->GetSessionId(), true);
+    EXPECT_TRUE(streamDesc->voipNoPrivacyFlag_.load());
+
+    audioCoreService->UpdateVoipNoPrivacyFlagBySessionId(streamDesc->GetSessionId(), false);
+    EXPECT_FALSE(streamDesc->voipNoPrivacyFlag_.load());
+
+    ClearCapturerStreamsFromPipeManager();
+}
+
+/**
+ * @tc.name  : UpdateVoipNoPrivacyFlagByPid_001
+ * @tc.number: UpdateVoipNoPrivacyFlagByPid_001
+ * @tc.desc  : Test UpdateVoipNoPrivacyFlagByPid updates only matched descriptors.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateVoipNoPrivacyFlagByPid_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto streamDescByAppPid = CreateCapturerStreamDescriptorForVoipPrivacy(710103,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    streamDescByAppPid->callerPid_ = 0;
+    streamDescByAppPid->appInfo_.appPid = 710201;
+
+    auto streamDescByCallerPid = CreateCapturerStreamDescriptorForVoipPrivacy(710104,
+        SOURCE_TYPE_MIC, STREAM_STATUS_STARTED, 710202);
+    AddCapturerStreamsToPipeManager({streamDescByAppPid, streamDescByCallerPid});
+
+    audioCoreService->UpdateVoipNoPrivacyFlagByPid(710201, true);
+    EXPECT_TRUE(streamDescByAppPid->voipNoPrivacyFlag_.load());
+    EXPECT_FALSE(streamDescByCallerPid->voipNoPrivacyFlag_.load());
+
+    audioCoreService->UpdateVoipNoPrivacyFlagByPid(710202, true);
+    EXPECT_TRUE(streamDescByCallerPid->voipNoPrivacyFlag_.load());
+
+    ClearCapturerStreamsFromPipeManager();
+}
+
+/**
+ * @tc.name  : EvaluateActivePrivacyVoipPresence_001
+ * @tc.number: EvaluateActivePrivacyVoipPresence_001
+ * @tc.desc  : Test active VOIP detection with muted and no-privacy exceptions.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, EvaluateActivePrivacyVoipPresence_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    bool hasActivePrivacyVoipCapturer = false;
+    auto activeVoip = CreateCapturerStreamDescriptorForVoipPrivacy(710105,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
+        hasActivePrivacyVoipCapturer);
+    EXPECT_TRUE(hasActivePrivacyVoipCapturer);
+
+    hasActivePrivacyVoipCapturer = true;
+    activeVoip->voipPriorityLowered_.store(true);
+    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
+        hasActivePrivacyVoipCapturer);
+    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+
+    hasActivePrivacyVoipCapturer = false;
+    activeVoip->voipPriorityLowered_.store(false);
+    activeVoip->voipNoPrivacyFlag_.store(true);
+    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
+        hasActivePrivacyVoipCapturer);
+    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+}
+
+/**
+ * @tc.name  : ShouldMuteCapturerByVoipPrivacy_001
+ * @tc.number: ShouldMuteCapturerByVoipPrivacy_001
+ * @tc.desc  : Test mute target, no-active-voip and ultrasonic bypass branches.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, ShouldMuteCapturerByVoipPrivacy_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto micStream = CreateCapturerStreamDescriptorForVoipPrivacy(710106, SOURCE_TYPE_MIC);
+    auto ultrasonicStream = CreateCapturerStreamDescriptorForVoipPrivacy(710107,
+        SOURCE_TYPE_ULTRASONIC);
+    auto voipStream = CreateCapturerStreamDescriptorForVoipPrivacy(710108,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+
+    EXPECT_TRUE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(micStream, true));
+    EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(micStream, false));
+    EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(ultrasonicStream, true));
+    EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(voipStream, true));
+}
+
+/**
+ * @tc.name  : CollectSessionsToMuteByVoipPrivacy_001
+ * @tc.number: CollectSessionsToMuteByVoipPrivacy_001
+ * @tc.desc  : Test collecting mute target sessions under active VOIP.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CollectSessionsToMuteByVoipPrivacy_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto voipStream = CreateCapturerStreamDescriptorForVoipPrivacy(710109,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    auto micStream = CreateCapturerStreamDescriptorForVoipPrivacy(710110, SOURCE_TYPE_MIC);
+    auto ultrasonicStream = CreateCapturerStreamDescriptorForVoipPrivacy(710111,
+        SOURCE_TYPE_ULTRASONIC);
+    auto wakeupStream = CreateCapturerStreamDescriptorForVoipPrivacy(710112,
+        SOURCE_TYPE_WAKEUP);
+
+    std::unordered_set<uint32_t> targetMuteSessions;
+    audioCoreService->CollectSessionsToMuteByVoipPrivacy(
+        {voipStream, micStream, ultrasonicStream, wakeupStream}, true, targetMuteSessions);
+
+    EXPECT_EQ(targetMuteSessions.count(voipStream->GetSessionId()), 0);
+    EXPECT_EQ(targetMuteSessions.count(micStream->GetSessionId()), 1);
+    EXPECT_EQ(targetMuteSessions.count(ultrasonicStream->GetSessionId()), 0);
+    EXPECT_EQ(targetMuteSessions.count(wakeupStream->GetSessionId()), 1);
+}
+
+/**
+ * @tc.name  : ReEvaluateVoipPrivacyMuteForCapturers_001
+ * @tc.number: ReEvaluateVoipPrivacyMuteForCapturers_001
+ * @tc.desc  : Test reevaluate main flow with descriptor-only state and no mute target.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, ReEvaluateVoipPrivacyMuteForCapturers_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto activeVoip = CreateCapturerStreamDescriptorForVoipPrivacy(710113,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    auto pausedMic = CreateCapturerStreamDescriptorForVoipPrivacy(710114, SOURCE_TYPE_MIC,
+        STREAM_STATUS_PAUSED);
+    AddCapturerStreamsToPipeManager({activeVoip, pausedMic});
+
+    audioCoreService->ReEvaluateVoipPrivacyMuteForCapturers(
+        "AudioCoreServiceUnitTest::ReEvaluateVoipPrivacyMuteForCapturers_001");
+    EXPECT_FALSE(activeVoip->voipPrivacyMuted_.load());
+    EXPECT_FALSE(pausedMic->voipPrivacyMuted_.load());
+
+    activeVoip->voipNoPrivacyFlag_.store(true);
+    audioCoreService->ReEvaluateVoipPrivacyMuteForCapturers(
+        "AudioCoreServiceUnitTest::ReEvaluateVoipPrivacyMuteForCapturers_001");
+    EXPECT_FALSE(activeVoip->voipPrivacyMuted_.load());
+
+    ClearCapturerStreamsFromPipeManager();
 }
 } // namespace AudioStandard
 } // namespace OHOS

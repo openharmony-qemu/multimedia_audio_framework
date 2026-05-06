@@ -45,6 +45,7 @@ static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
 static const char* MMAP_CLASS = "primary_mmap";
 static const char* DIRECT_CLASS = "primary_direct";
 static const char* A2DP_FAST_CLASS = "a2dp_fast";
+static const char* ULTRA_FAST_CLASS = "ultra_fast";
 static const char* INTERPHONE_CLASS = "interphone";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const char* BLUETOOTH_A2DP_FAST = "bt_a2dp_fast";

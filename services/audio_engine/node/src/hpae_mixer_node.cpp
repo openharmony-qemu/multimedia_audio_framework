@@ -41,6 +41,10 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
     mixedOutput_.SetAudioStreamType(nodeInfo.streamType);
     mixedOutput_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
+    dumpMixName_ = "hpae_mixer_out_" + std::to_string(nodeInfo.sessionId) + "_" +
+        std::to_string(nodeInfo.samplingRate) + "_" + std::to_string(nodeInfo.channels) + "_" +
+        std::to_string(nodeInfo.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpMixName_, &dumpMix_);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeMixerNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -51,6 +55,7 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
 
 HpaeMixerNode::~HpaeMixerNode()
 {
+    DumpFileUtil::CloseDumpFile(&dumpMix_);
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
@@ -156,6 +161,8 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
         limiter_->Process(GetFrameLen() * GetChannelCount(),
             tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer());
     }
+    DumpFileUtil::WriteDumpFile(dumpMix_, static_cast<void *>(mixedOutput_.GetPcmDataBuffer()),
+        mixedOutput_.DataSize());
     mixedOutput_.SetBufferState(bufferState);
     return &mixedOutput_;
 }

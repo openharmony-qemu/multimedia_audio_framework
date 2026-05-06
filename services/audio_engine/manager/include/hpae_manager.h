@@ -121,13 +121,17 @@ public:
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Start(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId) override;
-    int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId, bool isStandby = false) override;
     int32_t Flush(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
         const std::weak_ptr<IStreamStatusCallback> &callback) override;
+    int32_t GetStreamSpanSize(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        uint32_t &spanSizeInFrame) override;
+    int32_t GetStreamRouteFlag(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        uint32_t &routeFlag) override;
     // record stream interface
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;
@@ -206,6 +210,8 @@ public:
 
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    float GetMaxAmplitude() override;
+    void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) override;
 
     // interface for collaborative record
     void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
@@ -219,6 +225,7 @@ private:
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
         HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation);
+    void HandleUpdateSpanSize(uint32_t sessionId, uint32_t spanSizeInFrame, HpaeStreamClassType streamClassType);
     void HandleReloadDeviceResult(std::string deviceName, int32_t result);
     void HandleInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
@@ -250,6 +257,7 @@ private:
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerByName(const std::string &sinkName);
+    std::shared_ptr<IHpaeRendererManager> GetRendererManagerByDeviceClass(const std::string &deviceClass);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name);
 

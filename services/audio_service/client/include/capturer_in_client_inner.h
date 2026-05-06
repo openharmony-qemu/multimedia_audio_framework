@@ -18,6 +18,7 @@
 #include "capturer_in_client.h"
 
 #include <atomic>
+#include <cstdio>
 #include <cinttypes>
 #include <condition_variable>
 #include <sstream>
@@ -255,6 +256,7 @@ private:
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
     int32_t FlushCbBuffer();
+    void InitDfxOperation();
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
 
@@ -366,6 +368,8 @@ private:
 
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
+    std::string dumpInFile_ = "";
+    FILE *dumpInFd_ = nullptr;
 
     // Event handler
     bool runnerReleased_ = false;

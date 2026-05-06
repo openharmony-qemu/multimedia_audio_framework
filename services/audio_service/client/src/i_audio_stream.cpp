@@ -331,8 +331,16 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     Trace trace("IAudioStream::GetPlaybackStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        HILOG_COMM_INFO("[GetPlaybackStream]Create fast playback stream");
-        return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
+        int32_t enableNewRoute = 0;
+        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+
+        if (enableNewRoute == 1) {
+            HILOG_COMM_INFO("[GetPlaybackStream]Create renderer in client for fast playback stream with new route");
+            return RendererInClient::GetInstance(eStreamType, appUid);
+        } else {
+            HILOG_COMM_INFO("[GetPlaybackStream]Create fast playback stream");
+            return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
+        }
 #else
         (void)params;
         HILOG_COMM_INFO("[GetPlaybackStream]Unsupport create fast playback stream, so create ipc playback stream");
@@ -353,8 +361,16 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     Trace trace("IAudioStream::GetRecordStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        HILOG_COMM_INFO("[GetRecordStream]Create fast record stream");
-        return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
+        int32_t enableNewRoute = 0;
+        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+
+        if (enableNewRoute == 1) {
+            HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for fast record stream with new route");
+            return CapturerInClient::GetInstance(eStreamType, appUid);
+        } else {
+            HILOG_COMM_INFO("[GetRecordStream]Create fast record stream");
+            return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
+        }
 #else
         (void)params;
         AUDIO_INFO_LOG("Unsupport create fast record stream, so create ipc record stream");

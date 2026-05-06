@@ -130,6 +130,7 @@ public:
     MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, uint32_t), (override));
     MOCK_METHOD(void, OnNotifyDfxNodeInfoChanged, (uint32_t, const HpaeDfxNodeInfo &), (override));
     MOCK_METHOD(void, OnNotifyDfxNodeAdmin, (bool, const HpaeDfxNodeInfo &), (override));
+    MOCK_METHOD(OffloadCallbackData, GetOffloadCallbackData, (), (override, noexcept));
 };
 
 // Mock IStreamCallback

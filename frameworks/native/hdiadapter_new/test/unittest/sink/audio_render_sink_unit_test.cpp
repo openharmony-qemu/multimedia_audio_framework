@@ -1094,5 +1094,83 @@ HWTEST_F(AudioRenderSinkUnitTest, UpdateAppsUid_Direct_002, TestSize.Level1)
     DeInitDirectSink();
 }
 
+/**
+ * @tc.name   : Test GetCurrentOutputDevice API
+ * @tc.number : GetCurrentOutputDevice_001
+ * @tc.desc   : Test GetCurrentOutputDevice returns current active device type
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    
+    DeviceType deviceType = primarySink_->GetCurrentOutputDevice();
+    EXPECT_EQ(deviceType, DEVICE_TYPE_SPEAKER);
+    
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test GetCurrentOutputDevice API
+ * @tc.number : GetCurrentOutputDevice_002
+ * @tc.desc   : Test GetCurrentOutputDevice for USB sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_002, TestSize.Level1)
+{
+    InitUsbSink();
+    EXPECT_TRUE(usbSink_ && usbSink_->IsInited());
+    
+    DeviceType deviceType = usbSink_->GetCurrentOutputDevice();
+    EXPECT_EQ(deviceType, DEVICE_TYPE_USB_ARM_HEADSET);
+    
+    DeInitUsbSink();
+}
+
+/**
+ * @tc.name   : Test GetCurrentOutputDevice API
+ * @tc.number : GetCurrentOutputDevice_003
+ * @tc.desc   : Test GetCurrentOutputDevice for VOIP sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_003, TestSize.Level1)
+{
+    InitVoipSink();
+    EXPECT_TRUE(voipSink_ && voipSink_->IsInited());
+    
+    DeviceType deviceType = voipSink_->GetCurrentOutputDevice();
+    EXPECT_EQ(deviceType, DEVICE_TYPE_SPEAKER);
+    
+    DeInitVoipSink();
+}
+
+/**
+ * @tc.name   : Test GetCurrentOutputDevice API
+ * @tc.number : GetCurrentOutputDevice_004
+ * @tc.desc   : Test GetCurrentOutputDevice for uninitialized sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_004, TestSize.Level1)
+{
+    EXPECT_TRUE(primarySink_ == nullptr || !primarySink_->IsInited());
+    
+    if (primarySink_ != nullptr) {
+        DeviceType deviceType = primarySink_->GetCurrentOutputDevice();
+        EXPECT_EQ(deviceType, DEVICE_TYPE_NONE);
+    }
+}
+
+/**
+ * @tc.name   : Test GetCurrentOutputDevice API
+ * @tc.number : GetCurrentOutputDevice_005
+ * @tc.desc   : Test GetCurrentOutputDevice for direct sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_005, TestSize.Level1)
+{
+    InitDirectSink();
+    EXPECT_TRUE(directSink_ && directSink_->IsInited());
+    
+    DeviceType deviceType = directSink_->GetCurrentOutputDevice();
+    EXPECT_EQ(deviceType, DEVICE_TYPE_WIRED_HEADSET);
+    
+    DeInitDirectSink();
+}
 } // namespace AudioStandard
 } // namespace OHOS
