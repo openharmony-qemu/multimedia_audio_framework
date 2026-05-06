@@ -41,7 +41,7 @@ constexpr uint32_t MAX_DESCRIPTOR_NUM = 20;
 constexpr uint32_t MAX_CMD_LEN = 10;
 constexpr uint32_t MAX_REPLY_LEN = 10;
 constexpr uint32_t MAX_TIME_INTERVAL_MS = 160; // ms
-constexpr size_t PARAM_MAX_SIZE = 1000;
+constexpr size_t PARAM_MAX_SIZE = 4096;
 // key for effectName, value for (libName, effectId)
 static std::map<std::string, std::pair<std::string, std::string>> g_chainName2infoMap;
 static std::mutex g_chainMutex;
@@ -70,7 +70,11 @@ static inline int32_t GetByteSize(AudioSampleFormat format)
     return (it != sizeMap.end()) ? it->second : 2;  // Default size is 2
 }
 
-OfflineAudioEffectServerChain::OfflineAudioEffectServerChain(const std::string &chainName) : chainName_(chainName) {}
+OfflineAudioEffectServerChain::OfflineAudioEffectServerChain(const std::string &chainName) : chainName_(chainName)
+{
+    paramBufferIn_ = std::make_unique<int8_t[]>(PARAM_MAX_SIZE);
+    paramBufferOut_ = std::make_unique<int8_t[]>(PARAM_MAX_SIZE);
+}
 
 OfflineAudioEffectServerChain::~OfflineAudioEffectServerChain()
 {
@@ -83,6 +87,8 @@ OfflineAudioEffectServerChain::~OfflineAudioEffectServerChain()
     serverBufferOut_ = nullptr;
     DumpFileUtil::CloseDumpFile(&dumpFileIn_);
     DumpFileUtil::CloseDumpFile(&dumpFileOut_);
+    paramBufferIn_.reset();
+    paramBufferOut_.reset();
 }
 
 static struct IEffectModel *InitEffectModel()
@@ -183,6 +189,7 @@ int32_t OfflineAudioEffectServerChain::SetConfig(AudioStreamInfo inInfo, AudioSt
 
     offlineConfig_.inputCfg = {inInfo.samplingRate, inInfo.channels, inInfo.format};
     offlineConfig_.outputCfg = {outInfo.samplingRate, outInfo.channels, outInfo.format};
+    savedEncodingType_ = inInfo.encoding;
 
     int8_t output[MAX_REPLY_LEN] = {0};
     uint32_t replyLen = MAX_REPLY_LEN;
@@ -205,13 +212,35 @@ int32_t OfflineAudioEffectServerChain::SetParam(const std::vector<uint8_t> &para
     CHECK_AND_RETURN_RET_LOG(param.size() < PARAM_MAX_SIZE, ERROR,
         "set param failed, param size %{public}zu is too large", param.size());
     std::vector<uint8_t> myParam = param;
-    int8_t output[MAX_REPLY_LEN] = {0};
-    uint32_t replyLen = MAX_REPLY_LEN;
+    memset_s(paramBufferOut_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    uint32_t replyLen = PARAM_MAX_SIZE;
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "set param failed, controller is nullptr");
     int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_SET_PARAM,
-        reinterpret_cast<int8_t *>(myParam.data()), myParam.size(), output, &replyLen);
+        reinterpret_cast<int8_t *>(myParam.data()), myParam.size(), paramBufferOut_.get(), &replyLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         "%{public}s effect COMMAND_SET_PARAM failed, errCode is %{public}d", chainName_.c_str(), ret);
+    return SUCCESS;
+}
+
+int32_t OfflineAudioEffectServerChain::GetParam(std::vector<uint8_t> &param)
+{
+    CHECK_AND_RETURN_RET_LOG(param.size() < PARAM_MAX_SIZE, ERROR,
+        "get param failed, param size %{public}zu is too large", param.size());
+    memset_s(paramBufferIn_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    if (param.size() > 0) {
+        int32_t ret = memcpy_s(paramBufferIn_.get(), PARAM_MAX_SIZE, param.data(), param.size());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "memcpy failed, ret:%{public}d", ret);
+    }
+    memset_s(paramBufferOut_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    uint32_t replyLen = PARAM_MAX_SIZE;
+    CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "get param failed, controller is nullptr");
+    int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_GET_PARAM,
+        paramBufferIn_.get(), PARAM_MAX_SIZE, paramBufferOut_.get(), &replyLen);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        "%{public}s effect COMMAND_GET_PARAM failed, errCode is %{public}d", chainName_.c_str(), ret);
+    CHECK_AND_RETURN_RET_LOG(replyLen > 0 && replyLen <= PARAM_MAX_SIZE, ERROR,
+        "get param failed, invalid replyLen %{public}u", replyLen);
+    param.assign(paramBufferOut_.get(), paramBufferOut_.get() + replyLen);
     return SUCCESS;
 }
 
@@ -265,8 +294,9 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     struct AudioEffectBuffer input;
     struct AudioEffectBuffer output;
 
-    input = {static_cast<int32_t>(inSize) / GetFormatByteSize(offlineConfig_.inputCfg.format),
-        GetFormatByteSize(offlineConfig_.inputCfg.format),
+    int32_t frameCount = (savedEncodingType_ == ENCODING_METADATA) ?
+        0 : static_cast<int32_t>(inSize) / GetFormatByteSize(offlineConfig_.inputCfg.format);
+    input = {frameCount, savedEncodingType_,
         reinterpret_cast<int8_t *>(serverBufferIn_->GetBase()), static_cast<int32_t>(inSize)};
     output = {};
 

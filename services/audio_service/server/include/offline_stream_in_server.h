@@ -37,6 +37,8 @@ public:
 
     int32_t SetParamOfflineEffectChain(const std::vector<uint8_t> &param) override;
 
+    int32_t GetParamOfflineEffectChain(std::vector<uint8_t> &param) override;
+
     int32_t PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
         std::shared_ptr<AudioSharedMemory> &outBuffer) override;
 
