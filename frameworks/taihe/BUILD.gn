@@ -78,6 +78,7 @@ taihe_shared_library("audio_taihe") {
     "audiomanager/callback/taihe_active_volume_type_change_callback.cpp",
     "audiomanager/callback/taihe_appvolume_change_callback.cpp",
     "audiomanager/callback/taihe_audio_capturer_state_callback.cpp",
+    "audiomanager/callback/taihe_audio_effect_manager_callback.cpp",
     "audiomanager/callback/taihe_audio_manager_callbacks.cpp",
     "audiomanager/callback/taihe_audio_micstatechange_callback.cpp",
     "audiomanager/callback/taihe_audio_renderer_state_callback.cpp",

@@ -1059,162 +1059,30 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
     return NO_A2DP_DEVICE;
 }
 
-int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)
+bool AudioPolicyService::IsAudioSeparationEffectSupported()
 {
-    sptr<IStandardSleAudioOperationCallback> sleAudioOperationCallback =
-        iface_cast<IStandardSleAudioOperationCallback>(object);
-    CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR,
-        "sleAudioOperationCallback_ is nullptr");
-
-    sleAudioDeviceManager_.SetSleAudioOperationCallback(sleAudioOperationCallback);
-
-    return SUCCESS;
+    return AudioEffectService::GetAudioEffectService().IsAudioSeparationEffectSupported();
 }
 
-int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
+int32_t AudioPolicyService::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
-    audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, false);
-    return SUCCESS;
+    return AudioEffectService::GetAudioEffectService().SetAudioSeparationEffectEnabled(enabled, uid, streamId);
 }
 
-void AudioPolicyService::UpdateSpatializationSupported(const std::string macAddress, const bool support)
+int32_t AudioPolicyService::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
 {
-    audioDeviceLock_.UpdateSpatializationSupported(macAddress, support);
-}
-#ifdef HAS_FEATURE_INNERCAPTURER
-int32_t AudioPolicyService::LoadModernInnerCapSink(int32_t innerCapId)
-{
-    AUDIO_INFO_LOG("Start");
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
-    std::string name = INNER_CAPTURER_SINK;
-    moduleInfo.name = name + std::to_string(innerCapId);
-
-    moduleInfo.format = "s16le";
-    moduleInfo.channels = "2"; // 2 channel
-    moduleInfo.rate = "48000";
-    moduleInfo.bufferSize = "3840"; // 20ms
-
-    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-    return SUCCESS;
+    return AudioEffectService::GetAudioEffectService().SetAudioSeparationEffectVolume(type, volume);
 }
 
-int32_t AudioPolicyService::LoadModernOffloadCapSource()
+int32_t AudioPolicyService::OnAudioSeparationEffectEnabledChange(
+    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
 {
-    if (audioIOHandleMap_.CheckIOHandleExist(OFFLOAD_CAPTURER_SOURCE)) {
-        AUDIO_INFO_LOG("offload capture has loaded!");
-        return SUCCESS;
-    }
-    AUDIO_INFO_LOG("Start load offload capture:");
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.name = OFFLOAD_CAPTURER_SOURCE;
-    moduleInfo.lib = "libmodule-hdi-source.z.so";
-    moduleInfo.format = "s16le";
-    moduleInfo.ecFormat = "s16le";
-    moduleInfo.ecType = "1";
-    moduleInfo.channels = "2"; // 2 channel
-    moduleInfo.ecChannels = "2"; // 2 channel
-    moduleInfo.rate = "48000";
-    moduleInfo.ecSamplingRate = "48000";
-    moduleInfo.bufferSize = "3840"; // 20ms
-
-    moduleInfo.className = "offload";
-    moduleInfo.offloadEnable = "true";
-    moduleInfo.role = "source";
-    moduleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_OFFLOAD_CAPTURE);
-
-    int32_t result = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-    return result;
+    return AudioEffectService::GetAudioEffectService().OnAudioSeparationEffectEnabledChange(callback);
 }
 
-int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
+int32_t AudioPolicyService::OffAudioSeparationEffectEnabledChange()
 {
-    AUDIO_INFO_LOG("Start");
-    std::string name = INNER_CAPTURER_SINK;
-    name += std::to_string(innerCapId);
-
-    audioIOHandleMap_.ClosePortAndEraseIOHandle(name);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyService::UnloadModernOffloadCapSource()
-{
-    AUDIO_INFO_LOG("Start unload offload capture:");
-    audioIOHandleMap_.ClosePortAndEraseIOHandle(OFFLOAD_CAPTURER_SOURCE);
-    return SUCCESS;
-}
-#endif
-
-bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &config,
-    const AudioDeviceDescriptor &deviceInfo)
-{
-    if (audioPolicyServerHandler_ && config.streamInfo.encoding == ENCODING_EAC3 &&
-        deviceInfo.deviceType_ != DEVICE_TYPE_HDMI && deviceInfo.deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
-        audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(ERROR_UNSUPPORTED_FORMAT);
-        return false;
-    }
-    return true;
-}
-
-int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
-{
-    return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
-}
-
-bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectProperty> &property)
-{
-    bool ret = false;
-    for (const auto &item : property) {
-        if (item.name != "voip_up") continue;
-        if (ANRCategories.find(item.category) != ANRCategories.end()) {
-            ret = true;
-            break;
-        }
-    }
-    return ret;
-}
- 
-bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
-{
-    if (sourceType != SOURCE_TYPE_LIVE && sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AUDIO_INFO_LOG("SourceType %{public}d IsIntelligentNoiseReductionEnabledForCurrentDevice 0", sourceType);
-        return false;
-    }
- 
-    bool ret = false;
-    if (sourceType == SOURCE_TYPE_LIVE) {
-        std::string paramKey = LIVE_EFFECT_KEY;
-        std::string paramValue = "";
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
-        settingProvider.GetStringValue(paramKey, paramValue, LIVE_EFFECT_TABLE_TYPE);
-        ret = (paramValue == LIVE_EFFECT_ON);
-        AUDIO_INFO_LOG("SourceType %{public}d IsIntelligentNoiseReductionEnabledForCurrentDevice %{public}d",
-            sourceType, ret);
-        return ret;
-    }
-
-    if (ecEnableState_) { // is configed according to the product
-        AudioEffectPropertyArray propertyArray = {};
-        int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
-        CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");
-        ret = CheckVoipAnrOn(propertyArray.property);
-    } else {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
-        int32_t flagValue = INVALID_VALUE;
-        settingProvider.GetIntValue(AINR_FLAG, flagValue, AUDIO_SETTING_TABLE_TYPE);
-        ret = (flagValue == 1);
-    }
-    AUDIO_INFO_LOG("SourceType %{public}d IsIntelligentNoiseReductionEnabledForCurrentDevice %{public}d",
-        sourceType, ret);
-    return ret;
-}
-
-AudioScene AudioPolicyService::GetAudioSceneFromAllZones()
-{
-    return AudioZoneService::GetInstance().GetAudioSceneFromAllZones();
+    return AudioEffectService::GetAudioEffectService().OffAudioSeparationEffectEnabledChange();
 }
 } // namespace AudioStandard
 } // namespace OHOS

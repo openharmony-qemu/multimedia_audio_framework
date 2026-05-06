@@ -3745,6 +3745,43 @@ int32_t AudioPolicyManager::TriggerAudioZoneVolumeSync()
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->TriggerAudioZoneVolumeSync();
 }
+
+bool AudioPolicyManager::IsAudioSeparationEffectSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsAudioSeparationEffectSupported();
+}
+
+int32_t AudioPolicyManager::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+}
+
+int32_t AudioPolicyManager::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioSeparationEffectVolume(type, volume);
+}
+
+int32_t AudioPolicyManager::OnAudioSeparationEffectEnabledChange(
+    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->OnAudioSeparationEffectEnabledChange(callback);
+}
+
+int32_t AudioPolicyManager::OffAudioSeparationEffectEnabledChange()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->OffAudioSeparationEffectEnabledChange();
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

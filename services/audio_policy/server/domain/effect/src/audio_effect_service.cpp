@@ -22,6 +22,7 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "i_hpae_manager.h"
+#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -920,6 +921,51 @@ void AudioEffectService::UpdateVoipByAppMuteHintLocked(bool enable, uint32_t tri
     }
     HPAE::IHpaeManager::GetHpaeManager().SetAppsEnhanceMuteState(lastVoipBypassTriggerSessionId_, enable);
     AUDIO_INFO_LOG("voip bypass trigger by app-configured mute hint, enable:%{public}d", enable);
+}
+
+bool AudioEffectService::IsAudioSeparationEffectSupported()
+{
+    AUDIO_INFO_LOG("IsAudioSeparationEffectSupported called");
+    return true;
+}
+
+int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled: enabled=%{public}d, uid=%{public}d, streamId=%{public}ld",
+        enabled, uid, streamId);
+    NotifyAudioSeparationEffectEnabledChange(enabled);
+    return AUDIO_OK;
+}
+
+int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+{
+    AUDIO_INFO_LOG("SetAudioSeparationEffectVolume: type=%{public}d, volume=%{public}f", type, volume);
+    return AUDIO_OK;
+}
+
+int32_t AudioEffectService::OnAudioSeparationEffectEnabledChange(
+    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
+    separationEffectCallbacks_.push_back(callback);
+    return AUDIO_OK;
+}
+
+int32_t AudioEffectService::OffAudioSeparationEffectEnabledChange()
+{
+    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
+    separationEffectCallbacks_.clear();
+    return AUDIO_OK;
+}
+
+void AudioEffectService::NotifyAudioSeparationEffectEnabledChange(bool enabled)
+{
+    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
+    for (const auto &callback : separationEffectCallbacks_) {
+        if (callback != nullptr) {
+            callback->OnAudioSeparationEffectEnabledChange(enabled);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
