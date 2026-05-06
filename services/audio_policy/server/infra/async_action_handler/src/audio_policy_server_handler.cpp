@@ -1387,6 +1387,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         ProcessPreferredOutputDeviceForClient(it->first, it->second, ss);
     }
+    CHECK_AND_RETURN(!ss.str().empty());
     AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
 }
 
@@ -1463,6 +1464,7 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         ProcessPreferredInputDeviceForClient(it->first, it->second, ss);
     }
+    CHECK_AND_RETURN(!ss.str().empty());
     AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
 }
 
