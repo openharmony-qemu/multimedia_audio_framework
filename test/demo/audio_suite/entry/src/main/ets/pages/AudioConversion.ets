@@ -573,10 +573,8 @@ export struct AudioConversion {
             this.outputFilePath = documentSaveResult[0];
             const uri = new fileUri.FileUri(this.outputFilePath);
             this.outputFileName = uri.name || 'Output File';
-
             Logger.info(TAG, `User selected save path: ${this.outputFilePath}`);
 
-            // 保存文件
             if (isFilePath) {
               await this.saveToFileFromPath(data as string);
             } else {
@@ -761,7 +759,6 @@ export struct AudioConversion {
       let outputPath: string;
       let fileName: string;
 
-      // 直接使用用户选择的路径
       if (this.outputFilePath) {
         outputPath = this.outputFilePath;
         fileName = this.outputFileName;
@@ -802,7 +799,6 @@ export struct AudioConversion {
       let outputPath: string;
       let fileName: string;
 
-      // 直接使用用户选择的路径
       if (this.outputFilePath) {
         outputPath = this.outputFilePath;
         fileName = this.outputFileName;
