@@ -26,7 +26,7 @@ namespace HPAE {
 constexpr uint32_t BUFFER_EXPAND_SIZE_2 = 2;
 constexpr uint32_t BUFFER_EXPAND_SIZE_5 = 5;
 constexpr uint32_t SAMPLE_RATE_11025 = 11025;
-constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr uint32_t FRAME_LEN_20MS = (20 * SOURCE_PERIOD_SIZE);
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t ADD_SIZE = 100;
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
