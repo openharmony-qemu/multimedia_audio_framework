@@ -1305,7 +1305,7 @@ void NapiAudioSpatializationManager::UnregisterPersonalizedSpatializationEnabled
             std::static_pointer_cast<NapiPersonalizedSpatializationEnabledChangeCallback>(
             napiAudioSpatializationManager->personalizedSpatializationEnabledChangeCallbackNapi_);
         if (callback != nullptr) {
-            cb->RemovePersonalizedSpatializationEnabledChangeCallbackReference(env, callback);
+            cb->RemovePersonalizedSpatialEnabledChangeCallbackReference(env, callback);
         }
         if (callback == nullptr || cb->GetPersonalizedSpatializationEnabledChangeCbListSize() == 0) {
             int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
@@ -1313,7 +1313,7 @@ void NapiAudioSpatializationManager::UnregisterPersonalizedSpatializationEnabled
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterPersonalizedSpatializationEnabledEventListener Failed");
             napiAudioSpatializationManager->personalizedSpatializationEnabledChangeCallbackNapi_.reset();
             napiAudioSpatializationManager->personalizedSpatializationEnabledChangeCallbackNapi_ = nullptr;
-            cb->RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference();
+            cb->RemoveAllPersonalizedSpatialEnabledChangeCallbackReference();
         }
     } else {
         AUDIO_ERR_LOG("UnregisterCallback: PersonalizedSpatializationEnabledChangeCallbackNapi_ is null");

@@ -1073,7 +1073,7 @@ bool NapiPersonalizedSpatializationEnabledChangeCallback::GetPersonalizedSpatial
     return regAmPersonalizedSpatializationTsfn_;
 }
 
-void NapiPersonalizedSpatializationEnabledChangeCallback::RemovePersonalizedSpatializationEnabledChangeCallbackReference(
+void NapiPersonalizedSpatializationEnabledChangeCallback::RemovePersonalizedSpatialEnabledChangeCallbackReference(
     napi_env env, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -1088,11 +1088,10 @@ void NapiPersonalizedSpatializationEnabledChangeCallback::RemovePersonalizedSpat
             return;
         }
     }
-    AUDIO_INFO_LOG("RemovePersonalizedSpatializationEnabledChangeCallbackReference: js callback no find");
+    AUDIO_INFO_LOG("RemovePersonalizedSpatialEnabledChangeCallbackReference: js callback no find");
 }
 
-void NapiPersonalizedSpatializationEnabledChangeCallback::RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference(
-    )
+void NapiPersonalizedSpatializationEnabledChangeCallback::RemoveAllPersonalizedSpatialEnabledChangeCallbackReference()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto it = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
@@ -1101,7 +1100,7 @@ void NapiPersonalizedSpatializationEnabledChangeCallback::RemoveAllPersonalizedS
         (*it)->cb_ = nullptr;
     }
     personalizedSpatializationEnabledChangeCbForAnyDeviceList_.clear();
-    AUDIO_INFO_LOG("RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference: remove all js callbacks success");
+    AUDIO_INFO_LOG("RemoveAllPersonalizedSpatialEnabledChangeCallbackReference: remove all js callbacks success");
 }
 
 int32_t NapiPersonalizedSpatializationEnabledChangeCallback::GetPersonalizedSpatializationEnabledChangeCbListSize()

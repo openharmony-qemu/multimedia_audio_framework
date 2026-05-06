@@ -219,9 +219,9 @@ public:
     explicit NapiPersonalizedSpatializationEnabledChangeCallback(napi_env env);
     virtual ~NapiPersonalizedSpatializationEnabledChangeCallback();
     void SavePersonalizedSpatializationEnabledChangeCallbackReference(napi_value args);
-    void RemovePersonalizedSpatializationEnabledChangeCallbackReference(
+    void RemovePersonalizedSpatialEnabledChangeCallbackReference(
         napi_env env, napi_value args);
-    void RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference();
+    void RemoveAllPersonalizedSpatialEnabledChangeCallbackReference();
     int32_t GetPersonalizedSpatializationEnabledChangeCbListSize();
     void OnPersonalizedSpatializationEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) override;

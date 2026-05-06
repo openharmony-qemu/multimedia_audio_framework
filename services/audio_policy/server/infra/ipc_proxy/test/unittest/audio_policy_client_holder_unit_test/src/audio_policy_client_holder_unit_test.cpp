@@ -217,5 +217,34 @@ HWTEST_F(AudioPolicyClientHolderUnitTest, OnAdaptiveSpatialRenderingEnabledChang
     auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     clientHolder_->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
 }
+
+/*
+ * @tc.name  : Test OnPersonalizedSpatializationEnabledChangeForAnyDevice.
+ * @tc.number: AudioPolicyClientHolderTest_OnPersonalizedSpatializationEnabledChangeForAnyDevice_001
+ * @tc.desc  : Verify that hasSystemPermission_ == true.
+ */
+HWTEST_F(AudioPolicyClientHolderUnitTest, OnPersonalizedSpatializationEnabledChangeForAnyDevice_001, TestSize.Level4)
+{
+    EXPECT_CALL(*mockClient_, OnPersonalizedSpatializationEnabledChangeForAnyDevice(_, _)).WillOnce(Return(SUCCESS));
+    clientHolder_->audioPolicyClient_ = mockClient_;
+    clientHolder_->hasSystemPermission_ = true;
+    bool enabled = true;
+    auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    clientHolder_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+}
+
+/**
+ * @tc.name  : Test OnPersonalizedSpatializationEnabledChangeForAnyDevice.
+ * @tc.number: AudioPolicyClientHolderTest_OnPersonalizedSpatializationEnabledChangeForAnyDevice_002
+ * @tc.desc  : Verify that hasSystemPermission_ == false.
+ */
+HWTEST_F(AudioPolicyClientHolderUnitTest, OnPersonalizedSpatializationEnabledChangeForAnyDevice_002, TestSize.Level4)
+{
+    EXPECT_CALL(*mockClient_, OnPersonalizedSpatializationEnabledChangeForAnyDevice(_, _)).WillOnce(Return(SUCCESS));
+    clientHolder_->audioPolicyClient_ = mockClient_;
+    clientHolder_->hasSystemPermission_ = false;
+    bool enabled = true;
+    auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    clientHolder_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
 } // namespace AudioStandard
 } // namespace OHOS

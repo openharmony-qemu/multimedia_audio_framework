@@ -120,6 +120,8 @@ public:
     MOCK_METHOD(ErrCode, OnSpatialAudioSourceTypeChange, (int32_t mode), (override));
     MOCK_METHOD(ErrCode, OnAudioRouteSelectRefined,
         (const std::shared_ptr<AudioRouteSelectInfo>& routeSelectInfo, int32_t& selectResult), (override));
+    MOCK_METHOD(ErrCode, OnPersonalizedSpatializationEnabledChangeForAnyDevice,
+        (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled), (override));
 };
 
 } // namespace AudioStandard
