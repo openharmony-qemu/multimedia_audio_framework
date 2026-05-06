@@ -40,8 +40,8 @@ void AudioPcmProcessImplTest::TearDown(void) {}
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_001, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {96000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {96000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
     AudioConverterDestroy(handle);
@@ -49,70 +49,70 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_001, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_002, TestSize.Level1)
 {
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(nullptr, &outCfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_003, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, nullptr);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_004, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {99999, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {99999, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_005, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {99999, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {99999, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_006, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, static_cast<CAudioChannel>(3), AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, static_cast<CAudioChannel>(3), AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_007, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, static_cast<CAudioChannel>(3), AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, static_cast<CAudioChannel>(3), AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_008, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, static_cast<AudioBitDepth>(99)};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, static_cast<AudioBitDepth>(99)};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_009, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, static_cast<AudioBitDepth>(99)};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, static_cast<AudioBitDepth>(99)};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_001, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
 
@@ -132,8 +132,8 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_002, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_003, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
 
@@ -145,8 +145,8 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_003, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_004, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
 
@@ -159,8 +159,8 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_004, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_005, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
 
@@ -173,21 +173,17 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_005, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterDestroy_001, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
     AudioConverterDestroy(handle);
-}
-
-HWTEST_F(AudioPcmProcessImplTest, AudioConverterDestroy_002, TestSize.Level1)
-{
     AudioConverterDestroy(nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_001, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
@@ -201,28 +197,28 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_002, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_003, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {99999, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {99999, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_004, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, static_cast<CAudioChannel>(3), AudioBit16Int};
+    AudioFormatConfig cfg = {48000, static_cast<CAudioChannel>(3), AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_005, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, static_cast<AudioBitDepth>(99)};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, static_cast<AudioBitDepth>(99)};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_EQ(handle, nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_001, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -257,7 +253,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_002, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_003, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -269,7 +265,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_003, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_004, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -287,7 +283,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_004, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_005, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -304,7 +300,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_005, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_006, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -327,7 +323,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_006, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_007, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -346,7 +342,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_007, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_008, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -365,7 +361,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_008, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_009, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -387,20 +383,16 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_009, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerDestroy_001, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
-}
-
-HWTEST_F(AudioPcmProcessImplTest, AudioMixerDestroy_002, TestSize.Level1)
-{
     AudioMixerDestroy(nullptr);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_010, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChMono, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_MONO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -423,8 +415,8 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_010, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_010, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChMono, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_MONO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
     AudioConverterDestroy(handle);
@@ -432,8 +424,8 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_010, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_011, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit24Int};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit32Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT24_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT32_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
     AudioConverterDestroy(handle);
@@ -441,8 +433,8 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_011, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_012, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChStereo, AudioBit32Float};
-    AudioFormatConfig outCfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT32_FLOAT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
     AudioConverterDestroy(handle);
@@ -450,7 +442,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_012, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_006, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChMono, AudioBit24Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_MONO, AUDIO_BIT24_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
@@ -458,7 +450,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_006, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_007, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit32Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT32_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
@@ -466,7 +458,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_007, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_008, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit32Float};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT32_FLOAT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
@@ -474,7 +466,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_008, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_009, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {8000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {8000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
@@ -482,7 +474,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_009, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_010, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {44100, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {44100, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
@@ -490,7 +482,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_010, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_011, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {96000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {96000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
     AudioMixerDestroy(handle);
@@ -498,7 +490,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerCreate_011, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_011, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 
@@ -525,8 +517,8 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_011, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_013, TestSize.Level1)
 {
-    AudioFormatConfig inCfg = {48000, AudioChMono, AudioBit16Int};
-    AudioFormatConfig outCfg = {48000, AudioChMono, AudioBit16Int};
+    AudioFormatConfig inCfg = {48000, AUDIO_CH_MONO, AUDIO_BIT16_INT};
+    AudioFormatConfig outCfg = {48000, AUDIO_CH_MONO, AUDIO_BIT16_INT};
     AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
     ASSERT_NE(handle, nullptr);
 
@@ -539,7 +531,7 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_013, TestSize.Level1)
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_012, TestSize.Level1)
 {
-    AudioFormatConfig cfg = {48000, AudioChStereo, AudioBit16Int};
+    AudioFormatConfig cfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
     AudioMixHandle handle = AudioMixerCreate(&cfg);
     ASSERT_NE(handle, nullptr);
 

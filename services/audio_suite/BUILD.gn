@@ -184,7 +184,7 @@ audio_ohos_library("audio_pcm_process") {
     ]
   }
 
-  innerapi_tags = [ "chipsetsdk" ]
+  # innerapi_tags = [ "chipsetsdk" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

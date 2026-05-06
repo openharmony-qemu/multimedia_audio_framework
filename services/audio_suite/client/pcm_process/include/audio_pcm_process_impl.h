@@ -40,7 +40,7 @@ struct MixerHandleWrapper {
     std::unique_ptr<MixerProcessor> mixer;
     AudioFormat format;
     std::vector<uint8_t> outputBuffer;
-    uint32_t bitDepth = 0;
+    uint32_t bitDepthByteSize = 0;
     bool bufferAllocated = false;
     uint32_t expectedSampleCount = 0;
 };

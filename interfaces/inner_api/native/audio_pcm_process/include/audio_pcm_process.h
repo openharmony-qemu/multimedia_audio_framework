@@ -22,15 +22,15 @@ extern "C" {
 #endif
 
 enum AudioBitDepth {
-    AudioBit16Int = 16,
-    AudioBit24Int = 24,
-    AudioBit32Int = 32,
-    AudioBit32Float = 33
+    AUDIO_BIT16_INT = 16,
+    AUDIO_BIT24_INT = 24,
+    AUDIO_BIT32_INT = 32,
+    AUDIO_BIT32_FLOAT = 33
 };
 
 enum CAudioChannel {
-    AudioChMono = 1,
-    AudioChStereo = 2
+    AUDIO_CH_MONO = 1,
+    AUDIO_CH_STEREO = 2
 };
 
 struct AudioFormatConfig {

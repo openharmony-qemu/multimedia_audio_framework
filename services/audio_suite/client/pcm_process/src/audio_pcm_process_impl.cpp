@@ -32,18 +32,22 @@ constexpr int32_t ERR_CODE_SUCCESS = 0;
 constexpr int32_t ERR_CODE_INVALID_PARAM = -1;
 constexpr int32_t ERR_CODE_INVALID_STATE = -2;
 constexpr int32_t ERR_CODE_OPERATION_FAILED = -3;
+constexpr uint32_t S16_BYTE_SIZE = 2;
+constexpr uint32_t S24_BYTE_SIZE = 3;
+constexpr uint32_t S32_BYTE_SIZE = 4;
+constexpr uint32_t F32_BYTE_SIZE = 4;
 }
 
 AudioSampleFormat ConvertBitDepthToSampleFormat(AudioBitDepth bitDepth)
 {
     switch (bitDepth) {
-        case AudioBit16Int:
+        case AUDIO_BIT16_INT:
             return AudioSampleFormat::SAMPLE_S16LE;
-        case AudioBit24Int:
+        case AUDIO_BIT24_INT:
             return AudioSampleFormat::SAMPLE_S24LE;
-        case AudioBit32Int:
+        case AUDIO_BIT32_INT:
             return AudioSampleFormat::SAMPLE_S32LE;
-        case AudioBit32Float:
+        case AUDIO_BIT32_FLOAT:
             return AudioSampleFormat::SAMPLE_F32LE;
         default:
             return AudioSampleFormat::INVALID_WIDTH;
@@ -53,9 +57,9 @@ AudioSampleFormat ConvertBitDepthToSampleFormat(AudioBitDepth bitDepth)
 AudioChannelLayout ConvertChannelToLayout(CAudioChannel channel)
 {
     switch (channel) {
-        case AudioChMono:
+        case AUDIO_CH_MONO:
             return AudioChannelLayout::CH_LAYOUT_MONO;
-        case AudioChStereo:
+        case AUDIO_CH_STEREO:
             return AudioChannelLayout::CH_LAYOUT_STEREO;
         default:
             return AudioChannelLayout::CH_LAYOUT_UNKNOWN;
@@ -76,14 +80,14 @@ bool ValidateSampleRate(int sampleRate, AudioSamplingRate& outRate)
 uint32_t GetSampleSizeFromBitDepth(AudioBitDepth bitDepth)
 {
     switch (bitDepth) {
-        case AudioBit16Int:
-            return 2;
-        case AudioBit24Int:
-            return 3;
-        case AudioBit32Int:
-            return 4;
-        case AudioBit32Float:
-            return 4;
+        case AUDIO_BIT16_INT:
+            return S16_BYTE_SIZE;
+        case AUDIO_BIT24_INT:
+            return S24_BYTE_SIZE;
+        case AUDIO_BIT32_INT:
+            return S32_BYTE_SIZE;
+        case AUDIO_BIT32_FLOAT:
+            return F32_BYTE_SIZE;
         default:
             return 0;
     }
@@ -269,72 +273,66 @@ AudioMixHandle AudioMixerCreate(const AudioFormatConfig* inCfg)
 
     wrapper->mixer = std::move(mixer);
     wrapper->format = format;
-    wrapper->bitDepth = GetSampleSizeFromBitDepth(inCfg->bitDepth);
+    wrapper->bitDepthByteSize = GetSampleSizeFromBitDepth(inCfg->bitDepth);
     wrapper->bufferAllocated = false;
     wrapper->expectedSampleCount = 0;
 
     AUDIO_INFO_LOG("success, channels=%{public}u, bitDepth=%{public}u",
-        format.audioChannelInfo.numChannels, wrapper->bitDepth);
+        format.audioChannelInfo.numChannels, wrapper->bitDepthByteSize);
     return static_cast<AudioMixHandle>(wrapper);
 }
 
-AudioMixResult AudioMixerProcess(AudioMixHandle handle, const CAudioMixStream* streams, int streamCount)
+bool ParamCheck(AudioMixHandle handle, const CAudioMixStream* streams, int streamCount)
 {
-    AudioMixResult result = {nullptr, 0, ERR_CODE_INVALID_PARAM};
-
     if (handle == nullptr) {
         AUDIO_ERR_LOG("handle is nullptr");
-        return result;
+        return false;
     }
 
     if (streams == nullptr || streamCount <= 0) {
         AUDIO_ERR_LOG("invalid streams params");
-        return result;
+        return false;
     }
 
     MixerHandleWrapper* wrapper = static_cast<MixerHandleWrapper*>(handle);
     if (wrapper->mixer == nullptr) {
         AUDIO_ERR_LOG("mixer is nullptr");
-        result.errCode = ERR_CODE_INVALID_STATE;
-        return result;
+        return false;
     }
+    return true;
+}
 
-    uint32_t firstSampleCount = static_cast<uint32_t>(streams[0].sampleCount);
+AudioMixResult AudioMixerProcess(AudioMixHandle handle, const CAudioMixStream* streams, int streamCount)
+{
+    AudioMixResult result = {nullptr, 0, ERR_CODE_INVALID_PARAM};
+    CHECK_AND_RETURN_RET_LOG(ParamCheck(handle, streams, streamCount), result, "Param check failed");
+    uint32_t firstCount = static_cast<uint32_t>(streams[0].sampleCount);
     for (int i = 0; i < streamCount; ++i) {
-        if (streams[i].data == nullptr) {
-            AUDIO_ERR_LOG("stream[%{public}d] data is nullptr", i);
-            return result;
-        }
-        if (static_cast<uint32_t>(streams[i].sampleCount) != firstSampleCount) {
-            AUDIO_ERR_LOG("stream[%{public}d] sampleCount mismatch", i);
-            return result;
-        }
+        CHECK_AND_RETURN_RET_LOG((streams[i].data != nullptr && static_cast<uint32_t>(streams[i].sampleCount) ==
+            firstCount), result, "stream[%{public}d] invalid", i);
         if (streams[i].volume < 0.0f || streams[i].volume > 1.0f) {
             AUDIO_ERR_LOG("stream[%{public}d] volume out of range", i);
             return result;
         }
     }
 
+    MixerHandleWrapper* wrapper = static_cast<MixerHandleWrapper*>(handle);
     if (wrapper->bufferAllocated) {
-        if (firstSampleCount != wrapper->expectedSampleCount) {
-            AUDIO_ERR_LOG("sampleCount changed from %{public}u to %{public}u",
-                wrapper->expectedSampleCount, firstSampleCount);
-            result.errCode = ERR_CODE_INVALID_PARAM;
-            return result;
-        }
+        CHECK_AND_RETURN_RET_LOG(firstCount == wrapper->expectedSampleCount, result, "sampleCount changed %{public}u"
+            " to %{public}u", wrapper->expectedSampleCount, firstCount);
     } else {
         uint32_t tempChannelCount = wrapper->format.audioChannelInfo.numChannels;
-        uint32_t dataSize = firstSampleCount * wrapper->bitDepth * tempChannelCount;
+        uint32_t dataSize = firstCount * wrapper->bitDepthByteSize * tempChannelCount;
         wrapper->outputBuffer.resize(dataSize);
         wrapper->bufferAllocated = true;
-        wrapper->expectedSampleCount = firstSampleCount;
-        AUDIO_DEBUG_LOG("allocated outputBuffer size=%{public}u", dataSize);
+        wrapper->expectedSampleCount = firstCount;
+        AUDIO_INFO_LOG("allocated outputBuffer size = %{public}u", dataSize);
     }
 
     std::vector<AudioSuite::AudioMixStream> innerStreams;
     innerStreams.reserve(streamCount);
     uint32_t channelCount = wrapper->format.audioChannelInfo.numChannels;
-    uint32_t dataSize = firstSampleCount * wrapper->bitDepth * channelCount;
+    uint32_t dataSize = firstCount * wrapper->bitDepthByteSize * channelCount;
 
     for (int i = 0; i < streamCount; ++i) {
         AudioSuite::AudioMixStream innerStream;
@@ -347,7 +345,6 @@ AudioMixResult AudioMixerProcess(AudioMixHandle handle, const CAudioMixStream* s
     uint32_t outSize = 0;
     uint32_t outCapacity = static_cast<uint32_t>(wrapper->outputBuffer.size());
     int32_t ret = wrapper->mixer->Process(innerStreams, wrapper->outputBuffer.data(), outCapacity, &outSize);
-
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("mixer Process failed, ret=%{public}d", ret);
         result.errCode = ERR_CODE_OPERATION_FAILED;
@@ -355,10 +352,9 @@ AudioMixResult AudioMixerProcess(AudioMixHandle handle, const CAudioMixStream* s
     }
 
     result.outData = wrapper->outputBuffer.data();
-    result.outSamplerCount = static_cast<int>(firstSampleCount);
+    result.outSamplerCount = static_cast<int>(firstCount);
     result.errCode = ERR_CODE_SUCCESS;
 
-    AUDIO_DEBUG_LOG("success, outSamplerCount=%{public}d", result.outSamplerCount);
     return result;
 }
 
