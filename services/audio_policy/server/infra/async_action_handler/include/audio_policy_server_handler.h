@@ -95,6 +95,7 @@ public:
         ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE,
         BYPASS_SPATIAL_FOR_STEREO_CHANGE_FOR_CURRENT_DEVICE,
         EFFECT_MODE_CHANGE_FOR_ANY_DEVICE,
+        PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
     };
     /* event data */
     class EventContextObj {
@@ -115,6 +116,7 @@ public:
         bool spatializationEnabled;
         bool headTrackingEnabled;
         bool adaptiveSpatialRenderingEnabled;
+        bool personalizedSpatialRenderingEnabled;
         AudioScene audioScene;
         int32_t nnState;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -249,6 +251,8 @@ public:
     bool SendBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
         bool spatialization, bool headtracking);
     bool SendSpatialAudioSourceTypeChangeEvent(SpatialAudioSourceType mode);
+    bool SendPersonalizedSpatializationEnabledChangeForAnyDeviceEvent(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
 
 protected:
@@ -301,6 +305,7 @@ private:
     void HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializationEnabledChangeForBT(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatialAudioSourceTypeChange(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

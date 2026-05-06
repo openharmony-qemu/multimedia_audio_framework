@@ -62,8 +62,14 @@ public:
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
     int32_t SetBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool bypass);
+    bool IsPersonalizedSpatializationEnabled(const std::string address);
+    int32_t SetPersonalizedSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t DownloadPersonalizedHRTF(const int32_t &fd, const int64_t &length);
     void HandleAdaptiveSpatialRenderingEnabledChange(const bool &enabled);
     void HandleAdaptiveSpatialRenderingEnabledChange(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    void HandlePersonalizedSpatializationEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleSpatializationEnabledChange(
@@ -79,6 +85,7 @@ public:
     bool IsSpatializationSupportedForDevice(const std::string address);
     bool IsHeadTrackingSupported();
     bool IsHeadTrackingSupportedForDevice(const std::string address);
+    bool IsPersonalizedSpatializationSupported();
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
@@ -135,10 +142,12 @@ private:
     std::string preSettingSpatialAddress_ = "NO_PREVIOUS_SET_DEVICE";
     bool isSpatializationSupported_ = false;
     bool isHeadTrackingSupported_ = false;
+    bool isPersonalizedSpatializationSupported_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
     bool isHeadTrackingDataRequested_ = false;
     bool adaptiveSpatialRenderingEnabledReal_ = false;
+    bool personalizedSpatializationEnabledReal_ = false;
     AudioSpatializationState spatializationStateFlag_ = {};
     std::unordered_map<std::string, AudioSpatializationState> addressToSpatialEnabledMap_;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;

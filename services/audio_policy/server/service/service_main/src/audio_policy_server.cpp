@@ -4284,6 +4284,43 @@ int32_t AudioPolicyServer::GetCurrentSpatialAudioSourceType(int32_t &ret)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsPersonalizedSpatializationEnabled(const std::string &address, bool &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.IsPersonalizedSpatializationEnabled(address);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetPersonalizedSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+}
+
+int32_t AudioPolicyServer::DownloadPersonalizedHRTF(int32_t fd, int64_t length)
+{
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.DownloadPersonalizedHRTF(fd, length);
+}
+
 int32_t AudioPolicyServer::GetSpatializationState(int32_t streamUsage,
     AudioSpatializationState &state)
 {
@@ -4328,6 +4365,16 @@ int32_t AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string &a
         return ERR_PERMISSION_DENIED;
     }
     ret = audioSpatializationService_.IsHeadTrackingSupportedForDevice(address);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsPersonalizedSpatializationSupported(bool &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.IsPersonalizedSpatializationSupported();
     return SUCCESS;
 }
 

@@ -496,6 +496,13 @@ public:
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
+    int32_t IsPersonalizedSpatializationEnabled(const std::string &address, bool &ret) override;
+
+    int32_t SetPersonalizedSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
+
+    int32_t DownloadPersonalizedHRTF(int32_t fd, int64_t length) override;
+
     int32_t GetCurrentSpatialAudioSourceType(int32_t &ret) override;
 
     int32_t GetSpatializationState(int32_t streamUsage, AudioSpatializationState &state) override;
@@ -507,6 +514,8 @@ public:
     int32_t IsHeadTrackingSupported(bool &ret) override;
 
     int32_t IsHeadTrackingSupportedForDevice(const std::string &address, bool &ret) override;
+
+    int32_t IsPersonalizedSpatializationSupported(bool &ret) override;
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState &audioSpatialDeviceState) override;
 

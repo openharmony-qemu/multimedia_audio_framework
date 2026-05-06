@@ -559,6 +559,11 @@ struct AudioSpatialEnabledStateForDevice {
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
     bool enabled;
 };
+struct AudioPersonalizedSpatialEnabledChangeForAnyDevice {
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
+    bool enabled;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H

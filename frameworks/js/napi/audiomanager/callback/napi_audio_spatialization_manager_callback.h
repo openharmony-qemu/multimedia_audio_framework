@@ -212,6 +212,43 @@ private:
     bool regAmSpatialAudioSourceTypeTsfn_ = false;
     napi_threadsafe_function amSpatialAudioSourceTypeTsfn_ = nullptr;
 };
+
+class NapiPersonalizedSpatializationEnabledChangeCallback :
+    public AudioPersonalizedSpatializationEnabledChangeCallback {
+public:
+    explicit NapiPersonalizedSpatializationEnabledChangeCallback(napi_env env);
+    virtual ~NapiPersonalizedSpatializationEnabledChangeCallback();
+    void SavePersonalizedSpatializationEnabledChangeCallbackReference(napi_value args);
+    void RemovePersonalizedSpatializationEnabledChangeCallbackReference(
+        napi_env env, napi_value args);
+    void RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference();
+    int32_t GetPersonalizedSpatializationEnabledChangeCbListSize();
+    void OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) override;
+    void CreatePersonalizedSpatializationTsfn(napi_env env);
+    bool GetPersonalizedSpatializationTsfnFlag();
+
+private:
+    struct AudioPersonalizedSpatializationEnabledJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
+        std::string callbackName = "unknown";
+        bool enabled;
+    };
+
+    void OnJsCallbackPersonalizedSpatializationEnabled(
+        std::unique_ptr<AudioPersonalizedSpatializationEnabledJsCallback> &jsCb);
+    static void SafeJsCallbackPersonalizedSpatializationEnabledWork(
+        napi_env env, napi_value js_cb, void *context, void *data);
+    static void PersonalizedSpatializationEnabledTsfnFinalize(
+        napi_env env, void *data, void *hint);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> personalizedSpatializationEnabledChangeCbForAnyDeviceList_;
+    bool regAmPersonalizedSpatializationTsfn_ = false;
+    napi_threadsafe_function amPersonalizedSpatializationTsfn_ = nullptr;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif /* AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H */
