@@ -329,12 +329,9 @@ private:
     mutable std::mutex preferredDeviceSetMutex_;
     mutable std::mutex adaptiveSpatialRenderingEnabledChangeMutex_;
     mutable std::mutex spatialAudioSourceTypeChangeMutex_;
-<<<<<<< HEAD
     mutable std::mutex personalizedSpatializationEnabledChangeMutex_;
-=======
     std::shared_ptr<AudioRouteSelector> audioRouteSelectorCallback_;
     mutable std::mutex audioRouteSelectorMutex_;
->>>>>>> upstream/master
 };
 } // namespace AudioStandard
 } // namespace OHOS
