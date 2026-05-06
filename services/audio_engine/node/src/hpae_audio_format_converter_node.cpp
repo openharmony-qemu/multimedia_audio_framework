@@ -32,6 +32,8 @@ constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 constexpr uint32_t SAMPLE_RATE_11025 = 11025;
 constexpr uint32_t FRAME_LEN_40MS = 40;
 constexpr uint32_t FRAME_LEN_100MS = 100;
+constexpr uint32_t UNPROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
+constexpr uint32_t PROCESSED_BUFFER_COMPACTION_DIVISOR = 2;
 }
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
@@ -304,7 +306,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
         HILOG_COMM_INFO("[CheckUpdateInInfo]NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
             "channels: %{public}d -> %{public}d, channellayout: %{public}" PRIu64 " -> %{public}" PRIu64 ".",
             GetNodeId(), curInChannelInfo.numChannels, numChannels, curInChannelInfo.channelLayout, channelLayout);
- 
+
         AudioChannelInfo newInChannelInfo = {
             .channelLayout = (AudioChannelLayout)channelLayout,
             .numChannels = numChannels,
@@ -349,7 +351,6 @@ void HpaeAudioFormatConverterNode::UpdateTmpOutPcmBufferInfo(const PcmBufferInfo
         GetNodeId(), tmpOutPcmBufferInfo.rate, tmpOutPcmBufferInfo.frameLen, tmpOutPcmBufferInfo.ch);
     tmpOutBuf_.ReConfig(tmpOutPcmBufferInfo);
 }
-
 
 void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
 {
@@ -418,6 +419,7 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
     if (resampler_ == nullptr) {
         return;
     }
+    CHECK_AND_RETURN_LOG(resampler_->GetInRate() != 0, "NodeId %{public}d: inRate is zero", GetNodeId());
     resamplerInputThreshold_ = CalculateResamplerInputThreshold();
     outputFrameLen20ms_ = resampler_->GetOutRate() * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
 
@@ -427,7 +429,8 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
     uint32_t outCh = outChannelInfo.numChannels;
 
     // unprocessedBuffer_ stores data at inCh per frame
-    size_t unprocessedCapacity = static_cast<size_t>(resamplerInputThreshold_) * 2 * inCh;
+    size_t unprocessedCapacity = static_cast<size_t>(resamplerInputThreshold_) *
+        UNPROCESSED_BUFFER_CAPACITY_MULTIPLIER * inCh;
     unprocessedBuffer_.resize(unprocessedCapacity, 0.0f);
     unprocessedFrames_ = 0;
 
@@ -467,11 +470,9 @@ uint32_t HpaeAudioFormatConverterNode::CalculateResamplerInputThreshold() const
     }
     uint32_t inRate = resampler_->GetInRate();
     uint32_t outRate = resampler_->GetOutRate();
-
     if (inRate == outRate) {
         return inRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
     }
-
     // Find the minimum span that produces exact output at outRate.
     // This avoids rounding errors in the resampler output.
     // 11025Hz: 441 * 48000 / 11025 = 1920 (exact)
@@ -598,6 +599,7 @@ void HpaeAudioFormatConverterNode::ProcessSameRateChannelConversion(uint32_t inC
 void HpaeAudioFormatConverterNode::ProcessDiffRateResample(uint32_t inCh, uint32_t outCh,
     uint32_t inRate, uint32_t outRate)
 {
+    CHECK_AND_RETURN_LOG(inRate != 0, "NodeId %{public}d: inRate is zero, skip resample", GetNodeId());
     while (unprocessedFrames_ >= resamplerInputThreshold_) {
         float *inPtr = unprocessedBuffer_.data();
         uint32_t inFrameLen = resamplerInputThreshold_;
@@ -736,7 +738,7 @@ bool HpaeAudioFormatConverterNode::ExtractOutputFromProcessedBuffer()
     processedFrames_ -= outputFrameLen20ms_;
     if (processedFrames_ == 0) {
         processedReadPos_ = 0;
-    } else if (processedReadPos_ > processedBuffer_.size() / (channels * 2)) {
+    } else if (processedReadPos_ > processedBuffer_.size() / (channels * PROCESSED_BUFFER_COMPACTION_DIVISOR)) {
         CompactProcessedBuffer(channels);
     }
     AUDIO_DEBUG_LOG("NodeId %{public}d: ExtractOutput success, remaining processedFrames=%{public}u",
