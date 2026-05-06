@@ -1710,7 +1710,7 @@ static void GenerateOutputFilePath(char *buffer, size_t bufferSize)
         << static_cast<long long>(time(nullptr)) << ".pcm";
     std::string path = oss.str();
     size_t copyLen = (path.length() < bufferSize - 1) ? path.length() : bufferSize - 1;
-    memcpy(buffer, path.c_str(), copyLen);
+    std::copy(path.begin(), path.begin() + copyLen, buffer);
     buffer[copyLen] = '\0';
 }
 static void InitializeProcessParameters(ProcessState &state)
