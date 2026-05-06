@@ -51,6 +51,13 @@ const int32_t INTERRUPT_HINT_ERROR = -1;
 const bool RUN_ON_CREATE = false;
 const bool IS_SESSION_TIMEOUT = false;
 
+static std::shared_ptr<AudioCoreService::EventEntry> CreateEventEntry(
+    const std::shared_ptr<AudioCoreService> &coreService)
+{
+    return std::make_shared<AudioCoreService::EventEntry>(
+        coreService, coreService->readyConditionNotifier_);
+}
+
 void SetUid1041()
 {
     IRemoteInvoker *remoteInvoker =
@@ -1990,7 +1997,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     EXPECT_NE(audioInterruptService->policyServer_, nullptr);
     auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    audioInterruptService->policyServer_->eventEntry_ = CreateEventEntry(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
     audioInterruptService->formerUid_.store(formerUid_);
     audioInterruptService->ownerUid_ = ownerUid_;
@@ -2026,7 +2033,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     EXPECT_NE(audioInterruptService->policyServer_, nullptr);
     auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    audioInterruptService->policyServer_->eventEntry_ = CreateEventEntry(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
     AudioScene audioScene = AUDIO_SCENE_CALL_START;
     AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
@@ -2133,7 +2140,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
@@ -2223,7 +2230,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_002, TestSize.Level1)
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
@@ -2279,7 +2286,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_004, TestSize.Level1)
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
@@ -2308,7 +2315,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_005, TestSize.Level1)
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
@@ -2377,7 +2384,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_006, TestSize.Level1)
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
@@ -2417,7 +2424,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_007, TestSize.Level1)
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
@@ -2566,7 +2573,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_007, TestSize.Level1
     auto interruptServiceTest = server->interruptService_;
     AudioFocusList interrupts;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     interruptServiceTest->zonesMap_.clear();
@@ -2592,7 +2599,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_008, TestSize.Level1
     auto interruptServiceTest = server->interruptService_;
     AudioFocusList interrupts;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     SetUid1041();
@@ -2625,7 +2632,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_009, TestSize.Level1
     auto interruptServiceTest = server->interruptService_;
     AudioFocusList interrupts;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     interruptServiceTest->zonesMap_.clear();
@@ -2657,7 +2664,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_010, TestSize.Level1
     auto interruptServiceTest = server->interruptService_;
     AudioFocusList interrupts;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     interruptServiceTest->zonesMap_.clear();
@@ -2690,7 +2697,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_011, TestSize.Level1
     auto interruptServiceTest = server->interruptService_;
     AudioFocusList interrupts;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     interruptServiceTest->zonesMap_.clear();
@@ -2726,7 +2733,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_012, TestSize.Level1
     auto interruptServiceTest = server->interruptService_;
     AudioFocusList interrupts;
     auto coreService = std::make_shared<AudioCoreService>();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_ = CreateEventEntry(coreService);
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     interruptServiceTest->zonesMap_.clear();
@@ -3790,7 +3797,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_108, TestSize.Level1)
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     EXPECT_NE(audioInterruptService->policyServer_, nullptr);
     auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    audioInterruptService->policyServer_->eventEntry_ = CreateEventEntry(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
     AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
@@ -3811,7 +3818,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_109, TestSize.Level1)
     int32_t systemAbilityId = 0;
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    audioInterruptService->policyServer_->eventEntry_ = CreateEventEntry(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     audioInterruptService->policyServer_->SetAudioScene(AUDIO_SCENE_DEFAULT);
@@ -3836,7 +3843,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_110, TestSize.Level1)
     int32_t systemAbilityId = 0;
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    audioInterruptService->policyServer_->eventEntry_ = CreateEventEntry(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     audioInterruptService->policyServer_->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
@@ -3861,7 +3868,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_111, TestSize.Level1)
     int32_t systemAbilityId = 0;
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    audioInterruptService->policyServer_->eventEntry_ = CreateEventEntry(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     EXPECT_NE(audioInterruptService->policyServer_, nullptr);

@@ -51,6 +51,13 @@ bool g_hasServerInit = false;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr int32_t CHANNEL_STEREO = 2;
 
+static std::shared_ptr<AudioCoreService::EventEntry> CreateEventEntry(
+    const std::shared_ptr<AudioCoreService> &coreService)
+{
+    return std::make_shared<AudioCoreService::EventEntry>(
+        coreService, coreService->readyConditionNotifier_);
+}
+
 // Helper functions for GetCurrentRendererChangeInfosForZone tests
 std::shared_ptr<AudioRendererChangeInfo> CreateRendererChangeInfo(
     int32_t uid, int32_t sessionId, RendererState state, StreamUsage usage)
@@ -650,7 +657,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016A, TestSize.Level1)
     ASSERT_NE(policyServerTest, nullptr);
     policyServerTest->coreService_ = AudioCoreService::GetCoreService();
     policyServerTest->eventEntry_ =
-        std::make_shared<AudioCoreService::EventEntry>(policyServerTest->coreService_);
+        CreateEventEntry(policyServerTest->coreService_);
 
     auto pipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_NE(pipeManager, nullptr);
@@ -694,7 +701,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016B, TestSize.Level1)
     ASSERT_NE(policyServerTest, nullptr);
     policyServerTest->coreService_ = AudioCoreService::GetCoreService();
     policyServerTest->eventEntry_ =
-        std::make_shared<AudioCoreService::EventEntry>(policyServerTest->coreService_);
+        CreateEventEntry(policyServerTest->coreService_);
 
     auto pipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_NE(pipeManager, nullptr);
@@ -2957,7 +2964,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_139, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     server->coreService_ = AudioCoreService::GetCoreService();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(server->coreService_);
+    server->eventEntry_ = CreateEventEntry(server->coreService_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
     server->GetDevices(DeviceFlag::NONE_DEVICES_FLAG, ret);
     EXPECT_EQ(ret.size(), 0);
@@ -3453,7 +3460,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_165, TestSize.Level1)
     server->AddAudioServiceOnStart();
 
     server->coreService_ = AudioCoreService::GetCoreService();
-    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(server->coreService_);
+    server->eventEntry_ = CreateEventEntry(server->coreService_);
     server->isFirstAudioServiceStart_.store(false);
     server->AddAudioServiceOnStart();
 }

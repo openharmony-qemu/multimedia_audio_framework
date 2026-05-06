@@ -53,7 +53,7 @@ int32_t MultiConditionWaiter::WaitCountGuard::GetOldCount() const
 }
 
 template<bool waitFor, typename... Args>
-bool MultiConditionWaiter::DoWait(uint64_t targetConditionMask, Args&&... args)
+bool MultiConditionWaiter::DoWait(uint64_t targetConditionMask, Args &&... args)
 {
     std::unique_lock<std::mutex> lock(data_->mutex_);
     auto condition = [this, targetConditionMask]() { return IsCompleted(targetConditionMask); };
@@ -67,7 +67,7 @@ bool MultiConditionWaiter::DoWait(uint64_t targetConditionMask, Args&&... args)
 
 template<bool waitFor, typename... Args>
 MultiConditionWaiter::WaitResult MultiConditionWaiter::WaitInternal(uint64_t targetConditionMask,
-    int32_t waitLimit, Args&&... args)
+    int32_t waitLimit, Args &&... args)
 {
     CHECK_AND_RETURN_RET_LOG(data_ != nullptr, WaitResult::INVALID_STATE, "waiter data is nullptr");
     if (IsCompleted(targetConditionMask)) {

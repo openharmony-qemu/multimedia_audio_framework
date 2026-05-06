@@ -117,39 +117,32 @@ HWTEST_F(MultiConditionWaiterUnitTest, WaitFor_ZeroCondition_001, TestSize.Level
 }
 
 /**
- * @tc.name  : WaitFor_MoveConstructor_001
- * @tc.number: WaitFor_MoveConstructor_001
- * @tc.desc  : Test moved waiter keeps shared notifier data.
+ * @tc.name  : NotifySuccess_InvalidState_001
+ * @tc.number: NotifySuccess_InvalidState_001
+ * @tc.desc  : Test NotifySuccess with null data does not complete an existing waiter.
  */
-HWTEST_F(MultiConditionWaiterUnitTest, WaitFor_MoveConstructor_001, TestSize.Level4)
+HWTEST_F(MultiConditionWaiterUnitTest, NotifySuccess_InvalidState_001, TestSize.Level4)
 {
     MultiConditionNotifier notifier;
     MultiConditionWaiter waiter = notifier.CreateWaiter();
-    MultiConditionWaiter movedWaiter(std::move(waiter));
+    notifier.data_ = nullptr;
 
     notifier.NotifySuccess(FIRST_CONDITION);
-    auto result = movedWaiter.WaitFor(FIRST_CONDITION, SHORT_WAIT_TIME);
+    auto result = waiter.WaitFor(FIRST_CONDITION, std::chrono::milliseconds(10));
 
-    EXPECT_EQ(result, MultiConditionWaiter::WaitResult::SUCCESS);
+    EXPECT_EQ(result, MultiConditionWaiter::WaitResult::TIMEOUT);
 }
 
 /**
- * @tc.name  : WaitFor_MoveAssignment_001
- * @tc.number: WaitFor_MoveAssignment_001
- * @tc.desc  : Test move assignment keeps shared notifier data.
+ * @tc.name  : IsCompleted_InvalidState_001
+ * @tc.number: IsCompleted_InvalidState_001
+ * @tc.desc  : Test IsCompleted returns false when waiter data is null.
  */
-HWTEST_F(MultiConditionWaiterUnitTest, WaitFor_MoveAssignment_001, TestSize.Level4)
+HWTEST_F(MultiConditionWaiterUnitTest, IsCompleted_InvalidState_001, TestSize.Level4)
 {
-    MultiConditionNotifier notifier;
-    MultiConditionWaiter waiter = notifier.CreateWaiter();
-    MultiConditionNotifier otherNotifier;
-    MultiConditionWaiter movedWaiter = otherNotifier.CreateWaiter();
+    MultiConditionWaiter waiter(nullptr);
 
-    movedWaiter = std::move(waiter);
-    notifier.NotifySuccess(FIRST_CONDITION);
-    auto result = movedWaiter.WaitFor(FIRST_CONDITION, SHORT_WAIT_TIME);
-
-    EXPECT_EQ(result, MultiConditionWaiter::WaitResult::SUCCESS);
+    EXPECT_FALSE(waiter.IsCompleted(FIRST_CONDITION));
 }
 
 /**

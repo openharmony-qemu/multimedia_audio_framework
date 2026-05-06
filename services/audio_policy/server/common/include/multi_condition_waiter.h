@@ -78,9 +78,9 @@ private:
 
     bool IsCompleted(uint64_t targetConditionMask) const;
     template<bool waitFor, typename... Args>
-    WaitResult WaitInternal(uint64_t targetConditionMask, int32_t waitLimit, Args&&... args);
+    WaitResult WaitInternal(uint64_t targetConditionMask, int32_t waitLimit, Args &&... args);
     template<bool waitFor, typename... Args>
-    bool DoWait(uint64_t targetConditionMask, Args&&... args);
+    bool DoWait(uint64_t targetConditionMask, Args &&... args);
 
     std::shared_ptr<MultiConditionWaiterData> data_;
     std::atomic<int32_t> waitCount_ = 0;
