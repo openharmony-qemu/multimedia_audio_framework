@@ -293,6 +293,28 @@ HWTEST_F(HpaeSinkInputNodeTest, testLoudnessGain, TestSize.Level0)
     EXPECT_FLOAT_EQ(sinkInputNode->GetLoudnessGain(), LOUDNESS_GAIN);
 }
 
+HWTEST_F(HpaeSinkInputNodeTest, SetOffloadType_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NORMAL_ID;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_DEFAULT);
+
+    sinkInputNode->SetOffloadType(OFFLOAD_ACTIVE_FOREGROUND);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_ACTIVE_FOREGROUND);
+
+    sinkInputNode->SetOffloadType(OFFLOAD_INACTIVE_BACKGROUND);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_INACTIVE_BACKGROUND);
+
+    sinkInputNode->SetOffloadType(OFFLOAD_DEFAULT);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_DEFAULT);
+}
+
 HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBuffer, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;

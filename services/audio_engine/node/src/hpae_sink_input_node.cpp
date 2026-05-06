@@ -317,6 +317,16 @@ bool HpaeSinkInputNode::GetOffloadEnabled()
     return offloadEnable_;
 }
 
+void HpaeSinkInputNode::SetOffloadType(int32_t offloadType)
+{
+    offloadType_ = offloadType;
+}
+
+int32_t HpaeSinkInputNode::GetOffloadType()
+{
+    return offloadType_;
+}
+
 void HpaeSinkInputNode::SetDirect(bool isDirect)
 {
     isDirect_ = isDirect;

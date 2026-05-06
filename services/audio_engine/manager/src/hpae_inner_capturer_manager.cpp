@@ -1022,6 +1022,7 @@ int32_t HpaeInnerCapturerManager::SetOffloadPolicy(uint32_t sessionId, int32_t s
             sinkInfo_.deviceName.c_str(), state);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
         sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
+        sinkInputNodeMap_[sessionId]->SetOffloadType(state);
     };
     SendRequestInner(request, __func__);
     return SUCCESS;

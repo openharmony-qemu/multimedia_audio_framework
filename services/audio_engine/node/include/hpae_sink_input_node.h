@@ -56,6 +56,8 @@ public:
 
     void SetOffloadEnabled(bool offloadEnable);
     bool GetOffloadEnabled();
+    void SetOffloadType(int32_t offloadType);
+    int32_t GetOffloadType();
     int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
     void SetSpeed(float speed);
@@ -93,6 +95,7 @@ private:
     uint8_t pullDataCount_ = 0; // for customSampleRate that is not multiples of 50, eg. 8010, pull data each 100ms
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
+    int32_t offloadType_ = OFFLOAD_DEFAULT;
     float loudnessGain_ = 0.0f;
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
