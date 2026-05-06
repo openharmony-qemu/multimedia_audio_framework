@@ -1427,13 +1427,11 @@ static int32_t AudioConverterRequestDataCallback(void *userData, const void **ou
         uint32_t dataSizeToReturn = (remainingData > DATA_CHUNK_SIZE) ? DATA_CHUNK_SIZE : remainingData;
         lseek(g_inputFd, filePos, SEEK_SET);
         ssize_t bytesRead = read(g_inputFd, g_inputData, dataSizeToReturn);
-
         if (bytesRead <= 0) {
             *outInputData = nullptr;
             *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
             return 0;
         }
-
         *outInputData = g_inputData;
         *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
         g_dataOffset += bytesRead;
@@ -1711,8 +1709,9 @@ static void GenerateOutputFilePath(char *buffer, size_t bufferSize)
     oss << "/data/storage/el2/base/haps/entry/files/converted_audio_"
         << static_cast<long long>(time(nullptr)) << ".pcm";
     std::string path = oss.str();
-    strncpy(buffer, path.c_str(), bufferSize - 1);
-    buffer[bufferSize - 1] = '\0';
+    size_t copyLen = (path.length() < bufferSize - 1) ? path.length() : bufferSize - 1;
+    memcpy(buffer, path.c_str(), copyLen);
+    buffer[copyLen] = '\0';
 }
 static void InitializeProcessParameters(ProcessState &state)
 {
