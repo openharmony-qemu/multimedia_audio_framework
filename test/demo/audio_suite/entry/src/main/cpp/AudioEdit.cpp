@@ -152,6 +152,10 @@ const int32_t WAV_BITS_PER_SAMPLE_OFFSET = 34; // WAV: 34
 
 const int32_t INDEXTWO = 2;
 const int32_t INDEXTHREE = 3;
+const int32_t INDEXFOUR = 4;
+const int32_t OffsetEight = 8;
+const int32_t OffsetSixteen = 16;
+const int32_t OffsetTwentyFour = 24;
 const int32_t INVALID_FD = -1;
 const char DATA_CHUNK_ID[] = {'d', 'a', 't', 'a'};
 const int32_t DATA_HEADER_INDEX[] = {'R', 'I', 'F', 'F'};
@@ -1309,14 +1313,14 @@ static int32_t GetBytesPerSample(int32_t sampleFormat)
         case AUDIO_SAMPLE_U8:
             return 1;
         case AUDIO_SAMPLE_S16LE:
-            return 2;
+            return INDEXTWO;
         case AUDIO_SAMPLE_S24LE:
-            return 3;
+            return INDEXTHREE;
         case AUDIO_SAMPLE_S32LE:
         case AUDIO_SAMPLE_F32LE:
-            return 4;
+            return INDEXFOUR;
         default:
-            return 2; // Default to 2 bytes
+            return INDEXTWO; // Default to 2 bytes
     }
 }
 
@@ -1347,8 +1351,8 @@ static napi_value CreateConverterResult(napi_env env, OH_AudioConverter_Result r
 
 static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
 {
-    size_t argc = 3;
-    napi_value argv[3];
+    size_t argc = INDEXTHREE;
+    napi_value argv[INDEXTHREE];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     OH_AudioConverter_Format inputFormat;
     if (!ParseAudioFormat(env, argv[0], inputFormat)) {
@@ -1359,7 +1363,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
         return nullptr;
     }
     int32_t fd = INVALID_FD;
-    napi_status status = napi_get_value_int32(env, argv[2], &fd);
+    napi_status status = napi_get_value_int32(env, argv[INDEXTWO], &fd);
     if (status != napi_ok || fd < 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Invalid file descriptor");
         return nullptr;
@@ -1391,11 +1395,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
         g_inputFd = -1;
         return nullptr;
     }
-    OH_LOG_Print(
-        LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "AudioConverterCreate: Using input file mode: %{public}ld bytes, original fd=%{public}d, dup fd=%{public}d",
-        fileSize, fd, g_inputFd);
-
+    
     uint32_t wavDataSize = 0;
     uint32_t wavDataStart = WAV_HEADER_SIZE;
     bool isWavFile = ParseWavFile(fd, fileSize, wavDataSize, wavDataStart);
@@ -1516,7 +1516,7 @@ static int32_t CalculateBufferSize()
     // Adjust buffer size based on sample format
     int32_t sampleFormatMultiplier = (g_outputSampleFormat == AUDIO_SAMPLE_S24LE ||
                                      g_outputSampleFormat == AUDIO_SAMPLE_S32LE ||
-                                     g_outputSampleFormat == AUDIO_SAMPLE_F32LE) ? 2 : 1;
+                                     g_outputSampleFormat == AUDIO_SAMPLE_F32LE) ? INDEXTWO : 1;
     bufferSize *= sampleFormatMultiplier;
 
     return bufferSize;
@@ -1927,7 +1927,7 @@ static int32_t GetSampleFormatFromBits(uint16_t bitsPerSample, uint16_t audioFor
         case BITS_PER_SAMPLE_16: sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE; break;
         case BITS_PER_SAMPLE_24: sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE; break;
         case BITS_PER_SAMPLE_32:
-            if (audioFormat == 3) {
+            if (audioFormat == INDEXTHREE) {
                 sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
             } else {
                 sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE;
@@ -2036,11 +2036,12 @@ static bool ReadAndParseWavHeader(int fd, uint8_t *header, uint32_t &samplingRat
         return false;
     }
 
-    samplingRate = header[WAV_SAMPLE_RATE_OFFSET] | (header[WAV_SAMPLE_RATE_OFFSET + 1] << 8) |
-                   (header[WAV_SAMPLE_RATE_OFFSET + 2] << 16) | (header[WAV_SAMPLE_RATE_OFFSET + 3] << 24);
-    numChannels = header[WAV_NUM_CHANNELS_OFFSET] | (header[WAV_NUM_CHANNELS_OFFSET + 1] << 8);
-    bitsPerSample = header[WAV_BITS_PER_SAMPLE_OFFSET] | (header[WAV_BITS_PER_SAMPLE_OFFSET + 1] << 8);
-    audioFormat = header[WAV_AUDIO_FORMAT_OFFSET] | (header[WAV_AUDIO_FORMAT_OFFSET + 1] << 8);
+    samplingRate = header[WAV_SAMPLE_RATE_OFFSET] | (header[WAV_SAMPLE_RATE_OFFSET + 1] << OffsetEight) |
+                   (header[WAV_SAMPLE_RATE_OFFSET + INDEXTWO] << OffsetSixteen) |
+                   (header[WAV_SAMPLE_RATE_OFFSET + INDEXTHREE] << OffsetTwentyFour);
+    numChannels = header[WAV_NUM_CHANNELS_OFFSET] | (header[WAV_NUM_CHANNELS_OFFSET + 1] << OffsetEight);
+    bitsPerSample = header[WAV_BITS_PER_SAMPLE_OFFSET] | (header[WAV_BITS_PER_SAMPLE_OFFSET + 1] << OffsetEight);
+    audioFormat = header[WAV_AUDIO_FORMAT_OFFSET] | (header[WAV_AUDIO_FORMAT_OFFSET + 1] << OffsetEight);
     return true;
 }
 
