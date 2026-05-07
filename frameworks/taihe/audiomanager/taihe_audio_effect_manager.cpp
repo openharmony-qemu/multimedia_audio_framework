@@ -189,7 +189,7 @@ void AudioEffectManagerImpl::OnAudioSeparationEffectEnabledChange(callback_view<
 
 void AudioEffectManagerImpl::OffAudioSeparationEffectEnabledChange(optional_view<callback<void(bool)>> callback)
 {
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermis1sion()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
         return;
     }
