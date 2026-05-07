@@ -1745,9 +1745,7 @@ napi_value NapiAudioSpatializationManager::executeDownloadPersonalizedHRTF(
                 context->SignError(NAPI_ERR_SYSTEM);
                 break;
         }
-        
     };
-
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
