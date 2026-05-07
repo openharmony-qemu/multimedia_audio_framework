@@ -702,6 +702,8 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
         return PIPE_TYPE_IN_NORMAL_ULTRASONIC;
     } else if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
         return PIPE_TYPE_IN_NORMAL_UNPROCESS;
+    } else if (flag & AUDIO_INPUT_FLAG_LIVE) {
+        return PIPE_TYPE_IN_NORMAL_LIVE;
     } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
     } else if (flag & AUDIO_INPUT_FLAG_RAW_AI) {

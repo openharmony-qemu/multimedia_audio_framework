@@ -109,6 +109,7 @@ static const std::vector<std::string> SourceNames = {
     std::string(ACCESSORY_SOURCE),
     std::string(PRIMARY_AI_MIC),
     std::string(PRIMARY_UNPROCESS_MIC),
+    std::string(PRIMARY_LIVE_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
     std::string(PRIMARY_RAW_AI_MIC),
@@ -2076,6 +2077,7 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         if ((audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_MIC ||
             audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_ACCESSORY) &&
             ((pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI) && (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_UNPROCESS) &&
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_LIVE) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_ULTRASONIC) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI) &&

@@ -460,5 +460,20 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_011, TestSize.Level1)
     EXPECT_EQ(info, "default");
 }
 
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_012
+ * @tc.desc   : Test IdHandler action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_012, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    std::string pipeName = "test";
+
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_LIVE, pipeName);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_LIVE);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE));
+}
 } // namespace AudioStandard
 } // namespace OHOS

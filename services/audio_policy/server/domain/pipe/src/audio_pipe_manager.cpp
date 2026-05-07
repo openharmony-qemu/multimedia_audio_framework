@@ -373,6 +373,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
         (routeFlag & AUDIO_INPUT_FLAG_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_UNPROCESS) ||
+        (routeFlag & AUDIO_INPUT_FLAG_LIVE) ||
         (routeFlag & AUDIO_INPUT_FLAG_ULTRASONIC) ||
         (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) ||
         (routeFlag & AUDIO_INPUT_FLAG_RAW_AI) ||
