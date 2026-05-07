@@ -960,7 +960,7 @@ int32_t AudioEffectService::OnAudioSeparationEffectEnabledChange(const sptr<IRem
 int32_t AudioEffectService::OffAudioSeparationEffectEnabledChange()
 {
     std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
-    separationEffectCallbacks_.clear();
+    separationEffectListeners_.clear();
     return AUDIO_OK;
 }
 
@@ -971,15 +971,6 @@ void AudioEffectService::NotifyAudioSeparationEffectEnabledChange(bool enabled)
         if (listener != nullptr) {
             listener->OnAudioSeparationEffectEnabledChange(enabled);
         }
-    }
-}
-
-int32_t AudioEffectService::OffAudioSeparationEffectEnabledChange()
-{
-    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
-    separationEffectListeners_.clear();
-    return AUDIO_OK;
-}
     }
 }
 } // namespace AudioStandard
