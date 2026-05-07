@@ -26,7 +26,7 @@ public:
     AudioSeparationEffectEnabledChangeListener();
     virtual ~AudioSeparationEffectEnabledChangeListener();
 
-    void OnAudioSeparationEffectEnabledChange(const bool &enabled) override;
+    int32_t OnAudioSeparationEffectEnabledChange(bool enabled) override;
     void SetCallback(const std::weak_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
 private:
     std::weak_ptr<AudioSeparationEffectEnabledChangeCallback> callback_;

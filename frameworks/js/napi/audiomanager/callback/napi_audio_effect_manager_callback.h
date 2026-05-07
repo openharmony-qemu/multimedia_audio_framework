@@ -37,7 +37,7 @@ public:
     void RemoveAllAudioSeparationEffectEnabledChangeCallbackReference();
     int32_t GetAudioSeparationEffectEnabledChangeCbListSize();
     
-    void OnAudioSeparationEffectEnabledChange(const bool &enabled) override;
+    void OnAudioSeparationEffectEnabledChange(bool enabled) override;
     void CreateSeparationEffectEnableTsfn(napi_env env);
     bool GetSeparationEffectEnableTsfnFlag();
 

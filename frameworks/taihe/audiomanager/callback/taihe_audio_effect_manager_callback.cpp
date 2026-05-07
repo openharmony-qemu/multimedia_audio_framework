@@ -89,7 +89,7 @@ int32_t TaiheAudioSeparationEffectEnabledChangeCallback::GetAudioSeparationEffec
     return audioSeparationEffectEnabledChangeCbList_.size();
 }
 
-void TaiheAudioSeparationEffectEnabledChangeCallback::OnAudioSeparationEffectEnabledChange(const bool &enabled)
+void TaiheAudioSeparationEffectEnabledChangeCallback::OnAudioSeparationEffectEnabledChange(bool enabled)
 {
     AUDIO_INFO_LOG("enter");
     std::lock_guard<std::mutex> lock(mutex_);

@@ -121,7 +121,7 @@ int32_t NapiAudioSeparationEffectEnabledChangeCallback::GetAudioSeparationEffect
     return audioSeparationEffectEnabledChangeCbList_.size();
 }
 
-void NapiAudioSeparationEffectEnabledChangeCallback::OnAudioSeparationEffectEnabledChange(const bool &enabled)
+void NapiAudioSeparationEffectEnabledChangeCallback::OnAudioSeparationEffectEnabledChange(bool enabled)
 {
     AUDIO_INFO_LOG("OnAudioSeparationEffectEnabledChange entered");
     std::lock_guard<std::mutex> lock(mutex_);
@@ -136,8 +136,6 @@ void NapiAudioSeparationEffectEnabledChangeCallback::OnAudioSeparationEffectEnab
         onAudioSeparationEffectEnabledChangeFlag_ = true;
         OnJsCallbackAudioSeparationEffectEnabled(cb);
     }
-
-    return;
 }
 
 void NapiAudioSeparationEffectEnabledChangeCallback::SafeJsCallbackAudioSeparationEffectEnabledWork(

@@ -37,7 +37,7 @@ public:
     void RemoveAudioSeparationEffectEnabledChangeCallbackReference(std::shared_ptr<uintptr_t> callback);
     void RemoveAllAudioSeparationEffectEnabledChangeCallbackReference();
     int32_t GetAudioSeparationEffectEnabledChangeCbListSize();
-    void OnAudioSeparationEffectEnabledChange(const bool &enabled) override;
+    void OnAudioSeparationEffectEnabledChange(bool enabled) override;
 
 private:
     struct AudioSeparationEffectEnabledJsCallback {

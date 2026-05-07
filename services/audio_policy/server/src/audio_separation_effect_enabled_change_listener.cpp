@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_separation_effect_enabled_change_listener.h"
+#include "audio_errors.h"
 #include "audio_policy_log.h"
 
 namespace OHOS {
@@ -32,7 +33,7 @@ AudioSeparationEffectEnabledChangeListener::~AudioSeparationEffectEnabledChangeL
     AUDIO_DEBUG_LOG("AudioSeparationEffectEnabledChangeListener: instance destroy");
 }
 
-void AudioSeparationEffectEnabledChangeListener::OnAudioSeparationEffectEnabledChange(const bool &enabled)
+int32_t AudioSeparationEffectEnabledChangeListener::OnAudioSeparationEffectEnabledChange(bool enabled)
 {
     AUDIO_INFO_LOG("OnAudioSeparationEffectEnabledChange received: enabled=%{public}d", enabled);
     if (!callback_.expired()) {
@@ -43,6 +44,7 @@ void AudioSeparationEffectEnabledChangeListener::OnAudioSeparationEffectEnabledC
             AUDIO_ERR_LOG("callback_ lock failed");
         }
     }
+    return SUCCESS;
 }
 
 void AudioSeparationEffectEnabledChangeListener::SetCallback(

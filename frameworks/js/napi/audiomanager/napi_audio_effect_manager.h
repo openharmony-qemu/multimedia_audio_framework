@@ -61,3 +61,5 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
+
+#endif // NAPI_AUDIO_EFFECT_MANAGER_H

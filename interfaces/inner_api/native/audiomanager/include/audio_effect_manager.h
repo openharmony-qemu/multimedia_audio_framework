@@ -21,6 +21,7 @@
 #include <memory>
 #include "audio_effect.h"
 #include "audio_spatialization_manager.h"
+#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
