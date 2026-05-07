@@ -1357,11 +1357,13 @@ void AudioCoreService::OnVehiclePriorityChanged(bool enable)
     FetchInputDeviceAndRoute("OnVehiclePriorityChanged", reason);
 }
 
-void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
+void AudioCoreService::UpdateSpecialRemoteModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
 {
-    CHECK_AND_RETURN(pipeInfo && pipeInfo->moduleInfo_.className == "remote_offload");
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    std::string className = pipeInfo->moduleInfo_.className;
+    CHECK_AND_RETURN(className == "remote_offload" || className == "remote_multichannel");
     moduleName = pipeInfo->moduleInfo_.name;
-    AUDIO_INFO_LOG("remote offload");
+    AUDIO_INFO_LOG("remote special sink: %{public}s", className.c_str());
 }
 
 int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
@@ -1380,7 +1382,7 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
 
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
-    UpdateRemoteOffloadModuleName(pipeInfo, moduleName);
+    UpdateSpecialRemoteModuleName(pipeInfo, moduleName);
 
     AudioIOHandle moduleId;
     if (audioIOHandleMap_.GetModuleIdByKey(moduleName, moduleId)) {

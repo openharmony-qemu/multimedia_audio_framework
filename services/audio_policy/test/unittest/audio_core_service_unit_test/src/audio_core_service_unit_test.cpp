@@ -1908,6 +1908,30 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_012, TestSize.Level1
 
 /**
  * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : UpdatePlaybackStreamFlag_013
+ * @tc.desc   : Test UpdatePlaybackStreamFlag interface - when remote device and stream usage is movie.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_013, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.forceToNormal = false;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->networkId_ = "RemoteDevice";
+    deviceDesc->isSupportRemoteMultichannel_ = false;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    
+    bool isCreateProcess = true;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
  * @tc.number : SetFlagForSpecialStream_001
  * @tc.desc   : Test SetFlagForSpecialStream interface - when streamDesc is null, return flag normal.
  */

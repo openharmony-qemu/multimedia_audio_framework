@@ -460,5 +460,23 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_011, TestSize.Level1)
     EXPECT_EQ(info, "default");
 }
 
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_012
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with remote_multichannel
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_012, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClass("remote_multichannel");
+    EXPECT_NE(id, HDI_INVALID_ID);
+    
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_REMOTE_MULTICHANNEL);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
