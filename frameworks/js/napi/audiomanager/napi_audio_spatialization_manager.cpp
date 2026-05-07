@@ -1695,7 +1695,7 @@ napi_value NapiAudioSpatializationManager::DownloadPersonalizedHRTF(napi_env env
         int64_t length = 0;
         napi_status getLenValueStatus = napi_get_value_int64(env, napiLength, &length);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
-            getLenValueStatus == napi_ok && length > 0 length <= MAX_HRTF_LENGTH,
+            getLenValueStatus == napi_ok && length > 0 && length <= MAX_HRTF_LENGTH,
             "parameter verification failed: length wrong", NAPI_ERR_INVALID_PARAM);
 
         context->audioHRTFAnonymousDescriptor.fd = fd;
