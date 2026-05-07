@@ -82,8 +82,16 @@ void HpaeSignalProcessThread::Notify()
 
 void HpaeSignalProcessThread::Run()
 {
-    int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
-    SetThreadQosLevelAsync(setPriority);
+    if (isFastThread_) {
+        BindCore();
+        bool setPriorityResult = SetEndpointThreadPriority();
+        if (!setPriorityResult) {
+            SetThreadQosLevel();
+        }
+    } else {
+        int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
+        SetThreadQosLevelAsync(setPriority);
+    }
     auto manager = streamManager_.lock();
     while (running_.load() && manager != nullptr) {
         {
