@@ -45,6 +45,8 @@ namespace AudioStandard {
 static constexpr uint32_t DECIMAL_BASE = 10;
 static constexpr uint32_t RAW_CHANNEL_COUNT = 1;
 static constexpr uint32_t MICIN_CHANNEL_COUNT = 4;
+static constexpr uint32_t CAMCORDER_RAW_CHANNEL_COUNT = 2;
+static constexpr uint32_t CAMCORDER_MICIN_CHANNEL_COUNT = 4;
 static constexpr uint32_t AUDIO_D2D = 12;
 static constexpr uint32_t AUDIO_INPUT_INTERPHON_TYPE = 1 << 16;
 AudioInputType hdiAudioInterphoneInputType = static_cast<AudioInputType>(AUDIO_INPUT_INTERPHON_TYPE);
@@ -124,6 +126,39 @@ static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, cha
     for (size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
         if (memcpy_s(dstBase + frameIndex * outputFrameSize, outputFrameSize, rawBase + frameIndex * rawFrameSize,
             rawFrameSize) != EOK) {
+            return false;
+        }
+        if (memcpy_s(dstBase + frameIndex * outputFrameSize + rawFrameSize, outputFrameSize - rawFrameSize,
+            micInBase + frameIndex * micInFrameSize, micInFrameSize) != EOK) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool InterleaveRawAndMicInFrameForCamcorder(const int8_t *src, uint64_t frameLen,
+    char *dst, size_t bytesPerSample)
+{
+    if (src == nullptr || dst == nullptr || frameLen == 0 || bytesPerSample == 0) {
+        return false;
+    }
+
+    const uint64_t frameSize =
+        static_cast<uint64_t>(bytesPerSample) * (CAMCORDER_RAW_CHANNEL_COUNT + CAMCORDER_MICIN_CHANNEL_COUNT);
+    if (frameSize == 0 || frameLen % frameSize != 0) {
+        return false;
+    }
+
+    const size_t frameCount = static_cast<size_t>(frameLen / frameSize);
+    const size_t micInFrameSize = static_cast<size_t>(CAMCORDER_MICIN_CHANNEL_COUNT) * bytesPerSample;
+    const size_t rawFrameSize = static_cast<size_t>(CAMCORDER_RAW_CHANNEL_COUNT) * bytesPerSample;
+    const size_t outputFrameSize = micInFrameSize + rawFrameSize;
+    const uint8_t *rawBase = reinterpret_cast<const uint8_t *>(src);
+    const uint8_t *micInBase = rawBase + frameCount * rawFrameSize;
+    uint8_t *dstBase = reinterpret_cast<uint8_t *>(dst);
+    for (size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+        if (memcpy_s(dstBase + frameIndex * outputFrameSize, outputFrameSize,
+            rawBase + frameIndex * rawFrameSize, rawFrameSize) != EOK) {
             return false;
         }
         if (memcpy_s(dstBase + frameIndex * outputFrameSize + rawFrameSize, outputFrameSize - rawFrameSize,
@@ -449,6 +484,15 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
         audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
     }
     CheckLatencySignal(reinterpret_cast<uint8_t *>(frame), replyBytes);
+
+    if (attr_.sourceType == SOURCE_TYPE_CAMCORDER && attr_.channelMicIn > CHANNEL_UNKNOW) {
+        std::vector<int8_t> buffer(reinterpret_cast<int8_t *>(frame),
+            reinterpret_cast<int8_t *>(frame) + replyBytes);
+        size_t bytesPerSample = static_cast<size_t>(GetByteSizeByFormat(attr_.format));
+        if (!InterleaveRawAndMicInFrameForCamcorder(buffer.data(), replyBytes, frame, bytesPerSample)) {
+            AUDIO_WARNING_LOG("camcorder interleave failed, fallback to direct data");
+        }
+    }
 
     HdiDfxUtils::PrintVolumeInfo(frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
     HdiDfxUtils::DumpData(frame, replyBytes, dumpFile_, dumpFileName_);
@@ -1043,6 +1087,8 @@ uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSourc
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_RECOGNITION);
         case AUDIO_INPUT_RAW_AI_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT);
+        case AUDIO_INPUT_CAMCORDER_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_CAMCORDER);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -1091,7 +1137,7 @@ void AudioCaptureSource::InitEcOrMicRefAttr(const IAudioSourceAttr &attr)
 
 void AudioCaptureSource::UpdateRawSampleAttr(struct AudioSampleAttributes &param)
 {
-    if (attr_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+    if (attr_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION || attr_.sourceType == SOURCE_TYPE_CAMCORDER) {
         param.rawSampleAttributes.rawFormat = ConvertToHdiFormat(attr_.formatMicIn);
         param.rawSampleAttributes.rawSampleRate = attr_.sampleRateMicIn;
         param.rawSampleAttributes.rawChannelLayout = GetChannelLayoutByChannelCount(attr_.channelMicIn);

@@ -89,6 +89,13 @@ inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &cap
 {
     return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && params.isVoiceRecognitionMicInEcDegrade;
 }
+
+inline bool IsCamcorderMicInRequest(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &params)
+{
+    return capturerInfo.sourceType == SOURCE_TYPE_CAMCORDER &&
+       params.micInChannels > CHANNEL_UNKNOW;
+}
 }
 
 std::shared_ptr<CapturerInClient> CapturerInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
@@ -257,6 +264,13 @@ int32_t CapturerInClientInner::CheckForSetAudioStreamInfo(const AudioStreamParam
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_CONFING_OPERATION_FAILED,
                 "[SetAudioStreamInfo]GetByteSizePerFrameWithMicInEc failed with invalid params", true));
+    } else if (IsCamcorderMicInRequest(capturerInfo_, info)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(IAudioStream::GetByteSizePerFrameWithMicIn(info, sizePerFrameInByte_) ==
+            SUCCESS, ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithMicIn failed with invalid params"),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CONFING_OPERATION_FAILED,
+                "[SetAudioStreamInfo]GetByteSizePerFrameWithMicIn failed with invalid params", true));
     } else {
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
@@ -519,6 +533,8 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.micInChannels +
             streamParams_.ecChannels);
+    } else if (IsCamcorderMicInRequest(capturerInfo_, streamParams_)) {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.micInChannels);
     } else {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
     }

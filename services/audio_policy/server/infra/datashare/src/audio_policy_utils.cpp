@@ -73,6 +73,7 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_VOICE_RECOGNITION_MIC, TYPE_PRIMARY},
     {PRIMARY_RAW_AI_MIC, TYPE_PRIMARY},
     {PRIMARY_INTERPHON_MIC, TYPE_PRIMARY},
+    {PRIMARY_CAMCORDER, TYPE_PRIMARY},
 };
 
 std::set<DeviceType> AudioPolicyUtils::needDeclaredDevices = {
@@ -90,6 +91,7 @@ static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
         case AUDIO_INPUT_FLAG_ULTRASONIC:       return PRIMARY_ULTRASONIC_MIC;
         case AUDIO_INPUT_FLAG_VOICE_RECOGNITION:return PRIMARY_VOICE_RECOGNITION_MIC;
         case AUDIO_INPUT_FLAG_RAW_AI:           return PRIMARY_RAW_AI_MIC;
+        case AUDIO_INPUT_FLAG_CAMCORDER:        return PRIMARY_CAMCORDER;
         default:                                return PRIMARY_MIC;
     }
 }
@@ -542,6 +544,7 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
         {PRIMARY_VOICE_RECOGNITION_MIC, PRIMARY_CLASS},
         {PRIMARY_RAW_AI_MIC, PRIMARY_CLASS},
+        {PRIMARY_CAMCORDER, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -813,7 +816,8 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC
         || deviceName == PRIMARY_ULTRASONIC_MIC ||
         deviceName == PRIMARY_VOICE_RECOGNITION_MIC || deviceName == PRIMARY_RAW_AI_MIC ||
-        deviceName == PRIMARY_INTERPHON_MIC || deviceName == PRIMARY_LIVE_MIC) {
+        deviceName == PRIMARY_INTERPHON_MIC || deviceName == PRIMARY_LIVE_MIC ||
+        deviceName == PRIMARY_CAMCORDER) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;

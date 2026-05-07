@@ -203,6 +203,11 @@ static inline bool IsMicInEcRequested(const AudioCapturerOptions &capturerOption
         capturerOptions.ecStreamInfo.channels > CHANNEL_UNKNOW;
 }
 
+static inline bool IsMicInRequested(const AudioCapturerOptions &capturerOptions)
+{
+    return capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW;
+}
+
 static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
@@ -224,6 +229,14 @@ static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions 
             (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
             capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
             AUDIO_ERR_LOG("Create failed: ec samplingRate and format should follow process stream");
+            return false;
+        }
+    }
+
+    if (sourceType == SOURCE_TYPE_CAMCORDER && IsMicInRequested(capturerOptions)) {
+        if ((capturerOptions.micInStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
+            capturerOptions.micInStreamInfo.format != capturerOptions.streamInfo.format)) {
+            AUDIO_ERR_LOG("Create failed: camcorder mic-in samplingRate and format should follow process stream");
             return false;
         }
     }

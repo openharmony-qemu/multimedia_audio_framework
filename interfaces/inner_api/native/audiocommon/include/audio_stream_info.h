@@ -112,6 +112,7 @@ enum AudioPipeType {
     PIPE_TYPE_OUT_INTERPHONE = 19,
     PIPE_TYPE_IN_INTERPHONE = 20,
     PIPE_TYPE_IN_NORMAL_LIVE = 21,
+    PIPE_TYPE_IN_CAMCORDER = 23,
 };
 
 enum AudioPreloadType {

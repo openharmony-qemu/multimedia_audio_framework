@@ -70,6 +70,7 @@ static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
 static constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
+static const std::string PIPE_PRIMARY_INPUT_CAMCORDER = "primary_input_camcorder";
 static const std::unordered_set<SourceType> VOIP_PRIVACY_MUTE_TARGET_SOURCES = {
     SOURCE_TYPE_LIVE,
     SOURCE_TYPE_MIC,
@@ -308,6 +309,13 @@ static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStream
         (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
 }
 
+static bool IsCamcorderMicInRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER &&
+        streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW;
+}
+
 static bool IsVoiceRecognitionIndependentRouteSupported()
 {
     auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
@@ -315,6 +323,15 @@ static bool IsVoiceRecognitionIndependentRouteSupported()
     auto strategy = sourceStrategyMap->find(SOURCE_TYPE_VOICE_RECOGNITION);
     CHECK_AND_RETURN_RET(strategy != sourceStrategyMap->end(), false);
     return strategy->second.pipeName == PIPE_PRIMARY_INPUT_VOICE_RECOGNITION;
+}
+
+static bool IsCamcorderIndependentRouteSupported()
+{
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    CHECK_AND_RETURN_RET(sourceStrategyMap != nullptr, false);
+    auto strategy = sourceStrategyMap->find(SOURCE_TYPE_CAMCORDER);
+    CHECK_AND_RETURN_RET(strategy != sourceStrategyMap->end(), false);
+    return strategy->second.pipeName == PIPE_PRIMARY_INPUT_CAMCORDER;
 }
 
 static void UpdateMicInEcModuleInfoByStreamDesc(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -330,6 +347,24 @@ static void UpdateMicInEcModuleInfoByStreamDesc(const std::shared_ptr<AudioStrea
         }
     }
 
+    if (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW) {
+        moduleInfo.micInRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micInChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatToHpaeStr.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micInFormat = formatToHpaeStr[streamDesc->micInStreamInfo_.format];
+        }
+        moduleInfo.micRefRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micRefChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatToHpaeStr.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micRefFormat = formatToHpaeStr[streamDesc->micInStreamInfo_.format];
+        }
+    }
+}
+
+static void UpdateCamcorderMicInModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    AudioModuleInfo &moduleInfo)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     if (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW) {
         moduleInfo.micInRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
         moduleInfo.micInChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
@@ -708,6 +743,10 @@ int32_t AudioCoreService::CreateCapturerClient(
             "micin/ec capture denied: no system permission");
         CHECK_AND_RETURN_RET_LOG(IsVoiceRecognitionIndependentRouteSupported(), ERR_NOT_SUPPORTED,
             "micin/ec capture denied: voice recognition independent route not supported");
+    }
+    if (IsCamcorderMicInRequested(streamDesc)) {
+        CHECK_AND_RETURN_RET_LOG(IsCamcorderIndependentRouteSupported(), ERR_NOT_SUPPORTED,
+            "micin capture denied: camcorder independent route not supported");
     }
     if (sessionId == 0) {
         streamDesc->sessionId_ = GenerateSessionId();
@@ -4237,6 +4276,8 @@ int32_t AudioCoreService::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo
         moduleInfo.ecFormat = formatToHpaeStr[streamDesc->ecStreamInfo_.format];
     } else if (IsVoiceRecognitionMicInEcRequested(streamDesc)) {
         UpdateMicInEcModuleInfoByStreamDesc(streamDesc, moduleInfo);
+    } else if (IsCamcorderMicInRequested(streamDesc)) {
+        UpdateCamcorderMicInModuleInfo(streamDesc, moduleInfo);
     }
     AUDIO_INFO_LOG("sessionId:%{public}u rate:%{public}s channels:%{public}s bufferSize:%{public}s"
         "format:%{public}s channelLayout:%{public}s sourceType: %{public}s", targetSessionId,
