@@ -1155,10 +1155,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_053, Tes
 
 /**
 * @tc.name  : Test AudioSpatializationService.
-* @tc.number: AudioSpatializationService_054
+* @tc.number: AudioSpatializationService_055
 * @tc.desc  : Test AudioSpatializationService::IsPersonalizedSpatializationEnabled
 */
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_054, TestSize.Level1)
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_055, TestSize.Level1)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
@@ -1171,10 +1171,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_054, Tes
 
 /**
 * @tc.name  : Test AudioSpatializationService.
-* @tc.number: AudioSpatializationService_055
+* @tc.number: AudioSpatializationService_056
 * @tc.desc  : Test AudioSpatializationService::SetPersonalizedSpatializationEnabled
 */
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_055, TestSize.Level1)
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_056, TestSize.Level1)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
 
@@ -1190,10 +1190,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_055, Tes
 
 /**
 * @tc.name  : Test AudioSpatializationService.
-* @tc.number: AudioSpatializationService_056
+* @tc.number: AudioSpatializationService_057
 * @tc.desc  : Test AudioSpatializationService::HandlePersonalizedSpatializationEnabledChange
 */
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_056, TestSize.Level1)
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_057, TestSize.Level1)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
 
@@ -1208,10 +1208,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_056, Tes
 
 /**
 * @tc.name  : Test AudioSpatializationService.
-* @tc.number: AudioSpatializationService_057
+* @tc.number: AudioSpatializationService_058
 * @tc.desc  : Test AudioSpatializationService::HandlePersonalizedSpatializationEnabledChange
 */
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_057, TestSize.Level1)
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_058, TestSize.Level1)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
 
@@ -1264,8 +1264,5 @@ HWTEST_F(AudioSpatializationServiceUnitTest, InitSpatializationState_001, TestSi
     AudioSettingProvider::GetInstance(1).SetDataShareReady(true);
     ptrAudioSpatializationService->InitSpatializationState();
 }
-
-
-
 } // namespace AudioStandard
 } // namespace OHOS
