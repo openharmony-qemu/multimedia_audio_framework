@@ -566,6 +566,10 @@ int32_t HpaeFastRendererManager::Flush(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(node, "Flush not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
         node->Flush();
+        auto converter = SafeGetMap(converterNodeMap_, sessionId);
+        if (converter != nullptr) {
+            converter->FlushBuffers();
+        }
     };
     SendRequest(request, __func__);
     return SUCCESS;

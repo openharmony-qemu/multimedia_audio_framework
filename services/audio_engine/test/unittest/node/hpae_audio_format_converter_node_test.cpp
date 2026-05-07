@@ -1507,4 +1507,479 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, PullAhead_ZeroCredit, TestSize.Level0
     converterNode->PullAheadUntilThresholdOrFailure(960);
     EXPECT_EQ(converterNode->unprocessedFrames_, 100u);
 }
+
+// ======================== FlushBuffers tests ========================
+
+/**
+ * @tc.name  : FlushBuffers_BasicReset
+ * @tc.type  : FUNC
+ * @tc.number: FlushBuffers_BasicReset
+ * @tc.desc  : FlushBuffers resets all counters and credit after partial data accumulation
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_BasicReset, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    // Simulate partial data in both buffers
+    converterNode->unprocessedFrames_ = 200;
+    converterNode->processedFrames_ = 500;
+    converterNode->processedReadPos_ = 100;
+    converterNode->pullAheadCredit_ = 0;
+
+    converterNode->FlushBuffers();
+
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedReadPos_, 0u);
+    EXPECT_EQ(converterNode->pullAheadCredit_, converterNode->pullAheadMaxCredit_);
+}
+
+/**
+ * @tc.name  : FlushBuffers_EmptyBuffers
+ * @tc.type  : FUNC
+ * @tc.number: FlushBuffers_EmptyBuffers
+ * @tc.desc  : FlushBuffers on already-empty buffers does not crash
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_EmptyBuffers, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedReadPos_, 0u);
+
+    converterNode->FlushBuffers();
+
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedReadPos_, 0u);
+    EXPECT_EQ(converterNode->pullAheadCredit_, converterNode->pullAheadMaxCredit_);
+}
+
+/**
+ * @tc.name  : FlushBuffers_ThenProcessCleansOutput
+ * @tc.type  : FUNC
+ * @tc.number: FlushBuffers_ThenProcessCleansOutput
+ * @tc.desc  : After FlushBuffers, new data is processed from scratch without stale data
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_ThenProcessCleansOutput, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    uint32_t outCh = STEREO;
+    uint32_t inCh = STEREO;
+
+    // Fill buffers with stale data
+    converterNode->unprocessedFrames_ = 882;
+    converterNode->processedFrames_ = 960;
+    converterNode->processedReadPos_ = 0;
+    converterNode->pullAheadCredit_ = 0;
+
+    converterNode->FlushBuffers();
+
+    // Verify all cleared
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedReadPos_, 0u);
+    EXPECT_EQ(converterNode->pullAheadCredit_, converterNode->pullAheadMaxCredit_);
+
+    // Now append new data and verify it works cleanly
+    std::vector<float> newData(882u * inCh, 0.5f);
+    converterNode->AppendToUnprocessedBuffer(newData.data(), 882, inCh);
+    EXPECT_EQ(converterNode->unprocessedFrames_, 882u);
+}
+
+/**
+ * @tc.name  : FlushBuffers_CreditReset
+ * @tc.type  : FUNC
+ * @tc.number: FlushBuffers_CreditReset
+ * @tc.desc  : FlushBuffers resets pullAheadCredit_ to pullAheadMaxCredit_
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_CreditReset, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, STEREO);
+    uint32_t maxCredit = converterNode->pullAheadMaxCredit_;
+    ASSERT_GT(maxCredit, 0u);
+
+    // Exhaust credit
+    converterNode->pullAheadCredit_ = 0;
+    EXPECT_EQ(converterNode->pullAheadCredit_, 0u);
+
+    converterNode->FlushBuffers();
+    EXPECT_EQ(converterNode->pullAheadCredit_, maxCredit);
+}
+
+/**
+ * @tc.name  : FlushBuffers_PartialCreditReset
+ * @tc.type  : FUNC
+ * @tc.number: FlushBuffers_PartialCreditReset
+ * @tc.desc  : FlushBuffers restores credit from partial value
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_PartialCreditReset, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    uint32_t maxCredit = converterNode->pullAheadMaxCredit_;
+    ASSERT_GT(maxCredit, 1u);
+
+    converterNode->pullAheadCredit_ = maxCredit / 2;
+    converterNode->FlushBuffers();
+    EXPECT_EQ(converterNode->pullAheadCredit_, maxCredit);
+}
+
+/**
+ * @tc.name  : FlushBuffers_11025HzLargeBuffers
+ * @tc.type  : FUNC
+ * @tc.number: FlushBuffers_11025HzLargeBuffers
+ * @tc.desc  : FlushBuffers clears large accumulated data for 11025Hz non-standard rate
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_11025HzLargeBuffers, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, STEREO);
+    // 11025Hz threshold is 441, accumulate more than threshold
+    converterNode->unprocessedFrames_ = 600;
+    converterNode->processedFrames_ = 2000;
+    converterNode->processedReadPos_ = 960;
+    converterNode->pullAheadCredit_ = 0;
+
+    converterNode->FlushBuffers();
+
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedReadPos_, 0u);
+    EXPECT_EQ(converterNode->pullAheadCredit_, converterNode->pullAheadMaxCredit_);
+}
+
+/**
+ * @tc.name  : FlushBuffers_8010HzBuffers
+ * @tc.type  : FUNC
+ * @tc.number: FlushBuffers_8010HzBuffers
+ * @tc.desc  : FlushBuffers clears data for 8010Hz non-standard rate
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_8010HzBuffers, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_8010, SAMPLE_RATE_48000, STEREO, STEREO);
+    converterNode->unprocessedFrames_ = 801;
+    converterNode->processedFrames_ = 4800;
+    converterNode->processedReadPos_ = 0;
+    converterNode->pullAheadCredit_ = 0;
+
+    converterNode->FlushBuffers();
+
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedReadPos_, 0u);
+    EXPECT_EQ(converterNode->pullAheadCredit_, converterNode->pullAheadMaxCredit_);
+}
+
+// ======================== GetLatency tests ========================
+
+/**
+ * @tc.name  : GetLatency_EmptyBuffers
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_EmptyBuffers
+ * @tc.desc  : GetLatency returns 0 when both buffers are empty
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_EmptyBuffers, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+
+    uint64_t latency = converterNode->GetLatency();
+    EXPECT_EQ(latency, 0u);
+}
+
+/**
+ * @tc.name  : GetLatency_Standard48kHz
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_Standard48kHz
+ * @tc.desc  : GetLatency returns 0 for standard 48kHz with empty buffers (same rate passthrough)
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_Standard48kHz, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    // 48kHz->48kHz same rate, empty buffers
+    uint64_t latency = converterNode->GetLatency();
+    EXPECT_EQ(latency, 0u);
+}
+
+/**
+ * @tc.name  : GetLatency_UnprocessedOnly
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_UnprocessedOnly
+ * @tc.desc  : GetLatency reports delay from unprocessedBuffer_ only at input rate
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_UnprocessedOnly, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    // 441 frames at 44100Hz = 10ms = 10000us
+    uint32_t frames = 441;
+    converterNode->unprocessedFrames_ = frames;
+    converterNode->processedFrames_ = 0;
+
+    uint64_t latency = converterNode->GetLatency();
+    // Expected: 441 * 1000000 / 44100 = 10000 us
+    uint64_t expected = static_cast<uint64_t>(frames) * 1000000ULL / SAMPLE_RATE_44100;
+    EXPECT_EQ(latency, expected);
+}
+
+/**
+ * @tc.name  : GetLatency_ProcessedOnly
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_ProcessedOnly
+ * @tc.desc  : GetLatency reports delay from processedBuffer_ only at output rate
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_ProcessedOnly, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    // 960 frames at 48000Hz = 20ms = 20000us
+    uint32_t frames = 960;
+    converterNode->unprocessedFrames_ = 0;
+    converterNode->processedFrames_ = frames;
+
+    uint64_t latency = converterNode->GetLatency();
+    // Expected: 960 * 1000000 / 48000 = 20000 us
+    uint64_t expected = static_cast<uint64_t>(frames) * 1000000ULL / SAMPLE_RATE_48000;
+    EXPECT_EQ(latency, expected);
+}
+
+/**
+ * @tc.name  : GetLatency_BothBuffers
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_BothBuffers
+ * @tc.desc  : GetLatency reports combined delay from both buffers
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_BothBuffers, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    // unprocessed: 441 frames at 44100Hz = 10000us
+    // processed: 960 frames at 48000Hz = 20000us
+    // total = 30000us
+    converterNode->unprocessedFrames_ = 441;
+    converterNode->processedFrames_ = 960;
+
+    uint64_t latency = converterNode->GetLatency();
+    uint64_t expectedUnprocessed = static_cast<uint64_t>(441) * 1000000ULL / SAMPLE_RATE_44100;
+    uint64_t expectedProcessed = static_cast<uint64_t>(960) * 1000000ULL / SAMPLE_RATE_48000;
+    EXPECT_EQ(latency, expectedUnprocessed + expectedProcessed);
+}
+
+/**
+ * @tc.name  : GetLatency_11025HzNonStandard
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_11025HzNonStandard
+ * @tc.desc  : GetLatency correctly reports large delay for 11025Hz with accumulated data
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_11025HzNonStandard, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, STEREO);
+    // 441 frames at 11025Hz = 40ms = 40000us
+    converterNode->unprocessedFrames_ = 441;
+    converterNode->processedFrames_ = 0;
+
+    uint64_t latency = converterNode->GetLatency();
+    uint64_t expected = static_cast<uint64_t>(441) * 1000000ULL / SAMPLE_RATE_11025;
+    EXPECT_EQ(latency, expected);
+    // Verify it's approximately 40ms
+    EXPECT_GE(latency, 39000u);
+    EXPECT_LE(latency, 41000u);
+}
+
+/**
+ * @tc.name  : GetLatency_AfterFlushBuffers
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_AfterFlushBuffers
+ * @tc.desc  : GetLatency returns 0 after FlushBuffers clears all data
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_AfterFlushBuffers, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    converterNode->unprocessedFrames_ = 882;
+    converterNode->processedFrames_ = 1920;
+    ASSERT_GT(converterNode->GetLatency(), 0u);
+
+    converterNode->FlushBuffers();
+    EXPECT_EQ(converterNode->GetLatency(), 0u);
+}
+
+/**
+ * @tc.name  : GetLatency_Accuracy_LatencyDecreasesAfterExtract
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_Accuracy_LatencyDecreasesAfterExtract
+ * @tc.desc  : GetLatency decreases after output is extracted from processedBuffer
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, GetLatency_Accuracy_LatencyDecreasesAfterExtract, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    // Setup: 1920 processed frames at 48000Hz (40ms)
+    converterNode->processedFrames_ = 1920;
+    converterNode->processedReadPos_ = 0;
+    converterNode->unprocessedFrames_ = 0;
+
+    uint64_t latencyBefore = converterNode->GetLatency();
+
+    // Simulate extracting one 20ms chunk (960 frames) via RemoveConsumed
+    converterNode->processedFrames_ -= 960;
+    converterNode->processedReadPos_ += 960;
+
+    uint64_t latencyAfter = converterNode->GetLatency();
+    EXPECT_LT(latencyAfter, latencyBefore);
+    // 960 frames at 48000Hz = 20000us difference
+    EXPECT_EQ(latencyBefore - latencyAfter, 20000u);
+}
+
+// ======================== Low-latency same-rate (5ms frameLen) tests ========================
+
+namespace {
+constexpr uint32_t FRAME_LEN_5MS = 5;
+constexpr uint32_t FRAMELEN_5MS_48K = SAMPLE_RATE_48000 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND; // 240
+
+// Helper: create a same-rate converter with 5ms frameLen (low-latency path simulation)
+static std::shared_ptr<HpaeAudioFormatConverterNode> CreateLowLatencyConverter()
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = FRAMELEN_5MS_48K;
+    pre.channels = STEREO;
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = FRAMELEN_5MS_48K;
+    out.channels = STEREO;
+    return std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+}
+}
+
+/**
+ * @tc.name  : LowLatency_OutputFrameLenMatchesNodeFrameLen
+ * @tc.type  : FUNC
+ * @tc.number: LowLatency_OutputFrameLenMatchesNodeFrameLen
+ * @tc.desc  : For same-rate low-latency (5ms), outputFrameLen20ms_ should equal node frameLen (240), not 960
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_OutputFrameLenMatchesNodeFrameLen, TestSize.Level0)
+{
+    auto converterNode = CreateLowLatencyConverter();
+    // Same rate 48kHz->48kHz: outputFrameLen20ms_ must match node's frameLen (240), not 960
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, FRAMELEN_5MS_48K);
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, 240u);
+}
+
+/**
+ * @tc.name  : LowLatency_ExtractOutputNoOverflow
+ * @tc.type  : FUNC
+ * @tc.number: LowLatency_ExtractOutputNoOverflow
+ * @tc.desc  : ExtractOutputFromProcessedBuffer succeeds for 5ms same-rate without memcpy_s overflow
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_ExtractOutputNoOverflow, TestSize.Level0)
+{
+    auto converterNode = CreateLowLatencyConverter();
+    uint32_t channels = converterNode->converterOutput_.GetChannelCount();
+    // Simulate processedBuffer_ with exactly 240 frames (one 5ms chunk)
+    converterNode->processedFrames_ = FRAMELEN_5MS_48K;
+    converterNode->processedReadPos_ = 0;
+    // Ensure processedBuffer_ has enough capacity
+    size_t requiredSize = static_cast<size_t>(FRAMELEN_5MS_48K) * channels;
+    if (converterNode->processedBuffer_.size() < requiredSize) {
+        converterNode->processedBuffer_.resize(requiredSize, 0.0f);
+    }
+    // Fill with non-zero data to verify copy
+    for (size_t i = 0; i < requiredSize; i++) {
+        converterNode->processedBuffer_[i] = static_cast<float>(i);
+    }
+
+    bool result = converterNode->ExtractOutputFromProcessedBuffer();
+    EXPECT_TRUE(result);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+}
+
+/**
+ * @tc.name  : LowLatency_ExtractOutput_MultipleChunks
+ * @tc.type  : FUNC
+ * @tc.number: LowLatency_ExtractOutput_MultipleChunks
+ * @tc.desc  : Multiple 5ms chunks can be extracted sequentially without overflow
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_ExtractOutput_MultipleChunks, TestSize.Level0)
+{
+    auto converterNode = CreateLowLatencyConverter();
+    uint32_t channels = converterNode->converterOutput_.GetChannelCount();
+    // Simulate 4 chunks worth of data (4 * 240 = 960 frames)
+    uint32_t totalFrames = FRAMELEN_5MS_48K * 4;
+    size_t requiredSize = static_cast<size_t>(totalFrames) * channels;
+    converterNode->processedBuffer_.resize(requiredSize, 0.0f);
+    for (size_t i = 0; i < requiredSize; i++) {
+        converterNode->processedBuffer_[i] = static_cast<float>(i % 100);
+    }
+    converterNode->processedFrames_ = totalFrames;
+    converterNode->processedReadPos_ = 0;
+
+    // Extract all 4 chunks one by one
+    for (int i = 0; i < 4; i++) {
+        bool result = converterNode->ExtractOutputFromProcessedBuffer();
+        EXPECT_TRUE(result) << "Extract failed at chunk " << i;
+    }
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+}
+
+/**
+ * @tc.name  : LowLatency_PassthroughDoesNotAccumulate
+ * @tc.type  : FUNC
+ * @tc.number: LowLatency_PassthroughDoesNotAccumulate
+ * @tc.desc  : Same-rate passthrough for 5ms: input 240 frames, process, extract 240 frames in one cycle
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_PassthroughDoesNotAccumulate, TestSize.Level0)
+{
+    auto converterNode = CreateLowLatencyConverter();
+    uint32_t channels = STEREO;
+    uint32_t frameLen = FRAMELEN_5MS_48K;
+
+    // Append one 5ms input chunk
+    std::vector<float> inputData(static_cast<size_t>(frameLen) * channels, 0.5f);
+    converterNode->AppendToUnprocessedBuffer(inputData.data(), frameLen, channels);
+    EXPECT_EQ(converterNode->unprocessedFrames_, frameLen);
+
+    // ProcessResampleLoop for same-rate same-channel: MoveUnprocessedToProcessed
+    converterNode->ProcessResampleLoop();
+    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedFrames_, frameLen);
+
+    // Extract should succeed immediately (no accumulation needed)
+    converterNode->converterOutput_.Reset();
+    bool result = converterNode->ExtractOutputFromProcessedBuffer();
+    EXPECT_TRUE(result);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+}
+
+/**
+ * @tc.name  : LowLatency_DiffRateStillUses20ms
+ * @tc.type  : FUNC
+ * @tc.number: LowLatency_DiffRateStillUses20ms
+ * @tc.desc  : Different rate (44100->48000) still uses 20ms outputFrameLen even with 5ms input
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_DiffRateStillUses20ms, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_44100;
+    pre.frameLen = SAMPLE_RATE_44100 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND; // 220.5 -> 220
+    pre.channels = STEREO;
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = SAMPLE_RATE_48000 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND; // 240
+    out.channels = STEREO;
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+
+    // Different rate: outputFrameLen20ms_ should be 20ms at output rate (960), not node frameLen
+    uint32_t expected20ms = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, expected20ms);
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, 960u);
+}
+
+/**
+ * @tc.name  : LowLatency_StandardRate20ms
+ * @tc.type  : FUNC
+ * @tc.number: LowLatency_StandardRate20ms
+ * @tc.desc  : Standard 48kHz->48kHz with 20ms frameLen uses 960 as outputFrameLen
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_StandardRate20ms, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    // Same rate with 20ms frameLen: outputFrameLen20ms_ = 960
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, DEFAULT_FRAMELEN_SECOND);
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, 960u);
+}
 }
