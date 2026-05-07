@@ -638,6 +638,7 @@ audio_ohos_library("audio_policy_client") {
     "client/stub/src/sle_audio_operation_callback_stub_impl.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",
     "server/src/audio_spatialization_state_change_listener.cpp",
+    "server/src/audio_separation_effect_enabled_change_listener.cpp",
   ]
 
   deps = [
