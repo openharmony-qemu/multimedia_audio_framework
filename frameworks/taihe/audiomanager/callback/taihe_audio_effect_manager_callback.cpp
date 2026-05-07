@@ -147,7 +147,7 @@ void TaiheAudioSeparationEffectEnabledChangeCallback::SafeJsCallbackAudioSeparat
     AUDIO_INFO_LOG("SafeJsCallbackAudioSeparationEffectEnabledWork: safe js callback working.");
 
     std::shared_ptr<taihe::callback<void(bool)>> cacheCallback =
-        std::reinterpret_pointer_cast<taihe::callback<void(bool)>>>(event->callback->cb_);
+        std::reinterpret_pointer_cast<taihe::callback<void(bool)>, uintptr_t>(event->callback->cb_);
     CHECK_AND_RETURN_LOG(cacheCallback != nullptr, "get reference value fail");
     (*cacheCallback)(event->enabled);
 }
