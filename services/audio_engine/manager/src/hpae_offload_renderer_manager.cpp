@@ -380,6 +380,13 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
         AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
         // flush history buffer
         node->Flush();
+        // flush converter nodes' dual buffers to prevent stale resampled data
+        if (converterForLoudness_ != nullptr) {
+            converterForLoudness_->FlushBuffers();
+        }
+        if (converterForOutput_ != nullptr) {
+            converterForOutput_->FlushBuffers();
+        }
         if (sessionId == curNode_->GetSessionId()) {
             // flush sinkoutput cache
             sinkOutputNode_->FlushStream();

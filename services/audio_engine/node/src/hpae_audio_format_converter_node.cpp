@@ -364,7 +364,12 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     PcmBufferInfo outPcmBufferInfo = pcmBufferInfo_; // isMultiFrames_ and frame_ are inheritated from sinkInputNode
     outPcmBufferInfo.ch = outChannelInfo.numChannels;
     outPcmBufferInfo.rate = resampler_->GetOutRate();
-    outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+    {
+        uint32_t curInRate = resampler_->GetInRate();
+        uint32_t curOutRate = resampler_->GetOutRate();
+        outPcmBufferInfo.frameLen = (curInRate == curOutRate) ? GetFrameLen() :
+            curOutRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+    }
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
 
     AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, update tmp PCM buffer info!",
@@ -421,7 +426,11 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
     }
     CHECK_AND_RETURN_LOG(resampler_->GetInRate() != 0, "NodeId %{public}d: inRate is zero", GetNodeId());
     resamplerInputThreshold_ = CalculateResamplerInputThreshold();
-    outputFrameLen20ms_ = resampler_->GetOutRate() * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+    uint32_t outRate = resampler_->GetOutRate();
+    uint32_t inRate = resampler_->GetInRate();
+    // Same-rate path (e.g., low-latency 5ms): use node's actual output frameLen to match converterOutput_ buffer
+    outputFrameLen20ms_ = (inRate == outRate) ? GetFrameLen() :
+        outRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
 
     AudioChannelInfo inChannelInfo = channelConverter_.GetInChannelInfo();
     AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
@@ -823,12 +832,36 @@ void HpaeAudioFormatConverterNode::DisConnectWithInfo(const std::shared_ptr<Outp
 
 uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
 {
-    return 0;
+    if (resampler_ == nullptr) {
+        return 0;
+    }
+    // Dual-buffer latency: unprocessed input at input rate + processed output at output rate
+    uint32_t inRate = resampler_->GetInRate();
+    uint32_t outRate = resampler_->GetOutRate();
+    uint64_t latencyUs = 0;
+    if (inRate != 0) {
+        latencyUs += static_cast<uint64_t>(unprocessedFrames_) * AUDIO_US_PER_SECOND / inRate;
+    }
+    if (outRate != 0) {
+        latencyUs += static_cast<uint64_t>(processedFrames_) * AUDIO_US_PER_SECOND / outRate;
+    }
+    return latencyUs;
 }
 
 void HpaeAudioFormatConverterNode::SetDownmixNormalization(bool normalizing)
 {
     channelConverter_.SetDownmixNormalization(normalizing);
+}
+
+void HpaeAudioFormatConverterNode::FlushBuffers()
+{
+    AUDIO_INFO_LOG("NodeId %{public}d: FlushBuffers, discarding "
+        "unprocessedFrames=%{public}u, processedFrames=%{public}u",
+        GetNodeId(), unprocessedFrames_, processedFrames_);
+    unprocessedFrames_ = 0;
+    processedFrames_ = 0;
+    processedReadPos_ = 0;
+    pullAheadCredit_ = pullAheadMaxCredit_;
 }
 } // Hpae
 } // AudioStandard
