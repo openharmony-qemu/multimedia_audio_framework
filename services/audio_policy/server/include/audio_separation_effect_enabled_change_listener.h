@@ -15,11 +15,21 @@
 #ifndef AUDIO_STANDARD_SEPARATION_EFFECT_ENABLED_CHANGE_LISTENER_H
 #define AUDIO_STANDARD_SEPARATION_EFFECT_ENABLED_CHANGE_LISTENER_H
 
-#include "standard_audio_separation_effect_enabled_change_listener_stub.h"
+#include "iremote_stub.h"
 #include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+class IStandardAudioSeparationEffectEnabledChangeListener : public IRemoteBroker {
+public:
+    virtual void OnAudioSeparationEffectEnabledChange(const bool &enabled) = 0;
+};
+
+class StandardAudioSeparationEffectEnabledChangeListenerStub : public IRemoteStub<IStandardAudioSeparationEffectEnabledChangeListener> {
+public:
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
+};
 
 class AudioSeparationEffectEnabledChangeListener : public StandardAudioSeparationEffectEnabledChangeListenerStub {
 public:

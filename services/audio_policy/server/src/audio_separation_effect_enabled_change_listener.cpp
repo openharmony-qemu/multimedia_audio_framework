@@ -17,9 +17,13 @@
 #endif
 
 #include "audio_separation_effect_enabled_change_listener.h"
+#include "audio_errors.h"
+#include "audio_policy_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int32_t ON_SEPARATION_EFFECT_ENABLED_CHANGE = 1;
 
 AudioSeparationEffectEnabledChangeListener::AudioSeparationEffectEnabledChangeListener()
 {
@@ -29,6 +33,18 @@ AudioSeparationEffectEnabledChangeListener::AudioSeparationEffectEnabledChangeLi
 AudioSeparationEffectEnabledChangeListener::~AudioSeparationEffectEnabledChangeListener()
 {
     AUDIO_DEBUG_LOG("AudioSeparationEffectEnabledChangeListener: instance destroy");
+}
+
+int StandardAudioSeparationEffectEnabledChangeListenerStub::OnRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    if (code == ON_SEPARATION_EFFECT_ENABLED_CHANGE) {
+        bool enabled = data.ReadBool();
+        OnAudioSeparationEffectEnabledChange(enabled);
+        return SUCCESS;
+    }
+    AUDIO_ERR_LOG("OnRemoteRequest: unknown code %{public}d", code);
+    return ERR_INVALID_OPERATION;
 }
 
 void AudioSeparationEffectEnabledChangeListener::OnAudioSeparationEffectEnabledChange(const bool &enabled)
