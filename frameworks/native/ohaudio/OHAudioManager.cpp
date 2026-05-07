@@ -33,7 +33,7 @@ const std::set<OHOS::AudioStandard::AudioScene> INVALID_AUDIO_SCENES = {
 using OHOS::AudioStandard::OHAudioManager;
 static OHOS::AudioStandard::OHAudioManager *convertManager(OH_AudioManager *audioManager)
 {
-    return (OHAudioManager*) audioManager;
+    return reinterpret_cast<OHAudioManager*>(audioManager);
 }
 
 OH_AudioCommon_Result OH_GetAudioManager(OH_AudioManager **audioManager)
@@ -65,7 +65,7 @@ OH_AudioCommon_Result OH_AudioManager_RegisterAudioSceneChangeCallback(OH_AudioM
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioManager *ohAudioManager = (OHAudioManager*)manager;
+    OHAudioManager *ohAudioManager = reinterpret_cast<OHAudioManager*>(manager);
     int32_t result = ohAudioManager->SetAudioSceneChangeCallback(callback, userData);
     return static_cast<OH_AudioCommon_Result>(result);
 }
@@ -78,7 +78,7 @@ OH_AudioCommon_Result OH_AudioManager_UnregisterAudioSceneChangeCallback(OH_Audi
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioManager *ohAudioManager = (OHAudioManager*)manager;
+    OHAudioManager *ohAudioManager = reinterpret_cast<OHAudioManager*>(manager);
     int32_t result = ohAudioManager->UnsetAudioSceneChangeCallback(callback);
     return static_cast<OH_AudioCommon_Result>(result);
 }

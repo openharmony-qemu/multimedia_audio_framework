@@ -33,7 +33,7 @@ static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
 static OHOS::AudioStandard::OHAudioCapturer *convertCapturer(OH_AudioCapturer* capturer)
 {
-    return (OHOS::AudioStandard::OHAudioCapturer*) capturer;
+    return reinterpret_cast<OHOS::AudioStandard::OHAudioCapturer*>(capturer);
 }
 
 OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)

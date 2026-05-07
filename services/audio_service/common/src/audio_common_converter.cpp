@@ -53,7 +53,7 @@ inline void CopyFromU8ToS32(const uint8_t *buffer, int32_t *dst, float volStep, 
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
         for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
-            *--dst = (((int32_t)(*--buffer) - 0x80) << AUDIO_SAMPLE_24BIT_LENGTH) * vol;
+            *--dst = ((static_cast<int32_t>(*--buffer) - 0x80) << AUDIO_SAMPLE_24BIT_LENGTH) * vol;
         }
     }
 }
@@ -66,7 +66,7 @@ inline void CopyFromS16ToS32(const int16_t *buffer, int32_t *dst, float volStep,
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
         for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
-            *--dst = (((int32_t) * --buffer) << AUDIO_SAMPLE_16BIT_LENGTH) * vol;
+            *--dst = (static_cast<int32_t>(*--buffer) << AUDIO_SAMPLE_16BIT_LENGTH) * vol;
         }
     }
 }
@@ -153,7 +153,7 @@ inline void CopyFromU8ToS16(const uint8_t *buffer, int16_t *dst, float volStep, 
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
         for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
-            *--dst = (((int16_t)(*--buffer) - 0x80) << BYTES_ALIGNMENT_SIZE) * vol;
+            *--dst = ((static_cast<int16_t>(*--buffer) - 0x80) << BYTES_ALIGNMENT_SIZE) * vol;
         }
     }
 }
