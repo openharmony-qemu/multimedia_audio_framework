@@ -1037,11 +1037,14 @@ void AudioZoneService::OnSessionTimeout(const int32_t pid)
 
     CHECK_AND_RETURN_LOG(tmp != nullptr, "interruptService_ tmp is nullptr");
 
-    int32_t zoneId = tmp->GetAudioSessionZoneidByPid(pid);
-    CHECK_AND_RETURN_LOG(CheckIsZoneValid(zoneId), "zone id %{public}d is not valid", zoneId);
-
-    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
-        tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
+    auto zoneIds = tmp->FindAudioZonesByPid(pid);
+    AudioZoneInterruptReporter::ReporterVector reporters;
+    for (auto zoneId : zoneIds) {
+        CHECK_AND_CONTINUE(CheckIsZoneValid(zoneId));
+        auto tempReporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
+            tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
+        reporters.insert(reporters.end(), tempReporters.begin(), tempReporters.end());
+    }
     tmp->OnSessionTimeout(pid);
     for (auto &report : reporters) {
         report->ReportInterrupt();
