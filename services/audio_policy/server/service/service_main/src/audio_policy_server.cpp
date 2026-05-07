@@ -5907,6 +5907,32 @@ int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsAudioSeparationEffectSupported(bool &ret)
+{
+    ret = audioEffectService_.IsAudioSeparationEffectSupported();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    return audioEffectService_.SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+}
+
+int32_t AudioPolicyServer::SetAudioSeparationEffectVolume(int32_t type, double volume)
+{
+    return audioEffectService_.SetAudioSeparationEffectVolume(static_cast<AudioSeparationVolumeType>(type), volume);
+}
+
+int32_t AudioPolicyServer::OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object)
+{
+    return audioPolicyService_.OnAudioSeparationEffectEnabledChange(object);
+}
+
+int32_t AudioPolicyServer::OffAudioSeparationEffectEnabledChange()
+{
+    return audioPolicyService_.OffAudioSeparationEffectEnabledChange();
+}
+
 int32_t AudioPolicyServer::CreateLoopback(int32_t mode, int32_t type,
     const sptr<IRemoteObject> &cbObject, sptr<IRemoteObject> &loopback, int32_t &ret)
 {
