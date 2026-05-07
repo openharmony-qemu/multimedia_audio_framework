@@ -155,6 +155,29 @@ void AudioEffectManagerImpl::SetAudioSeparationEffectEnabled(bool enabled, int32
     }
 }
 
+void AudioEffectManagerImpl::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+{
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+    if (audioEffectMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioEffectMngr_ is nullptr");
+        return;
+    }
+    
+    OHOS::AudioStandard::AudioSeparationVolumeType volumeType =
+        static_cast<OHOS::AudioStandard::AudioSeparationVolumeType>(type.get_value());
+    int32_t result = audioEffectMngr_->SetAudioSeparationEffectVolume(volumeType, volume);
+    if (result == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "Effect is not supported in this device");
+        return;
+    } else if (result != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Audio system error occurs");
+        return;
+    }
+}
+
 void AudioEffectManagerImpl::OnAudioSeparationEffectEnabledChange(callback_view<void(bool)> callback)
 {
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
@@ -207,7 +230,7 @@ void AudioEffectManagerImpl::OffAudioSeparationEffectEnabledChange(optional_view
         int32_t ret = audioEffectMngr_->OffAudioSeparationEffectEnabledChange();
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
             "AudioEffectManagerImpl: OffAudioSeparationEffectEnabledChange Failed");
-        separationEffectEnabledChangeCallback_ = nullptr;
+    separationEffectEnabledChangeCallback_ = nullptr;
     } else if (separationEffectEnabledChangeCallback_ != nullptr) {
         auto cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
         
