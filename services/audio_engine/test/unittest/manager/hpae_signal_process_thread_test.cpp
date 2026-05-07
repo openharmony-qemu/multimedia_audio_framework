@@ -152,3 +152,18 @@ HWTEST_F(HpaeSignalProcessThreadTest, setFastThreadAfterActivate_001, TestSize.L
     hpaeSignalProcessThread->DeactivateThread();
     EXPECT_EQ(hpaeSignalProcessThread->IsRunning(), false);
 }
+
+/**
+ * @tc.name  : bindCore_defaultNotBinded_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSignalProcessThreadTest_006
+ * @tc.desc  : Test coreBinded_ is false by default
+ */
+HWTEST_F(HpaeSignalProcessThreadTest, bindCore_defaultNotBinded_001, TestSize.Level0)
+{
+    auto thrd = std::make_unique<HpaeSignalProcessThread>();
+    EXPECT_EQ(thrd->coreBinded_, false);
+    thrd->coreBinded_ = true;
+    thrd->BindCore();
+    EXPECT_EQ(thrd->coreBinded_, true);
+}
