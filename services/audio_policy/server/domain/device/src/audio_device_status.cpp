@@ -1361,7 +1361,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
-    if (!isActualConnection || CheckNeedExclude(updatedDesc, isConnected)) {
+    if (!isActualConnection) {
         return;
     }
     // fetch input&output device
@@ -1538,11 +1538,11 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
-#ifndef WIRELESS_DEFAULT_EXCLUDE
+
             std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
                 make_shared<AudioDeviceDescriptor>(desc)};
             AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
-#endif
+
             ClearPreferredWhenCategoryUpdated(desc);
         }
     }
@@ -1797,67 +1797,6 @@ bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_pt
     reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("RestoreNewA2dpPort", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("RestoreNewA2dpPort", reason);
-    return false;
-}
-
-bool AudioDeviceStatus::CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected)
-{
-    if (!isConnected) {
-        return false;
-    }
-
-#ifdef WIRELESS_DEFAULT_EXCLUDE
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        if (desc.IsSameDeviceDescPtr(strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
-            return false;
-        }
-
-        AudioDeviceDescriptor sco{DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE};
-        sco.macAddress_ = desc.macAddress_;
-        sco.networkId_ = desc.networkId_;
-        if (sco.IsSameDeviceDescPtr(strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
-            return false;
-        }
-
-        vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
-        AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
-        return true;
-    }
-
-    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        if (desc.IsSameDeviceDescPtr(strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
-            return false;
-        }
-
-        AudioDeviceDescriptor a2dp{DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE};
-        a2dp.macAddress_ = desc.macAddress_;
-        a2dp.networkId_ = desc.networkId_;
-        if (a2dp.IsSameDeviceDescPtr(strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
-            return false;
-        }
-
-        vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
-        AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
-        return true;
-    }
-
-    if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
-        if (desc.IsSameDeviceDescPtr(strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
-            return false;
-        }
-
-        if (desc.IsSameDeviceDescPtr(strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
-            return false;
-        }
-
-        vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
-        AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
-        AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
-        return true;
-    }
-#endif
-
     return false;
 }
 }
