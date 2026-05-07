@@ -21,6 +21,8 @@
 #include "audio_effect_config_parser.h"
 #include "audio_stream_change_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
+#include "iremote_object.h"
+#include "standard_audio_separation_effect_enabled_change_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
