@@ -1971,7 +1971,7 @@ bool AudioPolicyManager::IsPersonalizedSpatializationEnabled(const std::string a
     return ret;
 }
 
-int32_t AudioPolicyManager::DownloadPersonalizedHRTF(const int32_t &fd, const int64_t &length)
+int32_t AudioPolicyManager::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");

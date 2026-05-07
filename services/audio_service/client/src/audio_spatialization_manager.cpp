@@ -255,7 +255,7 @@ int32_t AudioSpatializationManager::GetCurrentSpatialAudioSourceType()
     return AudioPolicyManager::GetInstance().GetCurrentSpatialAudioSourceType();
 }
 
-int32_t AudioSpatializationManager::DownloadPersonalizedHRTF(const int32_t &fd, const int64_t &length)
+int32_t AudioSpatializationManager::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
 {
     return AudioPolicyManager::GetInstance().DownloadPersonalizedHRTF(fd, length);
 }

@@ -501,7 +501,7 @@ public:
 
     bool IsPersonalizedSpatializationEnabled(const std::string address);
 
-    int32_t DownloadPersonalizedHRTF(const int32_t &fd, const int64_t &length);
+    int32_t DownloadPersonalizedHRTF(const int32_t fd, const int64_t length);
 
     int32_t GetCurrentSpatialAudioSourceType();
 

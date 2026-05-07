@@ -459,7 +459,7 @@ public:
      * @return Returns success or not
      * @since 26
      */
-    int32_t DownloadPersonalizedHRTF(const int32_t &fd, const int64_t &length);
+    int32_t DownloadPersonalizedHRTF(const int32_t fd, const int64_t length);
 
     /**
      * @brief Get current spatial audio source type.

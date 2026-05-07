@@ -113,6 +113,7 @@ struct AudioSpatializationState : public Parcelable {
     {
         return parcel.WriteBool(spatializationEnabled)
             && parcel.WriteBool(headTrackingEnabled)
+            && parcel.WriteBool(adaptiveSpatialRenderingEnabled)
             && parcel.WriteBool(personalizedSpatializationEnabled);
     }
 
@@ -124,6 +125,7 @@ struct AudioSpatializationState : public Parcelable {
         }
         info->spatializationEnabled = parcel.ReadBool();
         info->headTrackingEnabled = parcel.ReadBool();
+        info->adaptiveSpatialRenderingEnabled = parcel.ReadBool();
         info->personalizedSpatializationEnabled = parcel.ReadBool();
         return info;
     }

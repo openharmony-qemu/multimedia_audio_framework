@@ -34,6 +34,8 @@ namespace AudioStandard {
 using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
+static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // HRTF max 10 MB
+
 NapiAudioSpatializationManager::NapiAudioSpatializationManager()
     : audioSpatializationMngr_(nullptr), env_(nullptr) {}
 
@@ -1651,7 +1653,6 @@ napi_value NapiAudioSpatializationManager::OffPersonalizedSpatializationEnabledC
 
 napi_value NapiAudioSpatializationManager::DownloadPersonalizedHRTF(napi_env env, napi_callback_info info)
 {
-    // 权限检查
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED),
         "No system permission");
@@ -1664,7 +1665,6 @@ napi_value NapiAudioSpatializationManager::DownloadPersonalizedHRTF(napi_env env
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    // 参数解析（同之前修正后的内容）
     auto inputParser = [env, context, &requireArgc](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc == requireArgc,
             "mandatory parameters are left unspecified", NAPI_ERR_INPUT_INVALID);
@@ -1695,7 +1695,7 @@ napi_value NapiAudioSpatializationManager::DownloadPersonalizedHRTF(napi_env env
         int64_t length = 0;
         napi_status getLenValueStatus = napi_get_value_int64(env, napiLength, &length);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
-            getLenValueStatus == napi_ok && length > 0,
+            getLenValueStatus == napi_ok && length > 0 length <= MAX_HRTF_LENGTH,
             "parameter verification failed: length wrong", NAPI_ERR_INVALID_PARAM);
 
         context->audioHRTFAnonymousDescriptor.fd = fd;
@@ -1708,7 +1708,6 @@ napi_value NapiAudioSpatializationManager::DownloadPersonalizedHRTF(napi_env env
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    // 调用 Promise 执行函数
     return executeDownloadPersonalizedHRTF(env, context);
 }
 

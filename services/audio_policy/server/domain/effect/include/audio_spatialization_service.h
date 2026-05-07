@@ -65,7 +65,7 @@ public:
     bool IsPersonalizedSpatializationEnabled(const std::string address);
     int32_t SetPersonalizedSpatializationEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
-    int32_t DownloadPersonalizedHRTF(const int32_t &fd, const int64_t &length);
+    int32_t DownloadPersonalizedHRTF(const int32_t fd, const int64_t length);
     void HandleAdaptiveSpatialRenderingEnabledChange(const bool &enabled);
     void HandleAdaptiveSpatialRenderingEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
