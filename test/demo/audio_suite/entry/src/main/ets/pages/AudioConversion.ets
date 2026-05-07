@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd. 2026-2026. All rights reserved.57575757
+ * Copyright (c) 2026 Huawei Device Co., Ltd. 2026-2026. All rights reserved.
  */
 
 
@@ -824,7 +824,7 @@ export struct AudioConversion {
 
       // Create WAV header
       const header = this.createWavHeader(
-        new ArrayBuffer(dataSize), sampleRate, channels, bitsPerSample, this.outputFormat.sampleFormat
+        dataSize, sampleRate, channels, bitsPerSample, this.outputFormat.sampleFormat
       );
 
       // Open output file
@@ -949,13 +949,13 @@ export struct AudioConversion {
     }
 
     if (bitsPerSample !== BITS_PER_SAMPLE_8 && bitsPerSample !== BITS_PER_SAMPLE_16 &&
-        bitsPerSample !== BITS_PER_SAMPLE_24 && bitsPerSample !== BITS_PER_SAMPLE_32) {
+      bitsPerSample !== BITS_PER_SAMPLE_24 && bitsPerSample !== BITS_PER_SAMPLE_32) {
       Logger.error(TAG, `unknown bitsPerSample: ${bitsPerSample}, Supports ${BITS_PER_SAMPLE_8},${BITS_PER_SAMPLE_16},${BITS_PER_SAMPLE_24},${BITS_PER_SAMPLE_32}-bit.`);
       throw new Error(`Unsupported bits per sample: ${bitsPerSample}`);
     }
   }
 
-  private createWavHeader(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
+  private createWavHeader(dataSize: number, sampleRate: number, channels: number,
     bitsPerSample: number, sampleFormat: number): ArrayBuffer {
     const header = new ArrayBuffer(WAV_HEADER_SIZE);
     const dv = new DataView(header);
@@ -967,7 +967,7 @@ export struct AudioConversion {
     };
 
     writeString(dv, WAV_OFFSET_RIFF, 'RIFF');
-    const totalDataLen = pcmBuffer.byteLength + WAV_DATA_CHUNK_HEADER_SIZE;
+    const totalDataLen = dataSize + WAV_DATA_CHUNK_HEADER_SIZE;
     dv.setUint32(WAV_OFFSET_FILE_SIZE, totalDataLen, true);
     writeString(dv, WAV_OFFSET_WAVE, 'WAVE');
 
@@ -991,7 +991,7 @@ export struct AudioConversion {
     dv.setUint16(WAV_OFFSET_BITS_PER_SAMPLE, bitsPerSample, true);
 
     writeString(dv, WAV_OFFSET_DATA, 'data');
-    dv.setUint32(WAV_OFFSET_DATA_SIZE, pcmBuffer.byteLength, true);
+    dv.setUint32(WAV_OFFSET_DATA_SIZE, dataSize, true);
 
     return header;
   }
@@ -999,7 +999,7 @@ export struct AudioConversion {
   private writeWavFileHeaderCorrected(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
     bitsPerSample: number, sampleFormat: number): ArrayBuffer {
     this.validateWavParameters(channels, sampleRate, bitsPerSample);
-    const header = this.createWavHeader(pcmBuffer, sampleRate, channels, bitsPerSample, sampleFormat);
+    const header = this.createWavHeader(pcmBuffer.byteLength, sampleRate, channels, bitsPerSample, sampleFormat);
     const viewWavHeader = new Uint8Array(header);
     const viewPcm = new Uint8Array(pcmBuffer);
     const resultBuffer = new ArrayBuffer(viewWavHeader.byteLength + viewPcm.byteLength);
