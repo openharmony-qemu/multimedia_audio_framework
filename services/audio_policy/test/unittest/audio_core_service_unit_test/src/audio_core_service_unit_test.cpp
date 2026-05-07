@@ -2958,8 +2958,16 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_003, TestSize.Level1)
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     deviceDesc->SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), true);
+    deviceDesc->SetDeviceSupportMmap(1);
+    EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_MIC;
+    deviceDesc->SetDeviceSupportMmap(0);
+    EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
     deviceDesc->SetDeviceSupportMmap(1);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
 }
@@ -2981,8 +2989,16 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     deviceDesc->SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), true);
+    deviceDesc->SetDeviceSupportMmap(1);
+    EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->SetDeviceSupportMmap(0);
+    EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
     deviceDesc->SetDeviceSupportMmap(1);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 }

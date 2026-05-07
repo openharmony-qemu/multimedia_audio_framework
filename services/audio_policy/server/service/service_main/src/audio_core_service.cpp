@@ -69,6 +69,7 @@ static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
+static constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
 static const std::unordered_set<SourceType> VOIP_PRIVACY_MUTE_TARGET_SOURCES = {
     SOURCE_TYPE_LIVE,
     SOURCE_TYPE_MIC,
@@ -870,7 +871,7 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         return false;
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
-    if (!deviceDesc->GetDeviceSupportMmap()) {
+    if (deviceDesc->getType() ==  DEVICE_TYPE_USB_ARM_HEADSET && !deviceDesc->GetDeviceSupportMmap()) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
@@ -954,6 +955,12 @@ AudioFlag AudioCoreService::GetFlagForMmapStream(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_[0] != nullptr, AUDIO_OUTPUT_FLAG_NORMAL, "Invalid stream desc");
     DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
+    // When a armusb device is not support ultrafast, set flag to fast
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET &&
+        streamDesc->newDeviceDescs_.front()->GetDeviceSupportMmap() == ONLY_SUPPORT_MMAP) {
+        streamDesc->SetUltraFastRequested(false);
+        return AUDIO_OUTPUT_FLAG_FAST;
+    }
     // For primary hal, fast and ultra fast cannot be used concurrently.
     // When a stream switched to a device that does not support ultra fast, all fast stream should use normal route.
     // During the recreate of fast stream, if current has ultra fast stream and current device does not support
@@ -1009,7 +1016,7 @@ bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescripto
         return false;
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
-    if (!deviceDesc->GetDeviceSupportMmap()) {
+    if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET && !deviceDesc->GetDeviceSupportMmap()) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
