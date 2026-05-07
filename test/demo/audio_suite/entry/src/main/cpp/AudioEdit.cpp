@@ -453,6 +453,7 @@ static napi_value DeleteSong(napi_env env, napi_callback_info info)
 
     // Get the inputId parameter
     std::string inputId;
+    napi_status status = ParseNapiString(env, argv[0], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong inputId is %{public}s",
         inputId.c_str());
     
@@ -461,6 +462,7 @@ static napi_value DeleteSong(napi_env env, napi_callback_info info)
         static_cast<int>(inputNodes.size()));
 
     Node node = g_nodeManager->GetNodeById(inputId);
+    Node nextNode;
     if (node.id.empty()) {
         napi_create_int64(env, static_cast<int>(result), &napiValue);
         delete[] argv;
@@ -751,6 +753,8 @@ static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
     std::string inputId;
     unsigned int mode = -1;
     std::string fieldEffectId;
+    napi_status status = ParseResetFieldEffectParams(env, info, inputId, mode, fieldEffectId);
+    
     OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
 
     napi_value ret;
