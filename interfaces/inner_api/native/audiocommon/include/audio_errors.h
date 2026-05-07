@@ -290,7 +290,7 @@ enum class ProblemCategory : uint8_t {
     FAULT_WRONG_DEVICE = 0x06,
     FAULT_AUTO_PLAY = 0x07,
     FAULT_CONTROL_ABNORMAL = 0x08,
-    FAULT_DEVICE_SWUTCG_FAIL = 0x09,
+    FAULT_DEVICE_SWITCH_FAIL = 0x09,
     FAULT_STATE_INCONSISTENT = 0x0A,
     FAULT_WRONG_AUDIO_EFFECT = 0x0B,
 };
@@ -405,7 +405,7 @@ constexpr int32_t PLAY_QUERY_NULL_POINTER = BuildErrorCode(ProblemCategory::FAUL
     OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
 
 // PLAY_DEVICE_SWITCH
-constexpr int32_t PLAY_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWUTCG_FAIL,
+constexpr int32_t PLAY_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
     OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
 
 // PLAY_CONFING
@@ -494,7 +494,7 @@ constexpr int32_t RECORD_SEND_DATA_ILLEGAL_STATE = BuildErrorCode(
 constexpr int32_t RECORD_DEVICE_SWITCH_ILLEGAL_STATE = BuildErrorCode(
     ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_ILLEGAL_STATE);
 constexpr int32_t RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_DEVICE_SWUTCG_FAIL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH,
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH,
     ERR_OPERATION_FAILED);
 constexpr int32_t RECORD_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(
     ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
@@ -555,6 +555,87 @@ constexpr int32_t RECORD_CONFING_INVALID_OPERATION = BuildErrorCode(
     ProblemCategory::FAULT_CONTROL_ABNORMAL, OperationType::RECORD, BusinessScenario::CONFING, ERR_INVALID_OPERATION);
 constexpr int32_t RECORD_CONFING_OPERATION_FAILED = BuildErrorCode(
     ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+
+// GENERAL_DEVICE_SWITCH
+constexpr int32_t ERR_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::GENERAL, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
+
+// PLAY_DEVICE_SWITCH
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_NULL_POINTER);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_DEVICE_NOT_FOUND = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_DEVICE_NOT_FOUND);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_PERMISSION_DENIED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_SYSTEM_PERMISSION_DENIED);
+
+// PLAY_DEVICE_SWITCH_CALLBACK
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::PLAY,
+    BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::PLAY,
+    BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_CALLBACK_REGISTER_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::PLAY,
+    BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
+
+// RECORD_DEVICE_SWITCH
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_NULL_POINTER);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_ILLEGAL_STATE);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_PERMISSION_DENIED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::DEVICE_SWITCH, ERR_SYSTEM_PERMISSION_DENIED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::DEVICE_SWITCH, ERR_MEMORY_ALLOC_FAILED);
+
+// RECORD_DEVICE_SWITCH_CALLBACK
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_REGISTER_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
+
+// VOLUME_SET
+constexpr int32_t ERR_SET_VOLUME_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_SET_VOLUME_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::CONFING, ERR_INVALID_PARAM);
+constexpr int32_t ERR_SET_VOLUME_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::CONFING, ERR_NOT_SUPPORTED);
+constexpr int32_t ERR_SET_VOLUME_PERMISSION_DENIED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY,
+    BusinessScenario::CONFING, ERR_SYSTEM_PERMISSION_DENIED);
+
+// VOLUME_GET
+constexpr int32_t ERR_GET_VOLUME_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_GET_VOLUME_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::QUERY, ERR_NOT_SUPPORTED);
+
+// VOLUME_CALLBACK
+constexpr int32_t ERR_VOLUME_CALLBACK_FAILED = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_VOLUME_CALLBACK_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t ERR_VOLUME_CALLBACK_REGISTER_FAILED = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
+constexpr int32_t ERR_VOLUME_CALLBACK_UNREGISTER_FAILED = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_UNREGISTER_FAILED);
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

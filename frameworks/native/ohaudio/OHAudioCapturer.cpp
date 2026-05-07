@@ -135,18 +135,18 @@ OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "convert Capturer failed", true),
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_INVALID_PARAM, "convert Capturer failed", true),
         "convert Capturer failed");
     int32_t ret = audioCapturer->SetInputDevice((OHOS::AudioStandard::DeviceType)deviceType);
     if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_DEVICE_SWITCH_ILLEGAL_STATE,
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_ILLEGAL_STATE,
             "This audioCapturer can not reset the input device", true);
         AUDIO_ERR_LOG("This audioCapturer can not reset the input device");
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     } else if (ret != AUDIOSTREAM_SUCCESS) {
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_DEVICE_SWITCH_OPERATION_FAILED,
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED,
             "system error when calling this function", true);
         AUDIO_ERR_LOG("system error when calling this function");
         return AUDIOSTREAM_ERROR_SYSTEM;
@@ -622,7 +622,7 @@ int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "capturer client is nullptr", true),
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_NULL_POINTER, "capturer client is nullptr", true),
         "capturer client is nullptr");
     return audioCapturer_->SetInputDevice(deviceType);
 }

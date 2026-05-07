@@ -2481,6 +2481,38 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 }
 
 /**
+* @tc.name  : Test AudioCoreService SetRingerMode branch coverage
+* @tc.number: SetRingerMode_Ringing_001
+* @tc.desc  : Cover if branch when IsRingerAudioScene is true (enter if)
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetRingerMode_Ringing_001, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_RINGING;
+
+    int32_t result = audioCoreService->SetRingerMode(RINGER_MODE_NORMAL);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService SetRingerMode branch coverage
+* @tc.number: SetRingerMode_Default_002
+* @tc.desc  : Cover if branch when IsRingerAudioScene is false (skip if)
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetRingerMode_Default_002, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    int32_t result = audioCoreService->SetRingerMode(RINGER_MODE_NORMAL);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
 * @tc.name  : Test AudioCoreService
 * @tc.number: UpdateDupDeviceOutputRoute_001
 * @tc.desc  : Test UpdateDupDeviceOutputRoute() when device type is null

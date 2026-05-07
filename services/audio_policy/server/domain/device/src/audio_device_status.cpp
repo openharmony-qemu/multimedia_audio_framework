@@ -36,6 +36,8 @@
 #include "audio_zone_service.h"
 #include "audio_collaborative_service.h"
 #include "audio_router_select_strategy.h"
+#include "stream_dfx_manager.h"
+#include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -263,9 +265,11 @@ void AudioDeviceStatus::TriggerAvailableDeviceChangedCallback(
 
     WriteAllDeviceSysEvents(desc, isConnected);
 
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendAvailableDeviceChange(desc, isConnected);
-    }
+    CHECK_AND_CALL_FUNC_RETURN(audioPolicyServerHandler_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            IPCSkeleton::GetCallingUid(), ERR_PLAY_DEVICE_SWITCH_CALLBACK_NULL_POINTER,
+            "TriggerAvailableDeviceChangedCallback handler is nullptr", false));
+    audioPolicyServerHandler_->SendAvailableDeviceChange(desc, isConnected);
 }
 
 void AudioDeviceStatus::TriggerDeviceChangedCallback(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
@@ -273,9 +277,10 @@ void AudioDeviceStatus::TriggerDeviceChangedCallback(const vector<std::shared_pt
 {
     Trace trace("AudioDeviceStatus::TriggerDeviceChangedCallback");
     WriteAllDeviceSysEvents(desc, isConnected);
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendDeviceChangedCallback(desc, isConnected);
-    }
+    CHECK_AND_CALL_FUNC_RETURN(audioPolicyServerHandler_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_CALLBACK_NULL_POINTER, "TriggerDeviceChangedCallback handler is nullptr", false));
+    audioPolicyServerHandler_->SendDeviceChangedCallback(desc, isConnected);
 }
 
 void AudioDeviceStatus::TriggerDeviceInfoUpdatedCallback(
