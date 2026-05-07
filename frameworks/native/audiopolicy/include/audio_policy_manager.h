@@ -680,15 +680,125 @@ public:
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
-int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
+    std::vector<AudioDevicePair> GetLoopbackSupportedDevicePairs();
+    AudioDevicePair GetLoopbackPreferredDevicePair();
+    bool IsSupportInnerCaptureOffload();
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
+    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetLoopbackVolume(float volume);
+    float GetLoopbackVolume();
+    int32_t CreateLoopback(AudioLoopbackMode mode, LoopbackType type,
+        const sptr<IRemoteObject> &callback, sptr<IRemoteObject> &loopback);
+    int32_t DestroyLoopback(LoopbackType type);
+    int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId);
+
+    int32_t SetAudioSceneChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
+    int32_t UnsetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
+    int32_t SetSplitModeReady();
+
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
+        StreamUsage streamUsage, bool &silentControl);
+
+    int32_t SetVoiceRingtoneMute(bool isMute);
+
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
+
+    int32_t ResetAllProxy();
+
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
+
+    static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
+
+    int32_t SetVirtualCall(const bool isVirtual);
+
+    bool GetVirtualCall();
+
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
+        const SourceType sourceType, bool isRunning);
+
+    int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
+
+    int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
+
+    int32_t SetBackgroundMuteCallback(const std::shared_ptr<AudioBackgroundMuteCallback> &callback);
+
+    int32_t SetAudioFormatUnsupportedErrorCallback(
+        const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback);
+
+    int32_t UnsetAudioFormatUnsupportedErrorCallback();
+
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
+
+    int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
+    int32_t ForceStopAudioStream(StopAudioType audioType);
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage);
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage);
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage);
+    bool GetStreamMuteByUsage(StreamUsage streamUsage);
+    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType);
+    std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage);
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
+    int32_t SetStreamVolumeChangeCallback(const int32_t clientPid, const std::set<StreamUsage> &streamUsages,
+        const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+    int32_t UnsetStreamVolumeChangeCallback(const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command);
+    int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
+    int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    bool IsCollaborativePlaybackSupported();
+    bool IsCollaborativePlaybackSupportedForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    int32_t SetCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
+    bool IsCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+    int32_t RestoreDistributedDeviceInfo();
+
+    int32_t RecordBootAnimationClientStateTime(const BootAnimationInfo &info);
+    int32_t SetVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
+    int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
+        int32_t volumeFlag, int32_t uid);
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t UpdateSafeVolumeByStrMode();
+    int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
+        const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
+    int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    AudioScene GetAudioSceneFromAllZones();
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
+    int32_t NotifyStreamSilentChange(uint32_t streamId);
+    int32_t SetAudioSessionBehavior(const uint32_t behavior);
+    int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+    int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs);
+    int32_t TriggerAudioZoneVolumeSync();
+
     bool IsAudioSeparationEffectSupported();
     int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId = -1);
     int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
     int32_t OnAudioSeparationEffectEnabledChange(
         const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
     int32_t OffAudioSeparationEffectEnabledChange();
-    
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
