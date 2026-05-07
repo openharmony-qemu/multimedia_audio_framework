@@ -35,6 +35,7 @@
 #include "audio_debug_info.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
+#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
