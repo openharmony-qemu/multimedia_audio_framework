@@ -107,8 +107,8 @@ int32_t AudioVolume::GetStreamAndPipeVolume(uint32_t sessionId, int32_t streamTy
     return 0;
 }
 
-float AudioVolume::GetVolume(std::shared_ptr<StreamVolume> streamVolume,
-    std::shared_ptr<PipeVolume> pipeVolume, VolumeValues *volumes)
+float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
+    const std::shared_ptr<PipeVolume>& pipeVolume, VolumeValues *volumes)
 {
     if (streamVolume == nullptr || pipeVolume == nullptr) return 1.0F;
 

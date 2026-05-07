@@ -110,8 +110,8 @@ public:
     std::set<int32_t> GetStreamVolumeAppUids();
     int32_t GetStreamAndPipeVolume(uint32_t sessionId, int32_t streamType, uint32_t pipeId,
         std::shared_ptr<StreamVolume> &streamVolume, std::shared_ptr<PipeVolume> &pipeVolume);
-    float GetVolume(std::shared_ptr<StreamVolume> streamVolume, 
-        std::shared_ptr<PipeVolume> pipeVolume, VolumeValues *volumes);
+    float GetVolume(const std::shared_ptr<StreamVolume>& streamVolume, 
+        const std::shared_ptr<PipeVolume>& pipeVolume, VolumeValues *volumes);
     
 private:
     AudioVolume();
