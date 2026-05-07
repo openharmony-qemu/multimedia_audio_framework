@@ -166,8 +166,9 @@ void AudioEffectManagerImpl::SetAudioSeparationEffectVolume(AudioSeparationVolum
         return;
     }
     
+    int32_t typeValue = type;
     OHOS::AudioStandard::AudioSeparationVolumeType volumeType =
-        static_cast<OHOS::AudioStandard::AudioSeparationVolumeType>(type.get_value());
+        static_cast<OHOS::AudioStandard::AudioSeparationVolumeType>(typeValue);
     int32_t result = audioEffectMngr_->SetAudioSeparationEffectVolume(volumeType, volume);
     if (result == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "Effect is not supported in this device");
