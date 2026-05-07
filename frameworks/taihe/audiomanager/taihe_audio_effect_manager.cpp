@@ -156,97 +156,67 @@ void AudioEffectManagerImpl::SetAudioSeparationEffectEnabled(bool enabled, int32
 
 void AudioEffectManagerImpl::OnAudioSeparationEffectEnabledChange(callback_view<void(bool)> callback)
 {
-    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
-    RegisterAudioSeparationEffectEnabledChangeCallback(cacheCallback, this);
-}
-
-void AudioEffectManagerImpl::OffAudioSeparationEffectEnabledChange(optional_view<callback<void(bool)>> callback)
-{
-    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
-    if (callback.has_value()) {
-        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
-    }
-    UnregisterAudioSeparationEffectEnabledChangeCallback(cacheCallback, this);
-}
-
-void AudioEffectManagerImpl::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
-{
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return;
-    }
-    if (volume < 0.0 || volume > 1.0) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
-            "parameter verification failed: volume range is [0.0, 1.0]");
         return;
     }
     if (audioEffectMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioEffectMngr_ is nullptr");
         return;
     }
-    OHOS::AudioStandard::AudioSeparationVolumeType volumeType =
-        static_cast<OHOS::AudioStandard::AudioSeparationVolumeType>(type.get_value());
-    int32_t result = audioEffectMngr_->SetAudioSeparationEffectVolume(volumeType, volume);
-    if (result == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NOT_SUPPORTED, "Effect is not supported in this device");
-        return;
-    } else if (result != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Audio system error occurs");
-        return;
-    }
-}
-
-void AudioEffectManagerImpl::RegisterAudioSeparationEffectEnabledChangeCallback(
-    std::shared_ptr<uintptr_t> &callback, AudioEffectManagerImpl *taiheEffectManager)
-{
-    if ((taiheEffectManager == nullptr) || (taiheEffectManager->audioEffectMngr_ == nullptr)) {
-        AUDIO_ERR_LOG("Failed to retrieve audio effect manager taihe instance.");
-        return;
-    }
-    std::lock_guard<std::mutex> lock(taiheEffectManager->mutex_);
-    if (!taiheEffectManager->separationEffectEnabledChangeCallback_) {
-        taiheEffectManager->separationEffectEnabledChangeCallback_ =
+    
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    if (!separationEffectEnabledChangeCallback_) {
+        separationEffectEnabledChangeCallback_ =
             std::make_shared<TaiheAudioSeparationEffectEnabledChangeCallback>();
-        CHECK_AND_RETURN_LOG(taiheEffectManager->separationEffectEnabledChangeCallback_ != nullptr,
+        CHECK_AND_RETURN_LOG(separationEffectEnabledChangeCallback_ != nullptr,
             "AudioEffectManagerImpl: Memory Allocation Failed !!");
-
-        int32_t ret = taiheEffectManager->audioEffectMngr_->RegisterAudioSeparationEffectEnabledChangeEventListener(
-            taiheEffectManager->separationEffectEnabledChangeCallback_);
+        
+        separationEffectEnabledChangeCallback_->SaveAudioSeparationEffectEnabledChangeCallbackReference(cacheCallback);
+        
+        int32_t ret = audioEffectMngr_->OnAudioSeparationEffectEnabledChange(
+            separationEffectEnabledChangeCallback_);
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
-            "AudioEffectManagerImpl: Registering of Audio Separation Effect Enabled Change Callback Failed");
+            "AudioEffectManagerImpl: OnAudioSeparationEffectEnabledChange Failed");
+    } else {
+        separationEffectEnabledChangeCallback_->SaveAudioSeparationEffectEnabledChangeCallbackReference(cacheCallback);
     }
-    std::shared_ptr<TaiheAudioSeparationEffectEnabledChangeCallback> cb =
-        std::static_pointer_cast<TaiheAudioSeparationEffectEnabledChangeCallback>(
-            taiheEffectManager->separationEffectEnabledChangeCallback_);
-    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
-    cb->SaveAudioSeparationEffectEnabledChangeCallbackReference(callback);
-    AUDIO_INFO_LOG("Register audio separation effect enabled change callback is successful");
+    
+    AUDIO_INFO_LOG("OnAudioSeparationEffectEnabledChange is successful");
 }
 
-void AudioEffectManagerImpl::UnregisterAudioSeparationEffectEnabledChangeCallback(
-    std::shared_ptr<uintptr_t> &callback, AudioEffectManagerImpl *taiheEffectManager)
+void AudioEffectManagerImpl::OffAudioSeparationEffectEnabledChange(optional_view<callback<void(bool)>> callback)
 {
-    CHECK_AND_RETURN_LOG(taiheEffectManager != nullptr, "Failed to retrieve taihe instance.");
-    std::lock_guard<std::mutex> lock(taiheEffectManager->mutex_);
-    CHECK_AND_RETURN_LOG(taiheEffectManager->audioEffectMngr_ != nullptr, "effect instance null.");
-    if (taiheEffectManager->separationEffectEnabledChangeCallback_ != nullptr) {
-        std::shared_ptr<TaiheAudioSeparationEffectEnabledChangeCallback> cb =
-            std::static_pointer_cast<TaiheAudioSeparationEffectEnabledChangeCallback>(
-                taiheEffectManager->separationEffectEnabledChangeCallback_);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
-        if (callback != nullptr) {
-            cb->RemoveAudioSeparationEffectEnabledChangeCallbackReference(callback);
-        }
-        if (callback == nullptr || cb->GetAudioSeparationEffectEnabledChangeCbListSize() == 0) {
-            int32_t ret = taiheEffectManager->audioEffectMngr_->UnregisterAudioSeparationEffectEnabledChangeEventListener();
-            CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
-                "UnregisterAudioSeparationEffectEnabledChangeEventListener Failed");
-            taiheEffectManager->separationEffectEnabledChangeCallback_.reset();
-            taiheEffectManager->separationEffectEnabledChangeCallback_ = nullptr;
-            cb->RemoveAllAudioSeparationEffectEnabledChangeCallbackReference();
-        }
-    } else {
-        AUDIO_ERR_LOG("UnregisterAudioSeparationEffectEnabledChangeCb: separationEffectEnabledChangeCallback_ is null");
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
     }
+    if (audioEffectMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioEffectMngr_ is nullptr");
+        return;
+    }
+    
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    if (!callback.has_value()) {
+        int32_t ret = audioEffectMngr_->OffAudioSeparationEffectEnabledChange();
+        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+            "AudioEffectManagerImpl: OffAudioSeparationEffectEnabledChange Failed");
+        separationEffectEnabledChangeCallback_ = nullptr;
+    } else if (separationEffectEnabledChangeCallback_ != nullptr) {
+        auto cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+        separationEffectEnabledChangeCallback_->RemoveAudioSeparationEffectEnabledChangeCallbackReference(cacheCallback);
+        
+        if (separationEffectEnabledChangeCallback_->GetAudioSeparationEffectEnabledChangeCbListSize() == 0) {
+            int32_t ret = audioEffectMngr_->OffAudioSeparationEffectEnabledChange();
+            CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+                "AudioEffectManagerImpl: OffAudioSeparationEffectEnabledChange Failed");
+            separationEffectEnabledChangeCallback_ = nullptr;
+        }
+    }
+    
+AUDIO_INFO_LOG("OffAudioSeparationEffectEnabledChange is successful");
 }
 } // namespace ANI::Audio

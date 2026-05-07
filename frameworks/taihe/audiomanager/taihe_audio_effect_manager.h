@@ -47,11 +47,6 @@ public:
     void SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
 
 private:
-    static void RegisterAudioSeparationEffectEnabledChangeCallback(
-        std::shared_ptr<uintptr_t> &callback, AudioEffectManagerImpl *taiheEffectManager);
-    static void UnregisterAudioSeparationEffectEnabledChangeCallback(
-        std::shared_ptr<uintptr_t> &callback, AudioEffectManagerImpl *taiheEffectManager);
-
     OHOS::AudioStandard::AudioEffectManager *audioEffectMngr_;
     int32_t cachedClientId_ = -1;
 
