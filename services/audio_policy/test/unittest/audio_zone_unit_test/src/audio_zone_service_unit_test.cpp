@@ -418,5 +418,97 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_EnableSystemVolumeProxy_001,
     svc.UnRegisterAudioZoneClient(zonePid);
     svc.ReleaseAudioZone(zoneId);
 }
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AddUidToAudioZone_001
+ * @tc.desc  : Test migrating uid from primary zone to extension zone.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddUidToAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    int32_t uid = 1001;
+    int32_t currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, DEFAULT_ZONEID);
+
+    int32_t ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, uid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId);
+    auto descriptor = AudioZoneService::GetInstance().GetAudioZone(zoneId);
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_TRUE(descriptor->uids_.find(uid) != descriptor->uids_.end());
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AddUidToAudioZone_002
+ * @tc.desc  : Test migrating uid from extension zone 1 to extension zone 2.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddUidToAudioZone_002, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    ASSERT_NE(zoneId1, ERROR);
+    int32_t zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("Zone2", context, 0);
+    ASSERT_NE(zoneId2, ERROR);
+
+    int32_t uid = 1001;
+    int32_t ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId1);
+    auto descriptor1 = AudioZoneService::GetInstance().GetAudioZone(zoneId1);
+    ASSERT_NE(descriptor1, nullptr);
+    EXPECT_TRUE(descriptor1->uids_.find(uid) != descriptor1->uids_.end());
+
+    ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId2, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId2);
+    descriptor1 = AudioZoneService::GetInstance().GetAudioZone(zoneId1);
+    ASSERT_NE(descriptor1, nullptr);
+    EXPECT_TRUE(descriptor1->uids_.find(uid) == descriptor1->uids_.end());
+    auto descriptor2 = AudioZoneService::GetInstance().GetAudioZone(zoneId2);
+    ASSERT_NE(descriptor2, nullptr);
+    EXPECT_TRUE(descriptor2->uids_.find(uid) != descriptor2->uids_.end());
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId2);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: RemoveUidFromAudioZone_001
+ * @tc.desc  : Test migrating uid from extension zone back to primary zone.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, RemoveUidFromAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    ASSERT_NE(zoneId1, ERROR);
+
+    int32_t uid = 1001;
+    int32_t ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId1);
+
+    ret = AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId1, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, DEFAULT_ZONEID);
+    auto descriptor = AudioZoneService::GetInstance().GetAudioZone(zoneId1);
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_TRUE(descriptor->uids_.find(uid) == descriptor->uids_.end());
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
