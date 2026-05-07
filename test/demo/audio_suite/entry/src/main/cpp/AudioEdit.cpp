@@ -1274,7 +1274,7 @@ static bool ReadFileData(int fd, off_t fileSize, bool isWavFile, const WavFileIn
         return true;
     }
 
-    // Memory mode: read all data into buffer
+    // Read WAV file data into buffer
     if (isWavFile) {
         lseek(fd, wavInfo.dataStart, SEEK_SET);
         bytesToRead = (wavInfo.dataSize > 0 && wavInfo.dataSize < (fileSize - wavInfo.dataStart)) ?
@@ -1472,10 +1472,6 @@ static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_inf
     }
     OH_AudioConverter *converter = reinterpret_cast<OH_AudioConverter *>(converterHandle);
 
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                 "AudioConverterSetInputCallback: converter=%{public}p, callback=%{public}p",
-                 converter, reinterpret_cast<void*>(AudioConverterRequestDataCallback));
-
     // Set callback
     OH_AudioConverter_Result result =
         OH_AudioConverter_SetInputCallback(converter, AudioConverterRequestDataCallback, nullptr);
@@ -1514,7 +1510,7 @@ static int32_t CalculateBufferSize()
     return bufferSize;
 }
 
-// Accumulate output data - file mode only
+// Accumulate output data
 static bool AccumulateOutputData(const void *outputData, int32_t outputSize)
 {
     if (g_outputFile == nullptr) {
@@ -1666,10 +1662,6 @@ static void InitializeProcessParameters(ProcessState &state)
     if (g_outputFile == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
                      "Failed to open output file: %{public}s", g_outputFilePath);
-    } else {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                     "Using file mode: %{public}s, input size=%{public}u, estimated output=%{public}zu",
-                     g_outputFilePath, g_inputDataLen, estimatedOutputSize);
     }
 }
 
@@ -1681,14 +1673,6 @@ static bool ProcessIteration(OH_AudioConverter *converter, ProcessState &state)
     int32_t outputSize = 0;
     OH_AudioConverter_Result result = OH_AudioConverter_Process(converter, outputData, currentBufferSize, &outputSize);
     state.processCount++;
-
-    // Only log every 100 iterations or on error to reduce overhead
-    if (state.processCount % 100 == 0 || result != AUDIOCONVERTER_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                     "ProcessIteration: processCount=%{public}d, result=%{public}d, outputSize=%{public}d, "
-                     "zeroOutputCount=%{public}d, g_outputDataLen=%{public}u",
-                     state.processCount, static_cast<int>(result), outputSize, state.zeroOutputCount, g_outputDataLen);
-    }
 
     if (result != AUDIOCONVERTER_SUCCESS) {
         return HandleProcessError(result, state, outputData);
@@ -1719,13 +1703,13 @@ static napi_value CreateFinalResult(napi_env env, bool hasError)
         return napiValue;
     }
 
-    // File mode: close file and return file path
+    // Close file and return file path
     if (g_outputFile != nullptr) {
         fclose(g_outputFile);
         g_outputFile = nullptr;
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                 "File mode: returning file path=%{public}s, size=%{public}u",
+                 "Returning file path=%{public}s, size=%{public}u",
                  g_outputFilePath, g_outputDataLen);
     napi_create_string_utf8(env, g_outputFilePath, strlen(g_outputFilePath), &napiValue);
     return napiValue;
