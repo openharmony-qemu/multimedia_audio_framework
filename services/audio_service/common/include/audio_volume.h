@@ -17,7 +17,9 @@
 #define AUDIO_VOLUME_H
 
 #include <string>
+#include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <shared_mutex>
 #include "audio_stream_info.h"
 #include "audio_volume_c.h"
@@ -106,17 +108,31 @@ public:
     void HandleAppIndividualVolumeSettingChanged(bool appIndividualVolumeEnabled);
     float GetSystemAppVolume(int32_t uid, AudioStreamType streamType);
     std::set<int32_t> GetStreamVolumeAppUids();
+    int32_t GetStreamAndPipeVolume(uint32_t sessionId, int32_t streamType, uint32_t pipeId,
+        std::shared_ptr<StreamVolume> &streamVolume, std::shared_ptr<PipeVolume> &pipeVolume);
+    float GetVolume(std::shared_ptr<StreamVolume> streamVolume, 
+        std::shared_ptr<PipeVolume> pipeVolume, VolumeValues *volumes);
+    
 private:
     AudioVolume();
+    // MUST be called with volumeMutex_ held (either unique_lock or shared_lock)
+    // Accesses appVolume_ map and AppVolume::totalVolume_, isMuted_ members
+    // Thread safety: NOT thread-safe if called without lock
     float GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode);
     uint32_t GetDoNotDisturbStatusVolumeInternal(int32_t volumeType, int32_t appUid, uint32_t sessionId);
+    // Lock-free method for GetVolume(shared_ptr version)
+    // Accesses doNotDisturbStatusWhiteList_ via atomic_load (thread-safe)
+    uint32_t GetDoNotDisturbStatusVolumeFromStream(StreamVolume& stream, int32_t volumeType, int32_t appUid);
     void ConstructEnforcedToneVolumeValues(VolumeValues *volumes);
+    // MUST be called with volumeMutex_ held (either unique_lock or shared_lock)
+    // Accesses streamVolume_ and pipeVolume_ maps
+    // Thread safety: NOT thread-safe if called without lock
     void GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, uint32_t pipeId, VolumeValues *volumes);
     bool ShouldApplySystemAppVolume(AudioStreamType streamType);
     float GetSystemAppVolumeEffective(StreamVolume &stream);
 private:
-    std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
-    std::unordered_map<std::string, PipeVolume> pipeVolume_ {};
+    std::unordered_map<uint32_t, std::shared_ptr<StreamVolume>> streamVolume_ {};
+    std::unordered_map<std::string, std::shared_ptr<PipeVolume>> pipeVolume_ {};
     std::unordered_map<int32_t, AppVolume> appVolume_ {};
     std::unordered_map<int32_t, SystemAppVolume> systemAppVolume_ {};
     std::shared_mutex volumeMutex_ {};
@@ -136,8 +152,9 @@ private:
         std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
 
     bool isScoActive_ = false;
-    std::unordered_map<uint32_t, float> doNotDisturbStatusWhiteListVolume_ {};
-    bool isDoNotDisturbStatus_ = false;
+    // Atomic variables (high-frequency access, lock-free)
+    std::shared_ptr<std::unordered_set<uint32_t>> doNotDisturbStatusWhiteList_;
+    std::atomic<bool> isDoNotDisturbStatus_{false};
     bool appIndividualVolumeEnabled_ = false;
 };
 
@@ -148,35 +165,53 @@ public:
         streamUsage_(streamUsage), appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp),
         isVirtualKeyboard_(isVKB) {volumeMode_ = static_cast<AudioVolumeMode>(mode);};
     ~StreamVolume() = default;
-    uint32_t GetSessionId() {return sessionId_;};
-    int32_t GetStreamType() {return streamType_;};
-    int32_t GetStreamUsage() {return streamUsage_;};
-    int32_t GetAppUid() {return appUid_;};
-    int32_t GetAppPid() {return appPid_;};
-    bool IsSystemApp() {return isSystemApp_;};
-    AudioVolumeMode GetVolumeMode() {return volumeMode_;};
-    bool IsVirtualKeyboard() {return isVirtualKeyboard_;};
+    uint32_t GetSessionId() const {return sessionId_;};
+    int32_t GetStreamType() const {return streamType_;};
+    int32_t GetStreamUsage() const {return streamUsage_;};
+    int32_t GetAppUid() const {return appUid_;};
+    int32_t GetAppPid() const {return appPid_;};
+    bool IsSystemApp() const {return isSystemApp_;};
+    AudioVolumeMode GetVolumeMode() const {return volumeMode_;};
+    bool IsVirtualKeyboard() const {return isVirtualKeyboard_;};
+    
+    // High-frequency read variables (atomic, lock-free)
+    float GetTotalVolume() const { return totalVolume_.load(std::memory_order_acquire); }
+    float GetHistoryVolume() const { return historyVolume_.load(std::memory_order_acquire); }
+    uint32_t GetDurationMs() const { return durationMs_.load(std::memory_order_acquire); }
+    float GetMonitorVolume() const { return monitorVolume_.load(std::memory_order_acquire); }
+    int32_t GetMonitorVolumeLevel() const { return monitorVolumeLevel_.load(std::memory_order_acquire); }
+    
+    void SetHistoryVolumeAtomic(float vol, uint32_t duration) {
+        historyVolume_.store(vol, std::memory_order_release);
+        durationMs_.store(duration, std::memory_order_release);
+    }
+    
+    void SetMonitorVolumeAtomic(float vol, int32_t level) {
+        monitorVolume_.store(vol, std::memory_order_release);
+        monitorVolumeLevel_.store(level, std::memory_order_release);
+    }
+    
+    // Volume factors group (protected by mutex)
+    mutable std::shared_mutex volumeFactorsMutex_;
+    
 public:
+    // Volume factors (low-frequency update, protected by volumeFactorsMutex_)
     float volume_ = 1.0f;
     float duckFactor_ = 1.0f;
     float lowPowerFactor_ = 1.0f;
-    bool isMuted_ = false;
-    bool nonInterruptMute_ = false;
-    uint32_t durationMs_ = 0;
-
-    // Indicates whether the stream is muted by SetAppRingMuted API.
-    // This flag is only applicable to ring stream.
-    bool isAppRingMuted_ = false;
-    // dual mute flag, this flag is true only dual and stream is mute
-    bool isDualMuted_ = false;
-
     float appVolume_ = 1.0f;
     float systemAppVolume_ = 1.0f;
-    float totalVolume_ = 1.0f; // volume_ * duckFactor_ * lowPowerFactor_ * appVolume_ * systemAppVolume_
+    bool isMuted_ = false;
+    bool nonInterruptMute_ = false;
+    bool isAppRingMuted_ = false;
+    bool isDualMuted_ = false;
 
-    float historyVolume_ = 0.0f; // used all volume
-    float monitorVolume_ = 0.0f; // monitor all volume change
-    int32_t monitorVolumeLevel_ = 0; // monitor system volume level change
+    // Atomic variables (high-frequency read, lock-free)
+    std::atomic<float> totalVolume_{1.0f};
+    std::atomic<float> historyVolume_{0.0f};
+    std::atomic<uint32_t> durationMs_{0};
+    std::atomic<float> monitorVolume_{0.0f};
+    std::atomic<int32_t> monitorVolumeLevel_{0};
 
 private:
     uint32_t sessionId_ = 0;
@@ -194,21 +229,52 @@ public:
     PipeVolume() = default;
     PipeVolume(uint32_t pipeId, AudioVolumeType volumeType, float volume, int32_t noMuteVolumeLevel,
         bool isMuted)
-        : pipeId_(pipeId), volumeType_(volumeType), noMuteVolumeLevel_(noMuteVolumeLevel),
-        isMuted_(isMuted), volume_(volume), totalVolume_(isMuted ? 0.0f : volume) {};
+        : pipeId_(pipeId), volumeType_(volumeType), noMuteVolumeLevel_{noMuteVolumeLevel},
+        isMuted_{isMuted}, volume_{volume}, totalVolume_{isMuted ? 0.0f : volume} {};
+    
+    PipeVolume(const PipeVolume& other)
+        : pipeId_(other.pipeId_), volumeType_(other.volumeType_),
+        noMuteVolumeLevel_{other.noMuteVolumeLevel_.load(std::memory_order_acquire)},
+        isMuted_{other.isMuted_.load(std::memory_order_acquire)},
+        volume_{other.volume_.load(std::memory_order_acquire)},
+        totalVolume_{other.totalVolume_.load(std::memory_order_acquire)} {}
+    
+    PipeVolume(PipeVolume&& other) noexcept
+        : pipeId_(other.pipeId_), volumeType_(other.volumeType_),
+        noMuteVolumeLevel_{other.noMuteVolumeLevel_.load(std::memory_order_acquire)},
+        isMuted_{other.isMuted_.load(std::memory_order_acquire)},
+        volume_{other.volume_.load(std::memory_order_acquire)},
+        totalVolume_{other.totalVolume_.load(std::memory_order_acquire)} {}
+    
+    PipeVolume& operator=(const PipeVolume&) = delete;
+    PipeVolume& operator=(PipeVolume&&) = delete;
+    
     ~PipeVolume() = default;
     AudioVolumeType GetVolumeType() const {return volumeType_;};
     int32_t GetPipeId() const {return pipeId_;};
+    
+    // Atomic getters (lock-free)
+    float GetTotalVolume() const { return totalVolume_.load(std::memory_order_acquire); }
+    float GetVolume() const { return volume_.load(std::memory_order_acquire); }
+    bool GetIsMuted() const { return isMuted_.load(std::memory_order_acquire); }
+    int32_t GetNoMuteVolumeLevel() const { return noMuteVolumeLevel_.load(std::memory_order_acquire); }
+    
+    // Atomic setters (lock-free)
+    void SetTotalVolume(float vol) { totalVolume_.store(vol, std::memory_order_release); }
+    void SetVolume(float vol) { volume_.store(vol, std::memory_order_release); }
+    void SetIsMuted(bool muted) { isMuted_.store(muted, std::memory_order_release); }
+    void SetNoMuteVolumeLevel(int32_t level) { noMuteVolumeLevel_.store(level, std::memory_order_release); }
 
 private:
     uint32_t pipeId_ = 0;
     AudioVolumeType volumeType_ = STREAM_DEFAULT;
 
 public:
-    int32_t noMuteVolumeLevel_ = 0;
-    bool isMuted_ = false;
-    float volume_ = 0.0f;
-    float totalVolume_ = 0.0f;
+    // Atomic variables (complete lock-free)
+    std::atomic<int32_t> noMuteVolumeLevel_{0};
+    std::atomic<bool> isMuted_{false};
+    std::atomic<float> volume_{0.0f};
+    std::atomic<float> totalVolume_{0.0f};
 };
 
 class AppVolume {
