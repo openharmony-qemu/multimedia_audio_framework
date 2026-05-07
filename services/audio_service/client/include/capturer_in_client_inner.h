@@ -73,6 +73,8 @@ public:
         const std::shared_ptr<AudioClientTracker> &proxyObj,
         const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     State GetState() override;
+    StreamFocusState GetFocusState() override;
+    void SetFocusState(StreamFocusState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -202,6 +204,8 @@ public:
     void HandleStateChangeEvent(int64_t data);
     void HandleCapturerMarkReachedEvent(int64_t capturerMarkPosition);
     void HandleCapturerPeriodReachedEvent(int64_t capturerPeriodNumber);
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+        const std::string &erroDesc, bool isClient, State state);
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
@@ -274,6 +278,7 @@ private:
     void ResetCallbackLoopTid();
     bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
 
+    void UpdateStreamState(State state);
     void FillCapturerClientOnlyInfo(AudioDebugInfo &debugInfo);
     void FillCapturerDeviceInfo(AudioDebugInfo &debugInfo, uint32_t sessionId);
     int32_t CheckForSetAudioStreamInfo(const AudioStreamParams info);
@@ -333,6 +338,8 @@ private:
     // using this lock when change status_
     std::mutex statusMutex_;
     std::atomic<State> state_ = INVALID;
+    std::atomic<StreamFocusState> streamFocusState_ = FOCUS_INVALID;
+    std::mutex focusStatusMutex_;
     // for status operation wait and notify
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
