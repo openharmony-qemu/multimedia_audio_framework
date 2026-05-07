@@ -96,14 +96,27 @@ public:
 class AudioSpatialAudioSourceTypeChangeCallback {
 public:
     virtual ~AudioSpatialAudioSourceTypeChangeCallback() = default;
-    virtual void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &spatialAudioSourceType) = 0;
+
+    virtual void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode) = 0;
 };
 
-class AudioSeparationEffectEnabledChangeCallback {
+class HeadTrackingDataRequestedChangeCallback {
 public:
-    virtual ~AudioSeparationEffectEnabledChangeCallback() = default;
-    virtual void OnAudioSeparationEffectEnabledChange(const bool &enabled) = 0;
+    virtual ~HeadTrackingDataRequestedChangeCallback() = default;
+    /**
+     * @brief HeadTrackingDataRequestedChangeCallback will be executed when
+     * whether head tracking data is requested changes
+     *
+     * @param isRequested whethet the head tracking data is requested.
+     * @since 12
+     */
+    virtual void OnHeadTrackingDataRequestedChange(bool isRequested) = 0;
 };
+
+/**
+ * @brief The AudioSpatializationManager class is an abstract definition of audio spatialization manager.
+ *        Provides a series of client/interfaces for audio spatialization management
+ */
 
 class AudioSpatializationManager {
 public:
