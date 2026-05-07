@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.5757575757
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
 #include <cstdint>
@@ -68,7 +68,6 @@ const int INPUTNODES_SIZE2 = 2;
 OH_AudioConverter* g_converter = nullptr;
 uint8_t *g_inputData = nullptr;
 uint32_t g_inputDataLen = 0;
-uint8_t *g_outputData = nullptr;  // Saving the Transformed Output Data
 uint32_t g_outputDataLen = 0; // Length of the output data
 uint32_t g_dataOffset = 0; // Offset of the read data
 int32_t g_inputSampleRate = 0;
@@ -77,12 +76,10 @@ int32_t g_inputSampleFormat = 0;
 int32_t g_outputSampleRate = 0;
 int32_t g_outputChannelCount = 0;
 int32_t g_outputSampleFormat = 0;
- 
+
 // File mode support for large files
 static FILE* g_outputFile = nullptr;
 static char g_outputFilePath[512] = {0};
-static bool g_useFileMode = false;
-const size_t SAFE_ARRAYBUFFER_LIMIT = 10UL * 1024 * 1024 * 1024;
 
 // Input file mode for large files (avoids OOM)
 static int g_inputFd = -1;                    // Input file descriptor
@@ -1300,11 +1297,6 @@ static void ClearOldData()
         g_inputData = nullptr;
         g_inputDataLen = 0;
     }
-    if (g_outputData != nullptr) {
-        delete[] g_outputData;
-        g_outputData = nullptr;
-        g_outputDataLen = 0;
-    }
 
     g_useInputFileMode = false;
     g_inputWavDataStart = 0;
@@ -1522,54 +1514,23 @@ static int32_t CalculateBufferSize()
     return bufferSize;
 }
 
-// Accumulate output data with buffer expansion
+// Accumulate output data - file mode only
 static bool AccumulateOutputData(const void *outputData, int32_t outputSize)
 {
-    // File mode: write directly to file
-    if (g_useFileMode && g_outputFile != nullptr) {
-        size_t written = fwrite(outputData, 1, outputSize, g_outputFile);
-        if (written != static_cast<size_t>(outputSize)) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                         "Failed to write to output file: written=%{public}zu, expected=%{public}d",
-                         written, outputSize);
-            return false;
-        }
-        g_outputDataLen += outputSize;
-        return true;
+    if (g_outputFile == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Output file is not open");
+        return false;
     }
 
-    // Memory mode: original logic
-    if (g_outputDataLen + outputSize > MAX_OUTPUT_SIZE) {
+    size_t written = fwrite(outputData, 1, outputSize, g_outputFile);
+    if (written != static_cast<size_t>(outputSize)) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                     "Output size exceeds maximum limit: current=%{public}u, adding=%{public}u, max=%{public}zu",
-                     g_outputDataLen, outputSize, MAX_OUTPUT_SIZE);
+                     "Failed to write to output file: written=%{public}zu, expected=%{public}d",
+                     written, outputSize);
         return false;
     }
-    size_t newBufferSize = g_outputDataLen + outputSize;
-    size_t allocatedBufferSize = (g_outputDataLen > 0) ? g_outputDataLen : 1;
-    while (allocatedBufferSize < newBufferSize) {
-        allocatedBufferSize *= BUFFER_EXPANSION_FACTOR;
-    }
-    if (allocatedBufferSize > MAX_SINGLE_ALLOC && g_outputDataLen + outputSize < MAX_SINGLE_ALLOC) {
-        allocatedBufferSize = g_outputDataLen + outputSize;
-    }
-    uint8_t *newBuffer = new (std::nothrow) uint8_t[allocatedBufferSize];
-    if (newBuffer == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                     "Failed to allocate memory for output buffer: %{public}zu bytes", allocatedBufferSize);
-        return false;
-    }
-    if (g_outputData != nullptr && g_outputDataLen > 0) {
-        std::copy(static_cast<const uint8_t *>(g_outputData),
-                  static_cast<const uint8_t *>(g_outputData) + g_outputDataLen, newBuffer);
-    }
-    std::copy(static_cast<const uint8_t *>(outputData), static_cast<const uint8_t *>(outputData) + outputSize,
-              newBuffer + g_outputDataLen);
     g_outputDataLen += outputSize;
-    if (g_outputData != nullptr) {
-        delete[] g_outputData;
-    }
-    g_outputData = newBuffer;
     return true;
 }
 
@@ -1580,24 +1541,16 @@ static void ResetOutputData()
         fclose(g_outputFile);
         g_outputFile = nullptr;
     }
-    if (g_outputData != nullptr) {
-        delete[] g_outputData;
-        g_outputData = nullptr;
-    }
     g_outputDataLen = 0;
     g_dataOffset = 0;
     g_outputFilePath[0] = '\0';
-    // Note: Don't reset g_inputDataLen or g_useFileMode here as input data is still needed
+    // Note: Don't reset g_inputDataLen here as input data is still needed
 }
 
 // Reset process state for retry
 static void ResetProcessState()
 {
     g_dataOffset = 0;
-    if (g_outputData != nullptr) {
-        delete[] g_outputData;
-        g_outputData = nullptr;
-    }
     g_outputDataLen = 0;
     // Note: Don't reset g_inputDataLen here as input data is still needed for retry
 }
@@ -1646,39 +1599,6 @@ static bool HandleProcessOutput(void *outputData, int32_t outputSize, ProcessSta
 }
 
 // Create output ArrayBuffer
-static napi_value CreateOutputArrayBuffer(napi_env env)
-{
-    napi_value napiValue;
-    void *arrayBufferData = nullptr;
-
-    // Add safety check for large outputs
-    if (g_outputDataLen > SAFE_ARRAYBUFFER_LIMIT) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                     "Output size exceeds safe ArrayBuffer limit: %{public}zu > %{public}zu",
-                     g_outputDataLen, SAFE_ARRAYBUFFER_LIMIT);
-        napi_get_null(env, &napiValue);
-        return napiValue;
-    }
-
-    napi_status status = napi_create_arraybuffer(env, g_outputDataLen, &arrayBufferData, &napiValue);
-    if (status != napi_ok || arrayBufferData == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                     "Failed to create ArrayBuffer: %{public}zu bytes, status=%{public}d",
-                     g_outputDataLen, status);
-        napi_get_null(env, &napiValue);
-        return napiValue;
-    }
-
-    std::copy(static_cast<const uint8_t*>(g_outputData),
-              static_cast<const uint8_t*>(g_outputData) + g_outputDataLen,
-              static_cast<uint8_t*>(arrayBufferData));
-
-    float ratio = (g_inputDataLen > 0) ? static_cast<float>(g_outputDataLen) / g_inputDataLen : 0.0f;
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Process Success", g_inputDataLen, g_outputDataLen, ratio);
-
-    return napiValue;
-}
-
 // Parse and validate converter handle
 static OH_AudioConverter* ParseAndValidateConverter(napi_env env, napi_value argv[])
 {
@@ -1740,11 +1660,12 @@ static void InitializeProcessParameters(ProcessState &state)
     if (inputBytesPerSample > 0) {
         estimatedOutputSize = estimatedOutputSize * outputBytesPerSample / inputBytesPerSample;
     }
-    g_useFileMode = true;
+
     GenerateOutputFilePath(g_outputFilePath, sizeof(g_outputFilePath));
     g_outputFile = fopen(g_outputFilePath, "wb");
     if (g_outputFile == nullptr) {
-        g_useFileMode = false;
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Failed to open output file: %{public}s", g_outputFilePath);
     } else {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                      "Using file mode: %{public}s, input size=%{public}u, estimated output=%{public}zu",
@@ -1786,8 +1707,8 @@ static napi_value CreateFinalResult(napi_env env, bool hasError)
 {
     napi_value napiValue;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                 "CreateFinalResult: hasError=%{public}d, g_outputDataLen=%{public}u, g_outputData=%{public}p",
-                 hasError, g_outputDataLen, g_outputData);
+                 "CreateFinalResult: hasError=%{public}d, g_outputDataLen=%{public}u",
+                 hasError, g_outputDataLen);
 
     if (hasError || g_outputDataLen == 0) {
         napi_get_null(env, &napiValue);
@@ -1798,22 +1719,15 @@ static napi_value CreateFinalResult(napi_env env, bool hasError)
         return napiValue;
     }
 
-    // File mode: return file path
-    if (g_useFileMode) {
-        if (g_outputFile != nullptr) {
-            fclose(g_outputFile);
-            g_outputFile = nullptr;
-        }
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                     "File mode: returning file path=%{public}s, size=%{public}u",
-                     g_outputFilePath, g_outputDataLen);
-        napi_create_string_utf8(env, g_outputFilePath, strlen(g_outputFilePath), &napiValue);
-        return napiValue;
+    // File mode: close file and return file path
+    if (g_outputFile != nullptr) {
+        fclose(g_outputFile);
+        g_outputFile = nullptr;
     }
-
-    // Memory mode: return ArrayBuffer
-    napiValue = CreateOutputArrayBuffer(env);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "CreateFinalResult: Output array buffer created");
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "File mode: returning file path=%{public}s, size=%{public}u",
+                 g_outputFilePath, g_outputDataLen);
+    napi_create_string_utf8(env, g_outputFilePath, strlen(g_outputFilePath), &napiValue);
     return napiValue;
 }
 
@@ -1886,36 +1800,6 @@ static napi_value AudioConverterDestroy(napi_env env, napi_callback_info info)
     napi_create_int64(env, static_cast<int>(result), &napiValue);
     delete[] argv;
     return napiValue;
-}
-
-// SaveConverterFile NAPI binding - Saving the converted audio data.
-static napi_value SaveConverterFile(napi_env env, napi_callback_info info)
-{
-    // Checking whether there is output data.
-    if (g_outputData == nullptr || g_outputDataLen == 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "No converter output data available");
-        napi_value emptyArray;
-        void *emptyData = nullptr;
-        napi_create_arraybuffer(env, 0, &emptyData, &emptyArray);
-        return emptyArray;
-    }
-
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Saving converter output data, size: %{public}d",
-                 g_outputDataLen);
-
-    // Create an ArrayBuffer and return it.
-    void *data = nullptr;
-    napi_value arrayBuffer;
-    napi_create_arraybuffer(env, g_outputDataLen, &data, &arrayBuffer);
-
-    if (data != nullptr && g_outputDataLen > 0) {
-        // Copying Output Data to ArrayBuffer
-        std::copy(static_cast<const uint8_t *>(g_outputData),
-                  static_cast<const uint8_t *>(g_outputData) + g_outputDataLen, static_cast<uint8_t *>(data));
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "ArrayBuffer created and data copied successfully");
-    }
-
-    return arrayBuffer;
 }
 
 static int32_t GetSampleFormatFromBits(uint16_t bitsPerSample, uint16_t audioFormat)
@@ -2241,8 +2125,6 @@ static napi_value Init(napi_env env, napi_value exports)
          napi_default, nullptr},
         {"audioConverterProcess", nullptr, AudioConverterProcess, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioConverterDestroy", nullptr, AudioConverterDestroy, nullptr, nullptr, nullptr,
-         napi_default, nullptr},
-        {"saveConverterFile", nullptr, SaveConverterFile, nullptr, nullptr, nullptr,
          napi_default, nullptr},
         {"audioConverterGetFileInfo", nullptr, AudioConverterGetFileInfo, nullptr, nullptr,
          nullptr, napi_default, nullptr}
