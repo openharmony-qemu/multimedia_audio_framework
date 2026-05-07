@@ -642,6 +642,7 @@ audio_ohos_library("audio_policy_client") {
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
     "../../services/audio_service/idl:audio_policy_client_idl_interface",
+    "../../services/audio_service:audio_common",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]
@@ -649,6 +650,7 @@ audio_ohos_library("audio_policy_client") {
   include_dirs = [
     "../../frameworks/native/audioutils/include",
     "../../services/audio_service/common/include/",
+    "../../services/audio_service/common/include/dfx",
   ]
 
   external_deps = [

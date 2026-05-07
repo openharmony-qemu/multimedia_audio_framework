@@ -26,6 +26,8 @@
 #include "audio_bundle_manager.h"
 #include "audio_active_device.h"
 #include "audio_zone_service.h"
+#include "stream_dfx_manager.h"
+#include <unistd.h>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -390,14 +392,20 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
     const uint32_t &streamId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
-    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(eventContextObj != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "EventContextObj get nullptr", false),
+        "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     AUDIO_INFO_LOG("Send interrupt event with streamId callback, streamId = %{public}u", streamId);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "Send INTERRUPT_EVENT_WITH_STREAMID event failed", false),
+        "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
     return ret;
 }
 

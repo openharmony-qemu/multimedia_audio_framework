@@ -27,6 +27,8 @@
 #include "dfx_msg_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_interrupt_utils.h"
+#include "stream_dfx_manager.h"
+#include <unistd.h>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -170,7 +172,12 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 
         std::pair<AudioFocusType, AudioFocusType> focusPair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_CALL_FUNC_RETURN_RET(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
+        bool isRecord = iterActive->first.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(focusCfgMap_.find(focusPair) != focusCfgMap_.end(),
+            ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                isRecord ? RECORD_INTERRUPT_CONFIG_OPERATION_FAILED : INTERRUPT_CONFIG_OPERATION_FAILED,
+                "no focus cfg found", false),
             HILOG_COMM_ERROR("[ProcessActiveStreamFocus]no focus cfg, active stream type = %{public}d, "
                 "incoming stream type = %{public}d",
                 static_cast<int32_t>(focusPair.first.streamType),
@@ -202,8 +209,11 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, int32_t reason)
 {
-    CHECK_AND_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID, "not recording");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+        activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_INTERRUPT_START_INVALID_PARAM, "not recording, source type is invalid", false),
+        "not recording");
     AUDIO_INFO_LOG("recording failed to start, incoming: sourceType %{public}d pid %{public}d uid %{public}d"\
         "active: sourceType %{public}d pid %{public}d uid %{public}d",
         incomingInterrupt.audioFocusType.sourceType, incomingInterrupt.pid, incomingInterrupt.uid,
@@ -212,7 +222,10 @@ void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incom
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
         Media::MediaMonitor::EventType::FAULT_EVENT);
-    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(bean != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_INTERRUPT_CALLBACK_NULL_POINTER, "bean is nullptr", false),
+        "bean is nullptr");
 
     bean->Add("INCOMING_SOURCE", incomingInterrupt.audioFocusType.sourceType);
     bean->Add("INCOMING_PID", incomingInterrupt.pid);

@@ -19,8 +19,10 @@
 
 #include "OHAudioSessionManager.h"
 #include "audio_errors.h"
+#include "stream_dfx_manager.h"
 #include <ostream>
 #include <iostream>
+#include <unistd.h>
 
 using OHOS::AudioStandard::OHAudioSessionManager;
 using OHOS::AudioStandard::AudioSessionManager;
@@ -54,6 +56,8 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(OH_AudioSessionMana
     OHAudioSessionManager* ohAudioSessionManager = OHAudioSessionManager::GetInstance();
     if (audioSessionManager == nullptr) {
         AUDIO_ERR_LOG("audioSessionManager is nullptr");
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_NULL_POINTER, "audioSessionManager is nullptr", true);
         return AUDIOCOMMON_RESULT_SUCCESS;
     }
     *audioSessionManager = reinterpret_cast<OH_AudioSessionManager*>(ohAudioSessionManager);
@@ -64,9 +68,14 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
     OH_AudioSessionManager *audioSessionManager, OH_AudioSession_DeactivatedCallback callback)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "callback is nullptr", true),
+        "callback is nullptr");
     return ohAudioSessionManager->SetAudioSessionCallback(callback);
 }
 
@@ -74,9 +83,14 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterSessionDeactivatedCallbac
     OH_AudioSessionManager *audioSessionManager, OH_AudioSession_DeactivatedCallback callback)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "callback is nullptr", true),
+        "callback is nullptr");
     return ohAudioSessionManager->UnsetAudioSessionCallback(callback);
 }
 
@@ -84,10 +98,14 @@ OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
     OH_AudioSessionManager *audioSessionManager, const OH_AudioSession_Strategy *strategy)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(strategy != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "strategy is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_START_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(strategy != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_START_INVALID_PARAM, "strategy is nullptr", true),
+        "strategy is nullptr");
     OHOS::AudioStandard::AudioSessionStrategy audioStrategy;
     audioStrategy.concurrencyMode =
         static_cast<OHOS::AudioStandard::AudioConcurrencyMode>(strategy->concurrencyMode);
@@ -98,8 +116,10 @@ OH_AudioCommon_Result OH_AudioSessionManager_DeactivateAudioSession(
     OH_AudioSessionManager *audioSessionManager)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_STOP_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
     return ohAudioSessionManager->DeactivateAudioSession();
 }
 
@@ -107,14 +127,20 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
     OH_AudioSessionManager *audioSessionManager)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false, "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_QUERY_NULL_POINTER, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
     return ohAudioSessionManager->IsAudioSessionActivated();
 }
 
 bool OH_AudioSessionManager_IsOtherMediaPlaying(OH_AudioSessionManager *audioSessionManager)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false, "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_QUERY_NULL_POINTER, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
     return ohAudioSessionManager->IsOtherMediaPlaying();
 }
 
@@ -210,12 +236,17 @@ OH_AudioCommon_Result OH_AudioSessionManager_SetScene(
     OH_AudioSessionManager *audioSessionManager, OH_AudioSession_Scene scene)
 {
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(((scene == AUDIO_SESSION_SCENE_MEDIA) ||
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(((scene == AUDIO_SESSION_SCENE_MEDIA) ||
         (scene == AUDIO_SESSION_SCENE_GAME) ||
         (scene == AUDIO_SESSION_SCENE_VOICE_COMMUNICATION)),
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "scene is invalid");
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "scene is invalid", true),
+        "scene is invalid");
 
     OHOS::AudioStandard::AudioSessionScene sessionScene =
         static_cast<OHOS::AudioStandard::AudioSessionScene>(scene);
@@ -226,9 +257,14 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterStateChangeCallback(
     OH_AudioSessionManager *audioSessionManager, OH_AudioSession_StateChangedCallback callback)
 {
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "callback is nullptr", true),
+        "callback is nullptr");
     return ohAudioSessionManager->SetAudioSessionStateChangeCallback(callback);
 }
 
@@ -236,9 +272,14 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterStateChangeCallback(
     OH_AudioSessionManager *audioSessionManager, OH_AudioSession_StateChangedCallback callback)
 {
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CALLBACK_INVALID_PARAM, "callback is nullptr", true),
+        "callback is nullptr");
     return ohAudioSessionManager->UnsetAudioSessionStateChangeCallback(callback);
 }
 
@@ -399,36 +440,51 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterCurrentInputDeviceChangeC
 OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthers(
     OH_AudioSessionManager *audioSessionManager, bool enable)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "audioSessionManager is nullptr", true),
+        "audioSessionManager is nullptr");
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
     return ohAudioSessionManager->EnableMuteSuggestionWhenMixWithOthers(enable);
 }
 
 OH_AudioCommon_Result OH_AudioSessionManager_SetCaptureMuteHint(
     OH_AudioSessionManager *audioSessionManager, bool mute)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::RECORD_INTERRUPT_CONFIG_INVALID_PARAM, "audioSessionManager is nullptr", true),
+        "audioSessionManager is nullptr");
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::RECORD_INTERRUPT_CONFIG_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
     return ohAudioSessionManager->SetCapturerMuteHint(mute);
 }
 
 OH_AudioCommon_Result OH_AudioSessionManager_SetBehavior(
     OH_AudioSessionManager *audioSessionManager, uint32_t behavior)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "audioSessionManager is nullptr", true),
+        "audioSessionManager is nullptr");
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "ohAudioSessionManager is nullptr", true),
+        "ohAudioSessionManager is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         (behavior & ~static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR)) == 0,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "param behavior is invalid");
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "param behavior is invalid", true),
+        "param behavior is invalid");
     return ohAudioSessionManager->SetAudioSessionBehavior(behavior);
 }
 
@@ -505,8 +561,10 @@ OHAudioSessionManager::~OHAudioSessionManager()
 
 OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     std::shared_ptr<OHAudioSessionCallback> ohAudioSessionCallback =
         std::make_shared<OHAudioSessionCallback>(callback);
     audioSessionManager_->SetAudioSessionCallback(ohAudioSessionCallback);
@@ -515,8 +573,10 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionCallback(OH_AudioSes
 
 OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     std::shared_ptr<OHAudioSessionCallback> ohAudioSessionCallback =
         std::make_shared<OHAudioSessionCallback>(callback);
     audioSessionManager_->UnsetAudioSessionCallback(ohAudioSessionCallback);
@@ -525,24 +585,33 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCallback(OH_AudioS
 
 OH_AudioCommon_Result OHAudioSessionManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_START_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->ActivateAudioSession(strategy);
-    if (ret == 0) {
+    if (ret == 0) {	 
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_START_ILLEGAL_STATE, "ActivateAudioSession failed", true),
+            "ActivateAudioSession failed");
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
 }
 
 OH_AudioCommon_Result OHAudioSessionManager::DeactivateAudioSession()
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->DeactivateAudioSession();
     if (ret == 0) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_ILLEGAL_STATE, "DeactivateAudioSession failed", true);
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
 }
@@ -608,27 +677,39 @@ BluetoothAndNearlinkPreferredRecordCategory OHAudioSessionManager::GetPreferredB
 
 bool OHAudioSessionManager::IsAudioSessionActivated()
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr, false, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     return audioSessionManager_->IsAudioSessionActivated();
 }
 
 bool OHAudioSessionManager::IsOtherMediaPlaying()
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr, false, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     return audioSessionManager_->IsOtherMediaPlaying();
 }
 
 OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionScene(AudioSessionScene sene)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
 
     int32_t ret = audioSessionManager_->SetAudioSessionScene(sene);
     if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_NOT_SUPPORTED, "session state error, set scene failed.", true);
         AUDIO_ERR_LOG("session satet error, set scene failed.");
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     } else if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to SetAudioSessionScene.");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_OPERATION_FAILED, "failed to SetAudioSessionScene.", true);
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
 
@@ -638,11 +719,15 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionScene(AudioSessionSc
 OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionStateChangeCallback(
     OH_AudioSession_StateChangedCallback callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
 
     if (callback == nullptr) {
         AUDIO_ERR_LOG("invalid callback");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_INVALID_PARAM, "invalid callback", true);
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
@@ -654,12 +739,16 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionStateChangeCallback(
 
     std::shared_ptr<OHAudioSessionStateCallback> ohAudioSessionStateCallback =
         std::make_shared<OHAudioSessionStateCallback>(callback);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionStateCallback != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ohAudioSessionStateCallback != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "Failed to create AudioSessionState callback!", true),
         "Failed to create AudioSessionState callback!");
 
     int32_t ret = audioSessionManager_->SetAudioSessionStateChangeCallback(ohAudioSessionStateCallback);
     if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to SetAudioSessionStateChangeCallback.");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_REGISTER_FAILED, "failed to SetAudioSessionStateChangeCallback.", true);
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
     sessionStateCallbacks_.emplace(callback, ohAudioSessionStateCallback);
@@ -671,18 +760,24 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionStateChangeCallback(
 OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionStateChangeCallback(
     OH_AudioSession_StateChangedCallback callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
 
     std::lock_guard<std::mutex> lock(sessionStateCbMutex_);
     if ((callback == nullptr) || (sessionStateCallbacks_.count(callback) == 0)) {
         AUDIO_ERR_LOG("invalid callback or callback not registered");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_INVALID_PARAM, "invalid callback or callback not registered", true);
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
     int32_t ret = audioSessionManager_->UnsetAudioSessionStateChangeCallback(sessionStateCallbacks_[callback]);
     if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to UnsetAudioSessionStateChangeCallback.");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_UNREGISTER_FAILED, "failed to UnsetAudioSessionStateChangeCallback.", true);
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
     sessionStateCallbacks_.erase(callback);
@@ -865,11 +960,16 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCurrentDeviceChang
 
 OH_AudioCommon_Result OHAudioSessionManager::EnableMuteSuggestionWhenMixWithOthers(bool enable)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->EnableMuteSuggestionWhenMixWithOthers(enable);
     if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to EnableMuteSuggestionWhenMixWithOthers.");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ret == ERROR_ILLEGAL_STATE ? SESSION_CONFIG_ILLEGAL_STATE : SESSION_CONFIG_OPERATION_FAILED,
+            "failed to EnableMuteSuggestionWhenMixWithOthers.", true);
         return ret == ERROR_ILLEGAL_STATE ? AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
     return AUDIOCOMMON_RESULT_SUCCESS;
@@ -877,11 +977,17 @@ OH_AudioCommon_Result OHAudioSessionManager::EnableMuteSuggestionWhenMixWithOthe
 
 OH_AudioCommon_Result OHAudioSessionManager::SetCapturerMuteHint(bool mute)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_INTERRUPT_CONFIG_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->SetCapturerMuteHint(mute);
     if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to SetCapturerMuteHint.");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ret == ERR_ILLEGAL_STATE ? RECORD_INTERRUPT_CONFIG_ILLEGAL_STATE :
+            (ret == ERR_INVALID_PARAM ? RECORD_INTERRUPT_CONFIG_INVALID_PARAM : RECORD_INTERRUPT_CONFIG_OPERATION_FAILED),
+            "failed to SetCapturerMuteHint.", true);
         if (ret == ERROR_ILLEGAL_STATE || ret == ERR_ILLEGAL_STATE) {
             return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
         }
@@ -895,11 +1001,15 @@ OH_AudioCommon_Result OHAudioSessionManager::SetCapturerMuteHint(bool mute)
 
 OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionBehavior(const uint32_t behavior)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE, "failed, audioSessionManager_ is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionManager_ != nullptr, AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_NULL_POINTER, "audioSessionManager_ is null", true),
+        "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->SetAudioSessionBehavior(behavior);
     if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to SetAudioSessionBehavior.");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_ILLEGAL_STATE, "failed to SetAudioSessionBehavior.", true);
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
     return AUDIOCOMMON_RESULT_SUCCESS;

@@ -25,6 +25,8 @@
 #include "audio_policy_manager_listener.h"
 #include "media_monitor_manager.h"
 #include "audio_log.h"
+#include "stream_dfx_manager.h"
+#include <unistd.h>
 
 #include "dfx_utils.h"
 #include "app_mgr_client.h"
@@ -281,7 +283,10 @@ void AudioInterruptService::WriteCallSessionEvent(int32_t strategyValue)
 void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid)
 {
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
+    CHECK_AND_CALL_FUNC_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_NULL_POINTER, "can not find zone", false),
+        "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     if (interruptDfx_ != nullptr) {
@@ -299,8 +304,13 @@ void AudioInterruptService::DeactivateAudioSessionErrorEvent(
 
 void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
+    bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
+    CHECK_AND_CALL_FUNC_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_QUERY_NULL_POINTER : INTERRUPT_QUERY_NULL_POINTER,
+            "can not find zone", false),
+        "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
     int32_t callerPid = audioInterrupt.pid;
     auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
@@ -326,6 +336,8 @@ AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t z
     result.retCode = sessionService_.ActivateAudioSession(callerPid, strategy, stateChangeCallbackFlag, callerUid);
     if (result.retCode != SUCCESS) {
         HILOG_COMM_ERROR("[ActivateAudioSession]Failed to activate audio session for pid %{public}d!", callerPid);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_START_OPERATION_FAILED, "Failed to activate audio session", false);
         return result;
     }
     if (!isActivated) {
@@ -350,6 +362,8 @@ AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t z
             AUDIO_INFO_LOG(
                 "Process focus for AudioSession, pid: %{public}d, result: %{public}d, updateScene: %{public}d",
                 callerPid, result.retCode, updateScene);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                SESSION_FOCUS_EVENT_OPERATION_FAILED, "ProcessFocusEntryForAudioSession failed", false);
             return result;
         }
     // audio session v1
@@ -383,6 +397,8 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
     if (!sessionService_.IsAudioSessionActivated(callerPid)) {
         HILOG_COMM_ERROR("[AddActiveInterruptToSession]The audio session for pid %{public}d "
             "is not active!", callerPid);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_ILLEGAL_STATE, "The audio session is not active", false);
         return;
     }
 
@@ -391,6 +407,8 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
         auto itZone = zonesMap_.find(zoneId);
         if (itZone == zonesMap_.end() || itZone->second == nullptr) {
             HILOG_COMM_ERROR("[AddActiveInterruptToSession]can not find zoneid");
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                SESSION_QUERY_NULL_POINTER, "can not find zoneid", false);
             continue;
         }
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -443,6 +461,8 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
     int32_t result = sessionService_.DeactivateAudioSession(callerPid);
     if (result != SUCCESS) {
         AUDIO_INFO_LOG("Failed to deactivate audio session for pid %{public}d, result %{public}d", callerPid, result);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_OPERATION_FAILED, "Failed to deactivate audio session", false);
         return result;
     }
 
@@ -456,7 +476,9 @@ void AudioInterruptService::AudioSessionStateChangeCallbackEvent(const int32_t z
 {
     AudioInterrupt audioInterrupt;
     int32_t ret = FindAudioInterruptByPid(zoneId, callerPid, audioInterrupt);
-    CHECK_AND_RETURN(ret == SUCCESS);
+    CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "FindAudioInterruptByPid failed", false));
     StreamUsage streamUsage = sessionService_.GetAudioSessionStreamUsage(callerPid);
     if (interruptDfx_ != nullptr) {
         interruptDfx_->HandleStateChangeCallbackEvent(streamUsage, audioInterrupt.uid, interruptErrorCode);
@@ -467,7 +489,9 @@ int32_t AudioInterruptService::FindAudioInterruptByPid(const int32_t zoneId, con
     AudioInterrupt &audioInterrupt)
 {
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_RET(itZone != zonesMap_.end() && itZone->second != nullptr, ERROR);
+    CHECK_AND_CALL_FUNC_RETURN_RET((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_NULL_POINTER, "can not find zone", false));
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     audioFocusInfoList = itZone->second->audioFocusInfoList;
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
@@ -475,6 +499,8 @@ int32_t AudioInterruptService::FindAudioInterruptByPid(const int32_t zoneId, con
         audioInterrupt = iter->first;
         return SUCCESS;
     }
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        SESSION_QUERY_OPERATION_FAILED, "can not find interrupt by pid", false);
     return ERROR;
 }
 
@@ -485,6 +511,8 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
     auto audioInterruptService = shared_from_this();
     auto deactivateTask = [audioInterruptService, zoneId, callerPid, streamsInSession, onFakeInterruptDeactivate] {
         if (audioInterruptService == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                SESSION_STOP_NULL_POINTER, "audioInterruptService is nullptr", false);
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -492,6 +520,8 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
         if (ret != SUCCESS) {
             HILOG_COMM_ERROR("[DelayToDeactivateStreamsInAudioSession]Deactivate streams in audio session failed, "
                 "pid %{public}d", callerPid);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                SESSION_STOP_OPERATION_FAILED, "Deactivate streams in audio session failed", false);
             return;
         }
         // Sleep for 50 milliseconds to allow streams in the session to stop.
@@ -516,6 +546,8 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
     if (sessionService_.IsAudioSessionActivated(callerPid)) {
         HILOG_COMM_ERROR("[DeactivateStreamsInAudioSession]Session is reactivated, no need to deactivate "
             "interrupt, pid %{public}d", callerPid);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_ILLEGAL_STATE, "Session is reactivated, no need to deactivate interrupt", false);
         return ERROR;
     }
 
@@ -527,8 +559,10 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
         InterruptEventInternal unmuteInterruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
         bool sessionIsMuted = false;
         auto itZone = zonesMap_.find(zoneId);
-        CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
-            ERROR, "can not find zone");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                SESSION_STOP_NULL_POINTER, "can not find zone", false),
+            "can not find zone");
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
         auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
             return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
@@ -587,7 +621,10 @@ void AudioInterruptService::DeactivateAudioSessionFakeInterruptInternal(
     const int32_t zoneId, const int32_t callerPid, bool isSessionTimeout)
 {
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
+    CHECK_AND_CALL_FUNC_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_NULL_POINTER, "can not find zone", false),
+        "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
@@ -596,6 +633,8 @@ void AudioInterruptService::DeactivateAudioSessionFakeInterruptInternal(
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
     if (iter == audioFocusInfoList.end()) {
         AUDIO_INFO_LOG("Can not find audio session fake interrupt for pid %{public}d", callerPid);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_OPERATION_FAILED, "Can not find audio session fake interrupt", false);
         return;
     }
 
@@ -611,7 +650,10 @@ void AudioInterruptService::DeactivateAudioSessionFakeInterrupt(const int32_t zo
 bool AudioInterruptService::HasAudioSessionFakeInterrupt(const int32_t zoneId, const int32_t callerPid)
 {
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), false, "can not find zone");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_NULL_POINTER, "can not find zone", false),
+        "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
@@ -626,6 +668,8 @@ void AudioInterruptService::RemovePlaceholderInterruptForSession(const int32_t c
     if (sessionService_.IsAudioSessionActivated(callerPid)) {
         HILOG_COMM_ERROR("[RemovePlaceholderInterruptForSession]The audio session for "
             "pid %{public}d is still active!", callerPid);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_ILLEGAL_STATE, "The audio session is still active", false);
         return;
     }
 
@@ -634,6 +678,8 @@ void AudioInterruptService::RemovePlaceholderInterruptForSession(const int32_t c
         auto itZone = zonesMap_.find(zoneId);
         if (itZone == zonesMap_.end() || itZone->second == nullptr) {
             HILOG_COMM_ERROR("[RemovePlaceholderInterruptForSession]can not find zoneid");
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                SESSION_STOP_NULL_POINTER, "can not find zoneid", false);
             continue;
         }
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -1033,13 +1079,22 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
 
     // maybe add check session id validation here
 
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "object is nullptr", false),
+        "object is nullptr");
 
     sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "obj cast failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "obj cast failed", false),
+        "obj cast failed");
 
     std::shared_ptr<AudioInterruptCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "create cb failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "create cb failed", false),
+        "create cb failed");
 
     if (interruptClients_.find(streamId) == interruptClients_.end()) {
         // Register client death recipient first
@@ -1049,7 +1104,10 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
 
         std::shared_ptr<AudioInterruptClient> client =
             std::make_shared<AudioInterruptClient>(callback, object, deathRecipient);
-        CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM, "create client failed");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                INTERRUPT_CALLBACK_NULL_POINTER, "create client failed", false),
+            "create client failed");
         uint32_t callingUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == MEDIA_SA_UID) {
             callingUid = uid;
@@ -1066,6 +1124,8 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
         }
     } else {
         HILOG_COMM_ERROR("[SetAudioInterruptCallback]%{public}u callback already exist", streamId);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_INVALID_PARAM, "callback already exist", false);
         return ERR_INVALID_PARAM;
     }
 
@@ -1081,16 +1141,22 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
         auto it = interruptClients_.find(streamId);
         if (it == interruptClients_.end()) {
             AUDIO_ERR_LOG("session %{public}u not present", streamId);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                INTERRUPT_CALLBACK_INVALID_PARAM, "session not present", false);
             return ERR_INVALID_PARAM;
         }
         if (callingUid != it->second->GetCallingUid()) {
             AUDIO_ERR_LOG("The callingUid is not equal to clientUid");
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                INTERRUPT_CALLBACK_INVALID_PARAM, "The callingUid is not equal to clientUid", false);
             return ERR_INVALID_PARAM;
         }
     }
 
     if (interruptClients_.erase(streamId) == 0) {
         AUDIO_ERR_LOG("streamId %{public}u not present", streamId);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_UNREGISTER_FAILED, "streamId not present", false);
         return ERR_INVALID_PARAM;
     }
 
@@ -1170,6 +1236,11 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
     int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
     if (ret != SUCCESS || !updateScene) {
         result.retCode = ret;
+        bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, result,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                isRecord ? RECORD_INTERRUPT_START_OPERATION_FAILED : INTERRUPT_START_OPERATION_FAILED,
+                "ActivateAudioInterruptCoreProcedure failed", false));
         return result;
     }
 
@@ -1205,19 +1276,27 @@ void AudioInterruptService::SetRegisterStateChangeCallbackFlag(int32_t callerPid
 int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
 {
+    bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     AudioInterrupt currAudioInterrupt = audioInterrupt;
     MirrorInterPhoneInterrupt(currAudioInterrupt);
     PrintLogsOfFocusStrategyBaseMusic(currAudioInterrupt); // Print logs for automatic detection tools.
     if (isPreemptMode_) {
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
         SendInterruptEventToIncomingStream(interruptEvent, currAudioInterrupt);
+        int32_t errorCode = ;
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_FOCUS_DENIED : INTERRUPT_START_FOCUS_DENIED,
+            "isPreemptMode", false);
         return ERR_FOCUS_DENIED;
     }
 
     if (currAudioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        CHECK_AND_CALL_FUNC_RETURN_RET(hasSystemPermission, ERR_FOCUS_DENIED,
-            HILOG_COMM_ERROR("[ActivateAudioInterruptCoreProcedure]VOICE_TRANSCRIPTION failed: no system permission"));
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(hasSystemPermission, ERR_FOCUS_DENIED,
+            HILOG_COMM_ERROR("[ActivateAudioInterruptCoreProcedure]VOICE_TRANSCRIPTION failed: no system permission"),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                isRecord ? RECORD_INTERRUPT_START_FOCUS_DENIED : INTERRUPT_START_FOCUS_DENIED,
+                "VOICE_TRANSCRIPTION failed: no system permission", false));
     }
 
     return ActivateAudioInterruptInternal(zoneId, currAudioInterrupt, isUpdatedAudioStrategy, updateScene);
@@ -1262,8 +1341,12 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
 
     // Process ProcessFocusEntryTable for current audioFocusInfoList
     int32_t ret = ProcessFocusEntry(zoneId, currAudioInterrupt);
-    CHECK_AND_CALL_FUNC_RETURN_RET(!ret, ERR_FOCUS_DENIED,
-        HILOG_COMM_ERROR("[ActivateAudioInterruptInternal]request rejected"));
+    bool isRecord = incomingSourceType != SOURCE_TYPE_INVALID;
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(!ret, ERR_FOCUS_DENIED,
+        HILOG_COMM_ERROR("[ActivateAudioInterruptInternal]request rejected"),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_FOCUS_DENIED : INTERRUPT_START_FOCUS_DENIED,
+            "request rejected", false));
     if (zoneId == ZONEID_DEFAULT) {
         updateScene = true;
     }
@@ -2084,10 +2167,19 @@ void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> streamIds, 
 
 void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
+    bool isRecord = incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     // Use local variable to record target focus info list, can be optimized
     auto targetZoneIt = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_LOG(targetZoneIt != zonesMap_.end(), "can not find zone id");
-    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(targetZoneIt != zonesMap_.end(),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_NULL_POINTER : INTERRUPT_START_NULL_POINTER,
+            "can not find zone id", false),
+        "can not find zone id");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(policyServer_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_NULL_POINTER : INTERRUPT_START_NULL_POINTER,
+            "policyServer nullptr", false),
+        "policyServer nullptr");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList {};
     if (targetZoneIt != zonesMap_.end()) {
         tmpFocusInfoList = targetZoneIt->second->audioFocusInfoList;
@@ -2213,8 +2305,12 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
     const int32_t &zoneId, bool &shouldReturnSuccess)
 {
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_CALL_FUNC_RETURN(itZone != zonesMap_.end(),
-        HILOG_COMM_ERROR("can not find zoneId"));
+    bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
+    CHECK_AND_CALL_FUNC_RETURN_REPORT(itZone != zonesMap_.end(),
+        HILOG_COMM_ERROR("can not find zoneId"),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_NULL_POINTER : INTERRUPT_START_NULL_POINTER,
+            "can not find zoneId", false));
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if ((itZone != zonesMap_.end()) && (itZone->second != nullptr)) {
@@ -2328,11 +2424,15 @@ bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrup
 
 int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
+    bool isRecord = incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     AudioFocuState incomingState = ACTIVE;
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_CALL_FUNC_RETURN_RET(itZone != zonesMap_.end(), ERROR,
-        HILOG_COMM_ERROR("[ProcessFocusEntry]can not find zoneid"));
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(itZone != zonesMap_.end(), ERROR,
+        HILOG_COMM_ERROR("[ProcessFocusEntry]can not find zoneid"),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_NULL_POINTER : INTERRUPT_START_NULL_POINTER,
+            "can not find zoneid", false));
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end()) { audioFocusInfoList = itZone->second->audioFocusInfoList; }
 
@@ -2342,8 +2442,11 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
         ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt->first,
             res == SUCCESS ? RECORD_ERROR_GET_FOCUS_FAIL : RECORD_ERROR_NO_FOCUS_CFG);
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET(res == SUCCESS, res,
-        HILOG_COMM_ERROR("[ProcessFocusEntry]ProcessActiveStreamFocus fail"));
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, res,
+        HILOG_COMM_ERROR("[ProcessFocusEntry]ProcessActiveStreamFocus fail"),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_OPERATION_FAILED : INTERRUPT_START_OPERATION_FAILED,
+            "ProcessActiveStreamFocus fail", false));
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
     if (activeInterrupt != audioFocusInfoList.end() && interruptCustom_ != nullptr) {
         interruptCustom_->ProcessActiveStreamCustomFocus(incomingInterrupt, activeInterrupt->first,
@@ -2354,14 +2457,21 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     if (IsGameAvoidCallbackCase(incomingInterrupt) && incomingState == PAUSE) {
         return SUCCESS;
     }
-    return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
+    CHECK_AND_CALL_FUNC_RETURN_RET(incomingState < PAUSE, ERR_FOCUS_DENIED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_FOCUS_DENIED : INTERRUPT_START_FOCUS_DENIED,
+            "incomingState >= PAUSE", false));
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::ProcessFocusEntryForAudioSession(
     const int32_t zoneId, const int32_t callerPid, bool &updateScene)
 {
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR, "can not find zone");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_FOCUS_EVENT_NULL_POINTER, "can not find zone", false),
+        "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     auto isAudioSessionFocusPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
@@ -2387,6 +2497,8 @@ int32_t AudioInterruptService::ProcessFocusEntryForAudioSession(
     if (ret == SUCCESS) {
         ResumeAudioFocusList(zoneId, false);
     } else {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_FOCUS_EVENT_OPERATION_FAILED, "ActivateAudioInterruptCoreProcedure failed", false);
         return ret;
     }
 
@@ -2404,7 +2516,10 @@ int32_t AudioInterruptService::HandleExistStreamsForSession(
     HandleOtherZoneExistStreams(zoneId, callerPid, updateScene);
 
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR, "can not find zone");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_FOCUS_EVENT_NULL_POINTER, "can not find zone", false),
+        "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     /* The focus of a single stream should be managed by audio session focus.
@@ -2425,6 +2540,8 @@ int32_t AudioInterruptService::HandleExistStreamsForSession(
             if (ret != SUCCESS) {
                 HILOG_COMM_ERROR("[HandleExistStreamsForSession]ActivateAudioInterruptCoreProcedure failed for "
                     "pid = %{public}d", it.first.pid);
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    INTERRUPT_START_OPERATION_FAILED, "ActivateAudioInterruptCoreProcedure failed", false);
             }
         }
     }
@@ -2475,6 +2592,8 @@ void AudioInterruptService::ReactivateAudioInterrupts(
     auto itZone = zonesMap_.find(zoneId);
     if (itZone == zonesMap_.end() || itZone->second == nullptr) {
         AUDIO_INFO_LOG("Can not find focus, no need to reactivate audio interrupt for pid: %{public}d", callerPid);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_NULL_POINTER, "Can not find focus, no need to reactivate audio interrupt", false);
         return;
     }
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
@@ -2494,6 +2613,8 @@ void AudioInterruptService::ReactivateAudioInterrupts(
             int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, it.first, true, tempUpdateScene);
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("ActivateAudioInterruptCoreProcedure failed for pid = %{public}d", callerPid);
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    INTERRUPT_START_OPERATION_FAILED, "ActivateAudioInterruptCoreProcedure failed", false);
             }
         }
     }
@@ -2530,13 +2651,21 @@ bool AudioInterruptService::ShouldBypassAudioSessionFocus(const int32_t zoneId, 
 void AudioInterruptService::TryHandleStreamCallbackInSession(
     const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
+    bool isRecord = incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     if (handler_ == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyServerHandler is nullptr");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_CALLBACK_NULL_POINTER : INTERRUPT_CALLBACK_NULL_POINTER,
+            "AudioPolicyServerHandler is nullptr", false);
         return;
     }
 
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
+    CHECK_AND_CALL_FUNC_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_QUERY_NULL_POINTER : INTERRUPT_QUERY_NULL_POINTER,
+            "can not find zone", false),
+        "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     auto isAudioSessionFocusPresent = [&incomingInterrupt](const std::pair<AudioInterrupt, AudioFocuState> &pair) {
@@ -2946,7 +3075,10 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
     AudioInterrupt audioInterrupt = iterActive->first;
     uint32_t streamId = audioInterrupt.streamId;
 
-    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(handler_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "handler is nullptr", false),
+        "handler is nullptr");
 
     InterruptEventInternal forceActive {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 1.0f};
     // RESUME event should be INTERRUPT_SHARE. But mark it as INTERRUPT_FORCE here for state checking.
@@ -2989,7 +3121,10 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
 void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
     const uint32_t &streamId, const AudioInterrupt &audioInterrupt)
 {
-    CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(dfxCollector_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "dfxCollector is null", false),
+        "dfxCollector is null");
     AUDIO_INFO_LOG("hintType= %{public}d", interruptEvent.hintType);
     InterruptDfxBuilder dfxBuilder;
     auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
@@ -3026,6 +3161,8 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
 
     if (handler_ == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyServerHandler is nullptr");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "AudioPolicyServerHandler is nullptr", false);
         return;
     }
     if (audioInterrupt.isAudioSessionInterrupt) {
@@ -3255,7 +3392,12 @@ void AudioInterruptService::SendActiveVolumeTypeChangeEvent(const int32_t zoneId
 void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory,
     const AudioInterrupt &audioInterrupt)
 {
-    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
+    bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
+    CHECK_AND_CALL_FUNC_RETURN_LOG(handler_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_CALLBACK_NULL_POINTER : INTERRUPT_CALLBACK_NULL_POINTER,
+            "handler is null", false),
+        "handler is null");
 
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
