@@ -971,5 +971,44 @@ HWTEST(AudioCapturerUnitTest, SetStreamCallback_001, TestSize.Level1)
     int32_t ret = fastAudioStream.SetStreamCallback(callback);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name  : Test NoNeedNotifyEvent
+ * @tc.type  : FUNC
+ * @tc.number: NoNeedNotifyEvent_001
+ * @tc.desc  : Test NoNeedNotifyEvent
+ */
+HWTEST(AudioCapturerUnitTest, NoNeedNotifyEvent_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+ 
+    AudioStreamParams tempParams = {};
+ 
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::FAST_STREAM, tempParams,
+        STREAM_MUSIC, getpid());
+    
+    audioStream->SetFocusState(FOCUS_RUNNING);
+    auto interruptCallback = std::make_unique<AudioCapturerInterruptCallbackImpl>(nullptr);
+    interruptCallback->UpdateAudioStream(audioStream);
+    EXPECT_EQ(interruptCallback->audioStream_, audioStream);
+ 
+    capturer->audioStream_ = audioStream;
+    InterruptEventInternal interruptEventInternal {InterruptType::INTERRUPT_TYPE_BEGIN,
+        InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_PAUSE, 0.0};
+    InterruptEvent event = InterruptEvent {interruptEventInternal.eventType, interruptEventInternal.forceType,
+        interruptEventInternal.hintType};
+ 
+    shared_ptr<AudioCapturerCallbackTestStub> cb = make_shared<AudioCapturerCallbackTestStub>();
+    interruptCallback->SaveCallback(cb);
+    EXPECT_EQ(true, interruptCallback->NoNeedNotifyEvent(event));
+    event.hintType = INTERRUPT_HINT_STOP;
+    EXPECT_EQ(true, interruptCallback->NoNeedNotifyEvent(event));
+    event.hintType = INTERRUPT_HINT_RESUME;
+    EXPECT_EQ(true, interruptCallback->NoNeedNotifyEvent(event));
+    event.hintType = INTERRUPT_HINT_DUCK;
+    EXPECT_NE(true, interruptCallback->NoNeedNotifyEvent(event));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

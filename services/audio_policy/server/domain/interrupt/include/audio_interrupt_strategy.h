@@ -22,6 +22,7 @@
 #include "audio_utils.h"
 #include "iremote_object.h"
 #include "istandard_audio_policy_manager_listener.h"
+#include "audio_session_service.h"
 #ifdef HAS_WINDOW_MANAGER
 #include "window_utils.h"
 #endif
@@ -31,6 +32,7 @@ namespace AudioStandard {
 
 class AudioInterruptStrategy {
 public:
+    AudioInterruptStrategy();
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
@@ -58,6 +60,14 @@ private:
     void UpdateAIBaseFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
     bool IsMicSource(SourceType sourceType);
+    void UpdateMediaWithMixStrategy(const AudioInterrupt &activeInterrupt,
+        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void UpdateMediaWithDuckStrategy(const AudioInterrupt &activeInterrupt,
+        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    bool IsMediaWithMixStrategy(const AudioInterrupt &currentInterrupt);
+    bool IsCanMixwithMedia(const AudioInterrupt &currentInterrupt);
+ 
+    AudioSessionService &sessionService_;
 };
 
 } // namespace AudioStandard
