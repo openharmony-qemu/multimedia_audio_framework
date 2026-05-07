@@ -81,7 +81,6 @@ export const audioConverterCreate: (inputFormat: {
 export const audioConverterSetInputCallback: (converter: number) => number;
 export const audioConverterProcess: (converter: number) => ArrayBuffer;
 export const audioConverterDestroy: (converter: number) => void;
-export const saveConverterFile: () => ArrayBuffer;
 export interface AudioFileInfo {
   samplingRate: number;
   channelLayout: number;
