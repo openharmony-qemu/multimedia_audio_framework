@@ -754,7 +754,7 @@ static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
     unsigned int mode = -1;
     std::string fieldEffectId;
     napi_status status = ParseResetFieldEffectParams(env, info, inputId, mode, fieldEffectId);
-    
+
     OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
 
     napi_value ret;
