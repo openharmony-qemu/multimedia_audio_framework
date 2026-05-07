@@ -399,6 +399,7 @@ int32_t HpaeFastRendererManager::InitSinkInner(bool isReload)
 int32_t HpaeFastRendererManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    hpaeSignalProcessThread_->SetFastThread(true);
     auto request = [this, isReload] {
         Trace trace("HpaeFastRendererManager::Init[" + std::to_string(isReload) + "]");
         InitSinkInner(isReload);
@@ -955,6 +956,7 @@ int32_t HpaeFastRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInf
 {
     if (!IsInit()) {
         hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+        hpaeSignalProcessThread_->SetFastThread(true);
     }
     auto request = [this, sinkInfo, isReload]() {
         Trace trace("HpaeFastRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
