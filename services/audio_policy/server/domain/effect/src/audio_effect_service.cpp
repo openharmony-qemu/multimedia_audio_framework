@@ -943,11 +943,17 @@ int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolume
     return AUDIO_OK;
 }
 
-int32_t AudioEffectService::OnAudioSeparationEffectEnabledChange(
-    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
+int32_t AudioEffectService::OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object)
 {
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
+    
+    sptr<IStandardAudioSeparationEffectEnabledChangeListener> listenerProxy =
+        iface_cast<IStandardAudioSeparationEffectEnabledChangeListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listenerProxy != nullptr, ERR_INVALID_PARAM, "listener proxy cast failed");
+    
     std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
-    separationEffectCallbacks_.push_back(callback);
+    sptr<IStandardAudioSeparationEffectEnabledChangeListener> listener = listenerProxy;
+    separationEffectListeners_.push_back(listener);
     return AUDIO_OK;
 }
 
@@ -961,10 +967,19 @@ int32_t AudioEffectService::OffAudioSeparationEffectEnabledChange()
 void AudioEffectService::NotifyAudioSeparationEffectEnabledChange(bool enabled)
 {
     std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
-    for (const auto &callback : separationEffectCallbacks_) {
-        if (callback != nullptr) {
-            callback->OnAudioSeparationEffectEnabledChange(enabled);
+    for (const auto &listener : separationEffectListeners_) {
+        if (listener != nullptr) {
+            listener->OnAudioSeparationEffectEnabledChange(enabled);
         }
+    }
+}
+
+int32_t AudioEffectService::OffAudioSeparationEffectEnabledChange()
+{
+    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
+    separationEffectListeners_.clear();
+    return AUDIO_OK;
+}
     }
 }
 } // namespace AudioStandard

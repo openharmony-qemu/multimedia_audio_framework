@@ -229,8 +229,7 @@ public:
     bool IsAudioSeparationEffectSupported();
     int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId);
     int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
-    int32_t OnAudioSeparationEffectEnabledChange(
-        const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
+    int32_t OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object);
     int32_t OffAudioSeparationEffectEnabledChange();
     
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);

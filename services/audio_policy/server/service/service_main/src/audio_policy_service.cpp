@@ -1232,10 +1232,9 @@ int32_t AudioPolicyService::SetAudioSeparationEffectVolume(AudioSeparationVolume
     return AudioEffectService::GetAudioEffectService().SetAudioSeparationEffectVolume(type, volume);
 }
 
-int32_t AudioPolicyService::OnAudioSeparationEffectEnabledChange(
-    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
+int32_t AudioPolicyService::OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object)
 {
-    return AudioEffectService::GetAudioEffectService().OnAudioSeparationEffectEnabledChange(callback);
+    return AudioEffectService::GetAudioEffectService().OnAudioSeparationEffectEnabledChange(object);
 }
 
 int32_t AudioPolicyService::OffAudioSeparationEffectEnabledChange()
