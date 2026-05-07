@@ -722,6 +722,19 @@ void AudioPolicyClientProxyOnStreamVolumeChangeFuzzTest(FuzzedDataProvider& fdp)
     iAudioPolicyClient->OnSystemVolumeChange(volumeEvent);
 }
 
+void AudioPolicyClientProxyOnSystemVolumeChangeByFilterFuzzTest(FuzzedDataProvider& fdp)
+{
+    SystemVolumeFilter filter;
+    filter.uid = fdp.ConsumeIntegral<int32_t>();
+    VolumeEvent volumeEvent = ConsumeVolumeEvent(fdp);
+    sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
+    auto iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
+    if (iAudioPolicyClient == nullptr) {
+        return;
+    }
+    iAudioPolicyClient->OnSystemVolumeChangeByFilter(filter, volumeEvent);
+}
+
 void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
     auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
@@ -863,6 +876,7 @@ void Test(FuzzedDataProvider& fdp)
         AudioPolicyClientProxyOnAudioSessionDeactiveFuzzTest,
         AudioPolicyClientProxyOnFormatUnsupportedErrorFuzzTest,
         AudioPolicyClientProxyOnStreamVolumeChangeFuzzTest,
+        AudioPolicyClientProxyOnSystemVolumeChangeByFilterFuzzTest,
         AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest,
         AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest,
         AudioClientTrackerCallbackProxyPausedStreamImplFuzzTest,

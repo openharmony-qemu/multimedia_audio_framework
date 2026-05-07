@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include "audio_device_info.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,9 +35,9 @@ public:
     void CancelSafeVolumeNotification(int32_t notificationId);
     void PublishLegacyHighVolumeNotification();
     void CancelLegacyHighVolumeNotification();
-    bool DeviceIsSupportSafeVolume();
+    bool DeviceIsSupportSafeVolume(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     bool IsWiredHeadSet(const DeviceType &deviceType);
-    bool IsBlueTooth(const DeviceType &deviceType);
+    bool IsBlueTooth(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     bool IsNearLink(const DeviceType &deviceType);
 
 private:

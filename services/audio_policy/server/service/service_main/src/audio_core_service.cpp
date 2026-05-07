@@ -69,6 +69,7 @@ static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
+static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
 static constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
 static const std::string PIPE_PRIMARY_INPUT_CAMCORDER = "primary_input_camcorder";
@@ -4657,6 +4658,69 @@ void AudioCoreService::NotifyServiceReady()
 void AudioCoreService::NotifyRequiredPipesReady()
 {
     readyConditionNotifier_.NotifySuccess(REQUIRED_PIPE_READY_MASK);
+}
+
+int32_t AudioCoreService::GetHighestPriorityVolumeTypeForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "deviceDesc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is nullptr");
+
+    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
+    AudioStreamType targetStreamType = STREAM_MUSIC;
+    int32_t highestPriority = STREAM_DEFAULT_PRIORITY;
+
+    for (const auto &streamDesc : outputStreamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        CHECK_AND_CONTINUE(streamDesc->streamStatus_ == AudioStreamStatus::STREAM_STATUS_STARTED);
+        CHECK_AND_CONTINUE(!streamDesc->GetNewDeviceDescs().empty());
+        
+        auto streamDevice = streamDesc->GetNewDeviceDescs().front();
+        CHECK_AND_CONTINUE(streamDevice != nullptr);
+        if (streamDevice->IsSameDeviceDesc(*deviceDesc)) {
+            AudioStreamType streamType = streamCollector_.GetStreamTypeFromUsageContent(
+                streamDesc->rendererInfo_.streamUsage, streamDesc->rendererInfo_.contentType);
+            int32_t priority = GetStreamTypePriority(streamType);
+            if (priority < highestPriority) {
+                highestPriority = priority;
+                targetStreamType = streamType;
+            }
+        }
+    }
+
+    volumeType = VolumeUtils::GetVolumeTypeFromStreamType(targetStreamType);
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::GetStreamTypePriority(AudioStreamType streamType)
+{
+    static const std::unordered_map<AudioStreamType, int32_t> STREAM_PRIORITY_MAP = {
+        {STREAM_VOICE_CALL, 0},
+        {STREAM_VOICE_CALL_ASSISTANT, 0},
+        {STREAM_VOICE_COMMUNICATION, 0},
+        {STREAM_VOICE_MESSAGE, 1},
+        {STREAM_VOICE_ASSISTANT, 3},
+        {STREAM_RING, 4},
+        {STREAM_VOICE_RING, 4},
+        {STREAM_ALARM, 5},
+        {STREAM_ANNOUNCEMENT, 5},
+        {STREAM_EMERGENCY, 5},
+        {STREAM_NAVIGATION, 6},
+        {STREAM_MUSIC, 7},
+        {STREAM_MOVIE, 7},
+        {STREAM_SPEECH, 7},
+        {STREAM_GAME, 7},
+        {STREAM_DTMF, 8},
+        {STREAM_SYSTEM, 8},
+        {STREAM_SYSTEM_ENFORCED, 9},
+        {STREAM_NOTIFICATION, 100}
+    };
+
+    auto it = STREAM_PRIORITY_MAP.find(streamType);
+    if (it != STREAM_PRIORITY_MAP.end()) {
+        return it->second;
+    }
+    return STREAM_DEFAULT_PRIORITY;
 }
 } // namespace AudioStandard
 } // namespace OHOS

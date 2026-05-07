@@ -938,8 +938,9 @@ void VolumeDataMaintainer::CheckNotificationVolumeState(std::shared_ptr<AudioDev
 IntValueInfo VolumeDataMaintainer::GetVolumeLevelInfo(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType, int32_t zoneId)
 {
+    DeviceType deviceType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_SPEAKER;
     int32_t dftVolume = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(device, streamType, zoneId);
-    int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(device, streamType, zoneId);
+    int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(deviceType, streamType, zoneId);
     IntValueInfo info {
 #ifdef FEATURE_AUDIO_ZONE
         .key = GetVolumeKey(device, streamType) + GetZoneKey(zoneId),

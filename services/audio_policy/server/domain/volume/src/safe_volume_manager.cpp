@@ -34,10 +34,11 @@ SafeVolumeManager::SafeVolumeManager()
 {
 }
 
-bool SafeVolumeManager::DeviceIsSupportSafeVolume()
+bool SafeVolumeManager::DeviceIsSupportSafeVolume(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "curOutputDevice is nullptr");
+    DeviceType curOutputDeviceType = deviceDesc->deviceType_;
+    DeviceCategory curOutputDeviceCategory = deviceDesc->deviceCategory_;
     switch (curOutputDeviceType) {
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
@@ -71,11 +72,11 @@ bool SafeVolumeManager::IsWiredHeadSet(const DeviceType &deviceType)
     }
 }
 
-bool SafeVolumeManager::IsBlueTooth(const DeviceType &deviceType)
+bool SafeVolumeManager::IsBlueTooth(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        if (audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_CAR &&
-            audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_SOUNDBOX) {
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "deviceDesc is nullptr");
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (deviceDesc->deviceCategory_ != BT_CAR && deviceDesc->deviceCategory_ != BT_SOUNDBOX) {
             return true;
         }
     }

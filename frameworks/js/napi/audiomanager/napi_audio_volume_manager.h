@@ -25,6 +25,7 @@
 #include "audio_system_manager.h"
 #include "napi_audio_volume_key_event.h"
 #include "napi_audio_system_volume_change_callback.h"
+#include "napi_audio_system_volume_change_by_filter_callback.h"
 #include "napi_audio_stream_volume_change_callback.h"
 
 namespace OHOS {
@@ -124,6 +125,12 @@ private:
         const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static void UnregisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
         size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static napi_value OnSystemVolumeChangeByFilter(napi_env env, napi_callback_info info);
+    static napi_value OffSystemVolumeChangeByFilter(napi_env env, napi_callback_info info);
+    static napi_value RegisterSystemVolumeChangeByFilterCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static void UnregisterSystemVolumeChangeByFilterCallback(napi_env env, napi_value *args,
+        size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
@@ -140,6 +147,8 @@ private:
     std::shared_ptr<VolumeKeyEventCallback> volumeDegreeCallbackNapi_ = nullptr;
     std::map<int32_t, std::shared_ptr<StreamVolumeChangeCallback>> streamVolumeChangeCallbackNapiMap_;
     std::shared_ptr<SystemVolumeChangeCallback> systemVolumeChangeCallbackNapi_ = nullptr;
+    std::vector<std::shared_ptr<NapiAudioSystemVolumeChangeByFilterCallback>>
+        systemVolumeChangeByFilterCallbackNapiList_;
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> selfAppVolumeChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> appVolumeChangeCallbackForUidNapi_ = nullptr;
     std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> activeVolumeTypeChangeCallbackNapi_ = nullptr;

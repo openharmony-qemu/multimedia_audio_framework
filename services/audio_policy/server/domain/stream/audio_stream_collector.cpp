@@ -1499,6 +1499,16 @@ AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType 
     return VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 }
 
+AudioStreamType AudioStreamCollector::GetStreamTypeFromUsageContent(StreamUsage streamUsage, ContentType contentType)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
+    if (pos != streamTypeMap_.end()) {
+        streamType = pos->second;
+    }
+    return streamType;
+}
+
 AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sourceType)
 {
     switch (sourceType) {

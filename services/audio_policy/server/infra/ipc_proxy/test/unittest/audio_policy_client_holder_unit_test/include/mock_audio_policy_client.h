@@ -99,6 +99,8 @@ public:
                 (const StreamVolumeEvent& streamVolumeEvent), (override));
     MOCK_METHOD(ErrCode, OnSystemVolumeChange,
                 (const VolumeEvent& volumeEvent), (override));
+    MOCK_METHOD(ErrCode, OnSystemVolumeChangeByFilter,
+                (const SystemVolumeFilter& filter, const VolumeEvent& volumeEvent), (override));
     MOCK_METHOD(ErrCode, OnAudioSessionStateChanged,
                 (int32_t stateChangeHint), (override));
     MOCK_METHOD(ErrCode, OnAudioSessionCurrentDeviceChanged,

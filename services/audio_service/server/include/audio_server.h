@@ -121,7 +121,7 @@ public:
     int32_t SetActiveOutputDevice(int32_t deviceType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
-    int32_t OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId) override;
+    int32_t OffloadSetVolume(float volume, uint32_t renderId) override;
     int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag,
         int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
     int32_t SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag) override;

@@ -120,15 +120,14 @@ public:
     void GetDefaultVolumeLevelForHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
 
-    int32_t GetMaxVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType,
-        int32_t zoneId = 0);
-    void GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId = 0);
+    int32_t GetMaxVolumeLevel(DeviceType deviceType, AudioStreamType streamType, int32_t zoneId = 0);
+    void GetMaxVolumeLevelFromConfig(DeviceType deviceType, AudioStreamType streamType,
+        int32_t &volumeLevel, int32_t zoneId = 0);
 
-    int32_t GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType,
+    int32_t GetMinVolumeLevel(DeviceType deviceType, AudioStreamType streamType,
         int32_t zoneId = 0);
-    void GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId = 0);
+    void GetMinVolumeLevelFromConfig(DeviceType deviceType, AudioStreamType streamType,
+        int32_t &volumeLevel, int32_t zoneId = 0);
 
     bool IsVolumeTypeValid(AudioStreamType streamType);
 

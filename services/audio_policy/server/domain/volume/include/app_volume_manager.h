@@ -33,21 +33,22 @@ public:
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> asyncHandler);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
-    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
-    int32_t SetSelfAppVolumeLevelWithCallback(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType);
+    int32_t SetSelfAppVolumeLevelWithCallback(
+        int32_t appUid, int32_t volumeLevel, bool isUpdateUi, DeviceType deviceType);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
-    int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
+    int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage, DeviceType deviceType);
     int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
-    int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage);
-    int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted);
+    int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage, DeviceType deviceType);
     int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute);
-    int32_t SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted);
+    int32_t SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted, DeviceType deviceType);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
     bool IsAppRingMuted(int32_t appUid);
     void FlushSystemAppVolume();
 
 private:
+    int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted, DeviceType deviceType);
     void ScheduleSystemAppVolumePersist();
 
     IAudioPolicyInterface& audioPolicyManager_;

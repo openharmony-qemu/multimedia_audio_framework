@@ -143,6 +143,7 @@ public:
     virtual bool OnCheckMediaControllerBundle(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetZoneDevice(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) = 0;
+    virtual bool OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName) = 0;
 };
 
 class AudioVKBInfoMgrCallback {
@@ -254,6 +255,19 @@ public:
      * @since 20
      */
     virtual void OnSystemVolumeChange(VolumeEvent volumeEvent) = 0;
+};
+
+class SystemVolumeChangeByFilterCallback {
+public:
+    virtual ~SystemVolumeChangeByFilterCallback() = default;
+    /**
+     * @brief SystemVolumeChangeByFilterCallback will be executed when system volume changed with filter
+     *
+     * @param volumeEvent the volume event info.
+     * @param filter the filter used for this callback.
+     * @since 20
+     */
+    virtual void OnSystemVolumeChangeByFilter(const VolumeEvent &volumeEvent) = 0;
 };
 
 class AudioCapturerStateChangeCallback {

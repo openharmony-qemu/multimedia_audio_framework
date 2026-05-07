@@ -487,6 +487,18 @@ int32_t AudioVolumeClientManager::RegisterSystemVolumeChangeCallback(const int32
     return ret;
 }
 
+int32_t AudioVolumeClientManager::RegisterSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+    const SystemVolumeFilter &filter, const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback)
+{
+    AUDIO_INFO_LOG("uid: %{public}d", filter.uid);
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "RegisterSystemVolumeChangeByFilterCallback callback is nullptr");
+    volumeChangeClientPid_ = clientPid;
+
+    return AudioPolicyManager::GetInstance().SetSystemVolumeChangeByFilterCallback(clientPid, filter, callback);
+}
+
 int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
     const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
@@ -495,6 +507,17 @@ int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeCallback(const int
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             ERR_VOLUME_CALLBACK_UNREGISTER_FAILED, "UnregisterSystemVolumeChangeCallback failed", true));
+    return ret;
+}
+
+int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+    const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("UnregisterSystemVolumeChangeByFilterCallback");
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetSystemVolumeChangeByFilterCallback(callback);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_VOLUME_CALLBACK_UNREGISTER_FAILED, "UnregisterSystemVolumeChangeByFilterCallback failed", true));
     return ret;
 }
 

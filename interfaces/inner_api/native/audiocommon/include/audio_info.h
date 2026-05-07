@@ -372,6 +372,7 @@ enum CallbackChange : int32_t {
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_AUDIO_SESSION_INPUT_DEVICE,
@@ -444,6 +445,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_AUDIO_SESSION_INPUT_DEVICE,
@@ -513,6 +515,32 @@ struct VolumeEvent : public Parcelable {
         }
         event->UnmarshallingSelf(parcel);
         return event;
+    }
+};
+
+struct SystemVolumeFilter : public Parcelable {
+    int32_t uid = -1;
+
+    SystemVolumeFilter() = default;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(uid);
+    }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        uid = parcel.ReadInt32();
+    }
+
+    static SystemVolumeFilter *Unmarshalling(Parcel &parcel)
+    {
+        auto filter = new(std::nothrow) SystemVolumeFilter();
+        if (filter == nullptr) {
+            return nullptr;
+        }
+        filter->UnmarshallingSelf(parcel);
+        return filter;
     }
 };
 

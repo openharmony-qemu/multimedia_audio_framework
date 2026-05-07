@@ -122,6 +122,12 @@ public:
     void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction){};
 };
 
+class SystemVolumeChangeByFilterCallbackFuzzTest : public SystemVolumeChangeByFilterCallback {
+public:
+    SystemVolumeChangeByFilterCallbackFuzzTest() {}
+    void OnSystemVolumeChangeByFilter(const VolumeEvent &volumeEvent) override {}
+};
+
 void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
 {
     bool block = GetData<bool>();
@@ -808,6 +814,31 @@ void AudioPolicyManagerPersonalizedFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().UnregisterPersonalizedSpatializationEnabledEventListener();
 }
 
+void AudioPolicyManagerSetSystemVolumeChangeByFilterCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    int32_t clientPid = GetData<int32_t>();
+    SystemVolumeFilter filter;
+    filter.uid = GetData<int32_t>();
+    std::shared_ptr<SystemVolumeChangeByFilterCallback> callback =
+        std::make_shared<SystemVolumeChangeByFilterCallbackFuzzTest>();
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    audioPolicyManager.isAudioPolicyClientRegisted_ = GetData<bool>();
+    audioPolicyManager.SetSystemVolumeChangeByFilterCallback(clientPid, filter, callback);
+}
+
+void AudioPolicyManagerUnsetSystemVolumeChangeByFilterCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    bool isNullptr = GetData<bool>();
+    std::shared_ptr<SystemVolumeChangeByFilterCallback> callback;
+    if (!isNullptr) {
+        callback = std::make_shared<SystemVolumeChangeByFilterCallbackFuzzTest>();
+    }
+    audioPolicyManager.UnsetSystemVolumeChangeByFilterCallback(callback);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -843,6 +874,8 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyManagerSetDeviceVolumeBehaviorFuzzTest,
     AudioPolicyManagerSetQueryDeviceVolumeBehaviorCallbackFuzzTest,
     AudioPolicyManagerPersonalizedFuzzTest,
+    AudioPolicyManagerSetSystemVolumeChangeByFilterCallbackFuzzTest,
+    AudioPolicyManagerUnsetSystemVolumeChangeByFilterCallbackFuzzTest,
     });
     func(fdp);
 }

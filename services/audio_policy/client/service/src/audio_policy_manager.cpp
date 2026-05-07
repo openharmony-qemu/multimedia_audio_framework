@@ -679,6 +679,27 @@ int32_t AudioPolicyManager::SetCallbackCapturerInfo(const AudioCapturerInfo &cap
     return gsp->SetCallbackCapturerInfo(capturerInfo, uid);
 }
 
+int32_t AudioPolicyManager::SetSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    return gsp->SetSystemVolumeChangeCallbackInfo(filter);
+}
+
+int32_t AudioPolicyManager::RemoveSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    return gsp->RemoveSystemVolumeChangeCallbackInfo(filter);
+}
+
+int32_t AudioPolicyManager::RemoveAllSystemVolumeChangeCallbackInfo()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    return gsp->RemoveAllSystemVolumeChangeCallbackInfo();
+}
+
 int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t clientId,
     const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
 {
@@ -1433,6 +1454,32 @@ int32_t AudioPolicyManager::SetSystemVolumeChangeCallback(const int32_t clientPi
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+    const SystemVolumeFilter &filter, const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeChangeByFilterCallback: client: %{public}d, uid: %{public}d", clientPid, filter.uid);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "systemVolumeChange callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddSystemVolumeChangeByFilterCallback(filter, callback);
+        SetSystemVolumeChangeCallbackInfo(filter);
+        size_t callbackSize = audioPolicyClientStubCB_->GetSystemVolumeChangeByFilterCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER, true);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::UnsetSystemVolumeChangeCallback
     (const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
@@ -1443,6 +1490,27 @@ int32_t AudioPolicyManager::UnsetSystemVolumeChangeCallback
         if (audioPolicyClientStubCB_->GetSystemVolumeChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_SYSTEM_VOLUME_CHANGE, false);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetSystemVolumeChangeByFilterCallback
+    (const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("UnsetSystemVolumeChangeByFilterCallback");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        SystemVolumeFilter removedFilter = audioPolicyClientStubCB_->RemoveSystemVolumeChangeByFilterCallback(callback);
+        if (removedFilter.uid != -1) {
+            RemoveSystemVolumeChangeCallbackInfo(removedFilter);
+        }
+        if (callback == nullptr) {
+            RemoveAllSystemVolumeChangeCallbackInfo();
+        }
+        if (audioPolicyClientStubCB_->GetSystemVolumeChangeByFilterCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER, false);
         }
     }
     return SUCCESS;

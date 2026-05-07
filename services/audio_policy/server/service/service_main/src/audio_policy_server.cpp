@@ -144,6 +144,9 @@ constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
 
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
+
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
@@ -537,23 +540,17 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 int32_t AudioPolicyServer::ReloadLoudVolumeMode(
     int32_t streamInFocus, int32_t setVolMode, bool &ret)
 {
+    ret = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT) {
-        ret = false;
         return AUDIO_INVALID_PARAM;
     }
-    if (loudVolumeManager_ == nullptr) {
-        AUDIO_INFO_LOG("loudVolumeManager_ is nullptr!");
-        ret = false;
-        return AUDIO_INVALID_PARAM;
-    }
-    if (loudVolumeManager_->ReloadLoudVolumeMode(static_cast<AudioStreamType>(streamInFocus),
+    if (audioVolumeManager_.ReloadLoudVolumeMode(static_cast<AudioStreamType>(streamInFocus),
         static_cast<SetLoudVolMode>(setVolMode)) == true) {
             ret = true;
             return AUDIO_OK;
         }
 #endif
-        ret = false;
         return AUDIO_INVALID_PARAM;
 }
 
@@ -713,6 +710,13 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
+    } else if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        AudioRendererInfo newRendererInfo;
+        auto deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(
+            newRendererInfo, SYSTEM_UID, LOCAL_NETWORK_ID);
+        CHECK_AND_RETURN_RET_LOG(!deviceDescs.empty(), ERROR, "deviceDescs is empty");
+        std::shared_ptr<AudioDeviceDescriptor> preferredDeviceDesc = deviceDescs.front();
+        eventEntry_->GetHighestPriorityVolumeTypeForDevice(preferredDeviceDesc, streamInFocus);
     } else {
         GetActiveAudioInterruptZone(zoneId, streamInFocus);
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);
@@ -760,7 +764,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
     if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         if (loudVolumeManager_ == nullptr) {
             AUDIO_ERR_LOG("loudVolumeManager_ is nullptr!");
-        } else if (loudVolumeManager_->CheckLoudVolumeMode(volumeLevelInInt, keyType, streamInFocus)) {
+        } else if (audioVolumeManager_.CheckLoudVolumeMode(volumeLevelInInt, keyType, streamInFocus)) {
             audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
             AUDIO_INFO_LOG("device %{public}d, stream %{public}d, loud volume mode operation",
                 audioActiveDevice_.GetCurrentOutputDeviceType(), streamInFocus);
@@ -2114,6 +2118,39 @@ int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capt
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SetCallbackCapturerInfo(capturerInfo, uid);
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_NULL_POINTER,
+        "audioPolicyServerHandler_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->SetSystemVolumeChangeCallbackInfo(clientPid, filter);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::RemoveSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_NULL_POINTER,
+        "audioPolicyServerHandler_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->RemoveSystemVolumeChangeCallbackInfo(clientPid, filter);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::RemoveAllSystemVolumeChangeCallbackInfo()
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_NULL_POINTER,
+        "audioPolicyServerHandler_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->RemoveAllSystemVolumeChangeCallbackInfo(clientPid);
     return SUCCESS;
 }
 
