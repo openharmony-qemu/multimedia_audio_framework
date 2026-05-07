@@ -246,12 +246,12 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
     void SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     bool SendDeviceConfigChangedEvent(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
-    void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
     bool SendAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     bool SendBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
         bool spatialization, bool headtracking);
     bool SendSpatialAudioSourceTypeChangeEvent(SpatialAudioSourceType mode);
+    void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
     bool SendPersonalizedSpatializationEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
 
