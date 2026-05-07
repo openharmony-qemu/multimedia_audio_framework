@@ -155,7 +155,8 @@ void AudioEffectManagerImpl::SetAudioSeparationEffectEnabled(bool enabled, int32
     }
 }
 
-void AudioEffectManagerImpl::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+void AudioEffectManagerImpl::SetAudioSeparationEffectVolume(OHOS::AudioStandard::AudioSeparationVolumeType type,
+    double volume)
 {
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
@@ -166,10 +167,7 @@ void AudioEffectManagerImpl::SetAudioSeparationEffectVolume(AudioSeparationVolum
         return;
     }
     
-    int32_t typeValue = type;
-    OHOS::AudioStandard::AudioSeparationVolumeType volumeType =
-        static_cast<OHOS::AudioStandard::AudioSeparationVolumeType>(typeValue);
-    int32_t result = audioEffectMngr_->SetAudioSeparationEffectVolume(volumeType, volume);
+    int32_t result = audioEffectMngr_->SetAudioSeparationEffectVolume(type, volume);
     if (result == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "Effect is not supported in this device");
         return;

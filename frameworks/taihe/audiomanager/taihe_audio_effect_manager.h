@@ -44,7 +44,7 @@ public:
     void SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, optional<int64_t> streamId);
     void OnAudioSeparationEffectEnabledChange(callback_view<void(bool)> callback);
     void OffAudioSeparationEffectEnabledChange(optional_view<callback<void(bool)>> callback);
-    void SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
+    void SetAudioSeparationEffectVolume(OHOS::AudioStandard::AudioSeparationVolumeType type, double volume);
 
 private:
     OHOS::AudioStandard::AudioEffectManager *audioEffectMngr_;
