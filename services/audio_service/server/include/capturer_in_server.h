@@ -104,6 +104,7 @@ private:
     void OnPrivacyAuthorityResult(bool isAllowed);
     int32_t CheckForReadData(size_t length, uint64_t currentWriteFrame);
     int32_t CheckForOnReadData(size_t requestDataLen, uint64_t currentWriteFrame);
+    void RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;

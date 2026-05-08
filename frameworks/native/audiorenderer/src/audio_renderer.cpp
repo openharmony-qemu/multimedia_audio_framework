@@ -767,6 +767,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     Trace trace("AudioRenderer::InitAudioStream");
     rendererProxyObj_->SaveRendererObj(weak_from_this());
     audioStream_->SetRendererInfo(rendererInfo_);
+    SetInnerStreamFastStatusChangeCallback(audioStream_);
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
     SetAudioPrivacyTypeInner(rendererInfo_.privacyType);
@@ -2567,8 +2568,12 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
 void AudioRendererPrivate::SetFastStatusChangeCallback(
     const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback)
 {
-    std::lock_guard lock(fastStatusChangeCallbackMutex_);
-    fastStatusChangeCallback_ = callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        fastStatusChangeCallback_ = callback;
+    }
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    SetInnerStreamFastStatusChangeCallback(currentStream);
 }
 
 bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
@@ -2576,6 +2581,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     CHECK_AND_RETURN_RET_LOG(audioStream, false, "stream is nullptr");
 
     SetSwitchInfoInner(info, audioStream);
+    SetInnerStreamFastStatusChangeCallback(audioStream);
 
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, false,
@@ -2624,6 +2630,7 @@ void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudi
 {
     audioStream_ = newAudioStream;
     audioStream_->GetRendererInfo(rendererInfo_);
+    SetInnerStreamFastStatusChangeCallback(audioStream_);
     RegisterRendererPolicyServiceDiedCallback(audioStream_);
     if (audioInterruptCallback_ != nullptr) {
         std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl =
@@ -3451,10 +3458,30 @@ void AudioRendererPrivate::FastStatusChangeCallback(FastStatus status)
 {
     FastStatus newStatus = GetFastStatusInner();
     if (newStatus != status) {
-        if (fastStatusChangeCallback_ != nullptr) {
-            fastStatusChangeCallback_->OnFastStatusChange(newStatus);
-        }
+        NotifyFastStatusChange(newStatus);
     }
+}
+
+void AudioRendererPrivate::NotifyFastStatusChange(FastStatus status)
+{
+    std::shared_ptr<AudioRendererFastStatusChangeCallback> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(callback != nullptr, "fastStatusChangeCallback_ is nullptr");
+    callback->OnFastStatusChange(status);
+}
+
+void AudioRendererPrivate::SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    CHECK_AND_RETURN_LOG(audioStream != nullptr, "audioStream is nullptr");
+    std::weak_ptr<AudioRendererPrivate> weakRenderer = weak_from_this();
+    audioStream->SetFastStatusChangeCallback([weakRenderer] (FastStatus status) {
+        auto renderer = weakRenderer.lock();
+        CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is nullptr");
+        renderer->NotifyFastStatusChange(status);
+    });
 }
 
 void FormatUnsupportedErrorCallbackImpl::OnFormatUnsupportedError(const AudioErrors &errorCode)

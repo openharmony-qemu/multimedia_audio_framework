@@ -133,6 +133,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer for UPDATE_SPANSIZE failed:%{public}d", ret);
         AUDIO_INFO_LOG("UPDATE_SPANSIZE sessionId:%{public}u spanSizeInFrame:%{public}u cacheSizeInFrame:%{public}u",
             sessionId_, spanSizeInFrame_, cacheSizeInFrame_.load());
+        NotifyFastStatusChange(static_cast<FastStatus>(result));
         return SUCCESS;
     }
 
@@ -217,6 +218,8 @@ void RendererInClientInner::CheckInnerCapVoIP()
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
+    fastStatus_.store(IsFastStream() ? FASTSTATUS_FAST : FASTSTATUS_NORMAL);
+    fastStatusNotified_.store(false);
 
     rendererInfo_.sceneType = AudioManagerUtil::GetEffectSceneName(rendererInfo_.streamUsage);
 
@@ -2099,10 +2102,41 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus RendererInClientInner::GetFastStatus()
 {
+    if (fastStatusNotified_.load()) {
+        return fastStatus_.load();
+    }
     if (IsFastStream()) {
         return FASTSTATUS_FAST;
     }
     return FASTSTATUS_NORMAL;
+}
+
+void RendererInClientInner::SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback)
+{
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
+void RendererInClientInner::NotifyFastStatusChange(FastStatus status)
+{
+    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL) {
+        AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
+        return;
+    }
+    FastStatus oldStatus = GetFastStatus();
+    fastStatus_.store(status);
+    fastStatusNotified_.store(true);
+    if (oldStatus == status) {
+        return;
+    }
+
+    std::function<void(FastStatus)> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(static_cast<bool>(callback), "fast status change callback is null");
+    callback(status);
 }
 
 DeviceType RendererInClientInner::GetDefaultOutputDevice()

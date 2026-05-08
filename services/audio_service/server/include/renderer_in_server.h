@@ -181,7 +181,7 @@ public:
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
-    int32_t RefreshServerBufferForSpanSizeUpdate();
+    int32_t RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
 

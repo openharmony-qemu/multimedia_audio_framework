@@ -46,6 +46,7 @@ public:
     virtual int32_t DropBuffer() = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
     virtual void TriggerAppsUidUpdate() { return; }
+    virtual uint32_t GetRouteFlag() const noexcept { return 0; }
 };
 } // namespace AudioStandard
 } // namespace OHOS

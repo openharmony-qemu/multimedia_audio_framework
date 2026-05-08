@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cinttypes>
 #include <condition_variable>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <mutex>
@@ -215,6 +216,7 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     DeviceType GetDefaultOutputDevice() override;
     FastStatus GetFastStatus() override;
+    void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback) override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
     void GetRestoreInfo(RestoreInfo &restoreInfo) override;
@@ -263,6 +265,7 @@ private:
     void InitDfxOperation();
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
+    void NotifyFastStatusChange(FastStatus status);
 
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
@@ -329,6 +332,10 @@ private:
     // callbacks
     std::mutex streamCbMutex_;
     std::weak_ptr<AudioStreamCallback> streamCallback_;
+    std::mutex fastStatusChangeCallbackMutex_;
+    std::function<void(FastStatus)> fastStatusChangeCallback_;
+    std::atomic<FastStatus> fastStatus_ = FASTSTATUS_NORMAL;
+    std::atomic<bool> fastStatusNotified_ = false;
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;

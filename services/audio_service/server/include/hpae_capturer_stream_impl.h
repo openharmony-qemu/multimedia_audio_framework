@@ -53,8 +53,11 @@ public:
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     void TriggerAppsUidUpdate() override;
+    uint32_t GetRouteFlag() const noexcept override;
 
 private:
+
+    int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
@@ -78,6 +81,7 @@ private:
     uint64_t framesRead_ = 0;
     uint64_t timestamp_ = 0;
     uint64_t latency_ = 0;
+    std::atomic<uint32_t> routeFlag_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

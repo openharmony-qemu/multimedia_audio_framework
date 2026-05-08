@@ -350,7 +350,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             OnCheckActiveMusicTime("Stopped");
             break;
         case OPERATION_UPDATE_SPANSIZE:
-            RefreshServerBufferForSpanSizeUpdate();
+            RefreshServerBufferForSpanSizeUpdate(stateListener);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -1276,7 +1276,7 @@ void RendererInServer::UpdateStreamStatusByRendererState()
     }
 }
 
-int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
+int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
     std::lock_guard<std::mutex> lock(writeLock_);
     AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate begin, sessionId:%{public}u oldSpan:%{public}zu",
@@ -1311,10 +1311,12 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
 
-    if (newRouteFlag != 0 && newRouteFlag != processConfig_.rendererInfo.rendererFlags) {
+    if (newRouteFlag != processConfig_.rendererInfo.rendererFlags) {
         AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
             processConfig_.rendererInfo.rendererFlags, newRouteFlag);
         processConfig_.rendererInfo.rendererFlags = newRouteFlag;
+        stateListener->OnOperationHandled(UPDATE_SPANSIZE, newRouteFlag == AUDIO_FLAG_NORMAL ?
+            FASTSTATUS_NORMAL : FASTSTATUS_FAST);
     }
 
     spanSizeInFrame_ = newSpanSizeInFrame;

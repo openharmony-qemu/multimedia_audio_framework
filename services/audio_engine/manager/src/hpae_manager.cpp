@@ -1989,6 +1989,14 @@ int32_t HpaeManager::GetStreamRouteFlag(HpaeStreamClassType streamClassType, uin
             return SUCCESS;
         }
     }
+    if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
+        capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
+        std::string sinkName = capturerIdSourceNameMap_[sessionId];
+        if (capturerManagerMap_.find(sinkName) != capturerManagerMap_.end()) {
+            routeFlag = capturerManagerMap_[sinkName]->GetSourceInfo().routeFlag;
+            return SUCCESS;
+        }
+    }
     return ERR_INVALID_OPERATION;
 }
 
