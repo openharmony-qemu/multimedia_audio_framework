@@ -806,7 +806,9 @@ void AudioVolume::SetPipeVolume(PipeVolume &pipeVolume)
             "isMuted:%{public}d, pipeVolumeSize:%{public}zu (updated)",  volumeType, pipeVolume.GetPipeId(),
             pipeVolume.GetVolume(), pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted(), pipeVolume_.size());
     } else {
-        pipeVolume_[key] = std::make_shared<PipeVolume>(pipeVolume);
+        pipeVolume_[key] = std::make_shared<PipeVolume>(
+            pipeVolume.GetPipeId(), volumeType, pipeVolume.GetVolume(), 
+            pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted());
         
         AUDIO_INFO_LOG("volumeType:%{public}d, pipeId:%{public}d,volume:%{public}f, noMuteVolumeLevel:%{public}d,"
             "isMuted:%{public}d, pipeVolumeSize:%{public}zu (created)",  volumeType, pipeVolume.GetPipeId(),

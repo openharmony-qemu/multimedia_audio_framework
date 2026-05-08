@@ -159,36 +159,8 @@ public:
         streamUsage_(streamUsage), appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp),
         isVirtualKeyboard_(isVKB) {volumeMode_ = static_cast<AudioVolumeMode>(mode);};
     
-    StreamVolume(const StreamVolume& other)
-        : sessionId_(other.sessionId_), streamType_(other.streamType_),
-        streamUsage_(other.streamUsage_), appUid_(other.appUid_), appPid_(other.appPid_),
-        isSystemApp_(other.isSystemApp_), volumeMode_(other.volumeMode_),
-        isVirtualKeyboard_(other.isVirtualKeyboard_), volume_(other.volume_),
-        duckFactor_(other.duckFactor_), lowPowerFactor_(other.lowPowerFactor_),
-        appVolume_(other.appVolume_), systemAppVolume_(other.systemAppVolume_),
-        isMuted_(other.isMuted_), nonInterruptMute_(other.nonInterruptMute_),
-        isAppRingMuted_(other.isAppRingMuted_), isDualMuted_(other.isDualMuted_),
-        totalVolume_{other.totalVolume_.load(std::memory_order_acquire)},
-        historyVolume_{other.historyVolume_.load(std::memory_order_acquire)},
-        durationMs_{other.durationMs_.load(std::memory_order_acquire)},
-        monitorVolume_{other.monitorVolume_.load(std::memory_order_acquire)},
-        monitorVolumeLevel_{other.monitorVolumeLevel_.load(std::memory_order_acquire)} {}
-    
-    StreamVolume(StreamVolume&& other) noexcept
-        : sessionId_(other.sessionId_), streamType_(other.streamType_),
-        streamUsage_(other.streamUsage_), appUid_(other.appUid_), appPid_(other.appPid_),
-        isSystemApp_(other.isSystemApp_), volumeMode_(other.volumeMode_),
-        isVirtualKeyboard_(other.isVirtualKeyboard_), volume_(other.volume_),
-        duckFactor_(other.duckFactor_), lowPowerFactor_(other.lowPowerFactor_),
-        appVolume_(other.appVolume_), systemAppVolume_(other.systemAppVolume_),
-        isMuted_(other.isMuted_), nonInterruptMute_(other.nonInterruptMute_),
-        isAppRingMuted_(other.isAppRingMuted_), isDualMuted_(other.isDualMuted_),
-        totalVolume_{other.totalVolume_.load(std::memory_order_acquire)},
-        historyVolume_{other.historyVolume_.load(std::memory_order_acquire)},
-        durationMs_{other.durationMs_.load(std::memory_order_acquire)},
-        monitorVolume_{other.monitorVolume_.load(std::memory_order_acquire)},
-        monitorVolumeLevel_{other.monitorVolumeLevel_.load(std::memory_order_acquire)} {}
-    
+    StreamVolume(const StreamVolume&) = delete;
+    StreamVolume(StreamVolume&&) = delete;
     StreamVolume& operator=(const StreamVolume&) = delete;
     StreamVolume& operator=(StreamVolume&&) = delete;
     
@@ -260,20 +232,8 @@ public:
         : pipeId_(pipeId), volumeType_(volumeType), noMuteVolumeLevel_{noMuteVolumeLevel},
         isMuted_{isMuted}, volume_{volume}, totalVolume_{isMuted ? 0.0f : volume} {};
     
-    PipeVolume(const PipeVolume& other)
-        : pipeId_(other.pipeId_), volumeType_(other.volumeType_),
-        noMuteVolumeLevel_{other.noMuteVolumeLevel_.load(std::memory_order_acquire)},
-        isMuted_{other.isMuted_.load(std::memory_order_acquire)},
-        volume_{other.volume_.load(std::memory_order_acquire)},
-        totalVolume_{other.totalVolume_.load(std::memory_order_acquire)} {}
-    
-    PipeVolume(PipeVolume&& other) noexcept
-        : pipeId_(other.pipeId_), volumeType_(other.volumeType_),
-        noMuteVolumeLevel_{other.noMuteVolumeLevel_.load(std::memory_order_acquire)},
-        isMuted_{other.isMuted_.load(std::memory_order_acquire)},
-        volume_{other.volume_.load(std::memory_order_acquire)},
-        totalVolume_{other.totalVolume_.load(std::memory_order_acquire)} {}
-    
+    PipeVolume(const PipeVolume&) = delete;
+    PipeVolume(PipeVolume&&) = delete;
     PipeVolume& operator=(const PipeVolume&) = delete;
     PipeVolume& operator=(PipeVolume&&) = delete;
     
