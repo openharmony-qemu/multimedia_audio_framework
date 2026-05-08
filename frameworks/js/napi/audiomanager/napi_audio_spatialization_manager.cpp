@@ -157,7 +157,7 @@ napi_value NapiAudioSpatializationManager::Init(napi_env env, napi_value exports
     const int32_t refCount = 1;
     napi_get_undefined(env, &result);
 
-    napi_property_descriptor audio_spatialization_manager_properties[] = {
+    napi_property_descriptor audio_spatial_manager_properties[] = {
         DECLARE_NAPI_FUNCTION("isSpatializationEnabled", IsSpatializationEnabled),
         DECLARE_NAPI_FUNCTION("setSpatializationEnabled", SetSpatializationEnabled),
         DECLARE_NAPI_FUNCTION("isHeadTrackingEnabled", IsHeadTrackingEnabled),
@@ -192,15 +192,13 @@ napi_value NapiAudioSpatializationManager::Init(napi_env env, napi_value exports
     };
 
     status = napi_define_class(env, AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
-        nullptr,
-        sizeof(audio_spatialization_manager_properties) / sizeof(audio_spatialization_manager_properties[PARAM0]),
-        audio_spatialization_manager_properties, &constructor);
+        nullptr, sizeof(audio_spatial_manager_properties) / sizeof(audio_spatial_manager_properties[PARAM0]),
+        audio_spatial_manager_properties, &constructor);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_define_class fail");
 
     status = napi_create_reference(env, constructor, refCount, &g_spatializationManagerConstructor);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_create_reference fail");
-    status = napi_set_named_property(env, exports, AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME.c_str(),
-        constructor);
+    status = napi_set_named_property(env, exports, AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME.c_str(), constructor);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_set_named_property fail");
     return exports;
 }
