@@ -810,10 +810,25 @@ void AudioVolume::SetPipeVolume(PipeVolume &pipeVolume)
 #endif
     std::string key = std::to_string(pipeVolume.GetPipeId()) + "|" + std::to_string(volumeType);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    pipeVolume_[key] = std::make_shared<PipeVolume>(pipeVolume);
-    AUDIO_INFO_LOG("volumeType:%{public}d, pipeId:%{public}d,volume:%{public}f, noMuteVolumeLevel:%{public}d,"
-        "isMuted:%{public}d, pipeVolumeSize:%{public}zu",  volumeType, pipeVolume.GetPipeId(),
-        pipeVolume.GetVolume(), pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted(), pipeVolume_.size());
+    
+    auto it = pipeVolume_.find(key);
+    if (it != pipeVolume_.end()) {
+        it->second->SetVolume(pipeVolume.GetVolume());
+        it->second->SetIsMuted(pipeVolume.GetIsMuted());
+        it->second->SetNoMuteVolumeLevel(pipeVolume.GetNoMuteVolumeLevel());
+        float totalVolume = pipeVolume.GetIsMuted() ? 0.0f : pipeVolume.GetVolume();
+        it->second->SetTotalVolume(totalVolume);
+        
+        AUDIO_INFO_LOG("volumeType:%{public}d, pipeId:%{public}d,volume:%{public}f, noMuteVolumeLevel:%{public}d,"
+            "isMuted:%{public}d, pipeVolumeSize:%{public}zu (updated)",  volumeType, pipeVolume.GetPipeId(),
+            pipeVolume.GetVolume(), pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted(), pipeVolume_.size());
+    } else {
+        pipeVolume_[key] = std::make_shared<PipeVolume>(pipeVolume);
+        
+        AUDIO_INFO_LOG("volumeType:%{public}d, pipeId:%{public}d,volume:%{public}f, noMuteVolumeLevel:%{public}d,"
+            "isMuted:%{public}d, pipeVolumeSize:%{public}zu (created)",  volumeType, pipeVolume.GetPipeId(),
+            pipeVolume.GetVolume(), pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted(), pipeVolume_.size());
+    }
 }
 
 void AudioVolume::SetPipeVolumeMute(uint32_t pipeId, AudioVolumeType volumeType, bool isMuted)
