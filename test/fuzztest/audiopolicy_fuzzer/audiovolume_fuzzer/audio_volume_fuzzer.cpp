@@ -117,7 +117,7 @@ void GetDoNotDisturbStatusVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeTest->isDoNotDisturbStatus_ = GetData<uint8_t>() % NUM_2;
     bool isSystemApp = GetData<uint8_t>() % NUM_2;
     bool isVKB = GetData<uint8_t>() % NUM_2;
-    audioVolumeTest->streamVolume_.insert({sessionId, 
+    audioVolumeTest->streamVolume_.insert({sessionId,
         std::make_shared<StreamVolume>(0, 0, 0, 0, 0, isSystemApp, 0, isVKB)});
     audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
 }
@@ -293,7 +293,7 @@ void MonitorFuzzTest(FuzzedDataProvider& fdp)
     bool isSystemApp = GetData<int32_t>() % NUM_2;
     int32_t mode = GetData<int32_t>();
     bool isVKB = GetData<int32_t>() % NUM_2;
-    audioVolume->streamVolume_.insert({sessionId, 
+    audioVolume->streamVolume_.insert({sessionId,
         std::make_shared<StreamVolume>(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
     audioVolume->Monitor(sessionId, GetData<int32_t>() % NUM_2);
 }
@@ -391,7 +391,7 @@ void SetDualStreamVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
     bool isSystemApp = GetData<uint8_t>() % NUM_2;
     int32_t mode = GetData<int32_t>();
     bool isVKB = GetData<uint8_t>() % NUM_2;
-    audioVolumeTest->streamVolume_.insert({sessionId, 
+    audioVolumeTest->streamVolume_.insert({sessionId,
         std::make_shared<StreamVolume>(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
     bool isDualMuted = GetData<uint8_t>() % NUM_2;
     audioVolumeTest->SetDualStreamVolumeMute(sessionId, isDualMuted);
@@ -407,7 +407,7 @@ void SetAppRingMutedFuzzTest(FuzzedDataProvider& fdp)
     bool isSystemApp = GetData<uint8_t>() % NUM_2;
     int32_t mode = GetData<int32_t>();
     bool isVKB = GetData<uint8_t>() % NUM_2;
-    audioVolumeTest->streamVolume_.insert({sessionId, 
+    audioVolumeTest->streamVolume_.insert({sessionId,
         std::make_shared<StreamVolume>(sessionId, STREAM_RING, streamUsage, appUid, pid, isSystemApp, mode, isVKB)});
     bool isMuted = GetData<uint8_t>() % NUM_2;
     audioVolumeTest->SetAppRingMuted(appUid, isMuted);
@@ -424,7 +424,7 @@ void GetDurationMsFuzzTest(FuzzedDataProvider& fdp)
     bool isSystemApp = GetData<uint8_t>() % NUM_2;
     int32_t mode = GetData<int32_t>();
     bool isVKB = GetData<uint8_t>() % NUM_2;
-    audioVolumeTest->streamVolume_.insert({sessionId, 
+    audioVolumeTest->streamVolume_.insert({sessionId,
         std::make_shared<StreamVolume>(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
     float volume = GetData<float>();
     uint32_t durationMs = GetData<uint32_t>();

@@ -89,7 +89,7 @@ public:
     void SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
     uint32_t GetStopFadeoutState(uint32_t streamIndex);
     void RemoveStopFadeoutState(uint32_t streamIndex);
-    
+
     void SetDefaultAppVolume(int32_t level);
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
@@ -110,9 +110,9 @@ public:
     std::set<int32_t> GetStreamVolumeAppUids();
     int32_t GetStreamAndPipeVolume(uint32_t sessionId, int32_t streamType, uint32_t pipeId,
         std::shared_ptr<StreamVolume> &streamVolume, std::shared_ptr<PipeVolume> &pipeVolume);
-    float GetVolume(const std::shared_ptr<StreamVolume>& streamVolume, 
+    float GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
         const std::shared_ptr<PipeVolume>& pipeVolume, VolumeValues *volumes);
-    
+
 private:
     AudioVolume();
     // MUST be called with volumeMutex_ held
@@ -158,12 +158,12 @@ public:
         bool isSystemApp, int32_t mode, bool isVKB) : sessionId_(sessionId), streamType_(streamType),
         streamUsage_(streamUsage), appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp),
         isVirtualKeyboard_(isVKB) {volumeMode_ = static_cast<AudioVolumeMode>(mode);};
-    
+
     StreamVolume(const StreamVolume&) = delete;
     StreamVolume(StreamVolume&&) = delete;
     StreamVolume& operator=(const StreamVolume&) = delete;
     StreamVolume& operator=(StreamVolume&&) = delete;
-    
+
     ~StreamVolume() = default;
     uint32_t GetSessionId() const {return sessionId_;};
     int32_t GetStreamType() const {return streamType_;};
@@ -173,25 +173,25 @@ public:
     bool IsSystemApp() const {return isSystemApp_;};
     AudioVolumeMode GetVolumeMode() const {return volumeMode_;};
     bool IsVirtualKeyboard() const {return isVirtualKeyboard_;};
-    
+
     float GetTotalVolume() const { return totalVolume_.load(std::memory_order_acquire); }
     float GetHistoryVolume() const { return historyVolume_.load(std::memory_order_acquire); }
     uint32_t GetDurationMs() const { return durationMs_.load(std::memory_order_acquire); }
     float GetMonitorVolume() const { return monitorVolume_.load(std::memory_order_acquire); }
     int32_t GetMonitorVolumeLevel() const { return monitorVolumeLevel_.load(std::memory_order_acquire); }
-    
+
     void SetHistoryVolumeAtomic(float vol, uint32_t duration) {
         historyVolume_.store(vol, std::memory_order_release);
         durationMs_.store(duration, std::memory_order_release);
     }
-    
+
     void SetMonitorVolumeAtomic(float vol, int32_t level) {
         monitorVolume_.store(vol, std::memory_order_release);
         monitorVolumeLevel_.store(level, std::memory_order_release);
     }
-    
+
     mutable std::shared_mutex volumeFactorsMutex_;
-    
+
 public:
     // Volume factors, protected by volumeFactorsMutex_
     float volume_ = 1.0f;
@@ -231,21 +231,21 @@ public:
         bool isMuted)
         : pipeId_(pipeId), volumeType_(volumeType), noMuteVolumeLevel_{noMuteVolumeLevel},
         isMuted_{isMuted}, volume_{volume}, totalVolume_{isMuted ? 0.0f : volume} {};
-    
+
     PipeVolume(const PipeVolume&) = delete;
     PipeVolume(PipeVolume&&) = delete;
     PipeVolume& operator=(const PipeVolume&) = delete;
     PipeVolume& operator=(PipeVolume&&) = delete;
-    
+
     ~PipeVolume() = default;
     AudioVolumeType GetVolumeType() const {return volumeType_;};
     int32_t GetPipeId() const {return pipeId_;};
-    
+
     float GetTotalVolume() const { return totalVolume_.load(std::memory_order_acquire); }
     float GetVolume() const { return volume_.load(std::memory_order_acquire); }
     bool GetIsMuted() const { return isMuted_.load(std::memory_order_acquire); }
     int32_t GetNoMuteVolumeLevel() const { return noMuteVolumeLevel_.load(std::memory_order_acquire); }
-    
+
     void SetTotalVolume(float vol) { totalVolume_.store(vol, std::memory_order_release); }
     void SetVolume(float vol) { volume_.store(vol, std::memory_order_release); }
     void SetIsMuted(bool muted) { isMuted_.store(muted, std::memory_order_release); }

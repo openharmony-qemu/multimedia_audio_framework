@@ -139,7 +139,7 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
         streamVolume->SetMonitorVolumeAtomic(volumes->volume, volumeLevel);
         HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,pipeId:%{public}d,"
             "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
-            "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", streamVolume->GetSessionId(), 
+            "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", streamVolume->GetSessionId(),
             volumes->volume, pipeVolume->GetPipeId(), volumes->volumePipe, volumes->volumeStream, volumes->volumeApp,
             streamVolume->IsVirtualKeyboard(), pipeVolume->GetIsMuted() ? "T" : "F",
             doNotDisturbStatusVolume, mdmMuteFactor);
@@ -223,7 +223,8 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
             "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
             "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", sessionId, volumes->volume, volumeType,
             pipeId, volumes->volumePipe, volumes->volumeStream, volumes->volumeApp,
-            it->second->IsVirtualKeyboard(), itSV != pipeVolume_.end() ? (itSV->second->GetIsMuted() ? "T" : "F") : "null",
+            it->second->IsVirtualKeyboard(),
+            itSV != pipeVolume_.end() ? (itSV->second->GetIsMuted() ? "T" : "F") : "null",
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
     Trace trace("AudioVolume::GetVolume " + std::to_string(volumes->volume));
@@ -249,7 +250,7 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolumeInternal(int32_t volumeType, in
         return DISTURB_STATE_VOLUME_UNMUTE;
     }
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
-    
+
     auto whiteList = std::atomic_load(&doNotDisturbStatusWhiteList_);
     if (whiteList && whiteList->count(static_cast<uint32_t>(appUid))) {
         // this stream of app is in whiteList, unMute
@@ -270,24 +271,24 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolumeFromStream(
     if (!isDoNotDisturbStatus_.load(std::memory_order_acquire)) {
         return DISTURB_STATE_VOLUME_UNMUTE;
     }
-    
+
     if (volumeType == STREAM_SYSTEM || volumeType == STREAM_DTMF) {
         return DISTURB_STATE_VOLUME_MUTE;
     }
-    
+
     if (stream.IsSystemApp() || static_cast<uint32_t>(appUid) == VOIP_CALL_VOICE_SERVICE) {
         return DISTURB_STATE_VOLUME_UNMUTE;
     }
-    
+
     auto whiteList = std::atomic_load(&doNotDisturbStatusWhiteList_);
-    
+
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(
         static_cast<AudioStreamType>(volumeType));
-    
+
     if (whiteList && whiteList->count(static_cast<uint32_t>(appUid))) {
         return DISTURB_STATE_VOLUME_UNMUTE;
     }
-    
+
     if (volumeMapType != STREAM_RING && volumeMapType != STREAM_NOTIFICATION) {
         return DISTURB_STATE_VOLUME_UNMUTE;
     } else {
@@ -299,15 +300,15 @@ void AudioVolume::SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std:
     doNotDisturbStatusWhiteList)
 {
     auto newWhiteList = std::make_shared<std::unordered_set<uint32_t>>();
-    
+
     for (const auto& obj : doNotDisturbStatusWhiteList) {
         for (const auto& [key, val] : obj) {
             newWhiteList->insert(static_cast<uint32_t>(atoi(key.c_str())));
         }
     }
-    
+
     std::atomic_store(&doNotDisturbStatusWhiteList_, newWhiteList);
-    
+
     AUDIO_INFO_LOG("DoNotDisturb whitelist updated, size: %{public}zu", newWhiteList->size());
 }
 
@@ -332,7 +333,7 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
         it->second->isMuted_ || it->second->nonInterruptMute_ || it->second->isDualMuted_ ?
         0.0f : it->second->volume_ * it->second->duckFactor_ * it->second->lowPowerFactor_;
     factorsLock.unlock();
-    
+
     if (!IsSameVolume(it->second->GetMonitorVolume(), volumeStream)) {
         it->second->SetMonitorVolumeAtomic(volumeStream, 0);
         AUDIO_INFO_LOG("volume, sessionId:%{public}u, stream volume:%{public}f", sessionId, volumeStream);
@@ -387,8 +388,8 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
     auto it = streamVolume_.find(streamVolumeParams.sessionId);
     if (it == streamVolume_.end()) {
         streamVolume_.emplace(streamVolumeParams.sessionId,
-            std::make_shared<StreamVolume>(streamVolumeParams.sessionId, streamVolumeParams.streamType, 
-                streamVolumeParams.streamUsage, streamVolumeParams.uid, streamVolumeParams.pid, 
+            std::make_shared<StreamVolume>(streamVolumeParams.sessionId, streamVolumeParams.streamType,
+                streamVolumeParams.streamUsage, streamVolumeParams.uid, streamVolumeParams.pid,
                 streamVolumeParams.isSystemApp, streamVolumeParams.mode, streamVolumeParams.isVKB));
     } else {
         HILOG_COMM_ERROR("[AddStreamVolume] stream volume already exist, sessionId:%{public}u",
@@ -649,7 +650,7 @@ bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
             stream->isAppRingMuted_ = isMuted;
             stream->appVolume_ = totalAppVolume;
             float newTotal = (stream->isMuted_ || stream->isAppRingMuted_) ? 0.0f : stream->volume_ *
-                stream->duckFactor_ * stream->lowPowerFactor_ * stream->appVolume_ * 
+                stream->duckFactor_ * stream->lowPowerFactor_ * stream->appVolume_ *
                 GetSystemAppVolumeEffective(*stream);
             factorsLock.unlock();
             stream->totalVolume_.store(newTotal, std::memory_order_release);
@@ -793,7 +794,7 @@ void AudioVolume::SetPipeVolume(PipeVolume &pipeVolume)
 #endif
     std::string key = std::to_string(pipeVolume.GetPipeId()) + "|" + std::to_string(volumeType);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    
+
     auto it = pipeVolume_.find(key);
     if (it != pipeVolume_.end()) {
         it->second->SetVolume(pipeVolume.GetVolume());
@@ -801,15 +802,15 @@ void AudioVolume::SetPipeVolume(PipeVolume &pipeVolume)
         it->second->SetNoMuteVolumeLevel(pipeVolume.GetNoMuteVolumeLevel());
         float totalVolume = pipeVolume.GetIsMuted() ? 0.0f : pipeVolume.GetVolume();
         it->second->SetTotalVolume(totalVolume);
-        
+
         AUDIO_INFO_LOG("volumeType:%{public}d, pipeId:%{public}d,volume:%{public}f, noMuteVolumeLevel:%{public}d,"
             "isMuted:%{public}d, pipeVolumeSize:%{public}zu (updated)",  volumeType, pipeVolume.GetPipeId(),
             pipeVolume.GetVolume(), pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted(), pipeVolume_.size());
     } else {
         pipeVolume_[key] = std::make_shared<PipeVolume>(
-            pipeVolume.GetPipeId(), volumeType, pipeVolume.GetVolume(), 
+            pipeVolume.GetPipeId(), volumeType, pipeVolume.GetVolume(),
             pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted());
-        
+
         AUDIO_INFO_LOG("volumeType:%{public}d, pipeId:%{public}d,volume:%{public}f, noMuteVolumeLevel:%{public}d,"
             "isMuted:%{public}d, pipeVolumeSize:%{public}zu (created)",  volumeType, pipeVolume.GetPipeId(),
             pipeVolume.GetVolume(), pipeVolume.GetNoMuteVolumeLevel(), pipeVolume.GetIsMuted(), pipeVolume_.size());
@@ -875,7 +876,7 @@ void AudioVolume::Dump(std::string &dumpString)
     for (auto &pipeVolume : pipeVolume_) {
         pipeVolumeList.push_back(pipeVolume.second);
     }
-    std::sort(pipeVolumeList.begin(), pipeVolumeList.end(), 
+    std::sort(pipeVolumeList.begin(), pipeVolumeList.end(),
         [](std::shared_ptr<PipeVolume> &a, std::shared_ptr<PipeVolume> &b) {
         return a->GetVolumeType() < b->GetVolumeType();
     });
@@ -893,7 +894,7 @@ void AudioVolume::Dump(std::string &dumpString)
     for (auto &streamVolume : streamVolume_) {
         streamVolumeList.push_back(streamVolume.second);
     }
-    std::sort(streamVolumeList.begin(), streamVolumeList.end(), 
+    std::sort(streamVolumeList.begin(), streamVolumeList.end(),
         [](std::shared_ptr<StreamVolume> &a, std::shared_ptr<StreamVolume> &b) {
         return a->GetSessionId() < b->GetSessionId();
     });
@@ -1070,7 +1071,7 @@ bool AudioVolume::ShouldApplySystemAppVolume(AudioStreamType streamType)
 void AudioVolume::HandleAppIndividualVolumeSettingChanged(bool appIndividualVolumeEnabled)
 {
     appIndividualVolumeEnabled_ = appIndividualVolumeEnabled;
-    
+
     // Recalculate the volume of all streams.
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
