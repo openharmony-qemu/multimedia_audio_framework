@@ -2724,11 +2724,8 @@ int32_t AudioPolicyServer::VerifyUidAndPid(const int32_t uid, const int32_t pid)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::ActivateAudioInterrupt(
-    const AudioInterrupt &audioInterruptIn, int32_t zoneID, bool isUpdatedAudioStrategy)
+int32_t AudioPolicyServer::ValidateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
-    Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
-    AudioInterrupt audioInterrupt = audioInterruptIn;
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     if (interruptService_ == nullptr) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -2743,6 +2740,16 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
             isRecord ? RECORD_INTERRUPT_START_INVALID_PARAM : INTERRUPT_START_INVALID_PARAM,
             "ActivateAudioInterrupt VerifyUidAndPid failed", false),
         "VerifyUidAndPid failed");
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterruptIn, int32_t zoneID, bool isUpdatedAudioStrategy)
+{
+    Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
+    AudioInterrupt audioInterrupt = audioInterruptIn;
+    int32_t validateRet = ValidateAudioInterrupt(audioInterrupt);
+    CHECK_AND_RETURN_RET(validateRet == SUCCESS, validateRet);
 
     auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
         audioInterrupt.audioFocusType.streamType);
@@ -2822,7 +2829,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
             ERR_UNKNOWN,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 isRecord ? RECORD_INTERRUPT_STOP_INVALID_PARAM : INTERRUPT_STOP_INVALID_PARAM,
-                "DeactivateAudioInterrupt VerifyUidAndPid failed", false);
+                "DeactivateAudioInterrupt VerifyUidAndPid failed", false),
             "VerifyUidAndPid failed");
 
         int32_t zoneId = interruptService_->FindAudioZoneByStreamId(audioInterrupt.streamId);

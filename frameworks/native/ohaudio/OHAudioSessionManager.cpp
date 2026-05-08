@@ -594,8 +594,7 @@ OH_AudioCommon_Result OHAudioSessionManager::ActivateAudioSession(const AudioSes
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            SESSION_START_ILLEGAL_STATE, "ActivateAudioSession failed", true),
-            "ActivateAudioSession failed");
+            SESSION_START_ILLEGAL_STATE, "ActivateAudioSession failed", true);
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
 }

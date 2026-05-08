@@ -825,6 +825,7 @@ private:
     void Init();
     int32_t HandleRouteSelectorCallbackEnable(bool enable);
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
+    int32_t ValidateAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
     // offload session
     void CheckSubscribePowerStateChange();

@@ -599,6 +599,8 @@ constexpr int32_t SESSION_QUERY_NULL_POINTER = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
 constexpr int32_t SESSION_FOCUS_EVENT_OPERATION_FAILED = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_OPERATION_FAILED);
+constexpr int32_t SESSION_FOCUS_EVENT_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_NULL_POINTER);
 
 // INTERRUPT Error Codes (PLAY type for AudioInterrupt playback)
 constexpr int32_t INTERRUPT_CALLBACK_INVALID_PARAM = BuildErrorCode(
@@ -615,8 +617,6 @@ constexpr int32_t INTERRUPT_START_NULL_POINTER = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_NULL_POINTER);
 constexpr int32_t INTERRUPT_START_FOCUS_DENIED = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_FOCUS_DENIED);
-constexpr int32_t INTERRUPT_STOP_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_OPERATION_FAILED);
 constexpr int32_t INTERRUPT_STOP_NULL_POINTER = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_NULL_POINTER);
 constexpr int32_t INTERRUPT_STOP_INVALID_PARAM = BuildErrorCode(
@@ -627,10 +627,6 @@ constexpr int32_t INTERRUPT_CONFIG_OPERATION_FAILED = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
 constexpr int32_t INTERRUPT_CONFIG_INVALID_PARAM = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_INVALID_PARAM);
-constexpr int32_t INTERRUPT_QUERY_ILLEGAL_STATE = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_ILLEGAL_STATE);
-constexpr int32_t INTERRUPT_QUERY_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
 constexpr int32_t INTERRUPT_QUERY_NULL_POINTER = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
 constexpr int32_t INTERRUPT_FOCUS_EVENT_OPERATION_FAILED = BuildErrorCode(
@@ -667,6 +663,7 @@ constexpr int32_t RECORD_INTERRUPT_QUERY_OPERATION_FAILED = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
 constexpr int32_t RECORD_INTERRUPT_QUERY_NULL_POINTER = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::QUERY, ERR_NULL_POINTER);
+
 // GENERAL_DEVICE_SWITCH
 constexpr int32_t ERR_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
     OperationType::GENERAL, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);

@@ -177,10 +177,7 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
     }
     lock.unlock();
 
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(gsp != nullptr, ERROR,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            SESSION_CALLBACK_NULL_POINTER, "AudioPolicy is nullptr", true),
-        "AudioPolicy is nullptr");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "AudioPolicy is nullptr");
     int32_t ret = gsp->RegisterPolicyCallbackClient(object, 0);
     if (ret == SUCCESS) {
         isAudioPolicyClientRegisted_ = true;
