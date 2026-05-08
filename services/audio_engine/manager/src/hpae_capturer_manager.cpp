@@ -210,6 +210,7 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
         auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
         if (collabInputCluster && sceneCluster->GetCapturerEffectConfig(collabNodeInfo,
             HPAE_SOURCE_BUFFER_TYPE_DEFAULT)) {
+            collabNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
             sceneCluster->DisConnectWithInfo(collabInputCluster, collabNodeInfo);
         }
     }
