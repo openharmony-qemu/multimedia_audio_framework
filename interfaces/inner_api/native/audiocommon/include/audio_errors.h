@@ -258,10 +258,10 @@ const int32_t ERR_BUFFER_TOO_SMALL = BASE_AUDIO_ERR_OFFSET - 63;
 const int32_t ERR_AUDIO_SUITE_WRITE_FAILED = BASE_AUDIO_ERR_OFFSET - 64;
 
 /** Time out when saving HRTF on disk */
-const int32_t ERR_SAVE_HRTF_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 66;
+const int32_t ERR_SAVE_HRTF_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 76;
 
 /** Fail to save HRTF on disk. */
-const int32_t ERR_SAVE_HRTF_FAIL = BASE_AUDIO_ERR_OFFSET - 67;
+const int32_t ERR_SAVE_HRTF_FAIL = BASE_AUDIO_ERR_OFFSET - 77;
 
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
