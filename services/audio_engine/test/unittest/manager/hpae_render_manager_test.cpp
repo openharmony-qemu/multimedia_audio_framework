@@ -3493,9 +3493,100 @@ HWTEST_F(HpaeRendererManagerTest, Pause_NonInterphone_001, TestSize.Level1)
     
     EXPECT_EQ(hpaeRendererManager->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
-    
+
     EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen with customSampleRate
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_004
+ * @tc.desc  : Test AdjustFrameLen uses customSampleRate instead of samplingRate
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_004, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 160;
+    inNodeInfo.samplingRate = SAMPLE_RATE_8000;
+    inNodeInfo.customSampleRate = 8010;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, true);
+    // 160 frames @ 8010Hz = 19ms, 960 frames @ 48000Hz = 20ms, different -> adjust
+    // outFrameLenUs = 960 * 1000 / 48000 = 20, inNodeInfo.frameLen = 20 * 8010 / 1000 = 160
+    EXPECT_EQ(inNodeInfo.frameLen, 160);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen divide by zero inRate
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_005
+ * @tc.desc  : Test AdjustFrameLen returns false when inRate is zero
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_005, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 960;
+    inNodeInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+    inNodeInfo.customSampleRate = 0;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen divide by zero outRate
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_006
+ * @tc.desc  : Test AdjustFrameLen returns false when outRate is zero
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_006, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 960;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+    outNodeInfo.customSampleRate = 0;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen with 11025Hz
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_007
+ * @tc.desc  : Test AdjustFrameLen with non-standard sample rate 11025Hz
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_007, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 220;
+    inNodeInfo.samplingRate = SAMPLE_RATE_11025;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, true);
+    // inFrameLenUs = 220 * 1000 / 11025 = 19, outFrameLenUs = 960 * 1000 / 48000 = 20
+    // 19 != 20, adjust: inNodeInfo.frameLen = 20 * 11025 / 1000 = 220
+    EXPECT_EQ(inNodeInfo.frameLen, 220);
 }
 }  // namespace

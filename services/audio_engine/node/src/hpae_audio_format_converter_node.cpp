@@ -136,8 +136,7 @@ void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *in
     // Step 1b: Pull-Ahead -- if not enough data accumulated and credit available, actively pull from upstream
     AudioChannelInfo inChannelInfo = channelConverter_.GetInChannelInfo();
     AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
-    bool needsAccumulation = (resampler_->GetInRate() != resampler_->GetOutRate()) ||
-        (inChannelInfo.numChannels != outChannelInfo.numChannels);
+    bool needsAccumulation = (resampler_->GetInRate() != resampler_->GetOutRate());
     AUDIO_DEBUG_LOG("NodeId %{public}d: inRate=%{public}u->outRate=%{public}u, "
         "inCh=%{public}u->outCh=%{public}u, inputFrameLen=%{public}u, unprocessedFrames=%{public}u, "
         "threshold=%{public}u, credit=%{public}u/%{public}u, needsAccumulation=%{public}d",
