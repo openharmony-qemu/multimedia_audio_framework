@@ -729,7 +729,7 @@ void RendererInClientInner::OnFirstFrameWriting()
     Trace trace("RendererInClientInner::OnFirstFrameWriting");
     AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
-    if (ipcStream_ != nullptr) {
+    if (IsFastStream() && ipcStream_ != nullptr) {
         ipcStream_->GetLatency(latency);
     }
 
