@@ -590,7 +590,7 @@ OH_AudioCommon_Result OHAudioSessionManager::ActivateAudioSession(const AudioSes
             SESSION_START_NULL_POINTER, "audioSessionManager_ is null", true),
         "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->ActivateAudioSession(strategy);
-    if (ret == 0) {	 
+    if (ret == 0) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -986,7 +986,8 @@ OH_AudioCommon_Result OHAudioSessionManager::SetCapturerMuteHint(bool mute)
         AUDIO_ERR_LOG("failed to SetCapturerMuteHint.");
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             ret == ERR_ILLEGAL_STATE ? RECORD_INTERRUPT_CONFIG_ILLEGAL_STATE :
-            (ret == ERR_INVALID_PARAM ? RECORD_INTERRUPT_CONFIG_INVALID_PARAM : RECORD_INTERRUPT_CONFIG_OPERATION_FAILED),
+            (ret == ERR_INVALID_PARAM ? RECORD_INTERRUPT_CONFIG_INVALID_PARAM :
+                RECORD_INTERRUPT_CONFIG_OPERATION_FAILED),
             "failed to SetCapturerMuteHint.", true);
         if (ret == ERROR_ILLEGAL_STATE || ret == ERR_ILLEGAL_STATE) {
             return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;

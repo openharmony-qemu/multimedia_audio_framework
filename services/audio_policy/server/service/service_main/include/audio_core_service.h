@@ -82,7 +82,8 @@ static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
 static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
     DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_EARPIECE
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_USB_ARM_HEADSET
 };
 struct ConcurrentCaptureDfxResult {
     std::vector<std::string> existingAppName{};

@@ -519,6 +519,8 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
 
     AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = getpid();
+    audioInterrupt.uid = getuid();
     int32_t zoneID = 456;
 
     int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);

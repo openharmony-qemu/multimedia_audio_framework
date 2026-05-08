@@ -420,6 +420,12 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
     }
 }
 
+std::vector<int32_t> AudioInterruptService::FindAudioZonesByPid(int32_t pid)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return zoneManager_.FindAudioZonesByPid(pid);
+}
+
 int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid,
     std::function<void()> onFakeInterruptDeactivate)
 {

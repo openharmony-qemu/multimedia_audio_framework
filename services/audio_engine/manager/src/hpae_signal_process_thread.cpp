@@ -16,10 +16,12 @@
 #include "audio_qosmanager.h"
 #include "parameter.h"
 #include "audio_engine_log.h"
+#include "audio_schedule.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+static constexpr int32_t CPU_INDEX = 2;
 HpaeSignalProcessThread::~HpaeSignalProcessThread()
 {
     DeactivateThread();
@@ -46,6 +48,31 @@ void HpaeSignalProcessThread::DeactivateThread()
     }
 }
 
+void HpaeSignalProcessThread::SetFastThread(bool isFast)
+{
+    isFastThread_ = isFast;
+}
+
+void HpaeSignalProcessThread::BindCore()
+{
+    if (coreBinded_) {
+        return;
+    }
+    cpu_set_t targetCpus;
+    CPU_ZERO(&targetCpus);
+    int32_t cpuNum = sysconf(_SC_NPROCESSORS_CONF);
+    for (int32_t i = CPU_INDEX; i < cpuNum; i++) {
+        CPU_SET(i, &targetCpus);
+    }
+    int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
+    if (ret != 0) {
+        HILOG_COMM_ERROR("[BindCore]set target cpu failed, ret: %{public}d", ret);
+        return;
+    }
+    AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
+    coreBinded_ = true;
+}
+
 void HpaeSignalProcessThread::Notify()
 {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -55,8 +82,16 @@ void HpaeSignalProcessThread::Notify()
 
 void HpaeSignalProcessThread::Run()
 {
-    int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
-    SetThreadQosLevelAsync(setPriority);
+    if (isFastThread_) {
+        BindCore();
+        bool setPriorityResult = SetEndpointThreadPriority();
+        if (!setPriorityResult) {
+            SetThreadQosLevel();
+        }
+    } else {
+        int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
+        SetThreadQosLevelAsync(setPriority);
+    }
     auto manager = streamManager_.lock();
     while (running_.load() && manager != nullptr) {
         {

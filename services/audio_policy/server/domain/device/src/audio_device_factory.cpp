@@ -25,6 +25,8 @@
 #include "audio_log.h"
 #include "audio_sco_device_behavior.h"
 #include "audio_sle_device_behavior.h"
+#include "stream_dfx_manager.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,7 +77,10 @@ int32_t AudioDeviceFactory::ActivateDevice(const std::shared_ptr<AudioStreamDesc
         HandleDeviceConflictLocked(deviceType);
     }
     auto result = deviceBehavior->ActivateDevice(streamDesc, reason);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "ActivateDevice failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, result,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_DEVICE_SWITCH_OPERATION_FAILED, "Active device failded", false),
+        "ActivateDevice failed");
 
     activatedDevices_[deviceDesc->deviceId_] = deviceDesc;
     return result;

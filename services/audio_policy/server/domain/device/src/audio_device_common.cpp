@@ -96,10 +96,12 @@ static const std::vector<std::string> SourceNames = {
     std::string(FILE_SOURCE),
     std::string(PRIMARY_AI_MIC),
     std::string(PRIMARY_UNPROCESS_MIC),
+    std::string(PRIMARY_LIVE_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
     std::string(PRIMARY_RAW_AI_MIC),
-    std::string(PRIMARY_INTERPHON_MIC)
+    std::string(PRIMARY_INTERPHON_MIC),
+    std::string(PRIMARY_CAMCORDER)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -376,11 +378,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     AudioAdapterManager::GetInstance().QueryDeviceVolumeBehavior(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
-#ifndef WIRELESS_DEFAULT_EXCLUDE
+
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
         make_shared<AudioDeviceDescriptor>(updatedDesc)};
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
-#endif
+
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     if (!NeedUpdatePreferredDevice(updatedDesc)) {

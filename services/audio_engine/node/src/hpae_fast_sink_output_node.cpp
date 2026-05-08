@@ -77,7 +77,6 @@ HpaeFastSinkOutputNode::~HpaeFastSinkOutputNode()
 
 void HpaeFastSinkOutputNode::DoProcess()
 {
-    BindCore();
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(dstAudioBuffer_ != nullptr, "dstAudioBuffer_ is nullptr");
     CHECK_AND_RETURN(!CheckIfSuspend());
@@ -856,26 +855,6 @@ void HpaeFastSinkOutputNode::SyncCurrentOutputDevice()
             GetSessionId(), currentOutputDevice_, outputDevice);
     }
     currentOutputDevice_ = outputDevice;
-}
-
-void HpaeFastSinkOutputNode::BindCore()
-{
-    if (coreBinded_) {
-        return;
-    }
-    cpu_set_t targetCpus;
-    CPU_ZERO(&targetCpus);
-    int32_t cpuNum = sysconf(_SC_NPROCESSORS_CONF);
-    for (int32_t i = CPU_INDEX; i < cpuNum; i++) {
-        CPU_SET(i, &targetCpus);
-    }
-    int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
-    if (ret != 0) {
-        HILOG_COMM_ERROR("[BindCore]set target cpu failed, ret: %{public}d", ret);
-        return;
-    }
-    AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
-    coreBinded_ = true;
 }
 
 void HpaeFastSinkOutputNode::InitLatencyMeasurement()

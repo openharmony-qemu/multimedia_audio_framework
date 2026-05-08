@@ -1068,6 +1068,17 @@ int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process
     return SUCCESS;
 }
 
+bool AudioService::DecideReleaseSink(std::shared_ptr<AudioEndpoint> endpoint)
+{
+    int32_t sinkType = endpoint->GetFastSinkType();
+    CHECK_AND_RETURN_RET(sinkType == static_cast<int32_t>(AudioEndpoint::FastSinkType::FAST_SINK_TYPE_ARM_USB), true);
+    int32_t sinkRefCount = 0;
+    for (const auto &[endpointName, endpoint] : endpointList_) {
+        sinkRefCount = endpoint->GetFastSinkType() == sinkType ? sinkRefCount + 1 : sinkRefCount;
+    }
+    return sinkRefCount > 1 ? false : true;
+}
+
 void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
 {
     std::lock_guard<std::mutex> lock(releaseEndpointMutex_);
@@ -1082,7 +1093,7 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
     std::shared_ptr<AudioEndpoint> temp = endpointList_[endpointName];
     if (temp->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
         AUDIO_INFO_LOG("%{public}s not in use anymore, call release!", endpointName.c_str());
-        temp->Release();
+        temp->Release(DecideReleaseSink(temp));
         temp = nullptr;
         endpointList_.erase(endpointName);
         return;

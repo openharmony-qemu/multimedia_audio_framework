@@ -27,6 +27,7 @@ config("bluetooth_client_private_config") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_policy/server/include/service/interface",
     "../../../../services/audio_service/client/include",
+    "../../../../services/audio_service/common/include/dfx",
   ]
 }
 
@@ -48,6 +49,7 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
 
   deps = [
     "../../audioutils:audio_utils",
+    "../../../../services/audio_service:audio_common",
   ]
 
   external_deps = [
@@ -84,6 +86,7 @@ ohos_unittest("bluetooth_hfp_manager_unit_test") {
   deps = [
     "../../audioutils:audio_utils",
     "../../../../services/audio_policy:audio_foundation",
+    "../../../../services/audio_service:audio_common",
   ]
 
   external_deps = [
@@ -121,6 +124,7 @@ ohos_unittest("bluetooth_a2dp_manager_unit_test") {
   deps = [
     "../../audioutils:audio_utils",
     "../../../../services/audio_policy:audio_foundation",
+    "../../../../services/audio_service:audio_common",
   ]
 
   external_deps = [

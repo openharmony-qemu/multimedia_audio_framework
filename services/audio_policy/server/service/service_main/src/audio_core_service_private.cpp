@@ -38,6 +38,7 @@
 #include "audio_bundle_manager.h"
 #include "parameters.h"
 #include "sco_audio_scene_manager.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -108,10 +109,12 @@ static const std::vector<std::string> SourceNames = {
     std::string(ACCESSORY_SOURCE),
     std::string(PRIMARY_AI_MIC),
     std::string(PRIMARY_UNPROCESS_MIC),
+    std::string(PRIMARY_LIVE_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
     std::string(PRIMARY_RAW_AI_MIC),
-    std::string(PRIMARY_INTERPHON_MIC)
+    std::string(PRIMARY_INTERPHON_MIC),
+    std::string(PRIMARY_CAMCORDER)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -1290,12 +1293,10 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
         : MoveToRemoteOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc);
-    if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("[MoveToNewOutputDevice]Move sink input %{public}d to device %{public}d failed!",
-            streamDesc->sessionId_, newDeviceDesc->deviceType_);
-        audioIOHandleMap_.NotifyUnmutePort();
-        return;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_HILOG(ret == SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "MoveToNewOutputDevice failed", false),
+        "[MoveToNewOutputDevice]Move sink faild!");
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
     if (pipeManager_->GetUpdateRouteSupport()) {
@@ -1398,7 +1399,10 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
     // start move.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, moduleName);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move [%{public}d] failed", sinkInputIds[i].streamId);
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "MoveToRemoteOutputDevice failed", false),
+            "move [%{public}d] failed", sinkInputIds[i].streamId);
         audioRouteMap_.AddRouteMapInfo(sinkInputIds[i].uid, moduleName, sinkInputIds[i].pid);
     }
 
@@ -1452,7 +1456,10 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
     auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front(), streamDesc->routeFlag_)
         : MoveToRemoteInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front());
-    CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
+    CHECK_AND_CALL_FUNC_RETURN_LOG(ret == SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "MoveToNewInputDevice failed", false),
+        "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
 
     if (pipeManager_->GetUpdateRouteSupport() &&
@@ -1478,7 +1485,9 @@ int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourc
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId,
             sourceId, sourceName);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "MoveToLocalInputDevice failed", false),
             "move [%{public}d] to local failed", sourceOutputs[i].paStreamId);
     }
 
@@ -1517,7 +1526,9 @@ int32_t AudioCoreService::MoveToRemoteInputDevice(std::vector<SourceOutput> sour
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId,
             sourceId, moduleName);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "MoveToRemoteInputDevice failed", false),
             "move [%{public}d] failed", sourceOutputs[i].paStreamId);
     }
 
@@ -2067,6 +2078,7 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         if ((audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_MIC ||
             audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_ACCESSORY) &&
             ((pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI) && (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_UNPROCESS) &&
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_LIVE) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_ULTRASONIC) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI) &&

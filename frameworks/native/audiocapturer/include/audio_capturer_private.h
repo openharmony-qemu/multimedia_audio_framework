@@ -216,6 +216,8 @@ private:
         const size_t processFrameSize, size_t &processBufSize, size_t &micInBufSize, size_t &ecBufSize);
     bool CheckForGenerateNewStream();
     int32_t CheckForStartImpl(CapturerState state);
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+ 	    const std::string &erroDesc, bool isClient, CapturerState state) const;
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
@@ -274,8 +276,9 @@ public:
     void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
-    int32_t InterruptHintResumeHandle(State currentState);
-    int32_t InterruptHintPauseHandle(State currentState);
+    bool NoNeedNotifyEvent(const InterruptEvent &interruptEvent);
+    int32_t InterruptHintResumeHandle(StreamFocusState focusState);
+    int32_t InterruptHintPauseHandle(StreamFocusState focusState);
     void WaitForSwitchTimeout(bool result);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;

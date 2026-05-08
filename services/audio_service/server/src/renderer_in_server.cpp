@@ -192,9 +192,13 @@ int32_t RendererInServer::ConfigServerBuffer()
 
     CHECK_AND_RETURN_RET_LOG(CreateServerBuffer() == SUCCESS, ERR_OPERATION_FAILED, "CreateServerBuffer failed");
 
-    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND /
-        (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
-        processConfig_.streamInfo.customSampleRate);
+    uint32_t sampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
+        processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
+    CHECK_AND_RETURN_RET_LOG(sampleRate != 0, ERR_INVALID_PARAM,
+        "ConfigServerBuffer: sampleRate is zero, cannot compute spanTime");
+    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND / sampleRate;
+    CHECK_AND_RETURN_RET_LOG(spanTime != 0, ERR_INVALID_PARAM,
+        "ConfigServerBuffer: spanTime is zero, cannot compute audioCheckFreq");
     audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
 
     isBufferConfiged_ = true;
@@ -1289,8 +1293,15 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
         newEngineSizeInFrame = newSpanSizeInFrame * DEFAULT_SPAN_SIZE;
     }
     
+    uint32_t sampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
+        processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
+    CHECK_AND_RETURN_RET_LOG(newSpanSizeInFrame != 0, ERR_INVALID_PARAM,
+        "RefreshServerBufferForSpanSizeUpdate: newSpanSizeInFrame is zero");
+    CHECK_AND_RETURN_RET_LOG(sampleRate != 0, ERR_INVALID_PARAM,
+        "RefreshServerBufferForSpanSizeUpdate: sampleRate is zero, cannot compute spanTime");
+
     uint32_t newRouteFlag = stream_->GetRouteFlag();
-    
+
     if (audioServerBuffer_ != nullptr && newSpanSizeInFrame > 0) {
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
             "routeFlag:%{public}u isLowLatency:%{public}d",
@@ -1299,25 +1310,25 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
             processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST);
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
-    
+
     if (newRouteFlag != 0 && newRouteFlag != processConfig_.rendererInfo.rendererFlags) {
         AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
             processConfig_.rendererInfo.rendererFlags, newRouteFlag);
         processConfig_.rendererInfo.rendererFlags = newRouteFlag;
     }
-    
+
     spanSizeInFrame_ = newSpanSizeInFrame;
     engineTotalSizeInFrame_ = newEngineSizeInFrame;
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    
+
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         bufferTotalSizeInFrame_ = (spanSizeInByte_ + AVS3METADATA_SIZE) * DEFAULT_SPAN_SIZE;
     }
-    
-    uint32_t sampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
-        processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
+
     uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND / sampleRate;
+    CHECK_AND_RETURN_RET_LOG(spanTime != 0, ERR_INVALID_PARAM,
+        "RefreshServerBufferForSpanSizeUpdate: spanTime is zero, cannot compute audioCheckFreq");
     audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
     
     AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate success, sessionId:%{public}u newSpan:%{public}zu "
