@@ -147,7 +147,8 @@ private:
         std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
 
     bool isScoActive_ = false;
-    std::shared_ptr<std::unordered_set<uint32_t>> doNotDisturbStatusWhiteList_;
+    std::shared_ptr<std::unordered_set<uint32_t>> doNotDisturbStatusWhiteList_ =
+        std::make_shared<std::unordered_set<uint32_t>>();
     std::atomic<bool> isDoNotDisturbStatus_{false};
     bool appIndividualVolumeEnabled_ = false;
 };

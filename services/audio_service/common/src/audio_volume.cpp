@@ -80,7 +80,6 @@ AudioVolume *AudioVolume::GetInstance()
 AudioVolume::AudioVolume()
 {
     AUDIO_INFO_LOG("AudioVolume construct");
-    doNotDisturbStatusWhiteList_ = std::make_shared<std::unordered_set<uint32_t>>();
 }
 
 AudioVolume::~AudioVolume()
