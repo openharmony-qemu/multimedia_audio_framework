@@ -73,7 +73,9 @@ static inline int32_t GetByteSize(AudioSampleFormat format)
 OfflineAudioEffectServerChain::OfflineAudioEffectServerChain(const std::string &chainName) : chainName_(chainName)
 {
     paramBufferIn_ = std::make_unique<int8_t[]>(PARAM_MAX_SIZE);
+    JUDGE_AND_WARNING_LOG(!paramBufferIn_, "Failed to allocate paramBufferIn_");
     paramBufferOut_ = std::make_unique<int8_t[]>(PARAM_MAX_SIZE);
+    JUDGE_AND_WARNING_LOG(!paramBufferOut_, "Failed to allocate paramBufferOut_");
 }
 
 OfflineAudioEffectServerChain::~OfflineAudioEffectServerChain()
@@ -190,7 +192,7 @@ int32_t OfflineAudioEffectServerChain::SetConfig(AudioStreamInfo inInfo, AudioSt
     offlineConfig_.inputCfg = {inInfo.samplingRate, inInfo.channels, inInfo.format};
     offlineConfig_.outputCfg = {outInfo.samplingRate, outInfo.channels, outInfo.format};
     savedEncodingType_ = inInfo.encoding;
-
+    AUDIO_INFO_LOG("Config savedEncodingType:%{public}u", savedEncodingType_);
     int8_t output[MAX_REPLY_LEN] = {0};
     uint32_t replyLen = MAX_REPLY_LEN;
 
@@ -212,7 +214,8 @@ int32_t OfflineAudioEffectServerChain::SetParam(const std::vector<uint8_t> &para
     CHECK_AND_RETURN_RET_LOG(param.size() < PARAM_MAX_SIZE, ERROR,
         "set param failed, param size %{public}zu is too large", param.size());
     std::vector<uint8_t> myParam = param;
-    memset_s(paramBufferOut_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    errno_t err = memset_s(paramBufferOut_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memset_s failed for paramBufferOut_, err:%{public}d", err);
     uint32_t replyLen = PARAM_MAX_SIZE;
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "set param failed, controller is nullptr");
     int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_SET_PARAM,
@@ -226,12 +229,14 @@ int32_t OfflineAudioEffectServerChain::GetParam(std::vector<uint8_t> &param)
 {
     CHECK_AND_RETURN_RET_LOG(param.size() < PARAM_MAX_SIZE, ERROR,
         "get param failed, param size %{public}zu is too large", param.size());
-    memset_s(paramBufferIn_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    errno_t err = memset_s(paramBufferIn_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memset_s failed for paramBufferIn_, err:%{public}d", err);
     if (param.size() > 0) {
         int32_t ret = memcpy_s(paramBufferIn_.get(), PARAM_MAX_SIZE, param.data(), param.size());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "memcpy failed, ret:%{public}d", ret);
     }
-    memset_s(paramBufferOut_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    err = memset_s(paramBufferOut_.get(), PARAM_MAX_SIZE, 0, PARAM_MAX_SIZE);
+    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memset_s failed for paramBufferOut_, err:%{public}d", err);
     uint32_t replyLen = PARAM_MAX_SIZE;
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "get param failed, controller is nullptr");
     int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_GET_PARAM,

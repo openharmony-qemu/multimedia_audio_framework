@@ -106,7 +106,7 @@ unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChainMock(
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "create OfflineEffectChain failed, errcode is %{public}d", ret);
     return chain;
 }
-
+  
 int32_t EffectProcess(struct IEffectControl *self, const struct AudioEffectBuffer* input,
     struct AudioEffectBuffer* output)
 {
