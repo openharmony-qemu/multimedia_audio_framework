@@ -1684,10 +1684,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid, const uint32_t streamId)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    if (captureInfo.sourceType <= SOURCE_TYPE_INVALID ||
-        captureInfo.sourceType > SOURCE_TYPE_MAX ||
-        (streamCollector_.HasRunningCapturerStreamByUid(uid) &&
-        audioRouterCenter_.IsConfigRouterStrategy(captureInfo.sourceType))) {
+    if (captureInfo.sourceType <= SOURCE_TYPE_INVALID || captureInfo.sourceType > SOURCE_TYPE_MAX) {
         deviceList = audioRouterSelectStrategy_.GetCurrentInputDevice(uid);
         if (deviceList.empty()) {
             deviceList.push_back(make_shared<AudioDeviceDescriptor>());

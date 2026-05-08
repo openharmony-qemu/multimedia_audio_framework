@@ -33,7 +33,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
         return make_shared<AudioDeviceDescriptor>();
     }
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
+        AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(clientUID, sessionID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     bool ret = CheckStreamUsage(perDev_, streamUsage);
     CHECK_AND_RETURN_RET(ret, make_shared<AudioDeviceDescriptor>());
@@ -55,7 +55,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
     const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
+        AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(clientUID, sessionID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
@@ -73,7 +73,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
     const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioRouterSelectStrategy::GetInstance().GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
+        AudioRouterSelectStrategy::GetInstance().GetCallInputDevice(clientUID, sessionID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_INPUT_DEVICES);
