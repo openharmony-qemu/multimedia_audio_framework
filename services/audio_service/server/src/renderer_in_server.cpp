@@ -1276,6 +1276,18 @@ void RendererInServer::UpdateStreamStatusByRendererState()
     }
 }
 
+int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
+{
+    if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
+        if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
+            return AUDIO_FLAG_VOIP_FAST;
+        } else {
+            return AUDIO_FLAG_MMAP;
+        }
+    }
+    return AUDIO_FLAG_NORMAL;
+}
+
 int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
     std::lock_guard<std::mutex> lock(writeLock_);
@@ -1301,6 +1313,7 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         "RefreshServerBufferForSpanSizeUpdate: sampleRate is zero, cannot compute spanTime");
 
     uint32_t newRouteFlag = stream_->GetRouteFlag();
+    int32_t rendererFlags = GetRendererFlagsByRoute(newRouteFlag);
 
     if (audioServerBuffer_ != nullptr && newSpanSizeInFrame > 0) {
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
@@ -1311,11 +1324,11 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
 
-    if (newRouteFlag != processConfig_.rendererInfo.rendererFlags) {
+    if (rendererFlags != processConfig_.rendererInfo.rendererFlags) {
         AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
-            processConfig_.rendererInfo.rendererFlags, newRouteFlag);
-        processConfig_.rendererInfo.rendererFlags = newRouteFlag;
-        stateListener->OnOperationHandled(UPDATE_SPANSIZE, newRouteFlag == AUDIO_FLAG_NORMAL ?
+            processConfig_.rendererInfo.rendererFlags, rendererFlags);
+        processConfig_.rendererInfo.rendererFlags = rendererFlags;
+        stateListener->OnOperationHandled(UPDATE_SPANSIZE, rendererFlags == AUDIO_FLAG_NORMAL ?
             FASTSTATUS_NORMAL : FASTSTATUS_FAST);
     }
 

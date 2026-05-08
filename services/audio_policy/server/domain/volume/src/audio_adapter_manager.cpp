@@ -1480,6 +1480,8 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
     int32_t result = SUCCESS;
     if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
         IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
+        attr.routeFlag = pipeInfo->routeFlag_;
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
             std::string idInfo = HDI_ID_INFO_DEFAULT;
             HdiIdType idType = HDI_ID_TYPE_PRIMARY;
