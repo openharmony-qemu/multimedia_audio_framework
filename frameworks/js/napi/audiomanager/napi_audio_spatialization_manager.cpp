@@ -34,7 +34,7 @@ namespace AudioStandard {
 using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
-static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // HRTF max 10 MB
+static const int64_t HRTF_LENGTH = 3809288; // HRTF size
 
 NapiAudioSpatializationManager::NapiAudioSpatializationManager()
     : audioSpatializationMngr_(nullptr), env_(nullptr) {}
@@ -1693,7 +1693,7 @@ napi_value NapiAudioSpatializationManager::DownloadPersonalizedHRTF(napi_env env
         int64_t length = 0;
         napi_status getLenValueStatus = napi_get_value_int64(env, napiLength, &length);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
-            getLenValueStatus == napi_ok && length > 0 && length <= MAX_HRTF_LENGTH,
+            getLenValueStatus == napi_ok && length == HRTF_LENGTH,
             "parameter verification failed: length wrong", NAPI_ERR_INVALID_PARAM);
 
         context->audioHRTFAnonymousDescriptor.fd = fd;
