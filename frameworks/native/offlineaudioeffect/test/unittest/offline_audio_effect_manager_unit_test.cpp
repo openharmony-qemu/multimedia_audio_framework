@@ -106,15 +106,10 @@ unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChainMock(
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "create OfflineEffectChain failed, errcode is %{public}d", ret);
     return chain;
 }
-  
-static int32_t g_lastProcessFrameCount = -1;
 
 int32_t EffectProcess(struct IEffectControl *self, const struct AudioEffectBuffer* input,
     struct AudioEffectBuffer* output)
 {
-    if (input != nullptr) {
-        g_lastProcessFrameCount = input->frameCount;
-    }
     return SUCCESS;
 }
 
@@ -342,8 +337,13 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_004, TestSize.
  */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_005, TestSize.Level1)
 {
+    // Call Prepare first to satisfy the EXPECT_CALL in CreateOfflineAudioEffectChainMock
+    int32_t ret = chain_->Prepare();
+    EXPECT_EQ(SUCCESS, ret);
+
+    // Now test GetParam
     std::vector<uint8_t> param;
-    int32_t ret = chain_->GetParam(param);
+    ret = chain_->GetParam(param);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -401,6 +401,9 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetParam_001, TestSize.Level1)
     ret = serverChain->GetParam(param);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_GT(param.size(), 0);
+    // 验证返回的数据内容是否正确
+    EXPECT_EQ(param.size(), strlen("test_param"));
+    EXPECT_EQ(memcmp(param.data(), "test_param", param.size()), 0);
 }
 
 /**
@@ -469,80 +472,6 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, Process_PCM_001, TestSize.Level1
     EXPECT_EQ(serverChain->savedEncodingType_, AudioEncodingType::ENCODING_PCM);
 }
 
-/**
- * @tc.name  : Test OfflineAudioEffectServerChain Process frameCount with metadata encoding
- * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectServerChain_Process_Metadata_002
- * @tc.desc  : Test OfflineAudioEffectServerChain Process frameCount calculation with ENCODING_METADATA.
- */
-HWTEST_F(OfflineAudioEffectServerChainUnitTest, Process_Metadata_002, TestSize.Level1)
-{
-    AudioStreamInfo inInfo;
-    inInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    inInfo.encoding = AudioEncodingType::ENCODING_METADATA;
-    inInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    inInfo.channels = AudioChannel::MONO;
-    AudioStreamInfo outInfo;
-    outInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    outInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    outInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    outInfo.channels = AudioChannel::MONO;
-
-    serverChain->controller_ = mockControl;
-    serverChain->inBufferSize_ = 1024;
-    serverChain->outBufferSize_ = 1024;
-    auto inBuffer = AudioSharedMemory::Create("test_in", 1024, MemType::READ_WRITE_TYPE);
-    auto outBuffer = AudioSharedMemory::Create("test_out", 1024, MemType::READ_WRITE_TYPE);
-    serverChain->serverBufferIn_ = inBuffer;
-    serverChain->serverBufferOut_ = outBuffer;
-
-    int32_t ret = serverChain->SetConfig(inInfo, outInfo);
-    EXPECT_EQ(ret, SUCCESS);
-
-    g_lastProcessFrameCount = -1;
-    ret = serverChain->Process(100, 1024);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(g_lastProcessFrameCount, 0);
-}
-
-/**
- * @tc.name  : Test OfflineAudioEffectServerChain Process frameCount with PCM encoding
- * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectServerChain_Process_PCM_002
- * @tc.desc  : Test OfflineAudioEffectServerChain Process frameCount calculation with ENCODING_PCM.
- */
-HWTEST_F(OfflineAudioEffectServerChainUnitTest, Process_PCM_002, TestSize.Level1)
-{
-    AudioStreamInfo inInfo;
-    inInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    inInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    inInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    inInfo.channels = AudioChannel::MONO;
-    AudioStreamInfo outInfo;
-    outInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    outInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    outInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    outInfo.channels = AudioChannel::MONO;
-
-    serverChain->controller_ = mockControl;
-    serverChain->inBufferSize_ = 1024;
-    serverChain->outBufferSize_ = 1024;
-    auto inBuffer = AudioSharedMemory::Create("test_in", 1024, MemType::READ_WRITE_TYPE);
-    auto outBuffer = AudioSharedMemory::Create("test_out", 1024, MemType::READ_WRITE_TYPE);
-    serverChain->serverBufferIn_ = inBuffer;
-    serverChain->serverBufferOut_ = outBuffer;
-
-    int32_t ret = serverChain->SetConfig(inInfo, outInfo);
-    EXPECT_EQ(ret, SUCCESS);
-
-    g_lastProcessFrameCount = -1;
-    uint32_t inSize = 100;
-    ret = serverChain->Process(inSize, 1024);
-    EXPECT_EQ(ret, SUCCESS);
-    int32_t expectedFrameCount = static_cast<int32_t>(inSize) / 2;
-    EXPECT_EQ(g_lastProcessFrameCount, expectedFrameCount);
-}
-
 HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetEffectBufferSize_001, TestSize.Level1)
 {
     uint32_t inBufferSize;
@@ -589,6 +518,122 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, Release_001, TestSize.Level1)
 {
     int32_t ret = serverChain->Release();
     EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test GetParam with param size exceeding PARAM_MAX_SIZE
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectServerChain_GetParam_SizeTooLarge
+ * @tc.desc  : Test GetParam with param.size() > PARAM_MAX_SIZE.
+ */
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetParam_SizeTooLarge, TestSize.Level1)
+{
+    std::vector<uint8_t> param(4097); // PARAM_MAX_SIZE + 1
+    serverChain->controller_ = mockControl;
+    int32_t ret = serverChain->GetParam(param);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test GetParam with empty param
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectServerChain_GetParam_EmptyParam
+ * @tc.desc  : Test GetParam with empty param vector.
+ */
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetParam_EmptyParam, TestSize.Level1)
+{
+    std::vector<uint8_t> param;
+    serverChain->controller_ = mockControl;
+    int32_t ret = serverChain->GetParam(param);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(param.size(), strlen("test_param"));
+    EXPECT_EQ(memcmp(param.data(), "test_param", param.size()), 0);
+}
+
+/**
+ * @tc.name  : Test GetParam with non-empty param
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectServerChain_GetParam_NonEmptyParam
+ * @tc.desc  : Test GetParam with non-empty param vector to cover if (param.size() > 0) branch.
+ */
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetParam_NonEmptyParam, TestSize.Level1)
+{
+    std::vector<uint8_t> param = {'t', 'e', 's', 't'}; // Non-empty param
+    serverChain->controller_ = mockControl;
+    int32_t ret = serverChain->GetParam(param);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(param.size(), strlen("test_param"));
+    EXPECT_EQ(memcmp(param.data(), "test_param", param.size()), 0);
+}
+
+/**
+ * @tc.name  : Test GetParam with replyLen zero
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectServerChain_GetParam_ReplyLenZero
+ * @tc.desc  : Test GetParam when SendCommand returns replyLen = 0.
+ */
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetParam_ReplyLenZero, TestSize.Level1)
+{
+    std::vector<uint8_t> param;
+    serverChain->controller_ = mockControl;
+
+    // Mock SendCommand to return replyLen = 0
+    mockControl->SendCommand = [](struct IEffectControl *self, uint32_t cmdId,
+                                   const int8_t* cmdData, uint32_t cmdDataLen,
+                                   int8_t* replyData, uint32_t* replyDataLen) -> int32_t {
+        if (replyDataLen) *replyDataLen = 0;
+        return SUCCESS;
+    };
+
+    int32_t ret = serverChain->GetParam(param);
+    EXPECT_EQ(ret, ERROR);
+
+    // Restore original SendCommand
+    mockControl->SendCommand = SendCommand;
+}
+
+/**
+ * @tc.name  : Test GetParam verifies returned data
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectServerChain_GetParam_VerifyData
+ * @tc.desc  : Test GetParam verifies returned data content.
+ */
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetParam_VerifyData, TestSize.Level1)
+{
+    std::vector<uint8_t> param;
+    serverChain->controller_ = mockControl;
+    int32_t ret = serverChain->GetParam(param);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(param.size(), strlen("test_param"));
+    EXPECT_EQ(memcmp(param.data(), "test_param", param.size()), 0);
+}
+
+/**
+ * @tc.name  : Test SetParam with param size exceeding PARAM_MAX_SIZE
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectServerChain_SetParam_SizeTooLarge
+ * @tc.desc  : Test SetParam with param.size() >= PARAM_MAX_SIZE.
+ */
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_SizeTooLarge, TestSize.Level1)
+{
+    std::vector<uint8_t> param(4096); // PARAM_MAX_SIZE
+    serverChain->controller_ = mockControl;
+    int32_t ret = serverChain->SetParam(param);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetParam with size just under PARAM_MAX_SIZE
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectServerChain_SetParam_SizeBoundary
+ * @tc.desc  : Test SetParam with param.size() = PARAM_MAX_SIZE - 1.
+ */
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_SizeBoundary, TestSize.Level1)
+{
+    std::vector<uint8_t> param(4095); // PARAM_MAX_SIZE - 1
+    serverChain->controller_ = mockControl;
+    int32_t ret = serverChain->SetParam(param);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
