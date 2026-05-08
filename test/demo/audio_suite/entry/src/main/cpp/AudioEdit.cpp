@@ -77,13 +77,12 @@ int32_t g_outputSampleRate = 0;
 int32_t g_outputChannelCount = 0;
 int32_t g_outputSampleFormat = 0;
 
-// File mode support for large files
+// Output file and path
 static FILE* g_outputFile = nullptr;
 static char g_outputFilePath[512] = {0};
 
-// Input file mode for large files (avoids OOM)
+// Input file state
 static int g_inputFd = -1;                    // Input file descriptor
-static bool g_useInputFileMode = false;       // Use input file mode for large files
 static uint32_t g_inputWavDataStart = 0;      // WAV data start position
 static uint32_t g_inputWavDataSize = 0;       // WAV data size
 
@@ -164,9 +163,15 @@ const int32_t WAV_SAMPLE_RATE_OFFSET = 24; // WAV: 24
 const int32_t WAV_NUM_CHANNELS_OFFSET = 22; // WAV: 22
 const int32_t WAV_BITS_PER_SAMPLE_OFFSET = 34; // WAV: 34
 
+const int32_t SAMPLING_FORMAT_TWO = 2;
+const int32_t SAMPLING_FORMAT_THREE = 3;
+const int32_t SAMPLING_FORMAT_FOUR = 4;
+
 const int32_t INDEXTWO = 2;
 const int32_t INDEXTHREE = 3;
-const int32_t INDEXFOUR = 4;
+
+const int32_t OFFSET_TWO = 2;
+const int32_t OFFSET_THREE = 3;
 const int32_t OFFSET_EIGHT = 8;
 const int32_t OFFSET_SIXTEEN = 16;
 const int32_t OFFSET_TWENTY_FOUR = 24;
@@ -1248,45 +1253,25 @@ static bool ParseWavFile(int fd, off_t fileSize, WavFileInfo &wavInfo)
     return foundDataChunk;
 }
 
-// Read file data into buffer
+// Read file data - save WAV info for on-demand reading
 static bool ReadFileData(int fd, off_t fileSize, bool isWavFile, const WavFileInfo &wavInfo)
 {
     uint32_t bytesToRead = 0;
 
-    // Input file mode: save WAV info for on-demand reading
-    if (g_useInputFileMode) {
-        if (isWavFile) {
-            g_inputWavDataStart = wavInfo.dataStart;
-            g_inputWavDataSize = wavInfo.dataSize;
-            bytesToRead = (wavInfo.dataSize > 0 && wavInfo.dataSize < (fileSize - wavInfo.dataStart)) ?
-                          wavInfo.dataSize : (fileSize - wavInfo.dataStart);
-        } else {
-            g_inputWavDataStart = 0;
-            g_inputWavDataSize = 0;
-            bytesToRead = fileSize;
-        }
-        g_inputDataLen = bytesToRead;
-        g_dataOffset = 0;
-        OH_LOG_Print(
-            LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "ReadFileData: Input file mode, saved WAV info: start=%{public}u, size=%{public}u, total=%{public}u",
-            g_inputWavDataStart, g_inputWavDataSize, g_inputDataLen);
-        return true;
-    }
-
-    // Read WAV file data into buffer
     if (isWavFile) {
-        lseek(fd, wavInfo.dataStart, SEEK_SET);
+        g_inputWavDataStart = wavInfo.dataStart;
+        g_inputWavDataSize = wavInfo.dataSize;
         bytesToRead = (wavInfo.dataSize > 0 && wavInfo.dataSize < (fileSize - wavInfo.dataStart)) ?
                       wavInfo.dataSize : (fileSize - wavInfo.dataStart);
-        g_inputDataLen = read(fd, g_inputData, bytesToRead);
     } else {
-        lseek(fd, 0, SEEK_SET);
-        g_inputDataLen = read(fd, g_inputData, fileSize);
+        g_inputWavDataStart = 0;
+        g_inputWavDataSize = 0;
+        bytesToRead = fileSize;
     }
-
+    g_inputDataLen = bytesToRead;
     g_dataOffset = 0;
-    return g_inputDataLen > 0;
+
+    return true;
 }
 
 // Clear old input and output data
@@ -1298,7 +1283,6 @@ static void ClearOldData()
         g_inputDataLen = 0;
     }
 
-    g_useInputFileMode = false;
     g_inputWavDataStart = 0;
     g_inputWavDataSize = 0;
 }
@@ -1322,14 +1306,14 @@ static int32_t GetBytesPerSample(int32_t sampleFormat)
         case AUDIO_SAMPLE_U8:
             return 1;
         case AUDIO_SAMPLE_S16LE:
-            return INDEXTWO;
+            return SAMPLING_FORMAT_TWO;
         case AUDIO_SAMPLE_S24LE:
-            return INDEXTHREE;
+            return SAMPLING_FORMAT_THREE;
         case AUDIO_SAMPLE_S32LE:
         case AUDIO_SAMPLE_F32LE:
-            return INDEXFOUR;
+            return SAMPLING_FORMAT_FOUR;
         default:
-            return INDEXTWO;
+            return SAMPLING_FORMAT_TWO;
     }
 }
 
@@ -1383,8 +1367,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     if (!ValidateAndGetFileSize(fd, fileSize)) {
         return nullptr;
     }
-    
-    g_useInputFileMode = true;
+
     g_inputFd = dup(fd);
     if (g_inputFd < 0) {
         delete[] g_inputData;
@@ -1413,47 +1396,25 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
 static int32_t AudioConverterRequestDataCallback(void *userData, const void **outInputData,
                                                  OH_AudioConverter_InputStatus *outStatus)
 {
-    if (g_useInputFileMode) {
-        if (g_inputFd < 0 || g_dataOffset >= g_inputDataLen) {
-            *outInputData = nullptr;
-            *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
-            return 0;
-        }
-        off_t filePos = g_inputWavDataStart + g_dataOffset;
-        uint32_t remainingData = g_inputDataLen - g_dataOffset;
-        uint32_t dataSizeToReturn = (remainingData > DATA_CHUNK_SIZE) ? DATA_CHUNK_SIZE : remainingData;
-        lseek(g_inputFd, filePos, SEEK_SET);
-        ssize_t bytesRead = read(g_inputFd, g_inputData, dataSizeToReturn);
-        if (bytesRead <= 0) {
-            *outInputData = nullptr;
-            *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
-            return 0;
-        }
-        *outInputData = g_inputData;
-        *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
-        g_dataOffset += bytesRead;
-        return bytesRead;
-    }
-    
-    if (g_inputData == nullptr || g_inputDataLen == 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "No input data available");
+    if (g_inputFd < 0 || g_dataOffset >= g_inputDataLen) {
         *outInputData = nullptr;
         *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
         return 0;
     }
-
-    if (g_dataOffset >= g_inputDataLen) {
-        *outInputData = nullptr;
-        *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
-        return 0;
-    }
-    
+    off_t filePos = g_inputWavDataStart + g_dataOffset;
     uint32_t remainingData = g_inputDataLen - g_dataOffset;
     uint32_t dataSizeToReturn = (remainingData > DATA_CHUNK_SIZE) ? DATA_CHUNK_SIZE : remainingData;
-    *outInputData = g_inputData + g_dataOffset;
+    lseek(g_inputFd, filePos, SEEK_SET);
+    ssize_t bytesRead = read(g_inputFd, g_inputData, dataSizeToReturn);
+    if (bytesRead <= 0) {
+        *outInputData = nullptr;
+        *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
+        return 0;
+    }
+    *outInputData = g_inputData;
     *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
-    g_dataOffset += dataSizeToReturn;
-    return dataSizeToReturn;
+    g_dataOffset += bytesRead;
+    return bytesRead;
 }
 
 static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_info info)
@@ -1504,7 +1465,7 @@ static int32_t CalculateBufferSize()
     // Adjust buffer size based on sample format
     int32_t sampleFormatMultiplier = (g_outputSampleFormat == AUDIO_SAMPLE_S24LE ||
                                      g_outputSampleFormat == AUDIO_SAMPLE_S32LE ||
-                                     g_outputSampleFormat == AUDIO_SAMPLE_F32LE) ? INDEXTWO : 1;
+                                     g_outputSampleFormat == AUDIO_SAMPLE_F32LE) ? SAMPLING_FORMAT_TWO : 1;
     bufferSize *= sampleFormatMultiplier;
 
     return bufferSize;
@@ -1769,12 +1730,11 @@ static napi_value AudioConverterDestroy(napi_env env, napi_callback_info info)
     OH_AudioConverter_Destroy(converter); // Directly calling the void function.
     g_converter = nullptr;                // Avoiding dangling pointers
 
-    // Reset input file mode state and close the duplicated file descriptor
+    // Reset input file state and close the duplicated file descriptor
     if (g_inputFd >= 0) {
         close(g_inputFd);
         g_inputFd = -1;
     }
-    g_useInputFileMode = false;
     g_inputWavDataStart = 0;
     g_inputWavDataSize = 0;
 
@@ -1794,7 +1754,7 @@ static int32_t GetSampleFormatFromBits(uint16_t bitsPerSample, uint16_t audioFor
         case BITS_PER_SAMPLE_16: sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE; break;
         case BITS_PER_SAMPLE_24: sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE; break;
         case BITS_PER_SAMPLE_32:
-            if (audioFormat == INDEXTHREE) {
+            if (audioFormat == SAMPLING_FORMAT_THREE) {
                 sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
             } else {
                 sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE;
@@ -1904,8 +1864,8 @@ static bool ReadAndParseWavHeader(int fd, uint8_t *header, WavHeaderInfo &header
 
     headerInfo.samplingRate = header[WAV_SAMPLE_RATE_OFFSET] |
                               (header[WAV_SAMPLE_RATE_OFFSET + 1] << OFFSET_EIGHT) |
-                              (header[WAV_SAMPLE_RATE_OFFSET + INDEXTWO] << OFFSET_SIXTEEN) |
-                              (header[WAV_SAMPLE_RATE_OFFSET + INDEXTHREE] << OFFSET_TWENTY_FOUR);
+                              (header[WAV_SAMPLE_RATE_OFFSET + OFFSET_TWO] << OFFSET_SIXTEEN) |
+                              (header[WAV_SAMPLE_RATE_OFFSET + OFFSET_THREE] << OFFSET_TWENTY_FOUR);
     headerInfo.numChannels = header[WAV_NUM_CHANNELS_OFFSET] |
                              (header[WAV_NUM_CHANNELS_OFFSET + 1] << OFFSET_EIGHT);
     headerInfo.bitsPerSample = header[WAV_BITS_PER_SAMPLE_OFFSET] |
