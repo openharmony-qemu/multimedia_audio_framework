@@ -400,6 +400,7 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
             auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
             if (collabInputCluster && scnenCluster->GetCapturerEffectConfig(collabNodeInfo,
                 HPAE_SOURCE_BUFFER_TYPE_DEFAULT)) {
+                collabNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
                 scnenCluster->ConnectWithInfo(collabInputCluster, collabNodeInfo);
             }
         }
