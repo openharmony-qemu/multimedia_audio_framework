@@ -359,7 +359,7 @@ void AudioPolicyClientHolder::OnPersonalizedSpatializationEnabledChangeForAnyDev
         AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice %{public}d", enabled);
         audioPolicyClient_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     } else {
-        AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice 0 ");
+        AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice no permission");
         audioPolicyClient_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, false);
     }
 }
