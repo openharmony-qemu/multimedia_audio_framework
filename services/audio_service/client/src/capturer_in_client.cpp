@@ -213,10 +213,6 @@ void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
     capturerInfo_.encodingType = streamParams_.encoding;
     capturerInfo_.channelLayout = streamParams_.channelLayout;
-    FastStatus status = (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP ||
-        capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) ? FASTSTATUS_FAST : FASTSTATUS_NORMAL;
-    fastStatus_.store(status);
-    fastStatusNotified_.store(false);
     AUDIO_INFO_LOG("SetCapturerInfo with SourceType %{public}d flag %{public}d", capturerInfo_.sourceType,
         capturerInfo_.capturerFlags);
     return;
@@ -2212,9 +2208,6 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus CapturerInClientInner::GetFastStatus()
 {
-    if (fastStatusNotified_.load()) {
-        return fastStatus_.load();
-    }
     if (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP || capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) {
         return FASTSTATUS_FAST;
     }
@@ -2233,12 +2226,7 @@ void CapturerInClientInner::NotifyFastStatusChange(FastStatus status)
         AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
         return;
     }
-    FastStatus oldStatus = GetFastStatus();
     fastStatus_.store(status);
-    fastStatusNotified_.store(true);
-    if (oldStatus == status) {
-        return;
-    }
 
     std::function<void(FastStatus)> callback;
     {

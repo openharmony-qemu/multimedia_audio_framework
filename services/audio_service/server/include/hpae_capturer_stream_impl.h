@@ -57,8 +57,6 @@ public:
 
 private:
 
-    int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
-
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
     AudioProcessConfig processConfig_ = {};

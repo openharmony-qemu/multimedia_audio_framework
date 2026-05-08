@@ -409,7 +409,6 @@ private:
     std::mutex fastStatusChangeCallbackMutex_;
     std::function<void(FastStatus)> fastStatusChangeCallback_;
     std::atomic<FastStatus> fastStatus_ = FASTSTATUS_NORMAL;
-    std::atomic<bool> fastStatusNotified_ = false;
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;

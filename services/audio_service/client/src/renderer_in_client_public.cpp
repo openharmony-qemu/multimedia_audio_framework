@@ -218,8 +218,6 @@ void RendererInClientInner::CheckInnerCapVoIP()
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
-    fastStatus_.store(IsFastStream() ? FASTSTATUS_FAST : FASTSTATUS_NORMAL);
-    fastStatusNotified_.store(false);
 
     rendererInfo_.sceneType = AudioManagerUtil::GetEffectSceneName(rendererInfo_.streamUsage);
 
@@ -2102,9 +2100,6 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus RendererInClientInner::GetFastStatus()
 {
-    if (fastStatusNotified_.load()) {
-        return fastStatus_.load();
-    }
     if (IsFastStream()) {
         return FASTSTATUS_FAST;
     }
@@ -2123,12 +2118,7 @@ void RendererInClientInner::NotifyFastStatusChange(FastStatus status)
         AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
         return;
     }
-    FastStatus oldStatus = GetFastStatus();
     fastStatus_.store(status);
-    fastStatusNotified_.store(true);
-    if (oldStatus == status) {
-        return;
-    }
 
     std::function<void(FastStatus)> callback;
     {
