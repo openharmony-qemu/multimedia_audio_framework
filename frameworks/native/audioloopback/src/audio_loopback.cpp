@@ -434,6 +434,7 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
         return;
     }
 
+    audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     if (isGlobal_) {
