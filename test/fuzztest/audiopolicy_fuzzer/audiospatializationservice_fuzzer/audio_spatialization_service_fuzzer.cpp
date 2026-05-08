@@ -810,7 +810,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioSpatializationServiceUpdateRendererInfoMultipleFuzzTest,
     AudioSpatializationServiceIsHeadTrackingDataRequestedDifferentDeviceFuzzTest,
     AudioSpatializationServiceSetSpatializationSceneTypeAllTypesFuzzTest,
-    AudioSpatializationServiceSetSpatializationSceneTypeAllTypesFuzzTest,
     AudioSpatializationServiceIsPersonalizedSpatializationSupportedFuzzTest,
     AudioSpatializationServiceIsPersonalizedSpatializationEnabledFuzzTest,
     AudioSpatializationServiceSetPersonalizedSpatializationEnabledFuzzTest,
@@ -819,6 +818,7 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
+
 void Init(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
