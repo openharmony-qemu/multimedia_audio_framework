@@ -452,6 +452,7 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
         std::unique_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
         if (!IsVolumeSame(it->second->duckFactor_, duckFactor, AUDIO_VOLUME_EPSILON)) {
             it->second->duckFactor_ = duckFactor;
+            it->second->SetHistoryVolumeAtomic(it->second->GetHistoryVolume(), durationMs);
         }
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
@@ -459,7 +460,6 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
-        it->second->SetHistoryVolumeAtomic(it->second->GetHistoryVolume(), durationMs);
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
