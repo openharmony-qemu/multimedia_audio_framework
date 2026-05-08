@@ -350,7 +350,6 @@ public:
     virtual void RemoveAudioPipeVolume(uint32_t IoHandle) = 0;
     virtual void UpdateVolumeForAllPipes() = 0;
     virtual void UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType) = 0;
-    // virtual void UpdatePersonalizedHRTFBin(const int32_t &fd, const int64_t &length) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
