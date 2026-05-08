@@ -742,7 +742,7 @@ bool AudioPolicyServerHandler::SendPersonalizedSpatializationEnabledChangeForAny
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
-    eventContextObj->personalizedSpatialRenderingEnabled = enabled;
+    eventContextObj->personalizedSpatializationEnabled = enabled;
     eventContextObj->descriptor = selectedAudioDevice;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
@@ -2058,7 +2058,7 @@ void AudioPolicyServerHandler::HandlePersonalizedSpatializationEnabledChangeForA
             clientCallbacksMap_[it->first].count(CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE]);
         personalizedSpatializationEnabledChangeCb->OnPersonalizedSpatializationEnabledChangeForAnyDevice(
-            eventContextObj->descriptor, eventContextObj->personalizedSpatialRenderingEnabled);
+            eventContextObj->descriptor, eventContextObj->personalizedSpatializationEnabled);
     }
 }
 

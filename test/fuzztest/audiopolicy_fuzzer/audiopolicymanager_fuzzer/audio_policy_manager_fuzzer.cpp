@@ -122,6 +122,14 @@ public:
     void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction){};
 };
 
+class AudioPersonalizedSpatializationEnabledChangeCallbackFuzzTest :
+    public AudioPersonalizedSpatializationEnabledChangeCallback {
+public:
+    AudioPersonalizedSpatializationEnabledChangeCallbackFuzzTest() {}
+    void OnPersonalizedSpatializationEnabledChange(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        bool enabled) override {}
+};
+
 void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
 {
     bool block = GetData<bool>();
@@ -792,6 +800,24 @@ void AudioPolicyManagerSetQueryDeviceVolumeBehaviorCallbackFuzzTest(FuzzedDataPr
     audioPolicyManager.SetQueryDeviceVolumeBehaviorCallback(callback);
 }
 
+void AudioPolicyManagerPersonalizedFuzzTest(FuzzedDataProvider& fdp)
+{
+    bool enable = GetData<bool>();
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice;
+    std::string address = "test_address";
+    int32_t fd = GetData<int32_t>();
+    int64_t length = GetData<int64_t>();
+    std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> callback =
+        std::make_shared<AudioPersonalizedSpatializationEnabledChangeCallbackFuzzTest>();
+
+    AudioPolicyManager::GetInstance().SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+    AudioPolicyManager::GetInstance().IsPersonalizedSpatializationEnabled(address);
+    AudioPolicyManager::GetInstance().DownloadPersonalizedHRTF(fd, length);
+    AudioPolicyManager::GetInstance().RegisterPersonalizedSpatializationEnabledEventListener(callback);
+    AudioPolicyManager::GetInstance().IsPersonalizedSpatializationSupported();
+    AudioPolicyManager::GetInstance().UnregisterPersonalizedSpatializationEnabledEventListener();
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -826,6 +852,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyManagerPreferBluetoothAndNearlinkRecordFuzzTest,
     AudioPolicyManagerSetDeviceVolumeBehaviorFuzzTest,
     AudioPolicyManagerSetQueryDeviceVolumeBehaviorCallbackFuzzTest,
+    AudioPolicyManagerPersonalizedFuzzTest,
     });
     func(fdp);
 }

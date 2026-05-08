@@ -116,7 +116,7 @@ public:
         bool spatializationEnabled;
         bool headTrackingEnabled;
         bool adaptiveSpatialRenderingEnabled;
-        bool personalizedSpatialRenderingEnabled;
+        bool personalizedSpatializationEnabled;
         AudioScene audioScene;
         int32_t nnState;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;

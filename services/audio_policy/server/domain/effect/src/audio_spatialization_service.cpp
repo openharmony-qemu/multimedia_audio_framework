@@ -98,7 +98,7 @@ void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChai
             isHeadTrackingSupported_ = true;
         } else if (effectChain.label == PERSONALIZED_SPATIALIZATION_SUPPORTED_LABEL) {
             isSpatializationSupported_ = true;
-            isPersonalizedSpatializationSupported_= true;
+            isPersonalizedSpatializationSupported_ = true;
         } else if (effectChain.label == SPATIALIZATION_SUPPORTED_LABEL) {
             isSpatializationSupported_ = true;
         } else if (effectChain.label == HEAD_TRACKING_SUPPORTED_LABEL) {
