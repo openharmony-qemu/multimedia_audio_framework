@@ -26,6 +26,8 @@
 #include "audio_bundle_manager.h"
 #include "audio_active_device.h"
 #include "audio_zone_service.h"
+#include "stream_dfx_manager.h"
+#include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -333,7 +335,10 @@ bool AudioPolicyServerHandler::SendSelfAppVolumeChangeCallback(int32_t appUid, c
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SELF_APP_VOLUME_CHANGE_EVENT,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SELF_APP_VOLUME_CHANGE_EVENT event failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_VOLUME_CALLBACK_FAILED, "Send SELF_APP_VOLUME_CHANGE_EVENT event failed", false),
+        "Send SELF_APP_VOLUME_CHANGE_EVENT event failed");
     return ret;
 }
 
@@ -346,7 +351,10 @@ bool AudioPolicyServerHandler::SendSystemAppVolumeChangeCallback(int32_t appUid,
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SYSTEM_APP_VOLUME_CHANGE_EVENT event failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_VOLUME_CALLBACK_FAILED, "Send SYSTEM_APP_VOLUME_CHANGE_EVENT event failed", false),
+        "Send SYSTEM_APP_VOLUME_CHANGE_EVENT event failed");
     return ret;
 }
 
@@ -1387,6 +1395,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         ProcessPreferredOutputDeviceForClient(it->first, it->second, ss);
     }
+    CHECK_AND_RETURN(!ss.str().empty());
     AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
 }
 
@@ -1463,6 +1472,7 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         ProcessPreferredInputDeviceForClient(it->first, it->second, ss);
     }
+    CHECK_AND_RETURN(!ss.str().empty());
     AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
 }
 

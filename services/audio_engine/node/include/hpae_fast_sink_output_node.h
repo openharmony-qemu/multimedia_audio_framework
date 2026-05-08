@@ -131,7 +131,6 @@ private:
     void InitDumpFile();
     void InitSinkVolume();
     void SyncCurrentOutputDevice();
-    void BindCore();
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckPlaySignal(uint8_t *buffer, size_t bufferSize);
@@ -189,7 +188,6 @@ private:
     bool isCheckingSuspend_ = false;
     bool needReSyncPosition_ = true;
     bool isStarted_ = false;
-    bool coreBinded_ = false;
     bool needCheckZeroVolume_ = true;
     bool isUltraFast_ = false;
     int64_t zeroVolumeStartTime_ = INT64_MAX;

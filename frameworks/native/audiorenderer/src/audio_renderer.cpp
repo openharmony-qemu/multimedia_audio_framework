@@ -1400,6 +1400,13 @@ bool AudioRendererPrivate::WaitSwitchStreamIfNeeded(bool needWait)
     return true;
 }
 
+void AudioRendererPrivate::SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+    const std::string &erroDesc, bool isClient, RendererState state)
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(uid, errorCode, erroDesc, isClient);
+    audioStream_->SetFocusState(static_cast<StreamFocusState>(state));
+}
+
 int32_t AudioRendererPrivate::ActivateAudioInterruptInStart(const bool isMute)
 {
     if ((OHOS::AudioStandard::FLOAT_COMPARE_EQ(GetVolumeInner(), 0.0f) && isStillZeroStreamVolume_) || isMute) {
@@ -1496,10 +1503,12 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     bool isMute = audioStream_->GetMute() || silentControl;
     AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d", duckVolume, isMute);
 
+    RendererState state = GetStatusInner();
+    audioStream_->SetFocusState(FOCUS_STARTING);
     int32_t ret = ActivateAudioInterruptInStart(isMute);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_START_OPERATION_FAILED, "ActivateAudioInterrupt Failed", false));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            PLAY_START_OPERATION_FAILED, "ActivateAudioInterrupt Failed", false, state));
     ret = GetStartStreamResult(cmdType) ? SUCCESS : ERROR;
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_END);
     AudioPolicyManager::GetInstance().RecordBootAnimationClientStateTime(g_bootAnimationInfo);
@@ -1698,6 +1707,7 @@ int32_t AudioRendererPrivate::PauseImpl(StateChangeCmdType cmdType)
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             PLAY_PAUSE_ILLEGAL_STATE, "State is not running", true),
         HILOG_COMM_ERROR("[Pause]State of stream is not running. Illegal state:%{public}u", state));
+    audioStream_->SetFocusState(FOCUS_APP_PAUSING);
     bool result = audioStream_->PauseAudioStream(cmdType);
     if (result) {
         state_ = RENDERER_PAUSED;
@@ -1738,6 +1748,7 @@ int32_t AudioRendererPrivate::StopImpl()
     }
 
     WriteUnderrunEvent();
+    audioStream_->SetFocusState(FOCUS_APP_STOPPING);
     bool result = audioStream_->StopAudioStream();
     if (result) {
         state_ = RENDERER_STOPPED;
@@ -2044,6 +2055,23 @@ bool AudioRendererInterruptCallbackImpl::HandleForceDucking(const InterruptEvent
     return true;
 }
 
+void AudioRendererInterruptCallbackImpl::HandleForcePause(StreamFocusState currentFocusState)
+{
+    AUDIO_INFO_LOG("currentFocusState is  %{public}d.", static_cast<int32_t>(currentFocusState));
+    audioStream_->SetFocusState(FOCUS_SYSTEM_PAUSING);
+    (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+    (void)audioStream_->SetDuckVolume(1.0f);
+    isForcePaused_ = true;
+}
+ 
+void AudioRendererInterruptCallbackImpl::HandleForceStop(StreamFocusState currentFocusState)
+{
+    AUDIO_INFO_LOG("currentFocusState is  %{public}d.", static_cast<int32_t>(currentFocusState));
+    audioStream_->SetFocusState(FOCUS_SYSTEM_STOPPING);
+    (void)audioStream_->StopAudioStream();
+    (void)audioStream_->SetDuckVolume(1.0f);
+}
+
 void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
 {
     // Change InterruptForceType to Share, Since app will take care of resuming
@@ -2055,31 +2083,29 @@ void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const Interru
 InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(
     const InterruptEventInternal &interruptEvent)
 {
-    State currentState = audioStream_->GetState();
+    StreamFocusState currentFocusState  = audioStream_->GetFocusState();
     audioStream_->GetAudioSessionID(sessionID_);
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_PAUSE:
-            if (currentState == RUNNING || currentState == PREPARED) {
-                (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
-                (void)audioStream_->SetDuckVolume(1.0f);
-                isForcePaused_ = true;
+            if (currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_PREPARED ||
+                currentFocusState == FOCUS_STARTING) {
+                HandleForcePause(currentFocusState);
             } else {
-                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. No need to pause",
-                    sessionID_, static_cast<int32_t>(currentState));
+                AUDIO_WARNING_LOG("sessionId: %{public}u, currentFocusState: %{public}d. No need to pause",
+                    sessionID_, static_cast<int32_t>(currentFocusState));
                 return NO_EVENT;
             }
             break;
         case INTERRUPT_HINT_RESUME:
-            if ((currentState != PAUSED && currentState != PREPARED) || !isForcePaused_) {
-                AUDIO_WARNING_LOG("sessionId: %{public}u, State: %{public}d or not force pause before",
-                    sessionID_, static_cast<int32_t>(currentState));
+            if ((currentFocusState != FOCUS_PAUSED && currentFocusState != FOCUS_PREPARED) || !isForcePaused_) {
+                AUDIO_WARNING_LOG("sessionId: %{public}u, currentFocusState: %{public}d or not force pause before",
+                    sessionID_, static_cast<int32_t>(currentFocusState));
                 return NO_EVENT;
             }
             isForcePaused_ = false;
             return FORCE_PAUSED_TO_RESUME_EVENT;
         case INTERRUPT_HINT_STOP:
-            (void)audioStream_->StopAudioStream();
-            (void)audioStream_->SetDuckVolume(1.0f);
+            HandleForceStop(currentFocusState);
             break;
         case INTERRUPT_HINT_DUCK:
             if (!HandleForceDucking(interruptEvent)) {
@@ -2156,6 +2182,9 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 
     auto ret = HandleAndNotifyForcedEvent(interruptEvent);
     lock.unlock();
+    if (NoNeedNotifyEvent(interruptEvent) == true) {
+        return;
+    }
     if (ret == FORCE_EVENT) {
         // Notify valid forced event callbacks to app
         NotifyForcedEvent(interruptEvent);
@@ -2163,6 +2192,29 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
         // sending callback is taken care in NotifyForcePausedToResume
         NotifyForcePausedToResume(interruptEvent);
     }
+}
+
+bool AudioRendererInterruptCallbackImpl::NoNeedNotifyEvent(const InterruptEventInternal &interruptEvent)
+{
+    StreamFocusState currentFocusState = audioStream_->GetFocusState();
+    bool noNeedSendNotify = (currentFocusState == FOCUS_STARTING || currentFocusState == FOCUS_RUNNING
+        || currentFocusState == FOCUS_STOPPED || currentFocusState == FOCUS_APP_STOPPING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is pasue, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    noNeedSendNotify = (currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_STARTING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_STOP && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is stop, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    noNeedSendNotify = (currentFocusState == FOCUS_STARTING  || currentFocusState == FOCUS_RUNNING
+        || currentFocusState == FOCUS_STOPPED || currentFocusState == FOCUS_APP_STOPPING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_RESUME && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is resume, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    return false;
 }
 
 AudioStreamCallbackRenderer::AudioStreamCallbackRenderer(std::weak_ptr<AudioRendererPrivate> renderer)

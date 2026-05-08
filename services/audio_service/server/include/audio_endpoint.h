@@ -57,6 +57,21 @@ struct AudioEndpointConfig {
 class AudioEndpoint : public IProcessStatusListener {
 public:
     static constexpr int32_t MAX_LINKED_PROCESS = 6; // 6
+    enum FastSinkType {
+        NONE_FAST_SINK = 0,
+        FAST_SINK_TYPE_NORMAL,
+        FAST_SINK_TYPE_REMOTE,
+        FAST_SINK_TYPE_VOIP,
+        FAST_SINK_TYPE_BLUETOOTH,
+        FAST_SINK_TYPE_ARM_USB
+    };
+    enum FastSourceType {
+        NONE_FAST_SOURCE = 0,
+        FAST_SOURCE_TYPE_NORMAL,
+        FAST_SOURCE_TYPE_REMOTE,
+        FAST_SOURCE_TYPE_VOIP,
+        FAST_SOURCE_TYPE_ARM_USB
+    };
     enum EndpointType : uint32_t {
         TYPE_MMAP = 0,
         TYPE_INVALID,
@@ -86,7 +101,7 @@ public:
 
     virtual EndpointStatus GetStatus() = 0;
 
-    virtual void Release() = 0;
+    virtual void Release(bool releaseSink = true) = 0;
 
     virtual bool ShouldInnerCap(int32_t innerCapId) = 0;
     virtual int32_t EnableFastInnerCap(int32_t innerCapId,
@@ -105,6 +120,7 @@ public:
     virtual void SetMuteForSwitchDevice(bool mute);
     virtual AudioDeviceDescriptor &GetDeviceInfo();
     virtual AudioStreamInfo &GetAudioStreamInfo();
+    virtual int32_t GetFastSinkType() const { return 0; }
     virtual float GetMaxAmplitude() = 0;
     virtual uint32_t GetLinkedProcessCount() = 0;
 

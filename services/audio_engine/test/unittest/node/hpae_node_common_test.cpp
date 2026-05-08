@@ -834,7 +834,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_051, TestSize.Level0)
 HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_052, TestSize.Level0)
 {
     size_t result = CalculateFrameLenBySampleRate(SAMPLE_RATE_11025);
-    EXPECT_EQ(result, 441U); // 441 for 11025 samplerate
+    EXPECT_EQ(result, 220U); // 220 for 11025 samplerate (20ms unified)
 }
 
 /**

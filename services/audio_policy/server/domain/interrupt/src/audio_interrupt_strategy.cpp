@@ -23,6 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+AudioInterruptStrategy::AudioInterruptStrategy()
+    : sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
+{}
 
 bool AudioInterruptStrategy::IsMicSource(SourceType sourceType)
 {
@@ -228,11 +231,81 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
         AudioInterruptUtils::IsMediaStream(incomingStreamType));
     UpdateMapFocusStrategy(bundleName, focusEntry, AudioInterruptUtils::IsMediaStream(existStreamType),
         incomingSourceType);
+    UpdateMediaWithMixStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    UpdateMediaWithDuckStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateMicFocusByUid(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateInterPhoneStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+}
+
+void AudioInterruptStrategy::UpdateMediaWithDuckStrategy(const AudioInterrupt &activeInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    if (!AudioInterruptUtils::IsMediaStream(activeInterrupt.audioFocusType.streamType) ||
+        !AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType)) {
+        return;
+    }
+    AudioConcurrencyMode concurrencyMode = AudioConcurrencyMode::INVALID;
+    if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
+        concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
+    }
+    if (concurrencyMode == AudioConcurrencyMode::DUCK_OTHERS && sessionService_.IsSystemApp(incomingInterrupt.pid)) {
+        focusEntry.hintType = INTERRUPT_HINT_DUCK;
+        focusEntry.actionOn = CURRENT;
+        return;
+    }
+ 
+    concurrencyMode = AudioConcurrencyMode::INVALID;
+    if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid)) {
+        concurrencyMode = sessionService_.GetSessionStrategy(activeInterrupt.pid);
+    }
+    if (concurrencyMode == AudioConcurrencyMode::DUCK_OTHERS && sessionService_.IsSystemApp(activeInterrupt.pid)) {
+        focusEntry.hintType = INTERRUPT_HINT_DUCK;
+        focusEntry.actionOn = INCOMING;
+        return;
+    }
+}
+ 
+bool AudioInterruptStrategy::IsMediaWithMixStrategy(const AudioInterrupt &currentInterrupt)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType), false,
+        "current stream not media stream");
+ 
+    AudioConcurrencyMode concurrencyMode = AudioConcurrencyMode::INVALID;
+    if (sessionService_.IsAudioSessionActivated(currentInterrupt.pid)) {
+        concurrencyMode = sessionService_.GetSessionStrategy(currentInterrupt.pid);
+    }
+    if (currentInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS ||
+        concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+        return true;
+    }
+    return false;
+}
+ 
+bool AudioInterruptStrategy::IsCanMixwithMedia(const AudioInterrupt &currentInterrupt)
+{
+    AudioStreamType incomingStreamType = currentInterrupt.audioFocusType.streamType;
+    SourceType incomingSourceType = currentInterrupt.audioFocusType.sourceType;
+    bool isMixStream = (incomingStreamType == STREAM_ALARM);
+    bool isMixSource = (incomingSourceType == SOURCE_TYPE_MIC || incomingSourceType == SOURCE_TYPE_CAMCORDER ||
+        incomingSourceType == SOURCE_TYPE_VOICE_MESSAGE || incomingSourceType == SOURCE_TYPE_LIVE);
+    return (isMixStream || isMixSource);
+}
+
+void AudioInterruptStrategy::UpdateMediaWithMixStrategy(const AudioInterrupt &activeInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    if ((IsMediaWithMixStrategy(incomingInterrupt) && IsCanMixwithMedia(activeInterrupt)) ||
+        (IsMediaWithMixStrategy(activeInterrupt) && IsCanMixwithMedia(incomingInterrupt))) {
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.actionOn = INCOMING;
+        AUDIO_INFO_LOG("Two streams can mix because of the active session,"
+            "activeStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
+            activeInterrupt.streamId, incomingInterrupt.streamId, focusEntry.actionOn);
+        return;
+    }
 }
 
 int32_t AudioInterruptStrategy::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)

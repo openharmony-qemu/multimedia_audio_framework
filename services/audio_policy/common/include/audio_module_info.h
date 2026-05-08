@@ -76,9 +76,11 @@ static const char* PRIMARY_DIRECT = "direct";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";
 static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
+static const char* PRIMARY_LIVE_MIC = "Built_in_live";
 static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
 static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
 static const char* PRIMARY_INTERPHON_MIC = "Built_in_interphone";
+static const char* PRIMARY_CAMCORDER = "Built_in_camcorder";
 static const char* PRIMARY_SPEAKER_PIPENAME = "primary_output";
 }
 

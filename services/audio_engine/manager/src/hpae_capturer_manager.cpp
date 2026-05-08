@@ -46,7 +46,8 @@ HpaeCapturerManager::HpaeCapturerManager(HpaeSourceInfo &sourceInfo)
         sourceInfo.samplingRate, sourceInfo.channels, sourceInfo.format,
         sourceInfo.ecType, sourceInfo.ecSamplingRate, sourceInfo.ecChannels, sourceInfo.ecFormat,
         sourceInfo.micRef, sourceInfo.micRefSamplingRate, sourceInfo.micRefChannels, sourceInfo.micRefFormat);
-    CHECK_AND_RETURN(sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
+    CHECK_AND_RETURN(sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+        sourceInfo_.sourceType == SOURCE_TYPE_CAMCORDER);
     AUDIO_INFO_LOG("micin info:[%{public}u_%{public}u_%{public}u]",
         sourceInfo_.micInSamplingRate, sourceInfo_.micInFormat, sourceInfo_.micInChannels);
 }
@@ -133,7 +134,8 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 
 void HpaeCapturerManager::UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo)
 {
-    CHECK_AND_RETURN(sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
+    CHECK_AND_RETURN(sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+        sourceInfo_.sourceType == SOURCE_TYPE_CAMCORDER);
     // for recognition, mic = preprocess(1ch) + micin(4ch)
     uint8_t totalChannels = static_cast<uint8_t>(sourceInfo_.micInChannels) +
         static_cast<uint8_t>(sourceInfo_.channels) + static_cast<uint8_t>(sourceInfo_.ecChannels);
@@ -775,7 +777,8 @@ void HpaeCapturerManager::UpdateSourceAttr(IAudioSourceAttr &attr)
         attr.sampleRateEc = sourceInfo_.ecSamplingRate;
         attr.channelEc = sourceInfo_.ecChannels;
     }
-    if (sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+    if (sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+        sourceInfo_.sourceType == SOURCE_TYPE_CAMCORDER) {
         attr.formatMicIn = sourceInfo_.micInFormat;
         attr.sampleRateMicIn = sourceInfo_.micInSamplingRate;
         attr.channelMicIn = sourceInfo_.micInChannels;
@@ -902,7 +905,8 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
 
 void HpaeCapturerManager::UpdateSourceInputNodeInfoForRecognition(HpaeNodeInfo &nodeInfo)
 {
-    CHECK_AND_RETURN(nodeInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
+    CHECK_AND_RETURN(nodeInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+        nodeInfo.sourceType == SOURCE_TYPE_CAMCORDER);
     // for recognition, mic = preprocess(1ch) + micin(4ch)
     uint8_t totalChannels = static_cast<uint8_t>(sourceInfo_.micInChannels) +
         static_cast<uint8_t>(sourceInfo_.channels);
