@@ -251,13 +251,15 @@ public:
     int32_t GetNoMuteVolumeLevel() const { return noMuteVolumeLevel_.load(std::memory_order_acquire); }
 
     void SetTotalVolume(float vol) { totalVolume_.store(vol, std::memory_order_release); }
-    void SetVolume(float vol) {
+    void SetVolume(float vol)
+    {
         volume_.store(vol, std::memory_order_release);
         bool isMuted = isMuted_.load(std::memory_order_acquire);
         float total = isMuted ? 0.0f : vol;
         totalVolume_.store(total, std::memory_order_release);
     }
-    void SetIsMuted(bool muted) {
+    void SetIsMuted(bool muted)
+    {
         isMuted_.store(muted, std::memory_order_release);
         float volume = volume_.load(std::memory_order_acquire);
         float total = muted ? 0.0f : volume;

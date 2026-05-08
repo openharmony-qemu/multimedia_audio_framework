@@ -2419,7 +2419,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_002, TestSize.Level1)
     audioVolumeTest->SetPipeVolume(pipeVolume);
     
     std::shared_ptr<PipeVolume> pipeVolumePtr;
-    audioVolumeTest->GetStreamAndPipeVolume(99999, STREAM_MUSIC, TEST_PIPE_ID, 
+    audioVolumeTest->GetStreamAndPipeVolume(99999, STREAM_MUSIC, TEST_PIPE_ID,
         std::shared_ptr<StreamVolume>(), pipeVolumePtr);
     
     VolumeValues volumes;
@@ -2448,7 +2448,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_003, TestSize.Level1)
     audioVolumeTest->AddStreamVolume(params);
     
     std::shared_ptr<StreamVolume> streamVolumePtr;
-    audioVolumeTest->GetStreamAndPipeVolume(sessionId, streamType, TEST_PIPE_ID + 99, 
+    audioVolumeTest->GetStreamAndPipeVolume(sessionId, streamType, TEST_PIPE_ID + 99,
         streamVolumePtr, std::shared_ptr<PipeVolume>());
     
     VolumeValues volumes;
