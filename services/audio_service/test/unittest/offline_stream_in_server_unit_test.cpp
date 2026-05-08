@@ -138,7 +138,7 @@ HWTEST(OfflineStreamInServerUnitTest, OfflineStreamInServer_GetParam_001, TestSi
 
     std::vector<uint8_t> param;
     auto ret = offlineStreamInServer->GetParamOfflineEffectChain(param);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 /**
