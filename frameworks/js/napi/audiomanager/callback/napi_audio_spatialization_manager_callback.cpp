@@ -29,7 +29,6 @@ namespace AudioStandard {
 bool NapiAudioSpatializationEnabledChangeCallback::onSpatializationEnabledChangeFlag_;
 bool NapiAudioHeadTrackingEnabledChangeCallback::onHeadTrackingEnabledChangeFlag_;
 bool NapiAdaptiveSpatialRenderingEnabledChangeCallback::onAdaptiveSpatialRenderingEnabledChangeFlag_;
-
 using namespace std;
 NapiAudioSpatializationEnabledChangeCallback::NapiAudioSpatializationEnabledChangeCallback(napi_env env)
     : env_(env)
@@ -819,11 +818,11 @@ void NapiAdaptiveSpatialRenderingEnabledChangeCallback::SafeJsCallbackAdaptiveSp
             NapiParamUtils::SetValueBoolean(env, event->enabled, args[PARAM0]);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
         } else {
-            AudioPersonalizedSpatialEnabledChangeForAnyDevice personalizedSpatialEnabledStateForDevice;
-            personalizedSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
-            personalizedSpatialEnabledStateForDevice.enabled = event->enabled;
-            NapiParamUtils::SetPersonalizedSpatialEnabledStateForDevice(env,
-                personalizedSpatialEnabledStateForDevice, args[PARAM0]);
+            AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
+            audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
+            audioSpatialEnabledStateForDevice.enabled = event->enabled;
+            NapiParamUtils::SetAudioSpatialEnabledStateForDevice(env,
+                audioSpatialEnabledStateForDevice, args[PARAM0]);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
         }
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
@@ -1162,7 +1161,7 @@ void NapiPersonalizedSpatializationEnabledChangeCallback::SafeJsCallbackPersonal
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
         
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call adaptive spatial rendering enabled callback");
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call personalized spatial rendering enabled callback");
     } while (0);
     napi_close_handle_scope(env, scope);
 }

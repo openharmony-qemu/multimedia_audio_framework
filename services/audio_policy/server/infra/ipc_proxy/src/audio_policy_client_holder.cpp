@@ -356,8 +356,10 @@ void AudioPolicyClientHolder::OnPersonalizedSpatializationEnabledChangeForAnyDev
         AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
         clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
         deviceDescriptor->SetClientInfo(clientInfo);
+        AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice %{public}d", enabled);
         audioPolicyClient_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     } else {
+        AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice 0 ");
         audioPolicyClient_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, false);
     }
 }
