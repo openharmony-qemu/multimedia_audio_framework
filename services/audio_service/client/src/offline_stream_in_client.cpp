@@ -96,6 +96,12 @@ int32_t OfflineStreamInClient::SetParamOfflineEffectChain(const std::vector<uint
     return streamProxy_->SetParamOfflineEffectChain(param);
 }
 
+int32_t OfflineStreamInClient::GetParamOfflineEffectChain(std::vector<uint8_t> &param)
+{
+    CHECK_AND_RETURN_RET_LOG(streamProxy_ != nullptr, ERR_OPERATION_FAILED, "Get parameter failed with null ipcProxy.");
+    return streamProxy_->GetParamOfflineEffectChain(param);
+}
+
 int32_t OfflineStreamInClient::PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &clientInBuffer,
     std::shared_ptr<AudioSharedMemory> &clientOutBuffer)
 {

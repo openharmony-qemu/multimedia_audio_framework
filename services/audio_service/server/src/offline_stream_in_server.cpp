@@ -67,6 +67,13 @@ int32_t OfflineStreamInServer::SetParamOfflineEffectChain(const std::vector<uint
     return effectChain_->SetParam(param);
 }
 
+int32_t OfflineStreamInServer::GetParamOfflineEffectChain(std::vector<uint8_t> &param)
+{
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
+    CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
+    return effectChain_->GetParam(param);
+}
+
 int32_t OfflineStreamInServer::PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
     std::shared_ptr<AudioSharedMemory> &outBuffer)
 {
