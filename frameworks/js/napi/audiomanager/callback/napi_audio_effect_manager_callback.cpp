@@ -91,7 +91,7 @@ void NapiAudioSeparationEffectEnabledChangeCallback::RemoveAudioSeparationEffect
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto it = audioSeparationEffectEnabledChangeCbList_.begin();
         it != audioSeparationEffectEnabledChangeCbList_.end(); ++it) {
-        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
+        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env, args, (*it)->cb_);
         if (isSameCallback) {
             AUDIO_INFO_LOG("RemoveAudioSeparationEffectEnabledChangeCallbackReference: find js callback, delete it");
             napi_delete_reference(env, (*it)->cb_);

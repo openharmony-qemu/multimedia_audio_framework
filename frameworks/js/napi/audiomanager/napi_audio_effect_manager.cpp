@@ -443,6 +443,7 @@ napi_value NapiAudioEffectMgr::OnAudioSeparationEffectEnabledChange(napi_env env
 
 napi_value NapiAudioEffectMgr::OffAudioSeparationEffectEnabledChange(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("sbfl, napi_audio_effect_manager, OffAudioSeparationEffectEnabledChange");
     const size_t minArgc = PARAM0;
     size_t argc = ARGS_ONE;
     napi_value undefinedResult = nullptr;
