@@ -94,12 +94,12 @@ int32_t AudioVolume::GetStreamAndPipeVolume(uint32_t sessionId, int32_t streamTy
     auto it = streamVolume_.find(sessionId);
     CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), -1, "sessionId %{public}u is not found.", sessionId);
     streamVolume = it->second;
-    
+
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
     if (volumeType == STREAM_VOICE_ASSISTANT && !it->second->IsSystemApp()) {
         volumeType = STREAM_MUSIC;
     }
-    
+
     std::string key = std::to_string(pipeId) + "|" + std::to_string(volumeType);
     auto itSV = pipeVolume_.find(key);
     CHECK_AND_RETURN_RET_LOG(itSV != pipeVolume_.end(), -1, "key %{public}s is not found.", key.c_str());
@@ -114,7 +114,6 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
 
     Trace trace("[refactor] GetVolume " + std::to_string(streamVolume->GetTotalVolume()));
 
-    // Atomic reads (lock-free)
     volumes->volumeStream = streamVolume->GetTotalVolume();
     volumes->volumeHistory = streamVolume->GetHistoryVolume();
     auto appUid = streamVolume->GetAppUid();
@@ -125,18 +124,17 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
     if (streamVolume->IsVirtualKeyboard()) {
         sysVolume = pipeVolume->GetIsMuted() ? 0.0f : 1.0f;
     }
-    
+
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(
         GetDoNotDisturbStatusVolumeFromStream(*streamVolume, streamVolume->GetStreamType(), appUid));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor;
-    
-    // Read appVolume_ with lock (low-frequency)
+
     {
         std::shared_lock<std::shared_mutex> lock(streamVolume->volumeFactorsMutex_);
         volumes->volumeApp = streamVolume->appVolume_;
     }
-    
+
     if (!IsSameVolume(streamVolume->GetMonitorVolume(), volumes->volume)) {
         streamVolume->SetMonitorVolumeAtomic(volumes->volume, volumeLevel);
         HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,pipeId:%{public}d,"
@@ -167,7 +165,7 @@ void AudioVolume::ConstructEnforcedToneVolumeValues(VolumeValues *volumes)
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamTypeIn, uint32_t pipeId,
     VolumeValues *volumes)
 {
-    // Acquires lock to protect streamVolume_ and pipeVolume_ map access in GetVolumeValues
+    // Acquires AudioVolume::volumeMutex_ lock to protect streamVolume_ and pipeVolume_
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     if (streamType == STREAM_SYSTEM_ENFORCED && VolumeUtils::IsEnforcedToneVolumeFixed()) {
@@ -188,7 +186,6 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     int32_t appUid = -1;
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
-        // Atomic reads (lock-free)
         volumes->volumeStream = it->second->GetTotalVolume();
         volumes->volumeHistory = it->second->GetHistoryVolume();
         volumes->durationMs = it->second->GetDurationMs();
@@ -196,7 +193,6 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
         if (volumeType == STREAM_VOICE_ASSISTANT && !it->second->IsSystemApp()) {
             volumeType = STREAM_MUSIC;
         }
-        // Read appVolume_ with fine-grained lock
         std::shared_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
         volumes->volumeApp = it->second->appVolume_;
         factorsLock.unlock();
@@ -208,7 +204,6 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     std::string volumeKey = std::to_string(pipeId) + "|" + std::to_string(volumeType);
     auto itSV = pipeVolume_.find(volumeKey);
     if (itSV != pipeVolume_.end()) {
-        // Atomic reads (lock-free)
         volumes->volumePipe = itSV->second->GetTotalVolume();
         volumeLevel = itSV->second->GetNoMuteVolumeLevel();
     } else {
@@ -331,8 +326,7 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
         HILOG_COMM_ERROR("[GetStreamVolume]stream volume not exist, sessionId:%{public}u", sessionId);
         return 1.0f;
     }
-    
-    // Use fine-grained lock for volume factors
+
     std::shared_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
     float volumeStream =
         it->second->isMuted_ || it->second->nonInterruptMute_ || it->second->isDualMuted_ ?
@@ -351,7 +345,7 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
-        return it->second->GetHistoryVolume();  // Atomic read
+        return it->second->GetHistoryVolume();
     }
     return 0.0f;
 }
@@ -361,7 +355,7 @@ uint32_t AudioVolume::GetDurationMs(uint32_t sessionId)
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
-        return it->second->GetDurationMs();  // Atomic read
+        return it->second->GetDurationMs();
     }
     return 0;
 }
@@ -372,7 +366,7 @@ void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume, uint32_t du
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
-        it->second->SetHistoryVolumeAtomic(volume, durationMs);  // Atomic write
+        it->second->SetHistoryVolumeAtomic(volume, durationMs);
     }
 }
 
@@ -402,7 +396,6 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
     }
     it = streamVolume_.find(streamVolumeParams.sessionId);
     if (it != streamVolume_.end()) {
-        // Use fine-grained lock
         std::unique_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         it->second->systemAppVolume_ = totalSystemAppVolume;
@@ -410,7 +403,6 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
             it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
-        // Atomic write
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     } else {
         HILOG_COMM_ERROR("[AddStreamVolume] stream volume not exist, sessionId:%{public}u",
@@ -443,7 +435,6 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
             it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
-        // Atomic write
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     } else {
         HILOG_COMM_ERROR("[SetStreamVolume] stream volume not exist, sessionId:%{public}u", sessionId);
@@ -466,7 +457,6 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
             it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
-        // Atomic writes
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
         it->second->SetHistoryVolumeAtomic(it->second->GetHistoryVolume(), durationMs);
     } else {
@@ -487,7 +477,6 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
             it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
-        // Atomic write
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
@@ -543,7 +532,6 @@ void AudioVolume::SetNonInterruptMute(uint32_t sessionId, bool muteFlag)
             it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
-        // Atomic write
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     }
 }
@@ -561,7 +549,6 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
             it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
-        // Atomic write
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     }
 }
@@ -579,7 +566,6 @@ void AudioVolume::SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted)
             it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
-        // Atomic write
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     }
 }
@@ -594,8 +580,6 @@ float AudioVolume::GetAppVolume(int32_t appUid, AudioVolumeMode mode)
 }
 
 // MUST be called with volumeMutex_ held
-// This method accesses appVolume_ map without internal lock protection
-// All current call sites (SetStreamVolume, SetAppVolumeMute, etc.) hold volumeMutex_
 inline float AudioVolume::GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode)
 {
     float appVolume = 1.0f;
@@ -788,7 +772,6 @@ void AudioVolume::SetSystemAppVolumeMuted(int32_t appUid, bool isMuted)
                 stream->isDualMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ *
                 stream->lowPowerFactor_ * stream->appVolume_ * GetSystemAppVolumeEffective(*stream);
             factorsLock.unlock();
-            // Atomic write
             stream->totalVolume_.store(newTotal, std::memory_order_release);
         }
     }
@@ -843,7 +826,6 @@ void AudioVolume::SetPipeVolumeMute(uint32_t pipeId, AudioVolumeType volumeType,
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = pipeVolume_.find(key);
     if (it != pipeVolume_.end()) {
-        // Atomic writes
         it->second->SetIsMuted(isMuted);
         it->second->SetTotalVolume(isMuted ? 0.0f : it->second->GetVolume());
         AUDIO_INFO_LOG("pipeId:%{public}d, volumeType:%{public}d, isMuted:%{public}d",
@@ -922,7 +904,6 @@ void AudioVolume::Dump(std::string &dumpString)
         AppendFormat(dumpString, "  appPid: %d ", streamVolume->GetAppPid());
         AppendFormat(dumpString, "  volume: %f ", streamVolume->GetMonitorVolume());
         AppendFormat(dumpString, "  volumeLevel: %d ", streamVolume->GetMonitorVolumeLevel());
-        // Read factors with fine-grained lock
         std::shared_lock<std::shared_mutex> factorsLock(streamVolume->volumeFactorsMutex_);
         AppendFormat(dumpString, "  volFactor: %f ", streamVolume->volume_);
         AppendFormat(dumpString, "  duckFactor: %f ", streamVolume->duckFactor_);
@@ -946,10 +927,8 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
         bean->Add("APP_PID", streamVolume->second->GetAppPid());
         bean->Add("STREAMTYPE", streamVolume->second->GetStreamType());
         bean->Add("STREAM_TYPE", streamVolume->second->GetStreamUsage());
-        // Atomic reads
         bean->Add("VOLUME", streamVolume->second->GetMonitorVolume());
         bean->Add("SYSVOLUME", streamVolume->second->GetMonitorVolumeLevel());
-        // Read factors with fine-grained lock
         std::shared_lock<std::shared_mutex> factorsLock(streamVolume->second->volumeFactorsMutex_);
         bean->Add("VOLUMEFACTOR", streamVolume->second->volume_);
         bean->Add("POWERVOLUMEFACTOR", streamVolume->second->lowPowerFactor_);
