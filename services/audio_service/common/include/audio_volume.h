@@ -180,12 +180,14 @@ public:
     float GetMonitorVolume() const { return monitorVolume_.load(std::memory_order_acquire); }
     int32_t GetMonitorVolumeLevel() const { return monitorVolumeLevel_.load(std::memory_order_acquire); }
 
-    void SetHistoryVolumeAtomic(float vol, uint32_t duration) {
+    void SetHistoryVolumeAtomic(float vol, uint32_t duration)
+    {
         historyVolume_.store(vol, std::memory_order_release);
         durationMs_.store(duration, std::memory_order_release);
     }
 
-    void SetMonitorVolumeAtomic(float vol, int32_t level) {
+    void SetMonitorVolumeAtomic(float vol, int32_t level)
+    {
         monitorVolume_.store(vol, std::memory_order_release);
         monitorVolumeLevel_.store(level, std::memory_order_release);
     }
@@ -208,12 +210,13 @@ public:
     bool isDualMuted_ = false;
 
     std::atomic<float> totalVolume_{1.0f};
+
+private:
     std::atomic<float> historyVolume_{0.0f};
     std::atomic<uint32_t> durationMs_{0};
     std::atomic<float> monitorVolume_{0.0f};
     std::atomic<int32_t> monitorVolumeLevel_{0};
 
-private:
     uint32_t sessionId_ = 0;
     int32_t streamType_ = 0;
     int32_t streamUsage_ = 0;
