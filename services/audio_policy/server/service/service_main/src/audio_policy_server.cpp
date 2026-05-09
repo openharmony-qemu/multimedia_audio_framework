@@ -2071,11 +2071,6 @@ int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bo
     if (callbackchange == CALLBACK_ROUTE_SELECTOR) {
         return HandleRouteSelectorCallbackEnable(enable);
     }
-    if (callbackchange == CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE &&
-        !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetClientCallbacksEnable audio separation effect callback denied");
-        return ERR_SYSTEM_PERMISSION_DENIED;
-    }
     
     if (audioPolicyServerHandler_ != nullptr) {
         return audioPolicyServerHandler_->SetClientCallbacksEnable(callbackchange, enable);
