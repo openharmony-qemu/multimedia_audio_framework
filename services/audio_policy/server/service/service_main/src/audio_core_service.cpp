@@ -1343,6 +1343,45 @@ void AudioCoreService::ForceStopInterphoneStreamsIfNecessary(const std::shared_p
     }
 }
 
+int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+        streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RUNNING);
+    FetchDeviceForSessionUseDefault(sessionId, streamDesc);
+    int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
+    deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
+    CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
+    audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc, true, streamDesc);
+    if (pipeManager_->GetUpdateRouteSupport()) {
+        UpdateOutputRoute(streamDesc, pipeManager_->QueryPipeIdBySessionId(sessionId));
+    }
+    streamCollector_.UpdateRendererDeviceInfo(deviceDesc);
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
+        streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RUNNING);
+    FetchInputDeviceAndRoute("StartClient");
+    deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
+    int32_t inputRet = ActivateInputDevice(streamDesc);
+    CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
+    CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
+    CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
+    audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
+        pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
+    streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
@@ -1364,36 +1403,15 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     // will reset a2dp device to none.
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
 
+    int32_t ret = SUCCESS;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RUNNING);
-        FetchDeviceForSessionUseDefault(sessionId, streamDesc);
-        int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
-        CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
-        audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc, true, streamDesc);
-        if (pipeManager_->GetUpdateRouteSupport()) {
-            UpdateOutputRoute(streamDesc, pipeManager_->QueryPipeIdBySessionId(sessionId));
-        }
-        streamCollector_.UpdateRendererDeviceInfo(deviceDesc);
+        ret = StartClientForPlayback(sessionId, streamDesc, deviceDesc);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartClientForPlayback fail!");
     } else {
-        AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RUNNING);
-        FetchInputDeviceAndRoute("StartClient");
-        // [Capturer NOTE 1.2] After the FetchInputDeviceAndRoute, device may change:
-        // the device is selected based on the status of all streams,
-        // device force selection is related to the START status of streams,
-        // As a result, the device selection result may change compared with that before the START status.
-        deviceDesc = streamDesc->GetMainNewDeviceDesc();
-        CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
-        int32_t inputRet = ActivateInputDevice(streamDesc);
-        CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
-        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
-        CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
-        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
-            pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
-        streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
+        ret = StartClientForRecord(sessionId, streamDesc, deviceDesc);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartClientForRecord fail!");
     }
+
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
     // [Capturer NOTE 1.3] should use the new device.

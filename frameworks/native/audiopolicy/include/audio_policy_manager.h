@@ -815,8 +815,8 @@ private:
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
 
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
-    std::vector<AudioRendererInfo> rendererInfos_;
-    std::vector<AudioCapturerInfo> capturerInfos_;
+    std::vector<std::pair<AudioRendererInfo, int32_t>> rendererInfosWithUid_;
+    std::vector<std::pair<AudioCapturerInfo, int32_t>> capturerInfosWithUid_;
 
     std::mutex handleAvailableDeviceChangeCbsMapMutex_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
