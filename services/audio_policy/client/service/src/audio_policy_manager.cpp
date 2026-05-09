@@ -240,12 +240,12 @@ int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callback
 
     int32_t ret = SUCCESS;
     if (callbackChange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
-        for (auto &rendererInfo : rendererInfos_) {
-            ret = gsp->SetCallbackRendererInfo(rendererInfo, INVALID_UID);
+        for (auto &[rendererInfo, uid] : rendererInfosWithUid_) {
+            ret = gsp->SetCallbackRendererInfo(rendererInfo, uid);
         }
     } else if (callbackChange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
-        for (auto &capturerInfo : capturerInfos_) {
-            ret = gsp->SetCallbackCapturerInfo(capturerInfo, INVALID_UID);
+        for (auto &[capturerInfo, uid] : capturerInfosWithUid_) {
+            ret = gsp->SetCallbackCapturerInfo(capturerInfo, uid);
         }
     }
     return ret;
