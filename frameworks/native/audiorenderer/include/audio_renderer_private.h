@@ -279,6 +279,7 @@ private:
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    float GetMaxSpeed();
     void UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
