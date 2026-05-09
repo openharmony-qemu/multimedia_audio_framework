@@ -1563,7 +1563,6 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_EmptyBuffers, TestSize.L
 HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_ThenProcessCleansOutput, TestSize.Level0)
 {
     auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
-    uint32_t outCh = STEREO;
     uint32_t inCh = STEREO;
 
     // Fill buffers with stale data
