@@ -3241,7 +3241,8 @@ HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_001, Tes
     nodeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
     capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
 
-    EXPECT_EQ(static_cast<uint8_t>(nodeInfo.channels), static_cast<uint8_t>(sourceInfo.micInChannels) + static_cast<uint8_t>(sourceInfo.channels));
+    EXPECT_EQ(static_cast<uint8_t>(nodeInfo.channels), static_cast<uint8_t>(sourceInfo.micInChannels) +
+        static_cast<uint8_t>(sourceInfo.channels));
 }
 
 /*
