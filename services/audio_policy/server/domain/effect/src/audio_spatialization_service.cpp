@@ -712,8 +712,7 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
 
 int32_t AudioSpatializationService::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
 {
-    // return audioPolicyManager_.UpdatePersonalizedHRTFBin(fd, length);
-    return SPATIALIZATION_SERVICE_OK;
+    return audioPolicyManager_.UpdatePersonalizedHRTFBin(fd, length);
 }
 
 int32_t AudioSpatializationService::UpdateSpatializationSceneType()
