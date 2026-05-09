@@ -1701,7 +1701,7 @@ void HpaeRendererManager::EnableCollaboration()
     isReloadManagerFromCollStateChange_ = false;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
-        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE || nodeInfo.effectInfo.effectScene == SCENE_MUSIC) {
             AUDIO_INFO_LOG("move to coll sessionId %{public}u, state: %{public}d", key,
                 static_cast<int32_t>(node->GetState()));
             if (node->GetState() == HPAE_SESSION_RUNNING) {

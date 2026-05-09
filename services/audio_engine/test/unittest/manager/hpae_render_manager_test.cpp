@@ -2938,6 +2938,24 @@ HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
     hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp2] = sinkInputNode2;
     hpaeRendererManager->EnableCollaboration();
 
+    HpaeNodeInfo nodeInfo3;
+    uint32_t sessionIdTemp3 = sessionIdTemp2 + 1;
+    nodeInfo3.sessionId = sessionIdTemp3;
+    nodeInfo3.effectInfo.effectScene = SCENE_MUSIC;
+    auto sinkInputNode3 = std::make_shared<HpaeSinkInputNode>(nodeInfo3);
+    sinkInputNode3->SetState(HPAE_SESSION_RELEASED);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp3] = sinkInputNode3;
+    hpaeRendererManager->EnableCollaboration();
+
+    HpaeNodeInfo nodeInfo4;
+    uint32_t sessionIdTemp4 = sessionIdTemp3 + 1;
+    nodeInfo4.sessionId = sessionIdTemp4;
+    nodeInfo4.effectInfo.effectScene = SCENE_MUSIC;
+    auto sinkInputNode4 = std::make_shared<HpaeSinkInputNode>(nodeInfo4);
+    sinkInputNode4->SetState(HPAE_SESSION_RUNNING);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp4] = sinkInputNode4;
+    hpaeRendererManager->EnableCollaboration();
+
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
