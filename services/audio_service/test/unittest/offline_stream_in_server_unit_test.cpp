@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include "offline_stream_in_server.h"
 #include "audio_shared_memory.h"
+#include "audio_errors.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -122,6 +123,39 @@ HWTEST(OfflineStreamInServerUnitTest, OfflineStreamInServer_004, TestSize.Level1
     std::shared_ptr<AudioSharedMemory> outBuffer = nullptr;
 
     auto ret = offlineStreamInServer->PrepareOfflineEffectChain(inBuffer, outBuffer); // effectChain is nullptr
+    EXPECT_NE(ret, 0);
+}
+
+/**
+* @tc.name  : Test OfflineStreamInServer::GetParamOfflineEffectChain()
+* @tc.number: OfflineStreamInServer_GetParam_001
+* @tc.desc  : Test OfflineStreamInServer GetParam interface.
+*/
+HWTEST(OfflineStreamInServerUnitTest, OfflineStreamInServer_GetParam_001, TestSize.Level1)
+{
+    auto offlineStreamInServer = std::make_shared<OfflineStreamInServer>();
+    EXPECT_NE(offlineStreamInServer, nullptr);
+
+    std::vector<uint8_t> param;
+    auto ret = offlineStreamInServer->GetParamOfflineEffectChain(param);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OfflineStreamInServer::GetParamOfflineEffectChain() with effectChain
+* @tc.number: OfflineStreamInServer_GetParam_002
+* @tc.desc  : Test OfflineStreamInServer GetParam interface with effectChain.
+*/
+HWTEST(OfflineStreamInServerUnitTest, OfflineStreamInServer_GetParam_002, TestSize.Level1)
+{
+    auto offlineStreamInServer = std::make_shared<OfflineStreamInServer>();
+    EXPECT_NE(offlineStreamInServer, nullptr);
+
+    std::string chainName = "abc";
+    offlineStreamInServer->CreateOfflineEffectChain(chainName);
+
+    std::vector<uint8_t> param;
+    auto ret = offlineStreamInServer->GetParamOfflineEffectChain(param);
     EXPECT_NE(ret, 0);
 }
 } // namespace AudioStandard

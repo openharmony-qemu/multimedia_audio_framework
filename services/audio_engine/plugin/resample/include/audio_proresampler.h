@@ -41,20 +41,10 @@ public:
     uint32_t GetChannels() const override;
     uint32_t GetQuality() const;
 private:
-    int32_t Process11025SampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
-        uint32_t outFrameSize);
-    int32_t ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
-        uint32_t outFrameSize);
-    int32_t Process10HzSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
-        uint32_t outFrameSize);
     std::string ErrCodeToString(int32_t errCode);
     int32_t ConfigBufferSizeAndExpectedInFrameLen();
     int32_t CheckRateAndChannelParam();
 
-    std::vector<float> buf11025_;
-    std::vector<float> bufFor100ms_;
-    uint32_t buf11025Index_ = 0;
-    uint32_t bufFor100msIndex_ = 0;
     uint32_t inRate_;
     uint32_t outRate_;
     uint32_t channels_;

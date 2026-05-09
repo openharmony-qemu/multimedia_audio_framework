@@ -44,6 +44,15 @@ public:
     virtual int32_t SetParam(const std::vector<uint8_t> &param) = 0;
 
     /**
+     * @brief Get parameter for the offline audio effect chain
+     *
+     * @param param Output offline audio effect parameter
+     * @return The result of the getparam, 0 for success, other for error code
+     * @since 15
+     */
+    virtual int32_t GetParam(std::vector<uint8_t> &param) = 0;
+
+    /**
      * @brief Prepare the offline audio effect chain
      *
      * @return The result of the preparation, 0 for success, other for error code

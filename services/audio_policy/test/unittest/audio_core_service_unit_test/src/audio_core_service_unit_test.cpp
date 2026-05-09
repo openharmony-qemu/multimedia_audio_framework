@@ -567,6 +567,78 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_007, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_008
+* @tc.desc  : Test CreateCapturerClient - camcorder micIn needs independent route support.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_008, TestSize.Level1)
+{
+    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->emplace(SOURCE_TYPE_CAMCORDER,
+        AudioSourceStrategyType {
+        "AUDIO_INPUT_CAMCORDER_TYPE",
+        "primary",
+        "primary_input",
+        AUDIO_INPUT_FLAG_CAMCORDER,
+        1
+        });
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_CAMCORDER;
+    streamDesc->micInStreamInfo_.channels = AudioChannel::CHANNEL_4;
+
+    AudioCoreService audioCoreService;
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    auto ret = audioCoreService.CreateCapturerClient(streamDesc, flag, sessionId);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_009
+* @tc.desc  : Test CreateCapturerClient - camcorder micIn passes independent route check.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_009, TestSize.Level1)
+{
+    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->emplace(SOURCE_TYPE_CAMCORDER,
+        AudioSourceStrategyType {
+        "AUDIO_INPUT_CAMCORDER_TYPE",
+        "primary",
+        "primary_input_camcorder",
+        AUDIO_INPUT_FLAG_CAMCORDER,
+        1
+        });
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_CAMCORDER;
+    streamDesc->micInStreamInfo_.channels = AudioChannel::CHANNEL_4;
+
+    AudioCoreService audioCoreService;
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    auto ret = audioCoreService.CreateCapturerClient(streamDesc, flag, sessionId);
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: SetPreferredInputDeviceIfValid_001
 * @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
 */
@@ -2481,6 +2553,38 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 }
 
 /**
+* @tc.name  : Test AudioCoreService SetRingerMode branch coverage
+* @tc.number: SetRingerMode_Ringing_001
+* @tc.desc  : Cover if branch when IsRingerAudioScene is true (enter if)
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetRingerMode_Ringing_001, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_RINGING;
+
+    int32_t result = audioCoreService->SetRingerMode(RINGER_MODE_NORMAL);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService SetRingerMode branch coverage
+* @tc.number: SetRingerMode_Default_002
+* @tc.desc  : Cover if branch when IsRingerAudioScene is false (skip if)
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetRingerMode_Default_002, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    int32_t result = audioCoreService->SetRingerMode(RINGER_MODE_NORMAL);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
 * @tc.name  : Test AudioCoreService
 * @tc.number: UpdateDupDeviceOutputRoute_001
 * @tc.desc  : Test UpdateDupDeviceOutputRoute() when device type is null
@@ -2926,8 +3030,16 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_003, TestSize.Level1)
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     deviceDesc->SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), true);
+    deviceDesc->SetDeviceSupportMmap(1);
+    EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_MIC;
+    deviceDesc->SetDeviceSupportMmap(0);
+    EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
     deviceDesc->SetDeviceSupportMmap(1);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
 }
@@ -2949,8 +3061,16 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     deviceDesc->SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), true);
+    deviceDesc->SetDeviceSupportMmap(1);
+    EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->SetDeviceSupportMmap(0);
+    EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
     deviceDesc->SetDeviceSupportMmap(1);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 }
@@ -5176,6 +5296,30 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_081, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_082
+ * @tc.desc  : Test routerflag is AUDIO_INPUT_FLAG_LIVE.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_082, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->pipeRole_ = PIPE_ROLE_INPUT;
+    pipe->routeFlag_ = AUDIO_INPUT_FLAG_LIVE;
+    pipeList.push_back(pipe);
+
+    uint32_t sessionId = 1;
+    AudioStreamDescriptor runningSessionInfo = {};
+    bool hasSession = false;
+    bool result = audioCoreService->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(hasSession, false);
+}
+
+/**
  * @tc.name  : Test UpdateArmModuleInfo API with valid parameters
  * @tc.type  : FUNC
  * @tc.number: UpdateArmModuleInfo_001
@@ -5883,6 +6027,27 @@ static std::shared_ptr<AudioStreamDescriptor> CreateVoiceRecognitionStreamDesc(u
     return streamDesc;
 }
 
+static std::shared_ptr<AudioStreamDescriptor> CreateCamcorderStreamDesc(uint32_t targetSessionId)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = targetSessionId;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_CAMCORDER;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_CAMCORDER;
+    streamDesc->streamInfo_.format = SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->streamInfo_.encoding = ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = CH_LAYOUT_STEREO;
+    streamDesc->micInStreamInfo_.format = SAMPLE_S24LE;
+    streamDesc->micInStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->micInStreamInfo_.channels = CHANNEL_4;
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    inputDevice->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(inputDevice);
+    return streamDesc;
+}
+
 static void ExpectReloadSourceModuleInfo(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
     const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
@@ -5910,6 +6075,21 @@ static void ExpectReloadSourceMicEcModuleInfoEmpty(const std::shared_ptr<AudioPi
     EXPECT_EQ(pipeInfo->moduleInfo_.micRefRate, "");
     EXPECT_EQ(pipeInfo->moduleInfo_.micRefChannels, "");
     EXPECT_EQ(pipeInfo->moduleInfo_.micRefFormat, "");
+}
+
+static void ExpectReloadSourceCamcorderModuleInfo(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecType, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecSamplingRate, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecChannels, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecFormat, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micInRate, std::to_string(streamDesc->micInStreamInfo_.samplingRate));
+    EXPECT_EQ(pipeInfo->moduleInfo_.micInChannels, std::to_string(streamDesc->micInStreamInfo_.channels));
+    EXPECT_EQ(pipeInfo->moduleInfo_.micInFormat, "s24");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micRefRate, std::to_string(streamDesc->micInStreamInfo_.samplingRate));
+    EXPECT_EQ(pipeInfo->moduleInfo_.micRefChannels, std::to_string(streamDesc->micInStreamInfo_.channels));
+    EXPECT_EQ(pipeInfo->moduleInfo_.micRefFormat, "s24");
 }
 
 /**
@@ -6028,6 +6208,46 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_003, TestSize.Level1
     EXPECT_TRUE(ret == SUCCESS || ret == ERR_INVALID_HANDLE);
     if (ret == SUCCESS) {
         ExpectReloadSourceMicEcModuleInfoEmpty(pipeInfo);
+    }
+
+    if (hadOldIoHandle) {
+        ioHandleMap.AddIOHandleInfo(moduleName, oldIoHandle);
+    } else {
+        ioHandleMap.DelIOHandleInfo(moduleName);
+    }
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: ReloadSourceForInputPipe_004
+* @tc.desc  : Test ReloadSourceForInputPipe updates camcorder micIn module info.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_TRUE(audioCoreService != nullptr);
+    auto &ioHandleMap = audioCoreService->audioIOHandleMap_;
+
+    constexpr uint32_t targetSessionId = 123459;
+    const std::string moduleName = "ut_camcorder_mic_in_reload_pipe";
+    AudioIOHandle oldIoHandle = 0;
+    bool hadOldIoHandle = ioHandleMap.GetModuleIdByKey(moduleName, oldIoHandle);
+
+    auto pipeInfo = CreateReloadSourceInputPipeInfo(moduleName);
+    ASSERT_TRUE(pipeInfo != nullptr);
+    auto streamDesc = CreateCamcorderStreamDesc(targetSessionId);
+    ASSERT_TRUE(streamDesc != nullptr);
+    ASSERT_FALSE(streamDesc->newDeviceDescs_.empty());
+
+    pipeInfo->streamDescMap_[targetSessionId] = streamDesc;
+    ioHandleMap.AddIOHandleInfo(moduleName, static_cast<AudioIOHandle>(targetSessionId));
+    AudioIOHandle ioHandleInMap = 0;
+    ASSERT_TRUE(ioHandleMap.GetModuleIdByKey(moduleName, ioHandleInMap));
+
+    int32_t ret = audioCoreService->ReloadSourceForInputPipe(pipeInfo, targetSessionId);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_INVALID_HANDLE);
+    if (ret == SUCCESS) {
+        ExpectReloadSourceCamcorderModuleInfo(pipeInfo, streamDesc);
     }
 
     if (hadOldIoHandle) {

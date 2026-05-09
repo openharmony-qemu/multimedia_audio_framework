@@ -96,7 +96,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_FALSE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -123,7 +122,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_001, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_TRUE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -150,7 +148,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_FALSE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -177,7 +174,6 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_003, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_TRUE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -291,6 +287,28 @@ HWTEST_F(HpaeSinkInputNodeTest, testLoudnessGain, TestSize.Level0)
     sinkInputNode->SetLoudnessGain(LOUDNESS_GAIN);
 
     EXPECT_FLOAT_EQ(sinkInputNode->GetLoudnessGain(), LOUDNESS_GAIN);
+}
+
+HWTEST_F(HpaeSinkInputNodeTest, SetOffloadType_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NORMAL_ID;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_DEFAULT);
+
+    sinkInputNode->SetOffloadType(OFFLOAD_ACTIVE_FOREGROUND);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_ACTIVE_FOREGROUND);
+
+    sinkInputNode->SetOffloadType(OFFLOAD_INACTIVE_BACKGROUND);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_INACTIVE_BACKGROUND);
+
+    sinkInputNode->SetOffloadType(OFFLOAD_DEFAULT);
+    EXPECT_EQ(sinkInputNode->GetOffloadType(), OFFLOAD_DEFAULT);
 }
 
 HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBuffer, TestSize.Level0)
@@ -920,55 +938,6 @@ HWTEST_F(HpaeSinkInputNodeTest, testOnStreamInfoChange_GetOffloadCallbackData, T
     
     int32_t result = sinkInputNode->OnStreamInfoChange(true);
     EXPECT_EQ(result, SUCCESS);
-}
-
-/**
- * @tc.name  : testDoProcess_11025SampleRate
- * @tc.type  : FUNC
- * @tc.desc  : Test DoProcess with 11025 sample rate (pullDataFlag_ behavior)
- */
-HWTEST_F(HpaeSinkInputNodeTest, testDoProcess_11025SampleRate, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.samplingRate = SAMPLE_RATE_11025;
-    nodeInfo.customSampleRate = 0;
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    auto mockStreamCallback = std::make_shared<MockStreamCallback>();
-    sinkInputNode->writeCallback_ = mockStreamCallback;
-    
-    EXPECT_TRUE(sinkInputNode->pullDataFlag_);
-    
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
-        .WillRepeatedly([&](AudioCallBackStreamInfo& info) {
-            return SUCCESS;
-        });
-    
-    sinkInputNode->DoProcess();
-}
-
-/**
- * @tc.name  : testDoProcess_CustomSampleRateNotMultipleOf50
- * @tc.type  : FUNC
- * @tc.desc  : Test DoProcess with customSampleRate that is not multiples of 50
- */
-HWTEST_F(HpaeSinkInputNodeTest, testDoProcess_CustomSampleRateNotMultipleOf50, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.customSampleRate = SAMPLE_RATE_16010;
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    auto mockStreamCallback = std::make_shared<MockStreamCallback>();
-    sinkInputNode->writeCallback_ = mockStreamCallback;
-    
-    EXPECT_EQ(sinkInputNode->pullDataCount_, 0);
-    
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
-        .WillRepeatedly([&](AudioCallBackStreamInfo& info) {
-            return SUCCESS;
-        });
-    
-    sinkInputNode->DoProcess();
 }
 
 /**

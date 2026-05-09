@@ -82,7 +82,8 @@ static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
 static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
     DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_EARPIECE
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_USB_ARM_HEADSET
 };
 struct ConcurrentCaptureDfxResult {
     std::vector<std::string> existingAppName{};
@@ -472,8 +473,8 @@ public:
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
-    void UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled);
-    void UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled);
+    bool UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled);
+    bool UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled);
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     void TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered);
     int32_t ReloadCaptureSessionSoftLink();
@@ -794,7 +795,8 @@ private:
     void SyncVoipPrivacyMuteState(
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
         const std::unordered_set<uint32_t> &targetMuteSessions);
-    bool UpdateVoipPrivacyMuteForSession(uint32_t sessionId, bool mute);
+    bool UpdateVoipPrivacyMuteForSession(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool mute);
+    void WriteVoipMutedCaptureStats(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool mute) const;
 
     void CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void OnVehiclePriorityChanged(bool enable);

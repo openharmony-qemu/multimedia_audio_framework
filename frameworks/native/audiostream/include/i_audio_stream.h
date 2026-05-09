@@ -126,6 +126,7 @@ public:
     static int32_t GetByteSizePerFrame(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithEc(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithMicInEc(const AudioStreamParams &params, size_t &result);
+    static int32_t GetByteSizePerFrameWithMicIn(const AudioStreamParams &params, size_t &result);
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
@@ -174,6 +175,8 @@ public:
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;
     virtual State GetState() = 0;
+    virtual StreamFocusState GetFocusState() = 0;
+    virtual void SetFocusState(StreamFocusState state) = 0;
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;

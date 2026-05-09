@@ -1346,6 +1346,22 @@ enum State {
     PAUSED,
     /** Stopping */
     STOPPING
+}; /** When adding a new stream state, StreamFocusState needs to be added synchronously. */
+
+enum StreamFocusState {
+    FOCUS_INVALID = -1,
+    FOCUS_NEW,
+    FOCUS_PREPARED,
+    FOCUS_RUNNING,
+    FOCUS_STOPPED,
+    FOCUS_RELEASED,
+    FOCUS_PAUSED,
+    FOCUS_STOPPING,
+    FOCUS_STARTING,
+    FOCUS_APP_PAUSING,
+    FOCUS_SYSTEM_PAUSING,
+    FOCUS_APP_STOPPING,
+    FOCUS_SYSTEM_STOPPING
 };
 
 /**

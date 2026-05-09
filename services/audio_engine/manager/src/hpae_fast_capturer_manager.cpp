@@ -220,6 +220,7 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
 int32_t HpaeFastCapturerManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    hpaeSignalProcessThread_->SetFastThread(true);
     auto request = [this, isReload] {
         int32_t ret = InitCapturerManager();
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
@@ -602,6 +603,7 @@ int32_t HpaeFastCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sour
 {
     if (!IsInit()) {
         hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+        hpaeSignalProcessThread_->SetFastThread(true);
     }
     auto request = [this, sourceInfo, isReload] {
         for (const auto &[sessionId, node] : sourceOutputNodeMap_) {

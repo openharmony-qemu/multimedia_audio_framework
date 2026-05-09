@@ -96,6 +96,13 @@ static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStream
         (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
 }
 
+static bool IsCamcorderMicInRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER &&
+        streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW;
+}
+
 static void UpdateMicInEcModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     AudioModuleInfo &moduleInfo)
 {
@@ -109,6 +116,25 @@ static void UpdateMicInEcModuleInfo(const std::shared_ptr<AudioStreamDescriptor>
             moduleInfo.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
         }
     }
+
+    if (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW) {
+        moduleInfo.micInRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micInChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatStrToHpae.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micInFormat = formatStrToHpae[streamDesc->micInStreamInfo_.format];
+        }
+        moduleInfo.micRefRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micRefChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatStrToHpae.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micRefFormat = formatStrToHpae[streamDesc->micInStreamInfo_.format];
+        }
+    }
+}
+
+static void UpdateMicInModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    AudioModuleInfo &moduleInfo)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 
     if (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW) {
         moduleInfo.micInRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
@@ -702,12 +728,16 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
         return PIPE_TYPE_IN_NORMAL_ULTRASONIC;
     } else if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
         return PIPE_TYPE_IN_NORMAL_UNPROCESS;
+    } else if (flag & AUDIO_INPUT_FLAG_LIVE) {
+        return PIPE_TYPE_IN_NORMAL_LIVE;
     } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
     } else if (flag & AUDIO_INPUT_FLAG_RAW_AI) {
         return PIPE_TYPE_IN_NORMAL_RAW_AI;
     } else if (flag & AUDIO_INPUT_FLAG_INTERPHONE) {
         return PIPE_TYPE_IN_INTERPHONE;
+    } else if (flag & AUDIO_INPUT_FLAG_CAMCORDER) {
+        return PIPE_TYPE_IN_CAMCORDER;
     } else {
         return PIPE_TYPE_IN_NORMAL;
     }
@@ -1113,6 +1143,8 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         info.moduleInfo_.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
     } else if (IsVoiceRecognitionMicInEcRequested(streamDesc)) {
         UpdateMicInEcModuleInfo(streamDesc, info.moduleInfo_);
+    } else if (IsCamcorderMicInRequested(streamDesc)) {
+        UpdateMicInModuleInfo(streamDesc, info.moduleInfo_);
     }
 
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;

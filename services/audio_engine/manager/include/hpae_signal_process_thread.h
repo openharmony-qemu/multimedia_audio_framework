@@ -40,6 +40,9 @@ public:
         return recvSignal_.load();
     }
     void SleepUntilNotify(int64_t sleepInUs);
+    void SetFastThread(bool isFast);
+private:
+    void BindCore();
 private:
 
     std::atomic<bool> running_;
@@ -48,6 +51,8 @@ private:
     std::thread thread_;
     std::condition_variable condition_;
     std::mutex mutex_;
+    bool coreBinded_ = false;
+    bool isFastThread_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

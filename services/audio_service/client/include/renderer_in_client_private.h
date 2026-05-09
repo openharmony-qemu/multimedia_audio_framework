@@ -74,6 +74,8 @@ public:
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
+    StreamFocusState GetFocusState() override;
+    void SetFocusState(StreamFocusState state) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
@@ -361,6 +363,11 @@ private:
     void UpdateStopState();
 
     void NotifyStreamSilentChange();
+
+    void UpdateStreamState(State state);
+ 
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+        const std::string &erroDesc, bool isClient, State state);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -430,6 +437,8 @@ private:
     size_t cbBufferSize_ = 0;
     AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
+    std::atomic<StreamFocusState> streamFocusState_ = FOCUS_INVALID;
+    std::mutex focusStatusMutex_;
     std::atomic<State> state_ = INVALID;
     // using this lock when change status_
     std::mutex statusMutex_;

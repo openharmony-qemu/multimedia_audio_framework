@@ -29,24 +29,18 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static constexpr uint32_t EXPAND_SIZE_2 = 2;
-static constexpr uint32_t EXPAND_SIZE_5 = 5;
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
-    uint32_t frameDurationMs = nodeInfo.frameLen * AUDIO_MS_PER_S /
-        (nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
-    nodeInfo.frameLen = sinkInfo.samplingRate * frameDurationMs / AUDIO_MS_PER_S;
-    // for 11025, frameSize has expand twice, shrink to 20ms here for correctly setting up
-    // frameLen in formatConverterNode in outputCluster, need to be reconstructed
-    if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
-        nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
-            nodeInfo.frameLen /= EXPAND_SIZE_2;
-    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
-        // customSampleRate is multiples of 50, eg. 8050, 8100, 8150... 20ms
-        // else eg. 8010, 8020, 8030, 8040... 100ms shrink to 20ms
-            nodeInfo.frameLen /= EXPAND_SIZE_5;
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    if (effectiveRate == 0 || sinkInfo.samplingRate == 0) {
+        AUDIO_ERR_LOG("ProcessCluster invalid rate: effectiveRate=%{public}u sinkRate=%{public}d",
+            effectiveRate, sinkInfo.samplingRate);
+        nodeInfo.frameLen = sinkInfo.frameLen; // fallback
+    } else {
+        constexpr uint64_t AUDIO_US_PER_S = AUDIO_US_PER_MS * AUDIO_MS_PER_S;
+        uint64_t frameLenMicros = static_cast<uint64_t>(nodeInfo.frameLen) * AUDIO_US_PER_S / effectiveRate;
+        nodeInfo.frameLen = static_cast<uint32_t>(frameLenMicros * sinkInfo.samplingRate / AUDIO_US_PER_S);
     }
     nodeInfo.samplingRate = sinkInfo.samplingRate;
     // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.

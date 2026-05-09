@@ -57,6 +57,8 @@
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
 #include "audio_device_info.h"
+#include "stream_dfx_manager.h"
+#include "ipc_skeleton.h"
 
 
 #undef LOG_DOMAIN
@@ -1705,14 +1707,19 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
     const int32_t audioDeviceSelectMode)
 {
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_PERMISSION_DENIED, "SelectOutputDevice: No system permission", false),
+        "SelectOutputDevice: No system permission");
     if (!IsEnhancedRoutingAvailableForSelectMode(audioDeviceSelectMode)) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
             "SelectInputDevice: No system permission");
     }
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-        "SelectOutputDevice: No system permission");
-    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !audioDeviceDescriptors.empty() &&
-        audioDeviceDescriptors[0] != nullptr, ERROR, "SelectOutputDevice: ptr exception");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRendererFilter != nullptr &&
+        !audioDeviceDescriptors.empty() && audioDeviceDescriptors[0] != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_NULL_POINTER, "SelectOutputDevice: null filter or selectedDesc", false),
+        "SelectOutputDevice null filter or selectedDesc");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (auto desc : audioDeviceDescriptors) {

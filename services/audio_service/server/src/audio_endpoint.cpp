@@ -394,7 +394,7 @@ AudioEndpoint::EndpointStatus AudioEndpointInner::GetStatus()
     return endpointStatus_.load();
 }
 
-void AudioEndpointInner::Release()
+void AudioEndpointInner::Release(bool releaseSink)
 {
     // Wait for thread end and then clear other data to avoid using any cleared data in thread.
     AUDIO_INFO_LOG("Release enter.");
@@ -425,7 +425,7 @@ void AudioEndpointInner::Release()
     }
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
-    if (sink != nullptr) {
+    if (sink != nullptr && releaseSink) {
         sink->DeInit();
     }
     HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);

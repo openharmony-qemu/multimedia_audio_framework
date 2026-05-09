@@ -36,7 +36,7 @@ enum class InputDataStatus {
 struct AudioConvertResult {
     uint8_t* outData = nullptr;       // Output data buffer
     uint32_t outSampleCount = 0;      // Number of output samples
-    int32_t errCode = SUCCESS;
+    int32_t errCode = 0;
 };
 
 // Abstract class for format converter data request callback

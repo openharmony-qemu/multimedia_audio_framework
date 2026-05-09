@@ -114,7 +114,7 @@ public:
 
     EndpointStatus GetStatus() override;
 
-    void Release() override;
+    void Release(bool releaseSink = true) override;
     float GetMaxAmplitude() override;
     uint32_t GetLinkedProcessCount() override;
 
@@ -132,6 +132,8 @@ public:
     
     // This func is a virtual sync func, we can continully calculate frame rate and time even sink stoped
     void UpdateVirtualDeviceHandleInfo();
+
+    int32_t GetFastSinkType() const override { return static_cast<int32_t>(fastSinkType_); }
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -271,21 +273,6 @@ private:
         WAITTING = 0,
         SLEEPING,
         INRUNNING
-    };
-    enum FastSinkType {
-        NONE_FAST_SINK = 0,
-        FAST_SINK_TYPE_NORMAL,
-        FAST_SINK_TYPE_REMOTE,
-        FAST_SINK_TYPE_VOIP,
-        FAST_SINK_TYPE_BLUETOOTH,
-        FAST_SINK_TYPE_ARM_USB
-    };
-    enum FastSourceType {
-        NONE_FAST_SOURCE = 0,
-        FAST_SOURCE_TYPE_NORMAL,
-        FAST_SOURCE_TYPE_REMOTE,
-        FAST_SOURCE_TYPE_VOIP,
-        FAST_SOURCE_TYPE_ARM_USB
     };
     enum ZeroVolumeState : uint32_t {
         INACTIVE = 0,
