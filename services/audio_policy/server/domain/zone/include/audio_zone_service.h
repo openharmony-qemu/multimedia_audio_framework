@@ -70,9 +70,9 @@ public:
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
     void SetZoneDeviceVisible(bool visible);
     bool IsZoneDeviceVisible();
-    int32_t FindAudioZoneByUid(int32_t uid);
-    int32_t FindAudioZone(int32_t uid, StreamUsage usage);
-    virtual std::string FindAudioZoneNameByUid(int32_t uid);
+    int32_t FindAudioZoneByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE);
+    int32_t FindAudioZone(int32_t uid, StreamUsage usage, DeviceRole deviceRole = DEVICE_ROLE_NONE);
+    virtual std::string FindAudioZoneNameByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, DeviceType deviceType, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId, DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE);
@@ -144,7 +144,7 @@ private:
         const std::string &streamTag, const StreamUsage &usage);
     int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys);
     int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
-        const StreamUsage &usage);
+        const StreamUsage &usage, DeviceRole deviceRole);
     bool CheckIsZoneValid(int32_t zoneId);
     void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device);
 };

@@ -968,7 +968,7 @@ void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t cli
             STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
         return;
     }
-    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid]);
+    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid], OUTPUT_DEVICE);
     CHECK_AND_RETURN(zoneId != 0);
     auto tmpDeviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
         STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
@@ -996,7 +996,7 @@ bool AudioPolicyServerHandler::IsTargetZoneForVolumeKeyEvent(int32_t pid, int32_
 {
     CHECK_AND_RETURN_RET(pidUidMap_.count(pid) > 0, true);
     int32_t uid = pidUidMap_[pid];
-    int zoneIdForUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    int zoneIdForUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
     AUDIO_INFO_LOG("uid: %{public}d, zoneId: %{public}d, target zoneId: %{public}d, is target zone: %{public}s",
         uid, zoneIdForUid, zoneId, zoneId == zoneIdForUid ? "true" : "false");
     return zoneId == zoneIdForUid;

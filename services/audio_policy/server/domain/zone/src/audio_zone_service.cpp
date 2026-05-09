@@ -116,8 +116,8 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
         zoneClientManager_, AudioZoneInterruptReason::RELEASE_AUDIO_ZONE);
     tmp->ReleaseAudioInterruptZone(zoneId,
         [this](int32_t uid, const std::string &deviceTag, const std::string &streamTag,
-            const StreamUsage &usage)->int32_t {
-            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage);
+            const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
+            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage, deviceRole);
     });
     for (auto &report : reporters) {
         report->ReportInterrupt();
@@ -330,8 +330,8 @@ int32_t AudioZoneService::RemoveStreamsFromAudioZone(int32_t zoneId, std::vector
         zoneClientManager_, AudioZoneInterruptReason::UNBIND_APP_FROM_ZONE);
     tmp->MigrateAudioInterruptZone(zoneId,
         [this](int32_t uid, const std::string &deviceTag, const std::string &streamTag,
-            const StreamUsage &usage)->int32_t {
-            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage);
+            const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
+            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage, deviceRole);
     });
     for (auto &report : reporter) {
         report->ReportInterrupt();
@@ -371,7 +371,7 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
         AUDIO_DEBUG_LOG("add key %{public}d,%{public}s,%{public}s,%{public}d to zone %{public}d",
             uid, deviceTag.c_str(), streamTag.c_str(), usage, zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
-        srcZoneId = FindAudioZoneByKey(uid, deviceTag, streamTag, usage);
+        srcZoneId = FindAudioZoneByKey(uid, deviceTag, streamTag, usage, DEVICE_ROLE_NONE);
         auto zone = FindZone(zoneId);
         CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
 
@@ -391,8 +391,8 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
         zoneClientManager_, AudioZoneInterruptReason::BIND_APP_TO_ZONE);
     tmp->MigrateAudioInterruptZone(srcZoneId,
         [this](int32_t uid, const std::string &deviceTag, const std::string &streamTag,
-            const StreamUsage &usage)->int32_t {
-            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage);
+            const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
+            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage, deviceRole);
     });
     for (auto &report : reporter) {
         report->ReportInterrupt();
@@ -400,38 +400,40 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
     return SUCCESS;
 }
 
-int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
+int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid, DeviceRole deviceRole)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    return FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+    return FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID, deviceRole);
 }
 
-std::string AudioZoneService::FindAudioZoneNameByUid(int32_t uid)
+std::string AudioZoneService::FindAudioZoneNameByUid(int32_t uid, DeviceRole deviceRole)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     auto keyList = AudioZoneBindKey::GetSupportKeys(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
     for (const auto &key : keyList) {
         for (const auto &it : zoneMaps_) {
             CHECK_AND_CONTINUE(it.second != nullptr && it.second->IsContainKey(key));
+            CHECK_AND_CONTINUE(it.second->IsSupportDeviceRole(deviceRole));
             return it.second->GetName();
         }
     }
     return std::string(PRIMARY_ZONE_NAME);
 }
 
-int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)
+int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage, DeviceRole deviceRole)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    return FindAudioZoneByKey(uid, "", "", usage);
+    return FindAudioZoneByKey(uid, "", "", usage, deviceRole);
 }
 
 int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &deviceTag,
-    const std::string &streamTag, const StreamUsage &usage)
+    const std::string &streamTag, const StreamUsage &usage, DeviceRole deviceRole)
 {
     auto keyList = AudioZoneBindKey::GetSupportKeys(uid, deviceTag, streamTag, usage);
     for (const auto &key : keyList) {
         for (const auto &it : zoneMaps_) {
             CHECK_AND_CONTINUE(it.second != nullptr && it.second->IsContainKey(key));
+            CHECK_AND_CONTINUE(it.second->IsSupportDeviceRole(deviceRole));
             return it.first;
         }
     }
@@ -486,8 +488,8 @@ int32_t AudioZoneService::RemoveKeysFromAudioZone(int32_t zoneId, const std::vec
         zoneClientManager_, AudioZoneInterruptReason::UNBIND_APP_FROM_ZONE);
     tmp->MigrateAudioInterruptZone(zoneId,
         [this](int32_t uid, const std::string &deviceTag, const std::string &streamTag,
-            const StreamUsage &usage)->int32_t {
-            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage);
+            const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
+            return this->FindAudioZoneByKey(uid, deviceTag, streamTag, usage, deviceRole);
     });
     for (auto &report : reporter) {
         report->ReportInterrupt();
@@ -934,6 +936,13 @@ void AudioZoneService::UpdateContextForAudioZone(int32_t zoneId, const AudioZone
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
+        auto zone = FindZone(zoneId);
+        if (zone != nullptr) {
+            zone->UpdateContext(context);
+            AUDIO_INFO_LOG("zoneId: %{public}d, supportType: %{public}d", zoneId, context.supportType_);
+        } else {
+            AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
+        }
         tmp = interruptService_;
     }
     CHECK_AND_RETURN_LOG(tmp != nullptr, "interruptService_ tmp is nullptr");
