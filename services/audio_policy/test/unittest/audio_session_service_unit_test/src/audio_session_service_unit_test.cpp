@@ -522,6 +522,14 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_023, TestSize.
     audioSession->audioSessionScene_ = AudioSessionScene::MEDIA;
     EXPECT_NO_THROW(audioSessionService_.NotifyAppStateChange(pid, false));
     EXPECT_NO_THROW(audioSessionService_.NotifyAppStateChange(pid, true));
+
+    audioSession->fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_PAUSE;
+    EXPECT_NO_THROW(audioSessionService_.NotifyAppStateChange(pid, false));
+    EXPECT_NO_THROW(audioSessionService_.NotifyAppStateChange(pid, true));
+
+    audioSession->fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_STOP;
+    EXPECT_NO_THROW(audioSessionService_.NotifyAppStateChange(pid, false));
+    EXPECT_NO_THROW(audioSessionService_.NotifyAppStateChange(pid, true));
 }
 
 /**

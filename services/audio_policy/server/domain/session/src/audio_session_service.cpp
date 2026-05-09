@@ -108,7 +108,9 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
         }
 
         // session v2 background 10s
-        if (audioSession->IsSceneParameterSet() && audioSession->IsBackGroundApp()) {
+        if (audioSession->IsSceneParameterSet() &&
+            audioSession->GetFakeFocusInterruptEvent().hintType != INTERRUPT_HINT_PAUSE &&
+            audioSession->IsBackGroundApp()) {
             StartMonitor(callerPid, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
         }
     }
@@ -410,6 +412,17 @@ bool AudioSessionService::HasStreamForDeviceType(int32_t callerPid, DeviceType d
     return false;
 }
 
+void AudioSessionService::SetFakeFocusInterruptEvent(int32_t callerPid, const InterruptEventInternal &interruptEvent)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        session->second->SetFakeFocusInterruptEvent(interruptEvent);
+    } else {
+        AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
+    }
+}
+
 void AudioSessionService::GenerateFakeStreamId(int32_t callerPid)
 {
     uint32_t fakeStreamId = AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
@@ -607,6 +620,7 @@ void AudioSessionService::NotifyAppStateChange(const int32_t pid, bool isBackSta
     // v2 background
     if (session->second->IsActivated() &&
         session->second->IsSceneParameterSet() &&
+        session->second->GetFakeFocusInterruptEvent().hintType != INTERRUPT_HINT_PAUSE &&
         session->second->IsAudioSessionEmpty()) {
         StartMonitor(pid, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
     }

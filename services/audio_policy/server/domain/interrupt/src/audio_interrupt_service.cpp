@@ -3171,6 +3171,7 @@ void AudioInterruptService::SendAudioSessionInterruptEventCallback(
     */
     // Processes the situation where the audio session fake interrupt is preempted by other applications.
     if (sessionService_.ShouldAudioSessionProcessHintType(interruptEvent.hintType)) {
+        sessionService_.SetFakeFocusInterruptEvent(audioInterrupt.pid, interruptEvent);
         handler_->SendInterruptEventCallbackForAudioSession(interruptEvent, audioInterrupt);
         // Simulate the deactivation of the audio session.
         if (interruptEvent.hintType == INTERRUPT_HINT_STOP || interruptEvent.hintType == INTERRUPT_HINT_RESUME) {

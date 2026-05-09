@@ -153,10 +153,22 @@ void AudioSession::RemoveStreamInfo(uint32_t streamId)
         }
 
         // session v2 background 10s
-        if ((audioSessionScene_ != AudioSessionScene::INVALID) && IsBackGroundApp()) {
+        if ((audioSessionScene_ != AudioSessionScene::INVALID) &&
+            fakeFocusInterruptEvent_.hintType != INTERRUPT_HINT_PAUSE &&
+            IsBackGroundApp()) {
             audioSessionStateMonitor_.StartMonitor(callerPid_, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
         }
     }
+}
+
+void AudioSession::SetFakeFocusInterruptEvent(const InterruptEventInternal &interruptEvent)
+{
+    fakeFocusInterruptEvent_ = interruptEvent;
+}
+
+InterruptEventInternal AudioSession::GetFakeFocusInterruptEvent()
+{
+    return fakeFocusInterruptEvent_;
 }
 
 void AudioSession::ClearStreamInfo(void)
