@@ -68,7 +68,8 @@ private:
     std::weak_ptr<AudioLoopback> audioLoopback_;
 };
 
-static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopback> &audioLoopback)
+static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopback> &audioLoopback,
+    uint32_t &debugKey)
 {
     if (audioLoopback == nullptr) {
         return;
@@ -77,8 +78,11 @@ static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopbac
     if (debugCallback == nullptr) {
         return;
     }
-    (void)AudioDebugManager::GetInstance().RegisterAudioLoopback(
-        reinterpret_cast<uintptr_t>(audioLoopback.get()), debugCallback);
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(debugKey, debugCallback);
+    if (ret != SUCCESS || debugKey == 0) {
+        AUDIO_WARNING_LOG("Register loopback debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
+    }
+    AUDIO_INFO_LOG("Register loopback debug manager success, debugKey:%{public}u", debugKey);
 }
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
@@ -111,7 +115,9 @@ std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackM
 
     static bool registered = false;
     if (!registered) {
-        RegisterAudioLoopbackDebugManager(wrapper);
+        uint32_t debugKey = 0;
+        RegisterAudioLoopbackDebugManager(wrapper, debugKey);
+        wrapper->SetDebugKey(debugKey);
         registered = true;
     }
     return wrapper;
@@ -165,7 +171,6 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
         stateLock.unlock();
         DestroyAudioLoopbackInner();
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(reinterpret_cast<uintptr_t>(this));
 }
 
 void AudioLoopbackPrivate::GetValidDevice()
@@ -389,8 +394,8 @@ int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debug
     }
 
     // Stream states
-    debugInfo.uplinkStreamState = rendererState_.load();
-    debugInfo.downlinkStreamState = capturerState_.load();
+    debugInfo.uplinkStreamState = capturerState_.load();
+    debugInfo.downlinkStreamState = rendererState_.load();
 
     return SUCCESS;
 }

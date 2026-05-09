@@ -48,10 +48,10 @@ public:
     int32_t UnregisterAudioCapturer(uintptr_t capturerKey) override;
     int32_t PrintAudioCapturerDebugInfo(uintptr_t capturerKey, int32_t fd) const override;
 
-    int32_t RegisterAudioLoopback(uintptr_t loopbackKey,
+    int32_t RegisterAudioLoopback(uint32_t &loopbackKey,
         const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback) override;
-    int32_t UnregisterAudioLoopback(uintptr_t loopbackKey) override;
-    int32_t PrintAudioLoopbackDebugInfo(uintptr_t loopbackKey, int32_t fd) const override;
+    int32_t UnregisterAudioLoopback(uint32_t loopbackKey) override;
+    int32_t PrintAudioLoopbackDebugInfo(uint32_t loopbackKey, int32_t fd) const override;
 
     int32_t SetAudioSessionCallback(
         const std::shared_ptr<AudioSessionDebugCallback> &debugCallback) override;
@@ -68,11 +68,13 @@ private:
     int32_t GetAudioCapturerDebugInfo(uintptr_t capturerKey, AudioCapturerDebugInfo &debugInfo) const;
     static std::string ParserAudioCapturerDebugInfo(const AudioCapturerDebugInfo &debugInfo);
 
-    int32_t GetAudioLoopbackDebugInfo(uintptr_t loopbackKey, AudioLoopbackDebugInfo &debugInfo) const;
+    int32_t GetAudioLoopbackDebugInfo(uint32_t loopbackKey, AudioLoopbackDebugInfo &debugInfo) const;
     static std::string ParserAudioLoopbackDebugInfo(const AudioLoopbackDebugInfo &debugInfo);
 
     int32_t GetAudioSessionDebugInfo(AudioSessionDebugInfo &debugInfo) const;
     static std::string ParserAudioSessionDebugInfo(const AudioSessionDebugInfo &debugInfo);
+
+    uint32_t GenerateDebugKey();
 
 private:
     mutable std::mutex rendererMutex_;
@@ -81,8 +83,10 @@ private:
     mutable std::mutex sessionMutex_;
     std::map<uintptr_t, std::shared_ptr<AudioRendererDebugCallback>> audioRendererDebugCallbacks_;
     std::map<uintptr_t, std::shared_ptr<AudioCapturerDebugCallback>> audioCapturerDebugCallbacks_;
-    std::map<uintptr_t, std::shared_ptr<AudioLoopbackDebugCallback>> audioLoopbackDebugCallbacks_;
+    std::map<uint32_t, std::shared_ptr<AudioLoopbackDebugCallback>> audioLoopbackDebugCallbacks_;
     std::shared_ptr<AudioSessionDebugCallback> audioSessionDebugCallback_;
+    std::atomic<uint32_t> debugKeyCounter_ = DEBUG_KEY_START;
+    static constexpr uint32_t DEBUG_KEY_START = 1000;
 };
 } // namespace AudioStandard
 } // namespace OHOS
