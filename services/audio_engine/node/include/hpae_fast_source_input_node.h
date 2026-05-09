@@ -66,6 +66,7 @@ public:
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     void NotifyStreamChangeToSource(StreamChangeType change,
         uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID, bool mute = false);
+    bool PrepareNextLoop(int64_t &wakeUpTime);
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION_NS = 1000000;
@@ -81,7 +82,6 @@ private:
     void InitAudiobuffer(bool resetReadWritePos);
     void ResetReadPosition();
     bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
-    bool PrepareNextLoop(int64_t &wakeUpTime);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     void CheckWakeUpTime(int64_t &wakeUpTime);
     void RecordCheckSyncInfo(uint64_t curReadPos);

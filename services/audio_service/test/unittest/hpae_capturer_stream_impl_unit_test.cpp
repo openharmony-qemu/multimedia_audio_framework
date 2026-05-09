@@ -17,6 +17,7 @@
 #include "hpae_capturer_stream_impl.h"
 #include "audio_errors.h"
 #include "hpae_adapter_manager.h"
+#include "hpae_manager_impl.h"
 #include "audio_system_manager.h"
 
 using namespace testing::ext;
@@ -24,6 +25,18 @@ namespace OHOS {
 namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
 static std::shared_ptr<HpaeAdapterManager> adapterManager;
+
+class HpaeStatusCallbackTest : public IStatusCallback {
+public:
+    void OnStatusUpdate(IOperation operation) override
+    {
+        operation_ = operation;
+        notifyCount_++;
+    }
+
+    IOperation operation_ = OPERATION_INVALID;
+    int32_t notifyCount_ = 0;
+};
 
 class HpaeCapturerStreamUnitTest : public testing::Test {
 public:
@@ -367,6 +380,54 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level2)
     capturerStreamImplRet->AbortCallback(abortTimes);
     auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerStreamImpl API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_018
+ * @tc.desc  : Test OnStatusUpdate refreshes route flag on UPDATE_SPANSIZE.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_018, TestSize.Level2)
+{
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+    auto statusCallback = std::make_shared<HpaeStatusCallbackTest>();
+    capturerStreamImplRet->RegisterStatusCallback(statusCallback);
+
+    auto &hpaeManagerImpl = static_cast<HPAE::HpaeManagerImpl &>(HPAE::IHpaeManager::GetHpaeManager());
+    ASSERT_NE(hpaeManagerImpl.manager_, nullptr);
+    std::string sourceName = "mic_route_flag";
+    uint32_t sessionId = capturerStreamImplRet->processConfig_.originalSessionId;
+    auto oldSourceNameIter = hpaeManagerImpl.manager_->capturerIdSourceNameMap_.find(sessionId);
+    bool hasOldSourceName = oldSourceNameIter != hpaeManagerImpl.manager_->capturerIdSourceNameMap_.end();
+    std::string oldSourceName = hasOldSourceName ? oldSourceNameIter->second : "";
+    HPAE::HpaeSourceInfo sourceInfo;
+    sourceInfo.routeFlag = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP;
+    auto capturerManager = std::make_shared<HPAE::HpaeCapturerManager>(sourceInfo);
+    hpaeManagerImpl.manager_->capturerIdSourceNameMap_[sessionId] = sourceName;
+    hpaeManagerImpl.manager_->capturerManagerMap_[sourceName] = capturerManager;
+
+    capturerStreamImplRet->OnStatusUpdate(OPERATION_UPDATE_SPANSIZE, capturerStreamImplRet->GetStreamIndex());
+    EXPECT_EQ(capturerStreamImplRet->GetRouteFlag(), sourceInfo.routeFlag);
+    EXPECT_EQ(statusCallback->notifyCount_, 1);
+    EXPECT_EQ(statusCallback->operation_, OPERATION_UPDATE_SPANSIZE);
+
+    capturerStreamImplRet->routeFlag_.store(0);
+    hpaeManagerImpl.manager_->capturerManagerMap_.erase(sourceName);
+    capturerStreamImplRet->OnStatusUpdate(OPERATION_UPDATE_SPANSIZE, capturerStreamImplRet->GetStreamIndex());
+    EXPECT_EQ(capturerStreamImplRet->GetRouteFlag(), 0);
+    EXPECT_EQ(statusCallback->notifyCount_, 2);
+
+    capturerStreamImplRet->OnStatusUpdate(OPERATION_STARTED, capturerStreamImplRet->GetStreamIndex());
+    EXPECT_EQ(capturerStreamImplRet->GetRouteFlag(), 0);
+    EXPECT_EQ(statusCallback->notifyCount_, 3);
+    EXPECT_EQ(statusCallback->operation_, OPERATION_STARTED);
+
+    if (hasOldSourceName) {
+        hpaeManagerImpl.manager_->capturerIdSourceNameMap_[sessionId] = oldSourceName;
+    } else {
+        hpaeManagerImpl.manager_->capturerIdSourceNameMap_.erase(sessionId);
+    }
 }
 }
 }

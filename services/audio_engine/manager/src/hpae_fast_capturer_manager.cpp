@@ -492,6 +492,10 @@ void HpaeFastCapturerManager::Process()
             sourceOutputNode->DoProcess();
         }
     }
+    int64_t wakeUpTime = ClockTime::GetCurNano();
+    CHECK_AND_RETURN_LOG(sourceInputNode_ && sourceInputNode_->PrepareNextLoop(wakeUpTime),
+        "PrepareNextLoop failed");
+    ClockTime::AbsoluteSleep(wakeUpTime);
 }
 
 void HpaeFastCapturerManager::HandleMsg()

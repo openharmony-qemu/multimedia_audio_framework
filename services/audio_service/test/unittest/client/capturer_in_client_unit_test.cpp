@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <functional>
 #include <gtest/gtest.h>
 
 #include "audio_service_log.h"
@@ -311,6 +312,61 @@ HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
     operation = Operation::START_STREAM;
     ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NotifyFastStatusChange API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyFastStatusChange_001
+ * @tc.desc  : Test valid, invalid, and empty fast status callback branches.
+ */
+HWTEST(CapturerInClientUnitTest, NotifyFastStatusChange_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    int32_t notifyCount = 0;
+    FastStatus notifiedStatus = FASTSTATUS_INVALID;
+    capturerInClientInner->SetFastStatusChangeCallback([&notifyCount, &notifiedStatus] (FastStatus status) {
+        notifyCount++;
+        notifiedStatus = status;
+    });
+
+    capturerInClientInner->NotifyFastStatusChange(FASTSTATUS_FAST);
+    EXPECT_EQ(capturerInClientInner->fastStatus_.load(), FASTSTATUS_FAST);
+    EXPECT_EQ(notifyCount, 1);
+    EXPECT_EQ(notifiedStatus, FASTSTATUS_FAST);
+
+    capturerInClientInner->NotifyFastStatusChange(FASTSTATUS_INVALID);
+    EXPECT_EQ(capturerInClientInner->fastStatus_.load(), FASTSTATUS_FAST);
+    EXPECT_EQ(notifyCount, 1);
+
+    capturerInClientInner->SetFastStatusChangeCallback(std::function<void(FastStatus)>());
+    capturerInClientInner->NotifyFastStatusChange(FASTSTATUS_NORMAL);
+    EXPECT_EQ(capturerInClientInner->fastStatus_.load(), FASTSTATUS_NORMAL);
+    EXPECT_EQ(notifyCount, 1);
+}
+
+/**
+ * @tc.name  : Test OnOperationHandled UPDATE_SPANSIZE API
+ * @tc.type  : FUNC
+ * @tc.number: OnOperationHandled_UpdateSpanSize_001
+ * @tc.desc  : Test UPDATE_SPANSIZE dispatches fast status change callback.
+ */
+HWTEST(CapturerInClientUnitTest, OnOperationHandled_UpdateSpanSize_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    int32_t notifyCount = 0;
+    FastStatus notifiedStatus = FASTSTATUS_INVALID;
+    capturerInClientInner->SetFastStatusChangeCallback([&notifyCount, &notifiedStatus] (FastStatus status) {
+        notifyCount++;
+        notifiedStatus = status;
+    });
+
+    int32_t ret = capturerInClientInner->OnOperationHandled(UPDATE_SPANSIZE, FASTSTATUS_FAST);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(capturerInClientInner->fastStatus_.load(), FASTSTATUS_FAST);
+    EXPECT_EQ(notifyCount, 1);
+    EXPECT_EQ(notifiedStatus, FASTSTATUS_FAST);
 }
 
 /**

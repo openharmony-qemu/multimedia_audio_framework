@@ -58,6 +58,76 @@ static BufferDesc bufferDesc;
 static AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
     AudioChannelLayout::CH_LAYOUT_UNKNOWN);
 
+class RendererSpanSizeListener : public IStreamListener {
+public:
+    int32_t OnOperationHandled(Operation operation, int64_t result) override
+    {
+        operation_ = operation;
+        result_ = result;
+        notifyCount_++;
+        return SUCCESS;
+    }
+
+    Operation operation_ = UPDATE_SPANSIZE;
+    int64_t result_ = FASTSTATUS_INVALID;
+    int32_t notifyCount_ = 0;
+};
+
+class RendererStreamRouteFlagTest : public IRendererStream {
+public:
+    RendererStreamRouteFlagTest(uint32_t routeFlag, size_t spanSizeInFrame)
+        : routeFlag_(routeFlag), spanSizeInFrame_(spanSizeInFrame) {}
+    ~RendererStreamRouteFlagTest() override = default;
+
+    void SetStreamIndex(uint32_t index) override {}
+    uint32_t GetStreamIndex() override { return 0; }
+    int32_t Start() override { return SUCCESS; }
+    int32_t Pause(bool isStandby = false) override { return SUCCESS; }
+    int32_t Flush() override { return SUCCESS; }
+    int32_t Drain(bool stopFlag = false) override { return SUCCESS; }
+    int32_t Stop() override { return SUCCESS; }
+    int32_t Release() override { return SUCCESS; }
+    void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override {}
+    BufferDesc DequeueBuffer(size_t length) override { return {}; }
+    int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return SUCCESS; }
+    int32_t GetStreamFramesWritten(uint64_t &framesWritten) override { return SUCCESS; }
+    int32_t GetCurrentTimeStamp(uint64_t &timestamp) override { return SUCCESS; }
+    int32_t GetLatency(uint64_t &latency) override { return SUCCESS; }
+    int32_t SetRate(int32_t rate) override { return SUCCESS; }
+    int32_t SetAudioEffectMode(int32_t effectMode) override { return SUCCESS; }
+    int32_t GetAudioEffectMode(int32_t &effectMode) override { return SUCCESS; }
+    int32_t SetPrivacyType(int32_t privacyType) override { return SUCCESS; }
+    int32_t GetPrivacyType(int32_t &privacyType) override { return SUCCESS; }
+    void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) override {}
+    int32_t GetMinimumBufferSize(size_t &minBufferSize) const override { return SUCCESS; }
+    void GetByteSizePerFrame(size_t &byteSizePerFrame) const override { byteSizePerFrame = sizeof(int16_t); }
+    void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override { spanSizeInFrame = spanSizeInFrame_; }
+    void AbortCallback(int32_t abortTimes) override {}
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return SUCCESS; }
+    int32_t UnsetOffloadMode() override { return SUCCESS; }
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override { return SUCCESS; }
+    int32_t OffloadSetVolume() override { return SUCCESS; }
+    int32_t SetOffloadDataCallbackState(int32_t state) override { return SUCCESS; }
+    size_t GetWritableSize() override { return 0; }
+    int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override { return SUCCESS; }
+    int32_t UpdateMaxLength(uint32_t maxLength) override { return SUCCESS; }
+    int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override { return SUCCESS; }
+    int32_t ReturnIndex(int32_t index) override { return SUCCESS; }
+    AudioProcessConfig GetAudioProcessConfig() const noexcept override { return {}; }
+    int32_t SetClientVolume(float clientVolume) override { return SUCCESS; }
+    int32_t SetSpeed(float speed) override { return SUCCESS; }
+    int32_t SetLoudnessGain(float loudnessGain) override { return SUCCESS; }
+    void BlockStream() noexcept override {}
+    void SetSendDataEnabled(bool enabled) override {}
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override { return SUCCESS; }
+    uint32_t GetRouteFlag() const noexcept override { return routeFlag_; }
+
+private:
+    uint32_t routeFlag_ = 0;
+    size_t spanSizeInFrame_ = 0;
+};
+
 void RendererInServerUnitTest::SetUpTestCase(void) {}
 
 void RendererInServerUnitTest::TearDownTestCase(void)
@@ -78,6 +148,7 @@ void RendererInServerUnitTest::SetUp(void)
     processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     streamListener = streamListenerHolder;
+    stateListener = streamListenerHolder;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
 }
 
@@ -4075,8 +4146,91 @@ HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_001, Tes
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
 
-    ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate();
+    ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
     EXPECT_NE(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test GetRendererFlagsByRoute API
+ * @tc.type  : FUNC
+ * @tc.number: GetRendererFlagsByRoute_001
+ * @tc.desc  : Cover normal, fast, and voip fast route mapping.
+ */
+HWTEST_F(RendererInServerUnitTest, GetRendererFlagsByRoute_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_NE(nullptr, rendererInServer);
+
+    EXPECT_EQ(rendererInServer->GetRendererFlagsByRoute(0), AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(rendererInServer->GetRendererFlagsByRoute(AUDIO_OUTPUT_FLAG_FAST), AUDIO_FLAG_MMAP);
+    EXPECT_EQ(rendererInServer->GetRendererFlagsByRoute(AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP),
+        AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshServerBufferForSpanSizeUpdate API
+ * @tc.type  : FUNC
+ * @tc.number: RefreshServerBufferForSpanSizeUpdate_002
+ * @tc.desc  : Cover fast status notification when renderer flags change.
+ */
+HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    auto notifyListener = std::make_shared<RendererSpanSizeListener>();
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, notifyListener);
+    ASSERT_NE(nullptr, rendererInServer);
+    rendererInServer->stream_ = std::make_shared<RendererStreamRouteFlagTest>(AUDIO_OUTPUT_FLAG_FAST, 240);
+    rendererInServer->audioServerBuffer_ = nullptr;
+    rendererInServer->spanSizeInFrame_ = 480;
+    rendererInServer->engineTotalSizeInFrame_ = 960;
+    rendererInServer->byteSizePerFrame_ = sizeof(int16_t);
+
+    int32_t ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate(notifyListener);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererInServer->processConfig_.rendererInfo.rendererFlags, AUDIO_FLAG_MMAP);
+    EXPECT_EQ(notifyListener->notifyCount_, 1);
+    EXPECT_EQ(notifyListener->operation_, UPDATE_SPANSIZE);
+    EXPECT_EQ(notifyListener->result_, FASTSTATUS_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshServerBufferForSpanSizeUpdate API
+ * @tc.type  : FUNC
+ * @tc.number: RefreshServerBufferForSpanSizeUpdate_003
+ * @tc.desc  : Cover normal status notification and unchanged branch.
+ */
+HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    auto notifyListener = std::make_shared<RendererSpanSizeListener>();
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, notifyListener);
+    ASSERT_NE(nullptr, rendererInServer);
+    rendererInServer->stream_ = std::make_shared<RendererStreamRouteFlagTest>(0, 240);
+    rendererInServer->audioServerBuffer_ = nullptr;
+    rendererInServer->spanSizeInFrame_ = 480;
+    rendererInServer->engineTotalSizeInFrame_ = 960;
+    rendererInServer->byteSizePerFrame_ = sizeof(int16_t);
+
+    int32_t ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate(notifyListener);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererInServer->processConfig_.rendererInfo.rendererFlags, AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(notifyListener->notifyCount_, 1);
+    EXPECT_EQ(notifyListener->result_, FASTSTATUS_NORMAL);
+
+    ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate(notifyListener);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(notifyListener->notifyCount_, 1);
 }
 
 /**
@@ -4284,7 +4438,7 @@ HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_ZeroSpan
     ASSERT_EQ(SUCCESS, ret);
 
     rendererInServer->spanSizeInFrame_ = 0;
-    rendererInServer->RefreshServerBufferForSpanSizeUpdate();
+    rendererInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
 }
 } // namespace AudioStandard
 } // namespace OHOS
