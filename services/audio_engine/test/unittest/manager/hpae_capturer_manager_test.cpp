@@ -3117,7 +3117,7 @@ HWTEST_F(HpaeCapturerManagerTest, FaultCode_CaptureEffectCreate_InvalidSceneType
 /*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
- * tc.number : HpaeCapturerManagerTest
+ * tc.number : SourceTypeCamcorderConstruct_001
  * tc.desc   : Test SourceTypeCamcorderConstruct_001
  */
 HWTEST_F(HpaeCapturerManagerTest, SourceTypeCamcorderConstruct_001, TestSize.Level0)
@@ -3142,7 +3142,7 @@ HWTEST_F(HpaeCapturerManagerTest, SourceTypeCamcorderConstruct_001, TestSize.Lev
 /*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
- * tc.number : HpaeCapturerManagerTest
+ * tc.number : SourceTypeCamcorderConstruct_002
  * tc.desc   : Test SourceTypeCamcorderConstruct_002
  */
 HWTEST_F(HpaeCapturerManagerTest, SourceTypeCamcorderConstruct_002, TestSize.Level0)
@@ -3221,7 +3221,7 @@ HWTEST_F(HpaeCapturerManagerTest, UpdateSourceAttr_Camcorder_002, TestSize.Level
 /*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
- * tc.number : HpaeCapturerManagerTest
+ * tc.number : UpdateSourceInputNodeInfoForCamcorder_001
  * tc.desc   : Test UpdateSourceInputNodeInfoForCamcorder_001
  */
 HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_001, TestSize.Level0)
@@ -3241,16 +3241,16 @@ HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_001, Tes
     nodeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
     capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
 
-    EXPECT_EQ((uint8_t)nodeInfo.channels, (uint8_t)sourceInfo.micInChannels + (uint8_t)sourceInfo.channels);
+    EXPECT_EQ(static_cast<uint8_t>(nodeInfo.channels), static_cast<uint8_t>(sourceInfo.micInChannels) + static_cast<uint8_t>(sourceInfo.channels));
 }
 
 /*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
- * tc.number : HpaeCapturerManagerTest
- * tc.desc   : Test UpdateSourceInputNodeInfoForCamcorder_002
+ * tc.number : UpdateSourceInputNodeInfoForCamcorder_NonCamcorder_001
+ * tc.desc   : Test UpdateSourceInputNodeInfoForCamcorder_NonCamcorder_001
  */
-HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_002, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_NonCamcorder_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -3266,14 +3266,14 @@ HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_002, Tes
     InitNodeInfo(nodeInfo);
     capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
 
-    EXPECT_EQ(nodeInfo.channels == (AudioChannel)((uint8_t)sourceInfo.micInChannels + (uint8_t)sourceInfo.channels),
-        false);
+    EXPECT_EQ(nodeInfo.channels == static_cast<AudioChannel>(static_cast<uint8_t>(sourceInfo.micInChannels) +
+        static_cast<uint8_t>(sourceInfo.channels)), false);
 }
 
 /*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
- * tc.number : HpaeCapturerManagerTest
+ * tc.number : UpdateClusterNodeInfoForCamcorder_001
  * tc.desc   : Test UpdateClusterNodeInfoForCamcorder_001
  */
 HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForCamcorder_001, TestSize.Level0)
@@ -3298,16 +3298,16 @@ HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForCamcorder_001, TestSiz
 
     uint8_t totalChannels = static_cast<uint8_t>(sourceInfo.micInChannels) +
         static_cast<uint8_t>(sourceInfo.channels) + static_cast<uint8_t>(sourceInfo.ecChannels);
-    EXPECT_EQ((uint8_t)nodeInfo.channels, totalChannels);
+    EXPECT_EQ(static_cast<uint8_t>(nodeInfo.channels), totalChannels);
 }
 
 /*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
- * tc.number : HpaeCapturerManagerTest
- * tc.desc   : Test UpdateClusterNodeInfoForCamcorder_002
+ * tc.number : UpdateClusterNodeInfoForCamcorder_NonCamcorder_001
+ * tc.desc   : Test UpdateClusterNodeInfoForCamcorder_NonCamcorder_001
  */
-HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForCamcorder_002, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForCamcorder_NonCamcorder_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -3328,7 +3328,7 @@ HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForCamcorder_002, TestSiz
 
     uint8_t totalChannels = static_cast<uint8_t>(sourceInfo.micInChannels) +
         static_cast<uint8_t>(sourceInfo.channels) + static_cast<uint8_t>(sourceInfo.ecChannels);
-    EXPECT_EQ(nodeInfo.channels == (AudioChannel)totalChannels, false);
+    EXPECT_EQ(nodeInfo.channels == static_cast<AudioChannel>(totalChannels), false);
 }
 
 } // namespace HPAE
