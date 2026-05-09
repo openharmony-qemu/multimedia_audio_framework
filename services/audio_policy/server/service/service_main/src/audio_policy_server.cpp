@@ -58,6 +58,7 @@
 #include "audio_router_infra.h"
 #include "audio_device_info.h"
 #include "stream_dfx_manager.h"
+#include <unistd.h>
 #include "ipc_skeleton.h"
 
 
@@ -2493,10 +2494,14 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(uint32_t sessionID, const s
     uint32_t clientUid, int32_t zoneID)
 {
     if (interruptService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "SetAudioInterruptCallback interruptService_ is nullptr", false);
         HILOG_COMM_ERROR("[SetAudioInterruptCallback]The interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
     if (coreService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "SetAudioInterruptCallback coreService_ is nullptr", false);
         AUDIO_ERR_LOG("The coreService_ is nullptr!");
         return ERR_UNKNOWN;
     }
@@ -2504,7 +2509,9 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(uint32_t sessionID, const s
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     AUDIO_INFO_LOG("The sessionId %{public}u, callingUid %{public}u, clientUid %{public}u",
         sessionID, callingUid, clientUid);
-    CHECK_AND_RETURN_RET(VerifySessionId(sessionID, clientUid), ERR_UNKNOWN);
+    CHECK_AND_CALL_FUNC_RETURN_RET(VerifySessionId(sessionID, clientUid), ERR_UNKNOWN,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_INVALID_PARAM, "SetAudioInterruptCallback VerifySessionId failed", false));
 
     return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
 }
@@ -2514,6 +2521,8 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(uint32_t sessionID, int32
     if (interruptService_ != nullptr) {
         return interruptService_->UnsetAudioInterruptCallback(zoneID, sessionID);
     }
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        INTERRUPT_CALLBACK_UNREGISTER_FAILED, "UnsetAudioInterruptCallback interruptService_ is nullptr", false);
     return ERR_UNKNOWN;
 }
 
@@ -2715,17 +2724,32 @@ int32_t AudioPolicyServer::VerifyUidAndPid(const int32_t uid, const int32_t pid)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::ValidateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
+    if (interruptService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_NULL_POINTER : INTERRUPT_START_NULL_POINTER,
+            "ActivateAudioInterrupt interruptService_ is nullptr", false);
+        HILOG_COMM_ERROR("[ActivateAudioInterrupt]The interruptService_ is nullptr");
+        return ERR_UNKNOWN;
+    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(VerifyUidAndPid(audioInterrupt.uid, audioInterrupt.pid) == SUCCESS,
+        ERR_UNKNOWN,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            isRecord ? RECORD_INTERRUPT_START_INVALID_PARAM : INTERRUPT_START_INVALID_PARAM,
+            "ActivateAudioInterrupt VerifyUidAndPid failed", false),
+        "VerifyUidAndPid failed");
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     const AudioInterrupt &audioInterruptIn, int32_t zoneID, bool isUpdatedAudioStrategy)
 {
     Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     AudioInterrupt audioInterrupt = audioInterruptIn;
-    if (interruptService_ == nullptr) {
-        HILOG_COMM_ERROR("[ActivateAudioInterrupt]The interruptService_ is nullptr");
-        return ERR_UNKNOWN;
-    }
-    CHECK_AND_RETURN_RET_LOG(VerifyUidAndPid(audioInterrupt.uid, audioInterrupt.pid) == SUCCESS,
-        ERR_UNKNOWN, "VerifyUidAndPid failed");
+    int32_t validateRet = ValidateAudioInterrupt(audioInterrupt);
+    CHECK_AND_RETURN_RET(validateRet == SUCCESS, validateRet);
 
     auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
         audioInterrupt.audioFocusType.streamType);
@@ -2801,15 +2825,23 @@ int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID,
     bool isRemoveFocusHis)
 {
+    bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     if (interruptService_ != nullptr) {
-        CHECK_AND_RETURN_RET_LOG(VerifyUidAndPid(audioInterrupt.uid, audioInterrupt.pid) == SUCCESS,
-            ERR_UNKNOWN, "VerifyUidAndPid failed");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(VerifyUidAndPid(audioInterrupt.uid, audioInterrupt.pid) == SUCCESS,
+            ERR_UNKNOWN,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                isRecord ? RECORD_INTERRUPT_STOP_INVALID_PARAM : INTERRUPT_STOP_INVALID_PARAM,
+                "DeactivateAudioInterrupt VerifyUidAndPid failed", false),
+            "VerifyUidAndPid failed");
 
         int32_t zoneId = interruptService_->FindAudioZoneByStreamId(audioInterrupt.streamId);
         StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(audioInterrupt.uid,
             audioInterrupt.streamId);
         return UpdateAudioSceneAfterDeactivateInterrupt(zoneId, audioInterrupt, isRemoveFocusHis);
     }
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        isRecord ? RECORD_INTERRUPT_STOP_NULL_POINTER : INTERRUPT_STOP_NULL_POINTER,
+        "DeactivateAudioInterrupt interruptService_ is nullptr", false);
     return ERR_UNKNOWN;
 }
 
@@ -4375,15 +4407,22 @@ int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(uint32_t s
 
 int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID)
 {
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "RegisterPolicyCallbackClient listener object is nullptr", false),
         "RegisterPolicyCallbackClient listener object is nullptr");
 
     sptr<IAudioPolicyClient> audioPolicyClient = iface_cast<IAudioPolicyClient>(object);
-    CHECK_AND_RETURN_RET_LOG(audioPolicyClient != nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioPolicyClient != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "RegisterPolicyCallbackClient listener obj cast failed", false),
         "RegisterPolicyCallbackClient listener obj cast failed");
 
     auto callback = std::make_shared<AudioPolicyClientHolder>(audioPolicyClient);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Create AudioPolicyClientHolder failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_NULL_POINTER, "Create AudioPolicyClientHolder failed", false),
+        "Create AudioPolicyClientHolder failed");
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
@@ -5027,11 +5066,15 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn, const bool s
     AudioConcurrencyMode mode = static_cast<AudioConcurrencyMode>(strategyIn);
     AudioSessionStrategy strategy{mode};
     if (interruptService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_START_NULL_POINTER, "ActivateAudioSession interruptService_ is nullptr", false);
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
 
     if (!CheckAudioSessionStrategy(strategy)) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_START_INVALID_PARAM, "ActivateAudioSession audio session strategy is invalid", false);
         AUDIO_ERR_LOG("The audio session strategy is invalid!");
         return ERR_INVALID_PARAM;
     }
@@ -5076,6 +5119,8 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateSession(const int32_t zo
 int32_t AudioPolicyServer::DeactivateAudioSession()
 {
     if (interruptService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_OPERATION_FAILED, "DeactivateAudioSession interruptService_ is nullptr", false);
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
@@ -5091,6 +5136,8 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
 int32_t AudioPolicyServer::IsAudioSessionActivated(bool &isActive)
 {
     if (interruptService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_QUERY_NULL_POINTER, "IsAudioSessionActivated interruptService_ is nullptr", false);
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         isActive = false;
         return ERR_MEMORY_ALLOC_FAILED;
@@ -5148,6 +5195,8 @@ int32_t AudioPolicyServer::SetAudioSessionScene(int32_t audioSessionScene)
 int32_t AudioPolicyServer::EnableMuteSuggestionWhenMixWithOthers(bool enable)
 {
     if (interruptService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_NULL_POINTER, "EnableMuteSuggestionWhenMixWithOthers interruptService_ is nullptr", false);
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
@@ -5873,6 +5922,8 @@ int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)
 int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
 {
     if (interruptService_ == nullptr) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_NULL_POINTER, "SetAudioSessionBehavior interruptService_ is nullptr", false);
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
