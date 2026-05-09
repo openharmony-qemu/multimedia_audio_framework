@@ -18,6 +18,7 @@
 #include <optional>
 #include <thread>
 #include <mutex>
+#include <functional>
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
@@ -218,6 +219,7 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     FastStatus GetFastStatus() override;
+    void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback) override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
@@ -365,7 +367,9 @@ private:
     void NotifyStreamSilentChange();
 
     void UpdateStreamState(State state);
- 
+
+    void NotifyFastStatusChange(FastStatus status);
+
     void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
         const std::string &erroDesc, bool isClient, State state);
 private:
@@ -402,6 +406,9 @@ private:
     // callbacks
     std::mutex streamCbMutex_;
     std::weak_ptr<AudioStreamCallback> streamCallback_;
+    std::mutex fastStatusChangeCallbackMutex_;
+    std::function<void(FastStatus)> fastStatusChangeCallback_;
+    std::atomic<FastStatus> fastStatus_ = FASTSTATUS_NORMAL;
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;

@@ -271,6 +271,8 @@ private:
     int32_t SetSonicPitch(float pitch);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
+    void NotifyFastStatusChange(FastStatus status);
+    void SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
     int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
         std::string callingFunc);

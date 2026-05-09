@@ -217,17 +217,11 @@ void HpaeFastRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSink
     if (sinkOutputNode_ != nullptr) {
         sinkOutputNode_->RefreshSpanSize(spanSizeUpdated);
     }
-    const auto outNodeInfo = sinkOutputNode_->GetNodeInfo();
-    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
-    AUDIO_INFO_LOG("[FinishMove] session:%{public}u sinkSpanUpdated:%{public}d inputFrameLenAdjusted:%{public}d "
-        "newFrameLen:%{public}u", sessionId, spanSizeUpdated, frameLenAdjusted, nodeInfo.frameLen);
     node->SetNodeInfo(nodeInfo);
     node->SetIsLowLatency(true);
     sinkInputNodeMap_[sessionId] = node;
-    if (frameLenAdjusted) {
-        TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
-            HPAE_STREAM_CLASS_TYPE_PLAY);
-    }
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
+        HPAE_STREAM_CLASS_TYPE_PLAY);
 
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
