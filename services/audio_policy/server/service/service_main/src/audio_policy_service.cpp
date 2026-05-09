@@ -1216,30 +1216,5 @@ AudioScene AudioPolicyService::GetAudioSceneFromAllZones()
 {
     return AudioZoneService::GetInstance().GetAudioSceneFromAllZones();
 }
-
-bool AudioPolicyService::IsAudioSeparationEffectSupported()
-{
-    return AudioEffectService::GetAudioEffectService().IsAudioSeparationEffectSupported();
-}
-
-int32_t AudioPolicyService::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
-{
-    return AudioEffectService::GetAudioEffectService().SetAudioSeparationEffectEnabled(enabled, uid, streamId);
-}
-
-int32_t AudioPolicyService::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
-{
-    return AudioEffectService::GetAudioEffectService().SetAudioSeparationEffectVolume(type, volume);
-}
-
-int32_t AudioPolicyService::OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object)
-{
-    return AudioEffectService::GetAudioEffectService().OnAudioSeparationEffectEnabledChange(object);
-}
-
-int32_t AudioPolicyService::OffAudioSeparationEffectEnabledChange()
-{
-    return AudioEffectService::GetAudioEffectService().OffAudioSeparationEffectEnabledChange();
-}
 } // namespace AudioStandard
 } // namespace OHOS

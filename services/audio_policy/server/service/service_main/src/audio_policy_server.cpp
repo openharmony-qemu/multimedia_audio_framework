@@ -5925,12 +5925,12 @@ int32_t AudioPolicyServer::SetAudioSeparationEffectVolume(int32_t type, double v
 
 int32_t AudioPolicyServer::OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object)
 {
-    return audioPolicyService_.OnAudioSeparationEffectEnabledChange(object);
+    return audioEffectService_.OnAudioSeparationEffectEnabledChange(object);
 }
 
 int32_t AudioPolicyServer::OffAudioSeparationEffectEnabledChange()
 {
-    return audioPolicyService_.OffAudioSeparationEffectEnabledChange();
+    return audioEffectService_.OffAudioSeparationEffectEnabledChange();
 }
 
 int32_t AudioPolicyServer::CreateLoopback(int32_t mode, int32_t type,

@@ -225,13 +225,7 @@ public:
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    
-    bool IsAudioSeparationEffectSupported();
-    int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId);
-    int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
-    int32_t OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object);
-    int32_t OffAudioSeparationEffectEnabledChange();
-    
+
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
