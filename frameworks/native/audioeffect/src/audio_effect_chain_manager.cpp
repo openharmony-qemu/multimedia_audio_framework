@@ -2215,7 +2215,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
     CHECK_AND_RETURN_RET_LOG(outFd >= 0, ERR_SAVE_HRTF_FAIL, "outFd < 0");
     size_t remaining = length;
     char buffer[length];
-    ssize_t n;
+    size_t n;
 
     while (remaining > 0) {
         size_t toRead = (remaining < sizeof(buffer)) ? remaining : sizeof(buffer);
