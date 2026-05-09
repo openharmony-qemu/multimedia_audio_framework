@@ -195,8 +195,8 @@ void HpaeCapturerStreamImpl::OnStatusUpdate(IOperation operation, uint32_t strea
         if (ret == SUCCESS) {
             routeFlag_.store(routeFlag);
         }
-        AUDIO_INFO_LOG("OnStatusUpdate recv span update, streamIndex:%{public}u sessionId:%{public}u span:%{public}u "
-            "routeFlag:%{public}u", streamIndex_, processConfig_.originalSessionId, spanSizeInFrame, routeFlag);
+        AUDIO_INFO_LOG("OnStatusUpdate recv span update, streamIndex:%{public}u sessionId:%{public}u "
+            "routeFlag:%{public}u", streamIndex_, processConfig_.originalSessionId, routeFlag);
     }
     auto statusCallback = statusCallback_.lock();
     if (statusCallback) {
