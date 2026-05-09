@@ -140,7 +140,7 @@ const std::string NEARLINK_LIST = "audio_nearlink_list";
 constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
-static const int64_t HRTF_LENGTH = 3809288; // HRTF size
+static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // HRTF size
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -4314,7 +4314,8 @@ int32_t AudioPolicyServer::SetPersonalizedSpatializationEnabled(
 int32_t AudioPolicyServer::DownloadPersonalizedHRTF(int32_t fd, int64_t length)
 {
     CHECK_AND_RETURN_RET_LOG(fd >= 0, ERR_INVALID_PARAM, "invalid fd: %{public}d", fd);
-    CHECK_AND_RETURN_RET_LOG(length == HRTF_LENGTH, ERR_INVALID_PARAM, "invalid length: %{public}" PRId64, length);
+    CHECK_AND_RETURN_RET_LOG(length > 0 && length<= MAX_HRTF_LENGTH,
+        ERR_INVALID_PARAM, "invalid length: %{public}" PRId64, length);
     if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;
