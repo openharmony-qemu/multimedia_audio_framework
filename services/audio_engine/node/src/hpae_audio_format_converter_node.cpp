@@ -278,9 +278,10 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
         }
     }
     // update sample rate
-    if (resampler_->GetOutRate() != sampleRate) {
+    uint32_t oldOutRate = resampler_->GetOutRate();
+    if (oldOutRate != sampleRate) {
         HILOG_COMM_INFO("[CheckUpdateOutInfo]NodeId: %{public}d, update output sample rate: "
-            "%{public}d -> %{public}d", GetNodeId(), resampler_->GetOutRate(), sampleRate);
+            "%{public}d -> %{public}d", GetNodeId(), oldOutRate, sampleRate);
         resampler_->UpdateRates(resampler_->GetInRate(), sampleRate);
     }
 
@@ -288,6 +289,12 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     nodeInfo.channels = (AudioChannel)numChannels;
     nodeInfo.channelLayout = (AudioChannelLayout)channelLayout;
     nodeInfo.samplingRate = (AudioSamplingRate)resampler_->GetOutRate();
+    // Proportionally update frameLen when output rate changes to preserve time duration
+    uint32_t newOutRate = resampler_->GetOutRate();
+    if (oldOutRate != 0 && oldOutRate != newOutRate) {
+        nodeInfo.frameLen = static_cast<uint32_t>(
+            static_cast<uint64_t>(nodeInfo.frameLen) * newOutRate / oldOutRate);
+    }
     SetNodeInfo(nodeInfo);
     return true;
 }
