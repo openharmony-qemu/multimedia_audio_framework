@@ -4217,7 +4217,7 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeTy
         "device is in pass-through mode");
     CHECK_AND_RETURN_LOG(device->volumeBehavior_.controlMode != HILINK_MODE, "device is in hi-link mode");
 
-    bool isMuted = GetStreamMuteInternal(device, volumeType);
+    bool isMuted = GetStreamMuteForVolumeSet(device, volumeType);
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
     SaveSystemVolumeForSwitchDevice(device, volumeType, volumeLevel);
 
