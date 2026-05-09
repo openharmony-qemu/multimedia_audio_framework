@@ -35,7 +35,7 @@ enum class InputDataStatus {
 };
 
 struct AudioConvertResult {
-    uint8_t* outData = nullptr;       // Output data buffer
+    uint8_t* outData = nullptr;       // Output data buffer(Internal allocation and management)
     uint32_t outByteCount = 0;        // Number of output bytes
     int32_t errCode = SUCCESS;
 };
