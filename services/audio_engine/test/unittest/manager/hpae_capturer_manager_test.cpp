@@ -3113,6 +3113,224 @@ HWTEST_F(HpaeCapturerManagerTest, FaultCode_CaptureEffectCreate_InvalidSceneType
         HPAE_SCENE_DEFAULT, INVALID_ENHANCE_SCENE);
     EXPECT_EQ(ret, ERROR);
 }
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test SourceTypeCamcorderConstruct_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, SourceTypeCamcorderConstruct_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->sourceInfo_.micInSamplingRate, SAMPLE_RATE_16000);
+    EXPECT_EQ(capturerManager->sourceInfo_.micInFormat, SAMPLE_S16LE);
+    EXPECT_EQ(capturerManager->sourceInfo_.micInChannels, CHANNEL_4);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test SourceTypeCamcorderConstruct_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, SourceTypeCamcorderConstruct_002, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->sourceInfo_.sourceType, SOURCE_TYPE_CAMCORDER);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager UpdateSourceAttr API
+ * tc.type   : FUNC
+ * tc.number : UpdateSourceAttr_Camcorder_001
+ * tc.desc   : Test UpdateSourceAttr with camcorder source type
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceAttr_Camcorder_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+
+    IAudioSourceAttr attr;
+    capturerManager->CreateSourceAttr(attr);
+    capturerManager->UpdateSourceAttr(attr);
+
+    EXPECT_EQ(attr.formatMicIn == sourceInfo.micInFormat, true);
+    EXPECT_EQ(attr.sampleRateMicIn == sourceInfo.micInSamplingRate, true);
+    EXPECT_EQ(attr.channelMicIn == sourceInfo.micInChannels, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager UpdateSourceAttr API
+ * tc.type   : FUNC
+ * tc.number : UpdateSourceAttr_Camcorder_002
+ * tc.desc   : Test UpdateSourceAttr with camcorder and ec config
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceAttr_Camcorder_002, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    capturerManager->mainMicType_ = HPAE_SOURCE_MIC_EC;
+
+    IAudioSourceAttr attr;
+    capturerManager->CreateSourceAttr(attr);
+    capturerManager->UpdateSourceAttr(attr);
+
+    EXPECT_EQ(attr.formatMicIn == sourceInfo.micInFormat, true);
+    EXPECT_EQ(attr.sampleRateMicIn == sourceInfo.micInSamplingRate, true);
+    EXPECT_EQ(attr.channelMicIn == sourceInfo.micInChannels, true);
+    EXPECT_EQ(attr.formatEc == sourceInfo.ecFormat, true);
+    EXPECT_EQ(attr.sampleRateEc == sourceInfo.ecSamplingRate, true);
+    EXPECT_EQ(attr.channelEc == sourceInfo.ecChannels, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateSourceInputNodeInfoForCamcorder_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    nodeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
+
+    EXPECT_EQ((uint8_t)nodeInfo.channels, (uint8_t)sourceInfo.micInChannels + (uint8_t)sourceInfo.channels);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateSourceInputNodeInfoForCamcorder_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForCamcorder_002, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_16;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
+
+    EXPECT_EQ(nodeInfo.channels == (AudioChannel)((uint8_t)sourceInfo.micInChannels + (uint8_t)sourceInfo.channels),
+        false);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateClusterNodeInfoForCamcorder_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForCamcorder_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    nodeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    capturerManager->UpdateClusterNodeInfoForRecognition(nodeInfo);
+
+    uint8_t totalChannels = static_cast<uint8_t>(sourceInfo.micInChannels) +
+        static_cast<uint8_t>(sourceInfo.channels) + static_cast<uint8_t>(sourceInfo.ecChannels);
+    EXPECT_EQ((uint8_t)nodeInfo.channels, totalChannels);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateClusterNodeInfoForCamcorder_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForCamcorder_002, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_16;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_16;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    capturerManager->UpdateClusterNodeInfoForRecognition(nodeInfo);
+
+    uint8_t totalChannels = static_cast<uint8_t>(sourceInfo.micInChannels) +
+        static_cast<uint8_t>(sourceInfo.channels) + static_cast<uint8_t>(sourceInfo.ecChannels);
+    EXPECT_EQ(nodeInfo.channels == (AudioChannel)totalChannels, false);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
