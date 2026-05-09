@@ -39,8 +39,7 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
         nodeInfo.frameLen = sinkInfo.frameLen; // fallback
     } else {
         // mixerNode operates at sink rate, compute frameLen directly from sink rate.
-        // Avoids double integer truncation from input rate -> microsecond -> sink rate conversion.
-        nodeInfo.frameLen = sinkInfo.samplingRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+        nodeInfo.frameLen = CalculateFrameLenBySampleRate(sinkInfo.samplingRate);
     }
     nodeInfo.samplingRate = sinkInfo.samplingRate;
     // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.

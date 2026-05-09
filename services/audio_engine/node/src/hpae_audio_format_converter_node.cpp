@@ -288,9 +288,9 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     HpaeNodeInfo nodeInfo = GetNodeInfo();
     nodeInfo.channels = (AudioChannel)numChannels;
     nodeInfo.channelLayout = (AudioChannelLayout)channelLayout;
-    nodeInfo.samplingRate = (AudioSamplingRate)resampler_->GetOutRate();
-    // Proportionally update frameLen when output rate changes to preserve time duration
     uint32_t newOutRate = resampler_->GetOutRate();
+    nodeInfo.samplingRate = (AudioSamplingRate)newOutRate;
+    // Proportionally update frameLen when output rate changes to preserve time duration
     if (oldOutRate != 0 && oldOutRate != newOutRate) {
         nodeInfo.frameLen = static_cast<uint32_t>(
             static_cast<uint64_t>(nodeInfo.frameLen) * newOutRate / oldOutRate);
