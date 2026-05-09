@@ -762,9 +762,7 @@ void AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzz
     ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
 }
 
-void Test(FuzzedDataProvider& fdp)
-{
-    auto func = fdp.PickValueInArray({
+static constexpr FuzzTestFunc kAllFuzzTests[] = {
     UpdateCurrentDeviceFuzzTest,
     RemoveOldestDeviceFuzzTest,
     UpdateDeviceSpatialMapInfoFuzzTest,
@@ -815,7 +813,11 @@ void Test(FuzzedDataProvider& fdp)
     AudioSpatializationServiceSetPersonalizedSpatializationEnabledFuzzTest,
     AudioSpatializationServiceHandlePersonalizedSpatializationEnabledChangeFuzzTest,
     AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzzTest,
-    });
+};
+
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray(kAllFuzzTests);
     func(fdp);
 }
 
