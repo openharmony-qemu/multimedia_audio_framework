@@ -856,8 +856,6 @@ ohos_shared_library("audio_foundation") {
     "ipc:ipc_core",
   ]
 
-  public_external_deps = [ "c_utils:utils" ]
-
   cflags = [ "-Os" ]
   cflags_cc = cflags
 

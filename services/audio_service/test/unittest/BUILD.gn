@@ -88,6 +88,12 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../audio_service:audio_common",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",
@@ -829,6 +835,12 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "../../../../services/audio_service:audio_service",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   cflags = [ "-fno-access-control" ]
 
   external_deps = [
@@ -890,6 +902,12 @@ ohos_unittest("capturer_in_client_unit_test") {
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 
   cflags = [ "-fno-access-control" ]
 
@@ -1095,6 +1113,12 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../audio_policy:audio_foundation",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   external_deps = [
     "ability_runtime:app_manager",
     "access_token:libaccesstoken_sdk",
@@ -1257,6 +1281,12 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "../../../../services/audio_service/idl:audio_framework_interface",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   external_deps = [
     "ability_runtime:app_manager",
     "access_token:libaccesstoken_sdk",
@@ -1405,6 +1435,12 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service:audio_service",
     "../../../audio_policy:audio_foundation",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 
   external_deps = [
     "ability_runtime:app_manager",
