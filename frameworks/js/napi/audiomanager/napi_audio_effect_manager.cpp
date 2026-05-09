@@ -30,6 +30,24 @@ using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_effectMgrConstructor = nullptr;
 
+static napi_value CreatePromiseError(napi_env env, int32_t audioErrCode, const std::string &customMessage = "")
+{
+    int32_t napiErrCode = audioErrCode;
+    std::string message = NapiAudioError::GetMessageByCode(napiErrCode);
+    if (!customMessage.empty()) {
+        message = customMessage;
+    }
+
+    napi_value messageValue = nullptr;
+    napi_create_string_utf8(env, message.c_str(), NAPI_AUTO_LENGTH, &messageValue);
+    napi_value errorValue = nullptr;
+    napi_create_error(env, nullptr, messageValue, &errorValue);
+    napi_value codeValue = nullptr;
+    napi_create_int32(env, napiErrCode, &codeValue);
+    napi_set_named_property(env, errorValue, "code", codeValue);
+    return errorValue;
+}
+
 NapiAudioEffectMgr::NapiAudioEffectMgr()
     : env_(nullptr), audioEffectMngr_(nullptr) {}
 
@@ -297,17 +315,15 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, nap
     if (ret == AUDIO_OK) {
         AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled success, resolving promise");
         napi_resolve_deferred(env, deferred, nullptr);
-    } else if (ret == ERR_NOT_SUPPORTED) {
-        AUDIO_WARNING_LOG("SetAudioSeparationEffectEnabled not supported");
-        napi_value errorMsg = nullptr;
-        napi_create_string_utf8(env, "Effect is not supported in this device", NAPI_AUTO_LENGTH, &errorMsg);
-        napi_reject_deferred(env, deferred, errorMsg);
     } else {
-        AUDIO_ERR_LOG("SetAudioSeparationEffectEnabled failed: %{public}d", ret);
-        napi_value errorMsg = nullptr;
-        std::string message = "Audio system error: " + std::to_string(ret);
-        napi_create_string_utf8(env, message.c_str(), NAPI_AUTO_LENGTH, &errorMsg);
-        napi_reject_deferred(env, deferred, errorMsg);
+        if (ret == ERR_NOT_SUPPORTED) {
+            AUDIO_WARNING_LOG("SetAudioSeparationEffectEnabled not supported");
+        } else {
+            AUDIO_ERR_LOG("SetAudioSeparationEffectEnabled failed: %{public}d", ret);
+        }
+        napi_value errorValue = CreatePromiseError(env, ret,
+            ret == ERR_NOT_SUPPORTED ? "Effect is not supported in this device" : "");
+        napi_reject_deferred(env, deferred, errorValue);
     }
 
     return promise;  // Return Promise<void>
@@ -366,17 +382,15 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
     if (ret == AUDIO_OK) {
         AUDIO_INFO_LOG("SetAudioSeparationEffectVolume success, resolving promise");
         napi_resolve_deferred(env, deferred, nullptr);
-    } else if (ret == ERR_NOT_SUPPORTED) {
-        AUDIO_WARNING_LOG("SetAudioSeparationEffectVolume not supported");
-        napi_value errorMsg = nullptr;
-        napi_create_string_utf8(env, "Effect is not supported in this device", NAPI_AUTO_LENGTH, &errorMsg);
-        napi_reject_deferred(env, deferred, errorMsg);
     } else {
-        AUDIO_ERR_LOG("SetAudioSeparationEffectVolume failed: %{public}d", ret);
-        napi_value errorMsg = nullptr;
-        std::string message = "Audio system error: " + std::to_string(ret);
-        napi_create_string_utf8(env, message.c_str(), NAPI_AUTO_LENGTH, &errorMsg);
-        napi_reject_deferred(env, deferred, errorMsg);
+        if (ret == ERR_NOT_SUPPORTED) {
+            AUDIO_WARNING_LOG("SetAudioSeparationEffectVolume not supported");
+        } else {
+            AUDIO_ERR_LOG("SetAudioSeparationEffectVolume failed: %{public}d", ret);
+        }
+        napi_value errorValue = CreatePromiseError(env, ret,
+            ret == ERR_NOT_SUPPORTED ? "Effect is not supported in this device" : "");
+        napi_reject_deferred(env, deferred, errorValue);
     }
 
     return promise;  // Return Promise<void>
