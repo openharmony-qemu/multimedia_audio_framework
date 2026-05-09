@@ -2174,6 +2174,9 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
         case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
             HandleVolumeDegreeEvent(event);
             break;
+        case EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE:
+            HandleAudioSeparationEffectEnabledChangeEvent(event);
+            break;
         default:
             break;
     }
@@ -2237,9 +2240,6 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::EFFECT_MODE_CHANGE_FOR_ANY_DEVICE:
             HandleSpatialAudioSourceTypeChange(event);
-            break;
-        case EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE:
-            HandleAudioSeparationEffectEnabledChangeEvent(event);
             break;
         default:
             break;
