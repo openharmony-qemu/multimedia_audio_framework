@@ -380,11 +380,7 @@ void AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange(const SpatialAudioS
 void AudioPolicyClientHolder::OnAudioSeparationEffectEnabledChange(const bool &enabled)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    if (hasSystemPermission_) {
-        audioPolicyClient_->OnAudioSeparationEffectEnabledChange(enabled);
-    } else {
-        audioPolicyClient_->OnAudioSeparationEffectEnabledChange(false);
-    }
+    audioPolicyClient_->OnAudioSeparationEffectEnabledChange(hasSystemPermission_ && enabled);
 }
 
 int32_t AudioPolicyClientHolder::OnAudioRouteSelectRefined(
