@@ -393,6 +393,11 @@ int32_t AudioDebugManagerPrivate::PrintfAudioDebugInfo(int32_t fd, const std::st
     return WriteAudioDebugInfo(fd, debugInfo);
 }
 
+uint32_t AudioDebugManagerPrivate::GenerateDebugKey()
+{
+    return ++debugKeyCounter_;
+}
+
 int32_t AudioDebugManagerPrivate::PrintAppAudioDebugInfo(int32_t fd) const
 {
     AUDIO_INFO_LOG("Print app audio debug info start, fd:%{public}d", fd);
@@ -699,14 +704,14 @@ std::string AudioDebugManagerPrivate::ParserAudioLoopbackDebugInfo(
     return ss.str();
 }
 
-int32_t AudioDebugManagerPrivate::RegisterAudioLoopback(uint32_t loopbackKey,
+int32_t AudioDebugManagerPrivate::RegisterAudioLoopback(uint32_t &loopbackKey,
     const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback)
 {
     if (debugCallback == nullptr) {
         AUDIO_ERR_LOG("Register loopback failed: debugCallback is nullptr");
         return ERR_INVALID_PARAM;
     }
-
+    loopbackKey = GenerateDebugKey();
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     audioLoopbackDebugCallbacks_[loopbackKey] = debugCallback;
     return SUCCESS;

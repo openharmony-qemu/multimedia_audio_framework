@@ -581,14 +581,11 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GetLoopbackDebugInfo_003, TestSiz
 }
 
 namespace {
-    constexpr uint32_t TEST_LOOPBACK_KEY_1 = 90001;
-    constexpr uint32_t TEST_LOOPBACK_KEY_2 = 90002;
-    constexpr uint32_t TEST_LOOPBACK_KEY_3 = 90003;
-    constexpr uint32_t TEST_LOOPBACK_KEY_4 = 90004;
-    constexpr uint32_t TEST_LOOPBACK_KEY_5 = 90005;
     constexpr int32_t TEST_APP_UID = 1234;
     constexpr int32_t TEST_VOLUME = 75;
     constexpr size_t TEST_BUF_SIZE = 4096;
+    constexpr uint32_t TEST_APP_UID_CB1 = 100;
+    constexpr uint32_t TEST_APP_UID_CB2 = 200;
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_001, TestSize.Level1)
@@ -599,30 +596,12 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_001, TestSize.Leve
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_002, TestSize.Level1)
 {
-    auto callback = std::make_shared<TestLoopbackDebugCallback>();
-    callback->retCode_ = ERR_ILLEGAL_STATE;
-    uint32_t key = TEST_LOOPBACK_KEY_1;
-    AudioDebugManager::GetInstance().RegisterAudioLoopback(key, callback);
-
-    int32_t ret = AudioDebugManager::GetInstance().PrintAudioLoopbackDebugInfo(key, -1);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-
-    AudioDebugManager::GetInstance().UnregisterAudioLoopback(key);
+    uint32_t key = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(key, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_003, TestSize.Level1)
-{
-    auto callback = std::make_shared<TestLoopbackDebugCallback>();
-    uint32_t key = TEST_LOOPBACK_KEY_2;
-    AudioDebugManager::GetInstance().RegisterAudioLoopback(key, callback);
-
-    int32_t ret = AudioDebugManager::GetInstance().PrintAudioLoopbackDebugInfo(key, -1);
-    EXPECT_EQ(ret, SUCCESS);
-
-    AudioDebugManager::GetInstance().UnregisterAudioLoopback(key);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_004, TestSize.Level1)
 {
     auto callback = std::make_shared<TestLoopbackDebugCallback>();
     callback->testInfo_.appUid = TEST_APP_UID;
@@ -637,13 +616,15 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_004, TestSize.Leve
     callback->testInfo_.uplinkStreamState = CAPTURER_RUNNING;
     callback->testInfo_.downlinkStreamState = RENDERER_RUNNING;
 
-    uint32_t key = TEST_LOOPBACK_KEY_3;
-    AudioDebugManager::GetInstance().RegisterAudioLoopback(key, callback);
+    uint32_t key = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(key, callback);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(key, 0u);
 
     int pipefd[2];
     ASSERT_EQ(pipe(pipefd), 0);
 
-    int32_t ret = AudioDebugManager::GetInstance().PrintAudioLoopbackDebugInfo(key, pipefd[1]);
+    ret = AudioDebugManager::GetInstance().PrintAllAudioLoopbacksDebugInfo(pipefd[1]);
     EXPECT_EQ(ret, SUCCESS);
     close(pipefd[1]);
 
@@ -663,22 +644,72 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_004, TestSize.Leve
     AudioDebugManager::GetInstance().UnregisterAudioLoopback(key);
 }
 
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_004, TestSize.Level1)
+{
+    auto callback = std::make_shared<TestLoopbackDebugCallback>();
+    callback->retCode_ = ERR_ILLEGAL_STATE;
+
+    uint32_t key = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(key, callback);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = AudioDebugManager::GetInstance().PrintAllAudioLoopbacksDebugInfo(-1);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    AudioDebugManager::GetInstance().UnregisterAudioLoopback(key);
+}
+
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_005, TestSize.Level1)
 {
     auto callback = std::make_shared<TestLoopbackDebugCallback>();
-    uint32_t key = TEST_LOOPBACK_KEY_4;
-    AudioDebugManager::GetInstance().RegisterAudioLoopback(key, callback);
+
+    uint32_t key = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(key, callback);
+    EXPECT_EQ(ret, SUCCESS);
+
     AudioDebugManager::GetInstance().UnregisterAudioLoopback(key);
 
-    int32_t ret = AudioDebugManager::GetInstance().PrintAudioLoopbackDebugInfo(key, -1);
+    ret = AudioDebugManager::GetInstance().PrintAudioLoopbackDebugInfo(key, -1);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_PrintDebugInfo_006, TestSize.Level1)
 {
-    uint32_t key = TEST_LOOPBACK_KEY_5;
-    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(key, nullptr);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    auto callback1 = std::make_shared<TestLoopbackDebugCallback>();
+    callback1->testInfo_.appUid = TEST_APP_UID_CB1;
+    callback1->testInfo_.appName = "App1";
+    auto callback2 = std::make_shared<TestLoopbackDebugCallback>();
+    callback2->testInfo_.appUid = TEST_APP_UID_CB2;
+    callback2->testInfo_.appName = "App2";
+
+    uint32_t key1 = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(key1, callback1);
+    EXPECT_EQ(ret, SUCCESS);
+    uint32_t key2 = 0;
+    ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(key2, callback2);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(key1, key2);
+
+    int pipefd[2];
+    ASSERT_EQ(pipe(pipefd), 0);
+
+    ret = AudioDebugManager::GetInstance().PrintAllAudioLoopbacksDebugInfo(pipefd[1]);
+    EXPECT_EQ(ret, SUCCESS);
+    close(pipefd[1]);
+
+    char buf[TEST_BUF_SIZE] = {0};
+    ssize_t bytesRead = read(pipefd[0], buf, sizeof(buf) - 1);
+    close(pipefd[0]);
+    ASSERT_GT(bytesRead, 0);
+
+    std::string output(buf, bytesRead);
+    EXPECT_NE(output.find("appUid: " + std::to_string(TEST_APP_UID_CB1)), std::string::npos);
+    EXPECT_NE(output.find("App1"), std::string::npos);
+    EXPECT_NE(output.find("appUid: " + std::to_string(TEST_APP_UID_CB2)), std::string::npos);
+    EXPECT_NE(output.find("App2"), std::string::npos);
+
+    AudioDebugManager::GetInstance().UnregisterAudioLoopback(key1);
+    AudioDebugManager::GetInstance().UnregisterAudioLoopback(key2);
 }
 } // namespace AudioStandard
 } // namespace OHOS

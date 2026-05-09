@@ -26,6 +26,7 @@ ohos_unittest("audio_loopback_unit_test") {
     "../../../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../audiostream/include",
+    "../../../audio_debug_manager/include",
   ]
 
   cflags = [
@@ -35,7 +36,10 @@ ohos_unittest("audio_loopback_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "src/audio_loopback_unit_test.cpp" ]
+  sources = [
+    "src/audio_loopback_unit_test.cpp",
+    "../../../audio_debug_manager/src/audio_debug_manager.cpp",
+  ]
 
   deps = [
     "../../../../../services/audio_service:audio_client",
@@ -45,7 +49,8 @@ ohos_unittest("audio_loopback_unit_test") {
     "../../../audiocapturer:audio_capturer",
     "../../../audiorenderer:audio_renderer",
     "../../../audioloopback:audio_loopback",
-    "../../../audio_debug_manager:audio_debug_manager",
+    "../../../audiodefinitions:audio_definitions",
+    "../../../audioutils:audio_utils",
   ]
 
   external_deps = [

@@ -48,7 +48,7 @@ public:
     int32_t UnregisterAudioCapturer(uintptr_t capturerKey) override;
     int32_t PrintAudioCapturerDebugInfo(uintptr_t capturerKey, int32_t fd) const override;
 
-    int32_t RegisterAudioLoopback(uint32_t loopbackKey,
+    int32_t RegisterAudioLoopback(uint32_t &loopbackKey,
         const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback) override;
     int32_t UnregisterAudioLoopback(uint32_t loopbackKey) override;
     int32_t PrintAudioLoopbackDebugInfo(uint32_t loopbackKey, int32_t fd) const override;
@@ -74,6 +74,8 @@ private:
     int32_t GetAudioSessionDebugInfo(AudioSessionDebugInfo &debugInfo) const;
     static std::string ParserAudioSessionDebugInfo(const AudioSessionDebugInfo &debugInfo);
 
+    uint32_t GenerateDebugKey();
+
 private:
     mutable std::mutex rendererMutex_;
     mutable std::mutex capturerMutex_;
@@ -83,6 +85,8 @@ private:
     std::map<uintptr_t, std::shared_ptr<AudioCapturerDebugCallback>> audioCapturerDebugCallbacks_;
     std::map<uint32_t, std::shared_ptr<AudioLoopbackDebugCallback>> audioLoopbackDebugCallbacks_;
     std::shared_ptr<AudioSessionDebugCallback> audioSessionDebugCallback_;
+    std::atomic<uint32_t> debugKeyCounter_ = DEBUG_KEY_START;
+    static constexpr uint32_t DEBUG_KEY_START = 1000;
 };
 } // namespace AudioStandard
 } // namespace OHOS

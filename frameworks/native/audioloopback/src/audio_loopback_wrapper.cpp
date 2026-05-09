@@ -40,8 +40,9 @@ AudioLoopbackWrapper::~AudioLoopbackWrapper()
         loopbackProxy_ = nullptr;
     }
 
-    uint32_t loopbackKey = reinterpret_cast<uint32_t>(static_cast<AudioLoopback *>(this));
-    (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(loopbackKey);
+    if (debugKey_ != 0) {
+        (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(debugKey_);
+    }
 
     callbackStub_ = nullptr;
     private_ = nullptr;
