@@ -204,12 +204,14 @@ CAudioConvertResult AudioConverterProcess(AudioConverterHandle handle, const uin
         result.errCode = ERR_CODE_INVALID_STATE;
         return result;
     }
-
+    uint32_t bytesCount =
+        static_cast<uint32_t>(inSampleCount) * AudioSuiteUtil::GetSampleSize(wrapper->inputFormat.sampleFormat);
     AudioSuite::AudioConvertResult innerResult =
-        wrapper->converter->Process(inData, static_cast<uint32_t>(inSampleCount));
-
+        wrapper->converter->SyncProcess(inData, bytesCount);
+    int outSampleCount =
+        static_cast<int>(innerResult.outByteCount / AudioSuiteUtil::GetSampleSize(wrapper->outputFormat.sampleFormat));
     result.outData = innerResult.outData;
-    result.outSampleCount = static_cast<int>(innerResult.outSampleCount);
+    result.outSampleCount = static_cast<int>(outSampleCount);
     result.errCode = innerResult.errCode == SUCCESS ? ERR_CODE_SUCCESS : ERR_CODE_OPERATION_FAILED;
 
     AUDIO_DEBUG_LOG("outSampleCount=%{public}d, errCode=%{public}d", result.outSampleCount, result.errCode);

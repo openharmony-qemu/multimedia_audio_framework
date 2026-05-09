@@ -72,7 +72,7 @@ private:
     std::vector<uint8_t> outputBuffer_;    // Final output
 
     // Converter instances
-    std::unique_ptr<HPAE::ProResampler> proResampler_;
+    std::unique_ptr<HPAE::ProResampler> proResampler_ = nullptr;
     HPAE::ChannelConverter channelConverter_;
 
     // Configuration

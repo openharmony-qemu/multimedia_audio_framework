@@ -27,7 +27,6 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 static constexpr uint32_t RESAMPLE_QUAILTY = 1;
-static constexpr uint32_t DOUBLE_FRAME = 2;
 
 int32_t AudioSuiteFormatConversion::ChannelConvert(AudioSuitePcmBuffer *in, AudioSuitePcmBuffer *out)
 {
@@ -94,12 +93,6 @@ int32_t AudioSuiteFormatConversion::Resample(AudioSuitePcmBuffer *in, AudioSuite
     CHECK_AND_RETURN_RET_LOG(proResampler_ != nullptr, ERROR, "ProResampler_ is nullptr");
     int32_t ret = proResampler_->Process(inputData, inFrameSize, outputData, outFrameSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoResampleProcess fail with error code: %{public}d", ret);
-
-    if (inRate == SAMPLE_RATE_11025) {
-        ret = proResampler_->Process(inputData, 0, outputData +
-            (outFrameSize / DOUBLE_FRAME * inChannelCount), outFrameSize / DOUBLE_FRAME);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoResampleProcess fail with error code: %{public}d", ret);
-    }
 
     return SUCCESS;
 }

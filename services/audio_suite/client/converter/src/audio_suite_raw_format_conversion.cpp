@@ -38,7 +38,6 @@ AudioSuiteRawFormatConversion::AudioSuiteRawFormatConversion(const uint32_t resa
 
 AudioSuiteRawFormatConversion::~AudioSuiteRawFormatConversion()
 {
-    Reset();
 }
 
 int32_t AudioSuiteRawFormatConversion::Init(const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat)
@@ -90,6 +89,11 @@ void AudioSuiteRawFormatConversion::Reset()
     channelConverter_.Reset();
     initialized_ = false;
     formatsSame_ = false;
+
+    floatBuffer_.clear();
+    resampleBuffer_.clear();
+    channelBuffer_.clear();
+    outputBuffer_.clear();
 }
 
 int32_t AudioSuiteRawFormatConversion::Process11025SpecialCase(
