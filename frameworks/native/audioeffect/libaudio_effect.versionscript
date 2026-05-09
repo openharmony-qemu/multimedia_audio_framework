@@ -105,6 +105,7 @@
     *SetBypassSpatializationForStereo*;
     *IsSpatializationEnabledForChains*;
     *IsDownSamplingForSpatialization*;
+    *UpdatePersonalizedHRTFBin*;
   local:
     *;
 };

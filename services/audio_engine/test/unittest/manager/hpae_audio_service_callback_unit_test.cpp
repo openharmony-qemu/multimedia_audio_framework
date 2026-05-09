@@ -94,6 +94,11 @@ void HpaeAudioServiceCallbackUnitTest::OnUpdateSpatializationStateCb(int32_t res
     updateSpatializationStateResult_ = result;
 }
 
+void HpaeAudioServiceCallbackUnitTest::OnUpdatePersonalizedHRTFBinCb(int32_t result)
+{
+    updatePersonalizedHRTFBinResult_ = result;
+}
+
 int32_t HpaeAudioServiceCallbackUnitTest::GetPortId() const noexcept
 {
     return portId_;

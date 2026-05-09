@@ -897,6 +897,16 @@ int32_t HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &product
     return manager_->UpdateCollaborativeProductId(productId);
 }
 
+int32_t HpaeManagerImpl::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    CHECK_AND_RETURN_RET(manager_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
+        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+    return manager_->UpdatePersonalizedHRTFBin(fd, length);
+}
+
 void HpaeManagerImpl::LoadCollaborationConfig()
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");

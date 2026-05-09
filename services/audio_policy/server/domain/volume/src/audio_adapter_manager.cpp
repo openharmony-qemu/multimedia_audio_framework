@@ -4288,5 +4288,11 @@ void AudioAdapterManager::ApplySystemVolumeProxy(int32_t zoneId,
         volumeDb = 1.0f;
     }
 }
+
+int32_t AudioAdapterManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "ServiceAdapter is null");
+    return audioServiceAdapter_->UpdatePersonalizedHRTFBin(fd, length);
+}
 } // namespace AudioStandard
 } // namespace OHOS

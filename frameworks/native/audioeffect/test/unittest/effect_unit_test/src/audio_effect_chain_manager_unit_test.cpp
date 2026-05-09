@@ -40,6 +40,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
+#define TEST_DEFAULT_OPEN_MODE 0644
 constexpr uint32_t INFOCHANNELS = 2;
 constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
 constexpr int32_t INITIAL_DSP_STREAMUSAGE = -2;
@@ -49,6 +50,7 @@ constexpr float INITIAL_DSP_VOLUME = -1.0f;
 constexpr float DEFAULT_SYSTEM_VOLUME = 1.0f;
 constexpr float DEFAULT_STREAM_VOLUME = 1.0f;
 const std::string TEST_DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
+constexpr int32_t DEFAULT_FILE_LENGTH = 100;
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
     {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
@@ -4173,6 +4175,34 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_frontendAppType_001, Te
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->frontendAppType_ == scene, false);
     AudioEffectChainManager::GetInstance()->SendAudioParamToARM(code, value);
     ASSERT_TRUE(audioEffectChain != nullptr);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdatePersonalizedHRTFBinToArm API
+* @tc.number : UpdatePersonalizedHRTFBinToArm_001
+* @tc.desc   : Test UpdatePersonalizedHRTFBinToArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedHRTFBinToArm_001, TestSize.Level1)
+{
+    int32_t fd = -1;
+    long length = 0;
+    int32_t ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+
+    length = 1;
+    AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    fd = 0;
+    length = 0;
+    AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    fd = 0;
+    length = 1;
+    AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+
+    const char *tempPath = "sys_prod/etc/audio/audio_effect_config.xml";
+    fd = open(tempPath, O_WRONLY | O_CREAT | O_TRUNC, TEST_DEFAULT_OPEN_MODE);
+    length = DEFAULT_FILE_LENGTH;
+    AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 } // namespace AudioStandard

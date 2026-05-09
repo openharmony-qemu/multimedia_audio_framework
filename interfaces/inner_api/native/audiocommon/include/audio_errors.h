@@ -538,9 +538,8 @@ constexpr int32_t RECORD_SEND_DATA_ILLEGAL_STATE = BuildErrorCode(
 
 constexpr int32_t RECORD_DEVICE_SWITCH_ILLEGAL_STATE = BuildErrorCode(
     ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_ILLEGAL_STATE);
-constexpr int32_t RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH,
-    ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWUTCG_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
 constexpr int32_t RECORD_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(
     ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
 constexpr int32_t RECORD_DEVICE_SWITCH_NULL_POINTER = BuildErrorCode(
@@ -645,9 +644,8 @@ constexpr int32_t ERR_RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED = BuildErrorCode(
     BusinessScenario::DEVICE_SWITCH, ERR_MEMORY_ALLOC_FAILED);
 
 // RECORD_DEVICE_SWITCH_CALLBACK
-constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
-    BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode( ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
 constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_NULL_POINTER = BuildErrorCode(
     ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
     BusinessScenario::CALLBACK, ERR_NULL_POINTER);
