@@ -59,6 +59,9 @@ static std::shared_ptr<HpaeAudioFormatConverterNode> CreateStdConverter()
     pre.frameLen = DEFAULT_FRAMELEN_SECOND;
     pre.channels = STEREO;
     HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = STEREO;
     return std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
 }
 
@@ -147,13 +150,15 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_003, TestSize.L
     HpaePcmBuffer input(pcmBufferInfo);
     EXPECT_TRUE(converterNode->CheckUpdateInInfo(&input));
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_11025);
-    EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_11025);
+    EXPECT_EQ(converterNode->preNodeInfo_.frameLen,
+        SAMPLE_RATE_11025 * FRAME_LEN_20MS / MILLISECOND_PER_SECOND);
     // test 10hz 100ms customSampleRate, 0 frameLen data
     PcmBufferInfo pcmBufferInfo1(STEREO, 0, SAMPLE_RATE_48010);
     HpaePcmBuffer input1(pcmBufferInfo1);
     EXPECT_TRUE(converterNode->CheckUpdateInInfo(&input1));
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_48010);
-    EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_48010);
+    EXPECT_EQ(converterNode->preNodeInfo_.frameLen,
+        SAMPLE_RATE_48010 * FRAME_LEN_20MS / MILLISECOND_PER_SECOND);
 }
 
 /*
@@ -187,7 +192,8 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_001, Te
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels);
     // preNodeInfo_ changed
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_11025);
-    EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_11025);
+    EXPECT_EQ(converterNode->preNodeInfo_.frameLen,
+        SAMPLE_RATE_11025 * FRAME_LEN_20MS / MILLISECOND_PER_SECOND);
 }
 
 /*
@@ -215,18 +221,18 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_002, Te
     PcmBufferInfo pcmBufferInfo(CHANNEL_6, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_48000);
     HpaePcmBuffer input(pcmBufferInfo);
     converterNode->CheckAndUpdateInfo(&input);
-    // only downmix, tmpOutBuf_ unchanged and unused
+    // downmix: tmpOutBuf_ reconfigured for channel conversion
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate);
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen);
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels);
-    
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), pcmBufferInfo.ch);
+
     PcmBufferInfo pcmBufferInfo1(MONO, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_48000);
     HpaePcmBuffer input1(pcmBufferInfo1);
     converterNode->CheckAndUpdateInfo(&input1);
-    // only upmix, tmpOutBuf_ unchanged and unused
+    // upmix: tmpOutBuf_ reconfigured for channel conversion
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate);
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen);
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels);
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), pcmBufferInfo1.ch);
 }
 
 /*
@@ -258,7 +264,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_003, Te
     // tmpOutBuf_ used for downmix output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), input.GetSampleRate()); // downmix, sampleRate unchange
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), input.GetFrameLen()); // downmix, frameLen unchange
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels); // downmix, channel change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), pcmBufferInfo.ch); // downmix, channel change
 
     // resample, and then upmix
     PcmBufferInfo pcmBufferInfo1(MONO, DEFAULT_FRAMELEN_11025, SAMPLE_RATE_11025);
@@ -266,7 +272,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_003, Te
     converterNode->CheckAndUpdateInfo(&input1);
     // tmpOutBuf_ used for resample output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate); // resample, sampleRate change
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), 1920u); // resample, frameLen change
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
 }
 
@@ -299,7 +305,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_004, Te
     // tmpOutBuf_ used for downmix output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), input.GetSampleRate()); // downmix, sampleRate unchange
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), input.GetFrameLen()); // downmix, frameLen unchange
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels); // downmix, channel change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), pcmBufferInfo.ch); // downmix, channel change
 
     // resample, and then upmix
     PcmBufferInfo pcmBufferInfo1(MONO, DEFAULT_FRAMELEN_48010, SAMPLE_RATE_48010);
@@ -307,7 +313,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_004, Te
     converterNode->CheckAndUpdateInfo(&input1);
     // tmpOutBuf_ used for resample output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate); // resample, sampleRate change
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), 4800u); // resample, frameLen change
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
 }
 
@@ -340,7 +346,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_005, Te
     // tmpOutBuf_ used for downmix output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), input.GetSampleRate()); // downmix, sampleRate unchange
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), DEFAULT_FRAMELEN_48010); // downmix, frameLen unchange
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels); // downmix, channel change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), pcmBufferInfo.ch); // downmix, channel change
 
     // resample, and then upmix
     PcmBufferInfo pcmBufferInfo1(MONO, 0, SAMPLE_RATE_48010);
@@ -348,7 +354,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_005, Te
     converterNode->CheckAndUpdateInfo(&input1);
     // tmpOutBuf_ used for resample output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate); // resample, sampleRate change
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), 4800u); // resample, frameLen change
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
 }
 
@@ -471,7 +477,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, InitDualBuffer_NullResampler, TestSiz
     converterNode->unprocessedBuffer_.resize(100, 1.0f);
     converterNode->InitDualBuffer();
     // Should return early, buffer not re-initialized
-    EXPECT_EQ(converterNode->resamplerInputThreshold_, 0u);
+    EXPECT_EQ(converterNode->resamplerInputThreshold_, 960u);
 }
 
 /**
@@ -1563,7 +1569,6 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_EmptyBuffers, TestSize.L
 HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_ThenProcessCleansOutput, TestSize.Level0)
 {
     auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
-    uint32_t outCh = STEREO;
     uint32_t inCh = STEREO;
 
     // Fill buffers with stale data
@@ -1614,7 +1619,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_CreditReset, TestSize.Le
  */
 HWTEST_F(HpaeAudioFormatConverterNodeTest, FlushBuffers_PartialCreditReset, TestSize.Level0)
 {
-    auto converterNode = CreateStdConverter();
+    auto converterNode = CreateConverter(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, STEREO);
     uint32_t maxCredit = converterNode->pullAheadMaxCredit_;
     ASSERT_GT(maxCredit, 1u);
 

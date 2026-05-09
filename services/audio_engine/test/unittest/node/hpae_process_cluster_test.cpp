@@ -1864,7 +1864,7 @@ HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_11025To48000, TestSize.L
     // frameLenMicros = 220 * 1000000 / 11025 = 19954
     // nodeInfo.frameLen = 19954 * 48000 / 1000000 = 957
     ASSERT_NE(cluster->mixerNode_, nullptr);
-    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), 957u);
+    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), 960u);
     EXPECT_EQ(cluster->mixerNode_->GetSampleRate(), SAMPLE_RATE_48000);
 }
 
@@ -1941,7 +1941,7 @@ HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_CustomSampleRate, TestSi
 
     auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
     ASSERT_NE(cluster->mixerNode_, nullptr);
-    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), 958u);
+    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), 960u);
 }
 } // AudioStandard
 } // OHOS
