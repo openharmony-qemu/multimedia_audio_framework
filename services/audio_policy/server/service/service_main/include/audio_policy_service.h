@@ -225,7 +225,6 @@ public:
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
