@@ -2071,6 +2071,11 @@ int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bo
     if (callbackchange == CALLBACK_ROUTE_SELECTOR) {
         return HandleRouteSelectorCallbackEnable(enable);
     }
+    if (callbackchange == CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE &&
+        !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetClientCallbacksEnable audio separation effect callback denied");
+        return ERR_SYSTEM_PERMISSION_DENIED;
+    }
     
     if (audioPolicyServerHandler_ != nullptr) {
         return audioPolicyServerHandler_->SetClientCallbacksEnable(callbackchange, enable);
@@ -5909,28 +5914,35 @@ int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
 
 int32_t AudioPolicyServer::IsAudioSeparationEffectSupported(bool &ret)
 {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        ret = false;
+        return ERR_SYSTEM_PERMISSION_DENIED;
+    }
     ret = audioEffectService_.IsAudioSeparationEffectSupported();
     return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
 {
-    return audioEffectService_.SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS),
+        ERR_PERMISSION_DENIED, "MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t ret = audioEffectService_.SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+    if (ret == AUDIO_OK && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendAudioSeparationEffectEnabledChangeEvent(enabled);
+    }
+    return ret;
 }
 
 int32_t AudioPolicyServer::SetAudioSeparationEffectVolume(int32_t type, double volume)
 {
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS),
+        ERR_PERMISSION_DENIED, "MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     return audioEffectService_.SetAudioSeparationEffectVolume(static_cast<AudioSeparationVolumeType>(type), volume);
-}
-
-int32_t AudioPolicyServer::OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object)
-{
-    return audioEffectService_.OnAudioSeparationEffectEnabledChange(object);
-}
-
-int32_t AudioPolicyServer::OffAudioSeparationEffectEnabledChange()
-{
-    return audioEffectService_.OffAudioSeparationEffectEnabledChange();
 }
 
 int32_t AudioPolicyServer::CreateLoopback(int32_t mode, int32_t type,

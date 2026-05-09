@@ -377,6 +377,16 @@ void AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange(const SpatialAudioS
     }
 }
 
+void AudioPolicyClientHolder::OnAudioSeparationEffectEnabledChange(const bool &enabled)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    if (hasSystemPermission_) {
+        audioPolicyClient_->OnAudioSeparationEffectEnabledChange(enabled);
+    } else {
+        audioPolicyClient_->OnAudioSeparationEffectEnabledChange(false);
+    }
+}
+
 int32_t AudioPolicyClientHolder::OnAudioRouteSelectRefined(
     const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult)
 {

@@ -28,7 +28,6 @@
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_spatialization_state_change_listener.h"
-#include "audio_separation_effect_enabled_change_listener.h"
 #include "boot_animation_state_info.h"
 
 namespace OHOS {
@@ -3776,26 +3775,39 @@ int32_t AudioPolicyManager::OnAudioSeparationEffectEnabledChange(
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, 
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "Audio separation effect enabled change callback is nullptr");
 
-    sptr<AudioSeparationEffectEnabledChangeListener> listenerStub =
-        new(std::nothrow) AudioSeparationEffectEnabledChangeListener();
-    CHECK_AND_RETURN_RET_LOG(listenerStub != nullptr, ERROR, "object null");
+    if (!callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "RegisterPolicyCallbackClientFunc failed in OnAudioSeparationEffectEnabledChange");
+    }
 
-    listenerStub->SetCallback(callback);
-
-    sptr<IRemoteObject> object = listenerStub->AsObject();
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "IPC object creation failed");
-
-    return gsp->OnAudioSeparationEffectEnabledChange(object);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddAudioSeparationEffectEnabledChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetAudioSeparationEffectEnabledChangeCallbackSize();
+        CHECK_AND_RETURN_RET_LOG(callbackSize >= 1, ERROR, "Add callback failed");
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, true);
+        }
+    }
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::OffAudioSeparationEffectEnabledChange()
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->OffAudioSeparationEffectEnabledChange();
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveAudioSeparationEffectEnabledChangeCallback();
+        if (audioPolicyClientStubCB_->GetAudioSeparationEffectEnabledChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, false);
+        }
+    }
+    return SUCCESS;
 }
 
 // LCOV_EXCL_STOP

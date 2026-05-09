@@ -22,7 +22,6 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "i_hpae_manager.h"
-#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -933,7 +932,6 @@ int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_
 {
     AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled: enabled=%{public}d, uid=%{public}d, streamId=%{public}ld",
         enabled, uid, streamId);
-    NotifyAudioSeparationEffectEnabledChange(enabled);
     return AUDIO_OK;
 }
 
@@ -941,37 +939,6 @@ int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolume
 {
     AUDIO_INFO_LOG("SetAudioSeparationEffectVolume: type=%{public}d, volume=%{public}f", type, volume);
     return AUDIO_OK;
-}
-
-int32_t AudioEffectService::OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object)
-{
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
-    
-    sptr<IStandardAudioSeparationEffectEnabledChangeListener> listenerProxy =
-        iface_cast<IStandardAudioSeparationEffectEnabledChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listenerProxy != nullptr, ERR_INVALID_PARAM, "listener proxy cast failed");
-    
-    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
-    sptr<IStandardAudioSeparationEffectEnabledChangeListener> listener = listenerProxy;
-    separationEffectListeners_.push_back(listener);
-    return AUDIO_OK;
-}
-
-int32_t AudioEffectService::OffAudioSeparationEffectEnabledChange()
-{
-    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
-    separationEffectListeners_.clear();
-    return AUDIO_OK;
-}
-
-void AudioEffectService::NotifyAudioSeparationEffectEnabledChange(bool enabled)
-{
-    std::lock_guard<std::mutex> lock(separationEffectCallbackMutex_);
-    for (const auto &listener : separationEffectListeners_) {
-        if (listener != nullptr) {
-            listener->OnAudioSeparationEffectEnabledChange(enabled);
-        }
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -20,9 +20,6 @@
 #include "audio_effect.h"
 #include "audio_effect_config_parser.h"
 #include "audio_stream_change_info.h"
-#include "audio_separation_effect_enabled_change_callback.h"
-#include "iremote_object.h"
-#include "standard_audio_separation_effect_enabled_change_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,8 +58,6 @@ public:
     bool IsAudioSeparationEffectSupported();
     int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId);
     int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
-    int32_t OnAudioSeparationEffectEnabledChange(const sptr<IRemoteObject> &object);
-    int32_t OffAudioSeparationEffectEnabledChange();
 
 private:
     OriginalEffectConfig oriEffectConfig_;
@@ -104,11 +99,6 @@ private:
     bool currentVoipBypassByAppMuteHint_ = false;
     bool isVoipBypassByAppMuteHintStateValid_ = false;
     uint32_t lastVoipBypassTriggerSessionId_ = 0;
-    
-    mutable std::mutex separationEffectCallbackMutex_;
-    std::vector<sptr<IStandardAudioSeparationEffectEnabledChangeListener>> separationEffectListeners_;
-    
-    void NotifyAudioSeparationEffectEnabledChange(bool enabled);
 };
 } // namespace AudioStandard
 } // namespace OHOS
