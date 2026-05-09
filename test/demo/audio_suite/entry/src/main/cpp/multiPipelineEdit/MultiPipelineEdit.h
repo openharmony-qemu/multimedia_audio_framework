@@ -9,6 +9,7 @@
 #include "callback/RegisterCallback.h"
 #include <./utils/Utils.h>
 #include "PipelineManager.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
 
 struct InputAudioParams {
     std::string inputId;
@@ -36,5 +37,6 @@ napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info);
 napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info);
 napi_value GetAutoTestProcess(napi_env env, napi_callback_info info);
 extern thread_local std::shared_ptr<PipelineManager> g_threadPipelineManager;
+extern OH_AudioSuitePipeline **g_multiAudioSuitePipeline;
 
 #endif
