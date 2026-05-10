@@ -72,6 +72,8 @@ public:
     const std::shared_ptr<AudioZoneDescriptor> GetDescriptor();
     const std::string GetStringDescriptor();
     const std::string GetName();
+    void UpdateContext(const AudioZoneContext &context);
+    bool IsSupportDeviceRole(DeviceRole deviceRole);
 
     void BindByKey(const AudioZoneBindKey &key);
     void RemoveKey(const AudioZoneBindKey &key);

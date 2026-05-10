@@ -16,7 +16,6 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #undef private
 #include "audio_info.h"
 #include "audio_policy_server.h"
@@ -45,9 +44,6 @@ const string DEFAULTNAME = "name";
 const string DEFAULTADDRESS = "address";
 const string DEFAULTINFO = "EVENT_NAME=name;DEVICE_ADDRESS=address";
 const ssize_t DEFAULTSTRLENGTH = 2;
-static const uint8_t *RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
 
 AudioPolicyServer* GetServerPtr()
@@ -103,24 +99,10 @@ void AudioFuzzTestGetPermission()
     }
 }
 
-/*
-* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
-* tips: only support basic type
-*/
-template<class T>
-T GetData()
+template<typename T>
+T ConsumeEnum(FuzzedDataProvider &fdp)
 {
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
+    return static_cast<T>(fdp.ConsumeIntegral<int32_t>());
 }
 
 template<class T>
@@ -131,27 +113,6 @@ uint32_t GetArrLength(T& arr)
         return 0;
     }
     return sizeof(arr) / sizeof(arr[0]);
-}
-
-static AudioRendererInfo getAudioRenderInfo()
-{
-    ContentType contentType = GetData<ContentType>();
-    StreamUsage streamUsage = GetData<StreamUsage>();
-    int32_t rendererFlags = GetData<int32_t>();
-    std::string sceneType = "SCENE_MOVIE";
-    bool spatializationEnabled = GetData<bool>();
-    bool headTrackingEnabled = GetData<bool>();
-    int32_t originalFlag = GetData<int32_t>();
-    AudioRendererInfo rendererInfo = {
-        contentType,
-        streamUsage,
-        rendererFlags,
-        sceneType,
-        spatializationEnabled,
-        headTrackingEnabled,
-        originalFlag
-    };
-    return rendererInfo;
 }
 
 #ifdef AUDIO_WIRED_DETECT
@@ -179,7 +140,7 @@ void InitFuzzTest(FuzzedDataProvider& fdp)
 void GetHighestPriorityAudioSceneFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    int32_t zoneId = GetData<int32_t>();
+    int32_t zoneId = fdp.ConsumeIntegral<int32_t>();
     if (interruptService == nullptr) {
         return;
     }
@@ -199,7 +160,7 @@ void AudioInterruptZoneDumpFuzzTest(FuzzedDataProvider& fdp)
 void ClearAudioFocusInfoListOnAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    int zoneId = GetData<int32_t>();
+    int zoneId = fdp.ConsumeIntegral<int32_t>();
     if (interruptService == nullptr) {
         return;
     }
@@ -209,7 +170,7 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
 void GetStreamTypePriorityFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    OHOS::AudioStandard::AudioStreamType streamType = GetData<AudioStreamType>();
+    OHOS::AudioStandard::AudioStreamType streamType = ConsumeEnum<AudioStreamType>(fdp);
     if (interruptService == nullptr) {
         return;
     }
@@ -218,27 +179,27 @@ void GetStreamTypePriorityFuzzTest(FuzzedDataProvider& fdp)
 
 void SendInterruptEventFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioFocuState oldState = GetData<AudioFocuState>();
-    AudioFocuState newState = GetData<AudioFocuState>();
+    AudioFocuState oldState = ConsumeEnum<AudioFocuState>(fdp);
+    AudioFocuState newState = ConsumeEnum<AudioFocuState>(fdp);
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
-    focusInfo.first.streamUsage = GetData<StreamUsage>();
-    focusInfo.first.contentType = GetData<ContentType>();
-    focusInfo.first.audioFocusType.streamType = GetData<AudioStreamType>();
-    focusInfo.first.audioFocusType.sourceType = GetData<SourceType>();
-    focusInfo.first.audioFocusType.isPlay = GetData<bool>();
-    focusInfo.first.sessionId = GetData<int32_t>();
-    focusInfo.first.pauseWhenDucked = GetData<bool>();
-    focusInfo.first.pid = GetData<int32_t>();
-    focusInfo.first.mode = GetData<InterruptMode>();
-    focusInfo.second = GetData<AudioFocuState>();
+    focusInfo.first.streamUsage = ConsumeEnum<StreamUsage>(fdp);
+    focusInfo.first.contentType = ConsumeEnum<ContentType>(fdp);
+    focusInfo.first.audioFocusType.streamType = ConsumeEnum<AudioStreamType>(fdp);
+    focusInfo.first.audioFocusType.sourceType = ConsumeEnum<SourceType>(fdp);
+    focusInfo.first.audioFocusType.isPlay = fdp.ConsumeBool();
+    focusInfo.first.sessionId = fdp.ConsumeIntegral<int32_t>();
+    focusInfo.first.pauseWhenDucked = fdp.ConsumeBool();
+    focusInfo.first.pid = fdp.ConsumeIntegral<int32_t>();
+    focusInfo.first.mode = ConsumeEnum<InterruptMode>(fdp);
+    focusInfo.second = ConsumeEnum<AudioFocuState>(fdp);
     focusInfoList.push_back(focusInfo);
     auto it = focusInfoList.begin();
     if (interruptService == nullptr) {
         return;
     }
-    bool removeFocusInfo = GetData<bool>();
+    bool removeFocusInfo = fdp.ConsumeBool();
     interruptService->SendInterruptEvent(oldState, newState, it, removeFocusInfo);
 }
 
@@ -247,12 +208,12 @@ void IsSameAppInShareModeFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     AudioInterrupt incomingInterrupt;
     AudioInterrupt activateInterrupt;
-    incomingInterrupt.contentType = GetData<ContentType>();
-    incomingInterrupt.streamUsage = GetData<StreamUsage>();
-    incomingInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();
-    activateInterrupt.contentType = GetData<ContentType>();
-    activateInterrupt.streamUsage = GetData<StreamUsage>();
-    activateInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();
+    incomingInterrupt.contentType = ConsumeEnum<ContentType>(fdp);
+    incomingInterrupt.streamUsage = ConsumeEnum<StreamUsage>(fdp);
+    incomingInterrupt.audioFocusType.streamType = ConsumeEnum<AudioStreamType>(fdp);
+    activateInterrupt.contentType = ConsumeEnum<ContentType>(fdp);
+    activateInterrupt.streamUsage = ConsumeEnum<StreamUsage>(fdp);
+    activateInterrupt.audioFocusType.streamType = ConsumeEnum<AudioStreamType>(fdp);
     if (interruptService == nullptr) {
         return;
     }
@@ -263,11 +224,11 @@ void SendFocusChangeEventFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     AudioInterrupt audioInterrupt;
-    int32_t zoneId = GetData<int32_t>();
-    int32_t callbackCategory = GetData<int32_t>();
-    audioInterrupt.contentType = GetData<ContentType>();
-    audioInterrupt.streamUsage = GetData<StreamUsage>();
-    audioInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();
+    int32_t zoneId = fdp.ConsumeIntegral<int32_t>();
+    int32_t callbackCategory = fdp.ConsumeIntegral<int32_t>();
+    audioInterrupt.contentType = ConsumeEnum<ContentType>(fdp);
+    audioInterrupt.streamUsage = ConsumeEnum<StreamUsage>(fdp);
+    audioInterrupt.audioFocusType.streamType = ConsumeEnum<AudioStreamType>(fdp);
     if (interruptService == nullptr) {
         return;
     }
@@ -278,19 +239,19 @@ void GetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
 {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
-    focusInfo.first.streamUsage = GetData<StreamUsage>();
-    focusInfo.first.contentType = GetData<ContentType>();
-    focusInfo.first.audioFocusType.streamType = GetData<AudioStreamType>();
-    focusInfo.first.audioFocusType.sourceType = GetData<SourceType>();
-    focusInfo.first.audioFocusType.isPlay = GetData<bool>();
-    focusInfo.first.sessionId = GetData<int32_t>();
-    focusInfo.first.pauseWhenDucked = GetData<bool>();
-    focusInfo.first.pid = GetData<int32_t>();
-    focusInfo.first.mode = GetData<InterruptMode>();
-    focusInfo.second = GetData<AudioFocuState>();
+    focusInfo.first.streamUsage = ConsumeEnum<StreamUsage>(fdp);
+    focusInfo.first.contentType = ConsumeEnum<ContentType>(fdp);
+    focusInfo.first.audioFocusType.streamType = ConsumeEnum<AudioStreamType>(fdp);
+    focusInfo.first.audioFocusType.sourceType = ConsumeEnum<SourceType>(fdp);
+    focusInfo.first.audioFocusType.isPlay = fdp.ConsumeBool();
+    focusInfo.first.sessionId = fdp.ConsumeIntegral<int32_t>();
+    focusInfo.first.pauseWhenDucked = fdp.ConsumeBool();
+    focusInfo.first.pid = fdp.ConsumeIntegral<int32_t>();
+    focusInfo.first.mode = ConsumeEnum<InterruptMode>(fdp);
+    focusInfo.second = ConsumeEnum<AudioFocuState>(fdp);
     focusInfoList.push_back(focusInfo);
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    int32_t zoneId = GetData<int32_t>();
+    int32_t zoneId = fdp.ConsumeIntegral<int32_t>();
     if (interruptService == nullptr) {
         return;
     }
@@ -299,15 +260,15 @@ void GetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeMoreFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioStreamType streamType = GetData<AudioStreamType>();
-    VolumeAdjustType adjustType = GetData<VolumeAdjustType>();
-    int32_t volume = GetData<int32_t>();
-    int32_t streamId = GetData<int32_t>();
-    DeviceType deviceType = GetData<DeviceType>();
-    int32_t uid = GetData<int32_t>();
-    int32_t pid = GetData<int32_t>();
+    AudioStreamType streamType = ConsumeEnum<AudioStreamType>(fdp);
+    VolumeAdjustType adjustType = ConsumeEnum<VolumeAdjustType>(fdp);
+    int32_t volume = fdp.ConsumeIntegral<int32_t>();
+    int32_t streamId = fdp.ConsumeIntegral<int32_t>();
+    DeviceType deviceType = ConsumeEnum<DeviceType>(fdp);
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
+    int32_t pid = fdp.ConsumeIntegral<int32_t>();
 
-    bool mute = GetData<bool>();
+    bool mute = fdp.ConsumeBool();
     GetServerPtr()->SetSystemVolumeLevel(streamType, volume);
     GetServerPtr()->GetSystemVolumeLevel(streamType);
     GetServerPtr()->SetLowPowerVolume(streamId, volume);
@@ -328,55 +289,60 @@ void AudioVolumeMoreFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioDeviceMoreFuzzTest(FuzzedDataProvider& fdp)
 {
-    DeviceFlag flag = GetData<DeviceFlag>();
+    DeviceFlag flag = ConsumeEnum<DeviceFlag>(fdp);
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(RAW_DATA, g_dataSize);
+    size_t bufferSize = fdp.ConsumeIntegralInRange<size_t>(0,
+        fdp.remaining_bytes() > 64 ? 64 : fdp.remaining_bytes());
+    std::vector<uint8_t> parcelBuffer = fdp.ConsumeBytes<uint8_t>(bufferSize);
+    if (!parcelBuffer.empty()) {
+        data.WriteBuffer(parcelBuffer.data(), parcelBuffer.size());
+    }
     data.RewindRead(0);
-    SourceType sourceType = GetData<SourceType>();
-    int32_t capturerFlags = GetData<int32_t>();
+    SourceType sourceType = ConsumeEnum<SourceType>(fdp);
+    int32_t capturerFlags = fdp.ConsumeIntegral<int32_t>();
     AudioCapturerInfo capturerInfo = {sourceType, capturerFlags};
     AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate = GetData<AudioSamplingRate>();
-    audioStreamInfo.channels = GetData<AudioChannel>();
-    audioStreamInfo.format = GetData<AudioSampleFormat>();
-    audioStreamInfo.encoding = GetData<AudioEncodingType>();
-    InternalDeviceType deviceType = GetData<InternalDeviceType>();
-    uint32_t sessionId = GetData<uint32_t>();
-    bool active = GetData<bool>();
+    audioStreamInfo.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
+    audioStreamInfo.channels = ConsumeEnum<AudioChannel>(fdp);
+    audioStreamInfo.format = ConsumeEnum<AudioSampleFormat>(fdp);
+    audioStreamInfo.encoding = ConsumeEnum<AudioEncodingType>(fdp);
+    InternalDeviceType deviceType = ConsumeEnum<InternalDeviceType>(fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    bool active = fdp.ConsumeBool();
     GetServerPtr()->SetDeviceActive(deviceType, active);
     GetServerPtr()->IsDeviceActive(deviceType);
     GetServerPtr()->GetDevices(flag);
     GetServerPtr()->GetDevicesInner(flag);
-    AudioRingerMode ringMode = GetData<AudioRingerMode>();
+    AudioRingerMode ringMode = ConsumeEnum<AudioRingerMode>(fdp);
     GetServerPtr()->SetRingerMode(ringMode);
-    bool mute = GetData<bool>();
-    bool legacy = GetData<bool>();
+    bool mute = fdp.ConsumeBool();
+    bool legacy = fdp.ConsumeBool();
     GetServerPtr()->SetMicrophoneMute(mute);
     GetServerPtr()->SetMicrophoneMuteCommon(mute, legacy);
     GetServerPtr()->SetMicrophoneMuteAudioConfig(mute);
 
-    PolicyType type = GetData<PolicyType>();
+    PolicyType type = ConsumeEnum<PolicyType>(fdp);
     GetServerPtr()->SetMicrophoneMutePersistent(mute, type);
     GetServerPtr()->GetPersistentMicMuteState();
     GetServerPtr()->IsMicrophoneMuteLegacy();
     GetServerPtr()->GetAudioScene();
 
-    StreamUsage streamUsage = GetData<StreamUsage>();
+    StreamUsage streamUsage = ConsumeEnum<StreamUsage>(fdp);
     GetServerPtr()->GetDirectPlaybackSupport(audioStreamInfo, streamUsage);
 }
 
 void AudioPolicyOtherMoreFuzzTest(FuzzedDataProvider& fdp)
 {
-    int pid = GetData<int>();
+    int pid = fdp.ConsumeIntegral<int>();
     GetServerPtr()->RegisteredTrackerClientDied(pid, 0);
 
-    int32_t clientUid = GetData<int32_t>();
-    StreamSetState streamSetState = GetData<StreamSetState>();
+    int32_t clientUid = fdp.ConsumeIntegral<int32_t>();
+    StreamSetState streamSetState = ConsumeEnum<StreamSetState>(fdp);
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     GetServerPtr()->UpdateStreamState(clientUid, streamSetState, streamUsage);
     GetServerPtr()->IsHighResolutionExist();
-    bool highResExist = GetData<bool>();
+    bool highResExist = fdp.ConsumeBool();
     GetServerPtr()->SetHighResolutionExist(highResExist);
 }
 
@@ -385,10 +351,10 @@ void AudioVolumeKeyCallbackStubMoreFuzzTest(FuzzedDataProvider& fdp)
     sptr<AudioPolicyClientStub> listener =
         static_cast<sptr<AudioPolicyClientStub>>(new(std::nothrow) AudioPolicyClientStubImpl());
     VolumeEvent volumeEvent = {};
-    volumeEvent.volumeType =  GetData<AudioStreamType>();
-    volumeEvent.volume = GetData<int32_t>();
-    volumeEvent.updateUi = GetData<bool>();
-    volumeEvent.volumeGroupId = GetData<int32_t>();
+    volumeEvent.volumeType = ConsumeEnum<AudioStreamType>(fdp);
+    volumeEvent.volume = fdp.ConsumeIntegral<int32_t>();
+    volumeEvent.updateUi = fdp.ConsumeBool();
+    volumeEvent.volumeGroupId = fdp.ConsumeIntegral<int32_t>();
     std::string id = "123";
     volumeEvent.networkId = id;
 
@@ -408,13 +374,13 @@ void AudioPolicyManagerFuzzTest(FuzzedDataProvider& fdp)
 {
 #ifdef AUDIO_WIRED_DETECT
     AudioEvent audioEvent;
-    uint32_t eventType = GetData<uint32_t>();
-    uint32_t deviceType = GetData<uint32_t>();
+    uint32_t eventType = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t deviceType = fdp.ConsumeIntegral<uint32_t>();
     audioEvent.eventType = eventType;
     audioEvent.deviceType = deviceType;
     audioEvent.name = DEFAULTNAME;
     audioEvent.address = DEFAULTADDRESS;
-    int fd = GetData<int>();
+    int fd = fdp.ConsumeIntegral<int>();
     ssize_t strLength = DEFAULTSTRLENGTH;
     const char *msg = "SCENE";
     AudioSocketThread::IsUpdatePnpDeviceState(&audioEvent);
@@ -436,8 +402,8 @@ void AudioPolicyManagerFuzzTest(FuzzedDataProvider& fdp)
 void ForceVolumeKeyControlTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    int32_t volumeType = GetData<int32_t>();
-    int32_t duration = GetData<int32_t>();
+    int32_t volumeType = fdp.ConsumeIntegral<int32_t>();
+    int32_t duration = fdp.ConsumeIntegral<int32_t>();
     if (interruptService == nullptr) {
         return;
     }
@@ -466,15 +432,6 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
 void Init()
 {
     manager = std::make_shared<AudioA2dpOffloadManager>();
@@ -488,7 +445,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;

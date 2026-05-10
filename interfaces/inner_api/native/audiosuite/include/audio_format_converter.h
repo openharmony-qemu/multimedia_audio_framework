@@ -33,31 +33,36 @@ enum class InputDataStatus {
     DATA_FINISHED = 3,      // End of data flow
 };
 
+struct AudioConvertResult {
+    uint8_t* outData = nullptr;       // Output data buffer
+    uint32_t outSampleCount = 0;      // Number of output samples
+    int32_t errCode = 0;
+};
+
 // Abstract class for format converter data request callback
 class FormatConverterDataCallback {
 public:
     virtual ~FormatConverterDataCallback() = default;
-    // Return value: Data size (bytes), negative value indicates an error.
-    // Output parameters: data - data pointer, status - data status
+    /*
+    * Return value: Data size (bytes), negative value indicates an error.
+    * Output parameters: data - data pointer, status - data status
+    */
     virtual int32_t OnRequestData(const void** data, InputDataStatus* status) = 0;
 };
 
-// Format converter interface class (pure virtual interface)
-class IAudioFormatConverter {
+class AudioFormatConverter {
 public:
-    virtual ~IAudioFormatConverter() = default;
+    virtual ~AudioFormatConverter() = default;
 
-    // Interface 1: Create - Initialize the converter (with format parameters and format validation)
-    static std::shared_ptr<IAudioFormatConverter> Create(
-        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat);
+    static std::shared_ptr<AudioFormatConverter> Create(
+        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat, const uint32_t resampleQuality = 1);
 
-    // Interface 2: SetInputCallback - Sets the data request callback
     virtual int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) = 0;
 
-    // Interface 3: Process - Processes audio data
     virtual int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) = 0;
 
-    // Interface 4: Destroy - Destruction Converter
+    virtual AudioConvertResult Process(const uint8_t* inData, uint32_t inSampleCount) = 0;
+
     virtual void Destroy() = 0;
 private:
     static std::mutex createMutex_;

@@ -381,6 +381,123 @@ HWTEST_F(HpaeRenderEffectNodeTest, testInitEffectBuffer_001, TestSize.Level0)
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionId), SUCCESS);
 }
 
+/**
+ * @tc.name  : FaultCode_CreateAudioEffectChain_NullManager
+ * @tc.type  : FUNC
+ * @tc.desc  : Test CreateAudioEffectChain when AudioEffectChainManager returns null,
+ *             should report PLAY_CREATE_DEPENDENCY_NULL fault code.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, FaultCode_CreateAudioEffectChain_NullManager, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    // AudioEffectChainManager::GetInstance() returns a valid singleton in test,
+    // but CreateAudioEffectChainDynamic may fail with invalid scene type
+    nodeInfo.effectInfo.effectScene = static_cast<AudioEffectScene>(0xff);
+    int32_t ret = node->AudioRendererCreate(nodeInfo);
+    // Should still return SUCCESS (create handles failure gracefully)
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : FaultCode_SignalProcess_ApplyEffectFail
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SignalProcess when ApplyAudioEffectChain fails,
+ *             should report PLAY_SEND_EXECUTE_FAIL fault code.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, FaultCode_SignalProcess_ApplyEffectFail, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    std::vector<HpaePcmBuffer *> inputs;
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    hpaePcmBuffer.GetPcmDataBuffer();
+    hpaePcmBuffer.SetBufferValid(true);
+    inputs.emplace_back(&hpaePcmBuffer);
+    // SignalProcess should handle gracefully when effect chain not created
+    HpaePcmBuffer *result = node->SignalProcess(inputs);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : FaultCode_ReleaseAudioEffectChain_InvalidScene
+ * @tc.type  : FUNC
+ * @tc.desc  : Test ReleaseAudioEffectChain with invalid scene,
+ *             should report PLAY_RELEASE_DEPENDENCY_NULL or PLAY_RELEASE_STREAM_FAIL.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, FaultCode_ReleaseAudioEffectChain_InvalidScene, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    // Release without create - should handle gracefully
+    nodeInfo.effectInfo.effectScene = static_cast<AudioEffectScene>(0xff);
+    int32_t ret = node->ReleaseAudioEffectChain(nodeInfo);
+    // May return non-zero for invalid scene
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : FaultCode_GetLatency_NullManager
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetLatency when audioEffectChainManager is null,
+ *             should report PLAY_QUERY_INSTANCE_NULL fault code.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, FaultCode_GetLatency_NullManager, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    // GetLatency should return 0 when effect chain manager returns null
+    uint64_t latency = node->GetLatency(TEST_ID);
+    EXPECT_EQ(latency, 0);
+}
+
+/**
+ * @tc.name  : FaultCode_SplitCollaborativeData_InvalidChannel
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SplitCollaborativeData when channel count is not 4,
+ *             should report PLAY_SEND_INVALID_PARAM fault code.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, FaultCode_SplitCollaborativeData_InvalidChannel, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    // SplitCollaborativeData checks if channel count == 4
+    // With STEREO (2 channels), it should report fault
+    int32_t ret = node->SplitCollaborativeData();
+    EXPECT_EQ(ret, ERROR);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

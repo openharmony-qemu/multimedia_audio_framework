@@ -20,14 +20,14 @@
 #include "audio_client_tracker_callback_service.h"
 #include "audio_client_tracker_callback_listener.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include <map>
+#include <unordered_map>
+#include <vector>
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
 typedef void (*TestPtr)();
 sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
@@ -45,7 +45,7 @@ public:
 
 class AudioClientTrackerFuzzTest : public AudioClientTracker {
     public:
-        virtual ~AudioClientTrackerFuzzTest(FuzzedDataProvider& fdp) = default;
+        ~AudioClientTrackerFuzzTest() override = default;
         virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
         virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
         virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
@@ -157,20 +157,10 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-template<class T>
-T GetData()
+template<typename T>
+const T& PickValue(FuzzedDataProvider& fdp, const std::vector<T>& values)
 {
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
 }
 
 void AudioPolicyClientProxyOnVolumeKeyEventFuzzTest(FuzzedDataProvider& fdp)
@@ -222,7 +212,7 @@ void AudioPolicyClientProxyOnAudioFocusAbandonedFuzzTest(FuzzedDataProvider& fdp
 
 void AudioPolicyClientProxyOnActiveVolumeTypeChangedFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioVolumeType volumeType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
+    AudioVolumeType volumeType = PickValue(fdp, g_testAudioStreamTypes);
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
@@ -233,11 +223,11 @@ void AudioPolicyClientProxyOnActiveVolumeTypeChangedFuzzTest(FuzzedDataProvider&
 
 void AudioPolicyClientProxyOnAppVolumeChangedFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioVolumeType volType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    int32_t volLevel = GetData<int32_t>();
-    bool isUiUpdated = GetData<bool>();
+    AudioVolumeType volType = PickValue(fdp, g_testAudioStreamTypes);
+    int32_t volLevel = fdp.ConsumeIntegral<int32_t>();
+    bool isUiUpdated = fdp.ConsumeBool();
     VolumeEvent volumeEvent(volType, volLevel, isUiUpdated);
-    int32_t appUid = GetData<int32_t>();
+    int32_t appUid = fdp.ConsumeIntegral<int32_t>();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
@@ -253,8 +243,8 @@ void AudioPolicyClientProxyOnDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
         DISCONNECT,
     };
     DeviceChangeAction deviceChangeAction;
-    deviceChangeAction.type = testDeviceChangeTypes[GetData<uint32_t>() % testDeviceChangeTypes.size()];
-    deviceChangeAction.flag = g_testDeviceFlags[GetData<uint32_t>() % g_testDeviceFlags.size()];
+    deviceChangeAction.type = PickValue(fdp, testDeviceChangeTypes);
+    deviceChangeAction.flag = PickValue(fdp, g_testDeviceFlags);
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
@@ -270,7 +260,7 @@ void AudioPolicyClientProxyOnMicrophoneBlockedFuzzTest(FuzzedDataProvider& fdp)
         DEVICE_BLOCKED,
     };
     MicrophoneBlockedInfo microphoneBlockedInfo;
-    microphoneBlockedInfo.blockStatus = testDeviceBlockStatuses[GetData<uint32_t>() % testDeviceBlockStatuses.size()];
+    microphoneBlockedInfo.blockStatus = PickValue(fdp, testDeviceBlockStatuses);
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
@@ -286,7 +276,7 @@ void AudioPolicyClientProxyOnRingerModeUpdatedFuzzTest(FuzzedDataProvider& fdp)
         RINGER_MODE_VIBRATE,
         RINGER_MODE_NORMAL,
     };
-    AudioRingerMode ringerMode = testRingerModes[GetData<uint32_t>() % testRingerModes.size()];
+    AudioRingerMode ringerMode = PickValue(fdp, testRingerModes);
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
@@ -298,7 +288,7 @@ void AudioPolicyClientProxyOnRingerModeUpdatedFuzzTest(FuzzedDataProvider& fdp)
 void AudioPolicyClientProxyOnMicStateUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     MicStateChangeEvent micStateChangeEvent;
-    micStateChangeEvent.mute = GetData<bool>();
+    micStateChangeEvent.mute = fdp.ConsumeBool();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
@@ -310,31 +300,33 @@ void AudioPolicyClientProxyOnMicStateUpdatedFuzzTest(FuzzedDataProvider& fdp)
 void AudioPolicyClientProxyOnPreferredOutputDeviceUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioRendererInfo rendererInfo;
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
     }
-    audioPolicyClientProxy->OnPreferredOutputDeviceUpdated(rendererInfo, desc);
+    audioPolicyClientProxy->OnPreferredOutputDeviceUpdated(rendererInfo, uid, desc);
 }
 
 void AudioPolicyClientProxyOnPreferredInputDeviceUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerInfo capturerInfo;
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
     }
-    audioPolicyClientProxy->OnPreferredInputDeviceUpdated(capturerInfo, desc);
+    audioPolicyClientProxy->OnPreferredInputDeviceUpdated(capturerInfo, uid, desc);
 }
 
 void AudioPolicyClientProxyOnRendererStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    bool changeInfoNull = GetData<bool>();
+    bool changeInfoNull = fdp.ConsumeBool();
     std::shared_ptr<AudioRendererChangeInfo> changeInfo = std::make_shared<AudioRendererChangeInfo>();
     if (changeInfoNull) {
         changeInfo = nullptr;
@@ -351,7 +343,7 @@ void AudioPolicyClientProxyOnRendererStateChangeFuzzTest(FuzzedDataProvider& fdp
 void AudioPolicyClientProxyOnCapturerStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    bool changeInfoNull = GetData<bool>();
+    bool changeInfoNull = fdp.ConsumeBool();
     std::shared_ptr<AudioCapturerChangeInfo> changeInfo = std::make_shared<AudioCapturerChangeInfo>();
     if (changeInfoNull) {
         changeInfo = nullptr;
@@ -367,8 +359,8 @@ void AudioPolicyClientProxyOnCapturerStateChangeFuzzTest(FuzzedDataProvider& fdp
 
 void AudioPolicyClientProxyOnRendererDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
 {
-    uint32_t sessionId = GetData<uint32_t>();
-    AudioStreamDeviceChangeReasonExt reason = g_testReasons[GetData<uint32_t>() % g_testReasons.size()];
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    AudioStreamDeviceChangeReasonExt reason = PickValue(fdp, g_testReasons);
     AudioDeviceDescriptor deviceInfo;
     AudioDeviceDescriptor preDeviceInfo;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
@@ -381,10 +373,10 @@ void AudioPolicyClientProxyOnRendererDeviceChangeFuzzTest(FuzzedDataProvider& fd
 
 void AudioPolicyClientProxyOnRecreateRendererStreamEventFuzzTest(FuzzedDataProvider& fdp)
 {
-    uint32_t sessionId = GetData<uint32_t>();
-    int32_t streamFlag = GetData<int32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    int32_t streamFlag = fdp.ConsumeIntegral<int32_t>();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
-    AudioStreamDeviceChangeReasonExt reason = g_testReasons[GetData<uint32_t>() % g_testReasons.size()];
+    AudioStreamDeviceChangeReasonExt reason = PickValue(fdp, g_testReasons);
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
@@ -394,10 +386,10 @@ void AudioPolicyClientProxyOnRecreateRendererStreamEventFuzzTest(FuzzedDataProvi
 
 void AudioPolicyClientProxyOnRecreateCapturerStreamEventFuzzTest(FuzzedDataProvider& fdp)
 {
-    uint32_t sessionId = GetData<uint32_t>();
-    int32_t streamFlag = GetData<int32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    int32_t streamFlag = fdp.ConsumeIntegral<int32_t>();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
-    AudioStreamDeviceChangeReasonExt reason = g_testReasons[GetData<uint32_t>() % g_testReasons.size()];
+    AudioStreamDeviceChangeReasonExt reason = PickValue(fdp, g_testReasons);
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
@@ -408,7 +400,7 @@ void AudioPolicyClientProxyOnRecreateCapturerStreamEventFuzzTest(FuzzedDataProvi
 void AudioPolicyClientProxyOnHeadTrackingDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::unordered_map<std::string, bool> changeInfo;
-    bool changeInfoBool = GetData<bool>();
+    bool changeInfoBool = fdp.ConsumeBool();
     changeInfo.insert(std::make_pair("testKey", changeInfoBool));
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
@@ -425,7 +417,7 @@ void AudioPolicyClientProxyOnSpatializationEnabledChangeFuzzTest(FuzzedDataProvi
     if (iAudioPolicyClient == nullptr) {
         return;
     }
-    bool enabled = GetData<bool>();
+    bool enabled = fdp.ConsumeBool();
     iAudioPolicyClient->OnSpatializationEnabledChange(enabled);
 }
 
@@ -437,13 +429,13 @@ void AudioPolicyClientProxyOnSpatializationEnabledChangeForAnyDeviceFuzzTest(Fuz
     if (iAudioPolicyClient == nullptr) {
         return;
     }
-    bool enabled = GetData<bool>();
+    bool enabled = fdp.ConsumeBool();
     iAudioPolicyClient->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
 }
 
 void AudioPolicyClientProxyOnSpatializationEnabledChangeForCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    bool enabled = GetData<bool>();
+    bool enabled = fdp.ConsumeBool();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     std::shared_ptr<IAudioPolicyClient> iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
     if (iAudioPolicyClient == nullptr) {
@@ -454,7 +446,7 @@ void AudioPolicyClientProxyOnSpatializationEnabledChangeForCurrentDeviceFuzzTest
 
 void AudioPolicyClientProxyOnHeadTrackingEnabledChangeFuzzTest(FuzzedDataProvider& fdp)
 {
-    bool enabled = GetData<bool>();
+    bool enabled = fdp.ConsumeBool();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     std::shared_ptr<IAudioPolicyClient> iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
     if (iAudioPolicyClient == nullptr) {
@@ -479,7 +471,7 @@ void AudioPolicyClientProxyOnAudioSceneChangeFuzzTest(FuzzedDataProvider& fdp)
     if (testAudioScenes.size() == 0) {
         return;
     }
-    AudioScene audioScene = testAudioScenes[GetData<uint32_t>() % testAudioScenes.size()];
+    AudioScene audioScene = PickValue(fdp, testAudioScenes);
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
     if (iAudioPolicyClient == nullptr) {
@@ -490,7 +482,7 @@ void AudioPolicyClientProxyOnAudioSceneChangeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioPolicyClientProxyOnHeadTrackingEnabledChangeForAnyDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    bool enabled = GetData<bool>();
+    bool enabled = fdp.ConsumeBool();
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     std::shared_ptr<IAudioPolicyClient> iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
@@ -502,7 +494,7 @@ void AudioPolicyClientProxyOnHeadTrackingEnabledChangeForAnyDeviceFuzzTest(Fuzze
 
 void AudioPolicyClientProxyOnNnStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
-    int32_t state = GetData<int32_t>();
+    int32_t state = fdp.ConsumeIntegral<int32_t>();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
     if (iAudioPolicyClient == nullptr) {
@@ -521,7 +513,7 @@ void AudioPolicyClientProxyOnAudioSessionDeactiveFuzzTest(FuzzedDataProvider& fd
     if (testDeactiveReasons.size() == 0) {
         return;
     }
-    deactiveEvent.deactiveReason = testDeactiveReasons[GetData<uint32_t>() % testDeactiveReasons.size()];
+    deactiveEvent.deactiveReason = PickValue(fdp, testDeactiveReasons);
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
     if (iAudioPolicyClient == nullptr) {
@@ -545,7 +537,7 @@ void AudioPolicyClientProxyOnFormatUnsupportedErrorFuzzTest(FuzzedDataProvider& 
     if (errorCodes.size() == 0) {
         return;
     }
-    AudioErrors errorCode = errorCodes[GetData<uint32_t>() % errorCodes.size()];
+    AudioErrors errorCode = PickValue(fdp, errorCodes);
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
     if (iAudioPolicyClient == nullptr) {
@@ -578,9 +570,9 @@ void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest(FuzzedDataProvider& f
     }
     StreamSetStateEventInternal streamSetStateEventInternal;
     streamSetStateEventInternal.streamSetState =
-        g_testStreamSetStates[GetData<uint32_t>() % g_testStreamSetStates.size()];
+        PickValue(fdp, g_testStreamSetStates);
     streamSetStateEventInternal.streamUsage =
-        g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
+        PickValue(fdp, g_testAudioStreamUsages);
     clientTrackerCallbackListener->MuteStreamImpl(streamSetStateEventInternal);
 }
 
@@ -593,9 +585,9 @@ void AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest(FuzzedDataProvider&
     }
     StreamSetStateEventInternal streamSetStateEventInternal;
     streamSetStateEventInternal.streamSetState =
-        g_testStreamSetStates[GetData<uint32_t>() % g_testStreamSetStates.size()];
+        PickValue(fdp, g_testStreamSetStates);
     streamSetStateEventInternal.streamUsage =
-        g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
+        PickValue(fdp, g_testAudioStreamUsages);
     clientTrackerCallbackListener->UnmuteStreamImpl(streamSetStateEventInternal);
 }
 
@@ -608,9 +600,9 @@ void AudioClientTrackerCallbackProxyPausedStreamImplFuzzTest(FuzzedDataProvider&
     }
     StreamSetStateEventInternal streamSetStateEventInternal;
     streamSetStateEventInternal.streamSetState =
-        g_testStreamSetStates[GetData<uint32_t>() % g_testStreamSetStates.size()];
+        PickValue(fdp, g_testStreamSetStates);
     streamSetStateEventInternal.streamUsage =
-        g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
+        PickValue(fdp, g_testAudioStreamUsages);
     clientTrackerCallbackListener->PausedStreamImpl(streamSetStateEventInternal);
 }
 
@@ -623,9 +615,9 @@ void AudioClientTrackerCallbackProxyResumeStreamImplFuzzTest(FuzzedDataProvider&
     }
     StreamSetStateEventInternal streamSetStateEventInternal;
     streamSetStateEventInternal.streamSetState =
-        g_testStreamSetStates[GetData<uint32_t>() % g_testStreamSetStates.size()];
+        PickValue(fdp, g_testStreamSetStates);
     streamSetStateEventInternal.streamUsage =
-        g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
+        PickValue(fdp, g_testAudioStreamUsages);
     clientTrackerCallbackListener->ResumeStreamImpl(streamSetStateEventInternal);
 }
 
@@ -635,7 +627,7 @@ void AudioClientTrackerCallbackProxySetLowPowerVolumeImplFuzzTest(FuzzedDataProv
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
-    float volume = GetData<float>();
+    float volume = fdp.ConsumeFloatingPoint<float>();
     clientTrackerCallbackListener->SetLowPowerVolumeImpl(volume);
 }
 
@@ -645,7 +637,7 @@ void AudioClientTrackerCallbackProxyGetLowPowerVolumeImplFuzzTest(FuzzedDataProv
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
-    float volume = GetData<float>();
+    float volume = fdp.ConsumeFloatingPoint<float>();
     clientTrackerCallbackListener->GetLowPowerVolumeImpl(volume);
 }
 
@@ -655,7 +647,7 @@ void AudioClientTrackerCallbackProxyGetSingleStreamVolumeImplFuzzTest(FuzzedData
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
-    float volume = GetData<float>();
+    float volume = fdp.ConsumeFloatingPoint<float>();
     clientTrackerCallbackListener->GetSingleStreamVolumeImpl(volume);
 }
 
@@ -665,8 +657,8 @@ void AudioClientTrackerCallbackProxySetOffloadModeImplFuzzTest(FuzzedDataProvide
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
-    int32_t state = GetData<int32_t>();
-    bool isAppBack = GetData<bool>();
+    int32_t state = fdp.ConsumeIntegral<int32_t>();
+    bool isAppBack = fdp.ConsumeBool();
     clientTrackerCallbackListener->SetOffloadModeImpl(state, isAppBack);
 }
 
@@ -721,15 +713,6 @@ void Test(FuzzedDataProvider& fdp)
 });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
 void Init()
 {
 }
@@ -742,7 +725,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;

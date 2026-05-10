@@ -176,6 +176,7 @@ audio_ohos_library("audio_policy_service") {
   }
   install_enable = true
   sources = [
+    "server/domain/device/src/sco_audio_scene_manager.cpp",
     "server/domain/interrupt/src/standalone_mode_manager.cpp",
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/audio_manager_listener_stub_impl.cpp",
@@ -209,6 +210,8 @@ audio_ohos_library("audio_policy_service") {
     "server/common/src/audio_group_handle.cpp",
     "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
+    "server/service/service_main/src/audio_loopback_manager.cpp",
+    "server/service/service_main/src/loopback_in_server.cpp",
     "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
     "server/domain/stream/audio_stream_collector.cpp",
     "server/domain/stream/audio_stream_id_allocator.cpp",
@@ -228,6 +231,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
     "server/domain/interrupt/src/audio_interrupt_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_service_ext.cpp",
+    "server/domain/interrupt/src/audio_interrupt_strategy.cpp",
     "server/domain/interrupt/src/audio_interrupt_custom.cpp",
     "server/domain/interrupt/src/audio_interrupt_dfx.cpp",
     "server/domain/interrupt/src/audio_interrupt_utils.cpp",
@@ -638,6 +642,7 @@ audio_ohos_library("audio_policy_client") {
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
     "../../services/audio_service/idl:audio_policy_client_idl_interface",
+    "../../services/audio_service:audio_common",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]
@@ -645,6 +650,7 @@ audio_ohos_library("audio_policy_client") {
   include_dirs = [
     "../../frameworks/native/audioutils/include",
     "../../services/audio_service/common/include/",
+    "../../services/audio_service/common/include/dfx",
   ]
 
   external_deps = [
@@ -688,6 +694,7 @@ group("audio_policy_test_packages") {
     "server/domain/router_context/test:audio_router_context_test",
     "server/domain/session/test:audio_policy_session_unit_test",
     "server/domain/volume/test:audio_volume_unittest_packages",
+    "server/service/service_main/test:audio_loopback_manager_unit_test",
     "server/service/service_main/test:audio_policy_dump_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
     "server/service/service_main/test:audio_policy_service_ext_unit_test",
@@ -764,6 +771,41 @@ ohos_executable("audio_policy_test") {
   subsystem_name = "multimedia"
 }
 
+ohos_executable("audio_route_selector_test") {
+  install_enable = false
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  sources = [ "test/example/audio_route_selector_test.cpp" ]
+
+  configs = [ ":audio_policy_client_config" ]
+
+  deps = [
+    "../audio_policy:audio_policy_client",
+    "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 config("audio_foundation_public_config") {
   include_dirs = [
     "util/include",
@@ -813,8 +855,6 @@ ohos_shared_library("audio_foundation") {
     "hilog:libhilog",
     "ipc:ipc_core",
   ]
-
-  public_external_deps = [ "c_utils:utils" ]
 
   cflags = [ "-Os" ]
   cflags_cc = cflags

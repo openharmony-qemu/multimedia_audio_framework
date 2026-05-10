@@ -49,9 +49,15 @@ public:
 
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
+    bool GetKeepRunning();
+
+    void SetIsLowLatency(bool isLowLatency);
+    bool GetIsLowLatency();
 
     void SetOffloadEnabled(bool offloadEnable);
     bool GetOffloadEnabled();
+    void SetOffloadType(int32_t offloadType);
+    int32_t GetOffloadType();
     int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
     void SetSpeed(float speed);
@@ -61,6 +67,10 @@ public:
     bool QueryUnderrun();
     int32_t OnStreamInfoChange(bool needata = true);
     void NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos);
+    void TriggerClientWake();
+    void SetDirect(bool isDirect);
+    bool GetDirect() const noexcept;
+    void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
 
     bool isConnected_ = false;
     HpaeProcessorType connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
@@ -68,7 +78,6 @@ private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
     bool ReadToAudioBuffer(int32_t &ret);
-    void UpdateDataFlag(HpaeNodeInfo &nodeInfo);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;
@@ -81,15 +90,16 @@ private:
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     int32_t appUid_ = -1;
-    bool pullDataFlag_ = false; // pull data each 40ms for 11025hz input
-    uint8_t pullDataCount_ = 0; // for customSampleRate that is not multiples of 50, eg. 8010, pull data each 100ms
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
+    int32_t offloadType_ = OFFLOAD_DEFAULT;
     float loudnessGain_ = 0.0f;
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
     std::atomic<uint64_t> rewindTime_ = 0;
     uint32_t standbyCounter_ = 0;
+    bool isLowLatency_ = false;
+    bool isDirect_ = false;
 };
 
 }  // namespace HPAE

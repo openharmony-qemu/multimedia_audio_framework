@@ -143,6 +143,7 @@ private:
     int32_t EstimateRenderPosition();
     int32_t FlushInner(void);
     bool IsValidState();
+    void ReportHdPlayError(int32_t errorCode, const std::string &desc);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

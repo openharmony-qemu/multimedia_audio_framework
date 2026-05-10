@@ -139,14 +139,49 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_004, TestSize.Level1)
 /**
  * @tc.name   : Test FastSink API
  * @tc.number : FastSinkUnitTest_007
- * @tc.desc   : Test fast sink update apps uid
+ * @tc.desc   : Test fast sink update apps uid with empty vector
  */
 HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
     vector<int32_t> appsUid;
     int32_t ret = sink_->UpdateAppsUid(appsUid);
+#ifdef FEATURE_POWER_MANAGER
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_007_2
+ * @tc.desc   : Test fast sink update apps uid with valid appsUid
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007_2, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    vector<int32_t> appsUid = {1001, 1002, 1003};
+    int32_t ret = sink_->UpdateAppsUid(appsUid);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_007_3
+ * @tc.desc   : Test fast sink update apps uid with array input
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007_3, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    int32_t appsUid[MAX_MIX_CHANNELS] = {1001, 1002};
+    size_t size = 2;
+    int32_t ret = sink_->UpdateAppsUid(appsUid, size);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -299,6 +334,72 @@ HWTEST_F(FastAudioRenderSinkUnitTest, EnableSyncInfo_001, TestSize.Level2)
 
     testSink->EnableSyncInfo(1);
     EXPECT_EQ(testSink->syncInfoSize_, 1);
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_012
+ * @tc.desc   : Test Init with isLoopback true sets device route
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_012, TestSize.Level1)
+{
+    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    ASSERT_NE(fastAudioRenderSink, nullptr);
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+    attr.deviceType = DEVICE_TYPE_SPEAKER;
+    attr.isLoopback = true;
+
+    int32_t ret = fastAudioRenderSink->Init(attr);
+    if (ret == SUCCESS) {
+        EXPECT_TRUE(fastAudioRenderSink->IsInited());
+        fastAudioRenderSink->DeInit();
+    }
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_013
+ * @tc.desc   : Test Init with isLoopback false does not set device route
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_013, TestSize.Level1)
+{
+    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    ASSERT_NE(fastAudioRenderSink, nullptr);
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+    attr.deviceType = DEVICE_TYPE_SPEAKER;
+    attr.isLoopback = false;
+
+    int32_t ret = fastAudioRenderSink->Init(attr);
+    if (ret == SUCCESS) {
+        EXPECT_TRUE(fastAudioRenderSink->IsInited());
+        fastAudioRenderSink->DeInit();
+    }
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_014
+ * @tc.desc   : Test Init with loopback and different device types
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_014, TestSize.Level1)
+{
+    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    ASSERT_NE(fastAudioRenderSink, nullptr);
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+    attr.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    attr.isLoopback = true;
+
+    int32_t ret = fastAudioRenderSink->Init(attr);
+    if (ret == SUCCESS) {
+        EXPECT_TRUE(fastAudioRenderSink->IsInited());
+        fastAudioRenderSink->DeInit();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

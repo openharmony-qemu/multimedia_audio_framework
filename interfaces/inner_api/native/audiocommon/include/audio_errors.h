@@ -253,12 +253,42 @@ const int32_t ERR_SESSION_UNAVAILABLE = BASE_AUDIO_ERR_OFFSET - 62;
 
 /** Buffer too small */
 const int32_t ERR_BUFFER_TOO_SMALL = BASE_AUDIO_ERR_OFFSET - 63;
- 
-/** callback invalid */
-const int32_t ERR_CALLBACK_INVALID = BASE_AUDIO_ERR_OFFSET - 64;
- 
-/** callback not set */
-const int32_t ERR_CALLBACK_NOT_SET = BASE_AUDIO_ERR_OFFSET - 65;
+
+/** Audio suite write failed. */
+const int32_t ERR_AUDIO_SUITE_WRITE_FAILED = BASE_AUDIO_ERR_OFFSET - 64;
+
+/** AVSession service not exist */
+const int32_t ERR_SERVICE_NOT_EXIST = BASE_AUDIO_ERR_OFFSET - 65;
+
+/** AVSession not exist */
+const int32_t ERR_SESSION_NOT_EXIST = BASE_AUDIO_ERR_OFFSET - 66;
+
+/** AVSession command not support */
+const int32_t ERR_COMMAND_NOT_SUPPORT = BASE_AUDIO_ERR_OFFSET - 67;
+
+/** AVSession controller not exist */
+const int32_t ERR_CONTROLLER_NOT_EXIST = BASE_AUDIO_ERR_OFFSET - 68;
+
+/** AVSession no permission */
+const int32_t ERR_NO_PERMISSION = BASE_AUDIO_ERR_OFFSET - 69;
+
+/** AVSession deactive */
+const int32_t ERR_SESSION_DEACTIVE = BASE_AUDIO_ERR_OFFSET - 70;
+
+/** AVSession controller is exist */
+const int32_t ERR_CONTROLLER_IS_EXIST = BASE_AUDIO_ERR_OFFSET - 71;
+
+/** AVSession command send exceed max */
+const int32_t ERR_COMMAND_SEND_EXCEED_MAX = BASE_AUDIO_ERR_OFFSET - 72;
+
+/** AVSession is exist */
+const int32_t ERR_SESSION_IS_EXIST = BASE_AUDIO_ERR_OFFSET - 73;
+
+/** AVSession desktop lyric not support */
+const int32_t ERR_DESKTOPLYRIC_NOT_SUPPORT = BASE_AUDIO_ERR_OFFSET - 74;
+
+/** AVSession desktop lyric not enable */
+const int32_t ERR_DESKTOPLYRIC_NOT_ENABLE = BASE_AUDIO_ERR_OFFSET - 75;
 
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
@@ -293,8 +323,13 @@ enum class ProblemCategory : uint8_t {
     FAULT_WRONG_DEVICE = 0x06,
     FAULT_AUTO_PLAY = 0x07,
     FAULT_CONTROL_ABNORMAL = 0x08,
-    FAULT_DEVICE_SWUTCG_FAIL = 0x09,
+    FAULT_DEVICE_SWITCH_FAIL = 0x09,
     FAULT_STATE_INCONSISTENT = 0x0A,
+    FAULT_WRONG_AUDIO_EFFECT = 0x0B,
+    FAULT_SESSION_LOCAL_SET = 0x0C,
+    FAULT_SESSION_LOCAL_GET = 0x0D,
+    FAULT_SESSION_CAST_SET = 0x0E,
+    FAULT_SESSION_CAST_GET = 0x0F,
 };
 
 enum class OperationType : uint8_t {
@@ -303,7 +338,8 @@ enum class OperationType : uint8_t {
     RECORD = 0x02,
     CONTROL = 0x03,
     EDIT = 0x04,
-    HIPLAY = 0x05,
+    HDPLAY = 0x05,
+    AVSESSION = 0x06,
 };
 
 enum class BusinessScenario : uint8_t {
@@ -320,6 +356,8 @@ enum class BusinessScenario : uint8_t {
     QUERY = 0x0A,
     CALLBACK = 0x0B,
     CONFING = 0x0C,
+    RENDER = 0x0D,
+    CONTROL = 0x0E,
 };
 
 constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operationType,
@@ -331,6 +369,528 @@ constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operati
         ((BASE_AUDIO_ERR_OFFSET - detail) & 0xFF));
 }
 
+// PLAY_CREATE
+constexpr int32_t PLAY_CREATE_MEMORY_ALLOC_FAILED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_MEMORY_ALLOC_FAILED);
+constexpr int32_t PLAY_CREATE_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_OPERATION_FAILED);
+constexpr int32_t PLAY_CREATE_INVALID_PARAM = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_INVALID_PARAM);
+constexpr int32_t PLAY_CREATE_SERVICE_UNAVAILABLE = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_SERVICE_UNAVAILABLE);
+constexpr int32_t PLAY_CREATE_PERMISSION_DENIED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_PERMISSION_DENIED);
+constexpr int32_t PLAY_CREATE_CALLBACK_REGISTER_FAILED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_CALLBACK_REGISTER_FAILED);
+constexpr int32_t PLAY_CREATE_INVALID_INDEX = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_INVALID_INDEX);
+constexpr int32_t PLAY_CREATE_EXCEED_MAX_STREAM_CNT = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_EXCEED_MAX_STREAM_CNT);
+constexpr int32_t PLAY_CREATE_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::CREATE, ERR_NULL_POINTER);
+
+// PLAY_START
+constexpr int32_t PLAY_START_PERMISSION_DENIED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::START, ERR_PERMISSION_DENIED);
+constexpr int32_t PLAY_START_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
+    OperationType::PLAY, BusinessScenario::START, ERR_ILLEGAL_STATE);
+constexpr int32_t PLAY_START_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::START, ERR_NULL_POINTER);
+constexpr int32_t PLAY_START_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::START, ERR_OPERATION_FAILED);
+constexpr int32_t PLAY_START_TIMEOUT = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::START, ERR_TIMEOUT);
+
+// PLAY_SEND_DATA
+constexpr int32_t PLAY_SEND_DATA_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::SEND_DATA, ERR_NULL_POINTER);
+
+// PLAY_PAUSE
+constexpr int32_t PLAY_PAUSE_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
+    OperationType::PLAY, BusinessScenario::PAUSE, ERR_ILLEGAL_STATE);
+constexpr int32_t PLAY_PAUSE_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::PAUSE, ERR_OPERATION_FAILED);
+constexpr int32_t PLAY_PAUSE_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::PAUSE, ERR_NULL_POINTER);
+constexpr int32_t PLAY_PAUSE_TIMEOUT = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::PAUSE, ERR_TIMEOUT);
+
+// PLAY_STOP
+constexpr int32_t PLAY_STOP_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
+    OperationType::PLAY, BusinessScenario::STOP, ERR_ILLEGAL_STATE);
+constexpr int32_t PLAY_STOP_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::STOP, ERR_NULL_POINTER);
+constexpr int32_t PLAY_STOP_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::STOP, ERR_OPERATION_FAILED);
+constexpr int32_t PLAY_STOP_TIMEOUT = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::STOP, ERR_TIMEOUT);
+
+// PLAY_FLUSH
+constexpr int32_t PLAY_FLUSH_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
+    OperationType::PLAY, BusinessScenario::FLUSH, ERR_ILLEGAL_STATE);
+constexpr int32_t PLAY_FLUSH_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::FLUSH, ERR_NULL_POINTER);
+constexpr int32_t PLAY_FLUSH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_CONTROL_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::FLUSH, ERR_OPERATION_FAILED);
+
+// PLAY_RELEASE
+constexpr int32_t PLAY_RELEASE_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_NO_SOUND,
+    OperationType::PLAY, BusinessScenario::RELEASE, ERR_NULL_POINTER);
+constexpr int32_t PLAY_RELEASE_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::RELEASE, ERR_OPERATION_FAILED);
+
+// PLAY_QUERY
+constexpr int32_t PLAY_QUERY_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
+
+// PLAY_DEVICE_SWITCH
+constexpr int32_t PLAY_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
+
+// PLAY_CONFING
+constexpr int32_t PLAY_CONFING_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::CONFING, ERR_NULL_POINTER);
+constexpr int32_t PLAY_CONFING_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
+    OperationType::PLAY, BusinessScenario::CONFING, ERR_ILLEGAL_STATE);
+
+// HDPLAY Error Codes
+// CREATE scenario
+constexpr int32_t HDPLAY_CREATE_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::CREATE, ERR_INVALID_HANDLE);
+
+constexpr int32_t HDPLAY_CREATE_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::CREATE, ERR_NOT_STARTED);
+
+// START scenario
+constexpr int32_t HDPLAY_START_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::START, ERR_NOT_STARTED);
+
+// SEND_DATA scenario
+constexpr int32_t HDPLAY_SEND_DATA_WRITE_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::HDPLAY, BusinessScenario::SEND_DATA, ERR_WRITE_FAILED);
+
+// PAUSE scenario
+constexpr int32_t HDPLAY_PAUSE_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::PAUSE, ERR_NOT_STARTED);
+
+// STOP scenario
+constexpr int32_t HDPLAY_STOP_NOT_STARTED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::STOP, ERR_NOT_STARTED);
+
+// FLUSH scenario
+constexpr int32_t HDPLAY_FLUSH_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::FLUSH, ERR_OPERATION_FAILED);
+
+// QUERY scenario
+constexpr int32_t HDPLAY_QUERY_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+
+// CALLBACK scenario
+constexpr int32_t HDPLAY_CALLBACK_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+
+// CONFING scenario
+constexpr int32_t HDPLAY_CONFING_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+
+constexpr int32_t HDPLAY_CONFING_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_INVALID_HANDLE);
+
+constexpr int32_t HDPLAY_CONFING_VOLUME_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::HDPLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+
+constexpr int32_t RECORD_CREATE_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE, ERR_NULL_POINTER);
+constexpr int32_t RECORD_CREATE_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_CREATE_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_CREATE_INVALID_INDEX = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE, ERR_INVALID_INDEX);
+constexpr int32_t RECORD_CREATE_MEMORY_ALLOC_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CREATE, ERR_MEMORY_ALLOC_FAILED);
+constexpr int32_t RECORD_CREATE_PERMISSION_DENIED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE, ERR_PERMISSION_DENIED);
+constexpr int32_t RECORD_CREATE_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CREATE, ERR_INVALID_HANDLE);
+constexpr int32_t RECORD_CREATE_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CREATE, ERR_ILLEGAL_STATE);
+
+constexpr int32_t RECORD_START_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_CONTROL_ABNORMAL, OperationType::RECORD, BusinessScenario::START, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_START_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_START_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::START, ERR_INVALID_PARAM);
+
+constexpr int32_t RECORD_SEND_DATA_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::SEND_DATA, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_SEND_DATA_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_SEND_DATA_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE);
+
+constexpr int32_t RECORD_DEVICE_SWITCH_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH,
+    ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_DEVICE_SWITCH_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_NULL_POINTER);
+constexpr int32_t RECORD_DEVICE_SWITCH_DEVICE_MISMATCH = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_DEVICE_MISMATCH);
+constexpr int32_t RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_MEMORY_ALLOC_FAILED);
+
+constexpr int32_t RECORD_PAUSE_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_CONTROL_ABNORMAL, OperationType::RECORD, BusinessScenario::PAUSE, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_PAUSE_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::PAUSE, ERR_OPERATION_FAILED);
+
+constexpr int32_t RECORD_STOP_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_CONTROL_ABNORMAL, OperationType::RECORD, BusinessScenario::STOP, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_STOP_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::STOP, ERR_OPERATION_FAILED);
+
+constexpr int32_t RECORD_FLUSH_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::FLUSH, ERR_ILLEGAL_STATE);
+
+constexpr int32_t RECORD_RELEASE_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::RELEASE, ERR_ILLEGAL_STATE);
+
+constexpr int32_t RECORD_QUERY_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::QUERY, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_QUERY_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::QUERY, ERR_INVALID_HANDLE);
+constexpr int32_t RECORD_QUERY_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_QUERY_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::QUERY, ERR_INVALID_PARAM);
+
+constexpr int32_t RECORD_CALLBACK_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_CALLBACK_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_CALLBACK_MEMORY_ALLOC_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_MEMORY_ALLOC_FAILED);
+constexpr int32_t RECORD_CALLBACK_INVALID_HANDLE = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_INVALID_HANDLE);
+constexpr int32_t RECORD_CALLBACK_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_CALLBACK_TIMEOUT = BuildErrorCode(
+    ProblemCategory::FAULT_CONTROL_ABNORMAL, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_TIMEOUT);
+constexpr int32_t RECORD_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+
+constexpr int32_t RECORD_CONFING_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CONFING, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_CONFING_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CONFING, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_CONFING_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CONFING, ERR_NOT_SUPPORTED);
+constexpr int32_t RECORD_CONFING_INVALID_OPERATION = BuildErrorCode(
+    ProblemCategory::FAULT_CONTROL_ABNORMAL, OperationType::RECORD, BusinessScenario::CONFING, ERR_INVALID_OPERATION);
+constexpr int32_t RECORD_CONFING_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+
+// SESSION Error Codes (PLAY type for AudioSession)
+constexpr int32_t SESSION_CALLBACK_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
+constexpr int32_t SESSION_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t SESSION_CALLBACK_REGISTER_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
+constexpr int32_t SESSION_CALLBACK_UNREGISTER_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_UNREGISTER_FAILED);
+constexpr int32_t SESSION_START_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_ILLEGAL_STATE);
+constexpr int32_t SESSION_START_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_OPERATION_FAILED);
+constexpr int32_t SESSION_START_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_INVALID_PARAM);
+constexpr int32_t SESSION_START_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_NULL_POINTER);
+constexpr int32_t SESSION_STOP_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_ILLEGAL_STATE);
+constexpr int32_t SESSION_STOP_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_OPERATION_FAILED);
+constexpr int32_t SESSION_STOP_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_INVALID_PARAM);
+constexpr int32_t SESSION_STOP_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_NULL_POINTER);
+constexpr int32_t SESSION_CONFIG_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_ILLEGAL_STATE);
+constexpr int32_t SESSION_CONFIG_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+constexpr int32_t SESSION_CONFIG_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_INVALID_PARAM);
+constexpr int32_t SESSION_CONFIG_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_NOT_SUPPORTED);
+constexpr int32_t SESSION_CONFIG_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_NULL_POINTER);
+constexpr int32_t SESSION_QUERY_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_ILLEGAL_STATE);
+constexpr int32_t SESSION_QUERY_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+constexpr int32_t SESSION_QUERY_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
+constexpr int32_t SESSION_FOCUS_EVENT_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_OPERATION_FAILED);
+constexpr int32_t SESSION_FOCUS_EVENT_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_NULL_POINTER);
+
+// INTERRUPT Error Codes (PLAY type for AudioInterrupt playback)
+constexpr int32_t INTERRUPT_CALLBACK_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
+constexpr int32_t INTERRUPT_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t INTERRUPT_CALLBACK_UNREGISTER_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_UNREGISTER_FAILED);
+constexpr int32_t INTERRUPT_START_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_OPERATION_FAILED);
+constexpr int32_t INTERRUPT_START_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_INVALID_PARAM);
+constexpr int32_t INTERRUPT_START_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_NULL_POINTER);
+constexpr int32_t INTERRUPT_START_FOCUS_DENIED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_FOCUS_DENIED);
+constexpr int32_t INTERRUPT_STOP_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_NULL_POINTER);
+constexpr int32_t INTERRUPT_STOP_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_INVALID_PARAM);
+constexpr int32_t INTERRUPT_CONFIG_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_ILLEGAL_STATE);
+constexpr int32_t INTERRUPT_CONFIG_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+constexpr int32_t INTERRUPT_CONFIG_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFING, ERR_INVALID_PARAM);
+constexpr int32_t INTERRUPT_QUERY_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
+constexpr int32_t INTERRUPT_FOCUS_EVENT_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_OPERATION_FAILED);
+
+// RECORD_INTERRUPT Error Codes (RECORD type for AudioInterrupt recording)
+constexpr int32_t RECORD_INTERRUPT_CALLBACK_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_INTERRUPT_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t RECORD_INTERRUPT_START_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_INTERRUPT_START_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_INTERRUPT_START_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_NULL_POINTER);
+constexpr int32_t RECORD_INTERRUPT_START_FOCUS_DENIED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_FOCUS_DENIED);
+constexpr int32_t RECORD_INTERRUPT_STOP_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::STOP, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_INTERRUPT_STOP_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::STOP, ERR_NULL_POINTER);
+constexpr int32_t RECORD_INTERRUPT_STOP_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::STOP, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_INTERRUPT_CONFIG_ILLEGAL_STATE = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFING, ERR_ILLEGAL_STATE);
+constexpr int32_t RECORD_INTERRUPT_CONFIG_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_INTERRUPT_CONFIG_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFING, ERR_INVALID_PARAM);
+constexpr int32_t RECORD_INTERRUPT_CONFIG_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFING, ERR_NULL_POINTER);
+constexpr int32_t RECORD_INTERRUPT_QUERY_OPERATION_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_INTERRUPT_QUERY_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::QUERY, ERR_NULL_POINTER);
+
+// GENERAL_DEVICE_SWITCH
+constexpr int32_t ERR_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::GENERAL, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
+
+// PLAY_DEVICE_SWITCH
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_NULL_POINTER);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_DEVICE_NOT_FOUND = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_DEVICE_NOT_FOUND);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_PERMISSION_DENIED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::PLAY, BusinessScenario::DEVICE_SWITCH, ERR_SYSTEM_PERMISSION_DENIED);
+
+// PLAY_DEVICE_SWITCH_CALLBACK
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::PLAY,
+    BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::PLAY,
+    BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t ERR_PLAY_DEVICE_SWITCH_CALLBACK_REGISTER_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::PLAY,
+    BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
+
+// RECORD_DEVICE_SWITCH
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_NULL_POINTER);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_ILLEGAL_STATE);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_PERMISSION_DENIED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::DEVICE_SWITCH, ERR_SYSTEM_PERMISSION_DENIED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::DEVICE_SWITCH, ERR_MEMORY_ALLOC_FAILED);
+
+// RECORD_DEVICE_SWITCH_CALLBACK
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_NULL_POINTER = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_REGISTER_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
+    BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
+
+// VOLUME_SET
+constexpr int32_t ERR_SET_VOLUME_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::CONFING, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_SET_VOLUME_INVALID_PARAM = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::CONFING, ERR_INVALID_PARAM);
+constexpr int32_t ERR_SET_VOLUME_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::CONFING, ERR_NOT_SUPPORTED);
+constexpr int32_t ERR_SET_VOLUME_PERMISSION_DENIED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY,
+    BusinessScenario::CONFING, ERR_SYSTEM_PERMISSION_DENIED);
+
+// VOLUME_GET
+constexpr int32_t ERR_GET_VOLUME_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_GET_VOLUME_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_VOLUME_ABNORMAL, OperationType::PLAY, BusinessScenario::QUERY, ERR_NOT_SUPPORTED);
+
+// VOLUME_CALLBACK
+constexpr int32_t ERR_VOLUME_CALLBACK_FAILED = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_VOLUME_CALLBACK_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
+constexpr int32_t ERR_VOLUME_CALLBACK_REGISTER_FAILED = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
+constexpr int32_t ERR_VOLUME_CALLBACK_UNREGISTER_FAILED = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
+    OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_UNREGISTER_FAILED);
+	
+// AVSESSION_CONTROL Error Codes
+constexpr int32_t AVSESSION_CONTROL_NO_MEMORY_LOCAL_SET = BuildErrorCode(ProblemCategory::FAULT_SESSION_LOCAL_SET,
+    OperationType::AVSESSION, BusinessScenario::CONTROL, ERR_NO_MEMORY);
+constexpr int32_t AVSESSION_CONTROL_NO_MEMORY_CAST_SET = BuildErrorCode(ProblemCategory::FAULT_SESSION_CAST_SET,
+    OperationType::AVSESSION, BusinessScenario::CONTROL, ERR_NO_MEMORY);
+
+constexpr int32_t AVSESSION_CONTROL_INVALID_PARAM_LOCAL_SET = BuildErrorCode(ProblemCategory::FAULT_SESSION_LOCAL_SET,
+    OperationType::AVSESSION, BusinessScenario::CONTROL, ERR_INVALID_PARAM);
+constexpr int32_t AVSESSION_CONTROL_INVALID_PARAM_LOCAL_GET = BuildErrorCode(ProblemCategory::FAULT_SESSION_LOCAL_GET,
+    OperationType::AVSESSION, BusinessScenario::CONTROL, ERR_INVALID_PARAM);
+constexpr int32_t AVSESSION_CONTROL_INVALID_PARAM_CAST_SET = BuildErrorCode(ProblemCategory::FAULT_SESSION_CAST_SET,
+    OperationType::AVSESSION, BusinessScenario::CONTROL, ERR_INVALID_PARAM);
+constexpr int32_t AVSESSION_CONTROL_INVALID_PARAM_CAST_GET = BuildErrorCode(ProblemCategory::FAULT_SESSION_CAST_GET,
+    OperationType::AVSESSION, BusinessScenario::CONTROL, ERR_INVALID_PARAM);
+
+constexpr int32_t AVSESSION_CONTROL_SERVICE_NOT_EXIST_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SERVICE_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_SERVICE_NOT_EXIST_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SERVICE_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_SERVICE_NOT_EXIST_CAST_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_CAST_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SERVICE_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_SERVICE_NOT_EXIST_CAST_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_CAST_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SERVICE_NOT_EXIST);
+
+constexpr int32_t AVSESSION_CONTROL_SESSION_NOT_EXIST_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SESSION_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_SESSION_NOT_EXIST_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SESSION_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_SESSION_NOT_EXIST_CAST_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_CAST_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SESSION_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_SESSION_NOT_EXIST_CAST_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_CAST_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SESSION_NOT_EXIST);
+
+constexpr int32_t AVSESSION_CONTROL_COMMAND_NOT_SUPPORT_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_COMMAND_NOT_SUPPORT);
+constexpr int32_t AVSESSION_CONTROL_COMMAND_NOT_SUPPORT_CAST_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_CAST_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_COMMAND_NOT_SUPPORT);
+
+constexpr int32_t AVSESSION_CONTROL_CONTROLLER_NOT_EXIST_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_CONTROLLER_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_CONTROLLER_NOT_EXIST_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_CONTROLLER_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_CONTROLLER_NOT_EXIST_CAST_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_CAST_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_CONTROLLER_NOT_EXIST);
+constexpr int32_t AVSESSION_CONTROL_CONTROLLER_NOT_EXIST_CAST_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_CAST_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_CONTROLLER_NOT_EXIST);
+
+constexpr int32_t AVSESSION_CONTROL_NO_PERMISSION_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_NO_PERMISSION);
+constexpr int32_t AVSESSION_CONTROL_NO_PERMISSION_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_NO_PERMISSION);
+
+constexpr int32_t AVSESSION_CONTROL_SESSION_DEACTIVE_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SESSION_DEACTIVE);
+
+constexpr int32_t AVSESSION_CONTROL_CONTROLLER_IS_EXIST_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_CONTROLLER_IS_EXIST);
+
+constexpr int32_t AVSESSION_CONTROL_COMMAND_SEND_EXCEED_MAX_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_COMMAND_SEND_EXCEED_MAX);
+constexpr int32_t AVSESSION_CONTROL_COMMAND_SEND_EXCEED_MAX_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_COMMAND_SEND_EXCEED_MAX);
+
+constexpr int32_t AVSESSION_CONTROL_SESSION_IS_EXIST_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_SESSION_IS_EXIST);
+
+constexpr int32_t AVSESSION_CONTROL_PERMISSION_DENIED_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_PERMISSION_DENIED);
+constexpr int32_t AVSESSION_CONTROL_PERMISSION_DENIED_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_PERMISSION_DENIED);
+
+constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_SUPPORT_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_DESKTOPLYRIC_NOT_SUPPORT);
+constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_SUPPORT_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_DESKTOPLYRIC_NOT_SUPPORT);
+
+constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_ENABLE_LOCAL_SET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_SET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_DESKTOPLYRIC_NOT_ENABLE);
+constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_ENABLE_LOCAL_GET = BuildErrorCode(
+    ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
+    BusinessScenario::CONTROL, ERR_DESKTOPLYRIC_NOT_ENABLE);
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

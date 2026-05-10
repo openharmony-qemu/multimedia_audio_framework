@@ -35,12 +35,10 @@ const size_t THRESHOLD = 10;
 const static std::vector<uint32_t>  TEST_CHANNELS = {MONO, STEREO, CHANNEL_6};
 
 constexpr uint32_t QUALITY_ONE = 1;
-constexpr uint32_t FRAME_LEN_100MS = 100;
-constexpr uint32_t FRAME_LEN_40MS = 40;
 constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr uint32_t FRAME_LEN_40MS = 40;
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t PROCESS_LOOP_COUNT = 10;
-constexpr uint32_t CUSTOME_RATE_MULTIPLE = 50;
 template<class T>
 T GetData()
 {
@@ -92,14 +90,7 @@ void ResampleProcessTest()
 
     CHECK_AND_RETURN_LOG(inRate != 0, "divisor cannot be 0");
 
-    uint32_t inFrameLen = 0;
-    if (inRate % CUSTOME_RATE_MULTIPLE == 0) {
-        inFrameLen = FRAME_LEN_20MS * inRate / MS_PER_SECOND;
-    } else if (inRate == SAMPLE_RATE_11025) {
-        inFrameLen = FRAME_LEN_40MS * inRate / MS_PER_SECOND;
-    } else {
-        inFrameLen = FRAME_LEN_100MS * inRate / MS_PER_SECOND;
-    }
+    uint32_t inFrameLen = FRAME_LEN_20MS * inRate / MS_PER_SECOND;
     uint32_t outFrameLen = inFrameLen / inRate * outRate;
     
     for (uint32_t channels: TEST_CHANNELS) {

@@ -57,9 +57,7 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout,
     int64_t timeIn = ClockTime::GetCurNano();
     int64_t cost = 0;
     struct timespec waitTime;
-    if (timeout > 0) {
-        TimeoutToRelativeTime(timeout, waitTime);
-    }
+    if (timeout > 0) { TimeoutToRelativeTime(timeout, waitTime); }
 
     long res = 0;
     int32_t tryCount = 0;
@@ -76,6 +74,7 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout,
 
         cost = ClockTime::GetCurNano() - timeIn;
         if (cost >= timeout && timeout > 0) {
+            Trace::Count("FutexTool::WaitTimeoutState", static_cast<int64_t>(futexPtr->load()));
             return FUTEX_TIMEOUT;
         }
         if (cost < timeout && timeout > 0) {
@@ -89,6 +88,7 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout,
         if (pred()) { return FUTEX_SUCCESS; }
 
         if ((res != 0) && (sysErr == ETIMEDOUT)) {
+            Trace::Count("FutexTool::WaitTimeoutState", static_cast<int64_t>(futexPtr->load()));
             AUDIO_WARNING_LOG("wait:%{public}" PRId64"ns timeout, result:%{public}ld sysErr[%{public}d]:%{public}s",
                 timeout, res, sysErr, strerror(sysErr));
             return FUTEX_TIMEOUT;
@@ -99,9 +99,7 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout,
         }
         tryCount++;
     }
-    if (tryCount >= WAIT_TRY_COUNT) {
-        AUDIO_ERR_LOG("too much spurious wake-up");
-    }
+    if (tryCount >= WAIT_TRY_COUNT) { AUDIO_ERR_LOG("too much spurious wake-up"); }
     return FUTEX_OPERATION_FAILED;
 }
 
@@ -110,6 +108,8 @@ FutexCode FutexTool::FutexWake(std::atomic<uint32_t> *futexPtr, uint32_t wakeVal
     CHECK_AND_RETURN_RET_LOG(futexPtr != nullptr, FUTEX_INVALID_PARAMS, "futexPtr is null");
     Trace trace("FutexTool::FutexWake");
     uint32_t current = futexPtr->load();
+    Trace::Count("FutexTool::WakeCurrent", static_cast<int64_t>(current));
+    Trace::Count("FutexTool::WakeVal", static_cast<int64_t>(wakeVal));
     if (current != IS_READY && current != IS_NOT_READY && current != IS_PRE_EXIT) {
         AUDIO_ERR_LOG("failed: invalid param:%{public}u", current);
         return FUTEX_INVALID_PARAMS;
@@ -121,12 +121,17 @@ FutexCode FutexTool::FutexWake(std::atomic<uint32_t> *futexPtr, uint32_t wakeVal
     }
     uint32_t expect = IS_NOT_READY;
     if (futexPtr->compare_exchange_strong(expect, IS_READY)) {
+        Trace::Count("FutexTool::WakeHit", 1);
         Trace traceSyscall(std::string("syscall expect: ") + std::to_string(expect));
         long res = syscall(__NR_futex, futexPtr, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         if (res < 0) {
             AUDIO_ERR_LOG("failed:%{public}ld, errno[%{public}d]:%{public}s", res, errno, strerror(errno));
             return FUTEX_OPERATION_FAILED;
         }
+        Trace::Count("FutexTool::WakeSyscallRes", res);
+    } else {
+        Trace::Count("FutexTool::WakeHit", 0);
+        Trace::Count("FutexTool::WakeExpectAfterCas", static_cast<int64_t>(expect));
     }
     return FUTEX_SUCCESS;
 }

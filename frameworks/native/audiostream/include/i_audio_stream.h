@@ -17,6 +17,7 @@
 
 #include <map>
 #include <memory>
+#include <functional>
 #include "timestamp.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
@@ -126,6 +127,7 @@ public:
     static int32_t GetByteSizePerFrame(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithEc(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithMicInEc(const AudioStreamParams &params, size_t &result);
+    static int32_t GetByteSizePerFrameWithMicIn(const AudioStreamParams &params, size_t &result);
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
@@ -174,6 +176,8 @@ public:
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;
     virtual State GetState() = 0;
+    virtual StreamFocusState GetFocusState() = 0;
+    virtual void SetFocusState(StreamFocusState state) = 0;
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
@@ -196,6 +200,7 @@ public:
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
+    virtual int32_t SetSonicPitch(float pitch) { return ERR_NOT_SUPPORTED; }
     virtual float GetSpeed() = 0;
     virtual int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) { return SUCCESS; }
 
@@ -323,6 +328,8 @@ public:
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
+
+    virtual void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &) {};
 
     virtual DeviceType GetDefaultOutputDevice() = 0;
 

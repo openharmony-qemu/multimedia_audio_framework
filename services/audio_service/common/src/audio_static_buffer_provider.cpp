@@ -129,6 +129,14 @@ void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &stat
     sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
 }
 
+void AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    std::unique_lock<std::mutex> lock(eventMutex_);
+    staticBufferInfo.totalLoopTimes_ = totalLoopTimes_;
+    staticBufferInfo.currentLoopTimes_ = currentLoopTimes_;
+    staticBufferInfo.curStaticDataPos_ = curStaticDataPos_;
+}
+
 void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize)
 {
     std::unique_lock<std::mutex> lock(eventMutex_);

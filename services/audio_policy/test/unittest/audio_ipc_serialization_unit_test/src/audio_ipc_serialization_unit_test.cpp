@@ -283,11 +283,13 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneContext_001, TestSize.Level1)
     Parcel parcel;
     AudioZoneContext context = {};
     context.focusStrategy_ = AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY;
+    context.supportType_ = AudioZoneSupportType::RECORD_ONLY;
 
     EXPECT_TRUE(context.Marshalling(parcel));
     auto newContext = std::shared_ptr<AudioZoneContext>(AudioZoneContext::Unmarshalling(parcel));
     ASSERT_NE(newContext, nullptr);
     EXPECT_TRUE(newContext->focusStrategy_ == context.focusStrategy_);
+    EXPECT_TRUE(newContext->supportType_ == context.supportType_);
 }
 
 /**
@@ -304,6 +306,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneDescriptor_001, TestSize.Level1)
     descriptor.zoneId_ = TEST_VALUE_1;
     descriptor.name_ = TEST_STRING_VALUE_1;
     descriptor.uids_ = {TEST_VALUE_1, TEST_VALUE_2};
+    descriptor.supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_ONLY);
     descriptor.devices_.push_back(device);
 
     EXPECT_TRUE(descriptor.Marshalling(parcel));
@@ -311,6 +314,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneDescriptor_001, TestSize.Level1)
     ASSERT_NE(newDescriptor, nullptr);
     EXPECT_TRUE(newDescriptor->zoneId_ == descriptor.zoneId_);
     EXPECT_TRUE(newDescriptor->name_ == descriptor.name_);
+    EXPECT_TRUE(newDescriptor->supportType_ == descriptor.supportType_);
     EXPECT_TRUE(newDescriptor->uids_ == descriptor.uids_);
     EXPECT_TRUE(newDescriptor->devices_.size() == descriptor.devices_.size());
 }
@@ -767,99 +771,15 @@ HWTEST(AudioIpcSerializationUnitTest, SupportedEffectConfig_004, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test AudioEffectPropertyArrayV3.
- * @tc.number: AudioEffectPropertyArrayV3_001
- * @tc.desc  : Test AudioEffectPropertyArrayV3 Serialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArrayV3_001, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEffectPropertyArrayV3 propertyArray = {};
-    AudioEffectPropertyV3 property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2, CAPTURE_EFFECT_FLAG };
-    propertyArray.property.push_back(property);
-
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArrayV3>(
-        AudioEffectPropertyArrayV3::Unmarshalling(parcel));
-    ASSERT_NE(newPropertyArray, nullptr);
-    EXPECT_EQ(newPropertyArray->property.size(), propertyArray.property.size());
-    if (newPropertyArray->property.size() == propertyArray.property.size()) {
-        for (int32_t i = 0; i < propertyArray.property.size(); i++) {
-            EXPECT_EQ(newPropertyArray->property[i], propertyArray.property[i]);
-        }
-    }
-}
-
-/**
- * @tc.name  : Test AudioEffectPropertyArrayV3.
- * @tc.number: AudioEffectPropertyArrayV3_002
- * @tc.desc  : Test AudioEffectPropertyArrayV3 Deserialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArrayV3_002, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEffectPropertyArrayV3 propertyArray = {};
-    AudioEffectPropertyV3 property = {};
-
-    propertyArray.property.assign(AUDIO_EFFECT_COUNT_UPPER_LIMIT + 1, property);
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEffectPropertyArrayV3>(
-        AudioEffectPropertyArrayV3::Unmarshalling(parcel));
-    EXPECT_EQ(newPropertyArray, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioEnhancePropertyArray.
- * @tc.number: AudioEnhancePropertyArray_001
- * @tc.desc  : Test AudioEnhancePropertyArray Deserialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEnhancePropertyArray_001, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEnhancePropertyArray propertyArray = {};
-    AudioEnhanceProperty property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2 };
-    propertyArray.property.push_back(property);
-
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEnhancePropertyArray>(
-        AudioEnhancePropertyArray::Unmarshalling(parcel));
-    ASSERT_NE(newPropertyArray, nullptr);
-    EXPECT_EQ(newPropertyArray->property.size(), propertyArray.property.size());
-    if (newPropertyArray->property.size() == propertyArray.property.size()) {
-        for (int32_t i = 0; i < propertyArray.property.size(); i++) {
-            EXPECT_EQ(newPropertyArray->property[i], propertyArray.property[i]);
-        }
-    }
-}
-
-/**
- * @tc.name  : Test AudioEnhancePropertyArray.
- * @tc.number: AudioEnhancePropertyArray_002
- * @tc.desc  : Test AudioEnhancePropertyArray Deserialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioEnhancePropertyArray_002, TestSize.Level1)
-{
-    Parcel parcel;
-    AudioEnhancePropertyArray propertyArray = {};
-    AudioEnhanceProperty property = {};
-
-    propertyArray.property.assign(AUDIO_EFFECT_COUNT_UPPER_LIMIT + 1, property);
-    EXPECT_TRUE(propertyArray.Marshalling(parcel));
-    auto newPropertyArray = std::shared_ptr<AudioEnhancePropertyArray>(
-        AudioEnhancePropertyArray::Unmarshalling(parcel));
-    EXPECT_EQ(newPropertyArray, nullptr);
-}
-
-/**
  * @tc.name  : Test AudioEffectPropertyArray.
  * @tc.number: AudioEffectPropertyArray_001
- * @tc.desc  : Test AudioEffectPropertyArray Deserialization.
+ * @tc.desc  : Test AudioEffectPropertyArray Serialization.
  */
 HWTEST(AudioIpcSerializationUnitTest, AudioEffectPropertyArray_001, TestSize.Level1)
 {
     Parcel parcel;
     AudioEffectPropertyArray propertyArray = {};
-    AudioEffectProperty property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2 };
+    AudioEffectProperty property = { TEST_STRING_VALUE_1, TEST_STRING_VALUE_2, CAPTURE_EFFECT_FLAG };
     propertyArray.property.push_back(property);
 
     EXPECT_TRUE(propertyArray.Marshalling(parcel));

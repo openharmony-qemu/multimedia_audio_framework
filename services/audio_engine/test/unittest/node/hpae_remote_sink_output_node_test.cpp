@@ -22,6 +22,7 @@
 #include "hpae_sink_input_node.h"
 #include "hpae_remote_sink_output_node.h"
 #include "hpae_mixer_node.h"
+#include "hpae_mocks.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -136,6 +137,46 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, ResetAll_001, TestSize.Level1)
     EXPECT_TRUE(result);
 
     EXPECT_EQ(remoteNode->GetPreOutNum(), 0);
+}
+
+// FaultCode test constants
+static constexpr int32_t TEST_APP_UID = 1001;
+
+/**
+ * @tc.name  : FaultCode_UpdateAppsUid_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test UpdateAppsUid returns ERROR when audioRendererSink_ is nullptr,
+ *             covering PLAY_SEND_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, FaultCode_UpdateAppsUid_NullSink, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // audioRendererSink_ is nullptr by default
+    std::vector<int32_t> appsUid = {TEST_APP_UID};
+    int32_t result = remoteNode->UpdateAppsUid(appsUid);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_RenderSinkInit_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit returns ERROR when audioRendererSink_ is nullptr,
+ *             covering PLAY_CREATE_STREAM_FAIL fault code path.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, FaultCode_RenderSinkInit_NullSink, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // audioRendererSink_ is nullptr by default
+    IAudioSinkAttr attr;
+    attr.adapterName = "remote";
+    int32_t result = remoteNode->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERROR);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

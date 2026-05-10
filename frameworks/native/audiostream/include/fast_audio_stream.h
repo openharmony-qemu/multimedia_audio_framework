@@ -96,6 +96,8 @@ public:
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
+    StreamFocusState GetFocusState() override;
+    void SetFocusState(StreamFocusState state) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
@@ -169,6 +171,7 @@ public:
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
+    int32_t SetSonicPitch(float pitch) override;
     float GetSpeed() override;
 
     // Recording related APIs
@@ -258,6 +261,9 @@ private:
     int32_t SetCallbacksWhenRestore();
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
     bool IsDataCallbackSet() const;
+    void UpdateStreamState(State state);
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+        const std::string &erroDesc, bool isClient, State state);
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -272,6 +278,7 @@ private:
     AudioStreamParams streamInfo_;
     AudioProcessConfig processconfig_;
     State state_;
+    StreamFocusState streamFocusState_;
     uint32_t sessionId_ = 0;
     uint32_t underflowCount_ = 0;
     uint32_t overflowCount_ = 0;
@@ -299,6 +306,7 @@ private:
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
+    std::mutex focusStatusMutex_;
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
 

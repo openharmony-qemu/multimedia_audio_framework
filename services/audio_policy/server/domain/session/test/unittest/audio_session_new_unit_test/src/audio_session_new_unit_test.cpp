@@ -83,7 +83,7 @@ HWTEST_F(AudioSessionNewUnitTest, AddStreamInfo_001, TestSize.Level4)
     audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
     audioSession->audioSessionScene_ = AudioSessionScene::GAME;
     audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
-    audioSessionService_.AddStreamInfo(audioInterrupt);
+    audioSessionService_.AddStreamInfo({audioInterrupt, ACTIVE});
     EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 }
 
@@ -104,7 +104,7 @@ HWTEST_F(AudioSessionNewUnitTest, AddStreamInfo_002, TestSize.Level4)
     audioSession->defaultDeviceType_ = DEVICE_TYPE_SPEAKER;
     audioSession->audioSessionScene_ = AudioSessionScene::MEDIA;
     audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
 }
 
@@ -121,7 +121,7 @@ HWTEST_F(AudioSessionNewUnitTest, RemoveStreamInfo_001, TestSize.Level4)
 
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 1;
-    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
     audioSession->defaultDeviceType_ = DEVICE_TYPE_SPEAKER;
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
@@ -142,7 +142,7 @@ HWTEST_F(AudioSessionNewUnitTest, UpdateSingleVoipStreamDefaultOutputDevice_001,
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 1;
     audioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
-    audioSession->streamsInSession_.push_back(audioInterrupt);
+    audioSession->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, AudioFocuState::ACTIVE};
     audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA);
     int32_t ret = audioSession->Activate(strategy);
     EXPECT_EQ(ret, SUCCESS);

@@ -198,6 +198,30 @@ int32_t AudioZone::GetId()
     return zoneId_;
 }
 
+void AudioZone::UpdateContext(const AudioZoneContext &context)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    context_ = context;
+}
+
+bool AudioZone::IsSupportDeviceRole(DeviceRole deviceRole)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    if (deviceRole == DEVICE_ROLE_NONE) {
+        return true;
+    }
+
+    switch (context_.supportType_) {
+        case AudioZoneSupportType::PLAY_ONLY:
+            return deviceRole == OUTPUT_DEVICE;
+        case AudioZoneSupportType::RECORD_ONLY:
+            return deviceRole == INPUT_DEVICE;
+        case AudioZoneSupportType::PLAY_AND_RECORD:
+        default:
+            return true;
+    }
+}
+
 bool AudioZone::IsVolumeProxyEnable(DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
@@ -238,6 +262,7 @@ const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
     descriptor->zoneId_ = zoneId_;
     descriptor->name_ = name_;
     descriptor->initMode_ = static_cast<int32_t>(context_.initMode_);
+    descriptor->supportType_ = static_cast<int32_t>(context_.supportType_);
     AUDIO_INFO_LOG("zone %{public}d init mode %{public}d", zoneId_, descriptor->initMode_);
 
     for (const auto &key : keys_) {

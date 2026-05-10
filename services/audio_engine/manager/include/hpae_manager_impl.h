@@ -69,13 +69,17 @@ public:
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Start(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId) override;
-    int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId, bool isStandby = false) override;
     int32_t Flush(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
         const std::weak_ptr<IStreamStatusCallback> &callback) override;
+    int32_t GetStreamSpanSize(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        uint32_t &spanSizeInFrame) override;
+    int32_t GetStreamRouteFlag(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        uint32_t &routeFlag) override;
     // record stream interface
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;
@@ -107,8 +111,6 @@ public:
     int32_t EffectRotationUpdate(const uint32_t rotationState) override;
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     void InitHdiState() override;
@@ -124,13 +126,9 @@ public:
     int32_t SetMicrophoneMuteInfo(const bool &isMute) override;
     int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol) override;
     int32_t SetAudioEnhanceProperty(
-        const AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
+        const AudioEffectPropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t GetAudioEnhanceProperty(
-        AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
-    int32_t SetAudioEnhanceProperty(
-        const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
-    int32_t GetAudioEnhanceProperty(
-        AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
+        AudioEffectPropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
     void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
     void NotifySettingsDataReady() override;
@@ -160,6 +158,8 @@ public:
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    float GetMaxAmplitude() override;
+    void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) override;
 
     // interface for collaborative record
     void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,

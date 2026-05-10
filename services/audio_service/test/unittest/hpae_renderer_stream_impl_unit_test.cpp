@@ -28,6 +28,7 @@
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
 #include "audio_volume.h"
+#include "util/id_handler.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -36,8 +37,6 @@ namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
 static constexpr uint32_t SAMPLE_RATE_16010 = 16010;
 static constexpr uint32_t SAMPLE_RATE_16050 = 16050;
-static constexpr uint32_t FRAME_LEN_100MS = 100;
-static constexpr uint32_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint32_t TEST_SESSION_ID = 123456;
@@ -136,7 +135,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_001, TestSi
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
-    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
@@ -162,7 +161,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSi
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16010);
-    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_100MS *
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
@@ -236,7 +235,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSi
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
-    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
@@ -487,9 +486,10 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     AddStreamVolume();
     struct VolumeValues volumes = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     std::string volumeDeviceClass = unit->deviceClass_ == "remote_offload" ? "remote" : "offload";
+    auto renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(volumeDeviceClass);
     uint32_t originStreamIndex = unit->streamIndex_;
     float volume = AudioVolume::GetInstance()->GetVolume(unit->streamIndex_, unit->processConfig_.streamType,
-        volumeDeviceClass, &volumes);
+        renderId, &volumes);
     AudioVolume::GetInstance()->SetHistoryVolume(unit->streamIndex_, volume);
     ret = unit->OffloadSetVolume();
     RemoveStreamVolume();
@@ -1237,6 +1237,259 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_042, TestSize.Level1)
     int32_t ret = unit->WriteDataFromRingBuffer(true, outBuffer.data(), requestDataLen);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_TRUE(unit->preBufDone_);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode with statusCallback
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadMode_001
+ * @tc.desc  : Test SetOffloadMode when statusCallback != nullptr
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, SetOffloadMode_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+
+    // Create a mock status callback
+    class MockStatusCallback : public IStatusCallback {
+    public:
+        MOCK_METHOD(void, OnStatusUpdate, (IOperation operation), (override));
+        virtual ~MockStatusCallback() = default;
+    };
+    auto mockCallback = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCallback;
+
+    // Set offload mode with isAppBack = true
+    EXPECT_CALL(*mockCallback, OnStatusUpdate(::testing::_))
+        .Times(::testing::AtLeast(1));
+    int32_t ret = unit->SetOffloadMode(1, true); // state = 1, isAppBack = true
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode without statusCallback
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadMode_002
+ * @tc.desc  : Test SetOffloadMode when statusCallback is nullptr
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, SetOffloadMode_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+
+    // Set statusCallback to empty weak_ptr
+    unit->statusCallback_.reset();
+
+    // Set offload mode - should not crash
+    int32_t ret = unit->SetOffloadMode(1, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl FAST flag span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_FAST_SpanSize_001
+ * @tc.desc  : Test HpaeRendererStreamImpl with AUDIO_OUTPUT_FLAG_FAST for 5ms span.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_FAST_SpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    processConfig.isInnerCapturer = false;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    size_t expectedSpanSize = 5 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, expectedSpanSize);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl VOIP_FAST delayedWake
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_VOIP_FAST_DelayedWake_001
+ * @tc.desc  : Test HpaeRendererStreamImpl with VOIP_FAST flag sets delayedWake.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_VOIP_FAST_DelayedWake_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_VOIP_FAST;
+    processConfig.isInnerCapturer = false;
+    
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    EXPECT_TRUE(rendererStreamImpl.delayedWake_);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl ULTRA_FAST delayedWake
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_ULTRA_FAST_DelayedWake_001
+ * @tc.desc  : Test HpaeRendererStreamImpl with ultraFastFlag sets delayedWake.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_ULTRA_FAST_DelayedWake_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.ultraFastFlag = 3;
+    processConfig.isInnerCapturer = false;
+    
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    EXPECT_TRUE(rendererStreamImpl.delayedWake_);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl inner capturer no delayedWake
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_Inner_NoDelayedWake_001
+ * @tc.desc  : Test HpaeRendererStreamImpl with inner capturer should not set delayedWake.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_Inner_NoDelayedWake_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    processConfig.isInnerCapturer = true;
+    
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    EXPECT_FALSE(rendererStreamImpl.delayedWake_);
+}
+
+/**
+ * @tc.name  : Test GetRouteFlag API
+ * @tc.type  : FUNC
+ * @tc.number: GetRouteFlag_001
+ * @tc.desc  : Test GetRouteFlag returns routeFlag value.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, GetRouteFlag_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+    
+    unit->routeFlag_.store(123);
+    uint32_t routeFlag = unit->GetRouteFlag();
+    EXPECT_EQ(routeFlag, 123u);
+}
+
+/**
+ * @tc.name  : Test TriggerClientWake without writeCallback
+ * @tc.type  : FUNC
+ * @tc.number: TriggerClientWake_002
+ * @tc.desc  : Test TriggerClientWake without writeCallback should not crash.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, TriggerClientWake_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+    
+    unit->writeCallback_.reset();
+    unit->TriggerClientWake();
+    EXPECT_NE(unit, nullptr);
+}
+
+/**
+ * @tc.name  : Test OnStatusUpdate OPERATION_UPDATE_SPANSIZE
+ * @tc.type  : FUNC
+ * @tc.number: OnStatusUpdate_UpdateSpanSize_001
+ * @tc.desc  : Test OnStatusUpdate with OPERATION_UPDATE_SPANSIZE operation.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, OnStatusUpdate_UpdateSpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+    
+    unit->OnStatusUpdate(OPERATION_UPDATE_SPANSIZE, 0);
+    EXPECT_NE(unit, nullptr);
+}
+
+/**
+ * @tc.name  : Test UpdateSpanSize unchanged
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSpanSize_Unchanged_001
+ * @tc.desc  : Test UpdateSpanSize when spanSize is unchanged.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Unchanged_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+    
+    uint32_t currentSpanSize = unit->spanSizeInFrame_;
+    int32_t ret = unit->UpdateSpanSize(currentSpanSize);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateSpanSize changed
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSpanSize_Changed_001
+ * @tc.desc  : Test UpdateSpanSize when spanSize changes.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Changed_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+    
+    uint32_t newSpanSize = 960; // 20ms at 48000Hz
+    int32_t ret = unit->UpdateSpanSize(newSpanSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(unit->spanSizeInFrame_, newSpanSize);
+}
+
+/**
+ * @tc.name  : Test UpdateSpanSize zero span
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSpanSize_Zero_001
+ * @tc.desc  : Test UpdateSpanSize with zero should return error.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Zero_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    EXPECT_NE(unit, nullptr);
+    
+    int32_t ret = unit->UpdateSpanSize(0);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test keepRunning and isLoopback streamInfo
+ * @tc.type  : FUNC
+ * @tc.number: StreamInfo_LoopbackKeepRunning_001
+ * @tc.desc  : Test streamInfo sets keepRunning and isLoopback from processConfig.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, StreamInfo_LoopbackKeepRunning_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.keepRunning = true;
+    processConfig.rendererInfo.isLoopback = true;
+    
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    
+    int32_t ret = unit->InitParams("Speaker");
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Pause with isStandby parameter
+ * @tc.type  : FUNC
+ * @tc.number: Pause_IsStandby_001
+ * @tc.desc  : Test Pause passes isStandby to IHpaeManager.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, Pause_IsStandby_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    
+    int32_t ret = unit->Pause(true);
+    EXPECT_EQ(ret, SUCCESS);
+    
+    ret = unit->Pause(false);
+    EXPECT_EQ(ret, SUCCESS);
 }
 }
 }

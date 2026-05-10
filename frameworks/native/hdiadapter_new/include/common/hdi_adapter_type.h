@@ -45,6 +45,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
     uint32_t routeFlag = 0;
     bool isLoopback = false;
     AudioPin pin = AUDIO_PIN_NONE;
+    int32_t hdPlayBackMode = 0;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -65,7 +66,8 @@ typedef struct IAudioSinkAttr : public Parcelable {
             parcel.WriteInt32(audioStreamFlag) &&
             parcel.WriteString(address) &&
             parcel.WriteString(aux) &&
-            parcel.WriteUint32(routeFlag);
+            parcel.WriteUint32(routeFlag) &&
+            parcel.WriteInt32(hdPlayBackMode);
     }
 
     static IAudioSinkAttr *Unmarshalling(Parcel &parcel)
@@ -93,6 +95,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
         attr->address = parcel.ReadString();
         attr->aux = parcel.ReadString();
         attr->routeFlag = parcel.ReadUint32();
+        attr->hdPlayBackMode = parcel.ReadInt32();
         return attr;
     }
 } IAudioSinkAttr;

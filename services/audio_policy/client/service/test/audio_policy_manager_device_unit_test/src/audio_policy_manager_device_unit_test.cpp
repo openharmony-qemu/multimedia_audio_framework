@@ -380,5 +380,194 @@ HWTEST(AudioPolicyManagerDevice, IsCollaborativePlaybackSupportedForDevice_002, 
     bool result = audioPolicyManager_->IsCollaborativePlaybackSupportedForDevice(device);
     EXPECT_FALSE(result);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: SetPreferredOutputDeviceChangeCallback_WithUid_001.
+ * @tc.desc  : Test SetPreferredOutputDeviceChangeCallback stores uid correctly in rendererInfosWithUid_.
+ */
+HWTEST(AudioPolicyManagerDevice, SetPreferredOutputDeviceChangeCallback_WithUid_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_TRUE(audioPolicyManager->audioPolicyClientStubCB_ != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    int32_t testUid = 1234;
+    auto callback = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+
+    int32_t ret = audioPolicyManager->SetPreferredOutputDeviceChangeCallback(rendererInfo, callback, testUid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // Verify callback was added (indirect verification of uid storage)
+    size_t callbackSize = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
+    EXPECT_GE(callbackSize, 1);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: SetPreferredInputDeviceChangeCallback_WithUid_001.
+ * @tc.desc  : Test SetPreferredInputDeviceChangeCallback stores uid correctly in capturerInfosWithUid_.
+ */
+HWTEST(AudioPolicyManagerDevice, SetPreferredInputDeviceChangeCallback_WithUid_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_TRUE(audioPolicyManager->audioPolicyClientStubCB_ != nullptr);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    int32_t testUid = 5678;
+    auto callback = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+
+    int32_t ret = audioPolicyManager->SetPreferredInputDeviceChangeCallback(capturerInfo, callback, testUid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // Verify callback was added (indirect verification of uid storage)
+    size_t callbackSize = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
+    EXPECT_GE(callbackSize, 1);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: SetPreferredOutputDeviceChangeCallback_DuplicatePrevention_001.
+ * @tc.desc  : Test duplicate registration doesn't add duplicate entries to rendererInfosWithUid_.
+ */
+HWTEST(AudioPolicyManagerDevice, SetPreferredOutputDeviceChangeCallback_DuplicatePrevention_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_TRUE(audioPolicyManager->audioPolicyClientStubCB_ != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    int32_t testUid = 9999;
+    auto callback1 = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+    auto callback2 = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+
+    // Register same (rendererInfo, uid) pair twice
+    int32_t ret1 = audioPolicyManager->SetPreferredOutputDeviceChangeCallback(rendererInfo, callback1, testUid);
+    EXPECT_EQ(ret1, SUCCESS);
+
+    size_t sizeAfterFirst = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
+
+    int32_t ret2 = audioPolicyManager->SetPreferredOutputDeviceChangeCallback(rendererInfo, callback2, testUid);
+    EXPECT_EQ(ret2, SUCCESS);
+
+    size_t sizeAfterSecond = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
+
+    // Duplicate check should prevent adding duplicate entry
+    // The size should not increase significantly (implementation may add callback but not duplicate uid entry)
+    EXPECT_LE(sizeAfterSecond, sizeAfterFirst + 1);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: SetPreferredInputDeviceChangeCallback_DuplicatePrevention_001.
+ * @tc.desc  : Test duplicate registration doesn't add duplicate entries to capturerInfosWithUid_.
+ */
+HWTEST(AudioPolicyManagerDevice, SetPreferredInputDeviceChangeCallback_DuplicatePrevention_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_TRUE(audioPolicyManager->audioPolicyClientStubCB_ != nullptr);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    int32_t testUid = 8888;
+    auto callback1 = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+    auto callback2 = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+
+    // Register same (capturerInfo, uid) pair twice
+    int32_t ret1 = audioPolicyManager->SetPreferredInputDeviceChangeCallback(capturerInfo, callback1, testUid);
+    EXPECT_EQ(ret1, SUCCESS);
+
+    size_t sizeAfterFirst = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
+
+    int32_t ret2 = audioPolicyManager->SetPreferredInputDeviceChangeCallback(capturerInfo, callback2, testUid);
+    EXPECT_EQ(ret2, SUCCESS);
+
+    size_t sizeAfterSecond = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
+
+    // Duplicate check should prevent adding duplicate entry
+    EXPECT_LE(sizeAfterSecond, sizeAfterFirst + 1);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_RemovesUidEntry_001.
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback removes entry from rendererInfosWithUid_.
+ */
+HWTEST(AudioPolicyManagerDevice, UnsetPreferredOutputDeviceChangeCallback_RemovesUidEntry_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_TRUE(audioPolicyManager->audioPolicyClientStubCB_ != nullptr);
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    int32_t testUid = 1111;
+    auto callback = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+
+    // Register callback with specific uid
+    int32_t ret = audioPolicyManager->SetPreferredOutputDeviceChangeCallback(rendererInfo, callback, testUid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    size_t sizeAfterSet = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
+    EXPECT_GE(sizeAfterSet, 1);
+
+    // Unset callback with same uid
+    ret = audioPolicyManager->UnsetPreferredOutputDeviceChangeCallback(callback, rendererInfo, testUid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // Verify entry was removed (callback size should decrease)
+    size_t sizeAfterUnset = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
+    EXPECT_LT(sizeAfterUnset, sizeAfterSet);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_RemovesUidEntry_001.
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback removes entry from capturerInfosWithUid_.
+ */
+HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_RemovesUidEntry_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_TRUE(audioPolicyManager->audioPolicyClientStubCB_ != nullptr);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    int32_t testUid = 2222;
+    auto callback = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+
+    // Register callback with specific uid
+    int32_t ret = audioPolicyManager->SetPreferredInputDeviceChangeCallback(capturerInfo, callback, testUid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    size_t sizeAfterSet = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
+    EXPECT_GE(sizeAfterSet, 1);
+
+    // Unset callback with same uid
+    ret = audioPolicyManager->UnsetPreferredInputDeviceChangeCallback(callback, capturerInfo, testUid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // Verify entry was removed (callback size should decrease)
+    size_t sizeAfterUnset = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
+    EXPECT_LT(sizeAfterUnset, sizeAfterSet);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -153,6 +153,20 @@ void AudioFuzzTestGetPermission()
     }
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 void InitGetServerService(DeviceRole deviceRole, AudioStreamInfo audioStreamInfo_2)
 {
     AudioStreamInfo audioStreamInfo = {};
@@ -166,8 +180,8 @@ void InitGetServerService(DeviceRole deviceRole, AudioStreamInfo audioStreamInfo
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"activeBTDevice",
         configInfo});
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"A2dpDeviceCommon", {}});
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+    CurrentActiveDevice().networkId_ = LOCAL_NETWORK_ID;
+    CurrentActiveDevice().deviceType_
         = DEVICE_TYPE_BLUETOOTH_A2DP;
 }
 
@@ -238,7 +252,7 @@ void AudioPolicyServiceThirdTest()
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     GetServerPtr()->audioPolicyService_.RegisterRemoteDevStatusCallback();
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+    CurrentActiveDevice().deviceType_
         = DEVICE_TYPE_BLUETOOTH_A2DP;
     std::vector<DeviceType> DeviceTypeVec = {
         DEVICE_TYPE_BLUETOOTH_A2DP,

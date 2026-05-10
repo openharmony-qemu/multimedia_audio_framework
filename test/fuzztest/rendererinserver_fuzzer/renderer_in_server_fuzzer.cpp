@@ -1318,7 +1318,7 @@ void SelectModeAndWriteData1FuzzTest()
         byteSizePerFrame);
     RendererInServerPtr->staticBufferProvider_ = std::make_shared<AudioStaticBufferProvider>(config.streamInfo,
         RendererInServerPtr->audioServerBuffer_);
-    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen);
+    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen, false);
 }
 
 void SelectModeAndWriteData2FuzzTest()
@@ -1337,7 +1337,7 @@ void SelectModeAndWriteData2FuzzTest()
     int8_t *inputData = arr;
     size_t requestDataLen = 0;
 
-    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen);
+    RendererInServerPtr->SelectModeAndWriteData(inputData, requestDataLen, false);
 }
 
 void CreateServerBufferFuzzTest()

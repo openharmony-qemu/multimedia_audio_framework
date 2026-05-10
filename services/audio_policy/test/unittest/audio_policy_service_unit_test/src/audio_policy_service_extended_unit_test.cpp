@@ -459,20 +459,6 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetDistributedRoutingRoleInfo_001, 
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: GetActiveOutputDeviceDescriptor_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetActiveOutputDeviceDescriptor_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceExtendedUnitTest GetActiveOutputDeviceDescriptor_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetPermission();
-    auto res = GetServerPtr()->audioPolicyService_.GetActiveOutputDeviceDescriptor();
-    ASSERT_NE(nullptr, res);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: OnMicrophoneBlockedUpdate_001
 * @tc.desc  : Test AudioPolicyService interfaces.
 */

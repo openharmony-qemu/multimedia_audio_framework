@@ -21,6 +21,9 @@
 #include <cstring>
 #include <mutex>
 #include "v6_0/iaudio_manager.h"
+#ifdef MULTI_BUS_ENABLE
+#include "util/audio_playing_app_manager.h"
+#endif
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -28,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 class FastAudioRenderSink : public IAudioRenderSink {
 public:
-    FastAudioRenderSink() = default;
+    FastAudioRenderSink();
     ~FastAudioRenderSink();
 
     int32_t Init(const IAudioSinkAttr &attr) override;
@@ -81,6 +84,7 @@ private:
     int32_t CheckPositionTime(void);
     void PreparePosition(void);
     void EnableSyncInfo(const int32_t syncInfoSize);
+    bool SetPlayingAppNameParam(const std::string &param);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -112,6 +116,9 @@ private:
     std::atomic<bool> switchDeviceMute_ = false;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;
+#endif
+#ifdef MULTI_BUS_ENABLE
+    AudioPlayingAppManager playingAppManager_;
 #endif
     std::mutex startMutex_;
 

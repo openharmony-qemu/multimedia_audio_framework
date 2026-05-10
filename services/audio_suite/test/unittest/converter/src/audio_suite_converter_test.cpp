@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cstring>
+#include <numeric>
 
 using namespace testing::ext;
 
@@ -33,8 +34,12 @@ namespace AudioStandard {
 constexpr uint32_t DEFAULT_BUFFER_SIZE = 1024;
 constexpr uint32_t FILE_BUFFER_SIZE = 8000;
 constexpr uint32_t EXTRA_LARGE_BUFFER_SIZE = 50000;
-constexpr uint32_t LOOP_NUMBER = 10000;
+constexpr uint32_t LOOP_NUMBER = 10000000;
+constexpr uint32_t HASH_BUFFER_SIZE = 8192;
 static int32_t g_requestDataCallCount = 0;
+constexpr uint32_t REQUIRED_MS_FOR_11025HZ = 40;
+constexpr uint32_t MIN_FRAMES_FOR_20MS = 20;
+constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
 // MD5 constants
 constexpr uint32_t MD5_BLOCK_SIZE = 64;
 constexpr uint32_t MD5_DIGEST_SIZE = 16;
@@ -65,8 +70,9 @@ static int32_t g_callbackCallCount = 0;
 static int32_t g_callbackDataSize = DEFAULT_BUFFER_SIZE;
 
 static int32_t g_totalBytesRead = 0;
+static uint32_t g_outputCapacity = 0;
+static int32_t g_totalBytesWritten = 0;
 
-// InnerAPI 回调类：从文件读取数据
 class ReadFileCallback : public AudioSuite::FormatConverterDataCallback {
 public:
     explicit ReadFileCallback(FILE* file) : inputFile_(file) {}
@@ -102,6 +108,17 @@ struct MD5Context {
     uint32_t state[MD5_STATE_SIZE];
     uint32_t count[2];
     uint8_t buffer[MD5_BLOCK_SIZE];
+};
+
+// Parameters structure for batch processing
+struct ProcessBatchParams {
+    AudioSuite::AudioFormatConverter* converter;
+    const std::vector<uint8_t>* inputData;
+    uint32_t inputSampleSize;
+    uint32_t outputSampleSize;
+    uint32_t samplesPerCall;
+    uint32_t totalInputSampleCount;
+    FILE* outputFile;
 };
 
 static void BinHashInit(MD5Context* ctx);
@@ -391,18 +408,17 @@ static std::string CalculateBinHash(const std::string& filePath)
     MD5Context ctx;
     BinHashInit(&ctx);
 
-    char buffer[8192];
+    char buffer[HASH_BUFFER_SIZE];
     while (file) {
         file.read(buffer, sizeof(buffer));
         BinHashUpdate(&ctx, buffer, file.gcount());
     }
 
-    int32_t digestCount = 16;
-    uint8_t digest[digestCount];
+    uint8_t digest[MD5_DIGEST_SIZE];
     BinHashFinal(digest, &ctx);
 
     std::stringstream ss;
-    for (int i = 0; i < digestCount; i++) {
+    for (int i = 0; i < MD5_DIGEST_SIZE; i++) {
         ss << std::hex << std::setw(BYTE_WIDTH) << std::setfill('0') << static_cast<unsigned int>(digest[i]);
     }
 
@@ -540,6 +556,65 @@ static OHConverterTestInfo g_converterTestCases[] = {
         AudioSampleFormat::SAMPLE_S16LE},
 };
 
+static OHConverterTestInfo g_converterTestCasesEqual[] = {
+    {"in_converter_44100_2_s16le.pcm", "converterOut6.pcm", "b97b488de2cf524b0deb472ee801f1fb",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE},
+};
+ 
+static OHConverterTestInfo g_converterTestCasesSmall[] = {
+    {"in_converter_44100_2_s16le.pcm", "converterOut6.pcm", "d41d8cd98f00b204e9800998ecf8427e",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE},
+};
+
+static OHConverterTestInfo g_converterTestCasesDirectProcess[] = {
+    {"ch_in_014.pcm", "innerch_out_016.pcm", "03808f551cf89ff8fb8f04199b994d49",
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_014.pcm", "innerch_out_017.pcm", "828b0a6cdfffbbdfb986fb8475b0bc68",
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"ch_in_014.pcm", "innerch_out_018.pcm", "c1caf629896d98125f31b99e5062f675",
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_014.pcm", "innerch_out_019.pcm", "fb5d08b6a4dbc5e90c69f3214ab79169",
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"in_converter_22050_2_s24le.pcm", "innerch_out_020.pcm", "1f7e50aecfddcb4fe6f3c472a7469f49",
+        AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"in_converter_44100_2_s16le.pcm", "innerch_out_021.pcm", "f7ecbec6321922dc0a6f93e93ba801a2",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"in_converter_11025_1_s16.pcm", "innerch_out_022.pcm", "c274111c0facfae79fea46c3a7a6153b",
+        AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"in_converter_44100_2_s16le.pcm", "innerch_out_023.pcm", "311b73417d67674c7bf0bf7eafc75529",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE},
+};
+
 static AudioSuite::PcmBufferFormat SetupInputFormat(const OHConverterTestInfo& info)
 {
     AudioSuite::PcmBufferFormat format;
@@ -566,11 +641,11 @@ static AudioSuite::PcmBufferFormat SetupOutputFormat(const OHConverterTestInfo& 
     return format;
 }
 
-static std::shared_ptr<AudioSuite::IAudioFormatConverter> CreateConverter(const OHConverterTestInfo& info)
+static std::shared_ptr<AudioSuite::AudioFormatConverter> CreateConverter(const OHConverterTestInfo& info)
 {
     AudioSuite::PcmBufferFormat inputFormat = SetupInputFormat(info);
     AudioSuite::PcmBufferFormat outputFormat = SetupOutputFormat(info);
-    auto converter = AudioSuite::IAudioFormatConverter::Create(inputFormat, outputFormat);
+    auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat);
     if (converter == nullptr) {
         return nullptr;
     }
@@ -589,14 +664,14 @@ static FILE* OpenOutputFile(const OHConverterTestInfo& info)
     return fopen(outputFilePath.c_str(), "wb");
 }
 
-static bool ProcessConversion(AudioSuite::IAudioFormatConverter* converter, FILE* outputFile)
+static bool ProcessConversion(AudioSuite::AudioFormatConverter* converter, FILE* outputFile)
 {
     uint8_t outputBuffer[EXTRA_LARGE_BUFFER_SIZE] = {0};
-    int32_t totalBytesWritten = 0;
+    g_totalBytesWritten = 0;
     int32_t loopNumber = LOOP_NUMBER;
     while (loopNumber > 0) {
         uint32_t outputSize = 0;
-        int32_t ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
+        int32_t ret = converter->Process(outputBuffer, g_outputCapacity, &outputSize);
         if (ret != SUCCESS) {
             break;
         }
@@ -606,22 +681,18 @@ static bool ProcessConversion(AudioSuite::IAudioFormatConverter* converter, FILE
         }
         
         size_t bytesWritten = fwrite(outputBuffer, 1, outputSize, outputFile);
-        totalBytesWritten += bytesWritten;
+        g_totalBytesWritten += bytesWritten;
         loopNumber--;
     }
     
-    return totalBytesWritten > 0;
+    return g_totalBytesWritten > 0;
 }
 
-static void VerifyResults(const OHConverterTestInfo& info, int32_t totalBytesWritten)
+static void VerifyResults(const OHConverterTestInfo& info)
 {
     std::string outputFilePath = CONVERTER_TEST_DIR + info.outputFileName;
     std::string compareFileMd5 = info.compareFileMd5;
     CompareOutputWithReference(outputFilePath, compareFileMd5);
-    
-    EXPECT_GT(g_callbackCallCount, 0);
-    EXPECT_GT(g_totalBytesRead, 0);
-    EXPECT_GT(totalBytesWritten, 0);
 }
 
 static bool RunOHConverterTest(const OHConverterTestInfo& info)
@@ -631,17 +702,12 @@ static bool RunOHConverterTest(const OHConverterTestInfo& info)
         return false;
     }
     
-    // Use a local variable instead of the global `g_inputFile` to
-    // resolve multi-threading contention issues.
     FILE* inputFile = OpenInputFile(info);
     if (inputFile == nullptr) {
         converter->Destroy();
         return false;
     }
     
-    // Create an InnerAPI callback object and pass the file pointer to it.
-    // In a multi-threaded environment, each thread has its own independent inputFile and
-    // callback, avoiding contention.
     auto fileCallback = std::make_shared<ReadFileCallback>(inputFile);
     converter->SetInputCallback(fileCallback);
     
@@ -652,7 +718,7 @@ static bool RunOHConverterTest(const OHConverterTestInfo& info)
         return false;
     }
     
-    int32_t totalBytesWritten = ProcessConversion(converter.get(), outputFile);
+    ProcessConversion(converter.get(), outputFile);
     
     int32_t result = fclose(inputFile);
     if (result != 0) {
@@ -663,7 +729,7 @@ static bool RunOHConverterTest(const OHConverterTestInfo& info)
         return false;
     }
     
-    VerifyResults(info, totalBytesWritten);
+    VerifyResults(info);
     
     converter->Destroy();
     return true;
@@ -678,6 +744,184 @@ static int32_t RunAllOHConverterTests()
         EXPECT_TRUE(RunOHConverterTest(info));
     }
     return SUCCESS;
+}
+
+// Helper function to read input file data
+static bool ReadInputFileData(const std::string& filePath, std::vector<uint8_t>& inputData)
+{
+    FILE* inputFile = fopen(filePath.c_str(), "rb");
+    if (inputFile == nullptr) {
+        return false;
+    }
+    
+    int32_t result = fseek(inputFile, 0, SEEK_END);
+    if (result != 0) {
+        return false;
+    }
+    long fileSize = ftell(inputFile);
+    result = fseek(inputFile, 0, SEEK_SET);
+    if (result != 0) {
+        return false;
+    }
+    
+    if (fileSize <= 0) {
+        fclose(inputFile);
+        return false;
+    }
+    
+    inputData.resize(fileSize);
+    size_t bytesRead = fread(inputData.data(), 1, fileSize, inputFile);
+    result = fclose(inputFile);
+    if (result != 0) {
+        return false;
+    }
+    
+    return bytesRead == static_cast<size_t>(fileSize);
+}
+
+// Helper function to calculate sample sizes
+static bool CalculateSampleSizes(const OHConverterTestInfo& info, uint32_t& inputSampleSize, uint32_t& outputSampleSize)
+{
+    inputSampleSize = AudioSuite::AudioSuiteUtil::GetSampleSize(info.inputSampleFormat);
+    if (inputSampleSize == 0) {
+        return false;
+    }
+    
+    outputSampleSize = AudioSuite::AudioSuiteUtil::GetSampleSize(info.outputSampleFormat);
+    return outputSampleSize != 0;
+}
+
+// Helper function to calculate processing parameters
+static bool CalculateProcessingParameters(const OHConverterTestInfo& info, uint32_t inputSampleSize,
+                                          uint32_t channelCount, uint32_t& samplesPerCall,
+                                          uint32_t& minBytesForIntMs)
+{
+    uint32_t inputSampleRate = static_cast<uint32_t>(info.inputSampleRate);
+    uint32_t outputSampleRate = static_cast<uint32_t>(info.outputSampleRate);
+    double samplesPerMs = static_cast<double>(inputSampleRate * channelCount) / MILLISECONDS_PER_SECOND;
+    
+    bool is11025Hz = (info.inputSampleRate == AudioSamplingRate::SAMPLE_RATE_11025 ||
+                     info.outputSampleRate == AudioSamplingRate::SAMPLE_RATE_11025);
+    
+    samplesPerCall = is11025Hz ? static_cast<uint32_t>(samplesPerMs * REQUIRED_MS_FOR_11025HZ) :
+                                 static_cast<uint32_t>(samplesPerMs * MIN_FRAMES_FOR_20MS);
+    
+    if (samplesPerCall == 0) {
+        return false;
+    }
+    
+    uint64_t gcd = std::gcd(static_cast<uint64_t>(inputSampleRate), static_cast<uint64_t>(outputSampleRate));
+    uint64_t gcdSecond = std::gcd(gcd, static_cast<uint64_t>(MILLISECONDS_PER_SECOND));
+    if (gcdSecond == 0) {
+        return false;
+    }
+    uint32_t minTimeMs = static_cast<uint32_t>(MILLISECONDS_PER_SECOND / gcdSecond);
+    
+    uint32_t inputBytesPerFrame = inputSampleSize * channelCount;
+    minBytesForIntMs = (inputSampleRate * inputBytesPerFrame * minTimeMs) / MILLISECONDS_PER_SECOND;
+    
+    if (minBytesForIntMs == 0) {
+        return false;
+    }
+    
+    uint32_t bytesPerCall = samplesPerCall * inputSampleSize;
+    return bytesPerCall % minBytesForIntMs == 0;
+}
+
+// Helper function to write output data
+static bool WriteOutputData(const AudioSuite::AudioConvertResult& result, uint32_t outputSampleSize, FILE* outputFile)
+{
+    if (result.outData == nullptr || result.outSampleCount == 0) {
+        return true;
+    }
+    
+    size_t outputBytes = result.outSampleCount * outputSampleSize;
+    size_t bytesWritten = fwrite(result.outData, 1, outputBytes, outputFile);
+    return bytesWritten == outputBytes;
+}
+
+// Helper function to process data in batches
+static bool ProcessDataInBatches(const ProcessBatchParams& params)
+{
+    uint32_t processedSamples = 0;
+    while (processedSamples < params.totalInputSampleCount) {
+        uint32_t samplesToProcess = std::min(params.samplesPerCall,
+                                             params.totalInputSampleCount - processedSamples);
+        if (samplesToProcess != params.samplesPerCall &&
+            processedSamples + samplesToProcess < params.totalInputSampleCount) {
+            return false;
+        }
+
+        size_t byteOffset = processedSamples * params.inputSampleSize;
+        AudioSuite::AudioConvertResult result = params.converter->Process(
+            params.inputData->data() + byteOffset, samplesToProcess);
+        if (result.errCode != SUCCESS && processedSamples != 0) {
+            processedSamples += samplesToProcess;
+            continue;
+        }
+        if (result.errCode != SUCCESS) {
+            return false;
+        }
+
+        if (!WriteOutputData(result, params.outputSampleSize, params.outputFile)) {
+            return false;
+        }
+
+        processedSamples += samplesToProcess;
+    }
+
+    return true;
+}
+
+static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
+{
+    auto converter = CreateConverter(info);
+    if (converter == nullptr) {
+        return false;
+    }
+    std::string inputFilePath = CONVERTER_TEST_DIR + info.inputFileName;
+    std::vector<uint8_t> inputData;
+    if (!ReadInputFileData(inputFilePath, inputData)) {
+        converter->Destroy();
+        return false;
+    }
+    uint32_t inputSampleSize = 0;
+    uint32_t outputSampleSize = 0;
+    if (!CalculateSampleSizes(info, inputSampleSize, outputSampleSize)) {
+        converter->Destroy();
+        return false;
+    }
+    auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.inputChannelLayout);
+    uint32_t channelCount =
+        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
+
+    uint32_t samplesPerCall = 0;
+    uint32_t minBytesForIntMs = 0;
+    if (!CalculateProcessingParameters(info, inputSampleSize, channelCount, samplesPerCall, minBytesForIntMs)) {
+        converter->Destroy();
+        return false;
+    }
+
+    uint32_t totalInputSampleCount = static_cast<uint32_t>(inputData.size() / inputSampleSize);
+    std::string outputFilePath = CONVERTER_TEST_DIR + info.outputFileName;
+    FILE *outputFile = fopen(outputFilePath.c_str(), "wb");
+    if (outputFile == nullptr) {
+        converter->Destroy();
+        return false;
+    }
+    ProcessBatchParams params = {converter.get(),
+        &inputData, inputSampleSize, outputSampleSize, samplesPerCall, totalInputSampleCount, outputFile};
+    bool success = ProcessDataInBatches(params);
+    int32_t result = fclose(outputFile);
+    if (result != 0) {
+        return false;
+    }
+    converter->Destroy();
+
+    if (success) {
+        VerifyResults(info);
+    }
+    return success;
 }
 
 void AudioSuiteConverterTest::SetUpTestCase(void) { }
@@ -696,13 +940,55 @@ void AudioSuiteConverterTest::TearDown(void) { }
 
 /**
  * @tc.name  : Test OH_AudioConverter_Process.
- * @tc.number: OH_AudioConverter_Process_019
+ * @tc.number: OH_AudioConverter_Process_Compare_Pcm
  * @tc.desc  : Test conversion from real pcm file and save to compare pcm.
  */
 HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Compare_Pcm, TestSize.Level0)
 {
+    g_outputCapacity = EXTRA_LARGE_BUFFER_SIZE;
     int32_t ret = RunAllOHConverterTests();
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GT(g_callbackCallCount, 0);
+    EXPECT_GT(g_totalBytesRead, 0);
+    EXPECT_GT(g_totalBytesWritten, 0);
+}
+
+/**
+ * @tc.name  : Test OH_AudioConverter_Process.
+ * @tc.number: OH_AudioConverter_Process_Compare_Pcm_Equal
+ * @tc.desc  : Test conversion from real pcm file and save to compare pcm.
+ */
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Compare_Pcm_Equal, TestSize.Level0)
+{
+    const OHConverterTestInfo& info = g_converterTestCasesEqual[0];
+    auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.outputChannelLayout);
+    uint32_t channelCount =
+        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
+    g_outputCapacity =
+        AudioSuite::AudioSuiteUtil::GetSampleSize(info.outputSampleFormat) * channelCount;
+    EXPECT_TRUE(RunOHConverterTest(info));
+    EXPECT_GT(g_callbackCallCount, 0);
+    EXPECT_GT(g_totalBytesRead, 0);
+    EXPECT_GT(g_totalBytesWritten, 0);
+}
+ 
+/**
+ * @tc.name  : Test OH_AudioConverter_Process.
+ * @tc.number: OH_AudioConverter_Process_Compare_Pcm_Small
+ * @tc.desc  : Test conversion from real pcm file and save to compare pcm.
+ */
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Compare_Pcm_Small, TestSize.Level0)
+{
+    const OHConverterTestInfo& info = g_converterTestCasesSmall[0];
+    auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.outputChannelLayout);
+    uint32_t channelCount =
+        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
+    g_outputCapacity =
+        AudioSuite::AudioSuiteUtil::GetSampleSize(info.outputSampleFormat) * channelCount - 1;
+    EXPECT_TRUE(RunOHConverterTest(info));
+    EXPECT_EQ(g_callbackCallCount, 0);
+    EXPECT_EQ(g_totalBytesRead, 0);
+    EXPECT_EQ(g_totalBytesWritten, 0);
 }
 
 /**
@@ -736,13 +1022,13 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_002, TestSize.Lev
         AudioSamplingRate::SAMPLE_RATE_48000, 2,
         AudioChannelLayout::CH_LAYOUT_STEREO,
         AudioSampleFormat::SAMPLE_S16LE);
-    auto converter = AudioSuite::IAudioFormatConverter::Create(inputFormat, outputFormat);
+    auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat);
     
     // Calling Process directly without setting a callback should return a "callback not set" error.
     uint8_t outputBuffer[DEFAULT_BUFFER_SIZE] = {0};
     uint32_t outputSize = 0;
     int32_t ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
-    EXPECT_EQ(ret, ERR_CALLBACK_NOT_SET);
+    EXPECT_EQ(ret, ERR_CALLBACK_NOT_FOUND);
     
     converter->Destroy();
 }
@@ -753,10 +1039,10 @@ static std::atomic<int32_t> g_mtFailCount(0);
 
 /**
  * @tc.name  : Test OH_AudioConverter multithread with real audio files.
- * @tc.number: OH_AudioConverter_Multithread_003
+ * @tc.number: OH_AudioConverter_Multithread_001
  * @tc.desc  : Test multiple threads performing actual audio file conversions.
  */
-HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Multithread_003, TestSize.Level0)
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Multithread_001, TestSize.Level0)
 {
     g_mtSuccessCount = 0;
     g_mtFailCount = 0;
@@ -770,7 +1056,7 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Multithread_003, TestSize.Le
         threads.emplace_back([i]() {
             size_t testCaseIdx = i % (sizeof(g_converterTestCases) / sizeof(g_converterTestCases[0]));
             const OHConverterTestInfo& info = g_converterTestCases[testCaseIdx];
-
+            g_outputCapacity = EXTRA_LARGE_BUFFER_SIZE;
             bool success = RunOHConverterTest(info);
 
             if (success) {
@@ -787,6 +1073,22 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Multithread_003, TestSize.Le
 
     EXPECT_EQ(g_mtSuccessCount, numThreads);
     EXPECT_EQ(g_mtFailCount, 0);
+}
+
+/**
+ * @tc.name  : Test OH_AudioConverter_Process with direct input data from file.
+ * @tc.number: OH_AudioConverter_Process_Direct_Data_File_001
+ * @tc.desc  : Test conversion from real pcm file using new Process(inData, inSampleCount) interface.
+ *            Test case: 192000Hz 6-channel S24LE -> 8000Hz stereo S16LE
+ */
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Direct_Data_File_001, TestSize.Level0)
+{
+    size_t count = sizeof(g_converterTestCasesDirectProcess) / sizeof(g_converterTestCasesDirectProcess[0]);
+    
+    for (size_t idx = 0; idx < count; idx++) {
+        const OHConverterTestInfo& info = g_converterTestCasesDirectProcess[idx];
+        EXPECT_TRUE(RunOHConverterTestWithDirectProcess(info));
+    }
 }
 
 }

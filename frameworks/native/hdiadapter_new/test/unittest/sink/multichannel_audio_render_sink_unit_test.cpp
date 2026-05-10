@@ -686,5 +686,100 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_034, Test
     ret = multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_036
+ * @tc.desc   : Test UpdateAppsUid with array input
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_036, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    int32_t appsUid[MAX_MIX_CHANNELS] = {1001, 1002};
+    size_t size = 2;
+    int32_t ret = sink_->UpdateAppsUid(appsUid, size);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, SUCCESS);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_037
+ * @tc.desc   : Test UpdateAppsUid with vector input
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_037, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    std::vector<int32_t> appsUid = {1001, 1002, 1003};
+    int32_t ret = sink_->UpdateAppsUid(appsUid);
+#ifdef FEATURE_POWER_MANAGER
+    EXPECT_EQ(ret, SUCCESS);
+#else
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_038
+ * @tc.desc   : Test GetCurrentOutputDevice returns current active device
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_038, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    ASSERT_NE(multichannelAudioRenderSink, nullptr);
+
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_SPEAKER;
+    DeviceType device = multichannelAudioRenderSink->GetCurrentOutputDevice();
+    EXPECT_EQ(device, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_039
+ * @tc.desc   : Test GetCurrentOutputDevice returns default device when not set
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_039, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    ASSERT_NE(multichannelAudioRenderSink, nullptr);
+
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_NONE;
+    DeviceType device = multichannelAudioRenderSink->GetCurrentOutputDevice();
+    EXPECT_EQ(device, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_040
+ * @tc.desc   : Test GetCurrentOutputDevice returns bluetooth device
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_040, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    ASSERT_NE(multichannelAudioRenderSink, nullptr);
+
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    DeviceType device = multichannelAudioRenderSink->GetCurrentOutputDevice();
+    EXPECT_EQ(device, DEVICE_TYPE_BLUETOOTH_A2DP);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_041
+ * @tc.desc   : Test GetCurrentOutputDevice after UpdateActiveDevice
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_041, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    ASSERT_NE(multichannelAudioRenderSink, nullptr);
+
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_WIRED_HEADSET;
+    DeviceType device = multichannelAudioRenderSink->GetCurrentOutputDevice();
+    EXPECT_EQ(device, DEVICE_TYPE_WIRED_HEADSET);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -27,6 +27,8 @@
 #include "dfx_msg_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_interrupt_utils.h"
+#include "stream_dfx_manager.h"
+#include <unistd.h>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -133,42 +135,17 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
     return callingUid_;
 }
 
-void AudioInterruptService::SetLatestMuteState(const uint32_t &streamId, bool muteFlag)
+void AudioInterruptService::SetLatestMuteState(const AudioInterrupt &audioInterrupt, bool muteFlag)
 {
+    uint32_t streamId = audioInterrupt.streamId;
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
     streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
     policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
-}
 
-void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
-    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
-{
-    if (currentInterrupt.strategy == InterruptStrategy::DEFAULT &&
-        incomingInterrupt.strategy == InterruptStrategy::DEFAULT &&
-        !(currentInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == CURRENT) &&
-        !(incomingInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == INCOMING)) {
-        return;
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        policyServer_->NotifyVoipPriorityLoweredByMute(streamId, muteFlag);
     }
-
-    if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
-        focusEntry.hintType != INTERRUPT_HINT_PAUSE) ||
-        incomingInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP) {
-        AUDIO_INFO_LOG("streamId: %{public}u, keep current hintType=%{public}d",
-            currentInterrupt.streamId, focusEntry.hintType);
-        return;
-    }
-
-    if (currentInterrupt.strategy == InterruptStrategy::MUTE) {
-        focusEntry.actionOn = CURRENT;
-    }
-    if (incomingInterrupt.strategy == InterruptStrategy::MUTE) {
-        focusEntry.actionOn = INCOMING;
-    }
-
-    AUDIO_INFO_LOG("currentStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
-        currentInterrupt.streamId, incomingInterrupt.streamId, focusEntry.actionOn);
-    focusEntry.isReject = false;
-    focusEntry.hintType = INTERRUPT_HINT_MUTE;
+    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::SetLatestMuteState");
 }
 
 int32_t AudioInterruptService::ProcessActiveStreamFocus(
@@ -180,6 +157,9 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
     activeInterrupt = audioFocusInfoList.end();
 
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
+        if (iterActive->second == AudioFocuState::STANDBY) {
+            continue;
+        }
         activeInterrupt = iterActive;
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
         // if peeling is the incomming interrupt while at the momount there are already some existing recordings
@@ -192,7 +172,12 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 
         std::pair<AudioFocusType, AudioFocusType> focusPair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_CALL_FUNC_RETURN_RET(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
+        bool isRecord = iterActive->first.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(focusCfgMap_.find(focusPair) != focusCfgMap_.end(),
+            ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                isRecord ? RECORD_INTERRUPT_CONFIG_OPERATION_FAILED : INTERRUPT_CONFIG_OPERATION_FAILED,
+                "no focus cfg found", false),
             HILOG_COMM_ERROR("[ProcessActiveStreamFocus]no focus cfg, active stream type = %{public}d, "
                 "incoming stream type = %{public}d",
                 static_cast<int32_t>(focusPair.first.streamType),
@@ -224,8 +209,11 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, int32_t reason)
 {
-    CHECK_AND_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID, "not recording");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+        activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_INTERRUPT_START_INVALID_PARAM, "not recording, source type is invalid", false),
+        "not recording");
     AUDIO_INFO_LOG("recording failed to start, incoming: sourceType %{public}d pid %{public}d uid %{public}d"\
         "active: sourceType %{public}d pid %{public}d uid %{public}d",
         incomingInterrupt.audioFocusType.sourceType, incomingInterrupt.pid, incomingInterrupt.uid,
@@ -234,7 +222,10 @@ void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incom
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
         Media::MediaMonitor::EventType::FAULT_EVENT);
-    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(bean != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_INTERRUPT_CALLBACK_NULL_POINTER, "bean is nullptr", false),
+        "bean is nullptr");
 
     bean->Add("INCOMING_SOURCE", incomingInterrupt.audioFocusType.sourceType);
     bean->Add("INCOMING_PID", incomingInterrupt.pid);
@@ -516,9 +507,8 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     bool isInMuteCheckList = false;
     auto bundleName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
     string muteCheckAppName = bundleName;
-    if (queryBundleNameListCallback_ != nullptr) {
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_mute_check",
-            isInMuteCheckList);
+    if (interruptStrategy_ != nullptr) {
+        interruptStrategy_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_mute_check", isInMuteCheckList);
     }
     if (isInMuteCheckList) {
         focusEntry.hintType = INTERRUPT_HINT_NONE;
@@ -540,6 +530,7 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
     SendInterruptEventCallback(forceUnmute, sessionId, audioInterrupt);
     AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
     streamCollector_.CapturerMutedFlagChange(sessionId, 0);
+    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::ResetInterruptMuteState");
 }
 
 int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
@@ -549,19 +540,28 @@ int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, 
     return sessionService_.SetAudioSessionBehavior(callerPid, behavior, callerUid);
 }
  
-void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)
+void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audioInterrupt, bool muteFlag)
 {
     if (audioInterrupt.isAudioSessionInterrupt) {
         AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
             audioInterrupt.pid, muteFlag);
-        const auto &interruptsInSession = sessionService_.GetStreams(audioInterrupt.pid);
-        for (auto &interrupt : interruptsInSession) {
+        const auto &interruptsInSessionPair = sessionService_.GetStreams(audioInterrupt.pid);
+        for (const auto &[interrupt, state] : interruptsInSessionPair) {
             SetNonInterruptMute(interrupt.streamId, muteFlag);
         }
     } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-        SetLatestMuteState(audioInterrupt.streamId, muteFlag);
+        SetLatestMuteState(audioInterrupt, muteFlag);
     } else {
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
+    }
+}
+
+void AudioInterruptService::MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INTERPHONE) {
+        audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+        audioInterrupt.sourceType = SOURCE_TYPE_INTERPHONE;
+        AUDIO_INFO_LOG("Is Capturer InterPhone Interrupt");
     }
 }
 }

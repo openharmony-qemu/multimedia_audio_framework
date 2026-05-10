@@ -122,6 +122,10 @@ struct BasicBufferInfo {
 
     std::atomic<size_t> curStaticDataPos;
     std::atomic<int64_t> currentLoopTimes;
+
+    std::atomic<uint64_t> pendingSpanSize;
+    std::atomic<uint64_t> pendingEngineSize;
+    std::atomic<uint32_t> pendingRouteFlag;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -278,6 +282,11 @@ public:
 
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
 
+    void SetPendingSpanSize(uint64_t spanSize, uint64_t engineSize, uint32_t routeFlag);
+    uint64_t GetAndClearPendingSpanSize(uint64_t &engineSize, uint32_t &routeFlag);
+    bool HasPendingSpanSize() const;
+    void ClearPendingSpanSize();
+
 private:
     int32_t SizeCheck();
 
@@ -408,6 +417,11 @@ public:
     FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
 
     void WakeFutex(uint32_t wakeVal = IS_READY);
+
+    void SetPendingSpanSize(uint64_t spanSize, uint64_t engineSize, uint32_t routeFlag);
+    uint64_t GetAndClearPendingSpanSize(uint64_t &engineSize, uint32_t &routeFlag);
+    bool HasPendingSpanSize() const;
+    void ClearPendingSpanSize();
 
 private:
     int32_t Init(int dataFd, int infoFd);

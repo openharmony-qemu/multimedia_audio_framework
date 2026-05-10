@@ -263,6 +263,33 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_013, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetPipeType_014
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_RECORD and flag is live.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_014, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_LIVE;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_LIVE);
+}
+
+/**
+ * @tc.name: GetPipeType_015
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_RECORD and flag contains AUDIO_INPUT_FLAG_CAMCORDER.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_015, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_CAMCORDER;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_IN_CAMCORDER);
+}
+
+/**
  * @tc.name: GetAdapterNameByStreamDesc_001
  * @tc.desc: Test GetAdapterNameByStreamDesc when streamDesc is not nullptr and pipeInfoPtr
  *  and adapterInfoPtr are not nullptr.
@@ -409,6 +436,52 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_006, TestSize.Level1)
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
     EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
+}
+
+/**
+ * @tc.name: JudgeStreamAction_008
+ * @tc.desc: Test JudgeStreamAction when newPipe and oldPipe have the same adapterName, routeFlag and name_.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_008, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
+    newPipe->adapterName_ = "test_adapter";
+    newPipe->routeFlag_ = 1;
+    newPipe->name_ = "pipe_name";
+
+    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
+    oldPipe->adapterName_ = "test_adapter";
+    oldPipe->routeFlag_ = 1;
+    oldPipe->name_ = "pipe_name";
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
+    EXPECT_EQ(result, AUDIO_STREAM_ACTION_DEFAULT);
+}
+
+/**
+ * @tc.name: JudgeStreamAction_009
+ * @tc.desc: Test JudgeStreamAction when adapterName and routeFlag are the same but name_ is different.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_009, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
+    newPipe->adapterName_ = "test_adapter";
+    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    newPipe->name_ = "pipe_name_new";
+
+    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
+    oldPipe->adapterName_ = "test_adapter";
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    oldPipe->name_ = "pipe_name_old";
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
+    EXPECT_EQ(result, AUDIO_STREAM_ACTION_MOVE);
 }
 
 /**
@@ -983,6 +1056,55 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_011, TestSize.Le
     EXPECT_EQ(info.moduleInfo_.micRefRate, "");
     EXPECT_EQ(info.moduleInfo_.micRefChannels, "");
     EXPECT_EQ(info.moduleInfo_.micRefFormat, "");
+}
+
+/**
+ * @tc.name: ConvertStreamDescToPipeInfo_012
+ * @tc.desc: Test camcorder mic-in stream should carry micIn and micRef module info.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_012, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_CAMCORDER;
+    streamDesc->sessionId_ = 105;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_CAMCORDER;
+    streamDesc->micInStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->micInStreamInfo_.channels = CHANNEL_4;
+    streamDesc->micInStreamInfo_.format = SAMPLE_S24LE;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+
+    EXPECT_EQ(info.moduleInfo_.micInRate, "48000");
+    EXPECT_EQ(info.moduleInfo_.micInChannels, "4");
+    EXPECT_EQ(info.moduleInfo_.micInFormat, "s24");
+    EXPECT_EQ(info.moduleInfo_.micRefRate, "48000");
+    EXPECT_EQ(info.moduleInfo_.micRefChannels, "4");
+    EXPECT_EQ(info.moduleInfo_.micRefFormat, "s24");
+    EXPECT_EQ(info.moduleInfo_.ecType, "");
+    EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "");
 }
 
 /**

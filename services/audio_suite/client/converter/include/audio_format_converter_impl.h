@@ -20,6 +20,7 @@
 #include "audio_suite_base.h"
 #include "audio_suite_format_conversion.h"
 #include "audio_format_converter.h"
+#include "audio_suite_raw_format_conversion.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -60,30 +61,28 @@ struct ProcessingContext {
     uint32_t totalOutputSize;
     uint8_t* outputBufferPtr;
     uint32_t remainingCapacity;
-    std::vector<uint8_t> backupInputData;
 };
 
-// Format Converter InnerAPI Class (Implements the interface)
-class AudioFormatConverterImpl : public IAudioFormatConverter {
+class AudioFormatConverterImpl : public AudioFormatConverter {
 public:
     AudioFormatConverterImpl();
     ~AudioFormatConverterImpl() override;
 
-    // Interface 1: SetInputCallback - Sets the data request callback
     int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) override;
 
-    // Interface 2: Process - Processes audio data
     int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) override;
 
-    // Interface 3: Destroy - Destruction Converter
+    AudioConvertResult Process(const uint8_t* inData, uint32_t inSampleCount) override;
+
     void Destroy() override;
 
-    // member variables
     PcmBufferFormat inputFormat_;
     PcmBufferFormat outputFormat_;
-    std::shared_ptr<AudioSuiteFormatConversion> formatConversion_;
+    std::unique_ptr<AudioSuiteFormatConversion> formatConversion_;
+    std::unique_ptr<AudioSuiteRawFormatConversion> rawFormatConversion_;
     bool destroyed_ = false;
     std::mutex mutex_;
+    std::vector<uint8_t> outputDataVector_;
 
 private:
     // Internal implementation method
@@ -122,6 +121,10 @@ private:
         uint32_t outputBytesPerFrame);
     int32_t ProcessConversion(void* audioData, uint32_t outputCapacity,
         uint32_t* outputSize, uint32_t outputBytesPerFrame, uint32_t maxOutputFrames);
+    AudioConvertResult ValidateBasicParams(const uint8_t* inData, uint32_t inSampleCount);
+    AudioConvertResult ValidateSampleRateParams(uint32_t inSampleCount);
+    AudioConvertResult ValidateMinBytesParams(uint32_t inSampleCount, uint32_t inputBytes);
+    AudioConvertResult ExecuteConversion(const uint8_t* inData, uint32_t inputBytes);
     
     std::shared_ptr<FormatConverterDataCallback> dataCallback_;
     

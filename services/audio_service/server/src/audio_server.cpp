@@ -18,6 +18,7 @@
 
 #include "audio_server.h"
 
+#include <unistd.h>
 #include <cinttypes>
 #include <codecvt>
 #include <csignal>
@@ -45,6 +46,7 @@
 #include "audio_info.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
+#include "stream_dfx_manager.h"
 #include "async_action_handler.h"
 #include "audio_asr.h"
 #include "audio_stream_enum.h"
@@ -101,6 +103,7 @@ const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
 const std::string HOME_MUSIC_KEY = "HomeMusic";
+const std::string COCKPIT_DIRECT_KEY = "cockpit_direct";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
 const std::string MAIN_KEY_DFX = "dfx";
 const std::string SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT = "update_wakeup_trace_result";
@@ -207,6 +210,7 @@ const std::set<std::string> ASR_FORBIDDEN_KEYS = {
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
+static constexpr unsigned int WAIT_AUDIO_PARAMETER_PARSED_TIMEOUT_SECONDS = 5;
 static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 static constexpr int32_t RESTORE_SESSION_TRY_COUNT = 10;
 static constexpr uint32_t  RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS = 50000;
@@ -246,6 +250,21 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_LIVE,
 };
 
+static bool IsCockpitDirectCallerAllowed()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    return callingUid == UID_COCKPIT_SA || callingUid == ROOT_UID;
+}
+
+static std::string BuildExtraParameterValue(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    std::string value;
+    for (const auto &item : kvpairs) {
+        value += item.first + "=" + item.second + ";";
+    }
+    return value;
+}
+
 static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
 {
     return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_CALL_MANAGER_SA;
@@ -284,6 +303,7 @@ static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag
         {HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION},
         {HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT}
@@ -322,6 +342,8 @@ static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
 static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
 {
     if (source == nullptr || !source->IsInited()) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "Capturer is not initialized", false);
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
         source->UpdateActiveDevice(type);
@@ -343,6 +365,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     std::shared_ptr<IAudioCaptureSource> unprocessSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
     if (unprocessSource != nullptr && unprocessSource->IsInited()) {
         unprocessSource->UpdateActiveDevice(type);
+    }
+    std::shared_ptr<IAudioCaptureSource> liveSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE);
+    if (liveSource != nullptr && liveSource->IsInited()) {
+        liveSource->UpdateActiveDevice(type);
     }
     std::shared_ptr<IAudioCaptureSource> ultrasonicSource =
         GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
@@ -805,19 +831,26 @@ void AudioServer::ParseAudioParameter()
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
-    isAudioParameterParsed_.store(true);
+    NotifyAudioParameterParsed();
     RecordBootStateTime(AudioServerBootState::LOAD_AUDIO_PARAM_CONFIG_XML, ClockTime::GetCurMilli());
-
-    {
-        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
-        for (const auto &pair : audioExtraParameterCacheVector_) {
-            std::vector<StringPair> params = ConvertStringPair(pair.second);
-            SetExtraParameters(pair.first, params);
-        }
-        audioExtraParameterCacheVector_.clear();
-    }
-    AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
     PermissionUtil::UpdateBGSet();
+}
+
+void AudioServer::NotifyAudioParameterParsed()
+{
+    std::lock_guard<std::mutex> lock(audioParameterCacheMutex_);
+    isAudioParameterParsed_.store(true);
+    isAudioParameterParsedCv_.notify_all();
+}
+
+bool AudioServer::WaitAudioParameterParsed()
+{
+    if (isAudioParameterParsed_.load()) {
+        return true;
+    }
+    std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
+    return isAudioParameterParsedCv_.wait_for(lock, std::chrono::seconds(WAIT_AUDIO_PARAMETER_PARSED_TIMEOUT_SECONDS),
+        [this]() { return isAudioParameterParsed_.load(); });
 }
 
 void AudioServer::WriteServiceStartupError()
@@ -934,31 +967,65 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
     std::vector<std::pair<std::string, std::string>> newPair = ConvertStringPair(kvpairs);
+    CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
+        "set extra parameters failed: audio parameters not ready");
 
-    if (key == HOME_MUSIC_KEY) {
-        CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
-        std::string homeMusicNetworkId = newPair[0].second;
-        std::string homeMusicZoneValue = newPair[1].second;
-        HdiAdapterManager &managerRemote = HdiAdapterManager::GetInstance();
-        std::shared_ptr<IDeviceManager> deviceManager = managerRemote.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "remote device manager is nullptr");
-        deviceManager->SetAudioParameter(homeMusicNetworkId, AudioParamKey::NONE, ZONE_ID_CHANGE, homeMusicZoneValue);
-        return SUCCESS;
-    }
-
+    // Framework-only handlers that update local service state without forwarding to HDI.
     if (key == EFFECT_LIVE_KEY) {
-        ret = SetEffectLiveParameter(newPair);
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
-        return SUCCESS;
+        return SetEffectLiveExtraParameters(newPair);
     }
 
     if (key == PCM_DUMP_KEY) {
-        ret = SetPcmDumpParameter(newPair);
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
-        return SUCCESS;
+        return SetPcmDumpExtraParameters(newPair);
     }
-    HapReportWakeupEvent(key, newPair);
-    CHECK_AND_RETURN_RET_LOG(!CacheExtraParameters(key, newPair), ERROR, "cached");
+
+    // Keys below are translated and forwarded to HDI adapters.
+    if (key == HOME_MUSIC_KEY) {
+        return SetHomeMusicExtraParameters(newPair);
+    }
+
+    if (key == COCKPIT_DIRECT_KEY) {
+        return SetCockpitDirectExtraParameters(newPair);
+    }
+
+    return SetCommonExtraParameters(key, newPair);
+}
+
+int32_t AudioServer::SetHomeMusicExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
+    std::string homeMusicNetworkId = kvpairs[0].second;
+    std::string homeMusicZoneValue = kvpairs[1].second;
+    return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_REMOTE,
+        homeMusicNetworkId, ZONE_ID_CHANGE, homeMusicZoneValue);
+}
+
+int32_t AudioServer::SetEffectLiveExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    bool ret = SetEffectLiveParameter(kvpairs);
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetPcmDumpExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    bool ret = SetPcmDumpParameter(kvpairs);
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetCockpitDirectExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    CHECK_AND_RETURN_RET_LOG(IsCockpitDirectCallerAllowed(), ERR_PERMISSION_DENIED,
+        "set cockpit direct extra parameters failed: invalid caller uid");
+    return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "",
+        BuildExtraParameterValue(kvpairs));
+}
+
+int32_t AudioServer::SetCommonExtraParameters(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    HapReportWakeupEvent(key, kvpairs);
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
@@ -971,14 +1038,10 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     }
 
     std::string value;
-    bool isParamValid = ProcessKeyValuePairs(key, newPair, mainKeyIt->second, value);
+    bool isParamValid = ProcessKeyValuePairs(key, kvpairs, mainKeyIt->second, value);
     CHECK_AND_RETURN_RET_LOG(isParamValid, ERR_INVALID_PARAM, "invalid subkey or value");
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
-    return SUCCESS;
+    return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "", value);
 }
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
@@ -1007,24 +1070,6 @@ bool AudioServer::ProcessKeyValuePairs(const std::string &key,
 }
 
 // LCOV_EXCL_START
-bool AudioServer::CacheExtraParameters(const std::string &key,
-    const std::vector<std::pair<std::string, std::string>> &kvpairs)
-{
-    if (!isAudioParameterParsed_.load()) {
-        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
-        if (!isAudioParameterParsed_.load()) {
-            AUDIO_INFO_LOG("Audio extra parameters will be cached");
-            std::pair<std::string,
-                std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
-            audioExtraParameterCacheVector_.push_back(cache);
-
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool AudioServer::CheckAndPreStoreA2dpParam(std::shared_ptr<IAudioRenderSink> btSink,
     AudioParamKey parmKey, const std::string &renderValue)
 {
@@ -1093,10 +1138,7 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         source->SetAudioParameter(parmKey, "", valueNew);
     }
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "deviceManager is null");
-    deviceManager->SetAudioParameter(halName, parmKey, "", valueNew);
+    HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL, halName, parmKey, "", valueNew);
 
     return SUCCESS;
 }
@@ -1198,11 +1240,8 @@ int32_t AudioServer::SetAudioParameter(const std::string& networkId, int32_t key
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() || ret, ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
-    deviceManager->SetAudioParameter(networkId.c_str(), static_cast<AudioParamKey>(key), condition, value);
-    return SUCCESS;
+    return HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_REMOTE,
+        networkId, static_cast<AudioParamKey>(key), condition, value);
 }
 
 bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
@@ -1251,6 +1290,8 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
 int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
+    CHECK_AND_RETURN_RET_LOG(WaitAudioParameterParsed(), ERROR,
+        "get extra parameters failed: audio parameters not ready");
     if (mainKey == EFFECT_LIVE_KEY) {
         bool ret = GetEffectLiveParameter(subKeys, result);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get effect live parameters failed.");
@@ -1261,9 +1302,11 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
         return SUCCESS;
     } else if (mainKey == HOME_MUSIC_KEY) {
         return GetTaskIdParameter(subKeys, result);
+    } else if (mainKey == COCKPIT_DIRECT_KEY) {
+        CHECK_AND_RETURN_RET_LOG(IsCockpitDirectCallerAllowed(), ERR_PERMISSION_DENIED,
+            "get cockpit direct extra parameters failed: invalid caller uid");
+        return HdiAdapterManager::GetInstance().GetExtraParameters(subKeys, result);
     }
-
-    CHECK_AND_RETURN_RET_LOG(isAudioParameterParsed_.load(), ERROR, "audioParameterKeys is not ready");
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
@@ -1275,34 +1318,22 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
         return ERR_INVALID_PARAM;
     }
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
-    std::unordered_map<std::string, std::set<std::string>> subKeyMap = mainKeyIt->second;
+    std::vector<std::string> validSubKeys;
     if (subKeys.empty()) {
-        for (auto it = subKeyMap.begin(); it != subKeyMap.end(); it++) {
-            std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, it->first);
-            result.emplace_back(std::make_pair(it->first, value));
+        for (const auto &item : mainKeyIt->second) {
+            validSubKeys.emplace_back(item.first);
         }
-        return SUCCESS;
-    }
-
-    bool match = true;
-    for (auto it = subKeys.begin(); it != subKeys.end(); it++) {
-        auto subKeyIt = subKeyMap.find(*it);
-        if (subKeyIt != subKeyMap.end()) {
-            std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, *it);
-            result.emplace_back(std::make_pair(*it, value));
-        } else {
-            match = false;
-            break;
+    } else {
+        for (const auto &subKey : subKeys) {
+            auto subKeyIt = mainKeyIt->second.find(subKey);
+            if (subKeyIt == mainKeyIt->second.end()) {
+                result.clear();
+                return ERR_INVALID_PARAM;
+            }
+            validSubKeys.emplace_back(subKey);
         }
     }
-    if (!match) {
-        result.clear();
-        return ERR_INVALID_PARAM;
-    }
-    return SUCCESS;
+    return HdiAdapterManager::GetInstance().GetExtraParameters(validSubKeys, result);
 }
 
 int32_t AudioServer::GetAudioParameter(const std::string &key, std::string &value)
@@ -1323,13 +1354,9 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    if (deviceManager != nullptr) {
-        std::string result = HandleSpecificKey(key, deviceManager);
-        if (!result.empty()) {
-            return result;
-        }
+    auto result = HdiAdapterManager::GetInstance().GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, key);
+    if (result.has_value()) {
+        return result.value();
     }
 
     if (AudioServer::audioParameters.count(key)) {
@@ -1337,49 +1364,6 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
     } else {
         return "";
     }
-}
-
-std::string AudioServer::HandleSpecificKey(const std::string &key,
-    const std::shared_ptr<IDeviceManager> &deviceManager)
-{
-    if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
-            return deviceManager->GetAudioParameter("primary", PARAM_KEY_LOWPOWER, "");
-        }
-        if (key.starts_with("need_change_usb_device#C")) {
-            return deviceManager->GetAudioParameter("primary", USB_DEVICE, key);
-        }
-        if (key.starts_with("is_root_hub#C")) {
-            return deviceManager->GetAudioParameter("primary", USB_DEVICE, key);
-        }
-        if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
-            return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
-        }
-        if (key == "perf_info") {
-            return deviceManager->GetAudioParameter("primary", AudioParamKey::PERF_INFO, key);
-        }
-        if (key == "sound_card_info") {
-            return deviceManager->GetAudioParameter("primary", AudioParamKey::SOUND_CARD_INFO, key);
-        }
-        if (key == "concurrent_capture_stream_info") {
-            return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
-        }
-        if ((key == "pm_kara") || (key == "pm_kara_code")) {
-            return deviceManager->GetAudioParameter("usb", AudioParamKey::USB_DEVICE, key);
-        }
-        if (key.size() < BUNDLENAME_LENGTH_LIMIT && key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
-            key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
-            return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
-        }
-
-        const std::string mmiPre = "mmi_";
-        if (key.size() > mmiPre.size()) {
-            if (key.substr(0, mmiPre.size()) == mmiPre) {
-                return deviceManager->GetAudioParameter("primary", MMI,
-                    key.substr(mmiPre.size(), key.size() - mmiPre.size()));
-            }
-        }
-
-        return "";
 }
 
 const std::string AudioServer::GetVAParameter(const std::string &key)
@@ -1441,14 +1425,12 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
         "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
     DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
     lock_guard<mutex> lg(mtxGetUsbParameter_);
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "", "deviceManager is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
     if (role == OUTPUT_DEVICE  || role == INPUT_DEVICE) {
         auto it = usbInfoMap_.find(address);
         if (it == usbInfoMap_.end()) {
-            usbInfoStr = deviceManager->GetAudioParameter("usb", USB_DEVICE, infoCond);
+            usbInfoStr = HdiAdapterManager::GetInstance().GetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL,
+                "usb", USB_DEVICE, infoCond);
             usbInfoMap_[address] = usbInfoStr;
         } else {
             usbInfoStr = it->second;
@@ -1586,6 +1568,46 @@ int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, 
     return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), scoExcludeFlag);
 }
 
+int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "SetAudioSceneForPipe refused, only internal call allowed");
+    AUDIO_INFO_LOG("SetAudioSceneForPipe pipeId: %{public}u, audioScene: %{public}d, scoExcludeFlag: %{public}d",
+        pipeId, audioScene, scoExcludeFlag);
+    AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
+    CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
+        ERR_INVALID_PARAM, "param is invalid");
+    
+    std::shared_ptr<IAudioRenderSink> sink = nullptr;
+    std::shared_ptr<IAudioCaptureSource> source = nullptr;
+    
+    if (pipeId == DEFAULT_PIPE_ID) {
+        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, false);
+    } else {
+        sink = HdiAdapterManager::GetInstance().GetRenderSink(pipeId, true);
+        source = HdiAdapterManager::GetInstance().GetCaptureSource(pipeId, false);
+    }
+    
+    int32_t ret = SUCCESS;
+    if (sink != nullptr) {
+        ret = sink->SetAudioScene(audioSceneIn, scoExcludeFlag);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("SetAudioScene for sink %{public}u failed: %{public}d", pipeId, ret);
+        }
+    }
+    
+    if (source != nullptr) {
+        ret = source->SetAudioScene(audioSceneIn, scoExcludeFlag);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("SetAudioScene for source %{public}u failed: %{public}d", pipeId, ret);
+        }
+    }
+    
+    AUDIO_INFO_LOG("SetAudioSceneForPipe %{public}u completed with ret %{public}d", pipeId, ret);
+    return ret;
+}
+
 int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
     bool scoExcludeFlag)
 {
@@ -1651,18 +1673,21 @@ int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceType type, const Dev
     }
 
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
-        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "Capturer is not initialized", false),
+            "Capturer is not initialized");
         source->UpdateActiveDevice(type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
-        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
         sink->UpdateActiveDevice(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
-        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
-        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
-        source->UpdateActiveDevice(type);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
         sink->UpdateActiveDevice(deviceTypes);
+        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
+        source->UpdateActiveDevice(type);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
@@ -2183,6 +2208,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
             return nullptr;
         }
         AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+        if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+            AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
+        }
         sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
         pipeInfoGuard->SetReleaseFlag(false);
         return remoteObject;
@@ -2312,11 +2340,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
         CHECK_AND_CALL_FUNC_RETURN_RET(isSupportSate, nullptr,
             HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
-        HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-        std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-        if (deviceManager != nullptr) {
-            deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
-        }
+        (void)HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL,
+            "primary", AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
     }
 #ifdef FEATURE_APPGALLERY
     PolicyHandler::GetInstance().GetAndSaveClientType(resetConfig.appInfo.appUid,
@@ -2364,6 +2389,11 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
 
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
+    int32_t enableNewRoute = 0;
+    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    if (enableNewRoute == 1) {
+        return true;
+    }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         return config.rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL ||
             config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ||
@@ -2845,7 +2875,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
             info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
             info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI ||
-            info == HDI_ID_INFO_INTERPHONE;
+            info == HDI_ID_INFO_INTERPHONE || info == HDI_ID_INFO_LIVE;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {
@@ -3013,7 +3043,9 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
     }
 
     bool isMmap = devceClass == A2DP_FAST_CLASS || devceClass == MMAP_CLASS;
-    AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(isMmap, mute);
+    if (isMmap) {
+        AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(devceClass, mute);
+    }
 
     uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(devceClass);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
@@ -3315,7 +3347,7 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
         return SUCCESS;
     }
 
-    // if stream is fast, create when endpoint config to reduce power
+    // // if stream is fast, create when endpoint config to reduce power
     CHECK_AND_RETURN_RET(!NeedDelayCreateSink(idBase, idType, idInfo), SUCCESS);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
     if (sink == nullptr) {
@@ -3656,10 +3688,8 @@ int32_t AudioServer::GetRemoteAudioParameter(const std::string& networkId, int32
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() || ret, ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
-    value = deviceManager->GetAudioParameter(networkId.c_str(), static_cast<AudioParamKey>(key), condition);
+    value = HdiAdapterManager::GetInstance().GetAudioParameter(HDI_DEVICE_MANAGER_TYPE_REMOTE,
+        networkId, static_cast<AudioParamKey>(key), condition);
     AUDIO_INFO_LOG("Get valume %{public}s by key:%{public}d, condition:%{public}s",
         value.c_str(), key, condition.c_str());
     return SUCCESS;

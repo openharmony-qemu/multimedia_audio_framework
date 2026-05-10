@@ -28,8 +28,9 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioZone;
 class AudioZoneClientManager;
+class SessionTimeOutCallback;
 
-class AudioZoneService {
+class AudioZoneService : public SessionTimeOutCallback {
 public:
     static AudioZoneService &GetInstance();
 
@@ -69,9 +70,9 @@ public:
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
     void SetZoneDeviceVisible(bool visible);
     bool IsZoneDeviceVisible();
-    int32_t FindAudioZoneByUid(int32_t uid);
-    int32_t FindAudioZone(int32_t uid, StreamUsage usage);
-    virtual std::string FindAudioZoneNameByUid(int32_t uid);
+    int32_t FindAudioZoneByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE);
+    int32_t FindAudioZone(int32_t uid, StreamUsage usage, DeviceRole deviceRole = DEVICE_ROLE_NONE);
+    virtual std::string FindAudioZoneNameByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, DeviceType deviceType, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId, DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE);
@@ -88,7 +89,8 @@ public:
 
     AudioInterruptResult ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isRemoveFocusHis = false);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
@@ -111,6 +113,12 @@ public:
     void NotifyStreamSilentChange(uint32_t streamId);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     AudioScene GetAudioSceneFromAllZones();
+    AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+        const AudioSessionStrategy &strategy, const bool isStandalone = false,
+        const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID);
+    int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
+    // interfaces of SessionTimeOutCallback
+    void OnSessionTimeout(const int32_t pid) override;
 
 private:
     AudioZoneService()
@@ -123,6 +131,7 @@ private:
     AudioConnectedDevice &audioConnectedDevice_;
     std::shared_ptr<AudioInterruptService> interruptService_;
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
+    std::shared_ptr<SessionTimeOutCallback> sessionTimeoutCallbackPtr_;
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
@@ -135,7 +144,7 @@ private:
         const std::string &streamTag, const StreamUsage &usage);
     int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys);
     int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
-        const StreamUsage &usage);
+        const StreamUsage &usage, DeviceRole deviceRole);
     bool CheckIsZoneValid(int32_t zoneId);
     void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device);
 };

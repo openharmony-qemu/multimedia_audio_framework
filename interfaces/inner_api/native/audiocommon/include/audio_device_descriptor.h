@@ -252,6 +252,7 @@ public:
     VolumeBehavior volumeBehavior_;
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
+    bool hasStreamRunning_ = false;
     std::string dmDeviceInfo_ = "";
     HdPlaybackMode hdPlaybackMode_ = HD_NOT_SUPPORTED;
 
@@ -261,7 +262,7 @@ public:
     static constexpr uint32_t WEAR_AGAIN = 2;
 
 private:
-    uint32_t deviceSupportMmap_ = 1;
+    uint32_t deviceSupportMmap_ = 0; //only vaild on armusb
 
 private:
     bool IsOutput()

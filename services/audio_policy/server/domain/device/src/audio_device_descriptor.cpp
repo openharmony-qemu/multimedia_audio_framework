@@ -270,6 +270,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     interruptGroupId_ = deviceDescriptor.interruptGroupId_;
     networkId_ = deviceDescriptor.networkId_;
     dmDeviceType_ = deviceDescriptor.dmDeviceType_;
+    hasStreamRunning_ = deviceDescriptor.hasStreamRunning_;
     displayName_ = deviceDescriptor.displayName_;
     model_ = deviceDescriptor.model_;
     deviceCategory_ = deviceDescriptor.deviceCategory_;
@@ -314,6 +315,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     interruptGroupId_ = deviceDescriptor->interruptGroupId_;
     networkId_ = deviceDescriptor->networkId_;
     dmDeviceType_ = deviceDescriptor->dmDeviceType_;
+    hasStreamRunning_ = deviceDescriptor->hasStreamRunning_;
     displayName_ = deviceDescriptor->displayName_;
     model_ = deviceDescriptor->model_;
     deviceCategory_ = deviceDescriptor->deviceCategory_;

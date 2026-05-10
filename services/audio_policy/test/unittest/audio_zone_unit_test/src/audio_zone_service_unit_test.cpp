@@ -257,6 +257,74 @@ HWTEST_F(AudioZoneServiceUnitTest, FindAudioZone_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: FindAudioZone_WithSupportType_001
+ * @tc.desc  : Test supportType filter with output and input query.
+ * @tc.note  : FindAudioZone(uid, usage) uses DEVICE_ROLE_NONE by default, which bypasses
+ *             supportType check in IsSupportDeviceRole(). To test supportType filtering,
+ *             use FindAudioZoneByUid(uid, deviceRole) or FindAudioZone(uid, usage, deviceRole).
+ */
+HWTEST_F(AudioZoneServiceUnitTest, FindAudioZone_WithSupportType_001, TestSize.Level1)
+{
+    AudioZoneContext playOnlyContext;
+    playOnlyContext.supportType_ = AudioZoneSupportType::PLAY_ONLY;
+    int32_t playOnlyZoneId = AudioZoneService::GetInstance().CreateAudioZone("PlayOnlyZone", playOnlyContext, 0);
+
+    AudioZoneContext recordOnlyContext;
+    recordOnlyContext.supportType_ = AudioZoneSupportType::RECORD_ONLY;
+    int32_t recordOnlyZoneId = AudioZoneService::GetInstance().CreateAudioZone("RecordOnlyZone", recordOnlyContext, 0);
+
+    EXPECT_EQ(AudioZoneService::GetInstance().AddUidToAudioZone(playOnlyZoneId, 2001), SUCCESS);
+    EXPECT_EQ(AudioZoneService::GetInstance().AddUidToAudioZone(recordOnlyZoneId, 2002), SUCCESS);
+
+    // PlayOnly zone supports OUTPUT_DEVICE, should match when querying with OUTPUT_DEVICE role
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZoneByUid(2001, OUTPUT_DEVICE), playOnlyZoneId);
+    // PlayOnly zone does NOT support INPUT_DEVICE, should return 0
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZoneByUid(2001, INPUT_DEVICE), 0);
+
+    // RecordOnly zone supports INPUT_DEVICE, should match when querying with INPUT_DEVICE role
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZoneByUid(2002, INPUT_DEVICE), recordOnlyZoneId);
+    // RecordOnly zone does NOT support OUTPUT_DEVICE, should return 0
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZoneByUid(2002, OUTPUT_DEVICE), 0);
+
+    // FindAudioZone(uid, usage) uses DEVICE_ROLE_NONE default, which bypasses supportType check
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(2001, STREAM_USAGE_MEDIA), playOnlyZoneId);
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(2002, STREAM_USAGE_MEDIA), recordOnlyZoneId);
+
+    // To properly test supportType with FindAudioZone, pass explicit deviceRole parameter
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(2001, STREAM_USAGE_MEDIA, OUTPUT_DEVICE), playOnlyZoneId);
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(2001, STREAM_USAGE_MEDIA, INPUT_DEVICE), 0);
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(2002, STREAM_USAGE_MEDIA, OUTPUT_DEVICE), 0);
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(2002, STREAM_USAGE_MEDIA, INPUT_DEVICE), recordOnlyZoneId);
+
+    auto playOnlyDesc = AudioZoneService::GetInstance().GetAudioZone(playOnlyZoneId);
+    ASSERT_NE(playOnlyDesc, nullptr);
+    EXPECT_EQ(playOnlyDesc->supportType_, static_cast<int32_t>(AudioZoneSupportType::PLAY_ONLY));
+
+    auto recordOnlyDesc = AudioZoneService::GetInstance().GetAudioZone(recordOnlyZoneId);
+    ASSERT_NE(recordOnlyDesc, nullptr);
+    EXPECT_EQ(recordOnlyDesc->supportType_, static_cast<int32_t>(AudioZoneSupportType::RECORD_ONLY));
+
+    // Update context to PLAY_AND_RECORD, now both OUTPUT and INPUT should match
+    AudioZoneContext updateContext;
+    updateContext.supportType_ = AudioZoneSupportType::PLAY_AND_RECORD;
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(recordOnlyZoneId, updateContext);
+
+    // After update, recordOnlyZoneId should now support both OUTPUT and INPUT
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZoneByUid(2002, OUTPUT_DEVICE), recordOnlyZoneId);
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZoneByUid(2002, INPUT_DEVICE), recordOnlyZoneId);
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(2002, STREAM_USAGE_MEDIA, OUTPUT_DEVICE), recordOnlyZoneId);
+
+    // Verify descriptor reflects updated supportType
+    recordOnlyDesc = AudioZoneService::GetInstance().GetAudioZone(recordOnlyZoneId);
+    ASSERT_NE(recordOnlyDesc, nullptr);
+    EXPECT_EQ(recordOnlyDesc->supportType_, static_cast<int32_t>(AudioZoneSupportType::PLAY_AND_RECORD));
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(playOnlyZoneId);
+    AudioZoneService::GetInstance().ReleaseAudioZone(recordOnlyZoneId);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
  * @tc.number: GetDeviceDescriptor
  * @tc.desc  : Test GetDeviceDescriptor interface.
  */
@@ -417,6 +485,179 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_EnableSystemVolumeProxy_001,
     svc.UnRegisterAudioZoneClient(mainPid);
     svc.UnRegisterAudioZoneClient(zonePid);
     svc.ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AddUidToAudioZone_001
+ * @tc.desc  : Test migrating uid from primary zone to extension zone.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddUidToAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    int32_t uid = 1001;
+    int32_t currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, DEFAULT_ZONEID);
+
+    int32_t ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, uid);
+    EXPECT_EQ(ret, SUCCESS);
+
+    currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId);
+    auto descriptor = AudioZoneService::GetInstance().GetAudioZone(zoneId);
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_TRUE(descriptor->uids_.find(uid) != descriptor->uids_.end());
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AddUidToAudioZone_002
+ * @tc.desc  : Test migrating uid from extension zone 1 to extension zone 2.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddUidToAudioZone_002, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    ASSERT_NE(zoneId1, ERROR);
+    int32_t zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("Zone2", context, 0);
+    ASSERT_NE(zoneId2, ERROR);
+
+    int32_t uid = 1001;
+    int32_t ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId1);
+    auto descriptor1 = AudioZoneService::GetInstance().GetAudioZone(zoneId1);
+    ASSERT_NE(descriptor1, nullptr);
+    EXPECT_TRUE(descriptor1->uids_.find(uid) != descriptor1->uids_.end());
+
+    ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId2, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId2);
+    descriptor1 = AudioZoneService::GetInstance().GetAudioZone(zoneId1);
+    ASSERT_NE(descriptor1, nullptr);
+    EXPECT_TRUE(descriptor1->uids_.find(uid) == descriptor1->uids_.end());
+    auto descriptor2 = AudioZoneService::GetInstance().GetAudioZone(zoneId2);
+    ASSERT_NE(descriptor2, nullptr);
+    EXPECT_TRUE(descriptor2->uids_.find(uid) != descriptor2->uids_.end());
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId2);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: RemoveUidFromAudioZone_001
+ * @tc.desc  : Test migrating uid from extension zone back to primary zone.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, RemoveUidFromAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    ASSERT_NE(zoneId1, ERROR);
+
+    int32_t uid = 1001;
+    int32_t ret = AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, zoneId1);
+
+    ret = AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId1, uid);
+    EXPECT_EQ(ret, SUCCESS);
+    currentZone = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    EXPECT_EQ(currentZone, DEFAULT_ZONEID);
+    auto descriptor = AudioZoneService::GetInstance().GetAudioZone(zoneId1);
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_TRUE(descriptor->uids_.find(uid) == descriptor->uids_.end());
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: UpdateContextForAudioZone_001
+ * @tc.desc  : Test UpdateContextForAudioZone with valid zone, zone exists and context updated successfully.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, UpdateContextForAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    context.supportType_ = AudioZoneSupportType::PLAY_ONLY;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("UpdateContextTestZone1", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    auto zone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(zone, nullptr);
+
+    auto descriptor = AudioZoneService::GetInstance().GetAudioZone(zoneId);
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->supportType_, static_cast<int32_t>(AudioZoneSupportType::PLAY_ONLY));
+
+    AudioZoneContext newContext;
+    newContext.supportType_ = AudioZoneSupportType::PLAY_AND_RECORD;
+    newContext.focusStrategy_ = AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY;
+    newContext.backStrategy_ = MediaBackStrategy::KEEP;
+    newContext.initMode_ = InitMode::APP;
+
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(zoneId, newContext);
+
+    descriptor = AudioZoneService::GetInstance().GetAudioZone(zoneId);
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->supportType_, static_cast<int32_t>(AudioZoneSupportType::PLAY_AND_RECORD));
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: UpdateContextForAudioZone_002
+ * @tc.desc  : Test UpdateContextForAudioZone with invalid zoneId, zone not found branch.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, UpdateContextForAudioZone_002, TestSize.Level1)
+{
+    int32_t invalidZoneId = -1;  // Invalid zoneId that does not exist
+    AudioZoneContext newContext;
+    newContext.supportType_ = AudioZoneSupportType::PLAY_AND_RECORD;
+
+    // Verify zone does not exist before update
+    auto zone = AudioZoneService::GetInstance().FindZone(invalidZoneId);
+    EXPECT_EQ(zone, nullptr);
+
+    auto descriptor = AudioZoneService::GetInstance().GetAudioZone(invalidZoneId);
+    EXPECT_EQ(descriptor, nullptr);
+
+    // Call with invalid zoneId, should not crash
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(invalidZoneId, newContext);
+
+    // Verify zone still does not exist after update attempt
+    zone = AudioZoneService::GetInstance().FindZone(invalidZoneId);
+    EXPECT_EQ(zone, nullptr);
+
+    descriptor = AudioZoneService::GetInstance().GetAudioZone(invalidZoneId);
+    EXPECT_EQ(descriptor, nullptr);
+
+    // Test with zoneId that is positive but not exists
+    int32_t nonExistentZoneId = 99999;
+
+    // Verify zone does not exist before update
+    zone = AudioZoneService::GetInstance().FindZone(nonExistentZoneId);
+    EXPECT_EQ(zone, nullptr);
+
+    descriptor = AudioZoneService::GetInstance().GetAudioZone(nonExistentZoneId);
+    EXPECT_EQ(descriptor, nullptr);
+
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(nonExistentZoneId, newContext);
+
+    // Verify zone still does not exist after update attempt
+    zone = AudioZoneService::GetInstance().FindZone(nonExistentZoneId);
+    EXPECT_EQ(zone, nullptr);
+
+    descriptor = AudioZoneService::GetInstance().GetAudioZone(nonExistentZoneId);
+    EXPECT_EQ(descriptor, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

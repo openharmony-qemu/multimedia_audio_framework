@@ -152,12 +152,12 @@ void VolumeDataMaintainerGetMicMuteStateFuzzTest(const uint8_t *rawData, size_t 
     volumeDataMaintainerRet->GetMicMuteState(isMuteRet);
 }
 
-void VolumeDataMaintainerGetDeviceTypeNameFuzzTest(const uint8_t *rawData, size_t size)
+void VolumeDataMaintainerGetDeviceGroupTypeKeyFuzzTest(const uint8_t *rawData, size_t size)
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
-    volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
 }
 
 void VolumeDataMaintainerGetAppMuteFuzzTest(const uint8_t *rawData, size_t size)
@@ -185,7 +185,6 @@ void VolumeDataMaintainerSetMuteAffectedToMuteStatusDataBaseFuzzTest(const uint8
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -197,7 +196,6 @@ void VolumeDataMaintainerSetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, s
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -211,7 +209,6 @@ void VolumeDataMaintainerGetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, s
 {
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
-    volumeDataMaintainer->volumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -377,7 +374,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::VolumeDataMaintainerGetSafeVolumeTimeFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerRegisterClonedFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerGetMicMuteStateFuzzTest,
-    OHOS::AudioStandard::VolumeDataMaintainerGetDeviceTypeNameFuzzTest,
+    OHOS::AudioStandard::VolumeDataMaintainerGetDeviceGroupTypeKeyFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerGetAppMuteFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerGetAppMuteOwnedFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerSetMuteAffectedToMuteStatusDataBaseFuzzTest,

@@ -91,6 +91,7 @@ public:
     virtual std::string GetVoiceBeautifierType();
     virtual void SetAudioNodeWorkMode(PipelineWorkMode workMode);
     virtual PipelineWorkMode GetAudioNodeWorkMode();
+    virtual int32_t PrintNodeInfo(std::string &nodeInfo);
     std::vector<AudioSuitePcmBuffer*> PullOutputData(
         PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength);
     // Connection management

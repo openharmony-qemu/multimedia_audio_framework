@@ -225,6 +225,13 @@ void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b);
 void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
+int16_t ConvertSampleToS16(const uint8_t *samplePtr, AudioSampleFormat format);
+void ConvertSampleFromS16(int16_t s16Sample, uint8_t *outputPtr, AudioSampleFormat format);
+void ConvertBufferToS16(const uint8_t *input, uint32_t samples, int16_t *output, AudioSampleFormat format);
+void ConvertBufferFromS16(const int16_t *input, uint32_t samples, uint8_t *output, AudioSampleFormat format);
+
+float CapMax(float v);
+
 std::string GetEncryptStr(const std::string &str);
 std::string ConvertNetworkId(const std::string &networkId);
 std::string Hide(const std::string &str);
@@ -615,6 +622,8 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
     HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT = 16,
     HDI_CAPTURE_OFFSET_INTERPHONE = 17,
+    HDI_CAPTURE_OFFSET_LIVE = 21,
+    HDI_CAPTURE_OFFSET_CAMCORDER = 23,
 };
 
 enum HdiRenderOffset : uint32_t {

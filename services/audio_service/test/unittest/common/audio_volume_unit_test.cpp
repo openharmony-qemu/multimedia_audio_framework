@@ -27,6 +27,9 @@ namespace AudioStandard {
 const int32_t STREAM_MUSIC_TEST = STREAM_MUSIC;
 const int32_t STREAM_VOICE_TEST = STREAM_VOICE_CALL;
 const int32_t STREAM_USAGE_MEDIA_TEST = 1;
+const uint32_t TEST_PIPE_ID = 100;
+const uint32_t TEST_PIPE_ID_2 = 200;
+const uint32_t TEST_PIPE_ID_INVALID = 0xFFFFFFFF;
 
 class AudioVolumeUnitTest : public testing::Test {
 public:
@@ -80,9 +83,8 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_001, TestSize.Level1)
 {
     uint32_t sessionId = 1;
     int32_t volumeType = STREAM_MUSIC_TEST;
-    std::string deviceClass = "speaker";
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 1.0f);
 }
 
@@ -96,10 +98,8 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_002, TestSize.Level1)
 {
     uint32_t sessionId = 1;
     int32_t volumeType = STREAM_VOICE_TEST;
-    std::string deviceClass = "speaker";
-    AudioVolume::GetInstance()->SetVgsVolumeSupported(true);
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 1.0f);
 }
 
@@ -113,7 +113,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
 {
     uint32_t sessionId = 2;
     int32_t volumeType = STREAM_MUSIC;
-    std::string deviceClass = "speaker";
     int32_t streamType = STREAM_MUSIC;
     int32_t streamUsage = STREAM_USAGE_MUSIC;
     int32_t uid = 1000;
@@ -124,11 +123,11 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
-    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, true);
-    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, true);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
 
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 0.0f);
 }
 
@@ -142,7 +141,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
 {
     uint32_t sessionId = 2;
     int32_t volumeType = STREAM_MUSIC;
-    std::string deviceClass = "speaker";
     int32_t streamType = STREAM_MUSIC;
     int32_t streamUsage = STREAM_USAGE_MUSIC;
     int32_t uid = 1000;
@@ -153,11 +151,11 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
-    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
-    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
 
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 1.0f);
 }
 
@@ -278,128 +276,6 @@ HWTEST_F(AudioVolumeUnitTest, SetDualStreamVolumeMute_001, TestSize.Level1)
     float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
     EXPECT_EQ(retVolume, 0);
 }
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_001
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_001, TestSize.Level1)
-{
-    SystemVolume systemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5, false);
-    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
-    EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_002
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_002, TestSize.Level1)
-{
-    SystemVolume systemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5, false);
-    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
-    SystemVolume systemVolume2(STREAM_MUSIC_TEST, "speaker", 1.0f, 5, false);
-    AudioVolume::GetInstance()->SetSystemVolume(systemVolume2);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
-    EXPECT_EQ(it->second.volume_, 1.0f);
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_003
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_003, TestSize.Level1)
-{
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
-    EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_004
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_004, TestSize.Level1)
-{
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5);
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC_TEST, "speaker", 1.0f, 5);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
-    EXPECT_EQ(it->second.volume_, 1.0f);
-}
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolumeMute_001
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_001, TestSize.Level1)
-{
-    int32_t volumeType = STREAM_MUSIC_TEST;
-    std::string deviceClass = "speaker";
-    bool isMuted = true;
-    AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
-    EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolumeMute_002
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_002, TestSize.Level1)
-{
-    int32_t volumeType = STREAM_MUSIC_TEST;
-    std::string deviceClass = "test";
-    bool isMuted = true;
-    AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
-    EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
-}
-
-#ifdef MULTI_ALARM_LEVEL
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolumeMute_003
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_003, TestSize.Level1)
-{
-    AudioVolume::GetInstance()->systemVolume_.clear();
-    std::string deviceClass = "test";
-    bool isMuted = true;
-    AudioVolume::GetInstance()->SetSystemVolumeMute(STREAM_ANNOUNCEMENT, deviceClass, isMuted);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
-    EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolumeMute_004
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_004, TestSize.Level1)
-{
-    AudioVolume::GetInstance()->systemVolume_.clear();
-    std::string deviceClass = "test";
-    bool isMuted = true;
-    AudioVolume::GetInstance()->SetSystemVolumeMute(STREAM_EMERGENCY, deviceClass, isMuted);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
-    EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
-}
-#endif
 
 /**
  * @tc.name  : Test AudioVolume API
@@ -639,8 +515,8 @@ HWTEST_F(AudioVolumeUnitTest, Monitor_001, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     bool isVKB = true;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
-    audioVolume->streamVolume_.insert({sessionId, streamVolume});
+    audioVolume->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
     audioVolume->Monitor(sessionId, true);
 }
 
@@ -792,7 +668,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_005, TestSize.Level1)
 {
     uint32_t sessionId = 123;
     int32_t streamType = 5;
-    const std::string deviceClass = "test";
     VolumeValues volumes;
 
     audioVolumeTest->streamVolume_.clear();
@@ -803,10 +678,10 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_005, TestSize.Level1)
     bool isSystemApp = true;
     int32_t mode = 0;
     bool isVKB = false;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
 
-    audioVolumeTest->GetVolume(sessionId, streamType, deviceClass, &volumes);
+    audioVolumeTest->GetVolume(sessionId, streamType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(audioVolumeTest->streamVolume_.empty(), false);
 }
 
@@ -828,11 +703,16 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_001, TestSize.Level1)
     int32_t streamUsage = 0;
     int32_t uid = 0;
     int32_t pid = 0;
-    bool isSystemApp = true;
+    bool isSystemApp = false;
     int32_t mode = 0;
-    bool isVKB = false;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+    
+    std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
+    std::map<std::string, std::string> obj;
+    obj["1"] = "1";
+    doNotDisturbStatusWhiteList.push_back(obj);
+    audioVolumeTest->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
 
     uint32_t ret = audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
     EXPECT_EQ(ret, 1);
@@ -858,8 +738,8 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_002, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
 
     uint32_t ret = audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
     EXPECT_EQ(ret, 1);
@@ -885,9 +765,14 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_003, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
-    audioVolumeTest->doNotDisturbStatusWhiteListVolume_.insert({appUid, 1});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+    
+    std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
+    std::map<std::string, std::string> obj;
+    obj[std::to_string(appUid)] = "1";
+    doNotDisturbStatusWhiteList.push_back(obj);
+    audioVolumeTest->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
 
     uint32_t ret = audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
     EXPECT_EQ(ret, 1);
@@ -913,9 +798,14 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_004, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
-    audioVolumeTest->doNotDisturbStatusWhiteListVolume_.insert({1, 1});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+    
+    std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
+    std::map<std::string, std::string> obj;
+    obj["1"] = "1";
+    doNotDisturbStatusWhiteList.push_back(obj);
+    audioVolumeTest->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
 
     uint32_t ret = audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
     EXPECT_EQ(ret, 1);
@@ -924,7 +814,7 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_004, TestSize.Level1)
 /**
  * @tc.name  : Test GetDoNotDisturbStatusVolume API
  * @tc.type  : FUNC
- * @tc.number: GetDoNotDisturbStatusVolume_005
+ * @tc.number: GetDoNotDisturbStatusVolume_004
  * @tc.desc  : Test GetDoNotDisturbStatusVolume interface.
  */
 HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_005, TestSize.Level1)
@@ -941,9 +831,14 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_005, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
-    audioVolumeTest->doNotDisturbStatusWhiteListVolume_.insert({1, 1});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+    
+    std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
+    std::map<std::string, std::string> obj;
+    obj["1"] = "1";
+    doNotDisturbStatusWhiteList.push_back(obj);
+    audioVolumeTest->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
 
     uint32_t ret = audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
     EXPECT_EQ(ret, 1);
@@ -1155,8 +1050,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_003, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1184,8 +1079,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_004, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1193,8 +1088,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_004, TestSize.Level1)
 
     auto it = audioVolumeTest->streamVolume_.find(sessionId);
     EXPECT_NE(it, audioVolumeTest->streamVolume_.end());
-    EXPECT_EQ(it->second.appVolume_, 0.0f);
-    EXPECT_EQ(it->second.totalVolume_, 0.0f);
+    EXPECT_EQ(it->second->appVolume_, 0.0f);
+    EXPECT_EQ(it->second->GetTotalVolume(), 0.0f);
 }
 
 /**
@@ -1218,16 +1113,16 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_005, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
     EXPECT_EQ(audioVolumeTest->streamVolume_.empty(), false);
 
     auto it = audioVolumeTest->streamVolume_.find(sessionId);
-    EXPECT_EQ(it->second.appVolume_, 1.0f);
-    EXPECT_EQ(it->second.totalVolume_, 1.0f);
+    EXPECT_EQ(it->second->appVolume_, 1.0f);
+    EXPECT_EQ(it->second->GetTotalVolume(), 1.0f);
 }
 
 /**
@@ -1251,16 +1146,16 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_006, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 1;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
     EXPECT_EQ(audioVolumeTest->streamVolume_.empty(), false);
 
     auto it = audioVolumeTest->streamVolume_.find(sessionId);
-    EXPECT_EQ(it->second.appVolume_, 1.0f);
-    EXPECT_EQ(it->second.totalVolume_, 1.0f);
+    EXPECT_EQ(it->second->appVolume_, 1.0f);
+    EXPECT_EQ(it->second->GetTotalVolume(), 1.0f);
 }
 
 /**
@@ -1313,8 +1208,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_003, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 1;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1346,8 +1241,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_004, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 1;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1355,8 +1250,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_004, TestSize.Level1)
     EXPECT_EQ(appVolume.totalVolume_, 0.0f);
 
     auto it = audioVolumeTest->streamVolume_.find(appUid);
-    EXPECT_EQ(it->second.appVolume_, 0.0f);
-    EXPECT_EQ(it->second.totalVolume_, 0.0f);
+    EXPECT_EQ(it->second->appVolume_, 0.0f);
+    EXPECT_EQ(it->second->GetTotalVolume(), 0.0f);
 }
 
 /**
@@ -1384,8 +1279,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_005, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1393,8 +1288,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_005, TestSize.Level1)
     EXPECT_EQ(appVolume.totalVolume_, 2.0f);
 
     auto it = audioVolumeTest->streamVolume_.find(appUid);
-    EXPECT_EQ(it->second.appVolume_, 1.0f);
-    EXPECT_EQ(it->second.totalVolume_, 1.0f);
+    EXPECT_EQ(it->second->appVolume_, 1.0f);
+    EXPECT_EQ(it->second->GetTotalVolume(), 1.0f);
 }
 
 /**
@@ -1421,8 +1316,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_006, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, false);
-    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, false)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1430,79 +1325,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_006, TestSize.Level1)
     EXPECT_EQ(appVolume.totalVolume_, 2.0f);
 
     auto it = audioVolumeTest->streamVolume_.find(appUid);
-    EXPECT_EQ(it->second.appVolume_, 2.0f);
+    EXPECT_EQ(it->second->appVolume_, 2.0f);
 }
-
-/**
- * @tc.name  : Test SetSystemVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_001
- * @tc.desc  : Test AudioVolume interface
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_005, TestSize.Level1)
-{
-    audioVolumeTest->systemVolume_.clear();
-    int32_t volumeType = 0;
-    std::string deviceClass = "test";
-    float volume = 2.0f;
-    int32_t volumeLevel = 2;
-    audioVolumeTest->SetSystemVolume(volumeType, deviceClass, volume, volumeLevel);
-
-    EXPECT_EQ(audioVolumeTest->systemVolume_.empty(), false);
-
-    std::string key = std::to_string(volumeType) + deviceClass;
-    auto it = audioVolumeTest->systemVolume_.find(key);
-    EXPECT_EQ(it->second.totalVolume_, volume);
-}
-
-#ifdef MULTI_ALARM_LEVEL
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_006
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_006, TestSize.Level1)
-{
-    audioVolumeTest->systemVolume_.clear();
-    std::string deviceClass = "test";
-    float volume = 2.0f;
-    int32_t volumeLevel = 2;
-    audioVolumeTest->SetSystemVolume(STREAM_ANNOUNCEMENT, deviceClass, volume, volumeLevel);
-    EXPECT_EQ(audioVolumeTest->systemVolume_.empty(), true);
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_007
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_007, TestSize.Level1)
-{
-    audioVolumeTest->systemVolume_.clear();
-    std::string deviceClass = "test";
-    float volume = 2.0f;
-    int32_t volumeLevel = 2;
-    audioVolumeTest->SetSystemVolume(STREAM_EMERGENCY, deviceClass, volume, volumeLevel);
-    EXPECT_EQ(audioVolumeTest->systemVolume_.empty(), true);
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: SetSystemVolume_008
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_008, TestSize.Level1)
-{
-    audioVolumeTest->systemVolume_.clear();
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_ANNOUNCEMENT, "speaker", 0.5f, 5);
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_EMERGENCY, "speaker", 1.0f, 5);
-    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
-    EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
-}
-#endif
 
 /**
  * @tc.name  : Test GetSimpleBufferAvg API
@@ -1526,13 +1350,12 @@ HWTEST_F(AudioVolumeUnitTest, GetSimpleBufferAvg_002, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetCurVolume_001, TestSize.Level1)
 {
     uint32_t sessionId = 1;
-    const char *deviceClass = "device";
     struct VolumeValues volumes;
-    float result = GetCurVolume(sessionId, nullptr, deviceClass, &volumes);
+    float result = GetCurVolume(sessionId, nullptr, TEST_PIPE_ID_INVALID, &volumes);
     EXPECT_FLOAT_EQ(result, 1.0f);
 
     const char *streamType = "stream";
-    result = GetCurVolume(sessionId, streamType, nullptr, &volumes);
+    result = GetCurVolume(sessionId, streamType, TEST_PIPE_ID_INVALID, &volumes);
     EXPECT_FLOAT_EQ(result, 1.0f);
 }
 
@@ -1619,8 +1442,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_001, TestSize.Level1)
     AppVolume appVolume(appUid, 1.0f, 0, true);
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
 
@@ -1644,8 +1467,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_002, TestSize.Level1)
     AudioStreamType streamType = STREAM_RING;
     StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
 
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
 
@@ -1672,8 +1495,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_003, TestSize.Level1)
     AppVolume appVolume(appUid, 1.0f, 0, true);
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
 
@@ -1701,8 +1524,8 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_004, TestSize.Level1)
     AppVolume appVolume(appUid, 1.0f, 0, true);
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     bool result = audioVolumeTest->SetAppRingMuted(anotherAppUid, isMuted);
 
@@ -1722,7 +1545,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_006, TestSize.Level1)
 {
     uint32_t sessionId = 2;
     int32_t volumeType = STREAM_VOICE_ASSISTANT;
-    std::string deviceClass = "speaker";
     int32_t streamType = STREAM_MUSIC;
     int32_t streamUsage = STREAM_USAGE_MUSIC;
     int32_t uid = 1000;
@@ -1734,32 +1556,32 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_006, TestSize.Level1)
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
-    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, true);
-    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, true);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
 
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 0.0f);
 
     streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, true, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
-    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumeType = STREAM_SYSTEM;
-    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumeType = STREAM_VOICE_CALL;
-    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumeType = STREAM_VOICE_COMMUNICATION;
-    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumes = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volumes.volumeStream, 1.0f);
 }
 
@@ -1772,10 +1594,9 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_006, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolume_007, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = 0.0f;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 0.0f);
 }
 
@@ -1788,10 +1609,9 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_007, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolume_008, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = 0.5f;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 0.5f);
 }
 
@@ -1804,10 +1624,9 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_008, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolume_009, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = 1.0f;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, TEST_PIPE_ID, &volumes);
     EXPECT_EQ(volume, 1.0f);
 }
 
@@ -1820,10 +1639,9 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_009, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolume_010, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
 
@@ -1836,12 +1654,10 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_010, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_001, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
     AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    AudioVolume::GetInstance()->isVgsVolumeSupported_ = true;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
 
@@ -1854,12 +1670,10 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_001, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_002, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
     AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    AudioVolume::GetInstance()->isVgsVolumeSupported_ = false;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
 
@@ -1872,12 +1686,10 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_002, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_003, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
     AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioVolume::GetInstance()->isVgsVolumeSupported_ = false;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
 
@@ -1890,12 +1702,10 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_003, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_004, TestSize.Level1)
 {
     uint32_t sessionId = 123;
-    std::string deviceClass = "test";
     struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
     AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    AudioVolume::GetInstance()->isVgsVolumeSupported_ = true;
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_RING, deviceClass, &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_RING, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
 
@@ -1940,6 +1750,76 @@ HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_004, TestSize.Level1)
     AudioVolume::GetInstance()->SetStopFadeoutState(streamIndex, 1);
     uint32_t result = AudioVolume::GetInstance()->GetStopFadeoutState(streamIndex);
     EXPECT_EQ(result, 1);
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_PCVolumeEnabled
+ * @tc.number: ShouldApplySystemAppVolume_001
+ * @tc.desc  : Test when IsPCVolumeEnable returns true
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_PCVolumeEnabled, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    bool isPCVolumeEnabled = true;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_TRUE(result);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_AppIndividualVolumeDisabled
+ * @tc.number: ShouldApplySystemAppVolume_002
+ * @tc.desc  : Test when appIndividualVolumeEnabled is false
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_AppIndividualVolumeDisabled, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_StreamMusic
+ * @tc.number: ShouldApplySystemAppVolume_003
+ * @tc.desc  : Test returns true for STREAM_MUSIC when appIndividualVolumeEnabled is true
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_StreamMusic, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_TRUE(result);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_StreamNotMusic
+ * @tc.number: ShouldApplySystemAppVolume_004
+ * @tc.desc  : Test returns false for non-MUSIC stream when appIndividualVolumeEnabled is true
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_StreamNotMusic, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_FALSE(result);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
 }
 
 /**
@@ -2016,8 +1896,8 @@ HWTEST_F(AudioVolumeUnitTest, SetNonInterruptMute_001, TestSize.Level1)
     AppVolume appVolume(appUid, 1.0f, 0, true);
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     AudioVolume::GetInstance()->SetNonInterruptMute(sessionId, isMuted);
     float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
@@ -2025,6 +1905,643 @@ HWTEST_F(AudioVolumeUnitTest, SetNonInterruptMute_001, TestSize.Level1)
 
     audioVolumeTest->appVolume_.clear();
     audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test SetPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolume_001
+ * @tc.desc  : Test SetPipeVolume interface - normal case
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolume_001, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    auto it = AudioVolume::GetInstance()->pipeVolume_.find(key);
+    EXPECT_TRUE(it != AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+/**
+ * @tc.name  : Test SetPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolume_002
+ * @tc.desc  : Test SetPipeVolume interface - update case
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolume_002, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    PipeVolume pipeVolume2(TEST_PIPE_ID, STREAM_MUSIC, 1.0f, 10, true);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume2);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    auto it = AudioVolume::GetInstance()->pipeVolume_.find(key);
+    EXPECT_TRUE(it != AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_EQ(it->second->volume_, 1.0f);
+}
+
+/**
+ * @tc.name  : Test SetPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolume_003
+ * @tc.desc  : Test SetPipeVolume interface - different volumeType on same pipeId
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolume_003, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume1(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume1);
+    PipeVolume pipeVolume2(TEST_PIPE_ID, STREAM_VOICE_CALL, 0.8f, 8, true);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume2);
+    std::string key1 = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    std::string key2 = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_VOICE_CALL);
+    EXPECT_TRUE(AudioVolume::GetInstance()->pipeVolume_.find(key1) != AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_TRUE(AudioVolume::GetInstance()->pipeVolume_.find(key2) != AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+/**
+ * @tc.name  : Test SetPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolume_004
+ * @tc.desc  : Test SetPipeVolume interface - different pipeId
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolume_004, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume1(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume1);
+    PipeVolume pipeVolume2(TEST_PIPE_ID_2, STREAM_MUSIC, 0.8f, 8, true);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume2);
+    std::string key1 = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    std::string key2 = std::to_string(TEST_PIPE_ID_2) + "|" + std::to_string(STREAM_MUSIC);
+    EXPECT_TRUE(AudioVolume::GetInstance()->pipeVolume_.find(key1) != AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_TRUE(AudioVolume::GetInstance()->pipeVolume_.find(key2) != AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+#ifdef MULTI_ALARM_LEVEL
+/**
+ * @tc.name  : Test SetPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolume_005
+ * @tc.desc  : Test SetPipeVolume interface - STREAM_ANNOUNCEMENT not settable
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolume_005, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_ANNOUNCEMENT, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_ANNOUNCEMENT);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+/**
+ * @tc.name  : Test SetPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolume_006
+ * @tc.desc  : Test SetPipeVolume interface - STREAM_EMERGENCY not settable
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolume_006, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_EMERGENCY, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_EMERGENCY);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+#endif
+
+/**
+ * @tc.name  : Test SetPipeVolumeMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolumeMute_001
+ * @tc.desc  : Test SetPipeVolumeMute interface - set mute true
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolumeMute_001, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    AudioVolume::GetInstance()->SetPipeVolumeMute(TEST_PIPE_ID, STREAM_MUSIC, true);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    auto it = AudioVolume::GetInstance()->pipeVolume_.find(key);
+    EXPECT_TRUE(it != AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_EQ(it->second->isMuted_, true);
+}
+
+/**
+ * @tc.name  : Test SetPipeVolumeMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolumeMute_002
+ * @tc.desc  : Test SetPipeVolumeMute interface - set mute false
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolumeMute_002, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, true);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    AudioVolume::GetInstance()->SetPipeVolumeMute(TEST_PIPE_ID, STREAM_MUSIC, false);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    auto it = AudioVolume::GetInstance()->pipeVolume_.find(key);
+    EXPECT_TRUE(it != AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_EQ(it->second->isMuted_, false);
+}
+
+/**
+ * @tc.name  : Test SetPipeVolumeMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolumeMute_003
+ * @tc.desc  : Test SetPipeVolumeMute interface - non-existent entry
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolumeMute_003, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    AudioVolume::GetInstance()->SetPipeVolumeMute(TEST_PIPE_ID, STREAM_MUSIC, true);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+#ifdef MULTI_ALARM_LEVEL
+/**
+ * @tc.name  : Test SetPipeVolumeMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolumeMute_004
+ * @tc.desc  : Test SetPipeVolumeMute interface - STREAM_ANNOUNCEMENT not mutable
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolumeMute_004, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    AudioVolume::GetInstance()->SetPipeVolumeMute(TEST_PIPE_ID, STREAM_ANNOUNCEMENT, true);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_ANNOUNCEMENT);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+/**
+ * @tc.name  : Test SetPipeVolumeMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetPipeVolumeMute_005
+ * @tc.desc  : Test SetPipeVolumeMute interface - STREAM_EMERGENCY not mutable
+ */
+HWTEST_F(AudioVolumeUnitTest, SetPipeVolumeMute_005, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    AudioVolume::GetInstance()->SetPipeVolumeMute(TEST_PIPE_ID, STREAM_EMERGENCY, true);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_EMERGENCY);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+#endif
+
+/**
+ * @tc.name  : Test RemovePipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: RemovePipeVolume_001
+ * @tc.desc  : Test RemovePipeVolume interface - remove existing entry
+ */
+HWTEST_F(AudioVolumeUnitTest, RemovePipeVolume_001, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    AudioVolume::GetInstance()->RemovePipeVolume(TEST_PIPE_ID, STREAM_MUSIC);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+/**
+ * @tc.name  : Test RemovePipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: RemovePipeVolume_002
+ * @tc.desc  : Test RemovePipeVolume interface - remove non-existent entry
+ */
+HWTEST_F(AudioVolumeUnitTest, RemovePipeVolume_002, TestSize.Level1)
+{
+    audioVolumeTest->pipeVolume_.clear();
+    AudioVolume::GetInstance()->RemovePipeVolume(TEST_PIPE_ID, STREAM_MUSIC);
+    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_NonMusicStream
+ * @tc.number: GetSystemAppVolume_001
+ * @tc.desc  : Test GetSystemAppVolume returns 1.0f when streamType is not MUSIC
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_NonMusicStream, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_AppIndividualVolumeDisabled
+ * @tc.number: GetSystemAppVolume_002
+ * @tc.desc  : Test GetSystemAppVolume returns 1.0f when appIndividualVolumeEnabled is false
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_AppIndividualVolumeDisabled, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_PCVolumeEnabled
+ * @tc.number: GetSystemAppVolume_003
+ * @tc.desc  : Test GetSystemAppVolume returns 1.0f when uid not found in systemAppVolume_
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_PCVolumeEnabled, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioVolumeTest->systemAppVolume_.clear();
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_WithVolumeRecord
+ * @tc.number: GetSystemAppVolume_004
+ * @tc.desc  : Test GetSystemAppVolume returns stored volume when uid exists
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_WithVolumeRecord, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioVolumeTest->systemAppVolume_.clear();
+
+    SystemAppVolume systemAppVolume(uid, 0.5f, 1, false);
+    systemAppVolume.totalVolume_ = 0.8f;
+    audioVolumeTest->systemAppVolume_.insert({uid, systemAppVolume});
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(0.8f, result);
+
+    audioVolumeTest->systemAppVolume_.clear();
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolumeEffective_NonMusicStream
+ * @tc.number: GetSystemAppVolumeEffective_001
+ * @tc.desc  : Test GetSystemAppVolumeEffective returns 1.0f when streamType is not MUSIC
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_NonMusicStream, TestSize.Level1)
+{
+    int32_t sessionId = 1;
+    int32_t streamType = STREAM_VOICE_CALL;
+    int32_t streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    int32_t uid = 1001;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolumeEffective_AppIndividualVolumeDisabled
+ * @tc.number: GetSystemAppVolumeEffective_002
+ * @tc.desc  : Test GetSystemAppVolumeEffective returns 1.0f when appIndividualVolumeEnabled is false
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_AppIndividualVolumeDisabled, TestSize.Level1)
+{
+    int32_t sessionId = 1;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1001;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolumeEffective_WithVolumeRecord
+ * @tc.number: GetSystemAppVolumeEffective_003
+ * @tc.desc  : Test GetSystemAppVolumeEffective returns stream.systemAppVolume_ when should apply
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_WithVolumeRecord, TestSize.Level1)
+{
+    int32_t sessionId = 1;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1001;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+    streamVolume.systemAppVolume_ = 0.8f;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
+    EXPECT_EQ(0.8f, result);
+}
+
+/**
+ * @tc.name  : Test GetStreamAndPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamAndPipeVolume_001
+ * @tc.desc  : Test GetStreamAndPipeVolume returns shared_ptr successfully.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStreamAndPipeVolume_001, TestSize.Level1)
+{
+    uint32_t sessionId = 2;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1002;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
+    audioVolumeTest->AddStreamVolume(params);
+    
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 1.0f, 15, false);
+    audioVolumeTest->SetPipeVolume(pipeVolume);
+    
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    
+    int32_t result = audioVolumeTest->GetStreamAndPipeVolume(
+        sessionId, streamType, TEST_PIPE_ID, streamVolumePtr, pipeVolumePtr);
+    
+    EXPECT_EQ(result, 0);
+    EXPECT_NE(streamVolumePtr, nullptr);
+    EXPECT_NE(pipeVolumePtr, nullptr);
+    EXPECT_EQ(streamVolumePtr->GetSessionId(), sessionId);
+    EXPECT_EQ(pipeVolumePtr->GetPipeId(), TEST_PIPE_ID);
+    
+    audioVolumeTest->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetStreamAndPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamAndPipeVolume_002
+ * @tc.desc  : Test GetStreamAndPipeVolume returns -1 when sessionId not found.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStreamAndPipeVolume_002, TestSize.Level1)
+{
+    uint32_t sessionId = 9999;
+    int32_t streamType = STREAM_MUSIC;
+    
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    
+    int32_t result = audioVolumeTest->GetStreamAndPipeVolume(
+        sessionId, streamType, TEST_PIPE_ID, streamVolumePtr, pipeVolumePtr);
+    
+    EXPECT_EQ(result, -1);
+    EXPECT_EQ(streamVolumePtr, nullptr);
+    EXPECT_EQ(pipeVolumePtr, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetStreamAndPipeVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamAndPipeVolume_003
+ * @tc.desc  : Test GetStreamAndPipeVolume returns -1 when pipe not found.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStreamAndPipeVolume_003, TestSize.Level1)
+{
+    uint32_t sessionId = 3;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1003;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
+    audioVolumeTest->AddStreamVolume(params);
+    
+    uint32_t invalidPipeId = 99999;
+    
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    
+    int32_t result = audioVolumeTest->GetStreamAndPipeVolume(
+        sessionId, streamType, invalidPipeId, streamVolumePtr, pipeVolumePtr);
+    
+    EXPECT_EQ(result, -1);
+    EXPECT_EQ(streamVolumePtr, nullptr);
+    EXPECT_EQ(pipeVolumePtr, nullptr);
+    
+    audioVolumeTest->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetVolume API with shared_ptr
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeSharedPtr_001
+ * @tc.desc  : Test GetVolume(shared_ptr version) returns correct volume.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_001, TestSize.Level1)
+{
+    uint32_t sessionId = 4;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1004;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
+    audioVolumeTest->AddStreamVolume(params);
+    
+    audioVolumeTest->SetStreamVolume(sessionId, 0.8f);
+    
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 10, false);
+    audioVolumeTest->SetPipeVolume(pipeVolume);
+    
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    
+    int32_t result = audioVolumeTest->GetStreamAndPipeVolume(
+        sessionId, streamType, TEST_PIPE_ID, streamVolumePtr, pipeVolumePtr);
+    
+    EXPECT_EQ(result, 0);
+    
+    VolumeValues volumes;
+    float volume = audioVolumeTest->GetVolume(streamVolumePtr, pipeVolumePtr, &volumes);
+    
+    EXPECT_GT(volume, 0.0f);
+    EXPECT_LE(volume, 1.0f);
+    EXPECT_FLOAT_EQ(volumes.volumePipe, 0.5f);
+    
+    audioVolumeTest->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetVolume API with shared_ptr
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeSharedPtr_002
+ * @tc.desc  : Test GetVolume(shared_ptr version) returns 1.0f when streamVolume is null.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_002, TestSize.Level1)
+{
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 10, false);
+    audioVolumeTest->SetPipeVolume(pipeVolume);
+    
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    audioVolumeTest->GetStreamAndPipeVolume(99999, STREAM_MUSIC, TEST_PIPE_ID,
+        streamVolumePtr, pipeVolumePtr);
+    
+    VolumeValues volumes;
+    float volume = audioVolumeTest->GetVolume(nullptr, pipeVolumePtr, &volumes);
+    
+    EXPECT_FLOAT_EQ(volume, 1.0f);
+}
+
+/**
+ * @tc.name  : Test GetVolume API with shared_ptr
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeSharedPtr_003
+ * @tc.desc  : Test GetVolume(shared_ptr version) returns 1.0f when pipeVolume is null.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_003, TestSize.Level1)
+{
+    uint32_t sessionId = 5;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1005;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
+    audioVolumeTest->AddStreamVolume(params);
+    
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    audioVolumeTest->GetStreamAndPipeVolume(sessionId, streamType, TEST_PIPE_ID + 99,
+        streamVolumePtr, pipeVolumePtr);
+    
+    VolumeValues volumes;
+    float volume = audioVolumeTest->GetVolume(streamVolumePtr, nullptr, &volumes);
+    
+    EXPECT_FLOAT_EQ(volume, 1.0f);
+    
+    audioVolumeTest->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetVolume API with shared_ptr
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeSharedPtr_004
+ * @tc.desc  : Test GetVolume(shared_ptr version) calculates volume correctly.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_004, TestSize.Level1)
+{
+    uint32_t sessionId = 6;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1006;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
+    audioVolumeTest->AddStreamVolume(params);
+    
+    audioVolumeTest->SetStreamVolume(sessionId, 0.8f);
+    audioVolumeTest->SetStreamVolumeDuckFactor(sessionId, 0.9f, 0);
+    
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.7f, 12, false);
+    audioVolumeTest->SetPipeVolume(pipeVolume);
+    
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    
+    int32_t result = audioVolumeTest->GetStreamAndPipeVolume(
+        sessionId, streamType, TEST_PIPE_ID, streamVolumePtr, pipeVolumePtr);
+    
+    EXPECT_EQ(result, 0);
+    
+    VolumeValues volumes;
+    float volume = audioVolumeTest->GetVolume(streamVolumePtr, pipeVolumePtr, &volumes);
+    
+    float expectedStreamVolume = 0.8f * 0.9f;
+    float expectedTotalVolume = expectedStreamVolume * 0.7f;
+    
+    EXPECT_GT(volume, 0.0f);
+    EXPECT_FLOAT_EQ(volumes.volumePipe, expectedTotalVolume);
+    
+    audioVolumeTest->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetVolume API with shared_ptr
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeSharedPtr_005
+ * @tc.desc  : Test GetVolume(shared_ptr version) with virtual keyboard.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_005, TestSize.Level1)
+{
+    uint32_t sessionId = 7;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1007;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = true;
+    StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
+    audioVolumeTest->AddStreamVolume(params);
+    
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 10, true);
+    audioVolumeTest->SetPipeVolume(pipeVolume);
+    
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    
+    int32_t result = audioVolumeTest->GetStreamAndPipeVolume(
+        sessionId, streamType, TEST_PIPE_ID, streamVolumePtr, pipeVolumePtr);
+    
+    EXPECT_EQ(result, 0);
+    
+    VolumeValues volumes;
+    float volume = audioVolumeTest->GetVolume(streamVolumePtr, pipeVolumePtr, &volumes);
+    
+    EXPECT_EQ(volume, 0.0f);
+    
+    audioVolumeTest->RemoveStreamVolume(sessionId);
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

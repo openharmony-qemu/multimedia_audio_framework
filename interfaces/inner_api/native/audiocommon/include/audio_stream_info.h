@@ -111,6 +111,8 @@ enum AudioPipeType {
     PIPE_TYPE_OUT_3DA_DIRECT = 18,
     PIPE_TYPE_OUT_INTERPHONE = 19,
     PIPE_TYPE_IN_INTERPHONE = 20,
+    PIPE_TYPE_IN_NORMAL_LIVE = 21,
+    PIPE_TYPE_IN_CAMCORDER = 23,
 };
 
 enum AudioPreloadType {
@@ -173,7 +175,8 @@ enum AudioEncodingType {
     ENCODING_DTS_HD = 5,
     ENCODING_DTS_X = 6,
     ENCODING_AUDIOVIVID_DIRECT = 7,
-    ENCODING_AUDIOVIVID_3DA_DIRECT = 8
+    ENCODING_AUDIOVIVID_3DA_DIRECT = 8,
+    ENCODING_METADATA = 9
 };
 
 enum DirectPlaybackMode {
@@ -395,7 +398,8 @@ inline const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_TRUE_HD,
     ENCODING_DTS_HD,
     ENCODING_DTS_X,
-    ENCODING_AUDIOVIVID_DIRECT
+    ENCODING_AUDIOVIVID_DIRECT,
+    ENCODING_METADATA
 };
 
 inline const std::set<AudioEncodingType> HWDECODING_TYPES {
@@ -547,6 +551,7 @@ struct AudioCallBackStreamInfo {
     bool forceData = false;
     uint64_t writePos_ = 0;
     bool isWriteFirst_ = false;
+    bool isLowLatency = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

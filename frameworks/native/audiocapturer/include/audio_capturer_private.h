@@ -190,6 +190,8 @@ private:
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
+    void NotifyFastStatusChange(FastStatus status);
+    void SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     int32_t GetCurrentInputDevicesInner(AudioDeviceDescriptor &deviceInfo) const;
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
@@ -209,6 +211,15 @@ private:
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
         CapturerState previousState);
     void CheckStartResultAndReport(bool result);
+    int32_t InitAndReportErrorEvent(AudioStreamParams audioStreamParams,
+        IAudioStream::StreamClass streamClass, const AudioCapturerParams params);
+    int32_t CheckStateAndReportErrorEvent(CapturerState state);
+    int32_t CheckDegradeFallback(AudioStreamParams audioStreamParams, bool degradeFallback, size_t validDataLength,
+        const size_t processFrameSize, size_t &processBufSize, size_t &micInBufSize, size_t &ecBufSize);
+    bool CheckForGenerateNewStream();
+    int32_t CheckForStartImpl(CapturerState state);
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+ 	    const std::string &erroDesc, bool isClient, CapturerState state) const;
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
@@ -267,6 +278,10 @@ public:
     void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
+    bool NoNeedNotifyEvent(const InterruptEvent &interruptEvent);
+    int32_t InterruptHintResumeHandle(StreamFocusState focusState);
+    int32_t InterruptHintPauseHandle(StreamFocusState focusState);
+    void WaitForSwitchTimeout(bool result);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;
     bool isForcePaused_ = false;

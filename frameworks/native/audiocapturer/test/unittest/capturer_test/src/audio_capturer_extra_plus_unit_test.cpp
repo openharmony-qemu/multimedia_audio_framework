@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 #include <cstring>
+#include <functional>
 
 #include "audio_capturer.h"
 #include "audio_capturer_private.h"
@@ -27,6 +28,7 @@
 #include "audio_system_manager.h"
 #include "fast_audio_stream.h"
 #include "audio_client_tracker_callback_service.h"
+#include "capturer_in_client.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -83,8 +85,13 @@ public:
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
     bool ReleaseAudioStream(bool releaseRunner, bool isSwitchStream) override { return true; }
     float GetDuckVolume() override { return DUCK_VOLUME; }
+    void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback) override
+    {
+        fastStatusChangeCallback_ = callback;
+    }
 
     State state_ = State::RUNNING;
+    std::function<void(FastStatus)> fastStatusChangeCallback_;
 };
 
 class TestAudioMicInEcStreamStub : public TestAudioStremStub {
@@ -173,7 +180,14 @@ public:
 
 class CapturerFastStatusChangeCallbackTest : public AudioCapturerFastStatusChangeCallback {
 public:
-    void OnFastStatusChange(FastStatus status) override { return; }
+    void OnFastStatusChange(FastStatus status) override
+    {
+        notifyCount_++;
+        status_ = status;
+    }
+
+    int32_t notifyCount_ = 0;
+    FastStatus status_ = FASTSTATUS_INVALID;
 };
 
 /**
@@ -639,6 +653,66 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_029, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetInnerStreamFastStatusChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_035
+ * @tc.desc  : Test inner stream fast status callback notifies AudioCapturer callback.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_035, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+    auto fastStatusChangeCallback = std::make_shared<CapturerFastStatusChangeCallbackTest>();
+    auto audioStream = std::make_shared<TestAudioStremStub>();
+
+    capturer->SetFastStatusChangeCallback(fastStatusChangeCallback);
+    capturer->SetInnerStreamFastStatusChangeCallback(audioStream);
+    ASSERT_TRUE(static_cast<bool>(audioStream->fastStatusChangeCallback_));
+
+    audioStream->fastStatusChangeCallback_(FASTSTATUS_FAST);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+    EXPECT_EQ(fastStatusChangeCallback->status_, FASTSTATUS_FAST);
+
+    capturer->SetFastStatusChangeCallback(nullptr);
+    audioStream->fastStatusChangeCallback_(FASTSTATUS_NORMAL);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+
+    auto expiredAudioStream = std::make_shared<TestAudioStremStub>();
+    {
+        auto expiredCapturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL,
+            appInfo, false);
+        expiredCapturer->SetInnerStreamFastStatusChangeCallback(expiredAudioStream);
+    }
+    ASSERT_TRUE(static_cast<bool>(expiredAudioStream->fastStatusChangeCallback_));
+    expiredAudioStream->fastStatusChangeCallback_(FASTSTATUS_FAST);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+}
+
+/**
+ * @tc.name  : Test FastStatusChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_036
+ * @tc.desc  : Test fast status callback only notifies when status changes.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_036, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+    auto fastStatusChangeCallback = std::make_shared<CapturerFastStatusChangeCallbackTest>();
+    capturer->audioStream_ = std::make_shared<TestAudioStremStub>();
+    capturer->SetFastStatusChangeCallback(fastStatusChangeCallback);
+
+    capturer->FastStatusChangeCallback(FASTSTATUS_FAST);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 0);
+
+    capturer->FastStatusChangeCallback(FASTSTATUS_NORMAL);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+    EXPECT_EQ(fastStatusChangeCallback->status_, FASTSTATUS_FAST);
+}
+
+/**
  * @tc.name  : Test AudioCapturerPrivate API
  * @tc.type  : FUNC
  * @tc.number: AudioCapturerPrivate_030
@@ -970,5 +1044,44 @@ HWTEST(AudioCapturerUnitTest, SetStreamCallback_001, TestSize.Level1)
     int32_t ret = fastAudioStream.SetStreamCallback(callback);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name  : Test NoNeedNotifyEvent
+ * @tc.type  : FUNC
+ * @tc.number: NoNeedNotifyEvent_001
+ * @tc.desc  : Test NoNeedNotifyEvent
+ */
+HWTEST(AudioCapturerUnitTest, NoNeedNotifyEvent_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+ 
+    AudioStreamParams tempParams = {};
+ 
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::FAST_STREAM, tempParams,
+        STREAM_MUSIC, getpid());
+    
+    audioStream->SetFocusState(FOCUS_RUNNING);
+    auto interruptCallback = std::make_unique<AudioCapturerInterruptCallbackImpl>(nullptr);
+    interruptCallback->UpdateAudioStream(audioStream);
+    EXPECT_EQ(interruptCallback->audioStream_, audioStream);
+ 
+    capturer->audioStream_ = audioStream;
+    InterruptEventInternal interruptEventInternal {InterruptType::INTERRUPT_TYPE_BEGIN,
+        InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_PAUSE, 0.0};
+    InterruptEvent event = InterruptEvent {interruptEventInternal.eventType, interruptEventInternal.forceType,
+        interruptEventInternal.hintType};
+ 
+    shared_ptr<AudioCapturerCallbackTestStub> cb = make_shared<AudioCapturerCallbackTestStub>();
+    interruptCallback->SaveCallback(cb);
+    EXPECT_EQ(true, interruptCallback->NoNeedNotifyEvent(event));
+    event.hintType = INTERRUPT_HINT_STOP;
+    EXPECT_EQ(true, interruptCallback->NoNeedNotifyEvent(event));
+    event.hintType = INTERRUPT_HINT_RESUME;
+    EXPECT_EQ(true, interruptCallback->NoNeedNotifyEvent(event));
+    event.hintType = INTERRUPT_HINT_DUCK;
+    EXPECT_NE(true, interruptCallback->NoNeedNotifyEvent(event));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

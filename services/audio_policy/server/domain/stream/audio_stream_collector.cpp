@@ -1805,20 +1805,6 @@ SourceType AudioStreamCollector::GetRunningSourceTypeNoUltrasonic()
     return SOURCE_TYPE_INVALID;
 }
 
-StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
-{
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioRendererChangeInfos_) {
-        StreamUsage usage = changeInfo->rendererInfo.streamUsage;
-        RendererState state = changeInfo->rendererState;
-        if ((IsCallStreamUsage(usage) && state == RENDERER_RUNNING) ||
-            (usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && state == RENDERER_PREPARED)) {
-            return usage;
-        }
-    }
-    return STREAM_USAGE_UNKNOWN;
-}
-
 std::vector<uint32_t> AudioStreamCollector::GetAllRendererSessionIDForUID(int32_t uid)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

@@ -21,6 +21,7 @@
 #include "audio_policy_service.h"
 #include "audio_zone_service.h"
 #include "audio_scene_manager.h"
+#include "parameters.h"
 #ifdef FEATURE_DEVICE_MANAGER
 #include "dm_device_info.h"
 #endif
@@ -31,6 +32,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+static const bool IS_DEVICE_ENHANCED_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 
 const string MEDIA_RENDER_ROUTERS = "MediaRenderRouters";
 const string CALL_RENDER_ROUTERS = "CallRenderRouters";
@@ -252,6 +256,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::MediaFollowRingStrateg
 
 bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 {
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        return false;
+    }
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         return true;
     }
@@ -263,6 +270,9 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 
 bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage)
 {
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        return false;
+    }
     auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
     const bool isRingScene = (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
     const bool isAlarmUsage = (streamUsage == STREAM_USAGE_ALARM);
@@ -328,7 +338,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StartArbiterContext();
     
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(info.clientUID, info.streamUsage);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(info.clientUID, info.streamUsage, OUTPUT_DEVICE);
     if (zoneId != 0) {
         vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, info.streamUsage,
@@ -382,11 +392,13 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
     StreamUsage callStreamUsage =
-                AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+                AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
     AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d, isVoipStream:%{public}d.",
         info.streamUsage, audioScene, isVoipStream);
-    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
+    } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (desc->deviceType_ == DEVICE_TYPE_NONE) {
@@ -420,6 +432,15 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(So
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
+            return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
+            return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
+            return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        }
+    }
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
         if (audioScene != AUDIO_SCENE_DEFAULT) {
             return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
@@ -450,7 +471,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     
     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
     RouterType innerRouterType = ROUTER_TYPE_NONE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID, INPUT_DEVICE);
     if (zoneId != 0) {
         AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
         StopArbiterContext();

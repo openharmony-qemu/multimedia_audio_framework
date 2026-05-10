@@ -81,6 +81,17 @@ int32_t AudioSuiteVoiceBeautifierNode::DeInit()
     return SUCCESS;
 }
 
+int32_t AudioSuiteVoiceBeautifierNode::PrintNodeInfo(std::string &nodeInfo)
+{
+    std::string optionValue = "";
+    int32_t ret = GetOptions(VOICE_BEAUTIFIER_TYPE, optionValue);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS && !optionValue.empty()), ERROR, "GetOptions Error");
+
+    nodeInfo = "    Voice Beautifier: " +
+        AudioSuiteUtil::FormatOptionsValue(VOICE_BEAUTIFIER_TYPE, optionValue) + "\n";
+    return SUCCESS;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS

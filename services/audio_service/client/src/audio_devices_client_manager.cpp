@@ -20,6 +20,7 @@
 
 #include "audio_policy_manager.h"
 #include "audio_type_convert.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -226,13 +227,18 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDevicesClientManager::G
 int32_t AudioDevicesClientManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid) const
 {
     int32_t uid = clientUid == -1 ? getuid() : clientUid;
-    if (!IsActiveDeviceType(deviceType)) {
-        AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
-        return ERR_NOT_SUPPORTED;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(IsActiveDeviceType(deviceType), ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM, "SetDeviceActive device not supported", true),
+        "SetDeviceActive device=%{public}d not supported", deviceType);
 
     /* Call Audio Policy SetDeviceActive */
-    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, uid));
+    int32_t ret = AudioPolicyManager::GetInstance().SetDeviceActive(
+        static_cast<InternalDeviceType>(deviceType), flag, uid);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SetDeviceActive failed", true));
+    return ret;
 }
 
 bool AudioDevicesClientManager::IsDeviceActive(DeviceType deviceType) const

@@ -32,6 +32,7 @@
 #include <audio_interrupt_info.h>
 #include <audio_session_info.h>
 #include <audio_stream_info.h>
+#include <audio_volume_info.h>
 #include <audio_asr.h>
 #include "audio_shared_memory.h"
 #include "audio_pipe_types.h"
@@ -68,7 +69,11 @@ constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
+constexpr float MIN_STREAM_PITCH_LEVEL = 0.25f;
+constexpr float MAX_STREAM_PITCH_LEVEL = 4.0f;
+constexpr float PITCH_DEFAULT = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t UID_COCKPIT_SA = 1041;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 constexpr int32_t DEFAULT_ZONEID = 0;
@@ -375,6 +380,7 @@ enum CallbackChange : int32_t {
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
+    CALLBACK_ROUTE_SELECTOR,
     CALLBACK_MAX,
 };
 
@@ -444,6 +450,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
+    CALLBACK_ROUTE_SELECTOR,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -608,6 +615,34 @@ enum AudioLoopbackStatus {
     LOOPBACK_AVAILABLE_IDLE = 0,
     /** Audio loopback available and running.*/
     LOOPBACK_AVAILABLE_RUNNING = 1,
+};
+
+enum LoopbackType {
+    /** Normal loopback type, for single process usage.*/
+    LOOPBACK_TYPE_NORMAL = 0,
+    /** Global handler type, the main executor, system-wide unique.*/
+    LOOPBACK_TYPE_GLOBAL_HANDLER = 1,
+    /** Global control type, for sending control commands.*/
+    LOOPBACK_TYPE_GLOBAL_CONTROL = 2,
+};
+
+enum LoopbackCommand {
+    /** Enable command.*/
+    LOOPBACK_CMD_ENABLE = 1,
+    /** Disable command.*/
+    LOOPBACK_CMD_DISABLE = 2,
+};
+
+enum LoopBackError : int32_t {
+    ERROR_LOOPBACK_HANDLER_NOT_EXIST = 0,
+    ERROR_LOOPBACK_HANDLER_ALREADY_EXIST,
+    ERROR_LOOPBACK_OPERATION_NOT_SUPPORTED,
+    ERROR_LOOPBACK_PERMISSION_DENIED,
+};
+
+enum LoopbackStatusReason {
+    /** Handler process died.*/
+    LOOPBACK_REASON_HANDLER_DIED = 0,
 };
 
 enum AudioLoopbackState {
@@ -801,6 +836,7 @@ public:
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
     bool mixWithWakeUp = false;
+    bool loopBackEffectEnabled = false;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -822,8 +858,9 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
             parcel.WriteBool(isLoopback) &&
-            parcel.WriteInt32(static_cast<int32_t>(loopbackMode))&&
-            parcel.WriteBool(mixWithWakeUp);
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode)) &&
+            parcel.WriteBool(mixWithWakeUp) &&
+            parcel.WriteBool(loopBackEffectEnabled);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -840,6 +877,7 @@ public:
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         mixWithWakeUp = parcel.ReadBool();
+        loopBackEffectEnabled = parcel.ReadBool();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -1306,6 +1344,22 @@ enum State {
     PAUSED,
     /** Stopping */
     STOPPING
+}; /** When adding a new stream state, StreamFocusState needs to be added synchronously. */
+
+enum StreamFocusState {
+    FOCUS_INVALID = -1,
+    FOCUS_NEW,
+    FOCUS_PREPARED,
+    FOCUS_RUNNING,
+    FOCUS_STOPPED,
+    FOCUS_RELEASED,
+    FOCUS_PAUSED,
+    FOCUS_STOPPING,
+    FOCUS_STARTING,
+    FOCUS_APP_PAUSING,
+    FOCUS_SYSTEM_PAUSING,
+    FOCUS_APP_STOPPING,
+    FOCUS_SYSTEM_STOPPING
 };
 
 /**
@@ -1494,6 +1548,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteBool(capturerInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
         parcel.WriteBool(capturerInfo.mixWithWakeUp);
+        parcel.WriteBool(capturerInfo.loopBackEffectEnabled);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1559,6 +1614,7 @@ struct AudioProcessConfig : public Parcelable {
         config->capturerInfo.isLoopback = parcel.ReadBool();
         config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
+        config->capturerInfo.loopBackEffectEnabled = parcel.ReadBool();
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());

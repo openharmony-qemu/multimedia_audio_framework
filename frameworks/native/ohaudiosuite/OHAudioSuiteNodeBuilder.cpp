@@ -30,7 +30,7 @@ using OHOS::AudioStandard::OHAudioSuiteNodeBuilder;
 
 static OHOS::AudioStandard::OHAudioSuiteNodeBuilder *ConvertAudioSuitBuilder(OH_AudioNodeBuilder *builder)
 {
-    return (OHAudioSuiteNodeBuilder *)builder;
+    return reinterpret_cast<OHAudioSuiteNodeBuilder *>(builder);
 }
 
 OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Create(OH_AudioNodeBuilder **builder)

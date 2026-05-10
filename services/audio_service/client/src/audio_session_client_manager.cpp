@@ -22,13 +22,37 @@
 #include "audio_service_log.h"
 #include "audio_policy_manager.h"
 #include "audio_session_info.h"
+#include "audio_debug_manager.h"
+#include "audio_debug_callback.h"
+#include "stream_dfx_manager.h"
+#include <unistd.h>
 
 namespace OHOS {
 namespace AudioStandard {
+std::mutex AudioSessionClientManager::callbackRegisteredMutex_;
+bool AudioSessionClientManager::callbackRegistered_ = false;
+
+class AudioSessionDebugCallbackImpl : public AudioSessionDebugCallback {
+public:
+    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &debugInfo) override
+    {
+        return AudioSessionClientManager::GetInstance().GetSessionDebugInfo(debugInfo);
+    }
+};
+
 using namespace std;
 AudioSessionClientManager &AudioSessionClientManager::GetInstance()
 {
     static AudioSessionClientManager audioSessionManager;
+    if (!callbackRegistered_) {
+        std::lock_guard<std::mutex> lock(callbackRegisteredMutex_);
+        if (!callbackRegistered_) {
+            static std::shared_ptr<AudioSessionDebugCallbackImpl> sessionDebugCallback =
+                std::make_shared<AudioSessionDebugCallbackImpl>();
+            AudioDebugManager::GetInstance().SetAudioSessionCallback(sessionDebugCallback);
+            callbackRegistered_ = true;
+        }
+    }
     return audioSessionManager;
 }
 
@@ -42,7 +66,10 @@ int32_t AudioSessionClientManager::ActivateAudioSession(const AudioSessionStrate
         isFirstActivateV2_ = false;
     }
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy, stateChangeCallbackFlag_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ActivateAudioSession failed, ret:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_START_OPERATION_FAILED, "ActivateAudioSession failed", true),
+        "ActivateAudioSession failed, ret:%{public}d", ret);
 
     std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);
     if (setDefaultOutputDevice_) {
@@ -60,7 +87,10 @@ int32_t AudioSessionClientManager::DeactivateAudioSession()
 {
     AUDIO_INFO_LOG("in");
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioSession();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, ret:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_STOP_OPERATION_FAILED, "DeactivateAudioSession failed", true),
+        "DeactivateAudioSession failed, ret:%{public}d", ret);
 
     restoreParams_.OnAudioSessionDeactive();
     return ret;
@@ -81,10 +111,15 @@ int32_t AudioSessionClientManager::SetAudioSessionCallback(
     const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(audioSessionCallback != nullptr, ERR_INVALID_PARAM, "audioSessionCallback is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionCallback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_INVALID_PARAM, "audioSessionCallback is null", true),
+        "audioSessionCallback is null");
 
     int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionCallback(audioSessionCallback);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_REGISTER_FAILED, "SetAudioSessionCallback failed", true),
         "SetAudioSessionCallback result:%{public}d", result);
     return result;
 }
@@ -93,7 +128,9 @@ int32_t AudioSessionClientManager::UnsetAudioSessionCallback()
 {
     AUDIO_INFO_LOG("Unset all audio session callbacks");
     int32_t result = AudioPolicyManager::GetInstance().UnsetAudioSessionCallback();
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_UNREGISTER_FAILED, "UnsetAudioSessionCallback(all) failed", true),
         "UnsetAudioSessionCallback(all) result:%{public}d", result);
     return result;
 }
@@ -102,10 +139,15 @@ int32_t AudioSessionClientManager::UnsetAudioSessionCallback(
     const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     AUDIO_INFO_LOG("Unset one audio session callback");
-    CHECK_AND_RETURN_RET_LOG(audioSessionCallback != nullptr, ERR_INVALID_PARAM, "audioSessionCallback is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSessionCallback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_INVALID_PARAM, "audioSessionCallback is null", true),
+        "audioSessionCallback is null");
 
     int32_t result = AudioPolicyManager::GetInstance().UnsetAudioSessionCallback(audioSessionCallback);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_UNREGISTER_FAILED, "UnsetAudioSessionCallback failed", true),
         "UnsetAudioSessionCallback result:%{public}d", result);
     return result;
 }
@@ -116,7 +158,10 @@ int32_t AudioSessionClientManager::SetAudioSessionScene(const AudioSessionScene 
 
     audioSessionSceneFlag_ = true;
     int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionScene(audioSessionScene);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "SetAudioSessionScene failed, result:%{public}d", result);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, result,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_OPERATION_FAILED, "SetAudioSessionScene failed", true),
+        "SetAudioSessionScene failed, result:%{public}d", result);
 
     RegisterAudioPolicyServerDiedCb();
     restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE,
@@ -162,10 +207,15 @@ int32_t AudioSessionClientManager::SetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(stateChangedCallback != nullptr, ERR_INVALID_PARAM, "stateChangedCallback is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(stateChangedCallback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_INVALID_PARAM, "stateChangedCallback is null", true),
+        "stateChangedCallback is null");
 
     int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionStateChangeCallback(stateChangedCallback);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_REGISTER_FAILED, "SetAudioSessionStateChangeCallback failed", true),
         "SetAudioSessionStateChangeCallback result:%{public}d", result);
     return result;
 }
@@ -174,7 +224,9 @@ int32_t AudioSessionClientManager::UnsetAudioSessionStateChangeCallback()
 {
     AUDIO_INFO_LOG("Unset all audio session state callbacks");
     int32_t result = AudioPolicyManager::GetInstance().UnsetAudioSessionStateChangeCallback();
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_UNREGISTER_FAILED, "UnsetAudioSessionStateChangeCallback(all) failed", true),
         "UnsetAudioSessionStateChangeCallback(all) result:%{public}d", result);
     return result;
 }
@@ -183,10 +235,15 @@ int32_t AudioSessionClientManager::UnsetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {
     AUDIO_INFO_LOG("Unset one audio session state callback");
-    CHECK_AND_RETURN_RET_LOG(stateChangedCallback != nullptr, ERR_INVALID_PARAM, "stateChangedCallback is null");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(stateChangedCallback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_INVALID_PARAM, "stateChangedCallback is null", true),
+        "stateChangedCallback is null");
 
     int32_t result = AudioPolicyManager::GetInstance().UnsetAudioSessionStateChangeCallback(stateChangedCallback);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CALLBACK_UNREGISTER_FAILED, "UnsetAudioSessionStateChangeCallback failed", true),
         "UnsetAudioSessionStateChangeCallback result:%{public}d", result);
     return result;
 }
@@ -286,7 +343,9 @@ int32_t AudioSessionClientManager::EnableMuteSuggestionWhenMixWithOthers(bool en
     AUDIO_INFO_LOG("enable mute suggestion when mix with others, enable:%{public}d", enable);
 
     int32_t result = AudioPolicyManager::GetInstance().EnableMuteSuggestionWhenMixWithOthers(enable);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, result,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_OPERATION_FAILED, "EnableMuteSuggestionWhenMixWithOthers failed", true),
         "EnableMuteSuggestionWhenMixWithOthers failed, result:%{public}d", result);
 
     restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION,
@@ -338,7 +397,9 @@ void AudioSessionClientManager::OnAudioSessionStateChanged(const AudioSessionSta
 int32_t AudioSessionClientManager::SetAudioSessionBehavior(const uint32_t behavior)
 {
     int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionBehavior(behavior);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, result,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            SESSION_CONFIG_OPERATION_FAILED, "SetAudioSessionBehavior failed", true),
         "SetAudioSessionBehavior failed, result:%{public}d", result);
 
     RegisterAudioPolicyServerDiedCb();
@@ -353,7 +414,7 @@ void AudioSessionClientManager::SetRegisterStateChangeCallbackFlag(const bool st
         AudioPolicyManager::GetInstance().SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag);
         stateChangeCallbackByIpcFlag_ = false;
     }
-    stateChangeCallbackFlag_ = true;
+    stateChangeCallbackFlag_ = stateChangeCallbackFlag;
 }
 
 bool AudioSessionClientManager::Restore()
@@ -544,5 +605,9 @@ bool AudioSessionRestoreParams::RestoreParams()
     return true;
 }
 
+int32_t AudioSessionClientManager::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+{
+    return AudioPolicyManager::GetInstance().GetSessionDebugInfo(sessionDebugInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -25,6 +25,7 @@
 #include "hpae_node_common.h"
 #include "audio_volume.h"
 #include "audio_common_utils.h"
+#include "stream_dfx_manager.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
@@ -193,8 +194,11 @@ void HpaeOffloadSinkOutputNode::OffloadReset()
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
-        "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    CHECK_AND_RETURN_RET(audioRendererSink_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERR_ILLEGAL_STATE));
 
     sinkOutAttr_ = attr;
     if (audioRendererSink_->IsInited()) {
@@ -207,8 +211,11 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_OPERATION_FAILED),
+            "audioRendererSink_ init failed", false), ret));
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -221,8 +228,11 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkDeInit(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
-        "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    CHECK_AND_RETURN_RET(audioRendererSink_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERR_ILLEGAL_STATE));
     SetSinkState(STREAM_MANAGER_RELEASED);
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -242,16 +252,22 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkDeInit(void)
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkFlush(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
-        "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    CHECK_AND_RETURN_RET(audioRendererSink_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::FLUSH, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERR_ILLEGAL_STATE));
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
 #endif
     ret = audioRendererSink_->Flush();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "audioRendererSink_ flush failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::FLUSH, ERR_OPERATION_FAILED),
+            "audioRendererSink_ flush failed", false), ret));
     UpdateOffloadFlushStatus(true);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -264,8 +280,11 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkFlush(void)
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
-        "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    CHECK_AND_RETURN_RET(audioRendererSink_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERR_ILLEGAL_STATE));
 
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
@@ -273,8 +292,11 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
     timer.Start();
 #endif
     ret = audioRendererSink_->Start();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "audioRendererSink_ start failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::START, ERR_OPERATION_FAILED),
+            "audioRendererSink_ start failed", false), ret));
     RegOffloadCallback();
     // start need lock
     RunningLock(true);
@@ -291,8 +313,11 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
-        "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    CHECK_AND_RETURN_RET(audioRendererSink_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERR_ILLEGAL_STATE));
     SetSinkState(STREAM_MANAGER_SUSPENDED);
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
@@ -302,8 +327,11 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
     ret = audioRendererSink_->Stop();
     OffloadReset();
     RunningLock(false);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "audioRendererSink_ stop failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::STOP, ERR_OPERATION_FAILED),
+            "audioRendererSink_ stop failed", false), ret));
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
@@ -366,6 +394,7 @@ void HpaeOffloadSinkOutputNode::StopStream()
 void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
 {
     auto preState = hdiPolicyState_;
+    AUDIO_INFO_LOG("SetPolicyState preState: %{public}d, state: %{public}d", preState, state);
     hdiPolicyState_ = static_cast<AudioOffloadType>(state);
     if (setPolicyStateTask_.flag) {
         if (state != OFFLOAD_INACTIVE_BACKGROUND) {
@@ -537,13 +566,20 @@ int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi()
 
 int32_t HpaeOffloadSinkOutputNode::UpdatePresentationPosition()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
-        "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    CHECK_AND_RETURN_RET(audioRendererSink_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERR_ILLEGAL_STATE));
     uint64_t frames;
     int64_t timeSec;
     int64_t timeNanoSec;
     int ret = audioRendererSink_->ForceRefreshPresentationPosition(frames, hdiRealPos_, timeSec, timeNanoSec);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ForceRefreshPresentationPosition failed, ret is %{public}d", ret);
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::QUERY, ERR_OPERATION_FAILED),
+            "ForceRefreshPresentationPosition failed", false), ret));
     auto total_ns = std::chrono::seconds(timeSec) + std::chrono::nanoseconds(timeNanoSec);
     hdiPos_ = std::make_pair(frames, TimePoint(total_ns));
     return 0;
@@ -566,9 +602,7 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 {
     struct VolumeValues volumes;
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamType());
-    std::string deviceClass = GetDeviceClass();
-    std::string volumeDeviceClass = deviceClass == "remote_offload" ? "remote" : deviceClass;
-    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, volumeDeviceClass, &volumes);
+    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, renderId_, &volumes);
     float volumeBeg = AudioVolume::GetInstance()->GetHistoryVolume(GetSessionId());
     if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
@@ -618,8 +652,16 @@ void HpaeOffloadSinkOutputNode::RegOffloadCallback()
 
 int32_t HpaeOffloadSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
+            "audioRendererSink_ is nullptr", false), ERROR));
+    CHECK_AND_RETURN_RET(audioRendererSink_->IsInited(),
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_ILLEGAL_STATE),
+            "audioRendererSink_ not init", false), ERR_ILLEGAL_STATE));
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 

@@ -18,16 +18,19 @@
 #include "audio_utils.h"
 #include "mock_audio_arm_device_behavior.h"
 #include "audio_device_factory.h"
+#include "sco_audio_scene_manager.h"
 
 using namespace testing::ext;
 using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t DEFAULT_PIPE_ID = 0;
 
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
 static const uint32_t TEST_STREAM_2_SESSION_ID = 100002;
+static const uint32_t TEST_IO_HANDLE = 1234;
 inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
 inline static const std::string NULL_ADDRESS{""};
 
@@ -1697,6 +1700,7 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_004, 
     EXPECT_EQ(ret, SUCCESS);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckModemScene_001
@@ -1707,8 +1711,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1732,8 +1737,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_002, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    desc->deviceId_ = TEST_DEVICE_ID;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1756,8 +1762,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_003, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1781,8 +1788,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_004, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1805,8 +1813,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_005, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1830,8 +1839,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_006, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1854,8 +1864,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_007, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1879,8 +1890,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_008, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
-    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -2632,7 +2644,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_126, TestSize.Leve
 HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_127, TestSize.Level1)
 {
     uint32_t sessionIDTest = 100;
- 
+
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     AudioStreamInfo audioStreamInfo = {};
@@ -2646,22 +2658,24 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_127, TestSize.Leve
     audioStreamDescriptor->streamInfo_ = audioStreamInfo;
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
     pipeInfo->moduleInfo_.name = BLUETOOTH_MIC;
- 
+
     auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(audioStreamDescriptor, nullptr);
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
     pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
- 
+
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentInputDevice(curDesc);
+    audioCoreService->audioRouterSelectStrategy_.UpdateCurrentInputDevice(SYSTEM_UID,
+        {make_shared<AudioDeviceDescriptor>(curDesc)});
     uint32_t paIndex = 0;
     auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
     EXPECT_NE(ret, sessionIDTest);
- 
+
     AudioDeviceDescriptor curDesc1(DeviceType::DEVICE_TYPE_ACCESSORY, DeviceRole::INPUT_DEVICE);
-    audioCoreService->audioActiveDevice_.SetCurrentInputDevice(curDesc1);
+    audioCoreService->audioRouterSelectStrategy_.UpdateCurrentInputDevice(SYSTEM_UID,
+        {make_shared<AudioDeviceDescriptor>(curDesc1)});
     ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
     EXPECT_NE(ret, sessionIDTest);
 }
@@ -3561,7 +3575,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_001, 
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, stream, TEST_IO_HANDLE);
     EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3575,7 +3589,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_002, 
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream, TEST_IO_HANDLE);
     EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3589,7 +3603,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_003, 
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_2_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_2_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3604,7 +3618,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_004, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3619,7 +3633,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_005, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3634,7 +3648,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_006, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -3649,7 +3663,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, 
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream, TEST_IO_HANDLE);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
 
@@ -4106,7 +4120,8 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_001, TestSize.Level1)
     pipeInfo->AddStream(streamDesc);
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
 
-    audioCoreService->UpdateOutputRoute(streamDesc);
+    uint32_t pipeId = DEFAULT_PIPE_ID;
+    audioCoreService->UpdateOutputRoute(streamDesc, pipeId);
     EXPECT_EQ(1, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
 
     audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
@@ -4192,7 +4207,7 @@ HWTEST_F(AudioCoreServicePrivateTest, DeactivateA2dpAfterExclude_003, TestSize.L
     auto speakerDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     streamDesc->newDeviceDescs_.push_back(speakerDevice);
     outputStreamDescs.push_back(streamDesc);
-    
+
     // Method should return true and deactivate A2DP
     bool result = audioCoreService->DeactivateA2dpAfterExclude(excludeDeviceDescs, outputStreamDescs);
     EXPECT_TRUE(result);
@@ -4318,7 +4333,7 @@ HWTEST_F(AudioCoreServicePrivateTest, DecidedAudioFlagForStreams_001, TestSize.L
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
-    
+
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
 
     audioCoreService->DecidedAudioFlagForStreams(streamDescs);
@@ -4334,7 +4349,7 @@ HWTEST_F(AudioCoreServicePrivateTest, DecidedAudioFlagForStreams_002, TestSize.L
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
-    
+
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
@@ -4358,7 +4373,7 @@ HWTEST_F(AudioCoreServicePrivateTest, DecidedAudioFlagForStreams_003, TestSize.L
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
-    
+
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
@@ -4495,5 +4510,119 @@ HWTEST_F(AudioCoreServicePrivateTest, ReEvaluateVoipBypassByAppMuteHint_001, Tes
     audioCoreService->ReEvaluateVoipBypassByAppMuteHint();
     EXPECT_FALSE(audioCoreService->audioEffectService_.GetEffectiveAppMuteHint(7010));
 }
+
+/**
+ * @tc.name  : AudioCoreService_CalculatePipeAudioScene_001
+ * @tc.desc  : Test CalculatePipeAudioScene with empty pipe
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CalculatePipeAudioScene_001, TestSize.Level1)
+{
+    AudioScene scene = testCoreService_->CalculatePipeAudioScene(DEFAULT_PIPE_ID);
+    EXPECT_EQ(scene, AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_001
+ * @tc.desc  : Test TrackScoStreamAudioScene with cellular call
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    
+    streamDesc->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->callerUid_ = 1001;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, true);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, false);
+    EXPECT_FALSE(ScoAudioSceneManager::GetInstance().HasScoStream());
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_002
+ * @tc.desc  : Test TrackScoStreamAudioScene with voip
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    
+    streamDesc->sessionId_ = TEST_STREAM_2_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->callerUid_ = 1002;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, true);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    
+    AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
+    EXPECT_EQ(highestScene, AUDIO_SCENE_PHONE_CHAT);
+    
+    ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_003
+ * @tc.desc  : Test TrackScoStreamAudioScene with recognition
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    
+    streamDesc->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->callerUid_ = 1003;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    
+    testCoreService_->TrackScoStreamAudioScene(streamDesc, true);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    
+    ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
+}
+
+/**
+ * @tc.name  : AudioCoreService_TrackScoStreamAudioScene_004
+ * @tc.desc  : Test TrackScoStreamAudioScene priority ordering
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> voipStream = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(voipStream, nullptr);
+    voipStream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    voipStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    voipStream->streamStatus_ = STREAM_STATUS_STARTED;
+    voipStream->callerUid_ = 1001;
+    voipStream->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    
+    std::shared_ptr<AudioStreamDescriptor> cellularStream = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(cellularStream, nullptr);
+    cellularStream->sessionId_ = TEST_STREAM_2_SESSION_ID;
+    cellularStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    cellularStream->streamStatus_ = STREAM_STATUS_STARTED;
+    cellularStream->callerUid_ = 1002;
+    cellularStream->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    
+    testCoreService_->TrackScoStreamAudioScene(voipStream, true);
+    testCoreService_->TrackScoStreamAudioScene(cellularStream, true);
+    
+    AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
+    EXPECT_EQ(highestScene, AUDIO_SCENE_PHONE_CALL);
+    
+    ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

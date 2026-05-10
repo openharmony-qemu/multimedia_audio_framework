@@ -1655,7 +1655,7 @@ HWTEST(AudioCapturerUnitTest, SetIndependentAudioSessionStrategy_001, TestSize.L
     res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
     EXPECT_FALSE(res);
 
-    behavior = 3;
+    behavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR);
     testCapturerInner->audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
     res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;

@@ -30,6 +30,7 @@ constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
+constexpr int32_t UID_D2D_SA = 7040;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_DMSDP_SA = 7071;
@@ -38,6 +39,7 @@ const std::set<int32_t> RECORD_PRIVACY_SKIP_UIDS = {
     UID_MSDP_SA,
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
+    UID_D2D_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_AUDIO,
     UID_TELEPHONY_SA, // used in distributed communication call
@@ -94,22 +96,18 @@ bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t se
         return true;
     }
 
-    std::set<uint32_t> remainedSessions = tokenIter->second;
-    if (remainedSessions.count(sessionId)) {
-        remainedSessions.erase(sessionId);
-    }
+    tokenIter->second.erase(sessionId);
     AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
-        remainedSessions.size());
-    if (!remainedSessions.empty()) {
-        tokenIter->second = std::move(remainedSessions);
+        tokenIter->second.size());
+    if (!tokenIter->second.empty()) {
         return true;
     }
+    tokenIdRecordMap_.erase(tokenIter);
 
     AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
         "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
     CHECK_AND_RETURN_RET_LOG(StopUsingMicrophone(targetTokenId), false,
         "StopUsingMicrophone failed for tokenId:%{public}u sessionId:%{public}u", targetTokenId, sessionId);
-    tokenIdRecordMap_.erase(tokenIter);
     return true;
 }
  

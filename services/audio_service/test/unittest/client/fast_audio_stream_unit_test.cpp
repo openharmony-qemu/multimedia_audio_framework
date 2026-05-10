@@ -46,7 +46,7 @@ public:
     MOCK_METHOD(int32_t, Release, (bool isSwitchStream), (override));
 
     MOCK_METHOD(int32_t, GetSessionID, (uint32_t &sessionID), (override));
-    MOCK_METHOD(bool, GetAudioTime, (uint32_t &framePos, int64_t &sec, int64_t &nanoSec), (override));
+    MOCK_METHOD(bool, GetAudioTime, (int64_t &framePos, int64_t &sec, int64_t &nanoSec), (override));
     MOCK_METHOD(int32_t, GetBufferSize, (size_t &bufferSize), (override));
     MOCK_METHOD(int32_t, GetFrameCount, (uint32_t &frameCount), (override));
     MOCK_METHOD(int32_t, GetLatency, (uint64_t &latency), (override));
@@ -107,6 +107,7 @@ public:
         (const std::shared_ptr<AudioFirstFrameCallback> &callback), (override));
     MOCK_METHOD(void, SetIsFirstFrame, (bool value), (override));
     MOCK_METHOD(int32_t, ResetStaticPlayPosition, (), (override));
+    MOCK_METHOD(int32_t, SetPitch, (float pitch), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {
@@ -688,7 +689,29 @@ HWTEST_F(FastSystemStreamUnitTest, SetPitch_001, TestSize.Level1)
     int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream;
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    int32_t res = fastAudioStream->SetSonicPitch(1.0f);
+    EXPECT_EQ(res, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetPitch in static mode
+ * @tc.type  : FUNC
+ * @tc.number: SetPitch_StaticMode_001
+ * @tc.desc  : Test FastAudioStream SetPitch in static mode.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetPitch_StaticMode_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetPitch_StaticMode_001 start");
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    fastAudioStream->rendererInfo_.isStatic = true;
     int32_t res = fastAudioStream->SetPitch(1.0f);
+    EXPECT_EQ(res, ERR_NOT_SUPPORTED);
+
+    fastAudioStream->rendererInfo_.isStatic = false;
+    res = fastAudioStream->SetPitch(1.0f);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
 }
 
@@ -2270,6 +2293,332 @@ HWTEST_F(FastSystemStreamUnitTest, CheckRestoreStatus_static_001, TestSize.Level
     fastAudioStream->rendererInfo_.isStatic = false;
     status = fastAudioStream->CheckRestoreStatus();
     EXPECT_NE(status, RESTORING);
+}
+
+/**
+ * @tc.name  : Test StartAudioStream in PREPARED state
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_001_StartAudioStream_PreparedState
+ * @tc.desc  : Test StartAudioStream enters RUNNING from PREPARED state (FAS-UT-004)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_001_StartAudioStream_PreparedState, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->state_ = PREPARED;
+
+    EXPECT_CALL(*mockProcessClient, Start()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockProcessClient, SetIsFirstFrame(true)).Times(1);
+
+    bool result = fastAudioStream->StartAudioStream(CMD_FROM_CLIENT);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(fastAudioStream->state_, RUNNING);
+}
+
+/**
+ * @tc.name  : Test StartAudioStream in PAUSED state calls Resume
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_002_StartAudioStream_PausedState
+ * @tc.desc  : Test StartAudioStream calls Resume when in PAUSED state (FAS-UT-005)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_002_StartAudioStream_PausedState, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->state_ = PAUSED;
+
+    EXPECT_CALL(*mockProcessClient, Resume()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockProcessClient, SetIsFirstFrame(true)).Times(1);
+    EXPECT_CALL(*mockProcessClient, Start()).Times(0);
+
+    bool result = fastAudioStream->StartAudioStream(CMD_FROM_CLIENT);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(fastAudioStream->state_, RUNNING);
+}
+
+/**
+ * @tc.name  : Test StartAudioStream fails in invalid state
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_003_StartAudioStream_InvalidState
+ * @tc.desc  : Test StartAudioStream returns false when state is invalid
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_003_StartAudioStream_InvalidState, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    fastAudioStream->state_ = NEW;
+    EXPECT_FALSE(fastAudioStream->StartAudioStream(CMD_FROM_CLIENT));
+
+    fastAudioStream->state_ = RELEASED;
+    EXPECT_FALSE(fastAudioStream->StartAudioStream(CMD_FROM_CLIENT));
+
+    fastAudioStream->state_ = INVALID;
+    EXPECT_FALSE(fastAudioStream->StartAudioStream(CMD_FROM_CLIENT));
+}
+
+/**
+ * @tc.name  : Test PauseAudioStream fails when not RUNNING
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_004_PauseAudioStream_NotRunning
+ * @tc.desc  : Test PauseAudioStream returns false when state is not RUNNING (FAS-UT-006)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_004_PauseAudioStream_NotRunning, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    fastAudioStream->state_ = PREPARED;
+    EXPECT_FALSE(fastAudioStream->PauseAudioStream(CMD_FROM_CLIENT));
+
+    fastAudioStream->state_ = PAUSED;
+    EXPECT_FALSE(fastAudioStream->PauseAudioStream(CMD_FROM_CLIENT));
+
+    fastAudioStream->state_ = STOPPED;
+    EXPECT_FALSE(fastAudioStream->PauseAudioStream(CMD_FROM_CLIENT));
+
+    fastAudioStream->state_ = NEW;
+    EXPECT_FALSE(fastAudioStream->PauseAudioStream(CMD_FROM_CLIENT));
+}
+
+/**
+ * @tc.name  : Test PauseAudioStream succeeds when RUNNING
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_005_PauseAudioStream_Running
+ * @tc.desc  : Test PauseAudioStream succeeds and state becomes PAUSED
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_005_PauseAudioStream_Running, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->state_ = RUNNING;
+
+    EXPECT_CALL(*mockProcessClient, Pause(false)).WillOnce(Return(SUCCESS));
+
+    bool result = fastAudioStream->PauseAudioStream(CMD_FROM_CLIENT);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(fastAudioStream->state_, PAUSED);
+}
+
+/**
+ * @tc.name  : Test StopAudioStream fails when not RUNNING or PAUSED
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_006_StopAudioStream_NotRunning
+ * @tc.desc  : Test StopAudioStream returns false when state is not RUNNING/PAUSED (FAS-UT-007)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_006_StopAudioStream_NotRunning, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    fastAudioStream->state_ = PREPARED;
+    EXPECT_FALSE(fastAudioStream->StopAudioStream());
+
+    fastAudioStream->state_ = NEW;
+    EXPECT_FALSE(fastAudioStream->StopAudioStream());
+
+    fastAudioStream->state_ = RELEASED;
+    EXPECT_FALSE(fastAudioStream->StopAudioStream());
+
+    fastAudioStream->state_ = STOPPED;
+    EXPECT_FALSE(fastAudioStream->StopAudioStream());
+}
+
+/**
+ * @tc.name  : Test StopAudioStream succeeds when RUNNING
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_007_StopAudioStream_Running
+ * @tc.desc  : Test StopAudioStream succeeds and state becomes STOPPED
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_007_StopAudioStream_Running, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->state_ = RUNNING;
+
+    EXPECT_CALL(*mockProcessClient, Stop(AUDIO_PROC_STAGE_STOP)).WillOnce(Return(SUCCESS));
+
+    bool result = fastAudioStream->StopAudioStream();
+    EXPECT_TRUE(result);
+    EXPECT_EQ(fastAudioStream->state_, STOPPED);
+}
+
+/**
+ * @tc.name  : Test SetAudioStreamInfo sets renderer fast flag via InitializeAudioProcessConfig
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_008_SetAudioStreamInfo_RendererFastFlag
+ * @tc.desc  : Test SetAudioStreamInfo internally writes renderer fast flag (FAS-UT-003)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_008_SetAudioStreamInfo_RendererFastFlag, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    fastAudioStream->state_ = NEW;
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::STEREO;
+
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    int32_t result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_NE(result, ERR_INVALID_OPERATION);
+    if (result == SUCCESS) {
+        EXPECT_EQ(fastAudioStream->GetState(), PREPARED);
+    }
+}
+
+/**
+ * @tc.name  : Test SetAudioStreamInfo for record mode sets capturer fast flag
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_009_SetAudioStreamInfo_CapturerFastFlag
+ * @tc.desc  : Test SetAudioStreamInfo internally writes capturer fast flag for record mode
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_009_SetAudioStreamInfo_CapturerFastFlag, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    fastAudioStream->state_ = NEW;
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::MONO;
+
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    int32_t result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_NE(result, ERR_INVALID_OPERATION);
+    if (result == SUCCESS) {
+        EXPECT_EQ(fastAudioStream->GetState(), PREPARED);
+    }
+}
+
+/**
+ * @tc.name  : Test SetAudioStreamInfo rejects re-entry when processClient exists
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_010_SetAudioStreamInfo_RejectReentry
+ * @tc.desc  : Test SetAudioStreamInfo returns ERR_INVALID_OPERATION when processClient already exists (FAS-UT-002)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_010_SetAudioStreamInfo_RejectReentry, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::STEREO;
+
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    int32_t result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_EQ(result, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test GetFastStatus returns FASTSTATUS_FAST
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_011_GetFastStatus_ReturnsFast
+ * @tc.desc  : Test GetFastStatus returns FASTSTATUS_FAST (FAS-UT-008)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_011_GetFastStatus_ReturnsFast, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    FastStatus status = fastAudioStream->GetFastStatus();
+    EXPECT_EQ(status, FASTSTATUS_FAST);
+}
+
+/**
+ * @tc.name  : Test SetPreferredFrameSize passes to process client
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_012_SetPreferredFrameSize_Passthrough
+ * @tc.desc  : Test SetPreferredFrameSize transparently passes to process client (FAS-UT-009)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_012_SetPreferredFrameSize_Passthrough, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    int32_t frameSize = 1024;
+    EXPECT_CALL(*mockProcessClient, SetPreferredFrameSize(frameSize, false)).Times(1);
+    fastAudioStream->SetPreferredFrameSize(frameSize);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint passes to process client in record mode
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_013_SetMuteHint_RecordPassthrough
+ * @tc.desc  : Test SetMuteHint passes to process client in record mode (FAS-UT-011)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_013_SetMuteHint_RecordPassthrough, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    EXPECT_CALL(*mockProcessClient, SetMuteHint(true)).WillOnce(Return(SUCCESS));
+    int32_t result = fastAudioStream->SetMuteHint(true);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetRebuildFlag returns error when process is null
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_014_SetRebuildFlag_ProcessNull
+ * @tc.desc  : Test SetRebuildFlag returns error when processClient is null (FAS-UT-014)
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_014_SetRebuildFlag_ProcessNull, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    fastAudioStream->processClient_ = nullptr;
+    int32_t result = fastAudioStream->SetRebuildFlag();
+    EXPECT_NE(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

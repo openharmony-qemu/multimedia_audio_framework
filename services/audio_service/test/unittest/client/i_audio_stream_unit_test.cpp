@@ -478,5 +478,567 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicInEc_004, TestSize.Level1
     int32_t ret = IAudioStream::GetByteSizePerFrameWithMicInEc(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicIn API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicIn_001
+ * @tc.desc  : Test GetByteSizePerFrameWithMicIn with all valid formats.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicIn_001, TestSize.Level1)
+{
+    std::vector<std::pair<AudioSampleFormat, size_t>> cases = {
+        {SAMPLE_U8, 1},
+        {SAMPLE_S16LE, 2},
+        {SAMPLE_S24LE, 3},
+        {SAMPLE_S32LE, 4},
+        {SAMPLE_F32LE, 4},
+    };
+    for (const auto &item : cases) {
+        AudioStreamParams params {};
+        params.samplingRate = SAMPLE_RATE_48000;
+        params.format = item.first;
+        params.channels = AudioChannel::STEREO;
+        params.micInChannels = AudioChannel::CHANNEL_4;
+
+        size_t result = 0;
+        int32_t ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+        EXPECT_EQ(ret, SUCCESS);
+        EXPECT_EQ(result, item.second * 6); // 2 process channels + 4 mic-in channels
+    }
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicIn API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicIn_002
+ * @tc.desc  : Test GetByteSizePerFrameWithMicIn with invalid format.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicIn_002, TestSize.Level1)
+{
+    AudioStreamParams params {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = INVALID_WIDTH;
+    params.channels = AudioChannel::STEREO;
+    params.micInChannels = AudioChannel::CHANNEL_4;
+
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicIn API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicIn_003
+ * @tc.desc  : Test GetByteSizePerFrameWithMicIn with invalid total channels.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicIn_003, TestSize.Level1)
+{
+    AudioStreamParams params {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_UNKNOW;
+    params.micInChannels = CHANNEL_UNKNOW;
+
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    params.channels = static_cast<AudioChannel>(13);
+    params.micInChannels = AudioChannel::CHANNEL_4; // total 17
+    ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+class IAudioStreamNewUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void IAudioStreamNewUnitTest::SetUpTestCase(void) {}
+void IAudioStreamNewUnitTest::TearDownTestCase(void) {}
+void IAudioStreamNewUnitTest::SetUp(void) {}
+void IAudioStreamNewUnitTest::TearDown(void) {}
+
+/**
+ * @tc.name  : Test GetPlaybackStream for FAST_STREAM with new route enabled
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_NewRoute_001
+ * @tc.desc  : Test GetPlaybackStream creates RendererInClient when new route is enabled.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_NewRoute_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM, params, STREAM_MUSIC, getpid());
+    EXPECT_TRUE(stream != nullptr);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream for VOIP_STREAM with new route
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_VoipStream_001
+ * @tc.desc  : Test GetPlaybackStream for VOIP_STREAM creates appropriate stream.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_VoipStream_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream = IAudioStream::GetPlaybackStream(IAudioStream::VOIP_STREAM, params, STREAM_MUSIC, getpid());
+    EXPECT_TRUE(stream != nullptr);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream for PA_STREAM
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_PAStream_001
+ * @tc.desc  : Test GetPlaybackStream creates RendererInClient for PA_STREAM.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_PAStream_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+    EXPECT_TRUE(stream != nullptr);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream for invalid stream class
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_InvalidClass_001
+ * @tc.desc  : Test GetPlaybackStream returns nullptr for invalid stream class.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_InvalidClass_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream = IAudioStream::GetPlaybackStream(
+        static_cast<IAudioStream::StreamClass>(99), params, STREAM_MUSIC, getpid()); // 99 is temp invalid class
+    EXPECT_TRUE(stream == nullptr);
+}
+
+/**
+ * @tc.name  : Test GetRecordStream for FAST_STREAM with new route
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_NewRoute_001
+ * @tc.desc  : Test GetRecordStream creates CapturerInClient when new route is enabled.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_NewRoute_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream = IAudioStream::GetRecordStream(IAudioStream::FAST_STREAM, params, STREAM_MUSIC, getpid());
+    EXPECT_TRUE(stream != nullptr);
+}
+
+/**
+ * @tc.name  : Test GetRecordStream for VOIP_STREAM
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_VoipStream_001
+ * @tc.desc  : Test GetRecordStream for VOIP_STREAM creates appropriate stream.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_VoipStream_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream = IAudioStream::GetRecordStream(IAudioStream::VOIP_STREAM, params, STREAM_MUSIC, getpid());
+    EXPECT_TRUE(stream != nullptr);
+}
+
+/**
+ * @tc.name  : Test GetRecordStream for PA_STREAM
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_PAStream_001
+ * @tc.desc  : Test GetRecordStream creates CapturerInClient for PA_STREAM.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_PAStream_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+    EXPECT_TRUE(stream != nullptr);
+}
+
+/**
+ * @tc.name  : Test GetRecordStream for invalid stream class
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_InvalidClass_001
+ * @tc.desc  : Test GetRecordStream returns nullptr for invalid stream class.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_InvalidClass_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    auto stream =IAudioStream::GetRecordStream(
+        static_cast<IAudioStream::StreamClass>(99), params, STREAM_MUSIC, getpid()); // 99 is temp invalid class
+    EXPECT_TRUE(stream == nullptr);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream with different stream types
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_DifferentTypes_001
+ * @tc.desc  : Test GetPlaybackStream works for various stream types.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_DifferentTypes_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    std::vector<AudioStreamType> streamTypes = {
+        STREAM_MUSIC,
+        STREAM_VOICE_CALL,
+        STREAM_SYSTEM,
+        STREAM_RING,
+        STREAM_ALARM,
+        STREAM_NOTIFICATION
+    };
+    
+    for (auto type : streamTypes) {
+        auto stream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, params, type, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetRecordStream with different stream types
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_DifferentTypes_001
+ * @tc.desc  : Test GetRecordStream works for various stream types.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_DifferentTypes_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    std::vector<AudioStreamType> streamTypes = {
+        STREAM_MUSIC,
+        STREAM_VOICE_CALL,
+        STREAM_SYSTEM
+    };
+    
+    for (auto type : streamTypes) {
+        auto stream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, params, type, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream with different sample rates
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_DifferentRates_001
+ * @tc.desc  : Test GetPlaybackStream works for various sample rates.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_DifferentRates_001, TestSize.Level1)
+{
+    std::vector<AudioSamplingRate> rates = {
+        SAMPLE_RATE_8000,
+        SAMPLE_RATE_16000,
+        SAMPLE_RATE_44100,
+        SAMPLE_RATE_48000
+    };
+    
+    for (auto rate : rates) {
+        AudioStreamParams params;
+        params.samplingRate = rate;
+        params.format = SAMPLE_S16LE;
+        params.channels = STEREO;
+        params.encoding = ENCODING_PCM;
+        
+        auto stream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetRecordStream with different sample rates
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_DifferentRates_001
+ * @tc.desc  : Test GetRecordStream works for various sample rates.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_DifferentRates_001, TestSize.Level1)
+{
+    std::vector<AudioSamplingRate> rates = {
+        SAMPLE_RATE_8000,
+        SAMPLE_RATE_16000,
+        SAMPLE_RATE_44100,
+        SAMPLE_RATE_48000
+    };
+    
+    for (auto rate : rates) {
+        AudioStreamParams params;
+        params.samplingRate = rate;
+        params.format = SAMPLE_S16LE;
+        params.channels = STEREO;
+        params.encoding = ENCODING_PCM;
+        
+        auto stream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream with different formats
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_DifferentFormats_001
+ * @tc.desc  : Test GetPlaybackStream works for various formats.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_DifferentFormats_001, TestSize.Level1)
+{
+    std::vector<AudioSampleFormat> formats = {
+        SAMPLE_U8,
+        SAMPLE_S16LE,
+        SAMPLE_S24LE,
+        SAMPLE_S32LE,
+        SAMPLE_F32LE
+    };
+    
+    for (auto format : formats) {
+        AudioStreamParams params;
+        params.samplingRate = SAMPLE_RATE_48000;
+        params.format = format;
+        params.channels = STEREO;
+        params.encoding = ENCODING_PCM;
+        
+        auto stream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetRecordStream with different formats
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_DifferentFormats_001
+ * @tc.desc  : Test GetRecordStream works for various formats.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_DifferentFormats_001, TestSize.Level1)
+{
+    std::vector<AudioSampleFormat> formats = {
+        SAMPLE_U8,
+        SAMPLE_S16LE,
+        SAMPLE_S24LE,
+        SAMPLE_S32LE,
+        SAMPLE_F32LE
+    };
+    
+    for (auto format : formats) {
+        AudioStreamParams params;
+        params.samplingRate = SAMPLE_RATE_48000;
+        params.format = format;
+        params.channels = STEREO;
+        params.encoding = ENCODING_PCM;
+        
+        auto stream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream with different channels
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_DifferentChannels_001
+ * @tc.desc  : Test GetPlaybackStream works for various channel counts.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_DifferentChannels_001, TestSize.Level1)
+{
+    std::vector<AudioChannel> channels = {
+        MONO,
+        STEREO,
+        CHANNEL_4,
+        CHANNEL_6,
+        CHANNEL_8
+    };
+    
+    for (auto channel : channels) {
+        AudioStreamParams params;
+        params.samplingRate = SAMPLE_RATE_48000;
+        params.format = SAMPLE_S16LE;
+        params.channels = channel;
+        params.encoding = ENCODING_PCM;
+        
+        auto stream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetRecordStream with different channels
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_DifferentChannels_001
+ * @tc.desc  : Test GetRecordStream works for various channel counts.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_DifferentChannels_001, TestSize.Level1)
+{
+    std::vector<AudioChannel> channels = {
+        MONO,
+        STEREO,
+        CHANNEL_4,
+        CHANNEL_6
+    };
+    
+    for (auto channel : channels) {
+        AudioStreamParams params;
+        params.samplingRate = SAMPLE_RATE_48000;
+        params.format = SAMPLE_S16LE;
+        params.channels = channel;
+        params.encoding = ENCODING_PCM;
+        
+        auto stream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, getpid());
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetPlaybackStream with different appUids
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackStream_DifferentUids_001
+ * @tc.desc  : Test GetPlaybackStream works for various appUids.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetPlaybackStream_DifferentUids_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    std::vector<int32_t> uids = {100, 1000, 10000, getuid()};
+    
+    for (auto uid : uids) {
+        auto stream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, uid);
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test GetRecordStream with different appUids
+ * @tc.type  : FUNC
+ * @tc.number: GetRecordStream_DifferentUids_001
+ * @tc.desc  : Test GetRecordStream works for various appUid.
+ */
+HWTEST(IAudioStreamNewUnitTest, GetRecordStream_DifferentUids_001, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
+    params.encoding = ENCODING_PCM;
+    
+    std::vector<int32_t> uids = {100, 1000, 10000, getuid()};
+    
+    for (auto uid : uids) {
+        auto stream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, params, STREAM_MUSIC, uid);
+        EXPECT_TRUE(stream != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test stream creation with RendererInClient
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClient_Instance_001
+ * @tc.desc  : Test RendererInClient::GetInstance creates valid stream.
+ */
+HWTEST(IAudioStreamNewUnitTest, RendererInClient_Instance_001, TestSize.Level1)
+{
+    auto rendererInClient = RendererInClient::GetInstance(STREAM_MUSIC, getpid());
+    EXPECT_TRUE(rendererInClient != nullptr);
+}
+
+/**
+ * @tc.name  : Test stream creation with CapturerInClient
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInClient_Instance_001
+ * @tc.desc  : Test CapturerInClient::GetInstance creates valid stream.
+ */
+HWTEST(IAudioStreamNewUnitTest, CapturerInClient_Instance_001, TestSize.Level1)
+{
+    auto capturerInClient = CapturerInClient::GetInstance(STREAM_MUSIC, getpid());
+    EXPECT_TRUE(capturerInClient != nullptr);
+}
+
+/**
+ * @tc.name  : Test stream creation with different stream types for RendererInClient
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClient_DifferentTypes_001
+ * @tc.desc  : Test RendererInClient::GetInstance for various stream types.
+ */
+HWTEST(IAudioStreamNewUnitTest, RendererInClient_DifferentTypes_001, TestSize.Level1)
+{
+    std::vector<AudioStreamType> streamTypes = {
+        STREAM_MUSIC,
+        STREAM_VOICE_CALL,
+        STREAM_SYSTEM,
+        STREAM_RING,
+        STREAM_ALARM
+    };
+    
+    for (auto type : streamTypes) {
+        auto rendererInClient = RendererInClient::GetInstance(type, getpid());
+        EXPECT_TRUE(rendererInClient != nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test stream creation with different stream types for CapturerInClient
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInClient_DifferentTypes_001
+ * @tc.desc  : Test CapturerInClient::GetInstance for various stream types.
+ */
+HWTEST(IAudioStreamNewUnitTest, CapturerInClient_DifferentTypes_001, TestSize.Level1)
+{
+    std::vector<AudioStreamType> streamTypes = {
+        STREAM_MUSIC,
+        STREAM_VOICE_CALL,
+        STREAM_SYSTEM
+    };
+    
+    for (auto type : streamTypes) {
+        auto capturerInClient = CapturerInClient::GetInstance(type, getpid());
+        EXPECT_TRUE(capturerInClient != nullptr);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

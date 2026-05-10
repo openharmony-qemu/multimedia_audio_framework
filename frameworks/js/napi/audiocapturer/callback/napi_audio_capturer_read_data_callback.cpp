@@ -379,10 +379,10 @@ void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWorkInner(Captu
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call %{public}s callback", request.c_str());
-    } while (0);
-    if (event->capturerNapiObj != nullptr && event->capturerNapiObj->audioCapturer_ != nullptr) {
+        CHECK_AND_BREAK_LOG(event->capturerNapiObj != nullptr && event->capturerNapiObj->audioCapturer_ != nullptr,
+            "audioCapturer_ is null");
         event->capturerNapiObj->audioCapturer_->Enqueue(event->bufDesc);
-    }
+    } while (0);
     napi_close_handle_scope(env, scope);
 }
 } // namespace AudioStandard

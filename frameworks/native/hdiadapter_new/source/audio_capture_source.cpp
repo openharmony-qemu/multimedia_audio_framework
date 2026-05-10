@@ -45,6 +45,8 @@ namespace AudioStandard {
 static constexpr uint32_t DECIMAL_BASE = 10;
 static constexpr uint32_t RAW_CHANNEL_COUNT = 1;
 static constexpr uint32_t MICIN_CHANNEL_COUNT = 4;
+static constexpr uint32_t CAMCORDER_RAW_CHANNEL_COUNT = 2;
+static constexpr uint32_t CAMCORDER_MICIN_CHANNEL_COUNT = 4;
 static constexpr uint32_t AUDIO_D2D = 12;
 static constexpr uint32_t AUDIO_INPUT_INTERPHON_TYPE = 1 << 16;
 AudioInputType hdiAudioInterphoneInputType = static_cast<AudioInputType>(AUDIO_INPUT_INTERPHON_TYPE);
@@ -134,6 +136,39 @@ static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, cha
     return true;
 }
 
+static bool InterleaveRawAndMicInFrameForCamcorder(const int8_t *src, uint64_t frameLen,
+    char *dst, size_t bytesPerSample)
+{
+    if (src == nullptr || dst == nullptr || frameLen == 0 || bytesPerSample == 0) {
+        return false;
+    }
+
+    const uint64_t frameSize =
+        static_cast<uint64_t>(bytesPerSample) * (CAMCORDER_RAW_CHANNEL_COUNT + CAMCORDER_MICIN_CHANNEL_COUNT);
+    if (frameSize == 0 || frameLen % frameSize != 0) {
+        return false;
+    }
+
+    const size_t frameCount = static_cast<size_t>(frameLen / frameSize);
+    const size_t micInFrameSize = static_cast<size_t>(CAMCORDER_MICIN_CHANNEL_COUNT) * bytesPerSample;
+    const size_t rawFrameSize = static_cast<size_t>(CAMCORDER_RAW_CHANNEL_COUNT) * bytesPerSample;
+    const size_t outputFrameSize = micInFrameSize + rawFrameSize;
+    const uint8_t *rawBase = reinterpret_cast<const uint8_t *>(src);
+    const uint8_t *micInBase = rawBase + frameCount * rawFrameSize;
+    uint8_t *dstBase = reinterpret_cast<uint8_t *>(dst);
+    for (size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+        if (memcpy_s(dstBase + frameIndex * outputFrameSize, outputFrameSize,
+            rawBase + frameIndex * rawFrameSize, rawFrameSize) != EOK) {
+            return false;
+        }
+        if (memcpy_s(dstBase + frameIndex * outputFrameSize + rawFrameSize, outputFrameSize - rawFrameSize,
+            micInBase + frameIndex * micInFrameSize, micInFrameSize) != EOK) {
+            return false;
+        }
+    }
+    return true;
+}
+
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
 {
@@ -143,7 +178,15 @@ AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::stri
 
 AudioCaptureSource::~AudioCaptureSource()
 {
-    isCaptureThreadRunning_ = false;
+    isCaptureThreadRunning_.store(false);
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
+    if (captureThread_ != nullptr && captureThread_->joinable()) {
+        captureThread_->join();
+        captureThread_ = nullptr;
+    }
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
@@ -318,13 +361,16 @@ int32_t AudioCaptureSource::Stop(void)
     Trace trace("AudioCaptureSource::Stop");
     std::promise<void> promiseEnsureLock;
     auto futurePromiseEnsureLock = promiseEnsureLock.get_future();
-    std::thread stopThread([&promiseEnsureLock, this] {
+    if (stopThread_ != nullptr && stopThread_->joinable()) {
+        stopThread_->join();
+        stopThread_ = nullptr;
+    }
+    stopThread_ = std::make_unique<std::thread>([&promiseEnsureLock, this] {
         std::lock_guard<std::mutex> lock(statusMutex_);
         promiseEnsureLock.set_value();
         DoStop();
     });
     futurePromiseEnsureLock.get();
-    stopThread.detach();
 
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
         SetAccessoryDeviceState(false);
@@ -438,6 +484,15 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
         audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
     }
     CheckLatencySignal(reinterpret_cast<uint8_t *>(frame), replyBytes);
+
+    if (attr_.sourceType == SOURCE_TYPE_CAMCORDER && attr_.channelMicIn > CHANNEL_UNKNOW) {
+        std::vector<int8_t> buffer(reinterpret_cast<int8_t *>(frame),
+            reinterpret_cast<int8_t *>(frame) + replyBytes);
+        size_t bytesPerSample = static_cast<size_t>(GetByteSizeByFormat(attr_.format));
+        if (!InterleaveRawAndMicInFrameForCamcorder(buffer.data(), replyBytes, frame, bytesPerSample)) {
+            AUDIO_WARNING_LOG("camcorder interleave failed, fallback to direct data");
+        }
+    }
 
     HdiDfxUtils::PrintVolumeInfo(frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
     HdiDfxUtils::DumpData(frame, replyBytes, dumpFile_, dumpFileName_);
@@ -1024,12 +1079,16 @@ uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSourc
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
         case AUDIO_INPUT_RAW_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESS);
+        case AUDIO_INPUT_LIVE_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_LIVE);
         case AUDIO_INPUT_ULTRASONIC_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ULTRASONIC);
         case AUDIO_INPUT_VOICE_RECOGNITION_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_RECOGNITION);
         case AUDIO_INPUT_RAW_AI_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT);
+        case AUDIO_INPUT_CAMCORDER_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_CAMCORDER);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -1078,7 +1137,7 @@ void AudioCaptureSource::InitEcOrMicRefAttr(const IAudioSourceAttr &attr)
 
 void AudioCaptureSource::UpdateRawSampleAttr(struct AudioSampleAttributes &param)
 {
-    if (attr_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+    if (attr_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION || attr_.sourceType == SOURCE_TYPE_CAMCORDER) {
         param.rawSampleAttributes.rawFormat = ConvertToHdiFormat(attr_.formatMicIn);
         param.rawSampleAttributes.rawSampleRate = attr_.sampleRateMicIn;
         param.rawSampleAttributes.rawChannelLayout = GetChannelLayoutByChannelCount(attr_.channelMicIn);
@@ -1361,7 +1420,7 @@ int32_t AudioCaptureSource::NonblockingStart(void)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     started_.store(true);
 
-    isCaptureThreadRunning_ = true;
+    isCaptureThreadRunning_.store(true);
     captureThread_ = std::make_unique<std::thread>(&AudioCaptureSource::CaptureThreadLoop, this);
     std::string threadName = "OS_Capture";
     threadName += (attr_.sourceType == SOURCE_TYPE_EC) ? "Ec" : "MicRef";
@@ -1371,9 +1430,10 @@ int32_t AudioCaptureSource::NonblockingStart(void)
 
 int32_t AudioCaptureSource::NonblockingStop(void)
 {
-    isCaptureThreadRunning_ = false;
+    isCaptureThreadRunning_.store(false);
     if (captureThread_ != nullptr && captureThread_->joinable()) {
         captureThread_->join();
+        captureThread_ = nullptr;
     }
 
     if (!started_.load()) {
@@ -1558,11 +1618,13 @@ enum AudioFlag AudioCaptureSource::ConvertToAudioInputRouteFlag(int32_t sourceTy
         case SOURCE_TYPE_UNPROCESSED:
             audioInputRouteFlag = AUDIO_INPUT_FLAG_UNPROCESS;
             break;
+        case SOURCE_TYPE_LIVE:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_LIVE;
+            break;
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_CAMCORDER:
         case SOURCE_TYPE_VOICE_MESSAGE:
         case SOURCE_TYPE_VOICE_CALL:
-        case SOURCE_TYPE_LIVE:
             audioInputRouteFlag = AUDIO_INPUT_FLAG_NORMAL;
             break;
         case SOURCE_TYPE_ULTRASONIC:

@@ -110,7 +110,8 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConfigManager_(AudioCoreConfigManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
-        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
+        audioRouterSelectStrategy_(AudioRouterSelectStrategy::GetInstance()) {}
     ~AudioDeviceStatus() {}
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
@@ -141,9 +142,6 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
     int32_t UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &updatedDesc);
-#ifdef BLUETOOTH_ENABLE
-    void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
-#endif
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
     void UpdateAllUserSelectDevice(vector<shared_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
         AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc);
@@ -187,7 +185,6 @@ private:
         uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort);
     void UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
         AudioStreamDeviceChangeReasonExt &reason);
-    bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
@@ -207,6 +204,7 @@ private:
     AudioCoreConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;
     AudioUsrSelectManager& audioUsrSelectManager_;
+    AudioRouterSelectStrategy& audioRouterSelectStrategy_;
 
     bool remoteCapturerSwitch_ = false;
     std::vector<std::pair<AudioDeviceDescriptor, bool>> pnpDeviceList_;

@@ -29,6 +29,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
+FastAudioRenderSink::FastAudioRenderSink()
+#ifdef MULTI_BUS_ENABLE
+    : playingAppManager_([this](const std::string &param) { return SetPlayingAppNameParam(param); })
+#endif
+{
+}
+
 FastAudioRenderSink::~FastAudioRenderSink()
 {
     AUDIO_INFO_LOG("in");
@@ -47,9 +54,9 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
-    std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
     // Only set device route for loopback stream to ensure low latency creation succeeds
     if (attr.isLoopback) {
+        std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
         DoSetOutputRoute(devices);
     }
     sinkInited_ = true;
@@ -130,6 +137,9 @@ int32_t FastAudioRenderSink::Start(void)
 #endif
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
     started_ = true;
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Start();
+#endif
     AUDIO_DEBUG_LOG("cost: [%{public}" PRId64 "]ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
     return SUCCESS;
 }
@@ -159,6 +169,9 @@ int32_t FastAudioRenderSink::Stop(void)
     ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Stop]stop fail, ret: %{public}d", ret));
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.Stop();
+#endif
     started_ = false;
     return SUCCESS;
 }
@@ -281,6 +294,18 @@ void FastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::
     AUDIO_INFO_LOG("FastAudioRenderSink::SetAudioParameter SetExtraParams ret: %{public}d", ret);
 }
 
+bool FastAudioRenderSink::SetPlayingAppNameParam(const std::string &param)
+{
+    AUDIO_INFO_LOG("param: %{public}s", param.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, false, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set playing app name param fail, error code: %{public}d", ret);
+        return false;
+    }
+    return true;
+}
+
 int32_t FastAudioRenderSink::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
@@ -383,11 +408,19 @@ int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 
 int32_t FastAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid, appsUid + size);
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
     return SUCCESS;
 }
 
 int32_t FastAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef MULTI_BUS_ENABLE
+    playingAppManager_.UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    playingAppManager_.UpdatePlayingAppNameToHdi();
+#endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());

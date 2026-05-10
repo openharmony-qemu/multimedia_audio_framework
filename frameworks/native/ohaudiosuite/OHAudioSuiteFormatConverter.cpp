@@ -45,6 +45,9 @@ using namespace OHOS::AudioStandard;
 static std::atomic<int32_t> g_globalCreateCount(0);
 static std::atomic<int32_t> g_globalDestroyCount(0);
 
+static std::unordered_set<OH_AudioConverter*> g_activeConverters;
+static std::mutex g_activeConvertersMutex;
+
 // CAPI callback implementation class (adapter pattern)
 class ConverterDataCallbackImpl : public AudioSuite::FormatConverterDataCallback {
 public:
@@ -123,9 +126,9 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
             return AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL;
         case ERR_ILLEGAL_STATE:
             return AUDIOCONVERTER_ERROR_NOT_INITIALIZED;
-        case ERR_CALLBACK_INVALID:
+        case ERR_INVALID_WRITE:
             return AUDIOCONVERTER_ERROR_CALLBACK_INVALID;
-        case ERR_CALLBACK_NOT_SET:
+        case ERR_CALLBACK_NOT_FOUND:
             return AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET;
         default:
             return AUDIOCONVERTER_ERROR_SYSTEM;
@@ -134,7 +137,7 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
 
 static OHAudioConverter *ConvertAudioSuiteConverter(OH_AudioConverter *audioSuiteConverter)
 {
-    return (OHAudioConverter *)audioSuiteConverter;
+    return reinterpret_cast<OHAudioConverter *>(audioSuiteConverter);
 }
 
 OH_AudioConverter_Result OH_AudioConverter_Create(
@@ -159,6 +162,11 @@ OH_AudioConverter_Result OH_AudioConverter_Create(
     }
     *converter = (OH_AudioConverter*)suiteConverter;
 
+    {
+        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+        g_activeConverters.insert(*converter);
+    }
+
     g_globalCreateCount++;
     AUDIO_DEBUG_LOG("OH_AudioConverter_Create:global create count=%{public}d", g_globalCreateCount.load());
     return AUDIOCONVERTER_SUCCESS;
@@ -172,6 +180,14 @@ OH_AudioConverter_Result OH_AudioConverter_SetInputCallback(
     CHECK_AND_RETURN_RET_LOG(converter != nullptr,
         AUDIOCONVERTER_ERROR_INVALID_PARAM,
         "Failed to set callback function: The passed address is nullptr.");
+
+    {
+        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+        if (g_activeConverters.find(converter) == g_activeConverters.end()) {
+            AUDIO_ERR_LOG("Failed to set callback: Converter not active or already destroyed");
+            return AUDIOCONVERTER_ERROR_NOT_INITIALIZED;
+        }
+    }
 
     OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
 
@@ -191,6 +207,14 @@ OH_AudioConverter_Result OH_AudioConverter_Process(
         AUDIOCONVERTER_ERROR_INVALID_PARAM,
         "Data processing failed: Converter is a null pointer");
 
+    {
+        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+        if (g_activeConverters.find(converter) == g_activeConverters.end()) {
+            AUDIO_ERR_LOG("Process failed: Converter not active or already destroyed");
+            return AUDIOCONVERTER_ERROR_NOT_INITIALIZED;
+        }
+    }
+
     OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
 
     CHECK_AND_RETURN_RET_LOG(suiteConverter != nullptr,
@@ -207,15 +231,24 @@ void OH_AudioConverter_Destroy(OH_AudioConverter* converter)
         AUDIO_ERR_LOG("Data Destroy failed: Converter is a null pointer");
         return;
     }
-
+    {
+        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+        if (g_activeConverters.find(converter) == g_activeConverters.end()) {
+            AUDIO_ERR_LOG("Data Destroy: Converter not active or already destroyed");
+            return;
+        }
+    }
     OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
     if (suiteConverter == nullptr) {
         AUDIO_ERR_LOG("Data Destroy failed: OHAudioConverter Converter is a null pointer");
         return;
     }
     suiteConverter->Destroy();
-
     delete suiteConverter;
+    {
+        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+        g_activeConverters.erase(converter);
+    }
     g_globalDestroyCount++;
     if (g_globalDestroyCount.load() != g_globalCreateCount.load()) {
         AUDIO_ERR_LOG("OH_AudioConverter_Destroy:global destroy count=%{public}d, global create count=%{public}d",
@@ -267,7 +300,6 @@ OH_AudioConverter_Result OHAudioConverter::Create(
         AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT,
         "Create failed: unsupported audio encoding");
 
-    // Format conversion: OH_AudioConverter_Format -> PcmBufferFormat
     ConvertToPcmFormat(inputFormat, outputFormat);
 
     AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
@@ -276,22 +308,25 @@ OH_AudioConverter_Result OHAudioConverter::Create(
         outputFormat->samplingRate,
         MAP_LAYOUT_TO_CHANNEL[outputFormat->channelLayout]);
 
-    // Create an InnerAPI instance (no-argument constructor)
-    impl_ = IAudioFormatConverter::Create(inputFormat_, outputFormat_);
+    impl_ = AudioFormatConverter::Create(inputFormat_, outputFormat_);
     CHECK_AND_RETURN_RET_LOG(
         impl_ != nullptr, AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT, "Create failed: memory alloc failed");
- 
+    
+    isInitialized_ = true;
     return AUDIOCONVERTER_SUCCESS;
 }
 
 void OHAudioConverter::Destroy()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
+    if (!isInitialized_) {
+        AUDIO_ERR_LOG("Destroy: converter is not initialized or already destroyed");
+        return;
+    }
     if (impl_ != nullptr) {
         impl_->Destroy();
     }
-
+    isInitialized_ = false;
     AUDIO_DEBUG_LOG("Destroy: success");
     return;
 }
@@ -306,7 +341,6 @@ OH_AudioConverter_Result OHAudioConverter::SetRequestDataCallback(
 
     std::lock_guard<std::mutex> lock(mutex_);
     int32_t ret = 0;
-    // Create a callback implementation class object and pass it via shared_ptr.
     CHECK_AND_RETURN_RET_LOG(
         impl_ != nullptr, AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "The audio format converter pointer is empty.");
     auto callbackImpl = std::make_shared<ConverterDataCallbackImpl>(callback, userData);

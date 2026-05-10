@@ -80,12 +80,15 @@ public:
     void SetScoExcluded(bool scoExcluded);
     bool GetScoExcluded();
 
-    void UpdateCurrentOutputDevice(int32_t uid,
-        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
-    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetCurrentOutputDevice(int32_t uid);
     void UpdateCurrentInputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
     std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetCurrentInputDevice(int32_t uid);
+    std::set<int32_t> FindCurrentInputDevice(std::set<DeviceType> &&types);
+
+    void UpdateCurrentOutputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetCurrentOutputDevice(int32_t uid);
+    std::set<int32_t> FindCurrentOutputDevice(std::set<DeviceType> &&types);
 
     void UpdateInputStreamState(int32_t uid, uint32_t streamId, SourceType sourceType, CapturerState state);
     void UpdateOutputStreamState(int32_t uid, uint32_t streamId, StreamUsage streamUsage,

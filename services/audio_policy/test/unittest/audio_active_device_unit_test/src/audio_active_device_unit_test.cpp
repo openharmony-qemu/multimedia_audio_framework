@@ -15,6 +15,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_active_device_unit_test.h"
+#include "audio_router_select_strategy.h"
 
 using namespace testing::ext;
 
@@ -48,50 +49,13 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_001, TestSize.Leve
 HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_002, TestSize.Level1)
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    int32_t deviceId = AudioActiveDevice::GetInstance().GetCurrentInputDevice().deviceId_;
+    int32_t deviceId = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice().deviceId_;
     AudioInterrupt audioInterrupt;
     float result = audioActiveDevice->GetMaxAmplitude(deviceId, audioInterrupt);
     EXPECT_NE(audioActiveDevice, nullptr);
 }
 
-/**
-* @tc.name  : Test AudioActiveDevice.
-* @tc.number: AudioActiveDeviceUnitTest_003.
-* @tc.desc  : Test UpdateDevice.
-*/
-HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_003, TestSize.Level1)
-{
-    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE);
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->clientUID = 1001;
-    rendererChangeInfo->createrUID = 1001;
-    rendererChangeInfo->sessionId = 2001;
-
-    audioActiveDevice->UpdateDevice(desc, reason, rendererChangeInfo);
-    EXPECT_NE(rendererChangeInfo, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioActiveDevice.
-* @tc.number: AudioActiveDeviceUnitTest_004.
-* @tc.desc  : Test UpdateDevice.
-*/
-HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_004, TestSize.Level1)
-{
-    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE);
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->clientUID = 1001;
-    rendererChangeInfo->createrUID = 1001;
-    rendererChangeInfo->sessionId = 2001;
-
-    audioActiveDevice->UpdateDevice(desc, reason, rendererChangeInfo);
-    EXPECT_NE(rendererChangeInfo, nullptr);
-}
-
+constexpr int32_t TEST_DEVICE_ID = 1001;
 /**
 * @tc.name  : Test AudioActiveDevice.
 * @tc.number: AudioActiveDeviceUnitTest_011.
@@ -100,13 +64,15 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_004, TestSize.Leve
 HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_011, TestSize.Level1)
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    AudioDeviceDescriptor audioDeviceDescriptor(DeviceType::DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     bool result = audioActiveDevice->IsDirectSupportedDevice();
     EXPECT_EQ(result, true);
 
-    AudioDeviceDescriptor audioDeviceDescriptor1(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor1);
+    auto desc1 = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    desc->deviceId_ = 1002;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc1});
     result = audioActiveDevice->IsDirectSupportedDevice();
     EXPECT_EQ(result, false);
 }
@@ -119,8 +85,9 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_011, TestSize.Leve
 HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_012, TestSize.Level1)
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    AudioDeviceDescriptor audioDeviceDescriptor(DeviceType::DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     bool result = audioActiveDevice->IsDeviceActive(DeviceType::DEVICE_TYPE_USB_HEADSET);
     EXPECT_EQ(result, true);
 
@@ -136,8 +103,11 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_012, TestSize.Leve
 HWTEST_F(AudioActiveDeviceUnitTest, GetCurrentInputDeviceMacAddr_001, TestSize.Level1)
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-
-    audioActiveDevice->currentActiveInputDeviceMap_[-1].macAddress_ = "00:11:22:33:44:55";
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->deviceId_ = TEST_DEVICE_ID;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
     string ret = audioActiveDevice->GetCurrentInputDeviceMacAddr();
     EXPECT_EQ(ret, "00:11:22:33:44:55");
 }

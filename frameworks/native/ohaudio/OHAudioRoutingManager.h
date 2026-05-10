@@ -16,6 +16,9 @@
 #ifndef OH_AUDIO_ROUTING_MANAGER_H
 #define OH_AUDIO_ROUTING_MANAGER_H
 
+#include <unordered_map>
+#include <vector>
+
 #include "audio_common_log.h"
 #include "native_audio_routing_manager.h"
 #include "native_audio_common.h"
@@ -162,13 +165,23 @@ public:
 
 private:
     OHAudioRoutingManager();
+    struct PreferredOutputCallbackInfo {
+        int32_t uid;
+        StreamUsage streamUsage;
+    };
+    struct PreferredInputCallbackInfo {
+        int32_t uid;
+        SourceType sourceType;
+    };
     AudioSystemManager *audioSystemManager_ = AudioSystemManager::GetInstance();
     AudioRoutingManager *audioRoutingManager_ =  AudioRoutingManager::GetInstance();
     std::vector<std::shared_ptr<OHAudioDeviceChangedCallback>> ohAudioOnDeviceChangedCallbackArray_;
-    std::vector<std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback>>
-        ohAudioPreferredOutputDeviceCallbackArray_;
-    std::vector<std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback>> ohAudioPreferredInputDeviceCallbackArray_;
     std::vector<std::shared_ptr<OHMicrophoneBlockCallback>> ohMicroPhoneBlockCallbackArray_;
+
+    std::vector<std::pair<std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback>, PreferredOutputCallbackInfo>>
+        preferredOutputDeviceCallbackList_;
+    std::vector<std::pair<std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback>, PreferredInputCallbackInfo>>
+        preferredInputDeviceCallbackList_;
 
     std::mutex audioPreferredOutputDeviceCbMutex_;
     std::mutex audioPreferredInputDeviceCbMutex_;

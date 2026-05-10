@@ -376,6 +376,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Destroy_001, TestSize.Level0)
     OH_AudioConverter_Destroy(nullptr);
 
     OH_AudioConverter_Destroy(converter);
+    OH_AudioConverter_Destroy(converter);
 }
 
 /**
@@ -478,6 +479,35 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_SetInputCallback_004, TestSize.
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioConverter_SetInputCallback.
+ * @tc.number: OH_AudioConverter_SetInputCallback_005
+ * @tc.desc  : Test Set a callback function after destroying the converter.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioConverter_SetInputCallback_005, TestSize.Level0)
+{
+    OH_AudioConverter_Format inputFormat;
+    inputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    inputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    inputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    inputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+ 
+    OH_AudioConverter_Format outputFormat;
+    outputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    outputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
+    outputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    outputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+ 
+    OH_AudioConverter* converter = nullptr;
+    OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    OH_AudioConverter_Destroy(converter);
+    ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback, nullptr);
+    EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_NOT_INITIALIZED);
+ 
     OH_AudioConverter_Destroy(converter);
 }
 
@@ -1600,6 +1630,40 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_036, TestSize.Level0)
     OH_AudioConverter_Destroy(converter);
 }
 
+/**
+ * @tc.name  : Test OH_AudioConverter_Process.
+ * @tc.number: OH_AudioConverter_Process_037
+ * @tc.desc  : Test Destroy converter post-processing data.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_037, TestSize.Level0)
+{
+    OH_AudioConverter_Format inputFormat;
+    inputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    inputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    inputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    inputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+    
+    OH_AudioConverter_Format outputFormat;
+    outputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    outputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    outputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    outputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+    
+    OH_AudioConverter* converter = nullptr;
+    OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    
+    ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback, nullptr);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    
+    uint8_t outputData[LARGE_BUFFER_SIZE] = {0};
+    int32_t outputSize = 0;
+    OH_AudioConverter_Destroy(converter);
+    ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
+    EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_NOT_INITIALIZED);
+    
+    OH_AudioConverter_Destroy(converter);
+}
 
 // Multithreaded testing related
 static std::atomic<int32_t> g_mtCallbackCallCount(0);
@@ -1818,13 +1882,11 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_002, TestSize.Le
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallbackHaveData, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // Using non-frame aligned output capacity (STEREO + S16LE = 4 bytes per frame, 1022 is not divisible by 4)
     uint8_t outputData[CUSTOM_BUFFER_SIZE_1022] = {0};
     int32_t outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // The output size should be frame-aligned (a multiple of 4).
     EXPECT_EQ(outputSize % 4, 0);
 
     OH_AudioConverter_Destroy(converter);
@@ -1853,7 +1915,6 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_003, TestSize.Le
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // The first call generates cached data.
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_016, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
@@ -1862,7 +1923,6 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_003, TestSize.Le
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
 
-    // The second call may use the remaining cached data (partially copied branch).
     outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);

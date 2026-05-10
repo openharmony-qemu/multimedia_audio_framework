@@ -145,6 +145,7 @@ public:
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
+    int32_t SetPitch(float pitch) override;
     void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override;
     int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
     bool IsFastRenderer() override;
@@ -246,6 +247,7 @@ private:
         IAudioStream::SwitchInfo &info);
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream, RestoreInfo restoreInfo,
         RendererState previousState, IAudioStream::SwitchInfo &switchInfo);
+    void UpdateFlagForSwitchInfo(IAudioStream::SwitchInfo &switchInfo, IAudioStream::StreamClass targetClass);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();
@@ -266,9 +268,11 @@ private:
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
-    int32_t SetPitch(float pitch);
+    int32_t SetSonicPitch(float pitch);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
+    void NotifyFastStatusChange(FastStatus status);
+    void SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
     int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
         std::string callingFunc);
@@ -286,6 +290,11 @@ private:
     std::string &GetBundleNameByAppUid(int32_t uid);
     int32_t ActivateAudioInterruptInStart(const bool isMute);
     void HandleAudioInterruptInfo();
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+        const std::string &erroDesc, bool isClient, RendererState state);
+    bool ValidateStartState();
+    bool ValidateNotSwitching();
+    bool ValidateAudioStream();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -359,9 +368,12 @@ public:
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     InterruptCallbackEvent HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    bool NoNeedNotifyEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
+    void HandleForcePause(StreamFocusState currentFocusState);
+    void HandleForceStop(StreamFocusState currentFocusState);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioRendererCallback> callback_;
     std::shared_ptr<AudioRendererCallback> cb_;

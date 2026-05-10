@@ -24,6 +24,9 @@
 #include "audio_utils.h"
 #include "audio_performance_monitor.h"
 #include "adapter/i_device_manager.h"
+#ifdef MULTI_BUS_ENABLE
+#include "util/audio_playing_app_manager.h"
+#endif
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -79,6 +82,7 @@ public:
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
+    DeviceType GetCurrentOutputDevice() override;
     void HandleDeviceCallback(const bool state);
 
     bool IsInA2dpOffload() override;
@@ -114,6 +118,7 @@ private:
     int32_t HandleSwitchDeviceMuteState(bool mute, bool &applyVolume);
     int32_t SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute);
     int32_t SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute);
+    bool SetPlayingAppNameParam(const std::string &param);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -149,7 +154,7 @@ private:
     std::string adapterNameCase_ = "";
     struct IAudioRender *audioRender_ = nullptr;
     bool audioMonoState_ = false;
-    bool audioBalanceState_ = false;
+    std::atomic<bool> audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
     // for signal detect
@@ -186,6 +191,9 @@ private:
 
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;
+#ifdef MULTI_BUS_ENABLE
+    AudioPlayingAppManager playingAppManager_;
+#endif
 
     std::function<void(bool)> deviceCallback_ = nullptr;
 

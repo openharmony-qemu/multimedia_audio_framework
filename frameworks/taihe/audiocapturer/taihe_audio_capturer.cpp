@@ -423,7 +423,7 @@ void AudioCapturerImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
-    // Playback capture created by modern inner capture api forbidden to start. 
+    // Playback capture created by modern inner capture api forbidden to start.
     // It should start by RequestPlaybackCaptureStart.
     if (sourceType_ == OHOS::AudioStandard::SOURCE_TYPE_PLAYBACK_CAPTURE && isModernInnerCapturer_) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "Modern inner capturer can not use start");

@@ -17,11 +17,28 @@
 #define LOG_TAG "IHpaeCapturerManager"
 #endif
 #include "i_hpae_capturer_manager.h"
+#include "hpae_capturer_manager.h"
+#include "hpae_fast_capturer_manager.h"
 #include "audio_engine_log.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+namespace {
+constexpr uint32_t INPUT_FAST_FLAG_MASK = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP_FAST;
+}
+
+std::shared_ptr<IHpaeCapturerManager> IHpaeCapturerManager::CreateCapturerManager(HpaeSourceInfo &sourceInfo)
+{
+    if ((sourceInfo.routeFlag & INPUT_FAST_FLAG_MASK) != 0) {
+        AUDIO_INFO_LOG("IHpaeCapturerManager::CreateCapturerManager HpaeFastCapturerManager");
+        return std::make_shared<HpaeFastCapturerManager>(sourceInfo);
+    }
+    AUDIO_INFO_LOG("IHpaeCapturerManager::CreateCapturerManager HpaeCapturerManager");
+    return std::make_shared<HpaeCapturerManager>(sourceInfo);
+}
+
 void IHpaeCapturerManager::UploadDumpSourceInfo(std::string &deviceName)
 {
 #ifdef ENABLE_HIDUMP_DFX

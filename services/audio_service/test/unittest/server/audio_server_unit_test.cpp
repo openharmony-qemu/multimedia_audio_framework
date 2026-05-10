@@ -493,29 +493,6 @@ HWTEST(AudioServerUnitTest, ParseAudioParameter_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test CacheExtraParameters API
- * @tc.type  : FUNC
- * @tc.number: CacheExtraParameters_001
- * @tc.desc  : Test CacheExtraParameters interface.
- */
-HWTEST(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioServerUnitTest CacheExtraParameters_001 start");
-    int32_t systemAbilityId = 100;
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
-    ASSERT_TRUE(audioServer != nullptr);
-    const std::string key = "key-test";
-    const std::vector<StringPair> kvpairs = {
-        {"key1", "value1"},
-        {"key2", "value2"}
-    };
-    EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
-    EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
-    audioServer->ParseAudioParameter();
-    EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
-}
-
-/**
  * @tc.name  : Test OnSystemloadLevel API
  * @tc.type  : FUNC
  * @tc.number: OnSystemloadLevel_001

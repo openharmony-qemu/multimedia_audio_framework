@@ -44,6 +44,21 @@ class ConcreteIStreamListener : public IStreamListener {
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
 };
 
+class CapturerSpanSizeListener : public IStreamListener {
+public:
+    int32_t OnOperationHandled(Operation operation, int64_t result) override
+    {
+        operation_ = operation;
+        result_ = result;
+        notifyCount_++;
+        return SUCCESS;
+    }
+
+    Operation operation_ = UPDATE_SPANSIZE;
+    int64_t result_ = FASTSTATUS_INVALID;
+    int32_t notifyCount_ = 0;
+};
+
 const int32_t CAPTURER_FLAG = 10;
 static AudioProcessConfig GetInnerCapConfig()
 {
@@ -114,6 +129,19 @@ public:
         return bufferDesc;
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
+};
+
+class ICapturerStreamRouteFlagTest : public ICapturerStreamTest2 {
+public:
+    explicit ICapturerStreamRouteFlagTest(uint32_t routeFlag) : routeFlag_(routeFlag) {}
+
+    uint32_t GetRouteFlag() const noexcept override
+    {
+        return routeFlag_;
+    }
+
+private:
+    uint32_t routeFlag_ = 0;
 };
 
 /**
@@ -649,7 +677,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_037, Tes
     CapturerState capturerState = CAPTURER_NEW;
     capturerInServer_->processConfig_.appInfo.appFullTokenId = (static_cast<uint64_t>(1) << 32);
     auto ret = capturerInServer_->CheckBgRecordPermission(capturerState);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 
     capturerInServer_->isMicIndicatorOn_ = true;
     ret = capturerInServer_->TurnOnMicIndicator();
@@ -740,6 +768,40 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_042, Tes
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
     auto ret = capturerInServer_->RestoreSession(restoreInfo);
     EXPECT_EQ(NEED_RESTORE, ret);
+}
+
+HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorFail_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    processConfig.capturerInfo.isLoopback = false;
+    processConfig.appInfo.appTokenId = 0;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 202;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    info.nextState = CAPTURER_PREPARED;
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    auto ret = capturerInServer_->StartInner();
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+    manager.tokenIdRecordMap_.clear();
 }
 
 /**
@@ -1184,6 +1246,75 @@ HWTEST_F(CapturerInServerSecondUnitTest, StartPrivacyConfirmDialog_001, TestSize
     auto result = capturerInServer_->StartPrivacyConfirmDialog(1);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test GetCapturerFlagsByRoute.
+ * @tc.type  : FUNC
+ * @tc.number: GetCapturerFlagsByRoute_001.
+ * @tc.desc  : Cover normal, fast, and voip fast route mapping.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, GetCapturerFlagsByRoute_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer, nullptr);
+
+    EXPECT_EQ(capturerInServer->GetCapturerFlagsByRoute(0), AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(capturerInServer->GetCapturerFlagsByRoute(AUDIO_INPUT_FLAG_FAST), AUDIO_FLAG_MMAP);
+    EXPECT_EQ(capturerInServer->GetCapturerFlagsByRoute(AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP),
+        AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshServerBufferForSpanSizeUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: RefreshServerBufferForSpanSizeUpdate_001.
+ * @tc.desc  : Cover fast status notification when capturer flags change.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RefreshServerBufferForSpanSizeUpdate_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    auto stateListener = std::make_shared<CapturerSpanSizeListener>();
+    std::weak_ptr<IStreamListener> streamListener = stateListener;
+    auto capturerInServer = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer, nullptr);
+    capturerInServer->stream_ = std::make_shared<ICapturerStreamRouteFlagTest>(AUDIO_INPUT_FLAG_FAST);
+
+    capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
+
+    EXPECT_EQ(capturerInServer->processConfig_.capturerInfo.capturerFlags, AUDIO_FLAG_MMAP);
+    EXPECT_EQ(stateListener->notifyCount_, 1);
+    EXPECT_EQ(stateListener->operation_, UPDATE_SPANSIZE);
+    EXPECT_EQ(stateListener->result_, FASTSTATUS_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshServerBufferForSpanSizeUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: RefreshServerBufferForSpanSizeUpdate_002.
+ * @tc.desc  : Cover normal status notification and unchanged branch.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RefreshServerBufferForSpanSizeUpdate_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
+    auto stateListener = std::make_shared<CapturerSpanSizeListener>();
+    std::weak_ptr<IStreamListener> streamListener = stateListener;
+    auto capturerInServer = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer, nullptr);
+    capturerInServer->stream_ = std::make_shared<ICapturerStreamRouteFlagTest>(0);
+
+    capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
+
+    EXPECT_EQ(capturerInServer->processConfig_.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(stateListener->notifyCount_, 1);
+    EXPECT_EQ(stateListener->result_, FASTSTATUS_NORMAL);
+
+    capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
+    EXPECT_EQ(stateListener->notifyCount_, 1);
+}
  
 /*
  * @tc.name  : Test ReportPlaybackCaptureUserChoice.
@@ -1201,6 +1332,36 @@ HWTEST_F(CapturerInServerSecondUnitTest, ReportPlaybackCaptureUserChoice_001, Te
     capturerInServer_->OnPrivacyAuthorityResult(true);
     capturerInServer_->OnPrivacyAuthorityResult(false);
     EXPECT_NE(result, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test CapturerInServer destructor loopback effect cleanup branch.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerSecondUnitTest_Destructor_LoopBackEffectEnabled_001
+ * @tc.desc  : Cover false and true branches of loopback effect cleanup in destructor.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_Destructor_LoopBackEffectEnabled_001,
+    TestSize.Level1)
+{
+    {
+        AudioProcessConfig processConfig;
+        processConfig.capturerInfo.loopBackEffectEnabled = false;
+        std::weak_ptr<IStreamListener> streamListener;
+        auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+        ASSERT_NE(capturerInServer_, nullptr);
+        capturerInServer_->status_ = I_STATUS_RELEASED;
+        capturerInServer_ = nullptr;
+    }
+
+    {
+        AudioProcessConfig processConfig;
+        processConfig.capturerInfo.loopBackEffectEnabled = true;
+        std::weak_ptr<IStreamListener> streamListener;
+        auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+        ASSERT_NE(capturerInServer_, nullptr);
+        capturerInServer_->status_ = I_STATUS_RELEASED;
+        capturerInServer_ = nullptr;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

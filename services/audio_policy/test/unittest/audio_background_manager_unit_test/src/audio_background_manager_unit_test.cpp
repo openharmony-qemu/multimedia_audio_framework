@@ -1330,6 +1330,8 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_052, TestSize.Leve
     audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid_1, appState.hasBackTask, true);
 
     int32_t pid_2 = 1;
+    int32_t uid_2 = 1;
+    audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid_2, uid_2, appState);
     audioBackgroundManagerTest_->WriteAvSessionChangeSysEvent(pid_2, appState.hasSession, true);
     audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid_2, appState.hasBackTask, true);
 

@@ -23,6 +23,7 @@
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
 #include "audio_session_device_info.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,11 +64,13 @@ public:
     bool IsAudioSessionFocusMode(int32_t callerPid);
     bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
-    std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
+    std::vector<std::pair<AudioInterrupt, AudioFocuState>> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
-    void AddStreamInfo(const AudioInterrupt &audioInterrupt);
+    void AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
     void RemoveStreamInfo(const int32_t callerPid, const uint32_t streamId);
     void ClearStreamInfo(const int32_t callerPid);
+    int32_t UpdateStreamFocusState(const int32_t callerPid, uint32_t streamId, AudioFocuState focuState);
+    bool IsAllStreamsInState(const int32_t callerPid, AudioFocuState state);
     bool IsStreamInfoEmpty(const int32_t callerPid);
     bool IsAudioRendererEmpty(const int32_t callerPid);
     AudioConcurrencyMode GetSessionStrategy(int32_t callerPid);
@@ -92,6 +95,8 @@ public:
     AudioSessionActiveBehaviors GetSessionBehaviors(const int32_t callerPid);
     void SetRegisterStateChangeCallbackFlag(int32_t callerPid, const bool stateChangeCallbackFlag);
     void GetStateChangeCallbackFlag(int32_t callerPid, bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
+    void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
+    void SetFakeFocusInterruptEvent(int32_t callerpid, const InterruptEventInternal &interruptEvent);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

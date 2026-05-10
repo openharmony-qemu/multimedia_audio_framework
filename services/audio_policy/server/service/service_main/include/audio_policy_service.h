@@ -114,8 +114,6 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
-
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
@@ -190,15 +188,6 @@ public:
 
     void RegisterRemoteDevStatusCallback();
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
-
     int32_t GetMaxRendererInstances();
 
     bool IsEnhancedRoutingSupported();
@@ -232,18 +221,10 @@ public:
 
     void MuteMediaWhenAccountsChanged();
 
-    // for effect V3
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     // for effect
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    // for enhance
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
@@ -300,10 +281,10 @@ private:
 
     ~AudioPolicyService();
 
-    void GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    void GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    void GetSupportedEffectProperty(AudioEffectPropertyArray &propertyArray);
+    void GetSupportedEnhanceProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArray &propertyArray, const EffectFlag& flag);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray);
 
     void RegisterNameMonitorHelper();
 
@@ -332,7 +313,20 @@ private:
 
     BluetoothOffloadState GetA2dpOffloadFlag();
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
-    bool CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property);
+    bool CheckVoipAnrOn(std::vector<AudioEffectProperty> &property);
+
+    // Helper functions for GetProcessDeviceInfo refactoring
+    int32_t HandlePlaybackModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    int32_t HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    int32_t HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    int32_t HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    bool IsVoipStreamUsage(StreamUsage streamUsage);
+    void SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
+        const AudioDeviceDescriptor &sourceDesc, DeviceRole role);
 private:
 
     static bool isBtListenerRegistered;

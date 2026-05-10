@@ -23,6 +23,7 @@
 #include "audio_device_info.h"
 #include "audio_info.h"
 #include "audio_interrupt_info.h"
+#include "audio_route_select_info.h"
 #include "audio_stream_change_info.h"
 
 
@@ -119,6 +120,20 @@ public:
     virtual int32_t OnDistributedOutputChange(bool isRemote) = 0;
     virtual int32_t OnDistributedServiceOnline() = 0;
     virtual int32_t SetSplitModeReadyRefined() = 0;
+};
+
+class AudioRouteSelector {
+public:
+    virtual ~AudioRouteSelector() = default;
+
+    enum AudioRouteSelectResult : int32_t {
+        ROUTE_SELECT_RESULT_SUCCESS = 0,
+        ROUTE_SELECT_RESULT_REJECT_CREATE,
+        ROUTE_SELECT_RESULT_FALLBACK_NORMAL,
+    };
+
+    virtual int32_t OnAudioRouteSelect(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
+        int32_t &selectResult) = 0;
 };
 
 class AudioClientInfoMgrCallback {
@@ -547,4 +562,3 @@ struct AudioSpatialEnabledStateForDevice {
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H
-

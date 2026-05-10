@@ -287,6 +287,20 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CreateCheckMusicActiveThread_001, TestSi
     EXPECT_NE(server->audioPolicyService_.audioVolumeManager_.calculateLoopSafeTime_, nullptr);
 }
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+static AudioDeviceDescriptor& CurrentActiveDevice()
+{
+    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
+    if (desc->deviceId_ == 0) {
+        desc->deviceId_ = TEST_DEVICE_ID;
+        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    }
+    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
+    return *desc;
+}
+
 /**
  * @tc.name  : Test DealWithSafeVolume.
  * @tc.number: DealWithSafeVolume_001
@@ -297,7 +311,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     int32_t volumeLevel = 8;
     bool isA2dpDevice = true;
-    server->audioPolicyService_.audioVolumeManager_.audioActiveDevice_.currentActiveDevice_.deviceType_ =
+    CurrentActiveDevice().deviceType_ =
         DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t volumeLevelRet
         = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
@@ -957,21 +971,21 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
     uint32_t timeStamp = 0;
     int32_t ret;
 
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+    CurrentActiveDevice().deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
+    CurrentActiveDevice().networkId_ = LOCAL_NETWORK_ID;
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+    CurrentActiveDevice().deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    CurrentActiveDevice().networkId_ = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+    CurrentActiveDevice().deviceType_
         = DeviceType::DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    CurrentActiveDevice().networkId_ = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -988,7 +1002,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, NearlinkGetRenderPosition_001, TestSize.
     uint32_t delayValue = 0;
     int32_t ret;
 
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+    CurrentActiveDevice().deviceType_
         = DeviceType::DEVICE_TYPE_SPEAKER;
     ret = server->audioPolicyService_.NearlinkGetRenderPosition(delayValue);
     EXPECT_EQ(ret, SUCCESS);
@@ -1003,11 +1017,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, Tes
 {
     auto server = GetServerUtil::GetServerPtr();
     ASSERT_TRUE(server != nullptr);
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+    CurrentActiveDevice().deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
 
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    CurrentActiveDevice().deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
 }
 
@@ -1026,11 +1040,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnPreferredStateUpdated_001, TestSize.Le
     updateCommand = DeviceInfoUpdateCommand::CATEGORY_UPDATE;
     desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    desc.macAddress_ = server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.macAddress_;
+    desc.macAddress_ = CurrentActiveDevice().macAddress_;
     server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    desc.macAddress_ = server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.macAddress_;
+    desc.macAddress_ = CurrentActiveDevice().macAddress_;
     server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     desc.deviceCategory_ = DeviceCategory::BT_HEADPHONE;
@@ -1044,28 +1058,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnPreferredStateUpdated_001, TestSize.Le
     server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     EXPECT_EQ(reason.IsOverride(), false);
-}
-
-/**
- * @tc.name  : Test CheckAndActiveHfpDevice.
- * @tc.number: CheckAndActiveHfpDevice_001
- * @tc.desc  : Test CheckAndActiveHfpDevice interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAndActiveHfpDevice_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_TRUE(server != nullptr);
-    AudioDeviceDescriptor desc;
-
-    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
-
-    desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
-    desc.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
-    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
-
-    desc.connectState_ = ConnectState::CONNECTED;
-    desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
 }
 
 /**

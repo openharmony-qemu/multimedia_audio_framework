@@ -57,7 +57,7 @@ class AudioLoopbackPrivate : public AudioLoopback,
                              public AudioCapturerReadCallback,
                              public AudioRendererWriteCallback {
 public:
-    explicit AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo);
+    explicit AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo, bool isGlobal = false);
     virtual ~AudioLoopbackPrivate();
 
     bool Enable(bool enable) override;
@@ -136,8 +136,8 @@ private:
     std::map<std::string, std::string> karaokeParams_ = {};
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioCapturer> audioCapturer_;
-    std::mutex loopbackMutex_;
-    std::mutex stateMutex_;
+    mutable std::mutex loopbackMutex_;
+    mutable std::mutex stateMutex_;
     std::shared_ptr<AudioLoopbackCallback> statusCallback_;
     AudioLoopbackState currentState_ = LOOPBACK_STATE_IDLE;
     AudioLoopbackMode mode_ = LOOPBACK_HARDWARE;

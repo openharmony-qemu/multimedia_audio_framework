@@ -17,13 +17,18 @@
 #endif
 
 #include <string>
+#include <memory>
 #include <atomic>
 #include <unordered_map>
+#include <vector>
+#include <set>
+#include <sstream>
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_engine.h"
 #include "audio_suite_pipeline.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +54,7 @@ AudioSuiteEngine::AudioSuiteEngine(AudioSuiteManagerCallback& callback)
     RegisterHandler(MULTI_RENDER_FRAME, &AudioSuiteEngine::HandleMultiRenderFrame);
     RegisterHandler(GET_OPTIONS, &AudioSuiteEngine::HandleGetOptions);
     RegisterHandler(SET_OPTIONS, &AudioSuiteEngine::HandleSetOptions);
+    RegisterHandler(PRINT_INFO, &AudioSuiteEngine::HandlePrintInfo);
 
     AUDIO_INFO_LOG("AudioEditEngine Create");
 }
@@ -78,8 +84,8 @@ int32_t AudioSuiteEngine::Init()
 int32_t AudioSuiteEngine::DeInit()
 {
     isInit_.store(false);
-    engineThread_->ReleaseGroup();
     if (engineThread_ != nullptr) {
+        engineThread_->ReleaseGroup();
         engineThread_->DeactivateThread();
         engineThread_ = nullptr;
     }
@@ -136,6 +142,11 @@ int32_t AudioSuiteEngine::CreatePipeline(PipelineWorkMode workMode)
 
         if (pipelineMap_.size() >= engineCfg_.maxPipelineNum_ ||
             (isExistRealtime_ == true && workMode == PIPELINE_REALTIME_MODE)) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                               ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS),
+                "engine create pipeline failed, more than max pipeline num.", true);
             AUDIO_ERR_LOG("engine create pipeline failed, more than max pipeline num.");
             managerCallback_.OnCreatePipeline(ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS, INVALID_PIPELINE_ID);
             return;
@@ -143,6 +154,11 @@ int32_t AudioSuiteEngine::CreatePipeline(PipelineWorkMode workMode)
 
         std::shared_ptr<AudioSuitePipeline> pipeline = std::make_shared<AudioSuitePipeline>(workMode);
         if (pipeline == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
+                               ERR_MEMORY_ALLOC_FAILED),
+                "engine create pipeline failed, malloc error.", true);
             AUDIO_ERR_LOG("engine create pipeline failed, malloc error.");
             managerCallback_.OnCreatePipeline(ERR_MEMORY_ALLOC_FAILED, INVALID_PIPELINE_ID);
             return;
@@ -176,6 +192,11 @@ int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
         AUDIO_DEBUG_LOG("DestroyPipeline enter");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::RELEASE, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
+                "engine destroy pipeline failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine destroy pipeline failed, pipeline id is invailed.");
             managerCallback_.OnDestroyPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
@@ -210,6 +231,11 @@ int32_t AudioSuiteEngine::StartPipeline(uint32_t pipelineId)
         AUDIO_DEBUG_LOG("StartPipeline enter");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::START,
+                               ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
+                "engine start pipeline failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine start pipeline failed, pipeline id is invailed.");
             managerCallback_.OnStartPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
@@ -237,6 +263,11 @@ int32_t AudioSuiteEngine::StopPipeline(uint32_t pipelineId)
         AUDIO_DEBUG_LOG("StopPipeline enter");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::STOP,
+                               ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
+                "engine stop pipeline failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine stop pipeline failed, pipeline id is invailed.");
             managerCallback_.OnStopPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
@@ -509,11 +540,19 @@ int32_t AudioSuiteEngine::SetRequestDataCallback(uint32_t nodeId,
 
 int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not ConnectNodes.");
+
     auto request = [this, srcNodeId, destNodeId]() {
         AUDIO_DEBUG_LOG("ConnectNodes enter");
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
-            AUDIO_ERR_LOG("ConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.",
-                srcNodeId, destNodeId);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                    BusinessScenario::CONFING,
+                    ERR_INVALID_PARAM),
+                "The node does not exist.", true);
+            AUDIO_ERR_LOG("ConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.", srcNodeId,
+                          destNodeId);
             managerCallback_.OnConnectNodes(ERR_INVALID_PARAM);
             return;
         }
@@ -601,6 +640,11 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not RenderFrame.");
     auto request = [this, pipelineId, audioData, requestFrameSize, responseSize, finishedFlag]() {
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::RENDER, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
+                "engine RenderFrame failed, pipeline id is invailed.", true);
             AUDIO_ERR_LOG("engine RenderFrame failed, pipeline id is invailed.");
             managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
@@ -823,6 +867,155 @@ void AudioSuiteEngine::HandleGetOptions(int32_t result)
 void AudioSuiteEngine::HandleSetOptions(int32_t result)
 {
     managerCallback_.OnSetOptions(result);
+}
+
+int32_t AudioSuiteEngine::PrintInfo(uint32_t pipelineId, int32_t fd)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not print info.");
+
+    std::shared_ptr<IAudioSuitePipeline> targetPipeline = nullptr;
+    if (pipelineId != INVALID_PIPELINE_ID) {
+        auto it = pipelineMap_.find(pipelineId);
+        CHECK_AND_RETURN_RET_LOG(it != pipelineMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+            "PrintInfo pipeline not found, id = %{public}u",
+            pipelineId);
+        targetPipeline = it->second;
+    }
+
+    auto request = [this, pipelineId, fd, targetPipeline]() {
+        AUDIO_DEBUG_LOG("PrintInfo enter");
+        
+        std::string content = GenerateTextSnapshot(pipelineId, targetPipeline);
+        int32_t writeResult = WriteOutput(content, fd);
+        managerCallback_.OnPrintInfo(writeResult);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+std::string AudioSuiteEngine::GenerateTextSnapshot(uint32_t pipelineId,
+    std::shared_ptr<IAudioSuitePipeline> targetPipeline)
+{
+    std::stringstream ss;
+    std::string timestamp = AudioSuiteUtil::GetCurrentTimestamp();
+
+    ss << "========================================\n";
+    ss << "Audio Suite Engine Snapshot\n";
+    ss << "Timestamp: " << timestamp << "\n";
+    ss << "========================================\n\n";
+
+    if (pipelineId == INVALID_PIPELINE_ID) {
+        ss << "Total Pipelines: " << pipelineMap_.size() << "\n\n";
+        for (auto &[id, pipeline] : pipelineMap_) {
+            PrintPipelineSnapshotText(pipeline, ss);
+        }
+    } else {
+        PrintPipelineSnapshotText(targetPipeline, ss);
+    }
+
+    ss << "========================================\n";
+    return ss.str();
+}
+
+void AudioSuiteEngine::PrintPipelineSnapshotText(std::shared_ptr<IAudioSuitePipeline> pipeline, std::stringstream& ss)
+{
+    uint32_t pipelineId = pipeline->GetPipelineId();
+    AudioSuitePipelineState state = pipeline->GetCurrentPipelineState();
+    PipelineWorkMode workMode = pipeline->GetWorkMode();
+    const auto& nodeMap = pipeline->GetNodeMap();
+    const auto& connections = pipeline->GetConnections();
+    const auto& reverseConnections = pipeline->GetReverseConnections();
+
+    ss << "Pipeline [ID: " << pipelineId << "]\n";
+    ss << "  Work Mode: " << AudioSuiteUtil::GetWorkModeString(workMode) << "\n";
+    ss << "  State: " << AudioSuiteUtil::GetStateString(state) << "\n";
+    ss << "  Nodes: " << nodeMap.size() << "\n";
+    ss << "  Connections: " << connections.size() << "\n\n";
+
+    for (auto& [nodeId, node] : nodeMap) {
+        PrintNodeSnapshotText(node, ss);
+    }
+
+    if (!connections.empty()) {
+        ss << "  Connections:\n";
+        for (auto& [srcId, destId] : connections) {
+            ss << "    " << srcId << " -> " << destId << "\n";
+        }
+        ss << "\n";
+    }
+
+    if (!reverseConnections.empty()) {
+        ss << "  Reverse Connections:\n";
+        for (auto& [srcId, destIds] : reverseConnections) {
+            for (auto destId : destIds) {
+                ss << "    " << srcId << " -> " << destId << "\n";
+            }
+        }
+        ss << "\n";
+    }
+}
+
+void AudioSuiteEngine::PrintNodeSnapshotText(std::shared_ptr<AudioNode> node, std::stringstream & ss)
+{
+    AudioNodeInfo &info = node->GetAudioNodeInfo();   // 获取节点关键属性audioNodeInfo_
+
+    ss << "  Node [ID: " << info.nodeId << ", Type: " << node->GetNodeTypeString() << "]\n";
+
+    if (info.nodeType == NODE_TYPE_INPUT || info.nodeType == NODE_TYPE_OUTPUT ||
+        info.nodeType == NODE_TYPE_AUDIO_MIXER) {
+        ss << "    Format: sampleRate=" << info.audioFormat.rate
+            << ", channels=" << info.audioFormat.audioChannelInfo.numChannels
+            << ", format=" << AudioSuiteUtil::GetSampleFormatString(info.audioFormat.format) << "\n";
+    }
+
+    ss << "    Volume: " << info.volume << "\n";
+
+    if (info.nodeType == NODE_TYPE_INPUT) {
+        ss << "    Finished: " << (info.finishedFlag ? "true" : "false") << "\n";
+    }
+
+    std::string nodeInfo = "";
+    int32_t result = SUCCESS;
+    if (info.nodeType != NODE_TYPE_INPUT && info.nodeType != NODE_TYPE_OUTPUT) {
+        ss << "    Bypass: " << (info.bypassStatus ? "true" : "false") << "\n";
+        result = node->PrintNodeInfo(nodeInfo);
+    }
+
+    if (result == SUCCESS) {
+        ss << nodeInfo;
+    }
+    ss << "\n";
+}
+
+int32_t AudioSuiteEngine::WriteOutput(const std::string &content, int32_t fd)
+{
+    if (fd < 0) {
+        AUDIO_INFO_LOG("%{public}s", content.c_str());
+        return SUCCESS;
+    }
+
+    const char *data = content.c_str();
+    size_t totalSize = content.length();
+    size_t writtenSize = 0;
+
+    while (writtenSize < totalSize) {
+        ssize_t bytesWritten = write(fd, data + writtenSize, totalSize - writtenSize);
+        if (bytesWritten < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            AUDIO_ERR_LOG("WriteOutput write failed, errno = %{public}d", errno);
+            return ERR_AUDIO_SUITE_WRITE_FAILED;
+        }
+        writtenSize += static_cast<size_t>(bytesWritten);
+    }
+    return SUCCESS;
+}
+
+void AudioSuiteEngine::HandlePrintInfo(int32_t result, int32_t fd)
+{
+    managerCallback_.OnPrintInfo(result);
 }
 
 }  // namespace AudioSuite

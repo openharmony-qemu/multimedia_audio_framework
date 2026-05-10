@@ -363,6 +363,119 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_MovieStream_ShouldNotLock,
 
     offloadNode_->SetBufferSize();
 }
+
+/**
+ * @tc.name  : FaultCode_RenderSinkInit_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit returns ERR_ILLEGAL_STATE when audioRendererSink_ is nullptr,
+ *             covering PLAY_CREATE_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, FaultCode_RenderSinkInit_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto node = std::make_shared<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    // audioRendererSink_ is nullptr by default
+    IAudioSinkAttr attr;
+    attr.adapterName = "offload";
+    int32_t result = node->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : FaultCode_RenderSinkDeInit_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkDeInit returns ERR_ILLEGAL_STATE when audioRendererSink_ is nullptr,
+ *             covering PLAY_RELEASE_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, FaultCode_RenderSinkDeInit_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto node = std::make_shared<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    // audioRendererSink_ is nullptr by default
+    int32_t result = node->RenderSinkDeInit();
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : FaultCode_RenderSinkStart_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkStart returns ERR_ILLEGAL_STATE when audioRendererSink_ is nullptr,
+ *             covering PLAY_START_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, FaultCode_RenderSinkStart_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto node = std::make_shared<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    // audioRendererSink_ is nullptr by default
+    int32_t result = node->RenderSinkStart();
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : FaultCode_RenderSinkFlush_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkFlush returns ERR_ILLEGAL_STATE when audioRendererSink_ is nullptr,
+ *             covering PLAY_FLUSH_INSTANCE_NULL fault code path.
+ */
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, FaultCode_RenderSinkFlush_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto node = std::make_shared<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    // audioRendererSink_ is nullptr by default
+    int32_t result = node->RenderSinkFlush();
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+}
+
+// FaultCode test constants
+static constexpr int32_t TEST_APP_UID = 1001;
+
+/**
+ * @tc.name  : FaultCode_UpdateAppsUid_NullSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test UpdateAppsUid returns ERROR when audioRendererSink_ is nullptr,
+ *             covering PLAY_SEND_DEPENDENCY_NULL fault code path.
+ */
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, FaultCode_UpdateAppsUid_NullSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto node = std::make_shared<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    // audioRendererSink_ is nullptr by default
+    std::vector<int32_t> appsUid = {TEST_APP_UID};
+    int32_t result = node->UpdateAppsUid(appsUid);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : FaultCode_UpdateAppsUid_SinkNotInited
+ * @tc.type  : FUNC
+ * @tc.desc  : Test UpdateAppsUid returns ERR_ILLEGAL_STATE when sink is not initialized,
+ *             covering PLAY_SEND_STATE_ILLEGAL fault code path.
+ */
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, FaultCode_UpdateAppsUid_SinkNotInited, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto node = std::make_shared<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    node->audioRendererSink_ = mockSink;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
+
+    std::vector<int32_t> appsUid = {TEST_APP_UID};
+    int32_t result = node->UpdateAppsUid(appsUid);
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

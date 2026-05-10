@@ -568,7 +568,7 @@ napi_value NapiAudioCapturer::Start(napi_env env, napi_callback_info info)
         auto *napiAudioCapturer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
             "context object state is error.");
-        // Playback capture created by modern inner capture api forbidden to start. 
+        // Playback capture created by modern inner capture api forbidden to start.
         // It should start by RequestPlaybackCaptureStart.
         if (napiAudioCapturer->sourceType_ == SOURCE_TYPE_PLAYBACK_CAPTURE &&
             napiAudioCapturer->isModernInnerCapturer_) {

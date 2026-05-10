@@ -26,9 +26,7 @@ sequenceable audio_effect..OHOS.AudioStandard.Effect;
 sequenceable audio_effect..OHOS.AudioStandard.EffectChain;
 sequenceable audio_effect..OHOS.AudioStandard.EffectChainManagerParam;
 sequenceable audio_effect..OHOS.AudioStandard.AudioSpatializationState;
-sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArrayV3;
 sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArray;
-sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
 sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSinkAttr;
 sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSourceAttr;
 sequenceable audio_stutter..OHOS.AudioStandard.DataTransferMonitorParam;
@@ -86,12 +84,8 @@ interface IStandardAudioService {
     void SetAsrVoiceMuteMode([in] int asrVoiceMuteMode, [in] boolean on); // AsrVoiceMuteMode asrVoiceMuteMode
     void IsWhispering([out] int whisperRes);
     void GetEffectOffloadEnabled([out] boolean isEffectOffloadEnabled);
-    void GetAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
-    void SetAudioEffectProperty([in] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
-    void GetAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray, [in] int deviceType);
-    void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
-    void SetAudioEnhanceProperty([in] AudioEnhancePropertyArray propertyArray, [in] int deviceType);
-    void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray);
+    void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray, [in] int deviceType);
+    void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray, [in] int deviceType);
     void SuspendRenderSink([in] String sinkName);
     void RestoreRenderSink([in] String sinkName);
     void LoadHdiEffectModel();
@@ -162,4 +156,5 @@ interface IStandardAudioService {
     void GetRemoteAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
     [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
     void CheckInnerCapVoIP([in] unsigned int sessionId);
+    void SetAudioSceneForPipe([in] unsigned int pipeId, [in] int audioScene, [in] boolean scoExcludeFlag);
 }

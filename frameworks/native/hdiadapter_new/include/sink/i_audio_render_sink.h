@@ -20,6 +20,7 @@
 #include <string>
 #include <mutex>
 #include <functional>
+#include <vector>
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_engine_callback_types.h"
@@ -138,6 +139,7 @@ public:
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
 
     virtual void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) {}
+    virtual DeviceType GetCurrentOutputDevice() { return DEVICE_TYPE_INVALID; }
 
     // Implement by self (begin)
     virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback);

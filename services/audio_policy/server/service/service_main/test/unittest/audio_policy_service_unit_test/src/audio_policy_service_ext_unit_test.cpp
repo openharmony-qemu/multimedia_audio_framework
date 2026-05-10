@@ -232,7 +232,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_009, TestSize.Lev
     EXPECT_NE(nullptr, audioCapturerFilter);
     audioCapturerFilter->uid = -1;
     ret = AudioPolicyService::GetAudioPolicyService().GetInputDevice(audioCapturerFilter);
-    EXPECT_EQ(0, ret.size());
+    EXPECT_NE(0, ret.size());
 }
 
 /**
@@ -291,7 +291,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_014, TestSize.Lev
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_015, TestSize.Level1)
 {
-    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyArray propertyArray;
     EffectFlag flag = CAPTURE_EFFECT_FLAG;
     auto ret = AudioPolicyService::GetAudioPolicyService().CheckSupportedAudioEffectProperty(propertyArray, flag);
     EXPECT_EQ(AUDIO_OK, ret);
@@ -307,8 +307,8 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_015, TestSize.Lev
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_016, TestSize.Level1)
 {
-    AudioEffectPropertyArrayV3 propertyArray;
-    AudioEffectPropertyV3 tmp;
+    AudioEffectPropertyArray propertyArray;
+    AudioEffectProperty tmp;
     tmp.flag = CAPTURE_EFFECT_FLAG;
     propertyArray.property.push_back(tmp);
     tmp.flag = RENDER_EFFECT_FLAG;

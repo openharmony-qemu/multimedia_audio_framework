@@ -76,6 +76,7 @@ public:
     OH_AudioStream_Result SetMuteWhenInterrupted(bool muteWhenInterrupted);
     OH_AudioStream_Result SetCapturerFastStatusChangeCallback(
         OH_AudioCapturer_OnFastStatusChange callback, void *userData);
+    OH_AudioStream_Result SetCapturerLoopbackEffectEnabled(bool enabled);
 
 private:
     int32_t streamType_;
@@ -99,6 +100,7 @@ private:
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
     bool modernInnerCapturer_ = false;
+    bool loopBackEffectEnabled_ = false;
 
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;

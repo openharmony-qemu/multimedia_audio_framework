@@ -163,29 +163,6 @@ void GetPreferredInputStreamTypeInnerFuzzTest()
     OnStop();
 }
 
-void GetPreferredInputDeviceDescInnerFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
-    AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
-    DeviceType deviceType = GetData<DeviceType>();
-    shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
-    CHECK_AND_RETURN(audioPolicyServerHandler != nullptr);
-    audioDeviceCommon.Init(audioPolicyServerHandler);
-    audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
-
-    AudioRendererInfo rendererInfo;
-    rendererInfo.streamUsage = GetData<StreamUsage>();
-    audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
-    AudioCapturerInfo captureInfo;
-    captureInfo.sourceType = GetData<SourceType>();
-    std::string networkId = "LocalDevice";
-    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
-    audioDeviceCommon.DeInit();
-    OnStop();
-}
-
 void UpdateConnectedDevicesWhenDisconnectingFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -226,10 +203,10 @@ void ClearPreferredDevicesFuzzTest()
     dev->deviceRole_ = GetData<DeviceRole>();
     dev->deviceName_ = "--";
     dev->macAddress_ = "card=2;device=0";
-    comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
     strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
     strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
-    comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
+    strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
+    strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);
     OnStop();
@@ -506,7 +483,6 @@ TestFuncs g_testFuncs[] = {
     FilterSourceOutputsFuzzTest,
     IsRingerOrAlarmerDualDevicesRangeFuzzTest,
     IsRingOverPlaybackFuzzTest,
-    GetPreferredInputDeviceDescInnerFuzzTest,
     GetPreferredInputStreamTypeInnerFuzzTest,
     UpdateDeviceInfoFuzzTest,
     UpdateConnectedDevicesWhenDisconnectingFuzzTest,

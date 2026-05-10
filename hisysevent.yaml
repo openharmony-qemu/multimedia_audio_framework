@@ -145,9 +145,9 @@ PLAYBACK_VOLUME_STATS:
 
 MUTED_CAPTURE_STATS:
   __BASE: {type: STATISTIC, level: MINOR, desc: muted audio capture statistic}
-  STREAM_TYPE: {type: UINT8, desc: SourceType of audio capture stream}
-  DEVICE_TYPE: {type: UINT8, desc: audio device type}
-  DURATION: {type: UINT32, desc: duration of muted capture}
+  APP_NAME: {type: STRING, desc: application package name whose audio capture stream is muted}
+  STREAM_USAGE: {type: UINT8, desc: SourceType of audio capture stream}
+  MUTE: {type: BOOL, desc: mute or unmute state of audio capture stream}
 
 AUDIO_ROUTE_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: audio route change}
@@ -386,4 +386,3 @@ LOOPBACK_EXCEPTION:
   CAPTURE_DEVICE_TYPE: {type: INT32, desc: capture device type}
   ERROR_SCOPE: {type: INT32, desc: error scope}
   ERROR_TYPE: {type: INT32, desc: error type}
-  
