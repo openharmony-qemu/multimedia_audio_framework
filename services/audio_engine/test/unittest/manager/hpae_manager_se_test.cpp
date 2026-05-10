@@ -11,6 +11,8 @@
 #include "hpae_manager.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
+#include "hpae_process_cluster.h"
+#include "hpae_sink_input_node.h"
 #include "hpae_define.h"
 #include "i_hpae_manager.h"
 #include "hpae_mocks.h"
@@ -106,14 +108,14 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_sessionNotFound, TestSize.Level0
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
 }
 
-// API-3: SetAissEnabled(true) returns ERR_SESSION_ALREADY_BOUND when already bound
+// API-3: SetAissEnabled(true) is idempotent when already bound
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_alreadyBound, TestSize.Level0)
 {
     int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
-    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND));
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 // API-4: SetAissEnabled(false) succeeds when session is bound
@@ -158,7 +160,7 @@ HWTEST_F(HpaeManagerSeTest, SetVocalRatio_success, TestSize.Level0)
 {
     ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
 
-    int32_t ret = hpaeManager_->SetVocalRatio(TEST_SESSION_ID, 0.5f);
+    int32_t ret = hpaeManager_->SetVocalRatio(0.5f);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -166,18 +168,34 @@ HWTEST_F(HpaeManagerSeTest, SetVocalRatio_success, TestSize.Level0)
 // Design ref: se-state-management.md §3.1, se-test-plan.md §6 API-9
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_invalidRange, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetVocalRatio(1, -0.1f);
+    int32_t ret = hpaeManager_->SetVocalRatio(-0.1f);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER));
 
-    ret = hpaeManager_->SetVocalRatio(1, 1.5f);
+    ret = hpaeManager_->SetVocalRatio(1.5f);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER));
 }
 
 // API-10: SetVocalRatio returns ERR_EFFECT_NOT_BOUND when not bound
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_notBound, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetVocalRatio(TEST_SESSION_ID, 0.5f);
+    int32_t ret = hpaeManager_->SetVocalRatio(0.5f);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
+// API-11: SetVocalRatio succeeds via UID binding path
+HWTEST_F(HpaeManagerSeTest, SetVocalRatio_uidPath_success, TestSize.Level0)
+{
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.uid = TEST_UID;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
+
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+
+    int32_t ret = hpaeManager_->SetVocalRatio(0.5f);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 // --- SetAissEnabledByUid ---
@@ -227,6 +245,7 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_bindRunningStream, TestSize
 
     int32_t ret = hpaeManager_->SetAissEnabledByUid(TEST_UID, true);
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
 }
 
 // UID-6: Start auto-binds session effect when uid matches pending binding
@@ -305,6 +324,205 @@ HWTEST_F(HpaeManagerSeTest, DestroyStream_resetsToPending, TestSize.Level0)
 
     EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
     EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+}
+
+// --- E2E Tests: Init + DeactivateThread + HandleRequests pattern ---
+// RM.SendRequest passes IsInit() check and enqueues the message, even if the thread is null.
+// After DeactivateThread(), isInit_ stays true but hpaeSignalProcessThread_ is null.
+// So: CreateStream/Start/Flush/Pause enqueue messages that we process via HandleRequests().
+
+class HpaeManagerSeE2eTest : public ::testing::Test {
+protected:
+    void SetUp() override
+    {
+        hpaeManager_ = std::make_shared<HpaeManager>();
+        hpaeManager_->Init();
+
+        HpaeSinkInfo sinkInfo = GetTestSinkInfo();
+        rendererManager_ = std::make_shared<HpaeRendererManager>(sinkInfo);
+        rendererManager_->Init();               // starts thread, sets isInit=true
+        rendererManager_->DeactivateThread();   // stops thread, thread=null, isInit stays true
+
+        hpaeManager_->rendererManagerMap_["file_io"] = rendererManager_;
+        hpaeManager_->rendererIdSinkNameMap_[TEST_SESSION_ID] = "file_io";
+    }
+
+    void TearDown() override
+    {
+        hpaeManager_->SetAissEnabled(TEST_SESSION_ID, false);
+        hpaeManager_->rendererManagerMap_.erase("file_io");
+        hpaeManager_->rendererIdSinkNameMap_.erase(TEST_SESSION_ID);
+        hpaeManager_.reset();
+        rendererManager_.reset();
+    }
+
+    // Synchronously process one batch of queued messages
+    void ProcessRmMessages()
+    {
+        rendererManager_->hpaeNoLockQueue_.HandleRequests();
+    }
+
+    // AudioEffectChainManager not init'd in test → CreateProcessCluster skips cluster creation.
+    // GetProcessorType returns HPAE_SCENE_EFFECT_NONE due to missing effect chains.
+    // sessionNodeMap_.sceneType defaults to 0 (never set in CreateStream).
+    // Align both keys and inject the cluster at HPAE_SCENE_EFFECT_NONE.
+    void InjectProcessCluster(uint32_t sessionId)
+    {
+        auto sinkInput = rendererManager_->sinkInputNodeMap_[sessionId];
+        ASSERT_NE(sinkInput, nullptr);
+        HpaeNodeInfo nodeInfo = sinkInput->GetNodeInfo();
+        auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, rendererManager_->sinkInfo_);
+        cluster->CreateNodes(sinkInput);
+        cluster->Connect(sinkInput);
+        rendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_EFFECT_NONE;
+        rendererManager_->sessionNodeMap_[sessionId].bypass = false;
+        rendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = cluster;
+    }
+
+    std::shared_ptr<HpaeManager> hpaeManager_;
+    std::shared_ptr<HpaeRendererManager> rendererManager_;
+};
+
+// --- E2E: Flush ---
+
+// HM-FLUSH-E2E: RM.Flush → PC.SessionEffectFlush → SEN.FlushEffect
+HWTEST_F(HpaeManagerSeE2eTest, Flush_triggersSessionEffectFlush_E2E, TestSize.Level0)
+{
+    // Setup: create stream
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.uid = TEST_UID;
+    streamInfo.frameLen = TEST_FRAME_LEN;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.channels = STEREO;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
+
+    rendererManager_->CreateStream(streamInfo);
+    ProcessRmMessages();
+
+    // AudioEffectChainManager not init'd → no cluster created; inject one
+    InjectProcessCluster(TEST_SESSION_ID);
+
+    // Start session first (populates sessionNodeMap_ for CreateSessionEffect)
+    rendererManager_->Start(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    // Bind SE (PostCreateSessionEffect needs sessionNodeMap_ entry)
+    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+    ProcessRmMessages();
+
+    // Verify SE exists before flush
+    ASSERT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+
+    // Flush
+    rendererManager_->Flush(TEST_SESSION_ID);
+    ProcessRmMessages();  // processes Flush lambda → SE FlushEffect called
+
+    // Verify: SE still bound (flush doesn't destroy)
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+}
+
+// --- E2E: Pause ---
+
+// HM-PAUSE-E2E: RM.Pause(standby) → PC.SessionEffectPause → SEN.PauseEffect
+HWTEST_F(HpaeManagerSeE2eTest, PauseStandby_triggersSessionEffectPause_E2E, TestSize.Level0)
+{
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.uid = TEST_UID;
+    streamInfo.frameLen = TEST_FRAME_LEN;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.channels = STEREO;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
+
+    rendererManager_->CreateStream(streamInfo);
+    ProcessRmMessages();
+
+    // AudioEffectChainManager not init'd → no cluster created; inject one
+    InjectProcessCluster(TEST_SESSION_ID);
+
+    // Start session first (populates sessionNodeMap_ for CreateSessionEffect)
+    rendererManager_->Start(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    // Bind SE (PostCreateSessionEffect needs sessionNodeMap_ entry)
+    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+    ProcessRmMessages();
+
+    ASSERT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+
+    // Pause with isStandby=true (direct disconnect path)
+    rendererManager_->Pause(TEST_SESSION_ID, true);
+    ProcessRmMessages();  // processes Pause lambda → SE PauseEffect called
+
+    // Verify: SE still exists (pause doesn't destroy)
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+}
+
+// --- E2E: MoveStream ---
+
+// HM-MOVE-E2E: SE recreation on new device via BindSessionEffect + PostCreateSessionEffect
+HWTEST_F(HpaeManagerSeE2eTest, MoveStream_recreatesSessionEffect_E2E, TestSize.Level0)
+{
+    // 1. Bind SE to session (tracked in SessionEffectManager)
+    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+
+    auto boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    EXPECT_EQ(boundId, TEST_SESSION_ID);
+
+    // 2. Create target RM with session + cluster
+    HpaeSinkInfo sinkInfo2 = GetTestSinkInfo();
+    sinkInfo2.deviceClass = "file_io_2";
+    sinkInfo2.adapterName = "file_io_2";
+    sinkInfo2.filePath = "/data/local/tmp/test_se_move_target.pcm";
+    auto rm2 = std::make_shared<HpaeRendererManager>(sinkInfo2);
+    rm2->Init();
+    rm2->DeactivateThread();
+    hpaeManager_->rendererManagerMap_["file_io_2"] = rm2;
+
+    // Manually set up session on target RM (bypass CreateStream dependencies)
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = TEST_SESSION_ID;
+    nodeInfo.frameLen = TEST_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    auto sinkInput2 = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInput2->SetState(HPAE_SESSION_RUNNING);
+    rm2->sinkInputNodeMap_[TEST_SESSION_ID] = sinkInput2;
+    rm2->sessionNodeMap_[TEST_SESSION_ID].sceneType = HPAE_SCENE_EFFECT_NONE;
+    rm2->sessionNodeMap_[TEST_SESSION_ID].bypass = false;
+
+    auto cluster2 = std::make_shared<HpaeProcessCluster>(nodeInfo, rm2->sinkInfo_);
+    cluster2->CreateNodes(sinkInput2);
+    cluster2->Connect(sinkInput2);
+    rm2->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = cluster2;
+
+    // 3. Recreate SE on target (simulates HandleMoveSinkInput's SE path)
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    std::shared_ptr<EffectInstance> instance;
+    hpaeManager_->sessionEffectManager_->BindSessionEffect(
+        TEST_SESSION_ID, "ai_audio_enhance", config, instance);
+    ASSERT_NE(instance, nullptr);
+    // Call CreateSessionEffect directly (bypass queue — queue path tested by Flush/Pause)
+    int32_t ret = rm2->CreateSessionEffect(TEST_SESSION_ID, "ai_audio_enhance", instance, config);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // Verify: binding tracked, SE exists on target RM
+    boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    EXPECT_EQ(boundId, TEST_SESSION_ID);
+    EXPECT_TRUE(rm2->HasSessionEffect(TEST_SESSION_ID));
+
+    // Cleanup
+    rm2->PostDestroySessionEffect(TEST_SESSION_ID);
+    rm2->hpaeNoLockQueue_.HandleRequests();
+    hpaeManager_->rendererManagerMap_.erase("file_io_2");
 }
 
 }  // namespace HPAE

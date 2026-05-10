@@ -81,7 +81,7 @@ HWTEST_F(SessionEffectManagerTest, bind_newInstance_isActive, TestSize.Level0)
     EXPECT_EQ(instance->GetEffectName(), "ai_audio_enhance");
 }
 
-// Bind same session + same effect returns ERR_SESSION_ALREADY_BOUND
+// Bind same session + same effect is idempotent — returns SUCCESS with existing instance
 HWTEST_F(SessionEffectManagerTest, bind_duplicateSession_alreadyBound, TestSize.Level0)
 {
     std::shared_ptr<EffectInstance> instance;
@@ -89,7 +89,8 @@ HWTEST_F(SessionEffectManagerTest, bind_duplicateSession_alreadyBound, TestSize.
 
     std::shared_ptr<EffectInstance> instance2;
     int32_t ret = sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance2);
-    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND));
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(instance2, instance);  // same instance returned
 }
 
 // Unbind sets instance to PENDING_RELEASE

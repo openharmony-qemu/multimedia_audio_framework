@@ -392,6 +392,73 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, destroy_topo_restored, TestSize.Level
     EXPECT_EQ(converterNode->GetOutputPortNum(), 1u);
 }
 
+// PC-FLUSH-1: SessionEffectFlush forwards to node and returns SUCCESS
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectFlush_success, TestSize.Level0)
+{
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(TEST_SESSION_ID);
+
+    int32_t ret = cluster_->SessionEffectFlush(TEST_SESSION_ID);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(node, nullptr);
+    // FlushEffect restarts preheat thread; allow it to settle before tear-down
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+// PC-FLUSH-2: SessionEffectFlush returns ERR_EFFECT_NOT_BOUND when no SE
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectFlush_notBound, TestSize.Level0)
+{
+    int32_t ret = cluster_->SessionEffectFlush(TEST_SESSION_ID);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
+// PC-PAUSE-1: SessionEffectPause sets isPaused on node
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPause_success, TestSize.Level0)
+{
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(TEST_SESSION_ID);
+
+    int32_t ret = cluster_->SessionEffectPause(TEST_SESSION_ID);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(node, nullptr);
+    EXPECT_TRUE(node->IsPaused());
+}
+
+// PC-PAUSE-2: SessionEffectPause returns ERR_EFFECT_NOT_BOUND when no SE
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPause_notBound, TestSize.Level0)
+{
+    int32_t ret = cluster_->SessionEffectPause(TEST_SESSION_ID);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
+// PC-MOVE-1: SessionEffectPrepareMoveStream calls CloseSessionEffectCore
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPrepareMoveStream_success, TestSize.Level0)
+{
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(TEST_SESSION_ID);
+
+    cluster_->SessionEffectPrepareMoveStream(TEST_SESSION_ID);
+    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(node, nullptr);
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
+}
+
+// PC-MOVE-2: SessionEffectPrepareMoveStream no crash when no SE
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPrepareMoveStream_notBound, TestSize.Level0)
+{
+    // void return — just verify no crash
+    cluster_->SessionEffectPrepareMoveStream(TEST_SESSION_ID);
+    SUCCEED();
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
