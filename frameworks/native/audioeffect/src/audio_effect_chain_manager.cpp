@@ -2187,6 +2187,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBin(const int32_t &fd, co
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_SAVE_HRTF_FAIL, "update personalizedHRTFBinToArm failed");
     lseek(fd, 0, SEEK_SET);
     ret += UpdatePersonalizedHRTFBinToHdi(fd, length);
+    AUDIO_INFO_LOG("UpdatePersonalizedHRTFBin ret: %{public}d", ret);
     return ret;
 }
 
@@ -2197,7 +2198,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
         return ERR_SAVE_HRTF_FAIL;
     }
 
-    const char *outPath = "data/hvs/arm/personHrtf.bin";
+    const char *outPath = "data/hvs/arm/personalized_hrtf.bin";
     char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
@@ -2214,12 +2215,12 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
     int32_t outFd = open(outPath, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_OPEN_MODE);
     CHECK_AND_RETURN_RET_LOG(outFd >= 0, ERR_SAVE_HRTF_FAIL, "outFd < 0");
     size_t remaining = length;
-    char buffer[length];
+    std::vector<char> buffer(length);
     size_t n;
 
     while (remaining > 0) {
         size_t toRead = (remaining < sizeof(buffer)) ? remaining : sizeof(buffer);
-        n = read(fd, buffer, toRead);
+        n = read(fd, buffer.data(), toRead);
         if (n <= 0) {
             close(outFd);
             unlink(outPath);
@@ -2230,7 +2231,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
             return ERR_SAVE_HRTF_FAIL;
         }
 
-        size_t written = write(outFd, buffer, n);
+        size_t written = write(outFd, buffer.data(), n);
         if (written != n) {
             close(outFd);
             unlink(outPath);
@@ -2257,8 +2258,8 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToHdi(const int32_t &f
         "copy length failed");
 
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS, ERR_SAVE_HRTF_FAIL,
-        "set hdi personalizedSpatializationEnabled failed");
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_,
+        DEVICE_TYPE_BLUETOOTH_A2DP) == SUCCESS, ERR_SAVE_HRTF_FAIL, "set hdi personalizedSpatializationEnabled failed");
     return SUCCESS;
 }
 } // namespace AudioStandard

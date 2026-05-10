@@ -1652,6 +1652,7 @@ napi_value NapiAudioSpatializationManager::OffPersonalizedSpatializationEnabledC
 
 napi_value NapiAudioSpatializationManager::DownloadPersonalizedHRTF(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("DownloadPersonalizedHRTF");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED),
         "No system permission");

@@ -1601,6 +1601,7 @@ int32_t AudioPolicyClientStubImpl::OnPersonalizedSpatializationEnabledChangeForA
 {
     std::lock_guard<std::mutex> lockCbMap(personalizedSpatializationEnabledChangeMutex_);
     for (const auto &callback : personalizedSpatializationEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;
