@@ -129,9 +129,8 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessCloseCrossfade(const std::vector<Hp
         }
 
         FeedInputFromBuffer(inputs[0]);
-        size_t outputLevel = effectInstance_->GetOutputLevel();
-        if (outputLevel >= algoByteLen) {
-            effectInstance_->ReadOutput(reinterpret_cast<uint8_t *>(buf), algoByteLen);
+        int32_t readRet = effectInstance_->ReadOutput(reinterpret_cast<uint8_t *>(buf), algoByteLen);
+        if (readRet > 0) {
             ApplyCrossfadeMix(buf, raw, sampleCount);
         } else {
             for (size_t i = 0; i < sampleCount; ++i) {
@@ -336,6 +335,18 @@ int32_t HpaeSessionEffectNode::FlushEffect()
         status_ = STATUS::IDLE;
         isPaused_ = false;
         AUDIO_INFO_LOG("FlushEffect: paused → reset to IDLE");
+    } else if (status_ == STATUS::WARMING_UP) {
+        // WARMING_UP: stop preheat thread first (avoid data race), then restart preheat
+        StopPreheatThread();
+        uint32_t preheatFrames = effectInstance_->GetPreheatFrames();
+        size_t frameBytes = GetFrameLen() * audioConfig_.inputCfg.channels * sizeof(float);
+        size_t normalPrebuf = static_cast<size_t>(preheatFrames) * frameBytes;
+        prebufTargetBytes_ = normalPrebuf * FLUSH_PREHEAT_RATIO_NUMERATOR / FLUSH_PREHEAT_RATIO_DENOMINATOR;
+
+        stopRequested_ = false;
+        prebufFilled_ = false;
+        StartPreheatThread();
+        AUDIO_INFO_LOG("FlushEffect: WARMING_UP restart preheat, prebufTarget=%{public}zu", prebufTargetBytes_);
     } else if (status_ == STATUS::INTERCEPTING || status_ == STATUS::ACTIVE) {
         // Running: restart preheat with larger prebuf (3.8s)
         uint32_t preheatFrames = effectInstance_->GetPreheatFrames();
@@ -464,25 +475,20 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
     size_t channels = audioConfig_.inputCfg.channels;
     size_t byteLen = inputBuf->GetFrameLen() * channels * sizeof(float);
 
-    size_t outputLevel = effectInstance_->GetOutputLevel();
-    if (outputLevel >= byteLen) {
-        if (silenceFrameCount_ > 0) {
-            effectInstance_->SkipOutputFrames(silenceFrameCount_);
-            AUDIO_INFO_LOG("INTERCEPTING -> ACTIVE, skipped %{public}u stale frames, outputLevel=%{public}zu",
-                silenceFrameCount_, outputLevel);
-        }
-        silenceFrameCount_ = 0;
+    if (silenceFrameCount_ > 0) {
+        effectInstance_->SkipOutputFrames(silenceFrameCount_);
+        AUDIO_INFO_LOG("INTERCEPTING -> ACTIVE, skipped %{public}u stale frames",
+            silenceFrameCount_);
+    }
+    silenceFrameCount_ = 0;
 
-        int32_t ret = effectInstance_->ReadOutput(
-            reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
-        if (ret > 0) {
-            ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(),
-                inputBuf->GetFrameLen() * audioConfig_.inputCfg.channels);
-            status_ = STATUS::ACTIVE;
-            return inputBuf;
-        }
-        silenceFrameCount_++;
-        return &silenceData_;
+    int32_t ret = effectInstance_->ReadOutput(
+        reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
+    if (ret > 0) {
+        ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(),
+            inputBuf->GetFrameLen() * audioConfig_.inputCfg.channels);
+        status_ = STATUS::ACTIVE;
+        return inputBuf;
     }
 
     // No output yet → return silence, count it
@@ -524,13 +530,10 @@ void HpaeSessionEffectNode::FeedInputFromBuffer(HpaePcmBuffer *buf)
 HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, size_t byteLen, size_t channels)
 {
     (void)channels;
-    size_t outputLevel = effectInstance_->GetOutputLevel();
-    if (outputLevel >= byteLen) {
-        int32_t ret = effectInstance_->ReadOutput(
-            reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
-        if (ret > 0) {
-            return inputBuf;
-        }
+    int32_t ret = effectInstance_->ReadOutput(
+        reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
+    if (ret > 0) {
+        return inputBuf;
     }
     // No output → return silence
     stats_.underrunCount++;
@@ -555,7 +558,8 @@ void HpaeSessionEffectNode::CloseSessionEffectCore()
         }
     }
 
-    // Step 3: Clear algorithm caches
+    // Step 3: Clear algorithm caches (StopEffect is NOT called here intentionally;
+    // it will be called by DropEffect or destructor which follows this function)
     if (effectInstance_) {
         effectInstance_->ClearBuffers();
     }

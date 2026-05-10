@@ -83,6 +83,10 @@ int32_t EffectInstance::Init(const std::string &effectName, const AudioEffectCon
     AudioEffectTransInfo cmdInfo = {};
     cmdInfo.size = sizeof(audioConfig_);
     cmdInfo.data = &audioConfig_;
+    // SET_CONFIG failure is non-fatal: integration layer guarantees the caller
+    // checks Init() return code (ERR_EFFECT_CREATE_FAILED only on createEffect failure).
+    // If SET_CONFIG fails, the algorithm runs with default config; the caller will
+    // bypass this instance (not wire into processing chain) if Init indicated error.
     ret = (*effectHandle_)->command(effectHandle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, nullptr);
     if (ret != 0) {
         AUDIO_ERR_LOG("SET_CONFIG failed for %{public}s, ret=%{public}d", effectName.c_str(), ret);
@@ -261,11 +265,6 @@ size_t EffectInstance::GetInputLevel() const
     return fedBytes_;
 }
 
-size_t EffectInstance::GetOutputLevel() const
-{
-    return SIZE_MAX;
-}
-
 void EffectInstance::ClearBuffers()
 {
     skipFramesRemaining_ = 0;
@@ -312,10 +311,14 @@ int32_t EffectInstance::SetParameter(int32_t type, float value)
     if (!hasHandle_ || effectHandle_ == nullptr) {
         return 0;
     }
+    struct SetParamData {
+        int32_t type;
+        float value;
+    };
+    SetParamData data{type, value};
     AudioEffectTransInfo cmdInfo = {};
-    cmdInfo.size = sizeof(float);
-    cmdInfo.data = &value;
-    (void)type;
+    cmdInfo.size = sizeof(data);
+    cmdInfo.data = &data;
     return (*effectHandle_)->command(effectHandle_, EFFECT_CMD_SET_PARAM, &cmdInfo, nullptr);
 }
 

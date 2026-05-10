@@ -23,6 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
+// IMPORTANT: All methods must be called from the same thread (HpaeManagerThread). NOT thread-safe.
 class HpaeDelayedTaskQueue {
 public:
     HpaeDelayedTaskQueue();

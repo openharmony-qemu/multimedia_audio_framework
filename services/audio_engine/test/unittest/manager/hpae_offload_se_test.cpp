@@ -24,6 +24,8 @@
 #include "effect_instance.h"
 #include "hpae_define.h"
 #include "test_case_common.h"
+#include "fake_audio_effect_lib_entry.h"
+#include "hpae_plugin_node.h"
 
 using namespace testing::ext;
 
@@ -344,6 +346,234 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_unknownSession, TestSize.Level0
 {
     int32_t ret = manager_->DestroySessionEffect(INVALID_SESSION_ID);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
+// --- Offload dataflow test infrastructure ---
+
+// Source node: generates PCM data filled with a constant value.
+// Overrides DoProcess to push data directly (has no upstream to pull from).
+class OffloadMockSourceNode : public HpaePluginNode {
+public:
+    explicit OffloadMockSourceNode(HpaeNodeInfo& info, float fillValue = 0.5f)
+        : HpaePluginNode(info), fillValue_(fillValue)
+    {
+        silenceData_.SetBufferSilence(false);
+    }
+
+    void DoProcess() override
+    {
+        float *data = silenceData_.GetPcmDataBuffer();
+        size_t n = silenceData_.GetFrameLen() * silenceData_.GetChannelCount();
+        for (size_t i = 0; i < n; i++) {
+            data[i] = fillValue_;
+        }
+        silenceData_.SetBufferValid(true);
+        outputStream_.WriteDataToOutput(&silenceData_);
+    }
+
+    HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override
+    {
+        return inputs.empty() ? nullptr : inputs[0];
+    }
+    uint64_t GetLatency(uint32_t) override { return 0; }
+
+private:
+    float fillValue_;
+};
+
+// Probe node: captures output buffer for verification.
+class OffloadProbeNode : public HpaePluginNode {
+public:
+    using HpaePluginNode::HpaePluginNode;
+    HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override
+    {
+        captured_ = inputs.empty() ? nullptr : inputs[0];
+        return captured_;
+    }
+    HpaePcmBuffer *GetCaptured() const { return captured_; }
+    uint64_t GetLatency(uint32_t) override { return 0; }
+
+private:
+    HpaePcmBuffer *captured_ = nullptr;
+};
+
+class HpaeOffloadSeDataflowTest : public ::testing::Test {
+protected:
+    void SetUp() override
+    {
+        fake_.Reset();
+        HpaeSinkInfo sinkInfo = GetTestSinkInfo();
+        manager_ = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+
+        // Create local chain: source -> converterForLoudness_ -> [SE] -> loudnessGainNode_ -> probe
+        HpaeNodeInfo curInfo = MakeCurNodeInfo();
+        HpaeNodeInfo outputInfo = MakeOutputNodeInfo();
+
+        source_ = std::make_shared<OffloadMockSourceNode>(curInfo);
+        manager_->converterForLoudness_ =
+            std::make_shared<HpaeAudioFormatConverterNode>(curInfo, outputInfo);
+        manager_->converterForLoudness_->SetDownmixNormalization(false);
+        manager_->loudnessGainNode_ =
+            std::make_shared<HpaeLoudnessGainNode>(outputInfo);
+
+        // Connect: loudnessGainNode_ <- converterForLoudness_ <- source
+        manager_->converterForLoudness_->Connect(source_);
+        manager_->loudnessGainNode_->Connect(manager_->converterForLoudness_);
+
+        // Probe after loudnessGainNode_
+        HpaeNodeInfo probeInfo = outputInfo;
+        probeInfo.nodeId = 300;
+        probe_ = std::make_shared<OffloadProbeNode>(probeInfo);
+        probe_->Connect(manager_->loudnessGainNode_);
+
+        manager_->sessionEffectSessionId_ = CUR_SESSION_ID;
+    }
+
+    void TearDown() override
+    {
+        if (manager_->sessionEffectNode_ != nullptr) {
+            manager_->sessionEffectNode_->DropEffect();
+            manager_->sessionEffectNode_.reset();
+            manager_->sessionEffectSessionId_ = 0;
+        }
+        manager_.reset();
+    }
+
+    std::shared_ptr<EffectInstance> CreateEffectInstance()
+    {
+        auto inst = std::make_shared<EffectInstance>();
+        auto lib = fake_.GetLibrary();
+        inst->Init("test_effect", config_, &lib);
+        return inst;
+    }
+
+    FakeAudioEffectLibEntry fake_;
+    std::shared_ptr<OffloadMockSourceNode> source_;
+    std::shared_ptr<HpaeOffloadRendererManager> manager_;
+    std::shared_ptr<OffloadProbeNode> probe_;
+    AudioEffectConfig config_ = MakeTestConfig();
+};
+
+// OSE-DF-1: WARMING_UP -- SE outputs silence, does not pull upstream
+HWTEST_F(HpaeOffloadSeDataflowTest, warmingUp_outputsSilence, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    manager_->InsertSessionEffectNode("test_effect", instance, config_);
+
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    probe_->DoProcess();
+
+    auto *out = probe_->GetCaptured();
+    ASSERT_NE(out, nullptr);
+    float *data = out->GetPcmDataBuffer();
+    size_t n = out->GetFrameLen() * out->GetChannelCount();
+    for (size_t i = 0; i < n; i++) {
+        EXPECT_FLOAT_EQ(data[i], 0.0f) << " non-zero at sample " << i;
+    }
+}
+
+// OSE-DF-2: INTERCEPTING -- SE pulls upstream, FeedInput called, outputs silence
+HWTEST_F(HpaeOffloadSeDataflowTest, intercepting_feedsAndOutputsSilence, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    manager_->InsertSessionEffectNode("test_effect", instance, config_);
+
+    // Transition WARMING_UP -> INTERCEPTING
+    manager_->sessionEffectNode_->SetPrebufFilledForTest(true);
+    probe_->DoProcess();
+
+    uint32_t feedCountAfterTransition = fake_.GetFeedInputCount();
+    EXPECT_GE(feedCountAfterTransition, 1u);
+
+    // Second DoProcess in INTERCEPTING
+    probe_->DoProcess();
+
+    auto *out = probe_->GetCaptured();
+    ASSERT_NE(out, nullptr);
+    float *data = out->GetPcmDataBuffer();
+    size_t n = out->GetFrameLen() * out->GetChannelCount();
+    for (size_t i = 0; i < n; i++) {
+        EXPECT_FLOAT_EQ(data[i], 0.0f) << " non-zero at sample " << i;
+    }
+    EXPECT_GT(fake_.GetFeedInputCount(), feedCountAfterTransition);
+}
+
+// OSE-DF-3: ACTIVE -- SE outputs algorithm passthrough data
+HWTEST_F(HpaeOffloadSeDataflowTest, active_outputsAlgoData, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    manager_->InsertSessionEffectNode("test_effect", instance, config_);
+
+    // Drive to INTERCEPTING
+    manager_->sessionEffectNode_->SetPrebufFilledForTest(true);
+    probe_->DoProcess();
+
+    // Drive INTERCEPTING -> ACTIVE
+    probe_->DoProcess();
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // ACTIVE state
+    probe_->DoProcess();
+
+    auto *out = probe_->GetCaptured();
+    ASSERT_NE(out, nullptr);
+    float *data = out->GetPcmDataBuffer();
+    size_t n = out->GetFrameLen() * out->GetChannelCount();
+    for (size_t i = 0; i < n; i++) {
+        EXPECT_FLOAT_EQ(data[i], 0.5f) << " mismatch at sample " << i;
+    }
+}
+
+// OSE-DF-4: RemoveSessionEffectNode -- data passes through without SE
+HWTEST_F(HpaeOffloadSeDataflowTest, remove_restoresPassthrough, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    manager_->InsertSessionEffectNode("test_effect", instance, config_);
+
+    // Drive to ACTIVE
+    manager_->sessionEffectNode_->SetPrebufFilledForTest(true);
+    probe_->DoProcess();
+    probe_->DoProcess();
+    ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Remove SE
+    manager_->RemoveSessionEffectNode();
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+
+    // Data should pass through directly
+    probe_->DoProcess();
+
+    auto *out = probe_->GetCaptured();
+    ASSERT_NE(out, nullptr);
+    float *data = out->GetPcmDataBuffer();
+    size_t n = out->GetFrameLen() * out->GetChannelCount();
+    for (size_t i = 0; i < n; i++) {
+        EXPECT_FLOAT_EQ(data[i], 0.5f) << " mismatch at sample " << i;
+    }
+}
+
+// OSE-TOPO-1: InsertSessionEffectNode -- topology correct
+HWTEST_F(HpaeOffloadSeDataflowTest, insert_topo_correct, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    manager_->InsertSessionEffectNode("test_effect", instance, config_);
+
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetPreOutNum(), 1u);
+    EXPECT_EQ(manager_->loudnessGainNode_->GetPreOutNum(), 1u);
+}
+
+// OSE-TOPO-2: RemoveSessionEffectNode -- chain restored
+HWTEST_F(HpaeOffloadSeDataflowTest, remove_topo_restored, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    manager_->InsertSessionEffectNode("test_effect", instance, config_);
+
+    manager_->RemoveSessionEffectNode();
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->loudnessGainNode_->GetPreOutNum(), 1u);
 }
 
 }  // namespace HPAE

@@ -480,9 +480,7 @@ protected:
                 node_->StartEffect();
                 node_->SetPrebufFilledForTest(true);
                 node_->DoProcess();  // -> INTERCEPTING
-                // Next DoProcess needs GetOutputLevel >= byteLen + ReadOutput returning data
-                EXPECT_CALL(*mockInst_, GetOutputLevel())
-                    .WillOnce(testing::Return(byteLen));
+                // Next DoProcess needs ReadOutput returning >0 to trigger ACTIVE transition
                 EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen))
                     .WillOnce(testing::Return(byteLen));
                 node_->DoProcess();  // INTERCEPTING->ACTIVE
@@ -529,8 +527,8 @@ HWTEST_F(SessionEffectNodeStateTest, intercepting_feedsInputCache, TestSize.Leve
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen))
         .WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetOutputLevel())
-        .WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen))
+        .WillOnce(testing::Return(0));
 
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
@@ -541,7 +539,7 @@ HWTEST_F(SessionEffectNodeStateTest, intercepting_returnsSilence, TestSize.Level
 {
     EnterState(HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
     node_->DoProcess();
@@ -554,7 +552,6 @@ HWTEST_F(SessionEffectNodeStateTest, intercepting_toActive, TestSize.Level0)
     EnterState(HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen)).WillOnce(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
@@ -568,7 +565,6 @@ HWTEST_F(SessionEffectNodeStateTest, active_readsAlgoOutput, TestSize.Level0)
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
 
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen)).WillOnce(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
@@ -581,7 +577,7 @@ HWTEST_F(SessionEffectNodeStateTest, active_outputEmpty_returnsSilence, TestSize
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
 
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
     node_->DoProcess();
@@ -595,7 +591,7 @@ HWTEST_F(SessionEffectNodeStateTest, active_feedsInputContinuous, TestSize.Level
 
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen)).Times(2).WillRepeatedly(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
     node_->DoProcess();
     node_->DoProcess();
@@ -617,7 +613,6 @@ protected:
         ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, GetAudioConfig()).WillByDefault(testing::ReturnRef(config_));
         ON_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillByDefault(testing::Return(0));
-        ON_CALL(*mockInst_, GetOutputLevel()).WillByDefault(testing::Return(0));
 
         // Connect upstream — node reads from upstreamNode
         HpaeNodeInfo upInfo = MakeTestNodeInfo();
@@ -738,7 +733,7 @@ HWTEST_F(SessionEffectNodeStateTest, warmup_skipStaleOutput, TestSize.Level0)
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
     // DoProcess while INTERCEPTING with no output → silence, silenceFrameCount_ incremented again
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
@@ -746,7 +741,6 @@ HWTEST_F(SessionEffectNodeStateTest, warmup_skipStaleOutput, TestSize.Level0)
     // Next DoProcess with output → INTERCEPTING→ACTIVE, SkipOutputFrames(3) called
     // (1 from WARMING_UP + 1 from WARMING_UP→INTERCEPTING fall-through + 1 from INTERCEPTING)
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, SkipOutputFrames(3)).Times(1);
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen)).WillOnce(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
@@ -856,7 +850,6 @@ HWTEST_F(SessionEffectNodeStateTest, resume_fromIntercepting, TestSize.Level0)
 
     // Next DoProcess with algo output → ACTIVE
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen)).WillOnce(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
@@ -877,7 +870,6 @@ HWTEST_F(SessionEffectNodeStateTest, resume_fromActive, TestSize.Level0)
 
     // Verify steady state continues
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen)).WillOnce(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
@@ -1103,7 +1095,7 @@ HWTEST_F(SessionEffectNodeStateTest, algoFail_duringIntercepting, TestSize.Level
     // FeedInput fails
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_))
         .WillRepeatedly(testing::Return(-1));
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
     node_->DoProcess();
     // Should stay INTERCEPTING, not change state
@@ -1116,8 +1108,6 @@ HWTEST_F(SessionEffectNodeStateTest, algoFail_duringActive, TestSize.Level0)
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
 
     // ReadOutput fails (returns 0 or negative)
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(
-        testing::Return(TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float)));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_))
         .WillRepeatedly(testing::Return(-1));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_))
@@ -1293,7 +1283,6 @@ HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_silence_to_algo_output, TestS
 
     // Mock: algorithm has output ready (all 1.0f)
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen)).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen))
         .WillOnce(testing::DoAll(
             testing::WithArgs<0, 1>(testing::Invoke(
@@ -1343,7 +1332,6 @@ HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_algo_to_bypass, TestSize.Leve
     std::fill(rawData, rawData + sampleCount, 0.5f);
 
     // Mock: algorithm outputs all 1.0f
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen))
         .WillOnce(testing::DoAll(
             testing::WithArgs<0, 1>(testing::Invoke(
@@ -1383,7 +1371,6 @@ HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_duration_5_10ms, TestSize.Lev
     size_t byteLen = sampleCount * sizeof(float);
 
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen)).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen))
         .WillOnce(testing::Return(static_cast<int32_t>(byteLen)));
 
@@ -1400,7 +1387,7 @@ HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_duration_5_10ms, TestSize.Lev
 
     // Next call is already ACTIVE
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen)).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetOutputLevel()).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen)).WillRepeatedly(testing::Return(0));
     node_->SignalProcess(inputs);
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
 }

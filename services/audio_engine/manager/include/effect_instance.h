@@ -61,7 +61,6 @@ public:
     int32_t FeedInput(const uint8_t *data, size_t len) override;
     int32_t ReadOutput(uint8_t *buf, size_t len) override;
     size_t GetInputLevel() const override;
-    size_t GetOutputLevel() const override;
     void ClearBuffers() override;
     int32_t StartEffect() override;
     int32_t StopEffect() override;

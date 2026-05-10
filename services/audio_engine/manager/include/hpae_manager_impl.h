@@ -153,7 +153,7 @@ public:
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 
     int32_t SetAissEnabled(uint32_t sessionId, bool enabled) override;
-    int32_t SetVocalRatio(uint32_t sessionId, float ratio) override;
+    int32_t SetVocalRatio(float ratio) override;
     int32_t SetAissEnabledByUid(int32_t uid, bool enabled) override;
 
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;

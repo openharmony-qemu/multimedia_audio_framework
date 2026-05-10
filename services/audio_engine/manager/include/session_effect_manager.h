@@ -50,6 +50,10 @@ public:
     void SetLazyReleaseTimeout(uint64_t timeoutMs);
     void SetAudioEffectLibraryForTest(const AudioEffectLibrary *lib) { testLib_ = lib; }
 
+    // Effect library loading
+    void InitEffectLibraries(const std::vector<std::shared_ptr<AudioEffectLibEntry>> &libEntries);
+    AudioEffectLibEntry *GetEffectLibEntry(const std::string &libraryName) const;
+
     // Queries
     uint32_t GetBoundSessionId(const std::string &effectName) const;
     std::vector<std::string> GetAllActiveEffectNames() const;
@@ -67,6 +71,7 @@ private:
 
     HpaeManager &hpaeManager_;
     std::map<std::string, std::shared_ptr<EffectInstance>> effectInstanceMap_;
+    std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectLibMap_;
     std::shared_ptr<bool> alive_;
     uint64_t lazyReleaseTimeoutMs_ = 3000;
     const AudioEffectLibrary *testLib_ = nullptr;

@@ -148,7 +148,6 @@ HWTEST_F(EffectInstanceTest, phase1Stubs_returnSuccess, TestSize.Level0)
     EXPECT_EQ(instance_->FeedInput(nullptr, 0), 0);
     EXPECT_EQ(instance_->ReadOutput(nullptr, 0), 0);
     EXPECT_EQ(instance_->GetInputLevel(), 0u);
-    EXPECT_EQ(instance_->GetOutputLevel(), SIZE_MAX);
     EXPECT_EQ(instance_->TriggerProcess(), 0);
     EXPECT_EQ(instance_->Flush(), 0);
     EXPECT_EQ(instance_->SetParameter(0, 0.0f), 0);

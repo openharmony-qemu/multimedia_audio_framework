@@ -31,7 +31,6 @@ public:
     MOCK_METHOD(int32_t, FeedInput, (const uint8_t *data, size_t len), (override));
     MOCK_METHOD(int32_t, ReadOutput, (uint8_t *buf, size_t len), (override));
     MOCK_METHOD(size_t, GetInputLevel, (), (const, override));
-    MOCK_METHOD(size_t, GetOutputLevel, (), (const, override));
     MOCK_METHOD(void, ClearBuffers, (), (override));
     MOCK_METHOD(int32_t, StartEffect, (), (override));
     MOCK_METHOD(int32_t, StopEffect, (), (override));

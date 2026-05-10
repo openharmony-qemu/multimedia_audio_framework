@@ -44,9 +44,9 @@ uint64_t HpaeDelayedTaskQueue::PostDelayedTask(uint64_t delayMs, std::function<v
 
 void HpaeDelayedTaskQueue::CancelTask(uint64_t taskId)
 {
-    for (auto &entry : tasks_) {
-        if (entry.taskId == taskId) {
-            entry.cancelled = true;
+    for (auto it = tasks_.begin(); it != tasks_.end(); ++it) {
+        if (it->taskId == taskId) {
+            tasks_.erase(it);
             return;
         }
     }
@@ -81,9 +81,7 @@ uint64_t HpaeDelayedTaskQueue::GetNextDelayMs() const
 
 void HpaeDelayedTaskQueue::CancelAll()
 {
-    for (auto &entry : tasks_) {
-        entry.cancelled = true;
-    }
+    tasks_.clear();
 }
 
 }  // namespace HPAE

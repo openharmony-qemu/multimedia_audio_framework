@@ -41,7 +41,6 @@ public:
     virtual int32_t FeedInput(const uint8_t *data, size_t len) = 0;
     virtual int32_t ReadOutput(uint8_t *buf, size_t len) = 0;
     virtual size_t GetInputLevel() const = 0;
-    virtual size_t GetOutputLevel() const = 0;
     virtual void ClearBuffers() = 0;
 
     // Effect control (Phase 3A-1: sends ENABLE/DISABLE to algorithm)
