@@ -20,13 +20,13 @@ namespace HPAE {
 class PacingTestSink {
 public:
     using ProcessFunc = std::function<void()>;
-    static constexpr uint32_t US_PER_SEC = 1000000;
-    static constexpr uint32_t MS_PER_SEC = 1000;
+    static constexpr uint32_t usPerSec = 1000000;
+    static constexpr uint32_t msPerSec = 1000;
 
     PacingTestSink(ProcessFunc processFunc, uint32_t sampleRate = 48000,
                    uint32_t frameSize = 480)
         : processFunc_(processFunc),
-          intervalUs_(frameSize * US_PER_SEC / sampleRate),
+          intervalUs_(sampleRate != 0 ? frameSize * usPerSec / sampleRate : 0),
           running_(false),
           processedFrames_(0) {}
 
@@ -50,7 +50,7 @@ public:
     void RunFor(uint32_t durationMs)
     {
         Start();
-        usleep(durationMs * US_PER_SEC / MS_PER_SEC);
+        usleep(durationMs * usPerSec / msPerSec);
         Stop();
     }
 

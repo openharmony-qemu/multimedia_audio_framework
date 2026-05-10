@@ -16,7 +16,6 @@
 #ifndef SE_PROCESS_STATS_H
 #define SE_PROCESS_STATS_H
 
-#include <cinttypes>
 #include <cstdint>
 #include <iomanip>
 #include <sstream>

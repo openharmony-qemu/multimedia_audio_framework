@@ -31,11 +31,11 @@ namespace AudioStandard {
 // Realistic fake parameters
 // 1 DoProcess frame = 960 samples @ 48kHz = 20ms
 // Process threshold: 2s = 100 DoProcess frames = 96000 stereo samples = 192000 floats
-static constexpr size_t FAKE_PROCESS_THRESHOLD_FLOATS = 96000 * 2; // 2s of stereo data
+static constexpr size_t fakeProcessThresholdFloats = 96000 * 2; // 2s of stereo data
 // Preheat: 3s = 150 DoProcess frames
-static constexpr uint32_t FAKE_PREHEAT_FRAMES = 150;
+static constexpr uint32_t fakePreheatFrames = 150;
 // Process latency: 800ms
-static constexpr uint32_t FAKE_PROCESS_DELAY_MS = 800;
+static constexpr uint32_t fakeProcessDelayMs = 800;
 
 /**
  * Fake implementation of AudioEffectLibrary + AudioEffectInterface for testing.
@@ -175,10 +175,10 @@ public:
     {
         createFail_ = false;
         processFail_ = false;
-        processDelayMs_ = FAKE_PROCESS_DELAY_MS;
+        processDelayMs_ = fakeProcessDelayMs;
         flushFail_ = false;
-        preheatFrames_ = FAKE_PREHEAT_FRAMES;
-        processThreshold_ = FAKE_PROCESS_THRESHOLD_FLOATS;
+        preheatFrames_ = fakePreheatFrames;
+        processThreshold_ = fakeProcessThresholdFloats;
         createCount_ = 0;
         releaseCount_ = 0;
         processCount_ = 0;
@@ -339,9 +339,9 @@ private:
             return 0;
         }
         size_t toCopy = std::min(static_cast<size_t>(outBuffer->frameLength),
-                                  instance_->processedOutput_.size());
+            instance_->processedOutput_.size());
         (void)memcpy_s(outBuffer->f32, toCopy * sizeof(float),
-                        instance_->processedOutput_.data(), toCopy * sizeof(float));
+            instance_->processedOutput_.data(), toCopy * sizeof(float));
         instance_->processedOutput_.erase(
             instance_->processedOutput_.begin(), instance_->processedOutput_.begin() + toCopy);
         outBuffer->frameLength = toCopy;
@@ -383,10 +383,10 @@ private:
 
     bool createFail_ = false;
     bool processFail_ = false;
-    uint32_t processDelayMs_ = FAKE_PROCESS_DELAY_MS;
+    uint32_t processDelayMs_ = fakeProcessDelayMs;
     bool flushFail_ = false;
-    uint32_t preheatFrames_ = FAKE_PREHEAT_FRAMES;
-    size_t processThreshold_ = FAKE_PROCESS_THRESHOLD_FLOATS;
+    uint32_t preheatFrames_ = fakePreheatFrames;
+    size_t processThreshold_ = fakeProcessThresholdFloats;
     uint32_t channels_ = 2;
 
     bool feedInputFail_ = false;
