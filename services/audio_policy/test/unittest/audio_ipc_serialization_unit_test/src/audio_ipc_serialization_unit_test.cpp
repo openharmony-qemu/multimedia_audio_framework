@@ -284,12 +284,14 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneContext_001, TestSize.Level1)
     AudioZoneContext context = {};
     context.focusStrategy_ = AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY;
     context.supportType_ = AudioZoneSupportType::RECORD_ONLY;
+    context.userId_ = TEST_VALUE_1;
 
     EXPECT_TRUE(context.Marshalling(parcel));
     auto newContext = std::shared_ptr<AudioZoneContext>(AudioZoneContext::Unmarshalling(parcel));
     ASSERT_NE(newContext, nullptr);
     EXPECT_TRUE(newContext->focusStrategy_ == context.focusStrategy_);
     EXPECT_TRUE(newContext->supportType_ == context.supportType_);
+    EXPECT_TRUE(newContext->userId_ == context.userId_);
 }
 
 /**

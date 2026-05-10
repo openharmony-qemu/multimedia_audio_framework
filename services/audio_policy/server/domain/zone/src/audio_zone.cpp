@@ -254,6 +254,12 @@ const std::string AudioZone::GetName()
     return name_;
 }
 
+int32_t AudioZone::GetUserId()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    return context_.userId_;
+}
+
 const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
 {
     std::shared_ptr<AudioZoneDescriptor> descriptor = std::make_shared<AudioZoneDescriptor>();

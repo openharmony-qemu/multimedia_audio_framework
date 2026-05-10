@@ -3961,11 +3961,11 @@ HWTEST(AudioPolicyUnitTest, UpdateContextForAudioZone_001, TestSize.Level1)
 
     AudioZoneContext context = {};
 
-    // Test zoneId = 0
+    // Test zoneId = 0 (valid zoneId, but no permission)
     int32_t ret = server->UpdateContextForAudioZone(0, context);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 
-    // Test zoneId < 0
+    // Test zoneId < 0 (invalid zoneId)
     ret = server->UpdateContextForAudioZone(-1, context);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
@@ -3991,6 +3991,289 @@ HWTEST(AudioPolicyUnitTest, UpdateContextForAudioZone_003, TestSize.Level1)
 
     int32_t ret = server->UpdateContextForAudioZone(zoneId, context);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_001
+* @tc.desc  : Test GetAudioZoneForApp with empty userId list.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_001, TestSize.Level1)
+{
+    GetPermission();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    std::vector<int32_t> userIds = {};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(retUserIds.empty());
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_002
+* @tc.desc  : Test GetAudioZoneForApp with userId matching zone.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_002, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext zoneContext;
+    zoneContext.userId_ = 100;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("MatchZone", zoneContext, 0);
+    ASSERT_GT(zoneId, 0);
+
+    std::vector<int32_t> userIds = {100};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 1);
+    EXPECT_EQ(retUserIds[0], 100);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_003
+* @tc.desc  : Test GetAudioZoneForApp with userId not matching any zone, fallback to mainZone.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_003, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext mainContext;
+    mainContext.userId_ = 200;
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(DEFAULT_ZONEID, mainContext);
+
+    std::vector<int32_t> userIds = {100};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 1);
+    EXPECT_EQ(retUserIds[0], 200);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_004
+* @tc.desc  : Test GetAudioZoneForApp with multiple userIds, some match zones.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_004, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext mainContext;
+    mainContext.userId_ = 200;
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(DEFAULT_ZONEID, mainContext);
+
+    AudioZoneContext zoneContext;
+    zoneContext.userId_ = 100;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone", zoneContext, 0);
+    ASSERT_GT(zoneId, 0);
+
+    std::vector<int32_t> userIds = {100, 101};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 2);
+    EXPECT_EQ(retUserIds[0], 100);
+    EXPECT_EQ(retUserIds[1], 200);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_005
+* @tc.desc  : Test GetAudioZoneForApp with duplicate userIds.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_005, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext zoneContext;
+    zoneContext.userId_ = 100;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("DupZone", zoneContext, 0);
+    ASSERT_GT(zoneId, 0);
+
+    std::vector<int32_t> userIds = {100, 100, 100};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 3);
+    EXPECT_EQ(retUserIds[0], 100);
+    EXPECT_EQ(retUserIds[1], 100);
+    EXPECT_EQ(retUserIds[2], 100);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_006
+* @tc.desc  : Test GetAudioZoneForApp with mainZone userId = INVALID_USER_ID.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_006, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext mainContext;
+    mainContext.userId_ = AudioZoneContext::INVALID_USER_ID;
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(DEFAULT_ZONEID, mainContext);
+
+    std::vector<int32_t> userIds = {100};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 1);
+    EXPECT_EQ(retUserIds[0], AudioZoneContext::INVALID_USER_ID);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_007
+* @tc.desc  : Test GetAudioZoneForApp after zone is released.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_007, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext mainContext;
+    mainContext.userId_ = 250;
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(DEFAULT_ZONEID, mainContext);
+
+    AudioZoneContext zoneContext;
+    zoneContext.userId_ = 100;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TempZone", zoneContext, 0);
+    ASSERT_GT(zoneId, 0);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+
+    std::vector<int32_t> userIds = {100};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 1);
+    EXPECT_EQ(retUserIds[0], 250);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_008
+* @tc.desc  : Test GetAudioZoneForApp with dynamic context update.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_008, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext zoneContext;
+    zoneContext.userId_ = 100;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("DynamicZone", zoneContext, 0);
+    ASSERT_GT(zoneId, 0);
+
+    AudioZoneContext updatedContext;
+    updatedContext.userId_ = 150;
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(zoneId, updatedContext);
+
+    std::vector<int32_t> userIds = {150};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 1);
+    EXPECT_EQ(retUserIds[0], 150);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::GetAudioZoneForApp.
+* @tc.number: GetAudioZoneForApp_009
+* @tc.desc  : Test GetAudioZoneForApp with multiple zones matching different userIds.
+*/
+HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_009, TestSize.Level1)
+{
+    GetPermission();
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioZoneContext zone1Context;
+    zone1Context.userId_ = 100;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("Zone1", zone1Context, 0);
+    ASSERT_GT(zoneId1, 0);
+
+    AudioZoneContext zone2Context;
+    zone2Context.userId_ = 200;
+    int32_t zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("Zone2", zone2Context, 0);
+    ASSERT_GT(zoneId2, 0);
+
+    std::vector<int32_t> userIds = {100, 200};
+    std::vector<int32_t> retUserIds;
+    int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(retUserIds.size(), 2);
+    EXPECT_EQ(retUserIds[0], 100);
+    EXPECT_EQ(retUserIds[1], 200);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId2);
 }
 
 /**

@@ -41,6 +41,7 @@ public:
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid);
     void ReleaseAudioZone(int32_t zoneId);
     void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
+    int32_t GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds);
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     int32_t GetAudioZoneByName(std::string name);
@@ -133,6 +134,7 @@ private:
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
     std::shared_ptr<SessionTimeOutCallback> sessionTimeoutCallbackPtr_;
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
+    AudioZoneContext mainZoneContext_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
     bool zoneDeviceVisible_ = true;

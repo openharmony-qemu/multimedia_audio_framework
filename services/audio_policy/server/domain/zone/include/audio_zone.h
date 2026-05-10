@@ -74,6 +74,7 @@ public:
     const std::string GetName();
     void UpdateContext(const AudioZoneContext &context);
     bool IsSupportDeviceRole(DeviceRole deviceRole);
+    int32_t GetUserId();
 
     void BindByKey(const AudioZoneBindKey &key);
     void RemoveKey(const AudioZoneBindKey &key);

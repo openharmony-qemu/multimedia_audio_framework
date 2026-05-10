@@ -271,6 +271,19 @@ void AudioPolicyServerGetCurrentRendererChangeInfosForZone(FuzzedDataProvider& f
     server->GetCurrentRendererChangeInfosForZone(zoneId, audioRendererChangeInfos);
 }
 
+void AudioPolicyServerGetAudioZoneForApp(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    std::vector<int32_t> userIds;
+    size_t size = GetData<size_t>();
+    for (size_t i = 0; i < size; ++i) {
+        userIds.push_back(GetData<int32_t>());
+    }
+    std::vector<int32_t> retUserIds;
+    server->GetAudioZoneForApp(userIds, retUserIds);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -283,6 +296,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyServerSelectPrivateDevice,
     AudioPolicyServerForceVolumeKeyControlType,
     AudioPolicyServerGetCurrentRendererChangeInfosForZone,
+    AudioPolicyServerGetAudioZoneForApp,
     });
     func(fdp);
 }
