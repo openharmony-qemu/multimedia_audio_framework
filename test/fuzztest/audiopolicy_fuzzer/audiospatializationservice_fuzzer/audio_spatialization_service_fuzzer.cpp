@@ -762,6 +762,7 @@ void AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzz
     ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
 }
 
+using FuzzTestFunc = void (*)(FuzzedDataProvider& fdp);
 static constexpr FuzzTestFunc kAllFuzzTests[] = {
     UpdateCurrentDeviceFuzzTest,
     RemoveOldestDeviceFuzzTest,
