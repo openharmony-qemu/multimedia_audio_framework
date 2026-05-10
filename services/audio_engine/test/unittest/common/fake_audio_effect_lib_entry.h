@@ -28,9 +28,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-// Session Effect extended command codes (beyond AudioEffectCommandCode)
-static constexpr uint32_t EFFECT_CMD_FLUSH = 10;
-
 // Realistic fake parameters
 // 1 DoProcess frame = 960 samples @ 48kHz = 20ms
 // Process threshold: 2s = 100 DoProcess frames = 96000 stereo samples = 192000 floats

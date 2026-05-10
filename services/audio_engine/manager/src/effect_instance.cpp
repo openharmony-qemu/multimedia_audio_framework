@@ -22,9 +22,6 @@
 #include <cstring>
 #include <vector>
 
-namespace {
-constexpr uint32_t EFFECT_CMD_FLUSH = 10;  // Session Effect extended command
-}
 #include <algorithm>
 
 namespace OHOS {
