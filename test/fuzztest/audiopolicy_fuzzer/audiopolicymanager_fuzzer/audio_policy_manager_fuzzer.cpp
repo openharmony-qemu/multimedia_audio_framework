@@ -122,14 +122,6 @@ public:
     void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction){};
 };
 
-class AudioPersonalizedSpatializationEnabledChangeCallbackFuzzTest :
-    public AudioPersonalizedSpatializationEnabledChangeCallback {
-public:
-    AudioPersonalizedSpatializationEnabledChangeCallbackFuzzTest() {}
-    void OnPersonalizedSpatializationEnabledChange(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        bool enabled) override {}
-};
-
 void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
 {
     bool block = GetData<bool>();
@@ -808,7 +800,7 @@ void AudioPolicyManagerPersonalizedFuzzTest(FuzzedDataProvider& fdp)
     int32_t fd = GetData<int32_t>();
     int64_t length = GetData<int64_t>();
     std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> callback =
-        std::make_shared<AudioPersonalizedSpatializationEnabledChangeCallbackFuzzTest>();
+        std::make_shared<AudioPersonalizedSpatializationEnabledChangeCallback>();
 
     AudioPolicyManager::GetInstance().SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
     AudioPolicyManager::GetInstance().IsPersonalizedSpatializationEnabled(address);
