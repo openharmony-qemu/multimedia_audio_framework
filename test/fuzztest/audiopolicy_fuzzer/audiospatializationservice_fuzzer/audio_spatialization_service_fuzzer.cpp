@@ -763,7 +763,7 @@ void AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzz
 }
 
 using FuzzTestFunc = void (*)(FuzzedDataProvider& fdp);
-static constexpr FuzzTestFunc kAllFuzzTests[] = {
+static constexpr FuzzTestFunc ALL_FUZZ_TESTS[] = {
     UpdateCurrentDeviceFuzzTest,
     RemoveOldestDeviceFuzzTest,
     UpdateDeviceSpatialMapInfoFuzzTest,
@@ -818,7 +818,7 @@ static constexpr FuzzTestFunc kAllFuzzTests[] = {
 
 void Test(FuzzedDataProvider& fdp)
 {
-    auto func = fdp.PickValueInArray(kAllFuzzTests);
+    auto func = fdp.PickValueInArray(ALL_FUZZ_TESTS);
     func(fdp);
 }
 
