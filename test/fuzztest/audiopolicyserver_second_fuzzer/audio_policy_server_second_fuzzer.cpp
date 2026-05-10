@@ -284,6 +284,24 @@ void AudioPolicyServerGetAudioZoneForApp(FuzzedDataProvider& fdp)
     server->GetAudioZoneForApp(userIds, retUserIds);
 }
 
+void AudioPolicyServerAddStreamIdToAudioZone(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t zoneId = GetData<int32_t>();
+    uint32_t streamId = GetData<uint32_t>();
+    server->AddStreamIdToAudioZone(zoneId, streamId);
+}
+
+void AudioPolicyServerRemoveStreamIdFromAudioZone(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t zoneId = GetData<int32_t>();
+    uint32_t streamId = GetData<uint32_t>();
+    server->RemoveStreamIdFromAudioZone(zoneId, streamId);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -297,6 +315,8 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyServerForceVolumeKeyControlType,
     AudioPolicyServerGetCurrentRendererChangeInfosForZone,
     AudioPolicyServerGetAudioZoneForApp,
+    AudioPolicyServerAddStreamIdToAudioZone,
+    AudioPolicyServerRemoveStreamIdFromAudioZone,
     });
     func(fdp);
 }

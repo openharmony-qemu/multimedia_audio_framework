@@ -61,6 +61,36 @@ template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel,
     return res;
 }
 
+template<typename T> bool MarshallingSetUInt32(const std::set<T> &value, Parcel &parcel)
+{
+    size_t size = value.size();
+    if (!parcel.WriteUint64(size)) {
+        return false;
+    }
+    for (const auto &i : value) {
+        if (!parcel.WriteUint32(i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename T> std::set<T> UnmarshallingSetUInt32(Parcel &parcel,
+    const size_t maxSize = std::numeric_limits<size_t>::max())
+{
+    size_t size = parcel.ReadUint64();
+    // due to security concerns, sizelimit has been imposed
+    if (size > maxSize) {
+        size = maxSize;
+    }
+
+    std::set<T> res;
+    for (size_t i = 0; i < size; i++) {
+        res.insert(static_cast<T>(parcel.ReadUint32()));
+    }
+    return res;
+}
+
 template<typename T> bool MarshallingSetInt64(const std::set<T> &value, Parcel &parcel)
 {
     size_t size = value.size();

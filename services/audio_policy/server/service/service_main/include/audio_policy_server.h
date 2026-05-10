@@ -578,6 +578,10 @@ public:
 
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams) override;
 
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) override;
+
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
+
     int32_t SetZoneDeviceVisible(bool visible) override;
 
     int32_t GetAudioInterruptForZone(int32_t zoneId,

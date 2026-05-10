@@ -352,4 +352,6 @@ interface IAudioPolicy {
         [out] int ret);
     void DestroyLoopback([in] int type, [out] int ret);
     void GetAudioZoneForApp([in] List<int> userIds, [out] List<int> retUserIds);
+    void AddStreamIdToAudioZone([in] int zoneId, [in] unsigned int streamId);
+    void RemoveStreamIdFromAudioZone([in] int zoneId, [in] unsigned int streamId);
 }

@@ -69,11 +69,15 @@ public:
     int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId);
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
     void SetZoneDeviceVisible(bool visible);
     bool IsZoneDeviceVisible();
     int32_t FindAudioZoneByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE);
-    int32_t FindAudioZone(int32_t uid, StreamUsage usage, DeviceRole deviceRole = DEVICE_ROLE_NONE);
-    virtual std::string FindAudioZoneNameByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE);
+    int32_t FindAudioZone(int32_t uid, StreamUsage usage, DeviceRole deviceRole = DEVICE_ROLE_NONE,
+        uint32_t streamId = INVALID_STREAM_ID);
+    virtual std::string FindAudioZoneNameByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE,
+        uint32_t streamId = INVALID_STREAM_ID);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, DeviceType deviceType, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId, DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE);
@@ -143,9 +147,9 @@ private:
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage);
+        uint32_t streamId, const StreamUsage &usage);
     int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys);
-    int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
+    int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, uint32_t streamId,
         const StreamUsage &usage, DeviceRole deviceRole);
     bool CheckIsZoneValid(int32_t zoneId);
     void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device);

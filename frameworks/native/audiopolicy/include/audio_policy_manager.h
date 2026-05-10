@@ -608,6 +608,10 @@ public:
 
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
 
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId);
+
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
+
     void SetZoneDeviceVisible(bool visible);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);

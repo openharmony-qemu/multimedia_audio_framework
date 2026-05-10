@@ -192,9 +192,10 @@ HWTEST_F(AudioZoneServiceUnitTest, AddUidUsagesToAudioZone_001, TestSize.Level1)
     };
 
     EXPECT_EQ(AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId, 1000, usages), SUCCESS);
-    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_MEDIA)), true);
-    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_VOICE_COMMUNICATION)), true);
-    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_ALARM)), true);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", INVALID_STREAM_ID, STREAM_USAGE_MEDIA)), true);
+    EXPECT_EQ(audioZone->IsContainKey(
+        AudioZoneBindKey(1000, "", INVALID_STREAM_ID, STREAM_USAGE_VOICE_COMMUNICATION)), true);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", INVALID_STREAM_ID, STREAM_USAGE_ALARM)), true);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 
     // add invalid zone
@@ -220,9 +221,10 @@ HWTEST_F(AudioZoneServiceUnitTest, RemoveUidUsagesFromAudioZone_001, TestSize.Le
 
     EXPECT_EQ(AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId, 1000, usages), SUCCESS);
     EXPECT_EQ(AudioZoneService::GetInstance().RemoveUidUsagesFromAudioZone(zoneId, 1000, usages), SUCCESS);
-    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_MEDIA)), false);
-    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_VOICE_COMMUNICATION)), false);
-    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_ALARM)), false);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", INVALID_STREAM_ID, STREAM_USAGE_MEDIA)), false);
+    EXPECT_EQ(audioZone->IsContainKey(
+        AudioZoneBindKey(1000, "", INVALID_STREAM_ID, STREAM_USAGE_VOICE_COMMUNICATION)), false);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", INVALID_STREAM_ID, STREAM_USAGE_ALARM)), false);
 
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
     // remove invalid zone
@@ -658,6 +660,165 @@ HWTEST_F(AudioZoneServiceUnitTest, UpdateContextForAudioZone_002, TestSize.Level
 
     descriptor = AudioZoneService::GetInstance().GetAudioZone(nonExistentZoneId);
     EXPECT_EQ(descriptor, nullptr);
+}
+
+/**
+ * @tc.name  : AddStreamIdToAudioZone
+ * @tc.number: AddStreamIdToAudioZone_001
+ * @tc.desc  : Test AddStreamIdToAudioZone with valid zoneId and streamId
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddStreamIdToAudioZone_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    uint32_t streamId = 100;
+    auto ret = AudioZoneService::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto zone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(zone, nullptr);
+    AudioZoneBindKey expectedKey(INVALID_UID, "", streamId, StreamUsage::STREAM_USAGE_INVALID);
+    EXPECT_TRUE(zone->IsContainKey(expectedKey));
+
+    auto descriptor = zone->GetDescriptor();
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->streamIds_.size(), 1);
+    EXPECT_EQ(descriptor->streamIds_.count(streamId), 1);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : AddStreamIdToAudioZone
+ * @tc.number: AddStreamIdToAudioZone_002
+ * @tc.desc  : Test AddStreamIdToAudioZone with invalid zoneId
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddStreamIdToAudioZone_002, TestSize.Level1)
+{
+    ClearZone();
+    int32_t invalidZoneId = 99999;
+    uint32_t streamId = 100;
+
+    auto ret = AudioZoneService::GetInstance().AddStreamIdToAudioZone(invalidZoneId, streamId);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : AddStreamIdToAudioZone
+ * @tc.number: AddStreamIdToAudioZone_003
+ * @tc.desc  : Test AddStreamIdToAudioZone migrating streamId between zones
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddStreamIdToAudioZone_003, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneContext context;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("Zone1", context, 0);
+    int32_t zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("Zone2", context, 0);
+    ASSERT_NE(zoneId1, ERROR);
+    ASSERT_NE(zoneId2, ERROR);
+
+    uint32_t streamId = 100;
+    AudioZoneBindKey expectedKey(INVALID_UID, "", streamId, StreamUsage::STREAM_USAGE_INVALID);
+
+    auto ret1 = AudioZoneService::GetInstance().AddStreamIdToAudioZone(zoneId1, streamId);
+    EXPECT_EQ(ret1, SUCCESS);
+
+    auto zone1 = AudioZoneService::GetInstance().FindZone(zoneId1);
+    ASSERT_NE(zone1, nullptr);
+    EXPECT_TRUE(zone1->IsContainKey(expectedKey));
+    EXPECT_EQ(zone1->GetDescriptor()->streamIds_.count(streamId), 1);
+
+    auto ret2 = AudioZoneService::GetInstance().AddStreamIdToAudioZone(zoneId2, streamId);
+    EXPECT_EQ(ret2, SUCCESS);
+
+    EXPECT_FALSE(zone1->IsContainKey(expectedKey));
+    EXPECT_EQ(zone1->GetDescriptor()->streamIds_.count(streamId), 0);
+
+    auto zone2 = AudioZoneService::GetInstance().FindZone(zoneId2);
+    ASSERT_NE(zone2, nullptr);
+    EXPECT_TRUE(zone2->IsContainKey(expectedKey));
+    EXPECT_EQ(zone2->GetDescriptor()->streamIds_.count(streamId), 1);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId2);
+}
+
+/**
+ * @tc.name  : RemoveStreamIdFromAudioZone
+ * @tc.number: RemoveStreamIdFromAudioZone_001
+ * @tc.desc  : Test RemoveStreamIdFromAudioZone with existing streamId
+ */
+HWTEST_F(AudioZoneServiceUnitTest, RemoveStreamIdFromAudioZone_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    uint32_t streamId = 100;
+    AudioZoneService::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
+
+    auto ret = AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto zone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(zone, nullptr);
+    AudioZoneBindKey expectedKey(INVALID_UID, "", streamId, StreamUsage::STREAM_USAGE_INVALID);
+    EXPECT_FALSE(zone->IsContainKey(expectedKey));
+
+    auto descriptor = zone->GetDescriptor();
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->streamIds_.size(), 0);
+    EXPECT_EQ(descriptor->streamIds_.count(streamId), 0);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : RemoveStreamIdFromAudioZone
+ * @tc.number: RemoveStreamIdFromAudioZone_002
+ * @tc.desc  : Test RemoveStreamIdFromAudioZone with non-existent streamId
+ */
+HWTEST_F(AudioZoneServiceUnitTest, RemoveStreamIdFromAudioZone_002, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    uint32_t streamId = 100;
+
+    auto ret = AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto zone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(zone, nullptr);
+    AudioZoneBindKey expectedKey(INVALID_UID, "", streamId, StreamUsage::STREAM_USAGE_INVALID);
+    EXPECT_FALSE(zone->IsContainKey(expectedKey));
+
+    auto descriptor = zone->GetDescriptor();
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->streamIds_.size(), 0);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : RemoveStreamIdFromAudioZone
+ * @tc.number: RemoveStreamIdFromAudioZone_003
+ * @tc.desc  : Test RemoveStreamIdFromAudioZone with invalid zoneId
+ */
+HWTEST_F(AudioZoneServiceUnitTest, RemoveStreamIdFromAudioZone_003, TestSize.Level1)
+{
+    ClearZone();
+    int32_t invalidZoneId = 99999;
+    uint32_t streamId = 100;
+
+    auto ret = AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(invalidZoneId, streamId);
+    EXPECT_EQ(ret, ERROR);
 }
 } // namespace AudioStandard
 } // namespace OHOS

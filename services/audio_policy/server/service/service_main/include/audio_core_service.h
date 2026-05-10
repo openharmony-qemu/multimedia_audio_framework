@@ -310,6 +310,7 @@ public:
     void SetUsbSourceModuleInfo(AudioModuleInfo &moduleInfo);
 
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
+    bool IsValidRenderSessionId(const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
     void DumpSelectHistory(std::string &dumpString);
     void SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object);

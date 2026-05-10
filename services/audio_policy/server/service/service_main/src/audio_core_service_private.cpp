@@ -1152,6 +1152,12 @@ bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessi
     return true;
 }
 
+bool AudioCoreService::IsValidRenderSessionId(const uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, false, "pipeManager_ is nullptr");
+    return pipeManager_->IsValidRenderSessionId(sessionId);
+}
+
 int32_t AudioCoreService::SetOffloadAllowedForUid(uint32_t uid, bool allowed)
 {
     if (allowed) {

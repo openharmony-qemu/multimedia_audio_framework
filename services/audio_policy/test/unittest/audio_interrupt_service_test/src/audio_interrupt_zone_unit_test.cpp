@@ -205,5 +205,84 @@ HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_014, TestSize.Level
     audioInterruptZoneManager->TryActiveAudioFocusForZone(zoneId, interruptZone->audioFocusInfoList);
     EXPECT_TRUE(interruptZone->audioFocusInfoList.size() == 0);
 }
+
+/**
+ * @tc.name  : Test MigrateAudioInterruptZone
+ * @tc.number: MigrateAudioInterruptZone_001
+ * @tc.desc  : Test MigrateAudioInterruptZone with specified streamId for selective migration
+ */
+HWTEST(AudioInterruptZoneUnitTest, MigrateAudioInterruptZone_001, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 100;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    AudioInterrupt a2;
+    a2.streamId = 200;
+    interruptZone->audioFocusInfoList.push_back({a2, AudioFocuState::PAUSE});
+    AudioInterrupt a3;
+    a3.streamId = 300;
+    interruptZone->audioFocusInfoList.push_back({a3, AudioFocuState::ACTIVE});
+
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+    audioInterruptZoneManager->service_->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
+
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
+        uint32_t targetStreamId = 100;
+        CHECK_AND_RETURN_RET(streamId != targetStreamId, 1);
+        return 0;
+    };
+
+    auto ret = audioInterruptZoneManager->MigrateAudioInterruptZone(0, getZoneFunc);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[0]->audioFocusInfoList.size(), 1);
+    EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[1]->audioFocusInfoList.size(), 1);
+    EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[1]->audioFocusInfoList.front().first.streamId,
+        100);
+}
+
+/**
+ * @tc.name  : Test MigrateAudioInterruptZone
+ * @tc.number: MigrateAudioInterruptZone_002
+ * @tc.desc  : Test MigrateAudioInterruptZone with non-existent streamId
+ */
+HWTEST(AudioInterruptZoneUnitTest, MigrateAudioInterruptZone_002, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 100;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    AudioInterrupt a2;
+    a2.streamId = 200;
+    interruptZone->audioFocusInfoList.push_back({a2, AudioFocuState::PAUSE});
+
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+    audioInterruptZoneManager->service_->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
+
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
+        uint32_t nonExistentStreamId = 999;
+        CHECK_AND_RETURN_RET(streamId != nonExistentStreamId, 1);
+        return 0;
+    };
+
+    auto ret = audioInterruptZoneManager->MigrateAudioInterruptZone(0, getZoneFunc);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[0]->audioFocusInfoList.size(), 2);
+    EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[1]->audioFocusInfoList.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

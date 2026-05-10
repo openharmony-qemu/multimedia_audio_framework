@@ -2767,7 +2767,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
         interruptService_->IsAudioSessionActivated(audioInterrupt.pid)) ? streamUsage : audioInterrupt.streamUsage;
     DeviceRole deviceRole = interruptService_->IsAudioSessionActivated(audioInterrupt.pid) ? OUTPUT_DEVICE :
         audioInterrupt.audioFocusType.isPlay ? OUTPUT_DEVICE : INPUT_DEVICE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage, deviceRole);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage, deviceRole,
+        audioInterrupt.streamId);
     int32_t ret = -1;
     if (StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(audioInterrupt.uid,
         false, audioInterrupt.streamId)) {
@@ -3269,7 +3270,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
     for (const auto &info : allRendererChangeInfos) {
         CHECK_AND_CONTINUE(info != nullptr);
         int32_t rendererZoneId = AudioZoneService::GetInstance().FindAudioZone(
-            info->clientUID, info->rendererInfo.streamUsage, OUTPUT_DEVICE);
+            info->clientUID, info->rendererInfo.streamUsage, OUTPUT_DEVICE, info->sessionId);
         if (rendererZoneId == zoneId) {
             audioRendererChangeInfos.push_back(info);
         }
@@ -4676,6 +4677,25 @@ int32_t AudioPolicyServer::RemoveStreamsFromAudioZone(int32_t zoneId, const std:
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().RemoveStreamsFromAudioZone(zoneId, streams);
+}
+
+int32_t AudioPolicyServer::AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsValidRenderSessionId(streamId), ERR_INVALID_PARAM,
+        "streamId is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return AudioZoneService::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
+}
+
+int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(streamId >= MIN_STREAMID && streamId <= MAX_STREAMID, ERR_INVALID_PARAM,
+        "streamId is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)

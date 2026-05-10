@@ -174,6 +174,7 @@ public:
     bool CheckRemoteNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
     bool IsPipeNeedStop(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::string GetModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool IsValidRenderSessionId(const uint32_t sessionId);
 
     std::vector<PipeDeviceVolumeInfo> GetAllPipeDeviceVolumeInfo();
     std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);

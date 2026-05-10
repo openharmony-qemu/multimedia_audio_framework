@@ -66,7 +66,8 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
         return {deviceDesc->macAddress_};
     }
 
-    std::string zoneName = audioZoneService_.FindAudioZoneNameByUid(streamDesc->callerUid_, OUTPUT_DEVICE);
+    std::string zoneName = audioZoneService_.FindAudioZoneNameByUid(streamDesc->callerUid_, OUTPUT_DEVICE,
+        streamDesc->sessionId_);
     std::lock_guard<std::mutex> lock(audioMixMutex_);
     auto iter = audioMixMap_.find(zoneName);
     CHECK_AND_RETURN_RET(iter != audioMixMap_.end(), {});
