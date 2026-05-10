@@ -168,6 +168,10 @@ public:
         const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &cb);
     int32_t RemoveSpatialAudioSourceTypeChangeCallback();
     size_t GetCurrentSpatialAudioSourceTypeChangeCallbackSize() const;
+    int32_t AddPersonalizedSpatializationEnabledChangeCallback(
+        const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &cb);
+    int32_t RemovePersonalizedSpatializationEnabledChangeCallback();
+    size_t GetPersonalizedSpatializationEnabledChangeCallbackSize() const;
     int32_t SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &cb);
     int32_t UnsetAudioRouteSelectorCallback();
     bool HasAudioRouteSelectorCallback() const;
@@ -222,6 +226,9 @@ public:
     int32_t OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         bool enabled) override;
+    int32_t OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+        bool enabled) override;
     int32_t OnSpatializationEnabledChangeForBTDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         bool enabled,
@@ -271,6 +278,8 @@ private:
     std::vector<std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback>>
         adaptiveSpatialRenderingEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback>> spatialAudioSourceTypeChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback>>
+        personalizedSpatializationEnabledChangeCallbackList_;
 
     std::unordered_map<int32_t,
         std::unordered_map<StreamUsage,
@@ -320,6 +329,7 @@ private:
     mutable std::mutex preferredDeviceSetMutex_;
     mutable std::mutex adaptiveSpatialRenderingEnabledChangeMutex_;
     mutable std::mutex spatialAudioSourceTypeChangeMutex_;
+    mutable std::mutex personalizedSpatializationEnabledChangeMutex_;
     std::shared_ptr<AudioRouteSelector> audioRouteSelectorCallback_;
     mutable std::mutex audioRouteSelectorMutex_;
 };

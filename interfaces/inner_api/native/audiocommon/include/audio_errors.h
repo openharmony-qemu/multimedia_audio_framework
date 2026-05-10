@@ -290,6 +290,12 @@ const int32_t ERR_DESKTOPLYRIC_NOT_SUPPORT = BASE_AUDIO_ERR_OFFSET - 74;
 /** AVSession desktop lyric not enable */
 const int32_t ERR_DESKTOPLYRIC_NOT_ENABLE = BASE_AUDIO_ERR_OFFSET - 75;
 
+/** Time out when saving HRTF on disk */
+const int32_t ERR_SAVE_HRTF_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 76;
+
+/** Fail to save HRTF on disk. */
+const int32_t ERR_SAVE_HRTF_FAIL = BASE_AUDIO_ERR_OFFSET - 77;
+
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
 
@@ -532,9 +538,8 @@ constexpr int32_t RECORD_SEND_DATA_ILLEGAL_STATE = BuildErrorCode(
 
 constexpr int32_t RECORD_DEVICE_SWITCH_ILLEGAL_STATE = BuildErrorCode(
     ProblemCategory::FAULT_GENERAL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_ILLEGAL_STATE);
-constexpr int32_t RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH,
-    ERR_OPERATION_FAILED);
+constexpr int32_t RECORD_DEVICE_SWITCH_OPERATION_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_OPERATION_FAILED);
 constexpr int32_t RECORD_DEVICE_SWITCH_INVALID_PARAM = BuildErrorCode(
     ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::DEVICE_SWITCH, ERR_INVALID_PARAM);
 constexpr int32_t RECORD_DEVICE_SWITCH_NULL_POINTER = BuildErrorCode(
@@ -747,9 +752,8 @@ constexpr int32_t ERR_RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED = BuildErrorCode(
     BusinessScenario::DEVICE_SWITCH, ERR_MEMORY_ALLOC_FAILED);
 
 // RECORD_DEVICE_SWITCH_CALLBACK
-constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
-    BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
+constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_FAILED = BuildErrorCode(ProblemCategory::FAULT_DEVICE_SWITCH_FAIL,
+    OperationType::RECORD, BusinessScenario::CALLBACK, ERR_OPERATION_FAILED);
 constexpr int32_t ERR_RECORD_DEVICE_SWITCH_CALLBACK_NULL_POINTER = BuildErrorCode(
     ProblemCategory::FAULT_DEVICE_SWITCH_FAIL, OperationType::RECORD,
     BusinessScenario::CALLBACK, ERR_NULL_POINTER);

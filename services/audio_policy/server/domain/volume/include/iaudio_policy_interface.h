@@ -336,6 +336,7 @@ public:
     virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
         AudioStreamType streamType, int32_t volumeDegree) = 0;
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
+    virtual int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) = 0;
     virtual void LoadCollaborationConfig() = 0;
     virtual void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute) = 0;
     virtual void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress) = 0;

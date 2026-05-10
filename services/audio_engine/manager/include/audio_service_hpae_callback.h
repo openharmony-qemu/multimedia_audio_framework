@@ -50,6 +50,8 @@ public:
 
     virtual void OnUpdateSpatializationStateCb(int32_t result) = 0;
 
+    virtual void OnUpdatePersonalizedHRTFBinCb(int32_t result) = 0;
+
     virtual ~AudioServiceHpaeCallback()
     {}
 };

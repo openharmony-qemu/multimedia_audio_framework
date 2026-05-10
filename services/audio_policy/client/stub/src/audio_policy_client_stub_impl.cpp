@@ -1596,6 +1596,17 @@ int32_t AudioPolicyClientStubImpl::OnSpatialAudioSourceTypeChange(int32_t mode)
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(personalizedSpatializationEnabledChangeMutex_);
+    for (const auto &callback : personalizedSpatializationEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+        callback->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
@@ -1783,6 +1794,27 @@ size_t AudioPolicyClientStubImpl::GetCurrentSpatialAudioSourceTypeChangeCallback
 {
     std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
     return spatialAudioSourceTypeChangeCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::AddPersonalizedSpatializationEnabledChangeCallback(
+    const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(personalizedSpatializationEnabledChangeMutex_);
+    personalizedSpatializationEnabledChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemovePersonalizedSpatializationEnabledChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(personalizedSpatializationEnabledChangeMutex_);
+    personalizedSpatializationEnabledChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetPersonalizedSpatializationEnabledChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(personalizedSpatializationEnabledChangeMutex_);
+    return personalizedSpatializationEnabledChangeCallbackList_.size();
 }
 
 int32_t AudioPolicyClientStubImpl::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &cb)
