@@ -33,64 +33,59 @@ SessionEffectManager::~SessionEffectManager()
     Deinit();
 }
 
-int32_t SessionEffectManager::BindSessionEffect(uint32_t sessionId, const std::string &effectName,
-    const AudioEffectConfig &config, std::shared_ptr<EffectInstance> &outInstance,
-    uint32_t *preemptedSessionId)
+int32_t SessionEffectManager::TryReuseExistingInstance(const std::string &effectName,
+    uint32_t sessionId, std::shared_ptr<EffectInstance> &outInstance, uint32_t *preemptedSessionId)
 {
     auto it = effectInstanceMap_.find(effectName);
-    if (it != effectInstanceMap_.end()) {
-        auto &instance = it->second;
-        auto state = instance->GetState();
-        if (state == EffectInstance::EffectState::PENDING_RELEASE) {
-            // Reuse pending instance: cancel timer, flush, rebind
-            hpaeManager_.CancelDelayedTask(instance->GetPendingTaskId());
-            instance->Flush();
-            instance->SetBoundSessionId(sessionId);
-            instance->SetState(EffectInstance::EffectState::ACTIVE);
-            outInstance = instance;
-            AUDIO_INFO_LOG("[SE::SessionEffectManager] effect rebound reason=reusePending "
-                "effect=%{public}s session=%{public}u", effectName.c_str(), sessionId);
-            return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
-        }
+    if (it == effectInstanceMap_.end()) {
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+    }
 
-        if (state == EffectInstance::EffectState::ACTIVE) {
-            if (instance->GetBoundSessionId() == sessionId) {
-                outInstance = instance;
-                return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
-            }
-            // Steal from old session: cancel timer, flush, rebind
-            AUDIO_INFO_LOG("[SE::SessionEffectManager] effect rebound reason=preempt "
-                "effect=%{public}s oldSession=%{public}u newSession=%{public}u",
-                effectName.c_str(), instance->GetBoundSessionId(), sessionId);
-            if (preemptedSessionId != nullptr) {
-                *preemptedSessionId = instance->GetBoundSessionId();
-            }
-            hpaeManager_.CancelDelayedTask(instance->GetPendingTaskId());
-            instance->Flush();
-            instance->SetBoundSessionId(sessionId);
-            instance->SetState(EffectInstance::EffectState::ACTIVE);
+    auto &instance = it->second;
+    auto state = instance->GetState();
+    if (state == EffectInstance::EffectState::PENDING_RELEASE) {
+        hpaeManager_.CancelDelayedTask(instance->GetPendingTaskId());
+        instance->Flush();
+        instance->SetBoundSessionId(sessionId);
+        instance->SetState(EffectInstance::EffectState::ACTIVE);
+        outInstance = instance;
+        AUDIO_INFO_LOG("[SE::SessionEffectManager] effect rebound reason=reusePending "
+            "effect=%{public}s session=%{public}u", effectName.c_str(), sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+    }
+
+    if (state == EffectInstance::EffectState::ACTIVE) {
+        if (instance->GetBoundSessionId() == sessionId) {
             outInstance = instance;
             return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
         }
-
-        // IDLE/ERROR: release old instance before creating a new one
-        if (state == EffectInstance::EffectState::IDLE || state == EffectInstance::EffectState::ERROR) {
-            AUDIO_INFO_LOG("[SE::SessionEffectManager] effect released reason=staleState "
-                "effect=%{public}s state=%{public}d", effectName.c_str(), static_cast<int>(state));
-            instance->Release();
-            effectInstanceMap_.erase(it);
+        AUDIO_INFO_LOG("[SE::SessionEffectManager] effect rebound reason=preempt "
+            "effect=%{public}s oldSession=%{public}u newSession=%{public}u",
+            effectName.c_str(), instance->GetBoundSessionId(), sessionId);
+        if (preemptedSessionId != nullptr) {
+            *preemptedSessionId = instance->GetBoundSessionId();
         }
+        hpaeManager_.CancelDelayedTask(instance->GetPendingTaskId());
+        instance->Flush();
+        instance->SetBoundSessionId(sessionId);
+        instance->SetState(EffectInstance::EffectState::ACTIVE);
+        outInstance = instance;
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
     }
 
-    // Guard: reject if session already bound to a different effectName
-    // (se-state-management.md §2.3: "每条流最多绑定一个 EffectName")
-    auto existingInstance = FindBySessionId(sessionId);
-    if (existingInstance != nullptr) {
-        AUDIO_WARNING_LOG("Session %{public}u already bound to a different effect", sessionId);
-        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND);
+    // IDLE/ERROR: release old instance so caller can create a new one
+    if (state == EffectInstance::EffectState::IDLE || state == EffectInstance::EffectState::ERROR) {
+        AUDIO_INFO_LOG("[SE::SessionEffectManager] effect released reason=staleState "
+            "effect=%{public}s state=%{public}d", effectName.c_str(), static_cast<int>(state));
+        instance->Release();
+        effectInstanceMap_.erase(it);
     }
+    return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+}
 
-    // Create new instance
+int32_t SessionEffectManager::CreateNewInstance(const std::string &effectName, uint32_t sessionId,
+    const AudioEffectConfig &config, std::shared_ptr<EffectInstance> &outInstance)
+{
     auto instance = std::make_shared<EffectInstance>();
     int32_t ret;
     auto *libEntry = GetEffectLibEntry(effectName);
@@ -110,6 +105,25 @@ int32_t SessionEffectManager::BindSessionEffect(uint32_t sessionId, const std::s
     AUDIO_INFO_LOG("[SE::SessionEffectManager] effect created reason=new "
         "effect=%{public}s session=%{public}u", effectName.c_str(), sessionId);
     return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+}
+
+int32_t SessionEffectManager::BindSessionEffect(uint32_t sessionId, const std::string &effectName,
+    const AudioEffectConfig &config, std::shared_ptr<EffectInstance> &outInstance,
+    uint32_t *preemptedSessionId)
+{
+    int32_t reuseRet = TryReuseExistingInstance(effectName, sessionId, outInstance, preemptedSessionId);
+    if (reuseRet == static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        return reuseRet;
+    }
+
+    // Guard: reject if session already bound to a different effectName
+    auto existingInstance = FindBySessionId(sessionId);
+    if (existingInstance != nullptr) {
+        AUDIO_WARNING_LOG("Session %{public}u already bound to a different effect", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND);
+    }
+
+    return CreateNewInstance(effectName, sessionId, config, outInstance);
 }
 
 int32_t SessionEffectManager::UnbindSessionEffect(uint32_t sessionId)

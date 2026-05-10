@@ -1739,22 +1739,7 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            // Check uid binding for session effect
-            if (boundUid_ != -1 && sessionEffectManager_ != nullptr
-                && rendererIdStreamInfoMap_[sessionId].streamInfo.uid == boundUid_
-                && rendererIdStreamInfoMap_[sessionId].streamInfo.streamType == STREAM_MUSIC) {
-                if (boundSessionId_ != 0 && boundSessionId_ != sessionId) {
-                    auto oldRendererManager = GetRendererManagerById(boundSessionId_);
-                    if (oldRendererManager != nullptr) {
-                        oldRendererManager->PostDestroySessionEffect(boundSessionId_);
-                    }
-                    sessionEffectManager_->UnbindSessionEffect(boundSessionId_);
-                }
-                int32_t aissRet = BindAndCreateAiss(sessionId);
-                if (aissRet == SUCCESS) {
-                    boundSessionId_ = sessionId;
-                }
-            }
+            TryBindSessionEffectOnStart(sessionId);
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
@@ -2982,6 +2967,31 @@ int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
+{
+    if (boundUid_ == -1 || sessionEffectManager_ == nullptr) {
+        return;
+    }
+    auto it = rendererIdStreamInfoMap_.find(sessionId);
+    if (it == rendererIdStreamInfoMap_.end()) {
+        return;
+    }
+    if (it->second.streamInfo.uid != boundUid_ || it->second.streamInfo.streamType != STREAM_MUSIC) {
+        return;
+    }
+    if (boundSessionId_ != 0 && boundSessionId_ != sessionId) {
+        auto oldRendererManager = GetRendererManagerById(boundSessionId_);
+        if (oldRendererManager != nullptr) {
+            oldRendererManager->PostDestroySessionEffect(boundSessionId_);
+        }
+        sessionEffectManager_->UnbindSessionEffect(boundSessionId_);
+    }
+    int32_t aissRet = BindAndCreateAiss(sessionId);
+    if (aissRet == SUCCESS) {
+        boundSessionId_ = sessionId;
+    }
 }
 
 int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)

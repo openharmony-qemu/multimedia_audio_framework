@@ -18,7 +18,8 @@
 
 #include <cinttypes>
 #include <cstdint>
-#include <cstdio>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 struct SeProcessStats {
@@ -41,12 +42,14 @@ struct SeProcessStats {
 
     std::string ToString() const
     {
-        char buf[256];
-        snprintf(buf, sizeof(buf),
-            "frames=%" PRId64 " out=%" PRId64 " errors=%d underruns=%d latency=%.1f/%.1fms",
-            framesProcessed, framesOutput, processErrors, underrunCount,
-            lastProcessMs, maxProcessMs);
-        return std::string(buf);
+        std::ostringstream oss;
+        oss << "frames=" << framesProcessed
+            << " out=" << framesOutput
+            << " errors=" << processErrors
+            << " underruns=" << underrunCount
+            << " latency=" << std::fixed << std::setprecision(1)
+            << lastProcessMs << "/" << maxProcessMs << "ms";
+        return oss.str();
     }
 };
 

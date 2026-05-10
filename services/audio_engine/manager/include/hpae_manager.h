@@ -229,6 +229,11 @@ public:
     void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
         SourceType sourceType) override;
 private:
+    int32_t BindAndCreateAiss(uint32_t sessionId);
+    void TryBindSessionEffectOnStart(uint32_t sessionId);
+    uint32_t FindRunningMusicSession(int32_t uid);
+    int32_t EnableAissByUid(int32_t uid);
+    int32_t DisableAissByUid(int32_t uid);
     void CleanupOldAissSession(uint32_t newSessionId);
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);

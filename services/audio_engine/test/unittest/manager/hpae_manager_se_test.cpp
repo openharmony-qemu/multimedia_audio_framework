@@ -77,15 +77,18 @@ protected:
 
     void WaitForMsgProcessing()
     {
+        static constexpr int32_t POLL_INTERVAL_MS = 20;
+        static constexpr int32_t MAX_POLL_COUNT = 5;
+        static constexpr int32_t FINAL_WAIT_MS = 40;
         int waitCount = 0;
         while (hpaeManager_->IsMsgProcessing()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
             waitCount++;
-            if (waitCount >= 5) {
+            if (waitCount >= MAX_POLL_COUNT) {
                 break;
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        std::this_thread::sleep_for(std::chrono::milliseconds(FINAL_WAIT_MS));
     }
 };
 

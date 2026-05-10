@@ -60,6 +60,10 @@ public:
 private:
     void LazyReleaseExpired(const std::string &effectName, uint32_t generation);
     std::shared_ptr<EffectInstance> FindBySessionId(uint32_t sessionId) const;
+    int32_t TryReuseExistingInstance(const std::string &effectName, uint32_t sessionId,
+        std::shared_ptr<EffectInstance> &outInstance, uint32_t *preemptedSessionId);
+    int32_t CreateNewInstance(const std::string &effectName, uint32_t sessionId,
+        const AudioEffectConfig &config, std::shared_ptr<EffectInstance> &outInstance);
 
     HpaeManager &hpaeManager_;
     std::map<std::string, std::shared_ptr<EffectInstance>> effectInstanceMap_;
