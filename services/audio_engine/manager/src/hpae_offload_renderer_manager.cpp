@@ -401,6 +401,9 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
         node->SetState(HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
         if (sessionId == curNode_->GetSessionId()) {
+            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+                sessionEffectNode_->PauseEffect();
+            }
             DisConnectInputSession();
             if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
@@ -431,6 +434,9 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
         if (sessionId == curNode_->GetSessionId()) {
             // flush sinkoutput cache
             sinkOutputNode_->FlushStream();
+        }
+        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            sessionEffectNode_->FlushEffect();
         }
     };
     SendRequest(request, __func__);
@@ -553,6 +559,9 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
             return;
         }
         AUDIO_INFO_LOG("move session:%{public}d,sink [offload] --> [%{public}s]", sessionId, sinkName.c_str());
+        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            sessionEffectNode_->PrepareMoveStream();
+        }
         if (sessionId == curNode_->GetSessionId()) {
             DeleteInputSession();
             SetCurrentNode();

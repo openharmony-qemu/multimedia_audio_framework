@@ -66,7 +66,11 @@ public:
     bool HasSessionEffectNode(uint32_t sessionId) const;
     int32_t SessionEffectStart(uint32_t sessionId);
     int32_t SessionEffectStop(uint32_t sessionId);
+    int32_t SessionEffectFlush(uint32_t sessionId);
+    int32_t SessionEffectPause(uint32_t sessionId);
+    void SessionEffectPrepareMoveStream(uint32_t sessionId);
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value);
+    std::shared_ptr<HpaeSessionEffectNode> GetSessionEffectNode(uint32_t sessionId) const;
 
 private:
     void ConnectMixerNode();

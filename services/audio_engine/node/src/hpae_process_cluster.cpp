@@ -522,6 +522,32 @@ int32_t HpaeProcessCluster::SessionEffectStop(uint32_t sessionId)
     return node->StopEffect();
 }
 
+int32_t HpaeProcessCluster::SessionEffectFlush(uint32_t sessionId)
+{
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+        "SessionEffectFlush: no SE for session %{public}u", sessionId);
+    return node->FlushEffect();
+}
+
+int32_t HpaeProcessCluster::SessionEffectPause(uint32_t sessionId)
+{
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+        "SessionEffectPause: no SE for session %{public}u", sessionId);
+    return node->PauseEffect();
+}
+
+void HpaeProcessCluster::SessionEffectPrepareMoveStream(uint32_t sessionId)
+{
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    if (node != nullptr) {
+        node->PrepareMoveStream();
+    }
+}
+
 int32_t HpaeProcessCluster::SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)
 {
     auto node = SafeGetMap(idSessionEffectMap_, sessionId);
@@ -529,6 +555,12 @@ int32_t HpaeProcessCluster::SetSessionEffectParameter(uint32_t sessionId, int32_
         static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
         "SetSessionEffectParameter: no SE node for session %{public}u", sessionId);
     return node->SetParameter(type, value);
+}
+
+std::shared_ptr<HpaeSessionEffectNode> HpaeProcessCluster::GetSessionEffectNode(uint32_t sessionId) const
+{
+    auto it = idSessionEffectMap_.find(sessionId);
+    return it != idSessionEffectMap_.end() ? it->second : nullptr;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

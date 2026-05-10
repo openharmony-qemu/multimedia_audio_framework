@@ -55,7 +55,8 @@ int32_t SessionEffectManager::BindSessionEffect(uint32_t sessionId, const std::s
 
         if (state == EffectInstance::EffectState::ACTIVE) {
             if (instance->GetBoundSessionId() == sessionId) {
-                return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND);
+                outInstance = instance;
+                return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
             }
             // Steal from old session: cancel timer, flush, rebind
             AUDIO_INFO_LOG("[SE::SessionEffectManager] effect rebound reason=preempt "
@@ -71,6 +72,14 @@ int32_t SessionEffectManager::BindSessionEffect(uint32_t sessionId, const std::s
             outInstance = instance;
             return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
         }
+
+        // IDLE/ERROR: release old instance before creating a new one
+        if (state == EffectInstance::EffectState::IDLE || state == EffectInstance::EffectState::ERROR) {
+            AUDIO_INFO_LOG("[SE::SessionEffectManager] effect released reason=staleState "
+                "effect=%{public}s state=%{public}d", effectName.c_str(), static_cast<int>(state));
+            instance->Release();
+            effectInstanceMap_.erase(it);
+        }
     }
 
     // Guard: reject if session already bound to a different effectName
@@ -83,8 +92,13 @@ int32_t SessionEffectManager::BindSessionEffect(uint32_t sessionId, const std::s
 
     // Create new instance
     auto instance = std::make_shared<EffectInstance>();
-    int32_t ret = testLib_ ? instance->Init(effectName, config, testLib_)
-                           : instance->Init(effectName, config);
+    int32_t ret;
+    auto *libEntry = GetEffectLibEntry(effectName);
+    if (libEntry != nullptr && libEntry->audioEffectLibHandle != nullptr) {
+        ret = instance->Init(effectName, config, libEntry->audioEffectLibHandle);
+    } else {
+        ret = instance->Init(effectName, config);
+    }
     if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
         AUDIO_ERR_LOG("Failed to init effect %{public}s, ret=%{public}d", effectName.c_str(), ret);
         return ret;
@@ -243,6 +257,24 @@ std::vector<std::string> SessionEffectManager::GetAllActiveEffectNames() const
         }
     }
     return names;
+}
+
+void SessionEffectManager::InitEffectLibraries(
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &libEntries)
+{
+    for (const auto &entry : libEntries) {
+        effectLibMap_[entry->libraryName] = entry;
+    }
+    AUDIO_INFO_LOG("InitEffectLibraries: loaded %{public}zu entries", effectLibMap_.size());
+}
+
+AudioEffectLibEntry *SessionEffectManager::GetEffectLibEntry(const std::string &libraryName) const
+{
+    auto it = effectLibMap_.find(libraryName);
+    if (it != effectLibMap_.end()) {
+        return it->second.get();
+    }
+    return nullptr;
 }
 
 void SessionEffectManager::Deinit()
