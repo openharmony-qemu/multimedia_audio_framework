@@ -29,6 +29,8 @@
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
 #include "hpae_co_buffer_node.h"
+#include "effect_instance.h"
+#include "i_effect_instance.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,6 +90,7 @@ public:
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnFadeDone(uint32_t sessionId) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
+    void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
@@ -104,6 +107,20 @@ public:
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
     void OnCollborationFadeDone(uint32_t sessionId) override;
     void OnDisConnectCoBufferWaitFadeOutDone() override;
+
+    // Session Effect (synchronous — must be called from SignalProcessThread)
+    int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    int32_t DestroySessionEffect(uint32_t sessionId) override;
+    // Session Effect (async — dispatches to SignalProcessThread, safe to call from any thread)
+    void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    void PostDestroySessionEffect(uint32_t sessionId) override;
+    bool HasSessionEffect(uint32_t sessionId) const override;
+    bool IsValidSession(uint32_t sessionId) const override;
+    // Session Effect parameter routing
+    int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+    void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);

@@ -151,6 +151,11 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
+
+    int32_t SetAissEnabled(uint32_t sessionId, bool enabled) override;
+    int32_t SetVocalRatio(uint32_t sessionId, float ratio) override;
+    int32_t SetAissEnabledByUid(int32_t uid, bool enabled) override;
+
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
     

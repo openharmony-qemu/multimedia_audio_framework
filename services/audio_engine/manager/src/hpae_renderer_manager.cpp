@@ -18,6 +18,7 @@
 #endif
 
 #include "hpae_renderer_manager.h"
+#include <cinttypes>
 #include "audio_stream_info.h"
 #include "audio_errors.h"
 #include "hpae_node_common.h"
@@ -1486,6 +1487,16 @@ void HpaeRendererManager::OnNotifyQueue()
     hpaeSignalProcessThread_->Notify();
 }
 
+void HpaeRendererManager::OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs)
+{
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr,
+        "OnRewindBuffer: SinkInputNode not found for session %{public}u", sessionId);
+    sinkInputNode->RewindHistoryBuffer(rewindTimeUs);
+    AUDIO_INFO_LOG("OnRewindBuffer: session %{public}u rewound %{public}" PRIu64 "us",
+        sessionId, rewindTimeUs);
+}
+
 void HpaeRendererManager::UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::UpdateProcessClusterConnection" +
@@ -1849,6 +1860,129 @@ int32_t HpaeRendererManager::SetAuxiliarySinkEnable(bool isEnabled)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    if (it == sessionNodeMap_.end()) {
+        AUDIO_WARNING_LOG("CreateSessionEffect: session %{public}u not found", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    auto clusterIt = sceneClusterMap_.find(sceneType);
+    if (clusterIt == sceneClusterMap_.end()) {
+        AUDIO_WARNING_LOG("CreateSessionEffect: cluster not found for sceneType %{public}d",
+            sceneType);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+    int32_t ret = clusterIt->second->CreateSessionEffectNode(sessionId, effectName, instance, config);
+    if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        AUDIO_WARNING_LOG("CreateSessionEffect failed for session %{public}u, ret %{public}d",
+            sessionId, ret);
+    } else {
+        AUDIO_INFO_LOG("[SE::RendererManager] CreateSessionEffect sessionId=%{public}u",
+            sessionId);
+    }
+    return ret;
+}
+
+int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    if (it == sessionNodeMap_.end()) {
+        AUDIO_WARNING_LOG("DestroySessionEffect: session %{public}u not found", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    auto clusterIt = sceneClusterMap_.find(sceneType);
+    if (clusterIt == sceneClusterMap_.end()) {
+        AUDIO_WARNING_LOG("DestroySessionEffect: cluster not found for sceneType %{public}d",
+            sceneType);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+
+    uint64_t latency = 0;
+    int32_t ret = clusterIt->second->DestroySessionEffectNode(sessionId, latency);
+    if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        AUDIO_WARNING_LOG("DestroySessionEffect failed for session %{public}u, ret %{public}d",
+            sessionId, ret);
+        return ret;
+    }
+
+    // RewindHistoryBuffer: return unconsumed data to SinkInputNode
+    // Phase 2: latency=0, RewindBuffer(0) is no-op
+    // Phase 3: latency>0, RewindBuffer returns data to historyBuffer
+    if (latency > 0) {
+        auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        if (sinkInputNode != nullptr) {
+            sinkInputNode->RewindHistoryBuffer(latency);
+        }
+    }
+    AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect sessionId=%{public}u",
+        sessionId);
+    return ret;
+}
+
+bool HpaeRendererManager::HasSessionEffect(uint32_t sessionId) const
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    if (it == sessionNodeMap_.end()) {
+        return false;
+    }
+    auto clusterIt = sceneClusterMap_.find(it->second.sceneType);
+    if (clusterIt == sceneClusterMap_.end()) {
+        return false;
+    }
+    return clusterIt->second->HasSessionEffectNode(sessionId);
+}
+
+bool HpaeRendererManager::IsValidSession(uint32_t sessionId) const
+{
+    return sessionNodeMap_.find(sessionId) != sessionNodeMap_.end();
+}
+
+void HpaeRendererManager::PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+{
+    auto request = [this, sessionId, effectName, instance, config]() {
+        int32_t ret = CreateSessionEffect(sessionId, effectName, instance, config);
+        if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+            AUDIO_WARNING_LOG("PostCreateSessionEffect: CreateSessionEffect failed for session %{public}u,"
+                " ret=%{public}d (system abnormal state, no rollback)", sessionId, ret);
+        }
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+void HpaeRendererManager::PostDestroySessionEffect(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        DestroySessionEffect(sessionId);
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+int32_t HpaeRendererManager::SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    CHECK_AND_RETURN_RET_LOG(it != sessionNodeMap_.end(),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
+        "SetSessionEffectParameter: session %{public}u not found", sessionId);
+    auto clusterIt = sceneClusterMap_.find(it->second.sceneType);
+    CHECK_AND_RETURN_RET_LOG(clusterIt != sceneClusterMap_.end(),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
+        "SetSessionEffectParameter: cluster not found");
+    return clusterIt->second->SetSessionEffectParameter(sessionId, type, value);
+}
+
+void HpaeRendererManager::PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)
+{
+    auto request = [this, sessionId, type, value]() {
+        SetSessionEffectParameter(sessionId, type, value);
+    };
+    SendRequest(std::move(request), __func__);
 }
 
 void HpaeRendererManager::SetCollDelayCount()

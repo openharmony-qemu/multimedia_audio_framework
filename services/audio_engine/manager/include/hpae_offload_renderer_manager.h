@@ -29,6 +29,7 @@
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
 #include "hpae_limiter_node.h"
+#include "hpae_session_effect_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -90,6 +91,7 @@ public:
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0) override;
+    void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
@@ -97,6 +99,20 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
+
+    // Session Effect (synchronous — must be called from SignalProcessThread)
+    int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    int32_t DestroySessionEffect(uint32_t sessionId) override;
+    // Session Effect (async — dispatches to SignalProcessThread)
+    void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    void PostDestroySessionEffect(uint32_t sessionId) override;
+    bool HasSessionEffect(uint32_t sessionId) const override;
+    bool IsValidSession(uint32_t sessionId) const override;
+    // Session Effect parameter routing
+    int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+    void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
 
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
     OffloadCallbackData GetOffloadCallbackData() noexcept override;
@@ -131,6 +147,23 @@ private:
     std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
     std::shared_ptr<HpaeLimiterNode> limiterNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
+
+    // Session Effect state
+    struct PendingSessionEffect {
+        std::string effectName;
+        std::shared_ptr<IEffectInstance> instance;
+        AudioEffectConfig config;
+    };
+    std::shared_ptr<HpaeSessionEffectNode> sessionEffectNode_ = nullptr;
+    uint32_t sessionEffectSessionId_ = 0;
+    std::unordered_map<uint32_t, PendingSessionEffect> pendingSessionEffects_;
+
+    // Session Effect helpers (called on SignalProcessThread)
+    int32_t InsertSessionEffectNode(const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
+    int32_t RemoveSessionEffectNode();
+
+    int32_t lastPolicyState_ = 0;   // real policy state, restored after AISS close
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
     std::vector<int32_t> appsUid_;

@@ -419,6 +419,8 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
 
     latency += SafeGetMap(idConverterMap_, sessionId) ? idConverterMap_[sessionId]->GetLatency() : 0;
 
+    latency += SafeGetMap(idSessionEffectMap_, sessionId) ? idSessionEffectMap_[sessionId]->GetLatency(sessionId) : 0;
+
     latency += SafeGetMap(idLoudnessGainNodeMap_, sessionId) ? idLoudnessGainNodeMap_[sessionId]->GetLatency() : 0;
 
     latency += SafeGetMap(idGainMap_, sessionId) ? idGainMap_[sessionId]->GetLatency() : 0;
@@ -428,6 +430,105 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
     latency += renderEffectNode_ ? renderEffectNode_->GetLatency() : 0;
 
     return latency;
+}
+
+int32_t HpaeProcessCluster::CreateSessionEffectNode(uint32_t sessionId, const std::string &effectName,
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+{
+    if (SafeGetMap(idSessionEffectMap_, sessionId) != nullptr) {
+        AUDIO_WARNING_LOG("sessionId %{public}u already has session effect node", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND);
+    }
+    auto converterNode = SafeGetMap(idConverterMap_, sessionId);
+    auto loudnessGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);
+    if (converterNode == nullptr || loudnessGainNode == nullptr) {
+        AUDIO_WARNING_LOG("sessionId %{public}u converter or loudnessGain node not found", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+
+    HpaeNodeInfo nodeInfo = converterNode->GetNodeInfo();
+    auto sessionEffectNode = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
+
+    int32_t ret = sessionEffectNode->CreateEffectWithInstance(effectName, instance, config);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("sessionId %{public}u create effect failed, ret=%{public}d", sessionId, ret);
+        return ret;
+    }
+
+    // Insert between ConverterNode and LoudnessGainNode:
+    // Original: ConverterNode <- LoudnessGainNode
+    // After:    ConverterNode <- SessionEffectNode <- LoudnessGainNode
+    loudnessGainNode->DisConnect(converterNode);
+    sessionEffectNode->Connect(converterNode);
+    loudnessGainNode->Connect(sessionEffectNode);
+
+    idSessionEffectMap_[sessionId] = sessionEffectNode;
+    AUDIO_INFO_LOG("sessionId %{public}u session effect node created, effect=%{public}s",
+        sessionId, effectName.c_str());
+    return 0;
+}
+
+int32_t HpaeProcessCluster::DestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency)
+{
+    outLatency = 0;
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    if (node == nullptr) {
+        AUDIO_WARNING_LOG("sessionId %{public}u session effect node not found", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+    }
+
+    // Close SE flow: mark crossfade (Phase 2: no-op in bypass, Phase 3: real crossfade)
+    node->StartCloseCrossfade();
+
+    // Get latency before disconnect (Phase 2: returns 0, Phase 3: returns real latency)
+    outLatency = node->GetLatency(sessionId);
+
+    auto converterNode = SafeGetMap(idConverterMap_, sessionId);
+    auto loudnessGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);
+    // Restore original chain: ConverterNode <- LoudnessGainNode
+    if (loudnessGainNode != nullptr && converterNode != nullptr) {
+        loudnessGainNode->DisConnect(node);
+        node->DisConnect(converterNode);
+        loudnessGainNode->Connect(converterNode);
+    }
+
+    node->DropEffect();  // Don't destroy algorithm — SessionEffectManager manages lifecycle
+    idSessionEffectMap_.erase(sessionId);
+    AUDIO_INFO_LOG("sessionId %{public}u session effect node destroyed, latency=%{public}llu",
+        sessionId, (unsigned long long)outLatency);
+    return 0;
+}
+
+bool HpaeProcessCluster::HasSessionEffectNode(uint32_t sessionId) const
+{
+    return SafeGetMap(idSessionEffectMap_, sessionId) != nullptr;
+}
+
+int32_t HpaeProcessCluster::SessionEffectStart(uint32_t sessionId)
+{
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    if (node == nullptr) {
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+    }
+    return node->StartEffect();
+}
+
+int32_t HpaeProcessCluster::SessionEffectStop(uint32_t sessionId)
+{
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    if (node == nullptr) {
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+    }
+    return node->StopEffect();
+}
+
+int32_t HpaeProcessCluster::SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)
+{
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+        "SetSessionEffectParameter: no SE node for session %{public}u", sessionId);
+    return node->SetParameter(type, value);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
