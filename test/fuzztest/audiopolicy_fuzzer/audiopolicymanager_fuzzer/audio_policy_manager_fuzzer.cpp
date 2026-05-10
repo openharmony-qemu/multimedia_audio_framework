@@ -799,8 +799,7 @@ void AudioPolicyManagerPersonalizedFuzzTest(FuzzedDataProvider& fdp)
     std::string address = "test_address";
     int32_t fd = GetData<int32_t>();
     int64_t length = GetData<int64_t>();
-    std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> callback =
-        std::make_shared<AudioPersonalizedSpatializationEnabledChangeCallback>();
+    std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> callback;
 
     AudioPolicyManager::GetInstance().SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
     AudioPolicyManager::GetInstance().IsPersonalizedSpatializationEnabled(address);
