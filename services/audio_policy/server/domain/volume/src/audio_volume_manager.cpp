@@ -191,7 +191,8 @@ int32_t AudioVolumeManager::ClearLoudVolumeHoldMapForCall()
 {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     if (loudVolumeManager_ != nullptr) {
-        loudVolumeManager_->ClearLoudVolumeHoldMap(LoudVolumeHoldType::LOUD_VOLUME_MODE_VOICE);
+        (void)loudVolumeManager_->ReloadLoudVolumeModeSwitch(LoudVolumeHoldType::LOUD_VOLUME_MODE_VOICE,
+            SetLoudVolMode::LOUD_VOLUME_SWITCH_OFF);
     }
     return SUCCESS;
 #endif
