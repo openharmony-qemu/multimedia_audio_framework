@@ -38,7 +38,6 @@ AudioSuiteRawFormatConversion::AudioSuiteRawFormatConversion(const uint32_t resa
 
 AudioSuiteRawFormatConversion::~AudioSuiteRawFormatConversion()
 {
-    Reset();
 }
 
 int32_t AudioSuiteRawFormatConversion::Init(const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat)
@@ -90,19 +89,11 @@ void AudioSuiteRawFormatConversion::Reset()
     channelConverter_.Reset();
     initialized_ = false;
     formatsSame_ = false;
-}
 
-int32_t AudioSuiteRawFormatConversion::Process11025SpecialCase(
-    const float *inputData, uint32_t inFrameSize, float *outputData, uint32_t &outFrameSize, uint32_t channelCount)
-{
-    uint32_t additionalFrames = outFrameSize;
-    uint32_t offsetSamples = additionalFrames * channelCount;
-    int32_t ret = proResampler_->Process(inputData, 0, outputData + offsetSamples, additionalFrames);
-    CHECK_AND_RETURN_RET_LOG(
-        ret == SUCCESS, ERR_OPERATION_FAILED, "Process11025SpecialCase: failed with error code: %{public}d", ret);
-
-    outFrameSize += additionalFrames;
-    return SUCCESS;
+    floatBuffer_.clear();
+    resampleBuffer_.clear();
+    channelBuffer_.clear();
+    outputBuffer_.clear();
 }
 
 int32_t AudioSuiteRawFormatConversion::ProcessResample(
@@ -125,13 +116,6 @@ int32_t AudioSuiteRawFormatConversion::ProcessResample(
     int32_t ret = proResampler_->Process(inputData, inFrameSize, resampleBuffer_.data(), actualOutFrameSize);
     CHECK_AND_RETURN_RET_LOG(
         ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessResample: failed with error code: %{public}d", ret);
-
-    // Special handling for 11025Hz sample rate
-    if (inputFormat_.sampleRate == SAMPLE_RATE_11025) {
-        ret = Process11025SpecialCase(
-            inputData, inFrameSize, resampleBuffer_.data(), actualOutFrameSize, inputFormat_.channelCount);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessResample: 11025Hz special case failed");
-    }
 
     outData = resampleBuffer_.data();
     outSampleCount = actualOutFrameSize * inputFormat_.channelCount;
