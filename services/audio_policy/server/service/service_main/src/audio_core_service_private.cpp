@@ -2285,7 +2285,8 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     OnRemoteDeviceStatusUpdatedWhenNoRunningStream(descs.front());
     audioRouterSelectStrategy_.UpdateCurrentOutputDevice(SYSTEM_UID, descs);
     AUDIO_DEBUG_LOG("currentActiveDevice %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
-    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
+    bool enableSetVoiceCallVolume = !IsDeviceSwitching(reason);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front(), enableSetVoiceCallVolume);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_ = descs;
