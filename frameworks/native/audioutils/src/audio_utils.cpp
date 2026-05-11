@@ -2628,6 +2628,11 @@ void BindBigAndMidCore()
         HILOG_COMM_ERROR("[BindBigAndMidCore] Set target cpu failed, ret: %{public}d", result));
     AUDIO_INFO_LOG("Bind pid: %{public}d, tid: %{public}d to big and mid cores success", getpid(), gettid());
 }
+
+bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag)
+{
+    return ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLENMENTED);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

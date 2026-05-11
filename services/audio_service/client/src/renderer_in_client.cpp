@@ -238,6 +238,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.staticBufferInfo = staticBufferInfo_;
 
+    config.ultraFastFlag = curStreamParams_.ultraFastFlag;
+
     clientConfig_ = config;
 
     return config;

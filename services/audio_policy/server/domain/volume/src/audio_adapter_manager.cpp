@@ -2181,6 +2181,16 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     if (!audioModuleInfo.hdPlayBackMode.empty()) {
         attr.hdPlayBackMode = static_cast<int32_t>(std::stoul(audioModuleInfo.hdPlayBackMode));
     }
+
+    // Calculate period for ultra_fast to achieve 2.5ms low latency
+    if (audioModuleInfo.className == "ultra_fast" || audioModuleInfo.className == "usb_arm_ultra_fast") {
+        uint32_t formatByteSize = GetFormatByteSize(attr.format);
+        attr.period = static_cast<uint32_t>(
+            static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *
+            ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
+        AUDIO_INFO_LOG("GetAudioSinkAttr: ultra_fast period=%{public}u (2.5ms latency)", attr.period);
+    }
+
     return attr;
 }
 

@@ -680,6 +680,8 @@ float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
 uint64_t HexStrToNum(const std::string &str);
 
 void BindBigAndMidCore();
+
+bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H
