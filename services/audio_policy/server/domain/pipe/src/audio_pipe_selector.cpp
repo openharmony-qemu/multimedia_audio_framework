@@ -882,8 +882,7 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
-    CHECK_AND_RETURN_LOG(existingStream != nullptr && incomingStream != nullptr,
-        "existingStream or incomingStream is nullptr");
+
     std::shared_ptr<AudioStreamDescriptor> targetStream =
         (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
     CHECK_AND_RETURN(!ShouldSkipConcedeActionAdjust(targetStream));
