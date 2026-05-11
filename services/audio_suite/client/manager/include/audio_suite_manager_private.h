@@ -28,6 +28,7 @@
 #include "audio_suite_manager.h"
 #include "audio_suite_manager_callback.h"
 #include "audio_suite_node.h"
+#include "i_audio_suite_engine.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -117,6 +118,10 @@ public:
 private:
     void WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType);
     void WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t result, std::string description);
+    template<typename T>
+    int32_t SetParamsTemplate(uint32_t nodeId, const std::string& name, const T& param);
+    template<typename T>
+    int32_t GetParamsTemplate(uint32_t nodeId, const std::string& name, T& param);
 
 private:
     std::mutex lock_;
