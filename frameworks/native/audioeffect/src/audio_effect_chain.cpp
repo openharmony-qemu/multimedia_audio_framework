@@ -429,8 +429,6 @@ void AudioEffectChain::ResetIoBufferConfig()
 {
     ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
-    ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
         + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
