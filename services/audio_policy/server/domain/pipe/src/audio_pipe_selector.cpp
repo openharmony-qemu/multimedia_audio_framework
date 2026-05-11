@@ -868,13 +868,22 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     return action;
 }
 
+bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
+{
+    CHECK_AND_RETURN_RET_LOG(targetStream != nullptr, false, "targetStream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!targetStream->IsLoopbackStream(), false,
+        "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
+    return true;
+}
+
 void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
-    
+
     std::shared_ptr<AudioStreamDescriptor> targetStream =
         (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
+    CHECK_AND_RETURN(ShouldAdjustConcedeAction(targetStream));
 
     bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(targetStream->sessionId_);
     // Stream is in persistenly pasued state, unrelated to trigger recreation.
