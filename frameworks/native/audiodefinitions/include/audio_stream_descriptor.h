@@ -263,6 +263,8 @@ public:
         return streamInfo_.channels > AudioChannel::STEREO;
     }
 
+    bool IsLoopbackStream() const;
+
     void ResetToNormalRoute(bool updateRoute);
 
     bool IsOldRouteOffload() const

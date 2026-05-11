@@ -221,6 +221,11 @@ void AudioStreamDescriptor::SetBundleName(const std::string &bundleName)
     bundleName_ = bundleName;
 }
 
+bool AudioStreamDescriptor::IsLoopbackStream() const
+{
+    return rendererInfo_.isLoopback || capturerInfo_.isLoopback;
+}
+
 void AudioStreamDescriptor::Dump(std::string &dumpString)
 {
     AppendFormat(dumpString, "  Stream %u:\n", sessionId_);

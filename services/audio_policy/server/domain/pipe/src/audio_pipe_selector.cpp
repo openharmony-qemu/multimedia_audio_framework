@@ -841,11 +841,6 @@ bool AudioPipeSelector::GetIncomingStreamPriority(const std::shared_ptr<AudioStr
         incomingStream->GetSamplingRate() > existingStream->GetSamplingRate());
 }
 
-bool AudioPipeSelector::isLoopbackStream(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
-{
-    return targetStream->rendererInfo_.isLoopback || targetStream->capturerInfo_.isLoopback;
-}
-
 ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     std::shared_ptr<AudioStreamDescriptor> &existingStream,
     std::shared_ptr<AudioStreamDescriptor> &incomingStream)
@@ -876,7 +871,7 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
 bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
 {
     CHECK_AND_RETURN_RET_LOG(targetStream != nullptr, false, "targetStream is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!isLoopbackStream(targetStream), false,
+    CHECK_AND_RETURN_RET_LOG(!targetStream->IsLoopbackStream(), false,
         "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
     return true;
 }
