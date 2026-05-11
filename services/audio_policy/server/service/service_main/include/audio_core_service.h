@@ -627,7 +627,6 @@ private:
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId,
         const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
-    void FetchDeviceForSessionUseDefault(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);

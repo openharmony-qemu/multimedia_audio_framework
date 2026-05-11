@@ -1349,7 +1349,6 @@ int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
 {
     AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
         streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RUNNING);
-    FetchDeviceForSessionUseDefault(sessionId, streamDesc);
     int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
     deviceDesc = streamDesc->GetMainNewDeviceDesc();
@@ -1449,17 +1448,6 @@ void AudioCoreService::ForceStopInterphoneRenderer()
             pipeManager_->StopClient(streamDesc->sessionId_);
             ReloadCaptureSession(streamDesc->sessionId_, SESSION_OPERATION_STOP);
         }
-    }
-}
-
-void AudioCoreService::FetchDeviceForSessionUseDefault(
-    uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc)
-{
-    // A stream set default device special case
-    if (AudioRouterSelectStrategy::GetInstance().IsStreamSetDefaultOutputDevice(GetRealUid(streamDesc),
-        sessionId)) {
-        std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
-        FetchOutputDevicesForDescs(streamDesc, outputDescs);
     }
 }
 
