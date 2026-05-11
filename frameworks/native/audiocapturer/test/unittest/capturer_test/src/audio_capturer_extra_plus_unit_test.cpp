@@ -217,12 +217,12 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
 
     auto testAudioStremStub = std::make_shared<TestAudioStremStub>();
     interruptCallback->audioStream_ = testAudioStremStub;
-    testAudioStremStub->state_ = State::PAUSED;
+    testAudioStremStub->streamFocusState_ = StreamFocusState::FOCUS_PAUSED;
     interruptCallback->isForcePaused_ = true;
     interruptCallback->OnInterrupt(interruptEventInternalResume);
     EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_RESUME);
 
-    testAudioStremStub->state_ = State::RUNNING;
+    testAudioStremStub->streamFocusState_ = StreamFocusState::FOCUS_RUNNING;
     interruptCallback->OnInterrupt(interruptEventInternalPause);
     EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_PAUSE);
 
