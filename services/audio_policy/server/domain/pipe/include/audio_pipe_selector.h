@@ -147,7 +147,8 @@ private:
     
     void UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
-    bool ShouldNotSkipConcedeActionAdjust(const std::shared_ptr<AudioStreamDescriptor> &targetStream);
+    bool isLoopbackStream(const std::shared_ptr<AudioStreamDescriptor> &targetStream);
+    bool ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &targetStream);
 
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::mutex callbackMutex_;

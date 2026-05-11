@@ -841,6 +841,11 @@ bool AudioPipeSelector::GetIncomingStreamPriority(const std::shared_ptr<AudioStr
         incomingStream->GetSamplingRate() > existingStream->GetSamplingRate());
 }
 
+bool AudioPipeSelector::isLoopbackStream(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
+{
+    return targetStream->rendererInfo_.isLoopback || targetStream->capturerInfo_.isLoopback;
+}
+
 ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     std::shared_ptr<AudioStreamDescriptor> &existingStream,
     std::shared_ptr<AudioStreamDescriptor> &incomingStream)
@@ -868,13 +873,11 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     return action;
 }
 
-bool AudioPipeSelector::ShouldNotSkipConcedeActionAdjust(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
+bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
 {
     CHECK_AND_RETURN_RET_LOG(targetStream != nullptr, false, "targetStream is nullptr");
-    bool isLoopbackStream = targetStream->rendererInfo_.isLoopback || targetStream->capturerInfo_.isLoopback;
-    CHECK_AND_RETURN_RET_LOG(!isLoopbackStream, false,
-        "[ShouldNotSkipConcedeActionAdjust] target stream %{public}u is loopback, skip adjust",
-        targetStream->sessionId_);
+    CHECK_AND_RETURN_RET_LOG(!isLoopbackStream(targetStream), false, "target stream %{public}u is loopback, skip adjust",
+        targetStream->GetSessionId());
     return true;
 }
 
@@ -885,7 +888,7 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
 
     std::shared_ptr<AudioStreamDescriptor> targetStream =
         (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
-    CHECK_AND_RETURN(ShouldNotSkipConcedeActionAdjust(targetStream));
+    CHECK_AND_RETURN(ShouldAdjustConcedeAction(targetStream));
 
     bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(targetStream->sessionId_);
     // Stream is in persistenly pasued state, unrelated to trigger recreation.
