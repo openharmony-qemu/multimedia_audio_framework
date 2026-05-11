@@ -47,7 +47,7 @@ namespace {
     const std::string USB_SINK_NAME = "usb";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
     constexpr size_t RENDERER_REQUEST_COUNT = CURRENT_REQUEST_COUNT;
-    constexpr int32_t COLL_ALING_COUNT = 5; // 5 frames
+    constexpr int32_t COLL_ALING_COUNT = 10; // 10 frames = 200 ms
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
