@@ -66,7 +66,7 @@ void AudioZoneBindKeyAudioZoneBindKeyFuzzTest(FuzzedDataProvider& fdp)
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey_1(uid);
     AudioZoneBindKey audioZoneBindKey_2(uid, deviceTag);
-    AudioZoneBindKey audioZoneBindKey_3(uid, deviceTag);
+    AudioZoneBindKey audioZoneBindKey_3(streamId);
     AudioZoneBindKey audioZoneBindKey_4(audioZoneBindKey_1);
     AudioZoneBindKey audioZoneBindKey_5(std::move(audioZoneBindKey_1));
 }
