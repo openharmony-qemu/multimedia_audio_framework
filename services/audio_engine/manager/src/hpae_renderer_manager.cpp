@@ -115,15 +115,9 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     uint32_t sessionId = nodeInfo.sessionId;
 
     sinkInputNodeMap_[sessionId] = node;
-    HpaeNodeInfo outNodeInfo;
-    outNodeInfo.frameLen = sinkInfo_.frameLen;
-    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
-    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
-    if (frameLenAdjusted) {
-        node->SetNodeInfo(nodeInfo);
-        TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
-            static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
-    }
+    node->SetNodeInfo(nodeInfo);
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
+        static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 #ifdef ENABLE_HIDUMP_DFX
@@ -900,6 +894,10 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             ? sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
             "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
+        auto converter = sceneClusterMap_[sceneType]->GetConverterNodeById(sessionId);
+        if (converter != nullptr) {
+            converter->FlushBuffers();
+        }
         CHECK_AND_RETURN_LOG(isNeedInitEffectBufferFlagMap_.find(sessionId) != isNeedInitEffectBufferFlagMap_.end(),
             "isNeedInitEffectBufferFlagMap no find sessionId %{public}u", sessionId);
         if (isNeedInitEffectBufferFlagMap_[sessionId] == true) {
@@ -1566,6 +1564,7 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
             GetEncryptStr(sinkInfo_.deviceName).c_str(), state);
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
+            sinkInputNodeMap_[sessionId]->SetOffloadType(state);
         } else {
             AUDIO_ERR_LOG("not find sessionId %{public}u", sessionId);
         }

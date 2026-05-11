@@ -373,11 +373,13 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
         (routeFlag & AUDIO_INPUT_FLAG_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_UNPROCESS) ||
+        (routeFlag & AUDIO_INPUT_FLAG_LIVE) ||
         (routeFlag & AUDIO_INPUT_FLAG_ULTRASONIC) ||
         (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) ||
         (routeFlag & AUDIO_INPUT_FLAG_RAW_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_INTERPHONE) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
+        (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
@@ -1472,6 +1474,16 @@ std::string AudioPipeManager::GetModuleName(std::shared_ptr<AudioPipeInfo> pipeI
     std::string moduleName = networkId != LOCAL_NETWORK_ID ?
         AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole) : "";
     return moduleName;
+}
+
+bool AudioPipeManager::IsValidRenderSessionId(const uint32_t sessionId)
+{
+    auto outputDescs = GetAllOutputStreamDescs();
+    auto it = std::find_if(outputDescs.begin(), outputDescs.end(),
+        [sessionId](const std::shared_ptr<AudioStreamDescriptor> &desc) {
+            return desc != nullptr && desc->sessionId_ == sessionId;
+        });
+    return it != outputDescs.end();
 }
 
 AudioVolumeType AudioPipeManager::GetVolumeTypeFromStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)

@@ -282,5 +282,19 @@ HWTEST_F(AudioInterphoneBranchUnitTest, TestFlagStrToEnumInterphone, TestSize.Le
     MockNative::Resume();
 }
 
+/*
+ * Test AudioDefinitionPolicyUtils flagStrToEnum for CAMCORDER
+ */
+HWTEST_F(AudioInterphoneBranchUnitTest, TestFlagStrToEnumCamcorder, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+
+    auto inputIt = AudioDefinitionPolicyUtils::flagStrToEnum.find("AUDIO_INPUT_FLAG_CAMCORDER");
+    EXPECT_TRUE(inputIt != AudioDefinitionPolicyUtils::flagStrToEnum.end());
+    EXPECT_EQ(inputIt->second, AUDIO_INPUT_FLAG_CAMCORDER);
+    MockNative::Resume();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

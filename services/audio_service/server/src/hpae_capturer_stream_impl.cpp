@@ -188,6 +188,16 @@ int32_t HpaeCapturerStreamImpl::OnStreamData(AudioCallBackCapturerStreamInfo &ca
 
 void HpaeCapturerStreamImpl::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
 {
+    if (operation == OPERATION_UPDATE_SPANSIZE) {
+        uint32_t routeFlag = 0;
+        int32_t ret = IHpaeManager::GetHpaeManager().GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_RECORD,
+            processConfig_.originalSessionId, routeFlag);
+        if (ret == SUCCESS) {
+            routeFlag_.store(routeFlag);
+        }
+        AUDIO_INFO_LOG("OnStatusUpdate recv span update, streamIndex:%{public}u sessionId:%{public}u "
+            "routeFlag:%{public}u", streamIndex_, processConfig_.originalSessionId, routeFlag);
+    }
     auto statusCallback = statusCallback_.lock();
     if (statusCallback) {
         statusCallback->OnStatusUpdate(operation);
@@ -249,6 +259,11 @@ void HpaeCapturerStreamImpl::TriggerAppsUidUpdate()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     IHpaeManager::GetHpaeManager().TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_RECORD,
         processConfig_.originalSessionId);
+}
+
+uint32_t HpaeCapturerStreamImpl::GetRouteFlag() const noexcept
+{
+    return routeFlag_.load();
 }
 } // namespace AudioStandard
 } // namespace OHOS

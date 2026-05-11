@@ -98,10 +98,6 @@ void HpaeFastSourceInputNode::DoProcess()
     readTrace.End();
     inputAudioBuffer_.SetBufferValid(true);
     outputStream_.WriteDataToOutput(&inputAudioBuffer_);
-
-    int64_t wakeUpTime = ClockTime::GetCurNano();
-    CHECK_AND_RETURN_LOG(PrepareNextLoop(wakeUpTime), "PrepareNextLoop failed");
-    ClockTime::AbsoluteSleep(wakeUpTime);
 }
 
 bool HpaeFastSourceInputNode::Reset()

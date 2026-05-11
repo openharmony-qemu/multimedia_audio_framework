@@ -107,8 +107,10 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
     bool updateScene = false;
     auto &releaseZone = tempMap[zoneId];
     for (auto it = releaseZone->audioFocusInfoList.begin(); it != releaseZone->audioFocusInfoList.end(); it++) {
+        DeviceRole deviceRole = service_->IsRecordingInterruption(it->first) ? INPUT_DEVICE : OUTPUT_DEVICE;
         if (it->second == PLACEHOLDER) {
-            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", it->first.streamUsage);
+            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, it->first.streamId, it->first.streamUsage,
+                deviceRole);
             MoveAudioInterruptToZone(it->first, it->second, destZoneId);
             continue;
         }
@@ -123,7 +125,7 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
             streamUsage = ((streamUsage != StreamUsage::STREAM_USAGE_INVALID) &&
                 service_->sessionService_.IsAudioSessionActivated(it->first.pid)) ?
                 streamUsage : it->first.streamUsage;
-            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", streamUsage);
+            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, it->first.streamId, streamUsage, deviceRole);
             service_->ActivateAudioInterruptInternal(destZoneId, it->first, false, updateScene);
         }
     }
@@ -180,11 +182,13 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
     bool isMigrate = false;
     bool updateScene = false;
     for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
+        DeviceRole deviceRole = service_->IsRecordingInterruption(itFocus->first) ? INPUT_DEVICE : OUTPUT_DEVICE;
         StreamUsage streamUsage = service_->sessionService_.GetAudioSessionStreamUsage(itFocus->first.pid);
         streamUsage = ((streamUsage != StreamUsage::STREAM_USAGE_INVALID) &&
             service_->sessionService_.IsAudioSessionActivated(itFocus->first.pid)) ?
             streamUsage : itFocus->first.streamUsage;
-        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "", streamUsage);
+        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, itFocus->first.streamId, streamUsage,
+            deviceRole);
         if (toZoneId == zoneId) {
             ++itFocus;
             continue;

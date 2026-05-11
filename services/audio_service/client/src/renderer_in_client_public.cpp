@@ -84,7 +84,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
     loudVolumeSupportMode_ = OHOS::system::GetIntParameter("const.audio.loudvolume", 0);
-    state_ = NEW;
+    UpdateStreamState(NEW);
 }
 
 RendererInClientInner::~RendererInClientInner()
@@ -130,10 +130,10 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
     if (operation == UPDATE_SPANSIZE) {
         int32_t ret = InitSharedBuffer();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-            "InitSharedBuffer for UPDATE_SPANSIZE failed:%{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer for UPDATE_SPANSIZE failed:%{public}d", ret);
         AUDIO_INFO_LOG("UPDATE_SPANSIZE sessionId:%{public}u spanSizeInFrame:%{public}u cacheSizeInFrame:%{public}u",
             sessionId_, spanSizeInFrame_, cacheSizeInFrame_.load());
+        NotifyFastStatusChange(static_cast<FastStatus>(result));
         return SUCCESS;
     }
 
@@ -144,6 +144,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     if (notifiedResult_ == SUCCESS) {
         HandleStatusChangeOperation(operation);
     } else {
+        streamFocusState_ = static_cast<StreamFocusState>(state_.load());
         AUDIO_ERR_LOG("operation %{public}d failed, result: %{public}" PRId64 "", operation, result);
     }
 
@@ -155,13 +156,13 @@ void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
 {
     switch (operation) {
         case START_STREAM :
-            state_ = RUNNING;
+            UpdateStreamState(RUNNING);
             break;
         case PAUSE_STREAM :
-            state_ = PAUSED;
+            UpdateStreamState(PAUSED);
             break;
         case STOP_STREAM :
-            state_ = STOPPED;
+            UpdateStreamState(STOPPED);
             break;
         default :
             break;
@@ -308,7 +309,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     int32_t initRet = InitIpcStream();
     CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
         HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
-    state_ = PREPARED;
+    UpdateStreamState(PREPARED);
 
     InitDFXOperaiton();
     InitDirectPipeType();
@@ -729,7 +730,7 @@ void RendererInClientInner::OnFirstFrameWriting()
     Trace trace("RendererInClientInner::OnFirstFrameWriting");
     AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
-    if (ipcStream_ != nullptr) {
+    if (IsFastStream() && ipcStream_ != nullptr) {
         ipcStream_->GetLatency(latency);
     }
 
@@ -1213,32 +1214,29 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_START_ILLEGAL_STATE, "Illegal state", true),
-        "Start failed");
-
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_), PLAY_START_ILLEGAL_STATE,
+            "Illegal state", true, state_), "Start failed");
     hasFirstFrameWrited_ = false;
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ipcStream_ != nullptr, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_START_NULL_POINTER, "ipcStream is not inited", true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_START_NULL_POINTER, "ipcStream is not inited", true, state_),
         HILOG_COMM_ERROR("[StartAudioStream]ipcStream is not inited!"));
     int32_t ret = ipcStream_->Start();
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_START_OPERATION_FAILED, "Start call server failed", true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_START_OPERATION_FAILED, "Start call server failed", true, state_),
         HILOG_COMM_ERROR("[StartAudioStream]Start call server failed:%{public}u", ret));
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return state_ == RUNNING; // will be false when got notified.
     });
     if (!stopWaiting) {
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_START_TIMEOUT, "Start timeout", true);
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_START_TIMEOUT, "Start timeout", true, state_);
         AUDIO_ERR_LOG("Start failed: timeout");
         ipcStream_->Stop();
         return false;
     }
-
     waitLock.unlock();
     if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         AudioPolicyManager::GetInstance().ReloadLoudVolumeMode(eStreamType_, LOUD_VOLUME_SWITCH_AUTO);
@@ -1246,11 +1244,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     HILOG_COMM_INFO("[StartAudioStream]Start SUCCESS, sessionId: %{public}d, uid: %{public}d",
         sessionId_, clientUid_);
-
     UpdateTracker("RUNNING");
-
     FlushBeforeStart();
-
     offloadStartReadPos_ = 0;
 
     NotifyStopWaiting();
@@ -1281,20 +1276,20 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_PAUSE_ILLEGAL_STATE, "Illegal state", true);
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_ILLEGAL_STATE, "Illegal state", true, state_);
         AUDIO_ERR_LOG("State is not RUNNING. Illegal state:%{public}u", state_.load());
         return false;
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_PAUSE_NULL_POINTER, "ipcStream is not inited", true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_NULL_POINTER, "ipcStream is not inited", true, state_),
         "ipcStream is not inited!");
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_PAUSE_OPERATION_FAILED, "Pause call server failed", true);
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_OPERATION_FAILED, "Pause call server failed", true, state_);
         AUDIO_ERR_LOG("call server failed:%{public}u", ret);
         return false;
     }
@@ -1303,8 +1298,8 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
         return state_ == PAUSED; // will be false when got notified.
     });
     if (!stopWaiting) {
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_PAUSE_TIMEOUT, "Pause timeout", true);
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_PAUSE_TIMEOUT, "Pause timeout", true, state_);
         AUDIO_ERR_LOG("Pause failed: timeout");
         return false;
     }
@@ -1365,11 +1360,12 @@ bool RendererInClientInner::StopAudioStream()
 
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");
+        streamFocusState_ = static_cast<StreamFocusState>(STOPPED);
         return true;
     }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ == RUNNING || state_ == PAUSED, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
-            PLAY_STOP_ILLEGAL_STATE, "Illegal state", true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
+            PLAY_STOP_ILLEGAL_STATE, "Illegal state", true, state_),
         "Stop failed. Illegal state:%{public}u", state_.load());
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
@@ -1391,7 +1387,7 @@ bool RendererInClientInner::StopAudioStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_STOP_TIMEOUT, "Stop timeout", true);
         AUDIO_ERR_LOG("Stop failed: timeout");
-        state_ = INVALID;
+        UpdateStreamState(INVALID);
         return false;
     }
 
@@ -1425,7 +1421,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         AUDIO_WARNING_LOG("Already released");
         return true;
     }
-    state_ = RELEASED;
+    UpdateStreamState(RELEASED);
     statusLock.unlock();
 
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
@@ -2047,7 +2043,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
         "state_ is %{public}d, no need for restore", state_.load());
     bool result = true;
     State oldState = state_;
-    state_ = NEW;
+    UpdateStreamState(NEW);
     SetStreamTrackerState(false);
     // If pipe type is offload, need reset to normal.
     // Otherwise, unable to enter offload mode.
@@ -2077,7 +2073,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
             result = StartAudioStream(CMD_FROM_SYSTEM) && StopAudioStream();
             break;
         default:
-            state_ = oldState;
+            UpdateStreamState(oldState);
             break;
     }
     if (!result) {
@@ -2087,7 +2083,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 
 error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
-    state_ = oldState;
+    UpdateStreamState(oldState);
     return false;
 }
 
@@ -2108,6 +2104,29 @@ FastStatus RendererInClientInner::GetFastStatus()
         return FASTSTATUS_FAST;
     }
     return FASTSTATUS_NORMAL;
+}
+
+void RendererInClientInner::SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback)
+{
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
+void RendererInClientInner::NotifyFastStatusChange(FastStatus status)
+{
+    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL) {
+        AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
+        return;
+    }
+    fastStatus_.store(status);
+
+    std::function<void(FastStatus)> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(static_cast<bool>(callback), "fast status change callback is null");
+    callback(status);
 }
 
 DeviceType RendererInClientInner::GetDefaultOutputDevice()
@@ -2306,7 +2325,7 @@ void RendererInClientInner::NotifyStopWaiting()
 void RendererInClientInner::UpdateStopState()
 {
     CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
-    state_ = STOPPING;
+    UpdateStreamState(STOPPING);
     AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
 }
 

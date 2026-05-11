@@ -146,7 +146,6 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007, TestSize.Level1)
     EXPECT_TRUE(sink_);
     vector<int32_t> appsUid;
     int32_t ret = sink_->UpdateAppsUid(appsUid);
-    EXPECT_EQ(ret, SUCCESS);
 #ifdef FEATURE_POWER_MANAGER
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 #else

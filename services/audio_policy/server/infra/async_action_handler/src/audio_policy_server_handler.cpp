@@ -26,6 +26,9 @@
 #include "audio_bundle_manager.h"
 #include "audio_active_device.h"
 #include "audio_zone_service.h"
+#include "stream_dfx_manager.h"
+#include <unistd.h>
+#include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -333,7 +336,10 @@ bool AudioPolicyServerHandler::SendSelfAppVolumeChangeCallback(int32_t appUid, c
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SELF_APP_VOLUME_CHANGE_EVENT,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SELF_APP_VOLUME_CHANGE_EVENT event failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_VOLUME_CALLBACK_FAILED, "Send SELF_APP_VOLUME_CHANGE_EVENT event failed", false),
+        "Send SELF_APP_VOLUME_CHANGE_EVENT event failed");
     return ret;
 }
 
@@ -346,7 +352,10 @@ bool AudioPolicyServerHandler::SendSystemAppVolumeChangeCallback(int32_t appUid,
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SYSTEM_APP_VOLUME_CHANGE_EVENT event failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_VOLUME_CALLBACK_FAILED, "Send SYSTEM_APP_VOLUME_CHANGE_EVENT event failed", false),
+        "Send SYSTEM_APP_VOLUME_CHANGE_EVENT event failed");
     return ret;
 }
 
@@ -390,14 +399,20 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
     const uint32_t &streamId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
-    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(eventContextObj != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "EventContextObj get nullptr", false),
+        "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     AUDIO_INFO_LOG("Send interrupt event with streamId callback, streamId = %{public}u", streamId);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "Send INTERRUPT_EVENT_WITH_STREAMID event failed", false),
+        "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
     return ret;
 }
 
@@ -737,6 +752,21 @@ bool AudioPolicyServerHandler::SendSpatialAudioSourceTypeChangeEvent(SpatialAudi
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendPersonalizedSpatializationEnabledChangeForAnyDeviceEvent(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->personalizedSpatializationEnabled = enabled;
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE event failed");
+    AUDIO_INFO_LOG("Send PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE event");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendAudioSeparationEffectEnabledChangeEvent(const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -972,7 +1002,7 @@ void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t cli
             STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
         return;
     }
-    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid]);
+    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid], OUTPUT_DEVICE);
     CHECK_AND_RETURN(zoneId != 0);
     auto tmpDeviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
         STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
@@ -1000,7 +1030,7 @@ bool AudioPolicyServerHandler::IsTargetZoneForVolumeKeyEvent(int32_t pid, int32_
 {
     CHECK_AND_RETURN_RET(pidUidMap_.count(pid) > 0, true);
     int32_t uid = pidUidMap_[pid];
-    int zoneIdForUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    int zoneIdForUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
     AUDIO_INFO_LOG("uid: %{public}d, zoneId: %{public}d, target zoneId: %{public}d, is target zone: %{public}s",
         uid, zoneIdForUid, zoneId, zoneId == zoneIdForUid ? "true" : "false");
     return zoneId == zoneIdForUid;
@@ -1399,6 +1429,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         ProcessPreferredOutputDeviceForClient(it->first, it->second, ss);
     }
+    CHECK_AND_RETURN(!ss.str().empty());
     AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
 }
 
@@ -1475,6 +1506,7 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         ProcessPreferredInputDeviceForClient(it->first, it->second, ss);
     }
+    CHECK_AND_RETURN(!ss.str().empty());
     AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
 }
 
@@ -2038,6 +2070,25 @@ void AudioPolicyServerHandler::HandleSpatialAudioSourceTypeChange(const AppExecF
     }
 }
 
+void AudioPolicyServerHandler::HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    AUDIO_INFO_LOG("AudioPolicyServerHandler::HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent");
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> personalizedSpatializationEnabledChangeCb = it->second;
+        CHECK_AND_CONTINUE_LOG(personalizedSpatializationEnabledChangeCb != nullptr,
+            "PersonalizedSpatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
+        CHECK_AND_CONTINUE(clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE]);
+        personalizedSpatializationEnabledChangeCb->OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+            eventContextObj->descriptor, eventContextObj->personalizedSpatializationEnabled);
+    }
+}
+
 void AudioPolicyServerHandler::HandleAudioSeparationEffectEnabledChangeEvent(
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -2173,6 +2224,9 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
             break;
         case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
             HandleVolumeDegreeEvent(event);
+            break;
+        case EventAudioServerCmd::PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
+            HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(event);
             break;
         case EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE:
             HandleAudioSeparationEffectEnabledChangeEvent(event);

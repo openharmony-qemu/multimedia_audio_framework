@@ -510,6 +510,24 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Start_002, TestSize.Level0)
 }
 
 /**
+ * @tc.name    : Start_003
+ * @tc.type    : FUNC
+ * @tc.number  : Start_003
+ * @tc.desc    : Verify Start ConnectInputSession for curNode_->GetOffloadType() != OFFLOAD_DEFAULT
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Start_003, TestSize.Level0)
+{
+    // Use a non-curNode_ node to avoid ConnectInputSession (needs sinkOutputNode_)
+    auto secondNode = CreateTestNode(202, HPAE_SESSION_PREPARED);
+    secondNode->SetOffloadType(OFFLOAD_ACTIVE_FOREGROUND);
+    manager_->sinkInputNodeMap_[202] = secondNode;
+    int32_t ret = manager_->Start(202);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+    EXPECT_EQ(secondNode->GetState(), HPAE_SESSION_RUNNING);
+}
+
+/**
  * @tc.name    : Pause_001
  * @tc.type    : FUNC
  * @tc.number  : Pause_001

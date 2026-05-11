@@ -60,6 +60,7 @@ private:
     AudioSuite::PcmBufferFormat outputFormat_;
 
     std::mutex mutex_;
+    bool isInitialized_ = false;
 };
 
 } // namespace AudioStandard

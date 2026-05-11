@@ -1480,6 +1480,8 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
     int32_t result = SUCCESS;
     if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
         IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
+        attr.routeFlag = pipeInfo->routeFlag_;
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
             std::string idInfo = HDI_ID_INFO_DEFAULT;
             HdiIdType idType = HDI_ID_TYPE_PRIMARY;
@@ -1654,6 +1656,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_UNPROCESS;
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_LIVE) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_LIVE;
+        }
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRASONIC) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_ULTRASONIC;
@@ -1669,6 +1675,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_INTERPHONE) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_INTERPHONE;
+        }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_CAMCORDER) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_CAMCORDER;
         }
     } else if (pipeInfo->adapterName_ == "usb") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
@@ -4209,7 +4219,7 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeTy
         "device is in pass-through mode");
     CHECK_AND_RETURN_LOG(device->volumeBehavior_.controlMode != HILINK_MODE, "device is in hi-link mode");
 
-    bool isMuted = GetStreamMuteInternal(device, volumeType);
+    bool isMuted = GetStreamMuteForVolumeSet(device, volumeType);
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
     SaveSystemVolumeForSwitchDevice(device, volumeType, volumeLevel);
 
@@ -4279,6 +4289,12 @@ void AudioAdapterManager::ApplySystemVolumeProxy(int32_t zoneId,
         isMuted = false;
         volumeDb = 1.0f;
     }
+}
+
+int32_t AudioAdapterManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "ServiceAdapter is null");
+    return audioServiceAdapter_->UpdatePersonalizedHRTFBin(fd, length);
 }
 } // namespace AudioStandard
 } // namespace OHOS

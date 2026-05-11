@@ -84,6 +84,7 @@ struct AudioSpatializationState : public Parcelable {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
     bool adaptiveSpatialRenderingEnabled = false;
+    bool personalizedSpatializationEnabled = false;
 
     AudioSpatializationState() = default;
     AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -99,10 +100,21 @@ struct AudioSpatializationState : public Parcelable {
         this->adaptiveSpatialRenderingEnabled = adaptiveSpatialRenderingEnabled;
     }
 
+    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled, bool adaptiveSpatialRenderingEnabled,
+        bool personalizedSpatializationEnabled)
+    {
+        this->spatializationEnabled = spatializationEnabled;
+        this->headTrackingEnabled = headTrackingEnabled;
+        this->adaptiveSpatialRenderingEnabled = adaptiveSpatialRenderingEnabled;
+        this->personalizedSpatializationEnabled = personalizedSpatializationEnabled;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteBool(spatializationEnabled)
-            && parcel.WriteBool(headTrackingEnabled);
+            && parcel.WriteBool(headTrackingEnabled)
+            && parcel.WriteBool(adaptiveSpatialRenderingEnabled)
+            && parcel.WriteBool(personalizedSpatializationEnabled);
     }
 
     static AudioSpatializationState *Unmarshalling(Parcel &parcel)
@@ -113,6 +125,8 @@ struct AudioSpatializationState : public Parcelable {
         }
         info->spatializationEnabled = parcel.ReadBool();
         info->headTrackingEnabled = parcel.ReadBool();
+        info->adaptiveSpatialRenderingEnabled = parcel.ReadBool();
+        info->personalizedSpatializationEnabled = parcel.ReadBool();
         return info;
     }
 };

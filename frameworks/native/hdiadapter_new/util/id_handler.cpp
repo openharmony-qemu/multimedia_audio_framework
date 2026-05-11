@@ -120,6 +120,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t route
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
     } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_LIVE) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE);
     } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
@@ -128,6 +130,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t route
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_RAW_AI);
     } else if (routeFlag == AUDIO_INPUT_FLAG_INTERPHONE) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_CAMCORDER) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_CAMCORDER);
     }
     return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
 }

@@ -8,6 +8,8 @@ import window from '@ohos.window';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { display } from '@kit.ArkUI';
 import { NavigationParams, OFFLINEPIPELINE, PIPELINECASCADMODE_0, REALTIMEPIPELINE } from '../utils/InterfaceInfo';
+import audioNapi from 'libentry.so';
+import { DirInitHelper } from '../utils/DirInit';
 
 const TAG: string = 'AudioEditTestApp_Index';
 
@@ -27,18 +29,44 @@ struct Index {
   // Determine whether it is in landscape mode
   @StorageLink('isHorizontalScreen') isHorizontalScreen: boolean = false;
 
+  @StorageLink('showDebugButton') showDebugButton: boolean = true;
+  @StorageLink('debugButtonX') debugButtonX: number = 200;
+  @StorageLink('debugButtonY') debugButtonY: number = 100;
+
   private scrollerIndex: Scroller = new Scroller();
+  private initialButtonX: number = 0;
+  private initialButtonY: number = 0;
+  private screenWidth: number = 0;
+  private screenHeight: number = 0;
+  private buttonSize: number = 60;
+  private saveButtonTimer: number = -1; // Timer for throttling save operations
+
 
   aboutToAppear(): void {
-    this.setSystemBarProperties();
-    // Listen to screen orientation switch
+    // Initializes the status of the debugging button.
+    AppStorage.setOrCreate('showDebugButton', true);
+    AppStorage.setOrCreate('debugButtonX', 200);
+    AppStorage.setOrCreate('debugButtonY', 100);
+    // Obtaining the Screen Size
+    const defaultDisplay = display.getDefaultDisplaySync();
+    this.screenWidth = defaultDisplay.width;
+    this.screenHeight = defaultDisplay.height;
+
+    // Monitor screen size changes (including rotation)
     display.on('change', this.onDisplayChange);
+
+    this.setSystemBarProperties();
   }
 
   aboutToDisappear(): void {
     Logger.info(TAG, 'aboutToDisappear');
     // Destroy screen listeners
     display.off('change', this.onDisplayChange);
+    // Clear timer if exists
+    if (this.saveButtonTimer !== -1) {
+      clearTimeout(this.saveButtonTimer);
+      this.saveButtonTimer = -1;
+    }
   }
 
   // Listener function
@@ -49,7 +77,31 @@ struct Index {
         defaultDisplay.orientation === display.Orientation.PORTRAIT_INVERTED)
         ? false
         : true;
+
+    // Updating the screen size.
+    this.screenWidth = defaultDisplay.width;
+    this.screenHeight = defaultDisplay.height;
+    this.clampButtonPosition();
   };
+
+  // Ensure that the button is within the visible range of the screen.
+  private clampButtonPosition(): void {
+    const maxX = this.screenWidth - this.buttonSize;
+    const maxY = this.screenHeight - this.buttonSize;
+    let clampedX = Math.min(Math.max(this.debugButtonX, 0), maxX);
+    let clampedY = Math.min(Math.max(this.debugButtonY, 0), maxY);
+
+    if (clampedX !== this.debugButtonX || clampedY !== this.debugButtonY) {
+      this.debugButtonX = clampedX;
+      this.debugButtonY = clampedY;
+
+      AppStorage.setOrCreate('debugButtonX', this.debugButtonX);
+      AppStorage.setOrCreate('debugButtonY', this.debugButtonY);
+
+      Logger.info(TAG, `按钮位置已调整到可见范围: (${this.debugButtonX}, ${this.debugButtonY})`);
+    }
+  };
+
 
   // Set the background color of the status bar
   setSystemBarProperties() {
@@ -368,5 +420,69 @@ struct Index {
     .mode(NavigationMode.Stack)
     // .padding({ left: $r('app.float.padding_20'), right: $r('app.float.padding_20') })
     .backgroundColor(Color.Black)
+    .overlay(this.DebugDilogButton())
+  }
+
+    @Builder
+  DebugDilogButton() {
+    Column() {
+      if (this.showDebugButton) {
+        Button('调试')
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontFamily('HarmonyHeiTi')
+          .width(60)
+          .height(60)
+          .borderRadius(30)
+          .backgroundColor('#409EFF')
+          .fontColor(Color.White)
+          .shadow({ radius: 10, color: '#00000040' })
+          .position({ x: this.debugButtonX, y: this.debugButtonY })
+          .hitTestBehavior(HitTestMode.Transparent)
+          .gesture(
+            PanGesture({ direction: PanDirection.All })
+              .onActionStart(() => {
+                this.initialButtonX = this.debugButtonX;
+                this.initialButtonY = this.debugButtonY;
+                Logger.info(TAG, 'Start dragging the debug button.');
+              })
+              .onActionUpdate((event: GestureEvent) => {
+                let newX = this.initialButtonX + event.offsetX;
+                let newY = this.initialButtonY + event.offsetY;
+
+                const maxX = this.screenWidth - this.buttonSize;
+                const maxY = this.screenHeight - this.buttonSize;
+
+                this.debugButtonX = Math.min(Math.max(newX, 0), maxX);
+                this.debugButtonY = Math.min(Math.max(newY, 0), maxY);
+
+                if (this.saveButtonTimer !== -1) {
+                  clearTimeout(this.saveButtonTimer);
+                }
+                this.saveButtonTimer = setTimeout(() => {
+                  AppStorage.setOrCreate('debugButtonX', this.debugButtonX);
+                  AppStorage.setOrCreate('debugButtonY', this.debugButtonY);
+                  this.saveButtonTimer = -1;
+                }, 100);
+              })
+              .onActionEnd(() => {
+                Logger.info(TAG, `Drag end, position: (${this.debugButtonX}, ${this.debugButtonY})`);
+              })
+          )
+          .onClick(async () => {
+            Logger.info(TAG, '=== Manually triggering debugging ===');
+            try {
+              await DirInitHelper.ensureDirExists();
+              let ret = audioNapi.testPrintInfoToFile();
+              console.info(`Debugging information is printed in the log. Result code: ${ret}`);
+            } catch (err) {
+              Logger.error(TAG, `The debugging operation failed: ${err}`);
+            }
+          })
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .hitTestBehavior(HitTestMode.Transparent)
   }
 }

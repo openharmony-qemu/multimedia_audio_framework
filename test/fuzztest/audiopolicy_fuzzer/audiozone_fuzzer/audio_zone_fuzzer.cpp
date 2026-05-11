@@ -62,11 +62,11 @@ T GetData()
 void AudioZoneBindKeyAudioZoneBindKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceTag = "testDeviceTag";
-    std::string streamTag = "testStreamTag";
+    uint32_t streamId = GetData<uint32_t>();
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey_1(uid);
     AudioZoneBindKey audioZoneBindKey_2(uid, deviceTag);
-    AudioZoneBindKey audioZoneBindKey_3(uid, deviceTag, streamTag);
+    AudioZoneBindKey audioZoneBindKey_3(uid, deviceTag);
     AudioZoneBindKey audioZoneBindKey_4(audioZoneBindKey_1);
     AudioZoneBindKey audioZoneBindKey_5(std::move(audioZoneBindKey_1));
 }
@@ -74,9 +74,8 @@ void AudioZoneBindKeyAudioZoneBindKeyFuzzTest(FuzzedDataProvider& fdp)
 void AudioZoneBindKeyOperatorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceTag = "testDeviceTag";
-    std::string streamTag = "testStreamTag";
     int32_t uid = GetData<int32_t>();
-    AudioZoneBindKey audioZoneBindKey_1(uid, deviceTag, streamTag);
+    AudioZoneBindKey audioZoneBindKey_1(uid, deviceTag);
     AudioZoneBindKey audioZoneBindKey_2 = audioZoneBindKey_1;
 }
 
@@ -105,14 +104,14 @@ void AudioZoneBindKeyIsContainFuzzTest(FuzzedDataProvider& fdp)
 void AudioZoneBindKeyGetSupportKeysFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceTag = "testDeviceTag";
-    std::string streamTag = "testStreamTag";
+    uint32_t streamId = GetData<uint32_t>();
     int32_t uid = GetData<int32_t>();
     StreamUsage usage = static_cast<StreamUsage>
         (GetData<int32_t>() % StreamUsage::STREAM_USAGE_MAX);
-    AudioZoneBindKey audioZoneBindKey(uid, deviceTag, streamTag);
-    AudioZoneBindKey audioZoneBindKey_1(uid, deviceTag, streamTag);
+    AudioZoneBindKey audioZoneBindKey(uid, deviceTag);
+    AudioZoneBindKey audioZoneBindKey_1(uid, deviceTag);
     audioZoneBindKey.GetSupportKeys(audioZoneBindKey_1);
-    audioZoneBindKey.GetSupportKeys(uid, deviceTag, streamTag, usage);
+    audioZoneBindKey.GetSupportKeys(uid, deviceTag, streamId, usage);
 }
 
 void AudioZoneGetDescriptorFuzzTest(FuzzedDataProvider& fdp)

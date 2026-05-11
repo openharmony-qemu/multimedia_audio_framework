@@ -28,6 +28,9 @@
 #include <vector>
 #include <mutex>
 #include <set>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 
 #include "audio_effect.h"
 #include "audio_effect_chain.h"
@@ -148,6 +151,11 @@ public:
     bool IsSpatializationEnabledForChains();
     bool IsDownSamplingForSpatialization(const std::string &sceneType);
     void SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer);
+    void UpdatePersonalizedSpatializationEnabledToChains();
+    void UpdatePersonalizedSpatializationEnabledToHdi();
+    int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
+    int32_t UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length);
+    int32_t UpdatePersonalizedHRTFBinToHdi(const int32_t &fd, const long &length);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -254,6 +262,7 @@ private:
     int32_t earphoneProduct_ = 0;
     bool bypassSpatializationForStereo_ = false;
     bool isNeedInitEffectBuffer_ = true;
+    bool personalizedSpatializationEnabled_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -1573,11 +1573,8 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, PrintInfoNonExistentPipelineTest, Test
 
     engine.pipelineMap_[1] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
 
-    (void)engine.PrintInfo(999, -1);
-    sleep(1);
-
-    EXPECT_EQ(callback.isFinishPrintInfo_, true);
-    EXPECT_NE(callback.printInfoResult_, SUCCESS);
+    int32_t result = engine.PrintInfo(999, -1);
+    EXPECT_NE(result, SUCCESS);
 
     engine.pipelineMap_.erase(1);
     engine.DeInit();

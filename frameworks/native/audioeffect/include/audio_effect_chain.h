@@ -87,6 +87,7 @@ public:
     void SetStereoEnhancementMode(const std::string &stereoEnhancementMode);
     bool IsEffectChainFading();
     void SetFrontendAppType(const std::string &frontendAppType);
+    void SetPersonalizedSpatializationEnabled(const bool &personalizedSpatializationEnabled);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -117,7 +118,7 @@ private:
     AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
-    float finalVolume_ = 1.0f;
+    float finalVolume_ = 0.0f;
     float currVolume_ = 0.0f;
     bool sendFinalVolumeState_ = false;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
@@ -135,6 +136,7 @@ private:
     int32_t outdoorMode_ = 0;
     int32_t superLoudnessMode_ = 0;
     int32_t frontendAppType_ = 0;
+    bool personalizedSpatializationEnabled_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

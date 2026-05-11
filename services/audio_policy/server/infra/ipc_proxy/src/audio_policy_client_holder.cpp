@@ -347,6 +347,23 @@ void AudioPolicyClientHolder::OnAdaptiveSpatialRenderingEnabledChangeForAnyDevic
     }
 }
 
+void AudioPolicyClientHolder::OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
+    if (hasSystemPermission_) {
+        AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
+        deviceDescriptor->SetClientInfo(clientInfo);
+        AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice %{public}d", enabled);
+        audioPolicyClient_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    } else {
+        AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice no permission");
+        audioPolicyClient_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, false);
+    }
+}
+
 void AudioPolicyClientHolder::OnSpatializationEnabledChangeForBTDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled,
     const bool &headTrackingEnabled)

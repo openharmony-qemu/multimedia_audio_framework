@@ -496,6 +496,13 @@ public:
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
+    int32_t IsPersonalizedSpatializationEnabled(const std::string &address, bool &ret) override;
+
+    int32_t SetPersonalizedSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
+
+    int32_t DownloadPersonalizedHRTF(int32_t fd, int64_t length) override;
+
     int32_t GetCurrentSpatialAudioSourceType(int32_t &ret) override;
 
     int32_t GetSpatializationState(int32_t streamUsage, AudioSpatializationState &state) override;
@@ -507,6 +514,8 @@ public:
     int32_t IsHeadTrackingSupported(bool &ret) override;
 
     int32_t IsHeadTrackingSupportedForDevice(const std::string &address, bool &ret) override;
+
+    int32_t IsPersonalizedSpatializationSupported(bool &ret) override;
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState &audioSpatialDeviceState) override;
 
@@ -532,6 +541,8 @@ public:
     int32_t ReleaseAudioZone(int32_t zoneId) override;
 
     int32_t UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) override;
+
+    int32_t GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds) override;
 
     int32_t GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs) override;
 
@@ -566,6 +577,10 @@ public:
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
 
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams) override;
+
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) override;
+
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 
@@ -830,6 +845,7 @@ private:
     void Init();
     int32_t HandleRouteSelectorCallbackEnable(bool enable);
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
+    int32_t ValidateAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
     // offload session
     void CheckSubscribePowerStateChange();

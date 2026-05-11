@@ -201,6 +201,7 @@ private:
         const uint32_t sessionId);
     void HandleProcessInserverDualStreamDisableInner(AudioEndpoint &endpoint);
     void HandleProcessInserverDualStreamEnableInner(AudioEndpoint &endpoint, const std::string &dupSinkName);
+    bool DecideReleaseSink(std::shared_ptr<AudioEndpoint> endpoint);
 #endif
     int32_t EnableDualStreamForNormalStream(const uint32_t sessionId, const std::string &dupSinkName);
     int32_t DisableDualStreamForNormalStream(const uint32_t sessionId);

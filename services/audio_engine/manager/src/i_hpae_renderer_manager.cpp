@@ -109,10 +109,16 @@ int32_t IHpaeRendererManager::SetSinkVirtualOutputNode(
 bool IHpaeRendererManager::AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNodeInfo &outNodeInfo)
 {
     // Check if input node's frameLen needs to modify.
-    const std::size_t inFrameLenUs = inNodeInfo.frameLen * AUDIO_US_PER_MS / inNodeInfo.samplingRate;
-    const std::size_t outFrameLenUs = outNodeInfo.frameLen * AUDIO_US_PER_MS / outNodeInfo.samplingRate;
+    uint32_t inRate = inNodeInfo.GetEffectiveSampleRate();
+    uint32_t outRate = outNodeInfo.GetEffectiveSampleRate();
+    if (inRate == 0 || outRate == 0) {
+        AUDIO_ERR_LOG("AdjustFrameLen invalid rate: inRate=%{public}u outRate=%{public}u", inRate, outRate);
+        return false;
+    }
+    const std::size_t inFrameLenUs = static_cast<std::size_t>(inNodeInfo.frameLen) * AUDIO_US_PER_MS / inRate;
+    const std::size_t outFrameLenUs = static_cast<std::size_t>(outNodeInfo.frameLen) * AUDIO_US_PER_MS / outRate;
     if (inFrameLenUs != outFrameLenUs) {
-        inNodeInfo.frameLen = outFrameLenUs * inNodeInfo.samplingRate / AUDIO_US_PER_MS;
+        inNodeInfo.frameLen = static_cast<uint32_t>(outFrameLenUs * inRate / AUDIO_US_PER_MS);
         return true;
     }
     return false;

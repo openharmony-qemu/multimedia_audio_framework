@@ -100,11 +100,26 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     BluetoothAndNearlinkPreferredRecordCategory category =
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 
-    auto appSourceTypes = routerInfra.GetAppRunningSourceTypes(uid);
-    if (!appSourceTypes.empty()) {
-        simpleDesc = GetMediaInputDeviceWhenHasRunningStream(effectiveSourceType, category);
-    } else {
-        simpleDesc = GetMediaInputDeviceWhenNoRunningStream(uid, category, sourceType);
+    // First check stream-level selection
+    if (uid != SYSTEM_UID && ValidStreamId(streamId)) {
+        auto streamSelectDevice = routerInfra.GetStreamSelectDevice(uid, streamId);
+        if (streamSelectDevice != nullptr) {
+            simpleDesc = streamSelectDevice;
+            effectiveSourceType = routerInfra.GetStreamSourceType(uid, streamId);
+            if (effectiveSourceType == SourceType::SOURCE_TYPE_INVALID) {
+                effectiveSourceType = sourceType;
+            }
+        }
+    }
+
+    // If no stream-level selection, proceed with existing logic
+    if (simpleDesc == nullptr) {
+        auto appSourceTypes = routerInfra.GetAppRunningSourceTypes(uid);
+        if (!appSourceTypes.empty()) {
+            simpleDesc = GetMediaInputDeviceWhenHasRunningStream(effectiveSourceType, category);
+        } else {
+            simpleDesc = GetMediaInputDeviceWhenNoRunningStream(uid, category, sourceType);
+        }
     }
 
     if (simpleDesc != nullptr) {

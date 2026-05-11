@@ -58,11 +58,21 @@ enum class InitMode {
     APP = 1,
 };
 
+enum class AudioZoneSupportType {
+    PLAY_ONLY = 0,
+    RECORD_ONLY = 1,
+    PLAY_AND_RECORD = 2,
+};
+
 class AudioZoneContext : public Parcelable {
 public:
+    static constexpr int32_t INVALID_USER_ID = -1;
+
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
     MediaBackStrategy backStrategy_ = MediaBackStrategy::STOP;
     InitMode initMode_ = InitMode::NONE;
+    AudioZoneSupportType supportType_ = AudioZoneSupportType::PLAY_AND_RECORD;
+    int32_t userId_ = INVALID_USER_ID;
 
     AudioZoneContext() = default;
 
@@ -70,7 +80,9 @@ public:
     {
         return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_))
             && parcel.WriteInt32(static_cast<int32_t>(backStrategy_))
-            && parcel.WriteInt32(static_cast<int32_t>(initMode_));
+            && parcel.WriteInt32(static_cast<int32_t>(initMode_))
+            && parcel.WriteInt32(static_cast<int32_t>(supportType_))
+            && parcel.WriteInt32(userId_);
     }
 
     static AudioZoneContext *Unmarshalling(Parcel &parcel)
@@ -83,6 +95,8 @@ public:
         info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
         info->backStrategy_ = static_cast<MediaBackStrategy>(parcel.ReadInt32());
         info->initMode_ = static_cast<InitMode>(parcel.ReadInt32());
+        info->supportType_ = static_cast<AudioZoneSupportType>(parcel.ReadInt32());
+        info->userId_ = parcel.ReadInt32();
         return info;
     }
 };
@@ -92,8 +106,10 @@ public:
     int32_t zoneId_ = -1;
     std::string name_;
     std::set<int32_t> uids_;
+    std::set<uint32_t> streamIds_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices_;
     int32_t initMode_;
+    int32_t supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_AND_RECORD);
 
     AudioZoneDescriptor() = default;
 
@@ -102,7 +118,9 @@ public:
         bool result = parcel.WriteInt32(zoneId_);
         result &= parcel.WriteString(name_);
         result &= parcel.WriteInt32(initMode_);
+        result &= parcel.WriteInt32(supportType_);
         result &= MarshallingSetInt32(uids_, parcel);
+        result &= MarshallingSetUInt32(streamIds_, parcel);
         if (!result) {
             return false;
         }
@@ -124,7 +142,9 @@ public:
         zoneId_ = parcel.ReadInt32();
         name_ = parcel.ReadString();
         initMode_ = parcel.ReadInt32();
+        supportType_ = parcel.ReadInt32();
         uids_ = UnmarshallingSetInt32<int32_t>(parcel);
+        streamIds_ = UnmarshallingSetUInt32<uint32_t>(parcel);
 
         size_t size = parcel.ReadUint64();
         if (size > ZONE_MAX_DEVICE_SIZE) {

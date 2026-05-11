@@ -497,6 +497,13 @@ public:
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
+    int32_t SetPersonalizedSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+
+    bool IsPersonalizedSpatializationEnabled(const std::string address);
+
+    int32_t DownloadPersonalizedHRTF(const int32_t fd, const int64_t length);
+
     int32_t GetCurrentSpatialAudioSourceType();
 
     int32_t RegisterSpatializationEnabledEventListener(
@@ -516,6 +523,9 @@ public:
     int32_t RegisterSpatialAudioSourceTypeEventListener(
         const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &callback);
 
+    int32_t RegisterPersonalizedSpatializationEnabledEventListener(
+        const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &callback);
+
     int32_t UnregisterSpatializationEnabledEventListener();
 
     int32_t UnregisterSpatializationEnabledForCurrentDeviceEventListener();
@@ -528,6 +538,8 @@ public:
 
     int32_t UnregisterSpatialAudioSourceTypeEventListener();
 
+    int32_t UnregisterPersonalizedSpatializationEnabledEventListener();
+
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 
     bool IsSpatializationSupported();
@@ -537,6 +549,8 @@ public:
     bool IsHeadTrackingSupported();
 
     bool IsHeadTrackingSupportedForDevice(const std::string address);
+
+    bool IsPersonalizedSpatializationSupported();
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 
@@ -558,6 +572,8 @@ public:
     void ReleaseAudioZone(int32_t zoneId);
 
     void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
+
+    int32_t GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds);
 
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
 
@@ -592,6 +608,10 @@ public:
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
 
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
+
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId);
+
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
     void SetZoneDeviceVisible(bool visible);
 
@@ -823,8 +843,8 @@ private:
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
 
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
-    std::vector<AudioRendererInfo> rendererInfos_;
-    std::vector<AudioCapturerInfo> capturerInfos_;
+    std::vector<std::pair<AudioRendererInfo, int32_t>> rendererInfosWithUid_;
+    std::vector<std::pair<AudioCapturerInfo, int32_t>> capturerInfosWithUid_;
 
     std::mutex handleAvailableDeviceChangeCbsMapMutex_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,

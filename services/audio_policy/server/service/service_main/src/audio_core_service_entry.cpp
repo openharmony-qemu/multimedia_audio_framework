@@ -789,8 +789,9 @@ void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagBySessionId(uint32_t s
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
         sessionId, enabled);
-    coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled);
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    if (coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled)) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    }
 }
 
 void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled,
@@ -800,8 +801,9 @@ void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPi
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
         callerPid, enabled);
-    coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled);
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    if (coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled)) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    }
 }
 
 void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)

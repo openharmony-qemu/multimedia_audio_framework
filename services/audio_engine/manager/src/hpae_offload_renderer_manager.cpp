@@ -289,6 +289,10 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         return SUCCESS;
     }
     sinkOutputNode_->SetSpeed(curNode_->GetSpeed());
+    auto offloadType = curNode_->GetOffloadType();
+    if (offloadType != OFFLOAD_DEFAULT) {
+        sinkOutputNode_->SetPolicyState(offloadType);
+    }
     // single stream manager
     sinkOutputNode_->Connect(converterForOutput_);
     // if there's no loudness algo, audio format will be converted to output device format at the first converternode
@@ -376,6 +380,13 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
         AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
         // flush history buffer
         node->Flush();
+        // flush converter nodes' dual buffers to prevent stale resampled data
+        if (converterForLoudness_ != nullptr) {
+            converterForLoudness_->FlushBuffers();
+        }
+        if (converterForOutput_ != nullptr) {
+            converterForOutput_->FlushBuffers();
+        }
         if (sessionId == curNode_->GetSessionId()) {
             // flush sinkoutput cache
             sinkOutputNode_->FlushStream();
@@ -792,6 +803,7 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "SetOffloadPolicy not find sessionId %{public}u", sessionId);
         node->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
+        node->SetOffloadType(state);
         // OFFLOAD_DEFAULT do not need set buffersize
         if (state != OFFLOAD_DEFAULT && sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);

@@ -37,8 +37,6 @@ namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
 static constexpr uint32_t SAMPLE_RATE_16010 = 16010;
 static constexpr uint32_t SAMPLE_RATE_16050 = 16050;
-static constexpr uint32_t FRAME_LEN_100MS = 100;
-static constexpr uint32_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint32_t TEST_SESSION_ID = 123456;
@@ -137,7 +135,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_001, TestSi
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
-    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
@@ -163,7 +161,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSi
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16010);
-    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_100MS *
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
@@ -237,7 +235,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSi
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
-    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));

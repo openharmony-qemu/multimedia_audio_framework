@@ -478,6 +478,79 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicInEc_004, TestSize.Level1
     int32_t ret = IAudioStream::GetByteSizePerFrameWithMicInEc(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicIn API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicIn_001
+ * @tc.desc  : Test GetByteSizePerFrameWithMicIn with all valid formats.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicIn_001, TestSize.Level1)
+{
+    std::vector<std::pair<AudioSampleFormat, size_t>> cases = {
+        {SAMPLE_U8, 1},
+        {SAMPLE_S16LE, 2},
+        {SAMPLE_S24LE, 3},
+        {SAMPLE_S32LE, 4},
+        {SAMPLE_F32LE, 4},
+    };
+    for (const auto &item : cases) {
+        AudioStreamParams params {};
+        params.samplingRate = SAMPLE_RATE_48000;
+        params.format = item.first;
+        params.channels = AudioChannel::STEREO;
+        params.micInChannels = AudioChannel::CHANNEL_4;
+
+        size_t result = 0;
+        int32_t ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+        EXPECT_EQ(ret, SUCCESS);
+        EXPECT_EQ(result, item.second * 6); // 2 process channels + 4 mic-in channels
+    }
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicIn API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicIn_002
+ * @tc.desc  : Test GetByteSizePerFrameWithMicIn with invalid format.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicIn_002, TestSize.Level1)
+{
+    AudioStreamParams params {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = INVALID_WIDTH;
+    params.channels = AudioChannel::STEREO;
+    params.micInChannels = AudioChannel::CHANNEL_4;
+
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicIn API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicIn_003
+ * @tc.desc  : Test GetByteSizePerFrameWithMicIn with invalid total channels.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicIn_003, TestSize.Level1)
+{
+    AudioStreamParams params {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_UNKNOW;
+    params.micInChannels = CHANNEL_UNKNOW;
+
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    params.channels = static_cast<AudioChannel>(13);
+    params.micInChannels = AudioChannel::CHANNEL_4; // total 17
+    ret = IAudioStream::GetByteSizePerFrameWithMicIn(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
 class IAudioStreamNewUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);

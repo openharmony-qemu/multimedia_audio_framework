@@ -386,11 +386,6 @@ ohos_shared_library("audio_policy_manager") {
     defines += [ "FEATURE_AUDIO_ZONE" ]
   }
 
-  public_external_deps = [
-    "c_utils:utils",
-  ]
-
-  
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
@@ -500,7 +495,6 @@ ohos_shared_library("audio_client") {
   ]
 
   public_external_deps = [ "c_utils:utils", ]
-
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
@@ -694,6 +688,7 @@ audio_ohos_library("audio_process_service") {
     "qos_manager:concurrent_task_client",
     "ability_runtime:extension_manager",
     "init:libbegetutil",
+    "bounds_checking_function:libsec_static"
   ]
 
   if (!audio_framework_feature_new_engine_flag) {
@@ -701,8 +696,6 @@ audio_ohos_library("audio_process_service") {
       "pulseaudio:pulse",
     ]
   }
-
-  public_external_deps = [ "bounds_checking_function:libsec_static" ]
 
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -835,7 +828,7 @@ audio_ohos_library("audio_service") {
   }
 
   if (audio_framework_feature_offline_effect) {
-    public_deps = [
+    deps += [
       "../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
     ]
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
