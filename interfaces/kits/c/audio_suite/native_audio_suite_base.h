@@ -167,6 +167,8 @@ typedef enum {
      * @since 23
      */
     EFFECT_NODE_TYPE_TEMPO_PITCH = 211,
+
+    EFFECT_NODE_TYPE_HOA_RENDER = 212,
 } OH_AudioNode_Type;
 /**
  * @brief Define pipeline work mode

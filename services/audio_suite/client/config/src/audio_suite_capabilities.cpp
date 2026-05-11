@@ -256,6 +256,20 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeParameter &np)
     return SUCCESS;
 }
 
+int32_t AudioSuiteCapabilities::LoadHoaRenderCapability(NodeParameter &np)
+{
+    AUDIO_INFO_LOG("LoadHoaRenderCapability start.");
+    np.inSampleRate = SAMPLE_RATE_48000;
+    np.inChannels = CHANNEL_4;
+    np.inFormat = SAMPLE_S32LE;
+    np.outSampleRate = SAMPLE_RATE_48000;
+    np.outChannels = STEREO;
+    np.outFormat = SAMPLE_S32LE;
+    np.supportedOnThisDevice = true;
+    AUDIO_INFO_LOG("LoadHoaRenderCapability end.");
+    return SUCCESS;
+}
+
 int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported)
 {
     if (nodeType == NODE_TYPE_INPUT || nodeType == NODE_TYPE_OUTPUT || nodeType == NODE_TYPE_AUDIO_MIXER) {
@@ -345,6 +359,9 @@ int32_t AudioSuiteCapabilities::GetNodeParameter(AudioNodeType nodeType, NodePar
             case NODE_TYPE_SPACE_RENDER:
                 CHECK_AND_RETURN_RET_LOG(LoadSrCapability(np) == SUCCESS, ERROR, "LoadSrCapability failed.");
                 break;
+            case NODE_TYPE_HOA_RENDER:
+ 	            CHECK_AND_RETURN_RET_LOG(LoadHoaRenderCapability(np) == SUCCESS, ERROR, "LoadHoaRenderCapability failed.");
+ 	            break;
             default:
                 AUDIO_ERR_LOG("no such nodeType: %{public}d configured.", nodeType);
                 return ERROR;

@@ -67,6 +67,7 @@ private:
     int32_t LoadGeneralCapability(NodeParameter &np);
     int32_t LoadPureCapability(NodeParameter &np);
     int32_t LoadTempoPitchCapability(NodeParameter &np);
+    int32_t LoadHoaRenderCapability(NodeParameter &np);
     std::unordered_map<AudioNodeType, NodeParameter> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;
 };

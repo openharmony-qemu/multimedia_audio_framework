@@ -23,6 +23,7 @@
 #include "audio_suite_space_render_algo_interface_impl.h"
 #include "audio_suite_tempo_pitch_algo_interface_impl.h"
 #include "audio_suite_env_algo_interface_impl.h"
+#include "audio_suite_hoa_render_algo_interface_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,6 +53,8 @@ std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInte
             return std::make_shared<AudioSuiteTempoPitchAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_ENVIRONMENT_EFFECT:
             return std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(np);
+        case AlgoType::AUDIO_NODE_TYPE_HOA_RENDER:
+ 	        return std::make_shared<AudioSuiteHoaRenderAlgoInterfaceImpl>(np);
         default:
             return nullptr;
     }

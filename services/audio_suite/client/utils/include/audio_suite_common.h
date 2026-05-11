@@ -141,6 +141,9 @@ public:
     static std::string GetStateString(AudioSuitePipelineState state);
     static std::string GetSampleFormatString(AudioSampleFormat format);
     static std::string FormatOptionsValue(const std::string &name, const std::string &value);
+    static bool IsHoaLayout(AudioChannelLayout channelLayout);
+    static int16_t GetAmbOrder(AudioChannelLayout channelLayout);
+    static int32_t GetHoaInputFormat(AudioChannelLayout channelLayout);
 };
 
 class AudioSuiteLibraryManager {

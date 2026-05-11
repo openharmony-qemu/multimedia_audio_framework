@@ -83,6 +83,33 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
 
+static void CreateHoaInputNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode **audioNode)
+{
+    OH_AudioNodeBuilder *builder = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, INPUT_NODE_TYPE_DEFAULT);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioFormat audioFormat;
+    audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    audioFormat.channelCount = 4;
+    audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER1_ACN_N3D;
+    audioFormat.sampleFormat = AUDIO_SAMPLE_S16LE;
+    ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, RequestDataCallback, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_CreateNode(pipeline, builder, audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
 /**
  * @tc.name  : Test OH_AudioSuiteEngine_Create.
  * @tc.number: OH_AudioSuiteEngine_Create_001
@@ -3797,6 +3824,186 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_IsNodeTypeSupported001, Tes
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     EXPECT_EQ(isSupported, false);
     std::filesystem::rename("/system/lib64/libimedia_sws.z.so.bak", "/system/lib64/libimedia_sws.z.so");
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_HoaRenderNodeConnection.
+ * @tc.number: OH_AudioSuiteEngine_HoaRenderNodeConnection_001
+ * @tc.desc  : Test HOA InputNode to HoaRenderNode connection success.
+ */
+HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_HoaRenderNodeConnection_001, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_NE(audioSuiteEngine, nullptr);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_NE(pipeline, nullptr);
+
+    // Create HOA InputNode
+    OH_AudioNode *hoaInputNode = nullptr;
+    CreateHoaInputNode(pipeline, &hoaInputNode);
+
+    // Create HoaRenderNode
+    OH_AudioNode *hoaRenderNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_HOA_RENDER, &hoaRenderNode);
+
+    // Create OutputNode
+    OH_AudioNode *outputNode = nullptr;
+    CreateNode(pipeline, OUTPUT_NODE_TYPE_DEFAULT, &outputNode);
+
+    // Connect nodes: HOA InputNode -> HoaRenderNode -> OutputNode
+    ret = OH_AudioSuiteEngine_ConnectNodes(hoaInputNode, hoaRenderNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(hoaRenderNode, outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_StopPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(hoaInputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(hoaRenderNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_HoaRenderNodeConnection.
+ * @tc.number: OH_AudioSuiteEngine_HoaRenderNodeConnection_002
+ * @tc.desc  : Test HOA InputNode connected to non-HoaRenderNode should fail.
+ */
+HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_HoaRenderNodeConnection_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_NE(audioSuiteEngine, nullptr);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_NE(pipeline, nullptr);
+
+    // Create HOA InputNode
+    OH_AudioNode *hoaInputNode = nullptr;
+    CreateHoaInputNode(pipeline, &hoaInputNode);
+
+    // Create Equalizer node (not HoaRenderNode)
+    OH_AudioNode *eqNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
+
+    // Create OutputNode
+    OH_AudioNode *outputNode = nullptr;
+    CreateNode(pipeline, OUTPUT_NODE_TYPE_DEFAULT, &outputNode);
+
+    // Connect nodes: HOA InputNode -> Equalizer -> OutputNode
+    // HOA InputNode must connect to HoaRenderNode, this should fail
+    ret = OH_AudioSuiteEngine_ConnectNodes(hoaInputNode, eqNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(eqNode, outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_STATE);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(hoaInputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(eqNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_HoaRenderNodeConnection.
+ * @tc.number: OH_AudioSuiteEngine_HoaRenderNodeConnection_003
+ * @tc.desc  : Test HoaRenderNode with non-InputNode predecessor should fail.
+ */
+HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_HoaRenderNodeConnection_003, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_NE(audioSuiteEngine, nullptr);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_NE(pipeline, nullptr);
+
+    // Create normal InputNode
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    // Create Equalizer node (not HoaRenderNode)
+    OH_AudioNode *eqNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
+
+    // Create HoaRenderNode
+    OH_AudioNode *hoaRenderNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_HOA_RENDER, &hoaRenderNode);
+
+    // Create OutputNode
+    OH_AudioNode *outputNode = nullptr;
+    CreateNode(pipeline, OUTPUT_NODE_TYPE_DEFAULT, &outputNode);
+
+    // Connect nodes: InputNode -> EqNode -> HoaRenderNode -> OutputNode
+    // HoaRenderNode requires InputNode with HOA layout as predecessor
+    ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, eqNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(eqNode, hoaRenderNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(hoaRenderNode, outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_STATE);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(eqNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(hoaRenderNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
 
 } // namespace AudioStandard

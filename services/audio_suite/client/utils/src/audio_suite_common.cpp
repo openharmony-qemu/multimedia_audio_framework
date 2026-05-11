@@ -294,6 +294,64 @@ std::string AudioSuiteUtil::FormatOptionsValue(const std::string &name, const st
     return result;
 }
 
+bool AudioSuiteUtil::IsHoaLayout(AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER1_FUMA:
+        case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER2_FUMA:
+        case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER3_FUMA:
+            return true;
+        default:
+            return false;
+    }
+}
+
+int16_t AudioSuiteUtil::GetAmbOrder(AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER1_FUMA:
+            return 1;  // FOA
+        case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER2_FUMA:
+            return 2;  // HOA-2
+        case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER3_FUMA:
+            return 3;  // HOA-3
+        default:
+            return -1;  // not HOA format
+    }
+}
+
+int32_t AudioSuiteUtil::GetHoaInputFormat(AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
+            return 0;  // ACN + SN3D
+        case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
+            return 1;  // ACN + N3D
+        case CH_LAYOUT_HOA_ORDER1_FUMA:
+        case CH_LAYOUT_HOA_ORDER2_FUMA:
+        case CH_LAYOUT_HOA_ORDER3_FUMA:
+            return 2;  // FuMa
+        default:
+            return -1;  // not HOA format
+    }
+}
+
 }
 }
 }

@@ -131,6 +131,16 @@ static std::unordered_map<OH_AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHA
     {OH_AudioChannelLayout::CH_LAYOUT_5POINT1POINT2, AudioChannel::CHANNEL_8},
     {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE, AudioChannel::CHANNEL_8},
     {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
+    // HOA Ambisonic layouts (FOA 4ch, HOA-2 9ch, HOA-3 16ch)
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER1_ACN_N3D, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER1_ACN_SN3D, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER1_FUMA, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER2_ACN_N3D, AudioChannel::CHANNEL_9},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER2_ACN_SN3D, AudioChannel::CHANNEL_9},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER2_FUMA, AudioChannel::CHANNEL_9},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER3_ACN_N3D, AudioChannel::CHANNEL_16},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER3_ACN_SN3D, AudioChannel::CHANNEL_16},
+    {OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER3_FUMA, AudioChannel::CHANNEL_16},
 };
 
 using namespace OHOS::AudioStandard::AudioSuite;
@@ -146,9 +156,31 @@ static bool CheckChannelInfoValid(int32_t channelCount, OH_AudioChannelLayout ch
     return true;
 }
 
+static bool CheckHoaFormatValid(OH_Audio_SampleRate samplingRate, OH_AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_AMB_ORDER1_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER1_FUMA:
+        case CH_LAYOUT_AMB_ORDER2_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER2_FUMA:
+        case CH_LAYOUT_AMB_ORDER3_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER3_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER3_FUMA:
+            CHECK_AND_RETURN_RET_LOG(samplingRate == OH_Audio_SampleRate::SAMPLE_RATE_16000 ||
+                OH_Audio_SampleRate::samplingRate == SAMPLE_RATE_48000,
+                false, "HOA format requires 16k or 48k samplingRate, got %{public}d", samplingRate);
+            return true;
+        default:
+            return true;
+    }
+}
+
 bool CheckAudioFormat(OH_AudioFormat audioFormat)
 {
-    return CheckChannelInfoValid(audioFormat.channelCount, audioFormat.channelLayout);
+    return CheckChannelInfoValid(audioFormat.channelCount, audioFormat.channelLayout) &&
+           CheckHoaFormatValid(audioFormat.samplingRate, audioFormat.channelLayout);
 }
 
 OHAudioSuiteNodeBuilder::~OHAudioSuiteNodeBuilder()
