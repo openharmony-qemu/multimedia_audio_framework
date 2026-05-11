@@ -741,11 +741,9 @@ void AudioFormatConverterImpl::Destroy()
         formatConversion_->Reset();
         formatConversion_ = nullptr;
     }
-    
-    if (rawFormatConversion_ != nullptr) {
-        rawFormatConversion_->Reset();
-        rawFormatConversion_ = nullptr;
-    }
+    CHECK_AND_RETURN_LOG(rawFormatConversion_ != nullptr, "Destroy: Synchronous format conversion object is nullptr");
+    rawFormatConversion_->Reset();
+    rawFormatConversion_ = nullptr;
 
     inputFinished_ = false;
     cachedInputData_.clear();

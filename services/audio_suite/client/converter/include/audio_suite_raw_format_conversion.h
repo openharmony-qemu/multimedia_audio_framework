@@ -45,10 +45,6 @@ public:
     void Reset();
 
 private:
-    // Handle special processing for 11025Hz sample rate
-    int32_t Process11025SpecialCase(const float* inputData, uint32_t inFrameSize,
-        float* outputData, uint32_t& outFrameSize, uint32_t channelCount);
-
     // Perform resampling with all necessary calculations and special handling
     int32_t ProcessResample(const float* inputData, uint32_t inSampleCount,
         float*& outData, uint32_t& outSampleCount);
