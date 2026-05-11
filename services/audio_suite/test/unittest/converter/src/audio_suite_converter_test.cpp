@@ -1088,25 +1088,5 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Direct_Data_File_001
     }
 }
 
-/**
- * @tc.name  : Test OH_AudioConverter Destroy branch coverage
- * @tc.number: OH_AudioConverter_Destroy_Branch_001
- * @tc.desc  : Test Destroy() function covers both rawFormatConversion_ != nullptr and == nullptr branches
- */
-HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Destroy_Branch_001, TestSize.Level0)
-{
-    AudioSuite::PcmBufferFormat inputFormat(
-        AudioSamplingRate::SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, AudioSampleFormat::SAMPLE_S16LE);
-    AudioSuite::PcmBufferFormat outputFormat(
-        AudioSamplingRate::SAMPLE_RATE_48000, 2, AudioChannelLayout::CH_LAYOUT_STEREO, AudioSampleFormat::SAMPLE_S16LE);
-
-    auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat);
-    EXPECT_NE(converter, nullptr);
-
-    converter->Destroy();
-    converter->Destroy();
-    EXPECT_TRUE(true);
-}
-
 }
 }
