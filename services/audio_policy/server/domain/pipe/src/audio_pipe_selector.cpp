@@ -876,8 +876,8 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
 bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
 {
     CHECK_AND_RETURN_RET_LOG(targetStream != nullptr, false, "targetStream is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!isLoopbackStream(targetStream), false, "target stream %{public}u is loopback, skip adjust",
-        targetStream->GetSessionId());
+    CHECK_AND_RETURN_RET_LOG(!isLoopbackStream(targetStream), false,
+        "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
     return true;
 }
 
