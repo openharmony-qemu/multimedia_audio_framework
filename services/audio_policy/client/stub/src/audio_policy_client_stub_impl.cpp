@@ -1847,7 +1847,6 @@ size_t AudioPolicyClientStubImpl::GetPersonalizedSpatializationEnabledChangeCall
 {
     std::lock_guard<std::mutex> lockCbMap(personalizedSpatializationEnabledChangeMutex_);
     return personalizedSpatializationEnabledChangeCallbackList_.size();
->>>>>>> master
 }
 
 int32_t AudioPolicyClientStubImpl::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &cb)
