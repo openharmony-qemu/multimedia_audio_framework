@@ -124,7 +124,6 @@ private:
         uint32_t* outputSize, uint32_t outputBytesPerFrame, uint32_t maxOutputFrames);
     AudioConvertResult ValidateBasicParams(const uint8_t* inData, uint32_t inBytes);
     AudioConvertResult ValidateSampleRateParams(uint32_t inBytes);
-    AudioConvertResult ValidateMinBytesParams(uint32_t inBytes);
     AudioConvertResult ExecuteConversion(const uint8_t* inData, uint32_t inputBytes);
     
     std::shared_ptr<FormatConverterDataCallback> dataCallback_;

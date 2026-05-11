@@ -545,19 +545,6 @@ AudioConvertResult AudioFormatConverterImpl::ValidateBasicParams(const uint8_t* 
     CHECK_AND_RETURN_RET_LOG(outputFormat_.channelCount == LAYOUT_TO_CHANNEL.at(outputFormat_.channelLayout),
         result, "Process: output channelCount and channelLayout do not match");
 
-    uint32_t inputSampleSize = AudioSuiteUtil::GetSampleSize(inputFormat_.sampleFormat);
-    result = {nullptr, 0, ERR_INVALID_PARAM};
-    CHECK_AND_RETURN_RET_LOG(inputSampleSize != 0, result, "Process: invalid input format");
-
-    uint32_t inputBytesPerFrame = inputSampleSize * inputFormat_.channelCount;
-    CHECK_AND_RETURN_RET_LOG(inBytes % inputBytesPerFrame == 0,
-        result, "Process: inBytes must be multiple of bytes per frame");
-
-    result = {nullptr, 0, ERR_INVALID_PARAM};
-    uint32_t maxSampleCount =
-        (MAX_DURATION_MS * inputFormat_.sampleRate * inputFormat_.channelCount) / MILLISECONDS_PER_SECOND;
-    uint32_t maxBytes = maxSampleCount * inputSampleSize;
-    CHECK_AND_RETURN_RET_LOG(inBytes <= maxBytes, result, "Process: inBytes exceeds limit");
     return {nullptr, 0, SUCCESS};
 }
  
@@ -567,12 +554,12 @@ AudioConvertResult AudioFormatConverterImpl::ValidateSampleRateParams(uint32_t i
     uint32_t inputSampleRate = static_cast<uint32_t>(inputFormat_.sampleRate);
     uint32_t inputSampleSize = AudioSuiteUtil::GetSampleSize(inputFormat_.sampleFormat);
     uint32_t inputBytesPerFrame = inputSampleSize * inputFormat_.channelCount;
-    double bytesPerMs = static_cast<double>(inputSampleRate * inputBytesPerFrame) / MILLISECONDS_PER_SECOND;
 
     if (inputFormat_.sampleRate == AudioSamplingRate::SAMPLE_RATE_11025 ||
         outputFormat_.sampleRate == AudioSamplingRate::SAMPLE_RATE_11025) {
         // 11025Hz: must be exactly 40ms
-        uint32_t requiredBytesPerCall = static_cast<uint32_t>(bytesPerMs * REQUIRED_MS_FOR_11025HZ + 0.5);
+        uint32_t requiredBytesPerCall =
+            (REQUIRED_MS_FOR_11025HZ * inputSampleRate * inputBytesPerFrame) / MILLISECONDS_PER_SECOND;
         CHECK_AND_RETURN_RET_LOG(requiredBytesPerCall != 0, result,
             "Process: Failed to calculate required bytes per call");
         CHECK_AND_RETURN_RET_LOG(inBytes == requiredBytesPerCall, result,
@@ -580,37 +567,18 @@ AudioConvertResult AudioFormatConverterImpl::ValidateSampleRateParams(uint32_t i
             inBytes, requiredBytesPerCall);
     } else {
         // Other sample rates: max 60ms, must be multiple of 20ms
-        uint32_t maxBytesPerCall = static_cast<uint32_t>(bytesPerMs * MAX_DURATION_MS + 0.5);
-        double minBytesPerCall = bytesPerMs * MIN_DURATION_MS;
-
+        uint32_t minBytesPerCall = (MIN_DURATION_MS * inputSampleRate * inputBytesPerFrame) / MILLISECONDS_PER_SECOND;
+        uint32_t maxBytesPerCall = (MAX_DURATION_MS * inputSampleRate * inputBytesPerFrame) / MILLISECONDS_PER_SECOND;
+        
         CHECK_AND_RETURN_RET_LOG(minBytesPerCall != 0, result,
             "Process: Failed to calculate minimum bytes per call");
         CHECK_AND_RETURN_RET_LOG(inBytes <= maxBytesPerCall, result,
             "Process: inBytes(%{public}u) exceeds 60ms limit (%{public}u bytes)",
             inBytes, maxBytesPerCall);
-        double minByteCount = static_cast<double>(inBytes) / minBytesPerCall;
-        CHECK_AND_RETURN_RET_LOG(std::abs(minByteCount - std::floor(minByteCount)) < 1e-9, result,
-            "Process: inBytes(%{public}u) must be multiple of 20ms data (%{public}f bytes)",
+        CHECK_AND_RETURN_RET_LOG(inBytes % minBytesPerCall == 0, result,
+            "Process: inBytes(%{public}u) must be multiple of 20ms data (%{public}u bytes)",
             inBytes, minBytesPerCall);
     }
-
-    return {nullptr, 0, SUCCESS};
-}
- 
-AudioConvertResult AudioFormatConverterImpl::ValidateMinBytesParams(uint32_t inBytes)
-{
-    AudioConvertResult result = {nullptr, 0, ERR_INVALID_PARAM};
-    uint32_t inputSampleSize = AudioSuiteUtil::GetSampleSize(inputFormat_.sampleFormat);
-    CHECK_AND_RETURN_RET_LOG(inputSampleSize != 0, result, "Process: invalid input format");
-    uint32_t inputBytesPerFrame = inputSampleSize * inputFormat_.channelCount;
-    uint32_t minBytesForIntMs = CalculateMinBytesForIntMs(inputBytesPerFrame);
-
-    CHECK_AND_RETURN_RET_LOG(minBytesForIntMs != 0, result,
-        "Process: Failed to calculate minimum processing unit");
-    CHECK_AND_RETURN_RET_LOG(inBytes % minBytesForIntMs == 0, result,
-        "Process: inBytes(%{public}u) must be integer multiple of minBytesForIntMs(%{public}u)",
-        inBytes, minBytesForIntMs);
-
     return {nullptr, 0, SUCCESS};
 }
  
@@ -647,11 +615,7 @@ AudioConvertResult AudioFormatConverterImpl::SyncProcess(const uint8_t* inData, 
     result = ValidateSampleRateParams(inBytes);
     CHECK_AND_RETURN_RET_LOG(result.errCode == SUCCESS, result, "Process: sample rate params validation failed");
 
-    // Step 3: Validate minimum bytes parameters
-    result = ValidateMinBytesParams(inBytes);
-    CHECK_AND_RETURN_RET_LOG(result.errCode == SUCCESS, result, "Process: min bytes params validation failed");
-
-    // Step 4: Execute conversion
+    // Step 3: Execute conversion
     return ExecuteConversion(inData, inBytes);
 }
 
