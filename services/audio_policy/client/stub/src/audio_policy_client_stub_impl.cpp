@@ -1807,7 +1807,6 @@ size_t AudioPolicyClientStubImpl::GetCurrentSpatialAudioSourceTypeChangeCallback
     return spatialAudioSourceTypeChangeCallbackList_.size();
 }
 
-<<<<<<< sbflAPI
 int32_t AudioPolicyClientStubImpl::AddAudioSeparationEffectEnabledChangeCallback(
     const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &cb)
 {
@@ -1827,7 +1826,8 @@ size_t AudioPolicyClientStubImpl::GetAudioSeparationEffectEnabledChangeCallbackS
 {
     std::lock_guard<std::mutex> lockCbMap(audioSeparationEffectEnabledChangeMutex_);
     return audioSeparationEffectEnabledChangeCallbackList_.size();
-=======
+}
+
 int32_t AudioPolicyClientStubImpl::AddPersonalizedSpatializationEnabledChangeCallback(
     const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &cb)
 {
