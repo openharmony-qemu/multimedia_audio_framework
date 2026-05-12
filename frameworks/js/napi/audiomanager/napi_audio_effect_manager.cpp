@@ -48,6 +48,18 @@ static napi_value CreatePromiseError(napi_env env, int32_t audioErrCode, const s
     return errorValue;
 }
 
+static napi_value CreateEffectOperationErrorValue(napi_env env, int32_t ret, const char *operation)
+{
+    if (ret == ERR_NOT_SUPPORTED) {
+        AUDIO_WARNING_LOG("%{public}s not supported", operation);
+    } else {
+        AUDIO_ERR_LOG("%{public}s failed: %{public}d", operation, ret);
+    }
+
+    return CreatePromiseError(env, ret,
+        ret == ERR_NOT_SUPPORTED ? "Effect is not supported in this device" : "");
+}
+
 NapiAudioEffectMgr::NapiAudioEffectMgr()
     : env_(nullptr), audioEffectMngr_(nullptr) {}
 
@@ -307,13 +319,7 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, nap
         AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled success, resolving promise");
         napi_resolve_deferred(env, deferred, nullptr);
     } else {
-        if (ret == ERR_NOT_SUPPORTED) {
-            AUDIO_WARNING_LOG("SetAudioSeparationEffectEnabled not supported");
-        } else {
-            AUDIO_ERR_LOG("SetAudioSeparationEffectEnabled failed: %{public}d", ret);
-        }
-        napi_value errorValue = CreatePromiseError(env, ret,
-            ret == ERR_NOT_SUPPORTED ? "Effect is not supported in this device" : "");
+        napi_value errorValue = CreateEffectOperationErrorValue(env, ret, "SetAudioSeparationEffectEnabled");
         napi_reject_deferred(env, deferred, errorValue);
     }
 
@@ -342,8 +348,7 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
     napi_status status = NapiParamUtils::GetValueInt32(env, typeValue, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && typeValue == VOLUME_TYPE_VOCAL,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: type value must be VOLUME_TYPE_VOCAL"),
-        "get type failed");
+        "parameter verification failed: type value must be VOLUME_TYPE_VOCAL"), "get type failed");
     valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
@@ -353,8 +358,7 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
     status = NapiParamUtils::GetValueDouble(env, volume, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && volume >= 0.0 && volume <= 1.0,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: volume range is [0.0, 1.0]"),
-        "get volume failed");
+        "parameter verification failed: volume range is [0.0, 1.0]"), "get volume failed");
 
     napi_value promise = nullptr;
     napi_deferred deferred = nullptr;
@@ -366,13 +370,7 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
         AUDIO_INFO_LOG("SetAudioSeparationEffectVolume success, resolving promise");
         napi_resolve_deferred(env, deferred, nullptr);
     } else {
-        if (ret == ERR_NOT_SUPPORTED) {
-            AUDIO_WARNING_LOG("SetAudioSeparationEffectVolume not supported");
-        } else {
-            AUDIO_ERR_LOG("SetAudioSeparationEffectVolume failed: %{public}d", ret);
-        }
-        napi_value errorValue = CreatePromiseError(env, ret,
-            ret == ERR_NOT_SUPPORTED ? "Effect is not supported in this device" : "");
+        napi_value errorValue = CreateEffectOperationErrorValue(env, ret, "SetAudioSeparationEffectVolume");
         napi_reject_deferred(env, deferred, errorValue);
     }
 
@@ -440,7 +438,6 @@ napi_value NapiAudioEffectMgr::OnAudioSeparationEffectEnabledChange(napi_env env
 
 napi_value NapiAudioEffectMgr::OffAudioSeparationEffectEnabledChange(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("sbfl, napi_audio_effect_manager, OffAudioSeparationEffectEnabledChange");
     const size_t minArgc = PARAM0;
     size_t argc = ARGS_ONE;
     napi_value undefinedResult = nullptr;
@@ -449,27 +446,21 @@ napi_value NapiAudioEffectMgr::OffAudioSeparationEffectEnabledChange(napi_env en
     napi_value args[ARGS_ONE] = {nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("Off fail to napi_get_cb_info");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "invalid arguments");
-        return undefinedResult;
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID, "invalid arguments"),
+        "Off fail to napi_get_cb_info");
 
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     NapiAudioEffectMgr *napiEffectMgr = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiEffectMgr));
-    if ((status != napi_ok) || (napiEffectMgr == nullptr) ||
-        (napiEffectMgr->audioEffectMngr_ == nullptr)) {
-        AUDIO_ERR_LOG("Failed to retrieve audio effect manager napi instance.");
-        return undefinedResult;
-    }
+    CHECK_AND_RETURN_RET_LOG((status == napi_ok) && (napiEffectMgr != nullptr) &&
+        (napiEffectMgr->audioEffectMngr_ != nullptr),
+        undefinedResult, "Failed to retrieve audio effect manager napi instance.");
 
-    if (!napiEffectMgr->audioSeparationEffectEnabledChangeCallbackNapi_) {
-        AUDIO_ERR_LOG("audioSeparationEffectEnabledChangeCallbackNapi_ is nullptr");
-        return undefinedResult;
-    }
+    CHECK_AND_RETURN_RET_LOG(napiEffectMgr->audioSeparationEffectEnabledChangeCallbackNapi_ != nullptr,
+        undefinedResult, "audioSeparationEffectEnabledChangeCallbackNapi_ is nullptr");
 
     std::shared_ptr<NapiAudioSeparationEffectEnabledChangeCallback> cb =
         std::static_pointer_cast<NapiAudioSeparationEffectEnabledChangeCallback>
@@ -478,28 +469,28 @@ napi_value NapiAudioEffectMgr::OffAudioSeparationEffectEnabledChange(napi_env en
     if (argc == minArgc) {
         cb->RemoveAllAudioSeparationEffectEnabledChangeCallbackReference();
         int32_t ret = napiEffectMgr->audioEffectMngr_->OffAudioSeparationEffectEnabledChange();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-            undefinedResult, "NapiAudioEffectMgr: Unregistering of Audio Separation Effect Enabled Change Callback Failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
+            "NapiAudioEffectMgr: Unregistering of Audio Separation Effect Enabled Change Callback Failed");
         napiEffectMgr->audioSeparationEffectEnabledChangeCallbackNapi_ = nullptr;
         AUDIO_INFO_LOG("Unregister all audio separation effect enabled callbacks successful");
-    } else {
-        napi_valuetype valueType = napi_undefined;
-        napi_typeof(env, args[PARAM0], &valueType);
-        if (valueType != napi_function) {
-            NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
-                "incorrect parameter types: The type of callback must be function");
-            return undefinedResult;
-        }
-        
-        cb->RemoveAudioSeparationEffectEnabledChangeCallbackReference(env, args[PARAM0]);
-        if (cb->GetAudioSeparationEffectEnabledChangeCbListSize() == 0) {
-            int32_t ret = napiEffectMgr->audioEffectMngr_->OffAudioSeparationEffectEnabledChange();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
-                "NapiAudioEffectMgr: Unregistering of Audio Separation Effect Enabled Change Callback Failed");
-            napiEffectMgr->audioSeparationEffectEnabledChangeCallbackNapi_ = nullptr;
-        }
-        AUDIO_INFO_LOG("Unregister specific audio separation effect enabled callback successful");
+        return undefinedResult;
     }
+
+    napi_valuetype valueType = napi_undefined;
+    status = napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && valueType == napi_function,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of callback must be function"),
+        "Type mismatch for callback");
+
+    cb->RemoveAudioSeparationEffectEnabledChangeCallbackReference(env, args[PARAM0]);
+    if (cb->GetAudioSeparationEffectEnabledChangeCbListSize() == 0) {
+        int32_t ret = napiEffectMgr->audioEffectMngr_->OffAudioSeparationEffectEnabledChange();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
+            "NapiAudioEffectMgr: Unregistering of Audio Separation Effect Enabled Change Callback Failed");
+        napiEffectMgr->audioSeparationEffectEnabledChangeCallbackNapi_ = nullptr;
+    }
+    AUDIO_INFO_LOG("Unregister specific audio separation effect enabled callback successful");
 
     return undefinedResult;
 }
