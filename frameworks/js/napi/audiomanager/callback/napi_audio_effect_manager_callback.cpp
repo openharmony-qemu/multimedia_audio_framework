@@ -50,7 +50,7 @@ void NapiAudioSeparationEffectEnabledChangeCallback::CreateSeparationEffectEnabl
     std::string callbackName = "AudioSeparationEffectEnabledChange";
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_create_threadsafe_function(env_, nullptr, nullptr, cbName, 0, 1, nullptr,
-        AudioSeparationEffectEnabledTsfnFinalize, nullptr, 
+        AudioSeparationEffectEnabledTsfnFinalize, nullptr,
         SafeJsCallbackAudioSeparationEffectEnabledWork, &amSeparationEffectEnableTsfn_);
 }
 
@@ -70,7 +70,7 @@ void NapiAudioSeparationEffectEnabledChangeCallback::SaveAudioSeparationEffectEn
     for (auto it = audioSeparationEffectEnabledChangeCbList_.begin();
         it != audioSeparationEffectEnabledChangeCbList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
-        CHECK_AND_RETURN_LOG(!isSameCallback, 
+        CHECK_AND_RETURN_LOG(!isSameCallback,
             "SaveCallbackReference: audio effect manager has same callback");
     }
 
@@ -79,7 +79,7 @@ void NapiAudioSeparationEffectEnabledChangeCallback::SaveAudioSeparationEffectEn
         "NapiAudioSeparationEffectEnabledChangeCallback: creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
-    CHECK_AND_RETURN_LOG(cb != nullptr, 
+    CHECK_AND_RETURN_LOG(cb != nullptr,
         "NapiAudioSeparationEffectEnabledChangeCallback: creating callback failed");
 
     audioSeparationEffectEnabledChangeCbList_.push_back(cb);
@@ -141,7 +141,7 @@ void NapiAudioSeparationEffectEnabledChangeCallback::OnAudioSeparationEffectEnab
 void NapiAudioSeparationEffectEnabledChangeCallback::SafeJsCallbackAudioSeparationEffectEnabledWork(
     napi_env env, napi_value js_cb, void *context, void *data)
 {
-    AudioSeparationEffectEnabledJsCallback *event = 
+    AudioSeparationEffectEnabledJsCallback *event =
         reinterpret_cast<AudioSeparationEffectEnabledJsCallback *>(data);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackAudioSeparationEffectEnabled: no memory");

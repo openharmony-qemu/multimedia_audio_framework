@@ -56,7 +56,7 @@ private:
     AudioEffectManager *audioEffectMngr_;
     int32_t cachedClientId_ = -1;
     
-    std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> 
+    std::shared_ptr<AudioSeparationEffectEnabledChangeCallback>
         audioSeparationEffectEnabledChangeCallbackNapi_ = nullptr;
 };
 } // namespace AudioStandard

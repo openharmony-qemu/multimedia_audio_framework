@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-inline const std::string AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE_CALLBACK_NAME = 
+inline const std::string AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE_CALLBACK_NAME =
     "audioSeparationEffectEnabledChange";
 
 class NapiAudioSeparationEffectEnabledChangeCallback : public AudioSeparationEffectEnabledChangeCallback {

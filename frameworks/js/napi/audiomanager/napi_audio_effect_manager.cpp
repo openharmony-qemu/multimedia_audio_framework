@@ -272,7 +272,6 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, nap
         napiEffectMgr->audioEffectMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "parameter verification failed: mandatory parameters are left unspecified"),
         "argcCount invalid");
-
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_boolean, NapiAudioError::ThrowErrorAndReturn(env,
@@ -283,18 +282,15 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, nap
     napi_status status = NapiParamUtils::GetValueBoolean(env, enabled, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "parameter verification failed"), "get enabled failed");
-
     valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of uid must be number"),
         "invaild valueType");
-
     int32_t uid = 0;
     status = NapiParamUtils::GetValueInt32(env, uid, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "parameter verification failed"), "get uid failed");
-
     int64_t streamId = -1;
     if (argc == ARGS_THREE) {
         status = NapiParamUtils::GetValueInt64(env, streamId, args[PARAM2]);
@@ -302,16 +298,11 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, nap
             NAPI_ERR_INVALID_PARAM, "parameter verification failed"), "get streamId failed");
     }
 
-    // Create Promise
     napi_value promise = nullptr;
     napi_deferred deferred = nullptr;
     napi_status promiseStatus = napi_create_promise(env, &deferred, &promise);
     CHECK_AND_RETURN_RET_LOG(promiseStatus == napi_ok, nullptr, "create promise failed");
-
-    // Call Native API
     int32_t ret = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectEnabled(enabled, uid, streamId);
-    
-    // Resolve or Reject Promise based on result
     if (ret == AUDIO_OK) {
         AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled success, resolving promise");
         napi_resolve_deferred(env, deferred, nullptr);
@@ -347,20 +338,17 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of type must be number"),
         "invaild valueType");
-
     int32_t typeValue = 0;
     napi_status status = NapiParamUtils::GetValueInt32(env, typeValue, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && typeValue == VOLUME_TYPE_VOCAL,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: type value must be VOLUME_TYPE_VOCAL"),
         "get type failed");
-
     valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of volume must be number"),
         "invaild valueType");
-
     double volume = 0.0;
     status = NapiParamUtils::GetValueDouble(env, volume, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && volume >= 0.0 && volume <= 1.0,
@@ -368,17 +356,12 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
         "parameter verification failed: volume range is [0.0, 1.0]"),
         "get volume failed");
 
-    // Create Promise
     napi_value promise = nullptr;
     napi_deferred deferred = nullptr;
     napi_status promiseStatus = napi_create_promise(env, &deferred, &promise);
     CHECK_AND_RETURN_RET_LOG(promiseStatus == napi_ok, nullptr, "create promise failed");
-
-    // Call Native API
     AudioSeparationVolumeType volumeType = static_cast<AudioSeparationVolumeType>(typeValue);
     int32_t ret = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectVolume(volumeType, volume);
-    
-    // Resolve or Reject Promise based on result
     if (ret == AUDIO_OK) {
         AUDIO_INFO_LOG("SetAudioSeparationEffectVolume success, resolving promise");
         napi_resolve_deferred(env, deferred, nullptr);
@@ -439,8 +422,8 @@ napi_value NapiAudioEffectMgr::OnAudioSeparationEffectEnabledChange(napi_env env
 
         int32_t ret = napiEffectMgr->audioEffectMngr_->OnAudioSeparationEffectEnabledChange(
             napiEffectMgr->audioSeparationEffectEnabledChangeCallbackNapi_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-            undefinedResult, "NapiAudioEffectMgr: Registering of Audio Separation Effect Enabled Change Callback Failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
+            "NapiAudioEffectMgr: Registering of Audio Separation Effect Enabled Change Callback Failed");
     }
 
     std::shared_ptr<NapiAudioSeparationEffectEnabledChangeCallback> cb =
@@ -511,8 +494,8 @@ napi_value NapiAudioEffectMgr::OffAudioSeparationEffectEnabledChange(napi_env en
         cb->RemoveAudioSeparationEffectEnabledChangeCallbackReference(env, args[PARAM0]);
         if (cb->GetAudioSeparationEffectEnabledChangeCbListSize() == 0) {
             int32_t ret = napiEffectMgr->audioEffectMngr_->OffAudioSeparationEffectEnabledChange();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                undefinedResult, "NapiAudioEffectMgr: Unregistering of Audio Separation Effect Enabled Change Callback Failed");
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
+                "NapiAudioEffectMgr: Unregistering of Audio Separation Effect Enabled Change Callback Failed");
             napiEffectMgr->audioSeparationEffectEnabledChangeCallbackNapi_ = nullptr;
         }
         AUDIO_INFO_LOG("Unregister specific audio separation effect enabled callback successful");
