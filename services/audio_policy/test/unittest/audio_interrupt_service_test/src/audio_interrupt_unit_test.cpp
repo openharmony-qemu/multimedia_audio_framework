@@ -1069,22 +1069,39 @@ HWTEST_F(AudioInterruptUnitTest, GetStreamInFocus_Standby_001, TestSize.Level1)
 /**
 * @tc.name  : Test UpdateStreamFocusStateToStandby.
 * @tc.number: UpdateStreamFocusStateToStandby_001
-* @tc.desc  : Test UpdateStreamFocusStateToStandby with ACTIVE and DUCK states.
+* @tc.desc  : Test UpdateStreamFocusStateToStandby with ACTIVE state.
 */
 HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateToStandby_001, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
     interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 100;
     audioInterrupt.pid = 1001;
-    
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(audioInterrupt, ACTIVE);
     EXPECT_EQ(interruptServiceTest->UpdateStreamFocusStateToStandby(1001, 100), SUCCESS);
-    
-    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.clear();
+}
+
+/**
+* @tc.name  : Test UpdateStreamFocusStateToStandby with DUCK state.
+* @tc.number: UpdateStreamFocusStateToStandby_002
+* @tc.desc  : Test UpdateStreamFocusStateToStandby with DUCK state.
+*/
+HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateToStandby_002, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 100;
+    audioInterrupt.pid = 1001;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(audioInterrupt, DUCK);
     EXPECT_EQ(interruptServiceTest->UpdateStreamFocusStateToStandby(1001, 100), SUCCESS);
 }
@@ -1098,11 +1115,13 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateToActive_001, TestSize.Le
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
     interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 100;
     audioInterrupt.pid = 1001;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(audioInterrupt, STANDBY);
     EXPECT_EQ(interruptServiceTest->UpdateStreamFocusStateToActive(1001, 100), SUCCESS);
 }
@@ -1159,7 +1178,7 @@ HWTEST_F(AudioInterruptUnitTest, ProcessActiveInterrupt_Standby_001, TestSize.Le
 /**
 * @tc.name  : Test GetHighestPriorityAudioSceneFromAudioSession with STANDBY.
 * @tc.number: GetHighestPriorityAudioSceneFromAudioSession_Standby_001
-* @tc.desc  : Test GetHighestPriorityAudioSceneFromAudioSession skips STANDBY streams in session.
+* @tc.desc  : Test GetHighestPriorityAudioSceneFromAudioSession skips STANDBY streams and returns AUDIO_SCENE_DEFAULT.
 */
 HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAudioSession_Standby_001, TestSize.Level1)
 {
@@ -1191,7 +1210,7 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAudioSession_St
     audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     
     AudioScene scene = interruptServiceTest->GetHighestPriorityAudioSceneFromAudioSession(audioInterrupt, AUDIO_SCENE_DEFAULT);
-    EXPECT_NE(scene, AUDIO_SCENE_RINGING);
+    EXPECT_EQ(scene, AUDIO_SCENE_DEFAULT);
     
     interruptServiceTest->sessionService_.DeactivateAudioSession(pid);
 }
@@ -1199,7 +1218,7 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAudioSession_St
 /**
 * @tc.name  : Test GetHighestPriorityAudioScene with STANDBY.
 * @tc.number: GetHighestPriorityAudioScene_Standby_001
-* @tc.desc  : Test GetHighestPriorityAudioScene skips STANDBY streams.
+* @tc.desc  : Test GetHighestPriorityAudioScene skips STANDBY streams and returns scene from ACTIVE stream.
 */
 HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioScene_Standby_001, TestSize.Level1)
 {
@@ -1211,15 +1230,29 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioScene_Standby_001, TestS
     AudioInterrupt standbyInterrupt;
     standbyInterrupt.streamId = 100;
     standbyInterrupt.isAudioSessionInterrupt = true;
+    standbyInterrupt.pid = 1001;
+    standbyInterrupt.audioFocusType.streamType = STREAM_RING;
+    standbyInterrupt.audioFocusType.isPlay = true;
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(standbyInterrupt, STANDBY);
     
     AudioInterrupt activeInterrupt;
     activeInterrupt.streamId = 200;
     activeInterrupt.isAudioSessionInterrupt = true;
+    activeInterrupt.pid = 1001;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    activeInterrupt.audioFocusType.isPlay = true;
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(activeInterrupt, ACTIVE);
     
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    interruptServiceTest->sessionService_.ActivateAudioSession(1001, strategy);
+    interruptServiceTest->sessionService_.sessionMap_[1001]->AddStreamInfo({standbyInterrupt, STANDBY});
+    interruptServiceTest->sessionService_.sessionMap_[1001]->AddStreamInfo({activeInterrupt, ACTIVE});
+    
     AudioScene scene = interruptServiceTest->GetHighestPriorityAudioScene(0);
-    EXPECT_NE(scene, AUDIO_SCENE_INVALID);
+    EXPECT_EQ(scene, AUDIO_SCENE_DEFAULT);
+    
+    interruptServiceTest->sessionService_.DeactivateAudioSession(1001);
 }
 
 /**
