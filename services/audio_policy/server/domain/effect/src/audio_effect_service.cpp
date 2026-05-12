@@ -22,6 +22,7 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "i_hpae_manager.h"
+#include <cinttypes>
 
 namespace OHOS {
 namespace AudioStandard {
