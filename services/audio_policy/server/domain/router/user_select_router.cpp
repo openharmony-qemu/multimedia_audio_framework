@@ -148,6 +148,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
     }
     vector<shared_ptr<AudioDeviceDescriptor>> recordDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
+    
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_INPUT_DEVICES, perDev_)) {
         AUDIO_DEBUG_LOG(" PreferredRecordCaptureDevice is null or device is not available now");
         return make_shared<AudioDeviceDescriptor>();
