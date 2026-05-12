@@ -85,8 +85,8 @@ private:
     int32_t GetAdapterBufferInfo();
     void InitAudiobuffer(bool resetReadWritePos);
     void AsyncGetPosTime();
- 	void StopUpdateThread();
- 	bool ResetReadPosition();
+    void StopUpdateThread();
+    bool ResetReadPosition();
     bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     void CheckWakeUpTime(int64_t &wakeUpTime);

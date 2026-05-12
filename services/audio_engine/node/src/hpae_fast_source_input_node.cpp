@@ -243,7 +243,7 @@ int32_t HpaeFastSourceInputNode::CapturerSourceResume(void)
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Resume() == SUCCESS, ERROR, "Source resume fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     stopUpdateThread_.store(false);
- 	AsyncGetPosTime();
+    AsyncGetPosTime();
     needReSyncPosition_ = true;
     return SUCCESS;
 }
@@ -256,7 +256,7 @@ int32_t HpaeFastSourceInputNode::CapturerSourceStart(void)
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     stopUpdateThread_.store(false);
- 	AsyncGetPosTime();
+    AsyncGetPosTime();
     needReSyncPosition_ = true;
     return SUCCESS;
 }
