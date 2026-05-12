@@ -1256,7 +1256,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
         currAudioInterrupt.streamUsage, incomingSourceType);
 
-    if (AudioInterruptIsStandbyInFocusList(zoneId, incomingSessionId) ||
+    if (AudioInterruptIsStandbyInFocusList(zoneId, incomingStreamId) ||
             (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy)) {
         HILOG_COMM_INFO("[ActivateAudioInterruptInternal]Stream is active or standby in focus list, no need to"
             " active audio interrupt.");
