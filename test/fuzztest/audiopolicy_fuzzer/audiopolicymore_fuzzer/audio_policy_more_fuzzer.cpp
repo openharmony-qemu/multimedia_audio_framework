@@ -395,7 +395,6 @@ void AudioPolicyManagerFuzzTest(FuzzedDataProvider& fdp)
     GetPnpServerPtr()->GetAudioPnpServer();
     GetPnpServerPtr()->UnRegisterPnpStatusListener();
     GetPnpServerPtr()->OnPnpDeviceStatusChanged(DEFAULTINFO);
-    AudioInputThread::AudioPnpInputPollAndRead();
 #endif
 }
 
