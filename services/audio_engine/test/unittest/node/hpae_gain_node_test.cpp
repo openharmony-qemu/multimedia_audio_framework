@@ -191,6 +191,16 @@ HWTEST_F(HpaeGainNodeTest, testDoCollFade, TestSize.Level0)
 
 static constexpr uint32_t UT_SESSION_ID = 9999;
 static constexpr uint32_t UT_PIPE_ID = 0;
+static constexpr int32_t UT_UID = 1000;
+static constexpr int32_t UT_PID = 1000;
+static constexpr int32_t UT_VOLUME_MODE = 0;
+static constexpr int32_t UT_VOLUME_LEVEL = 100;
+static constexpr float UT_UNIT_GAIN = 1.0f;
+static constexpr float UT_HALF_GAIN = 0.5f;
+static constexpr float UT_PRECISION = 0.001f;
+static constexpr float UT_GAIN_PRECISION = 0.01f;
+static const std::string UT_DEVICE_CLASS_PRIMARY = "primary";
+static const std::string UT_DEVICE_CLASS_INNER_CAPTURER = "libmodule-inner-capturer-sink.z.so";
 
 static void SetupStreamAndPipeVolume(uint32_t sessionId, float streamVol, float pipeVol)
 {
@@ -199,15 +209,31 @@ static void SetupStreamAndPipeVolume(uint32_t sessionId, float streamVol, float 
     params.sessionId = sessionId;
     params.streamType = STREAM_MUSIC;
     params.streamUsage = STREAM_USAGE_MUSIC;
-    params.uid = 1000;
-    params.pid = 1000;
+    params.uid = UT_UID;
+    params.pid = UT_PID;
     params.isSystemApp = false;
-    params.mode = 0;
+    params.mode = UT_VOLUME_MODE;
     params.isVKB = false;
     audioVolume->AddStreamVolume(params);
     audioVolume->SetStreamVolume(sessionId, streamVol);
-    PipeVolume pipeVolume(UT_PIPE_ID, STREAM_MUSIC, pipeVol, 100, false);
+    PipeVolume pipeVolume(UT_PIPE_ID, STREAM_MUSIC, pipeVol, UT_VOLUME_LEVEL, false);
     audioVolume->SetPipeVolume(pipeVolume);
+}
+
+static void SetupStreamVolumeOnly(uint32_t sessionId, float streamVol)
+{
+    auto *audioVolume = AudioVolume::GetInstance();
+    StreamVolumeParams params;
+    params.sessionId = sessionId;
+    params.streamType = STREAM_MUSIC;
+    params.streamUsage = STREAM_USAGE_MUSIC;
+    params.uid = UT_UID;
+    params.pid = UT_PID;
+    params.isSystemApp = false;
+    params.mode = UT_VOLUME_MODE;
+    params.isVKB = false;
+    audioVolume->AddStreamVolume(params);
+    audioVolume->SetStreamVolume(sessionId, streamVol);
 }
 
 static void CleanupStreamAndPipeVolume(uint32_t sessionId)
@@ -215,6 +241,15 @@ static void CleanupStreamAndPipeVolume(uint32_t sessionId)
     auto *audioVolume = AudioVolume::GetInstance();
     audioVolume->RemoveStreamVolume(sessionId);
     audioVolume->RemovePipeVolume(UT_PIPE_ID, STREAM_MUSIC);
+}
+
+static void FillBuffer(HpaePcmBuffer &buf, float value)
+{
+    float *data = buf.GetPcmDataBuffer();
+    size_t totalSamples = buf.GetFrameLen() * buf.GetChannelCount();
+    for (size_t i = 0; i < totalSamples; i++) {
+        data[i] = value;
+    }
 }
 
 HWTEST_F(HpaeGainNodeTest, ResetVolume_CacheStreamAndPipeVolume_Normal, TestSize.Level0)
@@ -226,11 +261,11 @@ HWTEST_F(HpaeGainNodeTest, ResetVolume_CacheStreamAndPipeVolume_Normal, TestSize
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.streamType = STREAM_MUSIC;
-    nodeInfo.deviceClass = "primary";
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
     nodeInfo.sessionId = UT_SESSION_ID;
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
 
-    SetupStreamAndPipeVolume(UT_SESSION_ID, 0.5f, 0.8f);
+    SetupStreamAndPipeVolume(UT_SESSION_ID, UT_HALF_GAIN, 0.8f);
     hpaeGainNode->ResetVolume();
 
     EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
@@ -241,6 +276,7 @@ HWTEST_F(HpaeGainNodeTest, ResetVolume_CacheStreamAndPipeVolume_Normal, TestSize
 
 HWTEST_F(HpaeGainNodeTest, ResetVolume_CacheStreamOnly_InnerCapturer, TestSize.Level0)
 {
+    constexpr uint32_t sessionId = UT_SESSION_ID + 1;
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = DEFAULT_FRAME_LEN;
@@ -248,33 +284,22 @@ HWTEST_F(HpaeGainNodeTest, ResetVolume_CacheStreamOnly_InnerCapturer, TestSize.L
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.streamType = STREAM_MUSIC;
-    nodeInfo.deviceClass = "libmodule-inner-capturer-sink.z.so";
-    nodeInfo.sessionId = UT_SESSION_ID + 1;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.sessionId = sessionId;
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
     EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
 
-    auto *audioVolume = AudioVolume::GetInstance();
-    StreamVolumeParams params;
-    params.sessionId = UT_SESSION_ID + 1;
-    params.streamType = STREAM_MUSIC;
-    params.streamUsage = STREAM_USAGE_MUSIC;
-    params.uid = 1000;
-    params.pid = 1000;
-    params.isSystemApp = false;
-    params.mode = 0;
-    params.isVKB = false;
-    audioVolume->AddStreamVolume(params);
-    audioVolume->SetStreamVolume(UT_SESSION_ID + 1, 0.6f);
-
+    SetupStreamVolumeOnly(sessionId, 0.6f);
     hpaeGainNode->ResetVolume();
 
     EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
 
-    audioVolume->RemoveStreamVolume(UT_SESSION_ID + 1);
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
 }
 
 HWTEST_F(HpaeGainNodeTest, DoGain_NormalUsesCachedVolume, TestSize.Level0)
 {
+    constexpr uint32_t sessionId = UT_SESSION_ID + 2;
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = DEFAULT_FRAME_LEN;
@@ -282,35 +307,33 @@ HWTEST_F(HpaeGainNodeTest, DoGain_NormalUsesCachedVolume, TestSize.Level0)
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.streamType = STREAM_MUSIC;
-    nodeInfo.deviceClass = "primary";
-    nodeInfo.sessionId = UT_SESSION_ID + 2;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
 
-    SetupStreamAndPipeVolume(UT_SESSION_ID + 2, 1.0f, 1.0f);
+    SetupStreamAndPipeVolume(sessionId, UT_UNIT_GAIN, UT_UNIT_GAIN);
     hpaeGainNode->ResetVolume();
     ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
     ASSERT_NE(hpaeGainNode->pipeVolume_, nullptr);
 
-    // Create buffer filled with 1.0f, gain=1.0 should keep values unchanged
     PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
     HpaePcmBuffer inputBuf(bufInfo);
-    float *data = inputBuf.GetPcmDataBuffer();
-    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
-    for (size_t i = 0; i < totalSamples; i++) {
-        data[i] = 1.0f;
-    }
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
 
     hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
 
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
     for (size_t i = 0; i < totalSamples; i++) {
-        EXPECT_NEAR(data[i], 1.0f, 0.001f);
+        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], UT_UNIT_GAIN, UT_PRECISION);
     }
 
-    CleanupStreamAndPipeVolume(UT_SESSION_ID + 2);
+    CleanupStreamAndPipeVolume(sessionId);
 }
 
 HWTEST_F(HpaeGainNodeTest, DoGain_NormalAppliesGain, TestSize.Level0)
 {
+    constexpr uint32_t sessionId = UT_SESSION_ID + 3;
+    constexpr float expectedGain = UT_HALF_GAIN * UT_HALF_GAIN; // pipe * stream
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = DEFAULT_FRAME_LEN;
@@ -318,35 +341,31 @@ HWTEST_F(HpaeGainNodeTest, DoGain_NormalAppliesGain, TestSize.Level0)
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.streamType = STREAM_MUSIC;
-    nodeInfo.deviceClass = "primary";
-    nodeInfo.sessionId = UT_SESSION_ID + 3;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
 
-    SetupStreamAndPipeVolume(UT_SESSION_ID + 3, 0.5f, 0.5f);
+    SetupStreamAndPipeVolume(sessionId, UT_HALF_GAIN, UT_HALF_GAIN);
     hpaeGainNode->ResetVolume();
     ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
     ASSERT_NE(hpaeGainNode->pipeVolume_, nullptr);
 
     PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
     HpaePcmBuffer inputBuf(bufInfo);
-    float *data = inputBuf.GetPcmDataBuffer();
-    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
-    for (size_t i = 0; i < totalSamples; i++) {
-        data[i] = 1.0f;
-    }
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
 
     hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
 
-    // With stream vol=0.5 and pipe vol=0.5, total gain = pipe * stream = 0.25
-    // Since history volume starts at 0, there will be a ramp from 0 to 0.25
-    // Last sample should be close to 0.25
-    EXPECT_NEAR(data[totalSamples - 1], 0.25f, 0.01f);
+    // History volume starts at 0, ramp from 0 to expectedGain, last sample close to expectedGain
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
+    EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[totalSamples - 1], expectedGain, UT_GAIN_PRECISION);
 
-    CleanupStreamAndPipeVolume(UT_SESSION_ID + 3);
+    CleanupStreamAndPipeVolume(sessionId);
 }
 
 HWTEST_F(HpaeGainNodeTest, DoGain_InnerCapturerUsesStreamVolumeOnly, TestSize.Level0)
 {
+    constexpr uint32_t sessionId = UT_SESSION_ID + 4;
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = DEFAULT_FRAME_LEN;
@@ -354,47 +373,33 @@ HWTEST_F(HpaeGainNodeTest, DoGain_InnerCapturerUsesStreamVolumeOnly, TestSize.Le
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.streamType = STREAM_MUSIC;
-    nodeInfo.deviceClass = "libmodule-inner-capturer-sink.z.so";
-    nodeInfo.sessionId = UT_SESSION_ID + 4;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.sessionId = sessionId;
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
     EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
 
-    auto *audioVolume = AudioVolume::GetInstance();
-    StreamVolumeParams params;
-    params.sessionId = UT_SESSION_ID + 4;
-    params.streamType = STREAM_MUSIC;
-    params.streamUsage = STREAM_USAGE_MUSIC;
-    params.uid = 1000;
-    params.pid = 1000;
-    params.isSystemApp = false;
-    params.mode = 0;
-    params.isVKB = false;
-    audioVolume->AddStreamVolume(params);
-    audioVolume->SetStreamVolume(UT_SESSION_ID + 4, 1.0f);
-
+    SetupStreamVolumeOnly(sessionId, UT_UNIT_GAIN);
     hpaeGainNode->ResetVolume();
     ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
 
     PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
     HpaePcmBuffer inputBuf(bufInfo);
-    float *data = inputBuf.GetPcmDataBuffer();
-    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
-    for (size_t i = 0; i < totalSamples; i++) {
-        data[i] = 1.0f;
-    }
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
 
     hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
 
     // Inner capturer reads GetTotalVolume() directly (stream only, no pipe factor)
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
     for (size_t i = 0; i < totalSamples; i++) {
-        EXPECT_NEAR(data[i], 1.0f, 0.001f);
+        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], UT_UNIT_GAIN, UT_PRECISION);
     }
 
-    audioVolume->RemoveStreamVolume(UT_SESSION_ID + 4);
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
 }
 
 HWTEST_F(HpaeGainNodeTest, DoGain_NullPtrDefaultsToUnitGain, TestSize.Level0)
 {
+    constexpr uint32_t sessionId = UT_SESSION_ID + 5;
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = DEFAULT_FRAME_LEN;
@@ -402,8 +407,8 @@ HWTEST_F(HpaeGainNodeTest, DoGain_NullPtrDefaultsToUnitGain, TestSize.Level0)
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.streamType = STREAM_MUSIC;
-    nodeInfo.deviceClass = "primary";
-    nodeInfo.sessionId = UT_SESSION_ID + 5;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
 
     // Do NOT call ResetVolume, streamVolume_ and pipeVolume_ remain nullptr
@@ -412,17 +417,196 @@ HWTEST_F(HpaeGainNodeTest, DoGain_NullPtrDefaultsToUnitGain, TestSize.Level0)
 
     PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
     HpaePcmBuffer inputBuf(bufInfo);
-    float *data = inputBuf.GetPcmDataBuffer();
-    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
-    for (size_t i = 0; i < totalSamples; i++) {
-        data[i] = 1.0f;
-    }
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
 
     hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
 
     // With nullptr, gain defaults to 1.0f, data should remain unchanged
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
     for (size_t i = 0; i < totalSamples; i++) {
-        EXPECT_NEAR(data[i], 1.0f, 0.001f);
+        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], UT_UNIT_GAIN, UT_PRECISION);
     }
+}
+
+HWTEST_F(HpaeGainNodeTest, ResetVolume_InnerCapturer_StreamVolumeNull, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 6;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
+
+    // Do NOT set up any stream volume → GetStreamAndPipeVolume fails, streamVolume_ stays nullptr
+    hpaeGainNode->ResetVolume();
+
+    EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
+}
+
+HWTEST_F(HpaeGainNodeTest, ResetVolume_Normal_PipeVolumeNull, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 7;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // Only set stream volume, no pipe volume → pipeVolume_ stays nullptr
+    SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);
+    hpaeGainNode->ResetVolume();
+
+    EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_EQ(hpaeGainNode->pipeVolume_, nullptr);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+HWTEST_F(HpaeGainNodeTest, DoGain_InnerCapturer_AppliesGain, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 8;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
+
+    SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);
+    hpaeGainNode->ResetVolume();
+    ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer inputBuf(bufInfo);
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
+
+    hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
+
+    // ResetVolume set history=0.5, DoGain reads cur=0.5 pre=0.5, no ramp, scale by 0.5
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
+    for (size_t i = 0; i < totalSamples; i++) {
+        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], UT_HALF_GAIN, UT_PRECISION);
+    }
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+HWTEST_F(HpaeGainNodeTest, DoGain_InnerCapturer_ZeroVolumeSilence, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 9;
+    constexpr float zeroVolume = 0.0f;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
+
+    SetupStreamVolumeOnly(sessionId, zeroVolume);
+    hpaeGainNode->ResetVolume();
+    ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer inputBuf(bufInfo);
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
+
+    hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
+
+    // curGain=0 and preGain=0 → SilenceData path, buffer should be zeroed
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
+    for (size_t i = 0; i < totalSamples; i++) {
+        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], zeroVolume, UT_PRECISION);
+    }
+    EXPECT_EQ(inputBuf.IsSilence(), true);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+HWTEST_F(HpaeGainNodeTest, DoGain_InnerCapturer_StreamVolumeNull, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 10;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
+
+    // No stream volume set → ResetVolume leaves streamVolume_=nullptr
+    hpaeGainNode->ResetVolume();
+    EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer inputBuf(bufInfo);
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
+
+    hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
+
+    // streamVolume_ is nullptr → defaults to 1.0f, data unchanged
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
+    for (size_t i = 0; i < totalSamples; i++) {
+        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], UT_UNIT_GAIN, UT_PRECISION);
+    }
+}
+
+HWTEST_F(HpaeGainNodeTest, DoGain_Normal_PipeVolumeNull, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 11;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // Only set stream volume, no pipe → pipeVolume_=nullptr after ResetVolume
+    SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);
+    hpaeGainNode->ResetVolume();
+    ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
+    ASSERT_EQ(hpaeGainNode->pipeVolume_, nullptr);
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer inputBuf(bufInfo);
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
+
+    hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
+
+    // pipeVolume_ is nullptr → !(streamVolume_ && pipeVolume_) → defaults to 1.0f
+    size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
+    for (size_t i = 0; i < totalSamples; i++) {
+        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], UT_UNIT_GAIN, UT_PRECISION);
+    }
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
 }
 }  // namespace
