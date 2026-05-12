@@ -47,6 +47,7 @@ int32_t HpaePcmDumper::Dump(const int8_t *buffer, int32_t length)
 
 bool HpaePcmDumper::CheckAndReopenHandle()
 {
+    CHECK_AND_RETURN_RET(AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION, false);
     if (dumpFile_ != nullptr) {
         return true;
     } else {
