@@ -868,11 +868,14 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     return action;
 }
 
-bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &targetStream)
+bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    const std::shared_ptr<AudioStreamDescriptor> &incomingStream,
+    const std::shared_ptr<AudioStreamDescriptor> &targetStream)
 {
     CHECK_AND_RETURN_RET_LOG(targetStream != nullptr, false, "targetStream is nullptr");
     CHECK_AND_RETURN_RET_LOG(!targetStream->IsLoopbackStream(), false,
         "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
+    CHECK_AND_RETURN_RET(IsUpdateActionForDeviceLevelHdPlay(existingStream, incomingStream), false);
     return true;
 }
 
@@ -883,7 +886,7 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
 
     std::shared_ptr<AudioStreamDescriptor> targetStream =
         (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
-    CHECK_AND_RETURN(ShouldAdjustConcedeAction(targetStream));
+    CHECK_AND_RETURN(ShouldAdjustConcedeAction(existingStream, incomingStream, targetStream));
 
     bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(targetStream->sessionId_);
     // Stream is in persistenly pasued state, unrelated to trigger recreation.
@@ -1432,12 +1435,12 @@ int32_t AudioPipeSelector::SetCustomAudioMix(const std::string &zoneName, const 
 void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
-    CHECK_AND_RETURN(!existingStream->newDeviceDescs_.empty() && !incomingStream->newDeviceDescs_.empty(),
-        "newDeviceDescs_ empty");
-    auto existingHdPlayMode = existingStream->newDeviceDescs_[0]->hdPlaybackMode_;
-    auto incomingHdPlayMode = incomingStream->newDeviceDescs_[0]->hdPlaybackMode_;
+    CHECK_AND_RETURN_LOG(existingStream != nullptr && incomingStream != nullptr, "stream is nullptr");
+    auto existingHdPlayMode = existingStream->GetHdPlaybackMode();
+    auto incomingHdPlayMode = incomingStream->GetHdPlaybackMode();
     CHECK_AND_RETURN(existingHdPlayMode != HdPlaybackMode::HD_NOT_SUPPORTED &&
         incomingHdPlayMode != HdPlaybackMode::HD_NOT_SUPPORTED &&
+        (existingStream->IsRunning() && incomingStream->IsRunning()) &&
         (existingStream->IsRouteOffload() || incomingStream->IsRouteOffload()));
 
     ConcurrencyAction newAction = action;
@@ -1449,6 +1452,18 @@ void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescrip
     }
     AUDIO_INFO_LOG("old action: %{public}d, update as %{public}d", action, newAction);
     action = newAction;
+}
+
+bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(
+    const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    const std::shared_ptr<AudioStreamDescriptor> &incomingStream)
+{
+    CHECK_AND_RETURN_RET_LOG(existingStream != nullptr && incomingStream != nullptr, false, "stream is nullptr");
+    auto existingHdPlayMode = existingStream->GetHdPlaybackMode();
+    auto incomingHdPlayMode = incomingStream->GetHdPlaybackMode();
+    CHECK_AND_RETURN_RET_LOG(existingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL ||
+        incomingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL, false, "device level, not update action");
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS
