@@ -738,5 +738,236 @@ HWTEST(AudioPolicyUtilsUnitTest, ClearScoDeviceSuspendState_001, TestSize.Level1
     EXPECT_EQ(devMan.ExistsByType(DEVICE_TYPE_NEARLINK), true);
 }
 
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_001
+ * @tc.desc  : Test CheckInterphone with USB ARM headset (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_002
+ * @tc.desc  : Test CheckInterphone with earpiece (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_003
+ * @tc.desc  : Test CheckInterphone with hearing aid (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_HEARING_AID, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_004
+ * @tc.desc  : Test CheckInterphone with Bluetooth SCO watch (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->deviceCategory_ = BT_WATCH;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_005
+ * @tc.desc  : Test CheckInterphone with Bluetooth SCO hearing aid (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->deviceCategory_ = BT_HEARAID;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_006
+ * @tc.desc  : Test CheckInterphone with Bluetooth SCO (should return true)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_006, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->deviceCategory_ = CATEGORY_DEFAULT;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_007
+ * @tc.desc  : Test CheckInterphone with Nearlink (should return true)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->deviceCategory_ = CATEGORY_DEFAULT;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_008
+ * @tc.desc  : Test CheckInterphone with local speaker (should return true)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_008, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_009
+ * @tc.desc  : Test CheckInterphone with remote speaker (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_009, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = "remote_device_id";
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_010
+ * @tc.desc  : Test CheckInterphone with non-INTERPHONE usage (should return true)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_010, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_VOICE_COMMUNICATION, desc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_011
+ * @tc.desc  : Test CheckInterphone with nullptr descriptor (should return true)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_011, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_012
+ * @tc.desc  : Test CheckInterphone with paired device and local network (should return true)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_012, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->pairDeviceDescriptor_ = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN, DeviceRole::INPUT_DEVICE);
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_013
+ * @tc.desc  : Test CheckInterphone with paired device and remote network (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_013, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = "remote_device_id";
+    desc->pairDeviceDescriptor_ = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN, DeviceRole::INPUT_DEVICE);
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test CheckInterphone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_CheckInterphone_014
+ * @tc.desc  : Test CheckInterphone without paired device (should return false)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_CheckInterphone_014, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->pairDeviceDescriptor_ = nullptr;
+
+    bool result = AudioPolicyUtils::CheckInterphone(STREAM_USAGE_INTERPHONE, desc);
+    EXPECT_EQ(result, false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -573,7 +573,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 bool AudioPolicyService::IsVoipStreamUsage(StreamUsage streamUsage)
 {
     return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-           streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION;
+           streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_INTERPHONE;
 }
 
 void AudioPolicyService::SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,

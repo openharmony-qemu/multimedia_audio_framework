@@ -831,7 +831,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice
     }
 
     shared_ptr<AudioDeviceDescriptor> devDesc;
-    if (hasEarpiece_ && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION) {
+    if (hasEarpiece_ && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION && streamUsage != STREAM_USAGE_INTERPHONE) {
         devDesc = make_shared<AudioDeviceDescriptor>(earpiece_);
     } else {
         devDesc = make_shared<AudioDeviceDescriptor>(speaker_);

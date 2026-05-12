@@ -57,6 +57,8 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
+    CHECK_AND_RETURN_RET(AudioPolicyUtils::CheckInterphone(streamUsage, perDev_),
+        make_shared<AudioDeviceDescriptor>());
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(CALL_OUTPUT_DEVICES, perDev_)) {

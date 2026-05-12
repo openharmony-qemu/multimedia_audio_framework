@@ -862,6 +862,7 @@ AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage 
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_INTERPHONE:
             return CALL_OUTPUT_DEVICES;
         default:
             return MEDIA_OUTPUT_DEVICES;
@@ -1042,6 +1043,31 @@ void AudioPolicyUtils::ClearWirelessPreferredDevicesIfNeeded(PreferredType prefe
     } else if (preferredType == AUDIO_CALL_CAPTURE || preferredType == AUDIO_RECORD_CAPTURE) {
         ClearInputWirelessPreferred(desc, preferredType);
     }
+}
+
+bool AudioPolicyUtils::CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (desc && usage == STREAM_USAGE_INTERPHONE) {
+        AUDIO_INFO_LOG("id=%{public}d, type=%{public}d, isLocal=%{public}d, role=%{public}d, "
+            "pairId=%{public}d, pairType=%{public}d", desc->deviceId_, desc->deviceType_,
+            desc->networkId_ == LOCAL_NETWORK_ID, desc->deviceRole_,
+            desc->pairDeviceDescriptor_ ? desc->pairDeviceDescriptor_->deviceId_ : 0,
+            desc->pairDeviceDescriptor_ ? desc->pairDeviceDescriptor_->deviceType_ : 0);
+        switch (desc->deviceType_) {
+            case DEVICE_TYPE_USB_ARM_HEADSET:
+            case DEVICE_TYPE_EARPIECE:
+            case DEVICE_TYPE_HEARING_AID:
+                return false;
+            case DEVICE_TYPE_BLUETOOTH_SCO:
+            case DEVICE_TYPE_NEARLINK:
+                return desc->deviceCategory_ != BT_WATCH && desc->deviceCategory_ != BT_HEARAID;
+            case DEVICE_TYPE_SPEAKER:
+                return desc->networkId_ == LOCAL_NETWORK_ID;
+            default:
+                return desc->pairDeviceDescriptor_ && desc->networkId_ == LOCAL_NETWORK_ID;
+        }
+    }
+    return true;
 }
 
 int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)

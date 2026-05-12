@@ -64,7 +64,7 @@ static void SetPreferredDevice(AudioScene scene, SourceType srcType,
     const sptr<AudioCapturerFilter> &audioCapturerFilter, const shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
-        srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        srcType == SOURCE_TYPE_VOICE_COMMUNICATION || srcType == SOURCE_TYPE_INTERPHONE) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, desc);
     } else if (IsBtRecognition(audioCapturerFilter)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECOGNITION_CAPTURE, desc);
@@ -277,7 +277,7 @@ void AudioRecoveryDevice::SetCaptureDeviceForUsage(AudioScene scene, SourceType 
 {
     AUDIO_INFO_LOG("Scene: %{public}d, srcType: %{public}d", scene, srcType);
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
-        srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        srcType == SOURCE_TYPE_VOICE_COMMUNICATION || srcType == SOURCE_TYPE_INTERPHONE) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, desc);
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, desc);
