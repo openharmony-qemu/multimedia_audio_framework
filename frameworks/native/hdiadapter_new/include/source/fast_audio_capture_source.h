@@ -81,7 +81,6 @@ private:
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
-    static constexpr int32_t MAX_GET_POSITION_TRY_COUNT = 200;
     static constexpr int64_t GENERAL_MAX_GET_POSITION_HANDLE_TIME = 10000000; // 10ms = 10ns * 1000 * 1000
     static constexpr int64_t VOIP_MAX_GET_POSITION_HANDLE_TIME = 20000000; // 20ms = 20ns * 1000 * 1000
     static constexpr int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us

@@ -108,7 +108,6 @@ private:
     static constexpr float DEFAULT_VOLUME_LEVEL = 1.0f;
     static constexpr uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
     static constexpr int32_t HALF_FACTOR = 2;
-    static constexpr int32_t MAX_GET_POSITION_TRY_COUNT = 200;
     static constexpr int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 10000000us
     static constexpr int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
     static constexpr int32_t INVALID_FD = -1;

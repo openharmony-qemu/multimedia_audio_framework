@@ -92,7 +92,6 @@ private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
     static constexpr uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 3840;
     static constexpr int32_t HALF_FACTOR = 2;
-    static constexpr int32_t MAX_GET_POSITION_TRY_COUNT = 200;
     static constexpr int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 10000000us
     static constexpr int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
     static constexpr int32_t INVALID_FD = -1;
