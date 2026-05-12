@@ -86,6 +86,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_002, TestSize.Level1)
     auto deviceDesc = make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
     deviceDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(deviceDesc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDesc});
     ret = audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
     EXPECT_EQ(ret, 0);
@@ -1064,6 +1065,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_038, TestSize.Level1)
     auto deviceDesc = make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
     deviceDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(deviceDesc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDesc});
 
     result = audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
