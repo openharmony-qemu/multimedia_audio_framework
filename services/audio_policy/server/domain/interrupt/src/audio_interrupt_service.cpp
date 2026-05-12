@@ -1143,9 +1143,9 @@ bool AudioInterruptService::AudioInterruptIsStandbyInFocusList(const int32_t zon
     }
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     audioFocusInfoList = itZone->second->audioFocusInfoList;
-    auto isPresent = [incomingSessionId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+    auto isPresent = [incomingStreamId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
         // If the stream id has been standby, no need to activate audio interrupt again.
-        return pair.first.sessionId == incomingSessionId && (pair.second == STANDBY);
+        return pair.first.streamId == incomingStreamId && (pair.second == STANDBY);
     };
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
     if (iter != audioFocusInfoList.end()) {
