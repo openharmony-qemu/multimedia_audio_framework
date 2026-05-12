@@ -1615,7 +1615,7 @@ int32_t AudioPolicyClientStubImpl::OnAudioSeparationEffectEnabledChange(bool ena
         CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnAudioSeparationEffectEnabledChange(enabled);
     }
-    return SUCECESS;
+    return SUCCESS;
 }
 
 int32_t AudioPolicyClientStubImpl::AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb)
