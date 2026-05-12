@@ -400,7 +400,7 @@ void HpaeFastSourceInputNode::StopUpdateThread()
     updatePosTimeThread_.join();
 }
 
-void HpaeFastSourceInputNode::ResetReadPosition()
+bool HpaeFastSourceInputNode::ResetReadPosition()
 {
     CHECK_AND_RETURN_RET(srcAudioBuffer_ != nullptr, false);
     uint64_t handlePos = 0;
