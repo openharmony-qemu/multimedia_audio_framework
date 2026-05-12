@@ -101,6 +101,14 @@ void OnInterruptFuzzTest(FuzzedDataProvider& fdp)
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
     InterruptEventInternal interruptEvent;
+    int32_t eventTypeValue = fdp.ConsumeIntegral<int32_t>();
+    interruptEvent.eventType = static_cast<InterruptType>(eventTypeValue);
+    int32_t forceTypeValue = fdp.ConsumeIntegral<int32_t>();
+    interruptEvent.forceType = static_cast<InterruptForceType>(forceTypeValue);
+    int32_t hintTypeValue = fdp.ConsumeIntegral<int32_t>();
+    interruptEvent.hintType = static_cast<InterruptHint>(hintTypeValue);
+    interruptEvent.eventTimestamp = fdp.ConsumeIntegral<int64_t>();
+    interruptEvent.callbackToApp = fdp.ConsumeBool();
     policyListenerStub->OnInterrupt(interruptEvent);
     policyListenerStub->callback_ = std::make_shared<AudioInterruptCallbackFuzzTest>();
     if (policyListenerStub->callback_.lock() == nullptr) {
