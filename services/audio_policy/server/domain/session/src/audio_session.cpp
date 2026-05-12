@@ -415,13 +415,13 @@ int32_t AudioSession::UpdateStreamFocusState(uint32_t streamId, AudioFocuState f
 {
     auto it = interruptMap_.find(streamId);
     if (it == interruptMap_.end()) {
-        AUDIO_ERR_LOG("streamId %u not found in interruptMap", streamId);
+        AUDIO_ERR_LOG("streamId %{public}u not found in interruptMap", streamId);
         return ERR_INVALID_PARAM;
     }
     if (focuState == AudioFocuState::STANDBY) {
         if (it->second.second != AudioFocuState::ACTIVE &&
             it->second.second != AudioFocuState::DUCK) {
-            AUDIO_INFO_LOG("streamId %u state %d, cannot set to STANDBY",
+            AUDIO_INFO_LOG("streamId %{public}u state %{public}d, cannot set to STANDBY",
                 streamId, it->second.second);
             return SUCCESS;
         }
