@@ -930,7 +930,7 @@ bool AudioEffectService::IsAudioSeparationEffectSupported()
 
 int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
 {
-    AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled: enabled=%{public}d, uid=%{public}d, streamId=%{public}ld",
+    AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled: enabled=%{public}d, uid=%{public}d, streamId=%{public}lld",
         enabled, uid, streamId);
     return AUDIO_OK;
 }
