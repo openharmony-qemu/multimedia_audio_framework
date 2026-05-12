@@ -456,6 +456,32 @@ HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_NullStreamData, Tes
     mixerProcessor.Destroy();
 }
 
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_NoLimiterNullStreamData, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    stream.data = nullptr;
+    stream.dataSize = 256 * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    mixerProcessor.Destroy();
+}
+
 HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_NormalCase_SingleStream, TestSize.Level0)
 {
     MixerProcessorNode mixerProcessor;
@@ -1141,6 +1167,659 @@ HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_ChunkSizeChanged, T
 
     ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorInit_EnableLimiterFalse, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    int32_t ret = mixerProcessor.Init(format, false);
+    EXPECT_EQ(ret, SUCCESS);
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_OddFrameCount, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    // 480 samples (odd number) - should pass when enableLimiter=false
+    std::vector<float> inputData(480);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(inputData.size() * sizeof(float));
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_OddFrameCount, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    // 255 samples (odd number) - should fail when enableLimiter=true
+    std::vector<float> inputData(255);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_ChunkSizeChanged, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<float> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    // First process with 256 samples
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // Second process with different size (128 samples) - should pass when enableLimiter=false
+    std::vector<float> inputData2(128);
+    for (size_t i = 0; i < inputData2.size(); ++i) {
+        inputData2[i] = 0.1f;
+    }
+    stream.data = inputData2.data();
+    stream.dataSize = inputData2.size() * sizeof(float);
+    streams[0] = stream;
+
+    ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_U8Format, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_U8;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<uint8_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 128;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(uint8_t);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_S16LEFormat, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_S16LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<int16_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 1000;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(int16_t);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_S24LEFormat, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_S24LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<int32_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 1000;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * 3; // S24LE uses 3 bytes per sample
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_S32LEFormat, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_S32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<int32_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 1000;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(int32_t);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_F32LEFormat, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<float> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_MultipleStreams, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    // 48 input audio samples
+    const size_t frameCount = 48;
+    const float value = 0.1f;
+    for (int i = 0; i < 3; ++i) {
+        AudioMixStream stream;
+        std::vector<float> inputData(frameCount * STEREO, value);
+
+        stream.data = inputData.data();
+        stream.dataSize = inputData.size() * sizeof(float);
+        streams.push_back(stream);
+    }
+
+    std::vector<uint8_t> outputBuffer(frameCount * STEREO * sizeof(float));
+    uint32_t outSize = 0;
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, streams[0].dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterFalse_MonoWithChannelConvert, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_MONO;
+    format.audioChannelInfo.numChannels = MONO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<float> inputData(128);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_MonoS16LEWithBothConverts, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_MONO;
+    format.audioChannelInfo.numChannels = MONO;
+    format.format = SAMPLE_S16LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, false);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<int16_t> inputData(128);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 1000;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(int16_t);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_StereoF32LE, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<float> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_MonoWithChannelConvert, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_MONO;
+    format.audioChannelInfo.numChannels = MONO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<float> inputData(128);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_S16LEWithFormatConvert, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_S16LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<int16_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 1000;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(int16_t);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_MultipleStreams, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    // 48 input audio samples
+    const size_t frameCount = 48;
+    const float value = 0.1f;
+    for (int i = 0; i < 3; ++i) {
+        AudioMixStream stream;
+        std::vector<float> inputData(frameCount, value);
+
+        stream.data = inputData.data();
+        stream.dataSize = inputData.size() * sizeof(float);
+        streams.push_back(stream);
+    }
+
+    std::vector<uint8_t> outputBuffer(frameCount * sizeof(float));
+    uint32_t outSize = 0;
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, streams[0].dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_5Point1Channel, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_5POINT1;
+    format.audioChannelInfo.numChannels = CHANNEL_6;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    int32_t ret = mixerProcessor.Init(format, true);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<float> inputData(256 * 3);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(stream.dataSize);
+    uint32_t outSize = 0;
+
+    ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_7Point1Channel, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_7POINT1;
+    format.audioChannelInfo.numChannels = CHANNEL_8;
+    format.format = SAMPLE_F32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    int32_t ret = mixerProcessor.Init(format, true);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<float> inputData(256 * 4);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 0.1f;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(float);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(stream.dataSize);
+    uint32_t outSize = 0;
+
+    ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_S24LEWithFormatConvert, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_S24LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<int32_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 1000;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * 3; // S24LE uses 3 bytes per sample
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_S32LEWithFormatConvert, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_S32LE;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<int32_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 1000;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(int32_t);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
+
+    mixerProcessor.Destroy();
+}
+
+HWTEST_F(AudioSuiteMixerProcessorTest, MixerProcessorProcess_EnableLimiterTrue_U8WithFormatConvert, TestSize.Level0)
+{
+    MixerProcessorNode mixerProcessor;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    format.audioChannelInfo.numChannels = STEREO;
+    format.format = SAMPLE_U8;
+    format.rate = SAMPLE_RATE_48000;
+
+    mixerProcessor.Init(format, true);
+
+    std::vector<AudioMixStream> streams;
+    AudioMixStream stream;
+    std::vector<uint8_t> inputData(256);
+    for (size_t i = 0; i < inputData.size(); ++i) {
+        inputData[i] = 128;
+    }
+    stream.data = inputData.data();
+    stream.dataSize = inputData.size() * sizeof(uint8_t);
+    streams.push_back(stream);
+
+    std::vector<uint8_t> outputBuffer(1024);
+    uint32_t outSize = 0;
+
+    int32_t ret = mixerProcessor.Process(streams, outputBuffer.data(), outputBuffer.size(), &outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outSize, stream.dataSize);
 
     mixerProcessor.Destroy();
 }

@@ -261,7 +261,7 @@ AudioMixHandle AudioMixerCreate(const AudioFormatConfig* inCfg)
     }
 
     AudioFormat format = ConvertToAudioFormat(inCfg);
-    std::unique_ptr<MixerProcessor> mixer = MixerProcessorManager::Create(format);
+    std::unique_ptr<MixerProcessor> mixer = MixerProcessorManager::Create(format, false);
     if (mixer == nullptr) {
         AUDIO_ERR_LOG("failed to create MixerProcessor");
         return nullptr;
