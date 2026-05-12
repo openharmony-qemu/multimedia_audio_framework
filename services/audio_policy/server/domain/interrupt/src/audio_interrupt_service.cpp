@@ -1645,7 +1645,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
         if (iter->second == AudioFocuState::STANDBY) {
             AUDIO_INFO_LOG("the stream %{public}u focus state is standby, skip it.",
-                iter->first.sessionId);
+                iter->first.streamId);
             continue;
         }
         // if the steam is not active or the active stream is an audio capturer stream, skip it.
