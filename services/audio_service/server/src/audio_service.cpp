@@ -1601,6 +1601,12 @@ int32_t AudioService::GetCurrentRendererStreamCnt()
 void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
     IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
+    std::vector<SinkInput> directSinkInputs;
+    IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetAllSinkInputs(directSinkInputs);
+    sinkInputs.insert(sinkInputs.end(), directSinkInputs.begin(), directSinkInputs.end());
+    std::vector<SinkInput> voipSinkInputs;
+    IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetAllSinkInputs(voipSinkInputs);
+    sinkInputs.insert(sinkInputs.end(), voipSinkInputs.begin(), voipSinkInputs.end());
 }
 
 // need call with streamLifeCycleMutex_ lock

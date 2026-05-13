@@ -1503,6 +1503,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_DIRECT;
             } else {
                 attr.audioStreamFlag = AUDIO_FLAG_DIRECT;
+                idInfo = HDI_ID_INFO_DIRECT;
             }
             audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else {
