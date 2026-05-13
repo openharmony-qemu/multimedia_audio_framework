@@ -831,6 +831,7 @@ bool DataTransferStateChangeCallbackInnerImpl::IsNeedNotifyStandbyState(
         info.streamUsage == STREAM_USAGE_INTERPHONE ||
         info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
         info.streamUsage == STREAM_USAGE_RINGTONE ||
+        info.streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
         info.streamUsage == STREAM_USAGE_NOTIFICATION;
 }
 

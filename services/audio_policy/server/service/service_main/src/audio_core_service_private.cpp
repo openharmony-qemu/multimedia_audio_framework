@@ -221,7 +221,8 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
-        if (needUpdateActiveDevice) {
+        if (needUpdateActiveDevice && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
@@ -934,7 +935,8 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED ||
+                    pipeManager_->IsFocusStandby(desc->sessionId_)) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
@@ -968,7 +970,8 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED ||
+                    pipeManager_->IsFocusStandby(desc->sessionId_)) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
@@ -3063,7 +3066,8 @@ void AudioCoreService::HandleAudioSceneVolumeChange(AudioScene audioScene, Audio
 bool AudioCoreService::HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED ||
+        pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
         return true;
     }
     if (HandleDeviceChangeForFetchOutputDevice(streamDesc, reason) == ERR_NEED_NOT_SWITCH_DEVICE &&

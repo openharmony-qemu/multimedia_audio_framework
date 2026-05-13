@@ -1547,12 +1547,24 @@ void AudioCoreService::NotifyStandbyStatus(uint32_t sessionId, bool standbyStatu
 
 int32_t AudioCoreService::NotifyStreamStandby(int32_t pid, uint32_t streamId)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
+    pipeManager_->AddFocusStandby(streamId);
+    AUDIO_INFO_LOG("NotifyStreamStandby pid:%{public}d streamId:%{public}u", pid, streamId);
+    FetchOutputDeviceAndRoute("NotifyStreamStandby");
+    FetchInputDeviceAndRoute("NotifyStreamStandby");
+
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     return interruptService_->NotifyStreamStandby(pid, streamId);
 }
 
 int32_t AudioCoreService::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
+    pipeManager_->RemoveFocusStandby(streamId);
+    AUDIO_INFO_LOG("NotifyStreamStandbyResume pid:%{public}d streamId:%{public}u", pid, streamId);
+    FetchOutputDeviceAndRoute("NotifyStreamStandbyResume");
+    FetchInputDeviceAndRoute("NotifyStreamStandbyResume");
+
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     return interruptService_->NotifyStreamStandbyResume(pid, streamId);
 }
@@ -2421,7 +2433,8 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
 bool AudioCoreService::IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs)
 {
     for (auto streamDesc : outputStreamDescs) {
-        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
             return false;
         }
     }
