@@ -44,6 +44,18 @@ constexpr uint32_t TEST_ID = 1234;
 constexpr uint32_t TEST_FRAMELEN = 960;
 constexpr int TIMES = 5;
 constexpr float LOUDNESS_GAIN_VALUE = 10.0f;
+constexpr float EPSILON_TOLERANCE = 1e-4f;
+constexpr uint32_t TEST_FRAMELEN_96K = 1920;
+constexpr uint32_t TEST_FRAMELEN_192K = 3840;
+
+static void FillBufferWithValue(HpaePcmBuffer& buffer, float value)
+{
+    float* data = buffer.GetPcmDataBuffer();
+    uint32_t totalSamples = buffer.GetFrameLen() * buffer.GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples; i++) {
+        data[i] = value;
+    }
+}
 
 HWTEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode, TestSize.Level0)
 {
@@ -179,247 +191,270 @@ HWTEST_F(HpaeLoudnessGainNodeTest, FaultCode_SignalProcess_NullFirstInput, TestS
     EXPECT_EQ(result, &hpaeLoudnessGainNode->silenceData_);
 }
 
-// ==================== LoudnessGainNode tests ====================
-
-static HpaeStreamInfo MakeVoipStreamInfo(uint32_t sessionId)
+/**
+* @tc.name  : signalProcess96kHz_001
+* @tc.type  : FUNC
+* @tc.desc  : Test SignalProcess at 96000Hz with linear gain fallback
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, signalProcess96kHz_001, TestSize.Level1)
 {
-    HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
-    streamInfo.sessionId = sessionId;
-    streamInfo.streamType = STREAM_VOICE_COMMUNICATION;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    return streamInfo;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN_96K;
+    nodeInfo.samplingRate = SAMPLE_RATE_96000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN_96K, SAMPLE_RATE_96000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
+
+    node->SetLoudnessGain(6.0f);
+
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
+
+    float expectedGain = pow(10, 6.0f / 20);
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples && i < 16; i++) {
+        EXPECT_LT(fabs(outData[i] - expectedGain), EPSILON_TOLERANCE);
+    }
 }
 
 /**
-* @tc.name  : loudnessGainNodeExistsForDirectMusic_001
+* @tc.name  : signalProcess192kHz_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_145
-* @tc.desc  : Test loudnessGainNode_ is created for Direct Music pathway
+* @tc.desc  : Test SignalProcess at 192000Hz with linear gain fallback
 */
-HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainNodeExistsForDirectMusic_001, TestSize.Level0)
+HWTEST_F(HpaeLoudnessGainNodeTest, signalProcess192kHz_001, TestSize.Level1)
 {
-    EXPECT_EQ(directManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN_192K;
+    nodeInfo.samplingRate = SAMPLE_RATE_192000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN_192K, SAMPLE_RATE_192000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
 
-    EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_NE(directManager_->gainNode_, nullptr);
+    node->SetLoudnessGain(6.0f);
 
-    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
+
+    float expectedGain = pow(10, 6.0f / 20);
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples && i < 16; i++) {
+        EXPECT_LT(fabs(outData[i] - expectedGain), EPSILON_TOLERANCE);
+    }
 }
 
 /**
-* @tc.name  : loudnessGainNodeNullForVoip_001
+* @tc.name  : dynamicRateSwitch48kTo96k_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_146
-* @tc.desc  : Test loudnessGainNode_ is nullptr for Direct VoIP pathway
+* @tc.desc  : Test dynamic sample rate switch from 48kHz to 96kHz updates internal pcmBufferInfo_
 */
-HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainNodeNullForVoip_001, TestSize.Level0)
+HWTEST_F(HpaeLoudnessGainNodeTest, dynamicRateSwitch48kTo96k_001, TestSize.Level1)
 {
-    HpaeSinkInfo sinkInfo = GetVoipDirectSinkInfo();
-    auto voipManager = std::make_shared<HpaeDirectRendererManager>(sinkInfo);
-    EXPECT_EQ(voipManager->Init(), SUCCESS);
-    WaitForMsgProcessing(voipManager);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(voipManager->CreateStream(MakeVoipStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(voipManager);
+    // Process at 48kHz first
+    PcmBufferInfo pcmBufferInfo48k(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer buffer48k(pcmBufferInfo48k);
+    FillBufferWithValue(buffer48k, 1.0f);
+    std::vector<HpaePcmBuffer*> inputs48k = {&buffer48k};
+    node->SignalProcess(inputs48k);
 
-    EXPECT_EQ(voipManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(voipManager->volumeSyncNode_, nullptr);
+    node->SetLoudnessGain(3.0f);
 
-    EXPECT_EQ(voipManager->DeInit(), SUCCESS);
-    WaitForMsgProcessing(voipManager);
+    // Process at 96kHz
+    PcmBufferInfo pcmBufferInfo96k(STEREO, TEST_FRAMELEN_96K, SAMPLE_RATE_96000);
+    HpaePcmBuffer buffer96k(pcmBufferInfo96k);
+    FillBufferWithValue(buffer96k, 1.0f);
+    std::vector<HpaePcmBuffer*> inputs96k = {&buffer96k};
+    node->SignalProcess(inputs96k);
+
+    EXPECT_EQ(node->pcmBufferInfo_.rate, SAMPLE_RATE_96000);
+    EXPECT_FLOAT_EQ(node->GetLoudnessGain(), 3.0f);
 }
 
 /**
-* @tc.name  : setLoudnessGainInitialized_001
+* @tc.name  : gainZeroPassthrough_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_147
-* @tc.desc  : Test SetLoudnessGain propagates gain to loudnessGainNode_ for running Direct Music stream
+* @tc.desc  : Test SignalProcess returns input directly when gain is 0.0 dB
 */
-HWTEST_F(HpaeDirectRendererManagerTest, setLoudnessGainInitialized_001, TestSize.Level1)
+HWTEST_F(HpaeLoudnessGainNodeTest, gainZeroPassthrough_001, TestSize.Level0)
 {
-    EXPECT_EQ(directManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 0.75f);
 
-    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
-    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+    // Default gain is 0.0f
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* result = node->SignalProcess(inputs);
 
-    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(directManager_);
-
-    EXPECT_EQ(directManager_->SetLoudnessGain(TEST_STREAM_SESSION_ID, 5.0f), SUCCESS);
-    WaitForMsgProcessing(directManager_);
-
-    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 5.0f);
-    EXPECT_FLOAT_EQ(directManager_->curNode_->GetLoudnessGain(), 5.0f);
-
-    EXPECT_EQ(directManager_->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
-
-    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(result, inputs[0]);
 }
 
 /**
-* @tc.name  : setLoudnessGainNonCurrentSession_001
+* @tc.name  : linearGainFallbackValue_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_148
-* @tc.desc  : Test SetLoudnessGain for non-current session stores on SinkInputNode but does not propagate
+* @tc.desc  : Test linear gain fallback applies correct +20dB conversion
 */
-HWTEST_F(HpaeDirectRendererManagerTest, setLoudnessGainNonCurrentSession_001, TestSize.Level1)
+HWTEST_F(HpaeLoudnessGainNodeTest, linearGainFallbackValue_001, TestSize.Level0)
 {
-    EXPECT_EQ(directManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(500001)), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(500002)), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    node->SetLoudnessGain(20.0f);
 
-    EXPECT_EQ(directManager_->SetLoudnessGain(500002, 7.5f), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
 
-    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 0.0f);
-
-    auto node2 = directManager_->sinkInputNodeMap_[500002];
-    ASSERT_NE(node2, nullptr);
-    EXPECT_FLOAT_EQ(node2->GetLoudnessGain(), 7.5f);
-
-    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples; i++) {
+        EXPECT_LT(fabs(outData[i] - 10.0f), EPSILON_TOLERANCE);
+    }
 }
 
 /**
-* @tc.name  : setLoudnessGainVoip_001
+* @tc.name  : linearGainFallbackNeg3dB_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_149
-* @tc.desc  : Test SetLoudnessGain on VoIP manager has no side effects (loudnessGainNode_ always null)
+* @tc.desc  : Test linear gain fallback applies correct -3dB conversion
 */
-HWTEST_F(HpaeDirectRendererManagerTest, setLoudnessGainVoip_001, TestSize.Level1)
+HWTEST_F(HpaeLoudnessGainNodeTest, linearGainFallbackNeg3dB_001, TestSize.Level1)
 {
-    HpaeSinkInfo sinkInfo = GetVoipDirectSinkInfo();
-    auto voipManager = std::make_shared<HpaeDirectRendererManager>(sinkInfo);
-    EXPECT_EQ(voipManager->Init(), SUCCESS);
-    WaitForMsgProcessing(voipManager);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(voipManager->CreateStream(MakeVoipStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(voipManager);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
 
-    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    EXPECT_EQ(voipManager->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+    node->SetLoudnessGain(-3.0f);
 
-    EXPECT_EQ(voipManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(voipManager);
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
 
-    EXPECT_EQ(voipManager->SetLoudnessGain(TEST_STREAM_SESSION_ID, 10.0f), SUCCESS);
-    WaitForMsgProcessing(voipManager);
-
-    EXPECT_EQ(voipManager->loudnessGainNode_, nullptr);
-
-    EXPECT_EQ(voipManager->DeInit(), SUCCESS);
-    WaitForMsgProcessing(voipManager);
+    float expectedGain = pow(10, -3.0f / 20);
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples; i++) {
+        EXPECT_LT(fabs(outData[i] - expectedGain), EPSILON_TOLERANCE);
+    }
 }
 
 /**
-* @tc.name  : loudnessGainPersistenceAfterStopStart_001
+* @tc.name  : isLoudnessAlgoOn_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_150
-* @tc.desc  : Test loudness gain value persists across stream Stop then Start cycle
+* @tc.desc  : Test IsLoudnessAlgoOn returns false when DSP library is not loaded
 */
-HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainPersistenceAfterStopStart_001, TestSize.Level1)
+HWTEST_F(HpaeLoudnessGainNodeTest, isLoudnessAlgoOn_001, TestSize.Level0)
 {
-    EXPECT_EQ(directManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    EXPECT_FALSE(node->IsLoudnessAlgoOn());
 
-    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
-    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
-
-    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(directManager_);
-
-    EXPECT_EQ(directManager_->SetLoudnessGain(TEST_STREAM_SESSION_ID, 8.0f), SUCCESS);
-    WaitForMsgProcessing(directManager_);
-
-    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 8.0f);
-
-    EXPECT_EQ(directManager_->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
-
-    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(directManager_);
-
-    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 8.0f);
-
-    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    node->SetLoudnessGain(6.0f);
+    EXPECT_FALSE(node->IsLoudnessAlgoOn());
 }
 
 /**
-* @tc.name  : loudnessGainNodeDestroyedOnDeInit_001
+* @tc.name  : getLatency_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_151
-* @tc.desc  : Test loudnessGainNode_ is null after stream destruction
+* @tc.desc  : Test GetLatency returns 0 when handle_ is null
 */
-HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainNodeDestroyedOnDeInit_001, TestSize.Level1)
+HWTEST_F(HpaeLoudnessGainNodeTest, getLatency_001, TestSize.Level0)
 {
-    EXPECT_EQ(directManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(directManager_);
-
-    EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
-
-    EXPECT_EQ(directManager_->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(directManager_);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
-
-    EXPECT_EQ(directManager_->loudnessGainNode_, nullptr);
-
-    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(node->GetLatency(), 0);
 }
 
 /**
-* @tc.name  : onRequestLatencyIncludesLoudnessGainNode_001
+* @tc.name  : getLatencyWithSessionId_001
 * @tc.type  : FUNC
-* @tc.number: HpaeDirectRendererManagerTest_152
-* @tc.desc  : Test OnRequestLatency exercises loudnessGainNode_ branch without crash
+* @tc.desc  : Test GetLatency with sessionId returns 0 when handle_ is null
 */
-HWTEST_F(HpaeDirectRendererManagerTest, onRequestLatencyIncludesLoudnessGainNode_001, TestSize.Level0)
+HWTEST_F(HpaeLoudnessGainNodeTest, getLatencyWithSessionId_001, TestSize.Level0)
 {
-    EXPECT_EQ(directManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(node->GetLatency(12345), 0);
+}
 
-    uint64_t latency = 0;
-    directManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
+/**
+* @tc.name  : setLoudnessGainUpdatesLinearGain_001
+* @tc.type  : FUNC
+* @tc.desc  : Test SetLoudnessGain correctly updates internal linearGain_ member
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, setLoudnessGainUpdatesLinearGain_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
-    EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_EQ(latency, 0u);
+    node->SetLoudnessGain(6.0f);
+    EXPECT_LT(fabs(node->linearGain_ - pow(10, 6.0f / 20)), EPSILON_TOLERANCE);
 
-    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(directManager_);
+    node->SetLoudnessGain(0.0f);
+    EXPECT_LT(fabs(node->linearGain_ - 1.0f), EPSILON_TOLERANCE);
 }
 }
