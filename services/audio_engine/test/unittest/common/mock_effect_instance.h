@@ -29,7 +29,7 @@ public:
     MOCK_METHOD(const std::string &, GetEffectName, (), (const, override));
     MOCK_METHOD(const AudioEffectConfig &, GetAudioConfig, (), (const, override));
     MOCK_METHOD(int32_t, FeedInput, (const uint8_t *data, size_t len), (override));
-    MOCK_METHOD(int32_t, ReadOutput, (uint8_t *buf, size_t len), (override));
+    MOCK_METHOD(int32_t, ReadOutput, (uint8_t *buf, size_t len, uint32_t *skipCount), (override));
     MOCK_METHOD(size_t, GetInputLevel, (), (const, override));
     MOCK_METHOD(void, ClearBuffers, (), (override));
     MOCK_METHOD(int32_t, StartEffect, (), (override));
@@ -38,7 +38,6 @@ public:
     MOCK_METHOD(int32_t, Flush, (), (override));
     MOCK_METHOD(int32_t, SetParameter, (int32_t type, float value), (override));
     MOCK_METHOD(uint32_t, GetPreheatFrames, (), (override));
-    MOCK_METHOD(void, SkipOutputFrames, (uint32_t frames), (override));
 };
 
 }  // namespace HPAE

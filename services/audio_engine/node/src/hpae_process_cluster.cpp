@@ -205,7 +205,13 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
     ConnectMixerNode();
     mixerNode_->Connect(idGainMap_[sessionId]);
     idGainMap_[sessionId]->Connect(idLoudnessGainNodeMap_[sessionId]);
-    idLoudnessGainNodeMap_[sessionId]->Connect(idConverterMap_[sessionId]);
+    auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
+    if (seNode) {
+        idLoudnessGainNodeMap_[sessionId]->Connect(seNode);
+        // SE→converter persists across DisConnect/Connect, no need to reconnect
+    } else {
+        idLoudnessGainNodeMap_[sessionId]->Connect(idConverterMap_[sessionId]);
+    }
     idConverterMap_[sessionId]->Connect(preNode);
     // update mixer node info
     HpaeNodeInfo tmpNodeinfo = mixerNode_->GetNodeInfo();
@@ -222,7 +228,12 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         sessionId, preNode->GetNodeInfo().streamType, preNode->GetNodeInfo().sceneType);
     if (SafeGetMap(idConverterMap_, sessionId)) {
         idConverterMap_[sessionId]->DisConnect(preNode);
-        idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);
+        auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
+        if (seNode) {
+            idLoudnessGainNodeMap_[sessionId]->DisConnect(seNode);
+        } else {
+            idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);
+        }
         idGainMap_[sessionId]->DisConnect(idLoudnessGainNodeMap_[sessionId]);
         mixerNode_->DisConnect(idGainMap_[sessionId]);
         AUDIO_INFO_LOG("Exist converterNode preOutNum is %{public}zu", mixerNode_->GetPreOutNum());
@@ -561,6 +572,11 @@ std::shared_ptr<HpaeSessionEffectNode> HpaeProcessCluster::GetSessionEffectNode(
 {
     auto it = idSessionEffectMap_.find(sessionId);
     return it != idSessionEffectMap_.end() ? it->second : nullptr;
+}
+
+std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetLoudnessGainNode(uint32_t sessionId) const
+{
+    return SafeGetMap(idLoudnessGainNodeMap_, sessionId);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -146,7 +146,7 @@ HWTEST_F(EffectInstanceTest, phase1Stubs_returnSuccess, TestSize.Level0)
     instance_->Init("test_effect", config_);
 
     EXPECT_EQ(instance_->FeedInput(nullptr, 0), 0);
-    EXPECT_EQ(instance_->ReadOutput(nullptr, 0), 0);
+    EXPECT_EQ(instance_->ReadOutput(nullptr, 0, nullptr), 0);
     EXPECT_EQ(instance_->GetInputLevel(), 0u);
     EXPECT_EQ(instance_->TriggerProcess(), 0);
     EXPECT_EQ(instance_->Flush(), 0);
@@ -356,7 +356,7 @@ HWTEST_F(EffectInstanceAlgoTest, feedInput_proxies_to_feedInput, TestSize.Level0
     int32_t ret = instance_->FeedInput(reinterpret_cast<const uint8_t *>(data), sizeof(data));
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(fake_.GetFeedInputCount(), 1u);
-    EXPECT_EQ(instance_->GetInputLevel(), 0u);
+    EXPECT_EQ(instance_->GetInputLevel(), sizeof(data));
 }
 
 // EI-B2: ReadOutput gets output from algorithm
@@ -367,7 +367,7 @@ HWTEST_F(EffectInstanceAlgoTest, readOutput_gets_algo_output, TestSize.Level0)
     fake_.SetPreheatFrames(0);
 
     // Feed enough data to trigger processing (192000 floats = 2s stereo)
-    std::vector<float> data(FAKE_PROCESS_THRESHOLD_FLOATS);
+    std::vector<float> data(fakeProcessThresholdFloats);
     for (size_t i = 0; i < data.size(); i += 2) {
         data[i] = 1.0f;
         data[i + 1] = 2.0f;
@@ -396,17 +396,14 @@ HWTEST_F(EffectInstanceAlgoTest, readOutput_empty_when_no_algo_output, TestSize.
     EXPECT_EQ(ret, 0);
 }
 
-// EI-B4: ClearBuffers resets skip counter
-HWTEST_F(EffectInstanceAlgoTest, clearBuffers_resets_skip, TestSize.Level0)
+// EI-B5: ReadOutput with skipCount discards frames before reading
+HWTEST_F(EffectInstanceAlgoTest, readOutput_withSkip_discardsFrames, TestSize.Level0)
 {
     auto lib = fake_.GetLibrary();
     instance_->Init("test_effect", config_, &lib);
     fake_.SetPreheatFrames(0);
 
-    instance_->SkipOutputFrames(100);
-    instance_->ClearBuffers();
-    // After ClearBuffers, ReadOutput should not skip any frames
-    std::vector<float> data(FAKE_PROCESS_THRESHOLD_FLOATS);
+    std::vector<float> data(fakeProcessThresholdFloats * 3);
     for (size_t i = 0; i < data.size(); i += 2) {
         data[i] = 1.0f;
         data[i + 1] = 2.0f;
@@ -414,10 +411,61 @@ HWTEST_F(EffectInstanceAlgoTest, clearBuffers_resets_skip, TestSize.Level0)
     instance_->FeedInput(reinterpret_cast<const uint8_t *>(data.data()),
                          data.size() * sizeof(float));
     fake_.WaitForProcessing();
+
+    uint32_t skipCount = 2;
+    float out[4] = {};
+    int32_t ret = instance_->ReadOutput(reinterpret_cast<uint8_t *>(out), sizeof(out), &skipCount);
+    EXPECT_GT(ret, 0);
+    EXPECT_EQ(skipCount, 0u);
+    EXPECT_FLOAT_EQ(out[0], 2.0f);
+    EXPECT_FLOAT_EQ(out[1], 1.0f);
+}
+
+// EI-B6: ReadOutput with partial skip updates remaining count
+HWTEST_F(EffectInstanceAlgoTest, readOutput_partialSkip_updatesRemaining, TestSize.Level0)
+{
+    auto lib = fake_.GetLibrary();
+    instance_->Init("test_effect", config_, &lib);
+    fake_.SetPreheatFrames(0);
+
+    std::vector<float> data(fakeProcessThresholdFloats);
+    for (size_t i = 0; i < data.size(); i += 2) {
+        data[i] = 1.0f;
+        data[i + 1] = 2.0f;
+    }
+    instance_->FeedInput(reinterpret_cast<const uint8_t *>(data.data()),
+                         data.size() * sizeof(float));
+    fake_.WaitForProcessing();
+
+    // Use a buffer large enough to consume all output in one getOutput call.
+    // skipCount=2: 1st skip drains all output (success), 2nd finds empty (partial).
+    std::vector<float> largeBuf(fakeProcessThresholdFloats);
+    uint32_t skipCount = 2;
+    int32_t ret = instance_->ReadOutput(
+        reinterpret_cast<uint8_t *>(largeBuf.data()), largeBuf.size() * sizeof(float), &skipCount);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(skipCount, 1u);
+}
+
+// EI-B7: ReadOutput with skipCount=nullptr behaves as pure read
+HWTEST_F(EffectInstanceAlgoTest, readOutput_nullptrSkip_pureRead, TestSize.Level0)
+{
+    auto lib = fake_.GetLibrary();
+    instance_->Init("test_effect", config_, &lib);
+    fake_.SetPreheatFrames(0);
+
+    std::vector<float> data(fakeProcessThresholdFloats);
+    for (size_t i = 0; i < data.size(); i += 2) {
+        data[i] = 1.0f;
+        data[i + 1] = 2.0f;
+    }
+    instance_->FeedInput(reinterpret_cast<const uint8_t *>(data.data()),
+                         data.size() * sizeof(float));
+    fake_.WaitForProcessing();
+
     float out[4] = {};
     int32_t ret = instance_->ReadOutput(reinterpret_cast<uint8_t *>(out), sizeof(out));
     EXPECT_GT(ret, 0);
-    // L/R swapped: original [1,2] -> [2,1]
     EXPECT_FLOAT_EQ(out[0], 2.0f);
     EXPECT_FLOAT_EQ(out[1], 1.0f);
 }
@@ -449,7 +497,7 @@ HWTEST_F(EffectInstanceAlgoTest, stats_tracksErrorsOnFeedInputFail, TestSize.Lev
     auto lib = fake_.GetLibrary();
     instance_->Init("test_effect", config_, &lib);
     fake_.SetPreheatFrames(0);
-    fake_.SetProcessFail(true);
+    fake_.SetFeedInputFail(true);
 
     size_t frameBytes = 480 * config_.inputCfg.channels * sizeof(float);
     std::vector<float> data(frameBytes / sizeof(float), 1.0f);

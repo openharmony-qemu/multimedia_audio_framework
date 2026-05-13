@@ -204,9 +204,9 @@ void HpaeOffloadRendererManager::DeleteInputSession()
 {
     DisConnectInputSession();
 
-    // Session Effect: clean up SE node. DisConnectInputSession already restored
-    // the direct chain (bypassing SE), so DestroyOffloadNodes (called via RemoveNodeFromMap)
-    // will find the expected chain without SE node interference.
+    // Session Effect: clean up SE node. DisConnectInputSession already disconnected
+    // the SE node from the chain (no bypass reconnect), so DestroyOffloadNodes
+    // (called via RemoveNodeFromMap) will find a clean state.
     if (sessionEffectNode_ != nullptr) {
         sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
         sessionEffectNode_.reset();
@@ -319,11 +319,17 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     } else {
         converterForOutput_->Connect(loudnessGainNode_);
     }
-    loudnessGainNode_->Connect(converterForLoudness_);
+    // Session Effect: insert SE between loudnessGainNode_ and converterForLoudness_ when active
+    uint32_t curSessionId = curNode_->GetSessionId();
+    if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == curSessionId) {
+        loudnessGainNode_->Connect(sessionEffectNode_);
+        sessionEffectNode_->Connect(converterForLoudness_);
+    } else {
+        loudnessGainNode_->Connect(converterForLoudness_);
+    }
     loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
 
     // Session Effect: check if curNode_ has pending SE
-    uint32_t curSessionId = curNode_->GetSessionId();
     auto pendingIt = pendingSessionEffects_.find(curSessionId);
     if (pendingIt != pendingSessionEffects_.end()) {
         sessionEffectSessionId_ = curSessionId;
@@ -352,6 +358,9 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
         node->SetState(HPAE_SESSION_RUNNING);
         if (sessionId == curNode_->GetSessionId()) {
             ConnectInputSession();
+            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+                sessionEffectNode_->StartEffect();
+            }
         }
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
     };
@@ -363,20 +372,17 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
 {
     CHECK_AND_RETURN_RET(converterForLoudness_, SUCCESS);
 
-    // Session Effect: bypass SE node (restore direct chain) but do NOT ReleaseEffect here.
-    // ReleaseEffect happens in DeleteInputSession after DisConnectInputSession returns.
-    // This is because DestroyOffloadNodes (called later in DeleteInputSession via RemoveNodeFromMap)
-    // will destroy converterForLoudness_ and loudnessGainNode_, so we only need to restore
-    // the direct connection so the subsequent Disconnect calls find the expected chain.
+    // Session Effect: disconnect SE node from chain (no bypass reconnect).
+    // Do NOT ReleaseEffect here — that happens in DeleteInputSession after this returns.
     if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
         && converterForLoudness_ != nullptr) {
         loudnessGainNode_->DisConnect(sessionEffectNode_);
         sessionEffectNode_->DisConnect(converterForLoudness_);
-        loudnessGainNode_->Connect(converterForLoudness_);
+    } else if (loudnessGainNode_ != nullptr && converterForLoudness_ != nullptr) {
+        loudnessGainNode_->DisConnect(converterForLoudness_);
     }
 
     converterForLoudness_->DisConnect(curNode_);
-    loudnessGainNode_->DisConnect(converterForLoudness_);
     if (limiterNode_) {
         limiterNode_->DisConnect(loudnessGainNode_);
         converterForOutput_->DisConnect(limiterNode_);

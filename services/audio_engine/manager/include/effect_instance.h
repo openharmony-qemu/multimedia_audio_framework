@@ -59,7 +59,7 @@ public:
 
     // Phase 1 stubs (Phase 3: real algorithm integration)
     int32_t FeedInput(const uint8_t *data, size_t len) override;
-    int32_t ReadOutput(uint8_t *buf, size_t len) override;
+    int32_t ReadOutput(uint8_t *buf, size_t len, uint32_t *skipCount = nullptr) override;
     size_t GetInputLevel() const override;
     void ClearBuffers() override;
     int32_t StartEffect() override;
@@ -68,11 +68,12 @@ public:
     int32_t Flush() override;
     int32_t SetParameter(int32_t type, float value) override;
     uint32_t GetPreheatFrames() override;
-    void SkipOutputFrames(uint32_t frames) override;
     const SeProcessStats &GetStatsForTest() const { return stats_; }
     void SetStatsReportThresholdForTest(int64_t t) { statsReportThreshold_ = t; }
 
 private:
+    bool SkipStaleFrames(float *buf, size_t floatLen, uint32_t *skipCount);
+
     EffectState state_ = EffectState::IDLE;
     uint32_t boundSessionId_ = 0;
     std::string effectName_;
@@ -85,7 +86,6 @@ private:
     uint32_t preheatFrames_ = 0;
     bool preheatFramesCached_ = false;
     bool isEffectStarted_ = false;
-    uint32_t skipFramesRemaining_ = 0;
     size_t fedBytes_ = 0;
     SeProcessStats stats_;
     int64_t statsReportThreshold_ = 48000;

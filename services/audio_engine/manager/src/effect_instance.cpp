@@ -20,7 +20,6 @@
 #include "effect_instance.h"
 #include "audio_engine_log.h"
 #include <cstring>
-#include <vector>
 
 #include <algorithm>
 
@@ -107,7 +106,6 @@ int32_t EffectInstance::Release()
         effectHandle_ = nullptr;
         hasHandle_ = false;
     }
-    skipFramesRemaining_ = 0;
     preheatFramesCached_ = false;
     fedBytes_ = 0;
     stats_.Reset();
@@ -212,7 +210,25 @@ int32_t EffectInstance::FeedInput(const uint8_t *data, size_t len)
     return ret;
 }
 
-int32_t EffectInstance::ReadOutput(uint8_t *buf, size_t len)
+bool EffectInstance::SkipStaleFrames(float *buf, size_t floatLen, uint32_t *skipCount)
+{
+    uint32_t remaining = *skipCount;
+    while (remaining > 0) {
+        AudioBuffer tmp = {};
+        tmp.f32 = buf;
+        tmp.frameLength = floatLen;
+        int32_t ret = (*effectHandle_)->getOutput(effectHandle_, &tmp);
+        if (ret != 0 || tmp.frameLength == 0) {
+            *skipCount = remaining;
+            return false;
+        }
+        remaining--;
+    }
+    *skipCount = 0;
+    return true;
+}
+
+int32_t EffectInstance::ReadOutput(uint8_t *buf, size_t len, uint32_t *skipCount)
 {
     if (buf == nullptr || len == 0) {
         return 0;
@@ -225,29 +241,18 @@ int32_t EffectInstance::ReadOutput(uint8_t *buf, size_t len)
         return 0;
     }
 
-    if (skipFramesRemaining_ > 0) {
-        size_t floatLen = len / sizeof(float);
-        size_t floatsToSkip = std::min(static_cast<size_t>(skipFramesRemaining_), floatLen);
-        std::vector<float> skipBuf(floatsToSkip);
-        AudioBuffer skipOut = {};
-        skipOut.f32 = skipBuf.data();
-        skipOut.frameLength = floatsToSkip;
-        (void)iface->getOutput(effectHandle_, &skipOut);
-        size_t actuallySkipped = std::min(static_cast<size_t>(skipOut.frameLength), floatsToSkip);
-        skipFramesRemaining_ -= static_cast<uint32_t>(actuallySkipped);
-        if (skipFramesRemaining_ > 0) {
-            stats_.underrunCount++;
+    size_t floatLen = len / sizeof(float);
+    float *fout = reinterpret_cast<float *>(buf);
+
+    if (skipCount != nullptr && *skipCount > 0) {
+        if (!SkipStaleFrames(fout, floatLen, skipCount)) {
             return 0;
         }
     }
 
-    float *fout = reinterpret_cast<float *>(buf);
-    size_t floatLen = len / sizeof(float);
-
     AudioBuffer outBuf = {};
     outBuf.f32 = fout;
     outBuf.frameLength = floatLen;
-
     int32_t ret = iface->getOutput(effectHandle_, &outBuf);
     if (ret != 0) {
         AUDIO_ERR_LOG("getOutput failed, ret=%{public}d", ret);
@@ -267,7 +272,6 @@ size_t EffectInstance::GetInputLevel() const
 
 void EffectInstance::ClearBuffers()
 {
-    skipFramesRemaining_ = 0;
     fedBytes_ = 0;
     stats_.Reset();
 }
@@ -340,11 +344,6 @@ uint32_t EffectInstance::GetPreheatFrames()
     preheatFrames_ = frames;
     preheatFramesCached_ = true;
     return preheatFrames_;
-}
-
-void EffectInstance::SkipOutputFrames(uint32_t frames)
-{
-    skipFramesRemaining_ += frames;
 }
 
 }  // namespace HPAE

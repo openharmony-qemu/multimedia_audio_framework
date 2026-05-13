@@ -39,7 +39,7 @@ public:
 
     // Buffer operations (Phase 2: interface alignment; Phase 3: real implementation)
     virtual int32_t FeedInput(const uint8_t *data, size_t len) = 0;
-    virtual int32_t ReadOutput(uint8_t *buf, size_t len) = 0;
+    virtual int32_t ReadOutput(uint8_t *buf, size_t len, uint32_t *skipCount = nullptr) = 0;
     virtual size_t GetInputLevel() const = 0;
     virtual void ClearBuffers() = 0;
 
@@ -54,9 +54,6 @@ public:
 
     // Preheat frames — 查询算法预热帧数（单位：DoProcess帧，1帧=20ms@48kHz）
     virtual uint32_t GetPreheatFrames() = 0;
-
-    // Skip N DoProcess frames from output buffer (pipeline latency compensation)
-    virtual void SkipOutputFrames(uint32_t frames) = 0;
 };
 
 }  // namespace HPAE
