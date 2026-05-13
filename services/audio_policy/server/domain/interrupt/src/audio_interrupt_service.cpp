@@ -2969,7 +2969,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
                 IsGameAvoidCallbackCase(inprocessing)) {
                 focusEntry.hintType = INTERRUPT_HINT_PAUSE;
             }
-            UpdateFocusStateByHintType(focusEntry, iter->second, incomingState);
+            CHECK_AND_CONTINUE(UpdateFocusStateByHintType(focusEntry, iter->second, incomingState));
         }
 
         if (incomingState == PAUSE) { newAudioFocuInfoList = tmpAudioFocuInfoList; }
