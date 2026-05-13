@@ -453,7 +453,7 @@ void AudioUsbManager::AddDeviceBySoundCard(uint32_t cardNum)
 {
     auto path = string{"/proc/asound/card"} + to_string(cardNum);
     WaitFile(path + "/" + "usbbus");
-    this_thread::sleep_for(chrono::milliseconds(DELAY_MS));
+    this_thread::sleep_for(chrono::milliseconds(DELAY_MS + DELAY_MS));
     SoundCard card{.cardNum_ = cardNum};
     FillSoundCard(path, card);
     CHECK_AND_RETURN_LOG(!card.usbBus_.empty(), "No sound card[%{public}s]", path.c_str());
