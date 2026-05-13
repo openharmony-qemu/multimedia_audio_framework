@@ -2670,6 +2670,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
     desc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     auto ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);

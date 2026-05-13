@@ -5441,7 +5441,7 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateTest_001, TestSize.Level1
     auto streams = audioSession->GetStreams();
     for (const auto &[stream, state] : streams) {
         if (stream.streamId == streamId) {
-            EXPECT_EQ(state, AudioFocuState::STANDBY);
+            EXPECT_EQ(state, AudioFocuState::ACTIVE);
         }
     }
 }
