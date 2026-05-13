@@ -25,17 +25,17 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 
-static constexpr uint32_t testSessionId = 123456;
-static constexpr uint32_t testFrameLen = 882;
-static constexpr uint32_t waitForMsgMs = 500;
-static constexpr uint32_t usPerMs = 1000;
-static constexpr uint32_t testUid = 111111;
-static constexpr int32_t testWriteValue = 100;
-static constexpr uint32_t pollIntervalUs = 10000;     // 10ms
-static constexpr uint32_t waitShortUs = 200000;       // 200ms
-static constexpr uint32_t waitLongUs = 500000;        // 500ms
-static constexpr uint32_t verifyWaitUs = 100000;      // 100ms
-static constexpr uint32_t warmupWaitUs = 50000;        // 50ms
+static constexpr uint32_t TEST_SESSION_ID = 123456;
+static constexpr uint32_t TEST_FRAME_LEN = 882;
+static constexpr uint32_t WAIT_FOR_MSG_MS = 500;
+static constexpr uint32_t US_PER_MS = 1000;
+static constexpr uint32_t TEST_UID = 111111;
+static constexpr int32_t TEST_WRITE_VALUE = 100;
+static constexpr uint32_t POLL_INTERVAL_US = 10000;     // 10ms
+static constexpr uint32_t WAIT_SHORT_US = 200000;       // 200ms
+static constexpr uint32_t WAIT_LONG_US = 500000;        // 500ms
+static constexpr uint32_t VERIFY_WAIT_US = 100000;      // 100ms
+static constexpr uint32_t WARMUP_WAIT_US = 50000;        // 50ms
 
 AudioModuleInfo GetTestAudioModuleInfo()
 {
@@ -61,7 +61,7 @@ AudioModuleInfo GetTestAudioModuleInfo()
 
 void WaitForMsgProcessing()
 {
-    usleep(waitForMsgMs * usPerMs);
+    usleep(WAIT_FOR_MSG_MS * US_PER_MS);
 }
 
 }  // namespace
@@ -91,29 +91,29 @@ protected:
         streamInfo.channels = STEREO;
         streamInfo.samplingRate = SAMPLE_RATE_44100;
         streamInfo.format = SAMPLE_S16LE;
-        streamInfo.frameLen = testFrameLen;
-        streamInfo.sessionId = testSessionId;
+        streamInfo.frameLen = TEST_FRAME_LEN;
+        streamInfo.sessionId = TEST_SESSION_ID;
         streamInfo.streamType = STREAM_MUSIC;
         streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-        streamInfo.uid = testUid;
+        streamInfo.uid = TEST_UID;
         hpaeManager_->CreateStream(streamInfo);
         WaitForMsgProcessing();
 
         // Register write callback
-        writeCallback_ = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, testWriteValue);
-        hpaeManager_->RegisterWriteCallback(testSessionId, writeCallback_);
+        writeCallback_ = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, TEST_WRITE_VALUE);
+        hpaeManager_->RegisterWriteCallback(TEST_SESSION_ID, writeCallback_);
 
         // Start playback
-        hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, testSessionId);
+        hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID);
         WaitForMsgProcessing();
         sleep(1);
     }
 
     void TearDown() override
     {
-        hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, testSessionId);
+        hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID);
         WaitForMsgProcessing();
-        hpaeManager_->Release(HPAE_STREAM_CLASS_TYPE_PLAY, testSessionId);
+        hpaeManager_->Release(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID);
         WaitForMsgProcessing();
         hpaeManager_->DeInit();
         hpaeManager_.reset();
@@ -122,13 +122,13 @@ protected:
     // Effect control
     void EnableEffect()
     {
-        hpaeManager_->SetAissEnabled(testSessionId, true);
+        hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
         WaitForMsgProcessing();
     }
 
     void DisableEffect()
     {
-        hpaeManager_->SetAissEnabled(testSessionId, false);
+        hpaeManager_->SetAissEnabled(TEST_SESSION_ID, false);
         WaitForMsgProcessing();
     }
 
@@ -149,7 +149,7 @@ protected:
         auto deadline = std::chrono::steady_clock::now() +
                         std::chrono::milliseconds(timeoutMs);
         while (std::chrono::steady_clock::now() < deadline) {
-            usleep(pollIntervalUs);
+            usleep(POLL_INTERVAL_US);
             if (IsAlgorithmProcessing()) {
                 return;
             }
@@ -159,11 +159,11 @@ protected:
     void WaitUntilAlgorithmIdle(uint32_t timeoutMs = 3000)
     {
         auto feedBefore = GetFeedInputCount();
-        usleep(waitShortUs);
+        usleep(WAIT_SHORT_US);
         if (GetFeedInputCount() == feedBefore) {
             return;
         }
-        usleep(waitLongUs);
+        usleep(WAIT_LONG_US);
     }
 
     std::shared_ptr<HpaeManager> hpaeManager_;
@@ -182,7 +182,7 @@ HWTEST_F(SessionEffectE2EFixture, FixtureSetup, TestSize.Level0)
 // E2E-7: Bypass mode — no effect enabled, algorithm never called
 HWTEST_F(SessionEffectE2EFixture, BypassMode_NoEffectNoAlgorithmCalls, TestSize.Level0)
 {
-    usleep(waitShortUs);  // Run pipeline for 200ms
+    usleep(WAIT_SHORT_US);  // Run pipeline for 200ms
     EXPECT_EQ(GetFeedInputCount(), 0u);
     EXPECT_EQ(GetCreateCount(), 0u);
 }
@@ -206,10 +206,10 @@ HWTEST_F(SessionEffectE2EFixture, Disable_EffectStopsAlgorithm, TestSize.Level0)
     ASSERT_GT(GetFeedInputCount(), 0u);
 
     DisableEffect();
-    usleep(waitShortUs);
+    usleep(WAIT_SHORT_US);
 
     uint32_t feedAfter = GetFeedInputCount();
-    usleep(verifyWaitUs);
+    usleep(VERIFY_WAIT_US);
     EXPECT_EQ(GetFeedInputCount(), feedAfter);
 }
 
@@ -222,7 +222,7 @@ HWTEST_F(SessionEffectE2EFixture, LazyReuse_InstanceReused, TestSize.Level0)
     ASSERT_EQ(createCountAfterFirst, 1u);
 
     DisableEffect();
-    usleep(waitShortUs);
+    usleep(WAIT_SHORT_US);
 
     // Re-enable within 3s — should reuse instance
     EnableEffect();
@@ -239,7 +239,7 @@ HWTEST_F(SessionEffectE2EFixture, LazyExpire_NewInstanceCreated, TestSize.Level0
     ASSERT_EQ(GetCreateCount(), 1u);
 
     DisableEffect();
-    usleep(waitShortUs);
+    usleep(WAIT_SHORT_US);
 
     // Wait for lazy release to expire (>3s)
     sleep(4);
@@ -259,7 +259,7 @@ HWTEST_F(SessionEffectE2EFixture, ToggleThrice_AllSwitchesSucceed, TestSize.Leve
     WaitUntilAlgorithmProcessing(5000);
     ASSERT_GT(GetFeedInputCount(), 0u);
     DisableEffect();
-    usleep(waitShortUs);
+    usleep(WAIT_SHORT_US);
 
     // Round 2
     ResetFakeLibCounters();
@@ -267,7 +267,7 @@ HWTEST_F(SessionEffectE2EFixture, ToggleThrice_AllSwitchesSucceed, TestSize.Leve
     WaitUntilAlgorithmProcessing(5000);
     ASSERT_GT(GetFeedInputCount(), 0u);
     DisableEffect();
-    usleep(waitShortUs);
+    usleep(WAIT_SHORT_US);
 
     // Round 3
     ResetFakeLibCounters();
@@ -281,14 +281,14 @@ HWTEST_F(SessionEffectE2EFixture, ToggleThrice_AllSwitchesSucceed, TestSize.Leve
 HWTEST_F(SessionEffectE2EFixture, DisableDuringWarmup_NoCrash, TestSize.Level0)
 {
     EnableEffect();
-    usleep(warmupWaitUs);  // 50ms — still in early WARMING_UP
+    usleep(WARMUP_WAIT_US);  // 50ms — still in early WARMING_UP
 
     DisableEffect();
-    usleep(waitShortUs);
+    usleep(WAIT_SHORT_US);
 
     // Algorithm calls should stop
     uint32_t feedCount = GetFeedInputCount();
-    usleep(verifyWaitUs);
+    usleep(VERIFY_WAIT_US);
     EXPECT_EQ(GetFeedInputCount(), feedCount);
 }
 
