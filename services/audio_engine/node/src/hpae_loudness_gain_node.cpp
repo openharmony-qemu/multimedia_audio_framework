@@ -31,7 +31,6 @@ namespace AudioStandard {
 namespace HPAE {
 static const std::string LOUDNESSGAIN_PATH = "/system/lib64/libaudio_integration_loudness.z.so";
 static constexpr float EPSILON = 1e-6f;
-static constexpr uint32_t SAMPLE_RATE = 48000;
 static constexpr float DB_TO_AMPLITUDE_BASE = 10.0f;
 static constexpr float DB_TO_AMPLITUDE_DIVISOR = 20.0f;
 static constexpr uint64_t DEFAULT_LATENCY_IN_US = 5000;
@@ -167,7 +166,7 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
     AudioEffectConfig ioBufferConfig;
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
-    ioBufferConfig.inputCfg = {SAMPLE_RATE, pcmBufferInfo_.ch, DATA_FORMAT_F32, pcmBufferInfo_.channelLayout,
+    ioBufferConfig.inputCfg = {pcmBufferInfo_.rate, pcmBufferInfo_.ch, DATA_FORMAT_F32, pcmBufferInfo_.channelLayout,
         ENCODING_PCM};
     ioBufferConfig.outputCfg = ioBufferConfig.inputCfg;
     int32_t ret = (*handle_)->command(handle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -222,7 +221,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
                     ERR_OPERATION_FAILED), "loudness lib handle create failed", false), ERROR));
         AudioEffectConfig ioBufferConfig;
         AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
-        ioBufferConfig.inputCfg = {SAMPLE_RATE, pcmBufferInfo_.ch, DATA_FORMAT_F32, pcmBufferInfo_.channelLayout,
+        ioBufferConfig.inputCfg = {pcmBufferInfo_.rate, pcmBufferInfo_.ch, DATA_FORMAT_F32, pcmBufferInfo_.channelLayout,
             ENCODING_PCM};
         ioBufferConfig.outputCfg = ioBufferConfig.inputCfg;
         ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
