@@ -1706,8 +1706,8 @@ napi_value NapiAudioSpatializationManager::executeDownloadPersonalizedHRTF(
             IsPersonalizedSpatializationSupported();
         int32_t ret = isPersonalizedSpatializationSupported ?
             napiAudioSpatializationManager->audioSpatializationMngr_->DownloadPersonalizedHRTF(
-            context->audioHRTFAnonymousDescriptor.fd,
-            context->audioHRTFAnonymousDescriptor.length) : ERR_DEVICE_NOT_SUPPORTED;
+                context->audioHRTFAnonymousDescriptor.fd,
+                context->audioHRTFAnonymousDescriptor.length) : ERR_DEVICE_NOT_SUPPORTED;
 
         switch (ret) {
             case SUCCESS:
