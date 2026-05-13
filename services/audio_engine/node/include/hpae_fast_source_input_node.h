@@ -16,8 +16,12 @@
 #ifndef HPAE_FAST_SOURCE_INPUT_NODE_H
 #define HPAE_FAST_SOURCE_INPUT_NODE_H
 
+#include <atomic>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "audio_dump_pcm.h"
@@ -80,7 +84,9 @@ private:
     int32_t PrepareDeviceBuffer();
     int32_t GetAdapterBufferInfo();
     void InitAudiobuffer(bool resetReadWritePos);
-    void ResetReadPosition();
+    void AsyncGetPosTime();
+    void StopUpdateThread();
+    bool ResetReadPosition();
     bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     void CheckWakeUpTime(int64_t &wakeUpTime);
@@ -111,6 +117,12 @@ private:
     int64_t spanDuration_ = 0;
     uint64_t curReadPos_ = 0;
     bool needReSyncPosition_ = true;
+    std::thread updatePosTimeThread_;
+    std::mutex updateThreadLock_;
+    std::condition_variable updateThreadCV_;
+    std::atomic<bool> stopUpdateThread_ = false;
+    std::atomic<uint64_t> posInFrame_ = 0;
+    std::atomic<int64_t> timeInNano_ = 0;
 
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";

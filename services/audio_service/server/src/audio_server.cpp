@@ -709,6 +709,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
             "%{public}s not in whitelist", bundleName.c_str());
         if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
             (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_INTERPHONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION)) && info.isBackground) {

@@ -129,12 +129,18 @@ void HpaeGainNode::ResetVolume()
 {
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
+    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+    audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
+        streamVolume_, pipeVolume_);
     if (isInnerCapturerOrInjector_) {
-        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
+        if (streamVolume_) {
+            curSystemGain = streamVolume_->GetTotalVolume();
+        }
     } else {
-        struct VolumeValues volumes;
-        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
-        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), rendererId, &volumes);
+        if (streamVolume_ && pipeVolume_) {
+            struct VolumeValues volumes;
+            curSystemGain = audioVolume->GetVolume(streamVolume_, pipeVolume_, &volumes);
+        }
     }
     audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
     audioVolume->Monitor(GetSessionId(), true);
@@ -258,14 +264,17 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     uint32_t durationMs = 0;
     uint32_t remainDurationMs = 0;
     if (isInnerCapturerOrInjector_) {
-        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
-        preSystemGain = audioVolume->GetHistoryVolume(GetSessionId());
-        durationMs = audioVolume->GetDurationMs(GetSessionId());
+        if (streamVolume_) {
+            curSystemGain = streamVolume_->GetTotalVolume();
+            preSystemGain = streamVolume_->GetHistoryVolume();
+            durationMs = streamVolume_->GetDurationMs();
+        }
     } else {
-        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
-        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), rendererId, &volumes);
-        preSystemGain = volumes.volumeHistory;
-        durationMs = volumes.durationMs;
+        if (streamVolume_ && pipeVolume_) {
+            curSystemGain = audioVolume->GetVolume(streamVolume_, pipeVolume_, &volumes);
+            preSystemGain = volumes.volumeHistory;
+            durationMs = streamVolume_->GetDurationMs();
+        }
     }
 
     remainDurationMs = CalcRemainDurationMs(durationMs, frameLen, &curSystemGain, &preSystemGain);

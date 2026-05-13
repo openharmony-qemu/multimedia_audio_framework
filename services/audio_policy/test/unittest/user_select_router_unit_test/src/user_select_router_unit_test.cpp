@@ -241,5 +241,20 @@ HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_003, TestSize.Level3)
     auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
 }
+
+/**
+ * @tc.name  : Test GetRecordCaptureDevice.
+ * @tc.number: GetRecordCaptureDevice_004
+ * @tc.desc  : GetRecordCaptureDevice.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_004, TestSize.Level4)
+{
+    UserSelectRouter userSelectRouter;
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 678;
+    auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

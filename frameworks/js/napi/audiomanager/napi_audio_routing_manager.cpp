@@ -325,7 +325,11 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
             context->bArgTransFlag, argv[PARAM0]);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
             context->bArgTransFlag, argv[PARAM1]);
-        context->audioDeviceSelectMode = 0;
+
+        if (context->audioRendererFilter->uid > INVALID_UID) {
+            context->audioDeviceSelectMode = 1;
+        }
+
         if (argc == ARGS_THREE) {
             napi_status status = NapiParamUtils::GetValueInt32(env, context->audioDeviceSelectMode, argv[PARAM2]);
             NAPI_CHECK_ARGS_RETURN_VOID(context, status == napi_ok, "invalid audioDeviceSelectMode",

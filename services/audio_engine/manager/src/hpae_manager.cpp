@@ -2931,6 +2931,18 @@ int32_t HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
     return SUCCESS;
 }
 
+int32_t HpaeManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    auto request = [this, fd, length]() {
+        int32_t result = HpaePolicyManager::GetInstance().UpdatePersonalizedHRTFBin(fd, length);
+        auto serviceCallback = serviceCallback_.lock();
+        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
+        serviceCallback->OnUpdatePersonalizedHRTFBinCb(result);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 void HpaeManager::LoadCollaborationConfig()
 {
     auto request = []() {

@@ -143,6 +143,7 @@ const std::string NEARLINK_LIST = "audio_nearlink_list";
 constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
+static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // HRTF size
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -2766,7 +2767,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
         interruptService_->IsAudioSessionActivated(audioInterrupt.pid)) ? streamUsage : audioInterrupt.streamUsage;
     DeviceRole deviceRole = interruptService_->IsAudioSessionActivated(audioInterrupt.pid) ? OUTPUT_DEVICE :
         audioInterrupt.audioFocusType.isPlay ? OUTPUT_DEVICE : INPUT_DEVICE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage, deviceRole);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage, deviceRole,
+        audioInterrupt.streamId);
     int32_t ret = -1;
     if (StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(audioInterrupt.uid,
         false, audioInterrupt.streamId)) {
@@ -3268,7 +3270,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
     for (const auto &info : allRendererChangeInfos) {
         CHECK_AND_CONTINUE(info != nullptr);
         int32_t rendererZoneId = AudioZoneService::GetInstance().FindAudioZone(
-            info->clientUID, info->rendererInfo.streamUsage, OUTPUT_DEVICE);
+            info->clientUID, info->rendererInfo.streamUsage, OUTPUT_DEVICE, info->sessionId);
         if (rendererZoneId == zoneId) {
             audioRendererChangeInfos.push_back(info);
         }
@@ -4325,6 +4327,48 @@ int32_t AudioPolicyServer::GetCurrentSpatialAudioSourceType(int32_t &ret)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsPersonalizedSpatializationEnabled(const std::string &address, bool &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.IsPersonalizedSpatializationEnabled(address);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetPersonalizedSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, ERR_INVALID_PARAM,
+        "selectedAudioDevice is nullptr");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+}
+
+int32_t AudioPolicyServer::DownloadPersonalizedHRTF(int32_t fd, int64_t length)
+{
+    CHECK_AND_RETURN_RET_LOG(fd >= 0, ERR_INVALID_PARAM, "invalid fd: %{public}d", fd);
+    CHECK_AND_RETURN_RET_LOG(length > 0 && length<= MAX_HRTF_LENGTH,
+        ERR_INVALID_PARAM, "invalid length: %{public}" PRId64, length);
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.DownloadPersonalizedHRTF(fd, length);
+}
+
 int32_t AudioPolicyServer::GetSpatializationState(int32_t streamUsage,
     AudioSpatializationState &state)
 {
@@ -4369,6 +4413,16 @@ int32_t AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string &a
         return ERR_PERMISSION_DENIED;
     }
     ret = audioSpatializationService_.IsHeadTrackingSupportedForDevice(address);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsPersonalizedSpatializationSupported(bool &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.IsPersonalizedSpatializationSupported();
     return SUCCESS;
 }
 
@@ -4483,10 +4537,15 @@ int32_t AudioPolicyServer::ReleaseAudioZone(int32_t zoneId)
 
 int32_t AudioPolicyServer::UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context)
 {
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     AudioZoneService::GetInstance().UpdateContextForAudioZone(zoneId, context);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds)
+{
+    return AudioZoneService::GetInstance().GetAudioZoneForApp(userIds, retUserIds);
 }
 
 int32_t AudioPolicyServer::GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs)
@@ -4618,6 +4677,26 @@ int32_t AudioPolicyServer::RemoveStreamsFromAudioZone(int32_t zoneId, const std:
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().RemoveStreamsFromAudioZone(zoneId, streams);
+}
+
+int32_t AudioPolicyServer::AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsValidRenderSessionId(streamId), ERR_INVALID_PARAM,
+        "streamId is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return AudioZoneService::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
+}
+
+int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsValidRenderSessionId(streamId), ERR_INVALID_PARAM,
+        "streamId is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
@@ -5965,6 +6044,39 @@ int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
         audioVolumeManager_.TriggerAudioZoneVolumeSync(zone->zoneId_);
     }
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsAudioSeparationEffectSupported(bool &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        ret = false;
+        return ERR_SYSTEM_PERMISSION_DENIED;
+    }
+    ret = audioEffectService_.IsAudioSeparationEffectSupported();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS),
+        ERR_PERMISSION_DENIED, "MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t ret = audioEffectService_.SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+    if (ret == AUDIO_OK && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendAudioSeparationEffectEnabledChangeEvent(enabled);
+    }
+    return ret;
+}
+
+int32_t AudioPolicyServer::SetAudioSeparationEffectVolume(int32_t type, double volume)
+{
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS),
+        ERR_PERMISSION_DENIED, "MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return audioEffectService_.SetAudioSeparationEffectVolume(static_cast<AudioSeparationVolumeType>(type), volume);
 }
 
 int32_t AudioPolicyServer::CreateLoopback(int32_t mode, int32_t type,

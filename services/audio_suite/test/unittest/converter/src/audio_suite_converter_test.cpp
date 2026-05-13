@@ -116,8 +116,8 @@ struct ProcessBatchParams {
     const std::vector<uint8_t>* inputData;
     uint32_t inputSampleSize;
     uint32_t outputSampleSize;
-    uint32_t samplesPerCall;
-    uint32_t totalInputSampleCount;
+    uint32_t bytesPerCall;
+    uint32_t totalInputBytes;
     FILE* outputFile;
 };
 
@@ -793,70 +793,67 @@ static bool CalculateSampleSizes(const OHConverterTestInfo& info, uint32_t& inpu
 
 // Helper function to calculate processing parameters
 static bool CalculateProcessingParameters(const OHConverterTestInfo& info, uint32_t inputSampleSize,
-                                          uint32_t channelCount, uint32_t& samplesPerCall,
+                                          uint32_t channelCount, uint32_t& bytesPerCall,
                                           uint32_t& minBytesForIntMs)
 {
     uint32_t inputSampleRate = static_cast<uint32_t>(info.inputSampleRate);
     uint32_t outputSampleRate = static_cast<uint32_t>(info.outputSampleRate);
     double samplesPerMs = static_cast<double>(inputSampleRate * channelCount) / MILLISECONDS_PER_SECOND;
-    
+
     bool is11025Hz = (info.inputSampleRate == AudioSamplingRate::SAMPLE_RATE_11025 ||
                      info.outputSampleRate == AudioSamplingRate::SAMPLE_RATE_11025);
-    
-    samplesPerCall = is11025Hz ? static_cast<uint32_t>(samplesPerMs * REQUIRED_MS_FOR_11025HZ) :
+
+    uint32_t samplesPerCall = is11025Hz ? static_cast<uint32_t>(samplesPerMs * REQUIRED_MS_FOR_11025HZ) :
                                  static_cast<uint32_t>(samplesPerMs * MIN_FRAMES_FOR_20MS);
-    
+
     if (samplesPerCall == 0) {
         return false;
     }
-    
+
     uint64_t gcd = std::gcd(static_cast<uint64_t>(inputSampleRate), static_cast<uint64_t>(outputSampleRate));
     uint64_t gcdSecond = std::gcd(gcd, static_cast<uint64_t>(MILLISECONDS_PER_SECOND));
     if (gcdSecond == 0) {
         return false;
     }
     uint32_t minTimeMs = static_cast<uint32_t>(MILLISECONDS_PER_SECOND / gcdSecond);
-    
+
     uint32_t inputBytesPerFrame = inputSampleSize * channelCount;
     minBytesForIntMs = (inputSampleRate * inputBytesPerFrame * minTimeMs) / MILLISECONDS_PER_SECOND;
-    
+
     if (minBytesForIntMs == 0) {
         return false;
     }
-    
-    uint32_t bytesPerCall = samplesPerCall * inputSampleSize;
+
+    bytesPerCall = samplesPerCall * inputSampleSize;
     return bytesPerCall % minBytesForIntMs == 0;
 }
 
 // Helper function to write output data
 static bool WriteOutputData(const AudioSuite::AudioConvertResult& result, uint32_t outputSampleSize, FILE* outputFile)
 {
-    if (result.outData == nullptr || result.outSampleCount == 0) {
+    if (result.outData == nullptr || result.outByteCount == 0) {
         return true;
     }
-    
-    size_t outputBytes = result.outSampleCount * outputSampleSize;
+
+    size_t outputBytes = result.outByteCount;
     size_t bytesWritten = fwrite(result.outData, 1, outputBytes, outputFile);
     return bytesWritten == outputBytes;
 }
 
 // Helper function to process data in batches
-static bool ProcessDataInBatches(const ProcessBatchParams& params)
+static bool ProcessDataInBatches(const ProcessBatchParams &params)
 {
-    uint32_t processedSamples = 0;
-    while (processedSamples < params.totalInputSampleCount) {
-        uint32_t samplesToProcess = std::min(params.samplesPerCall,
-                                             params.totalInputSampleCount - processedSamples);
-        if (samplesToProcess != params.samplesPerCall &&
-            processedSamples + samplesToProcess < params.totalInputSampleCount) {
+    uint32_t processedBytes = 0;
+    while (processedBytes < params.totalInputBytes) {
+        uint32_t bytesToProcess = std::min(params.bytesPerCall, params.totalInputBytes - processedBytes);
+        if (bytesToProcess != params.bytesPerCall && processedBytes + bytesToProcess < params.totalInputBytes) {
             return false;
         }
 
-        size_t byteOffset = processedSamples * params.inputSampleSize;
-        AudioSuite::AudioConvertResult result = params.converter->Process(
-            params.inputData->data() + byteOffset, samplesToProcess);
-        if (result.errCode != SUCCESS && processedSamples != 0) {
-            processedSamples += samplesToProcess;
+        AudioSuite::AudioConvertResult result =
+            params.converter->SyncProcess(params.inputData->data() + processedBytes, bytesToProcess);
+        if (result.errCode != SUCCESS && processedBytes != 0) {
+            processedBytes += bytesToProcess;
             continue;
         }
         if (result.errCode != SUCCESS) {
@@ -867,7 +864,7 @@ static bool ProcessDataInBatches(const ProcessBatchParams& params)
             return false;
         }
 
-        processedSamples += samplesToProcess;
+        processedBytes += bytesToProcess;
     }
 
     return true;
@@ -895,14 +892,14 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
     uint32_t channelCount =
         (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
 
-    uint32_t samplesPerCall = 0;
+    uint32_t bytesPerCall = 0;
     uint32_t minBytesForIntMs = 0;
-    if (!CalculateProcessingParameters(info, inputSampleSize, channelCount, samplesPerCall, minBytesForIntMs)) {
+    if (!CalculateProcessingParameters(info, inputSampleSize, channelCount, bytesPerCall, minBytesForIntMs)) {
         converter->Destroy();
         return false;
     }
 
-    uint32_t totalInputSampleCount = static_cast<uint32_t>(inputData.size() / inputSampleSize);
+    uint32_t totalInputBytes = static_cast<uint32_t>(inputData.size());
     std::string outputFilePath = CONVERTER_TEST_DIR + info.outputFileName;
     FILE *outputFile = fopen(outputFilePath.c_str(), "wb");
     if (outputFile == nullptr) {
@@ -910,7 +907,7 @@ static bool RunOHConverterTestWithDirectProcess(const OHConverterTestInfo &info)
         return false;
     }
     ProcessBatchParams params = {converter.get(),
-        &inputData, inputSampleSize, outputSampleSize, samplesPerCall, totalInputSampleCount, outputFile};
+        &inputData, inputSampleSize, outputSampleSize, bytesPerCall, totalInputBytes, outputFile};
     bool success = ProcessDataInBatches(params);
     int32_t result = fclose(outputFile);
     if (result != 0) {

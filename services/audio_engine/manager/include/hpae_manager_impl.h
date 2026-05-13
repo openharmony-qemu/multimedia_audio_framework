@@ -157,6 +157,7 @@ public:
     int32_t SetAissEnabledByUid(int32_t uid, bool enabled) override;
 
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
+    int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;
     
     // interface for auxiliarySink

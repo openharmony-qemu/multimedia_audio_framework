@@ -4175,5 +4175,26 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_frontendAppType_001, Te
     ASSERT_TRUE(audioEffectChain != nullptr);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+/**
+* @tc.name   : Test UpdatePersonalizedHRTFBinToArm API
+* @tc.number : UpdatePersonalizedHRTFBinToArm_001
+* @tc.desc   : Test UpdatePersonalizedHRTFBinToArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedHRTFBinToArm_001, TestSize.Level1)
+{
+    int32_t fd = -1;
+    long length = 0;
+    int32_t ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
+    length = 1;
+    ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
+    fd = 0;
+    length = 0;
+    ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS

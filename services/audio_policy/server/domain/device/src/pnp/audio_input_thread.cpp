@@ -59,51 +59,6 @@ int32_t AudioInputThread::AudioAnalogHeadsetDeviceCheck(input_event evt)
     return SUCCESS;
 }
 
-int32_t AudioInputThread::AudioPnpInputPollAndRead()
-{
-    int32_t num;
-    int32_t ret;
-    int32_t inputNum = g_inputDevCnt;
-    input_event evt;
-
-    ret = poll(g_fdSets, (nfds_t)inputNum, -1);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("[poll] failed, %{public}d", errno);
-        return ERROR;
-    }
-
-    for (num = 0; num < inputNum; num++) {
-        if ((uint32_t)g_fdSets[num].revents & POLLIN) {
-            if (read(g_fdSets[num].fd, (void *)&evt, sizeof(evt)) < 0) {
-                AUDIO_ERR_LOG("[read] failed, %{public}d", errno);
-                return ERROR;
-            }
-            switch (evt.type) {
-                case EV_SYN:
-                    AUDIO_DEBUG_LOG("evt.type = EV_SYN code = 0x%{public}d, value = %{public}d",
-                        evt.code, evt.value);
-                    break;
-                case EV_SW:
-                    AUDIO_DEBUG_LOG("evt.type = EV_SW5, code = 0x%{public}d, value = %{public}d\n",
-                        evt.code, evt.value);
-                    AudioAnalogHeadsetDeviceCheck(evt);
-                    break;
-                case EV_KEY:
-                    AUDIO_DEBUG_LOG("evt.type = EV_KEY, code = 0x%{public}x, value = %{public}d.",
-                        evt.code, evt.value);
-                    break;
-                case EV_REL: // mouse move event.
-                case EV_MSC:
-                default:
-                    AUDIO_DEBUG_LOG("evt.type = EV_REL or EV_MSC code = 0x%{public}d, value = %{public}d",
-                        evt.code, evt.value);
-                    break;
-            }
-        }
-    }
-    return SUCCESS;
-}
-
 int32_t AudioInputThread::AudioPnpInputOpen()
 {
     int32_t num;

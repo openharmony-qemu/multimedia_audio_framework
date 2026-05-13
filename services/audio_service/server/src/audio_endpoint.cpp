@@ -1478,6 +1478,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
     } else if (isVirtualKeyboard) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
+    } else if (volumeType == STREAM_VOICE_CALL) {
+        result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
     } else {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume * vol.volumeFloat);
     }

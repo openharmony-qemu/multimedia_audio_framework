@@ -1527,56 +1527,41 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
 
 int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
 {
-    int32_t result = NapiAudioEnum::USAGE_UNKNOW;
     switch (streamUsage) {
         case StreamUsage::STREAM_USAGE_GAME:
-            result = NapiAudioEnum::USAGE_GAME;
-            break;
+            return NapiAudioEnum::USAGE_GAME;
         case StreamUsage::STREAM_USAGE_AUDIOBOOK:
-            result = NapiAudioEnum::USAGE_AUDIOBOOK;
-            break;
+            return NapiAudioEnum::USAGE_AUDIOBOOK;
         case StreamUsage::STREAM_USAGE_NAVIGATION:
-            result = NapiAudioEnum::USAGE_NAVIGATION;
-            break;
+            return NapiAudioEnum::USAGE_NAVIGATION;
         case StreamUsage::STREAM_USAGE_DTMF:
-            result = NapiAudioEnum::USAGE_DTMF;
-            break;
+            return NapiAudioEnum::USAGE_DTMF;
         case StreamUsage::STREAM_USAGE_ENFORCED_TONE:
-            result = NapiAudioEnum::USAGE_ENFORCED_TONE;
-            break;
+            return NapiAudioEnum::USAGE_ENFORCED_TONE;
         case StreamUsage::STREAM_USAGE_ULTRASONIC:
-            result = NapiAudioEnum::USAGE_ULTRASONIC;
-            break;
+            return NapiAudioEnum::USAGE_ULTRASONIC;
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
-            result = NapiAudioEnum::USAGE_VIDEO_COMMUNICATION;
-            break;
+            return NapiAudioEnum::USAGE_VIDEO_COMMUNICATION;
         case StreamUsage::STREAM_USAGE_RANGING:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
         case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
-            result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
-            break;
+            return NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
         case StreamUsage::STREAM_USAGE_INTERPHONE:
-            result = NapiAudioEnum::USAGE_INTERPHONE;
-            break;
+            return NapiAudioEnum::USAGE_INTERPHONE;
 #ifdef MULTI_ALARM_LEVEL
         case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
-            result = NapiAudioEnum::USAGE_ANNOUNCEMENT;
-            break;
+            return NapiAudioEnum::USAGE_ANNOUNCEMENT;
         case StreamUsage::STREAM_USAGE_EMERGENCY:
-            result = NapiAudioEnum::USAGE_EMERGENCY;
-            break;
+            return NapiAudioEnum::USAGE_EMERGENCY;
 #else
         case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
         case StreamUsage::STREAM_USAGE_EMERGENCY:
-            result = NapiAudioEnum::USAGE_ALARM;
-            break;
+            return NapiAudioEnum::USAGE_ALARM;
 #endif
         default:
-            result = NapiAudioEnum::USAGE_UNKNOW;
-            break;
+            return NapiAudioEnum::USAGE_UNKNOW;
     }
-    return result;
 }
 
 bool NapiAudioEnum::IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType)
@@ -1647,6 +1632,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_UNPROCESSED:
         case SourceType::SOURCE_TYPE_LIVE:
         case SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+        case SourceType::SOURCE_TYPE_INTERPHONE:
             return true;
         default:
             return false;
@@ -1864,58 +1850,40 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
 
 StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
 {
-    StreamUsage result = STREAM_USAGE_UNKNOWN;
-
     switch (streamUsage) {
         case NapiAudioEnum::USAGE_GAME:
-            result = STREAM_USAGE_GAME;
-            break;
+            return STREAM_USAGE_GAME;
         case NapiAudioEnum::USAGE_AUDIOBOOK:
-            result = STREAM_USAGE_AUDIOBOOK;
-            break;
+            return STREAM_USAGE_AUDIOBOOK;
         case NapiAudioEnum::USAGE_NAVIGATION:
-            result = STREAM_USAGE_NAVIGATION;
-            break;
+            return STREAM_USAGE_NAVIGATION;
         case NapiAudioEnum::USAGE_DTMF:
-            result = STREAM_USAGE_DTMF;
-            break;
+            return STREAM_USAGE_DTMF;
         case NapiAudioEnum::USAGE_ENFORCED_TONE:
-            result = STREAM_USAGE_ENFORCED_TONE;
-            break;
+            return STREAM_USAGE_ENFORCED_TONE;
         case NapiAudioEnum::USAGE_ULTRASONIC:
-            result = STREAM_USAGE_ULTRASONIC;
-            break;
+            return STREAM_USAGE_ULTRASONIC;
         case NapiAudioEnum::USAGE_VIDEO_COMMUNICATION:
-            result = STREAM_USAGE_VIDEO_COMMUNICATION;
-            break;
+            return STREAM_USAGE_VIDEO_COMMUNICATION;
         case NapiAudioEnum::USAGE_INTERPHONE:
-            result = STREAM_USAGE_INTERPHONE;
-            break;
+            return STREAM_USAGE_INTERPHONE;
         case NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
-            result = STREAM_USAGE_VOICE_CALL_ASSISTANT;
-            break;
+            return STREAM_USAGE_VOICE_CALL_ASSISTANT;
 #ifdef MULTI_ALARM_LEVEL
         case NapiAudioEnum::USAGE_ANNOUNCEMENT:
-            result = STREAM_USAGE_ANNOUNCEMENT;
-            break;
+            return STREAM_USAGE_ANNOUNCEMENT;
         case NapiAudioEnum::USAGE_EMERGENCY:
-            result = STREAM_USAGE_EMERGENCY;
-            break;
+            return STREAM_USAGE_EMERGENCY;
 #else
         case NapiAudioEnum::USAGE_ANNOUNCEMENT:
         case NapiAudioEnum::USAGE_EMERGENCY:
-            result = STREAM_USAGE_ALARM;
-            break;
+            return STREAM_USAGE_ALARM;
 #endif
         case NapiAudioEnum::USAGE_MAX:
-            result = STREAM_USAGE_MAX;
-            break;
+            return STREAM_USAGE_MAX;
         default:
-            result = STREAM_USAGE_INVALID;
-            break;
+            return STREAM_USAGE_INVALID;
     }
-
-    return result;
 }
 
 AudioRingerMode NapiAudioEnum::GetNativeAudioRingerMode(int32_t ringMode)

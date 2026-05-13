@@ -35,6 +35,7 @@
 #include "audio_debug_info.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
+#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -496,6 +497,13 @@ public:
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
+    int32_t SetPersonalizedSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+
+    bool IsPersonalizedSpatializationEnabled(const std::string address);
+
+    int32_t DownloadPersonalizedHRTF(const int32_t fd, const int64_t length);
+
     int32_t GetCurrentSpatialAudioSourceType();
 
     int32_t RegisterSpatializationEnabledEventListener(
@@ -515,6 +523,9 @@ public:
     int32_t RegisterSpatialAudioSourceTypeEventListener(
         const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &callback);
 
+    int32_t RegisterPersonalizedSpatializationEnabledEventListener(
+        const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &callback);
+
     int32_t UnregisterSpatializationEnabledEventListener();
 
     int32_t UnregisterSpatializationEnabledForCurrentDeviceEventListener();
@@ -527,6 +538,8 @@ public:
 
     int32_t UnregisterSpatialAudioSourceTypeEventListener();
 
+    int32_t UnregisterPersonalizedSpatializationEnabledEventListener();
+
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 
     bool IsSpatializationSupported();
@@ -536,6 +549,8 @@ public:
     bool IsHeadTrackingSupported();
 
     bool IsHeadTrackingSupportedForDevice(const std::string address);
+
+    bool IsPersonalizedSpatializationSupported();
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 
@@ -557,6 +572,8 @@ public:
     void ReleaseAudioZone(int32_t zoneId);
 
     void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
+
+    int32_t GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds);
 
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
 
@@ -591,6 +608,10 @@ public:
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
 
     int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
+
+    int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId);
+
+    int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
     void SetZoneDeviceVisible(bool visible);
 
@@ -790,6 +811,13 @@ public:
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs);
     int32_t TriggerAudioZoneVolumeSync();
+
+    bool IsAudioSeparationEffectSupported();
+    int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId = -1);
+    int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
+    int32_t OnAudioSeparationEffectEnabledChange(
+        const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
+    int32_t OffAudioSeparationEffectEnabledChange();
 
 private:
     AudioPolicyManager() {}

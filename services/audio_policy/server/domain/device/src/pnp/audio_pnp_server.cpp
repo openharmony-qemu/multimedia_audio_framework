@@ -129,11 +129,6 @@ void AudioPnpServer::OpenAndReadInput()
     }
 
     do {
-        ret = AudioInputThread::AudioPnpInputPollAndRead();
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("[AudioPnpInputPollAndRead] failed");
-            return;
-        }
         eventInfo_ = GetAudioEventInfo(AudioInputThread::audioInputEvent_);
         CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid input info");
         if (AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_BLOCKED ||

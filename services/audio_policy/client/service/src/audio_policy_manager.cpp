@@ -1986,6 +1986,30 @@ bool AudioPolicyManager::IsAdaptiveSpatialRenderingEnabled(const std::string add
     return ret;
 }
 
+int32_t AudioPolicyManager::SetPersonalizedSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+}
+
+bool AudioPolicyManager::IsPersonalizedSpatializationEnabled(const std::string address)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->IsPersonalizedSpatializationEnabled(address, ret);
+    return ret;
+}
+
+int32_t AudioPolicyManager::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->DownloadPersonalizedHRTF(fd, length);
+}
+
 bool AudioPolicyManager::IsHeadTrackingEnabled()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2179,6 +2203,34 @@ int32_t AudioPolicyManager::RegisterSpatialAudioSourceTypeEventListener(
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::RegisterPersonalizedSpatializationEnabledEventListener(
+    const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to register");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddPersonalizedSpatializationEnabledChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetPersonalizedSpatializationEnabledChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE, true);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
@@ -2265,6 +2317,21 @@ int32_t AudioPolicyManager::UnregisterSpatialAudioSourceTypeEventListener()
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::UnregisterPersonalizedSpatializationEnabledEventListener()
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemovePersonalizedSpatializationEnabledChangeCallback();
+        if (audioPolicyClientStubCB_->GetPersonalizedSpatializationEnabledChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE, false);
+        }
+    }
+    return SUCCESS;
+}
+
 AudioSpatializationState AudioPolicyManager::GetSpatializationState(const StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2311,6 +2378,15 @@ bool AudioPolicyManager::IsHeadTrackingSupportedForDevice(const std::string addr
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool ret = false;
     gsp->IsHeadTrackingSupportedForDevice(address, ret);
+    return ret;
+}
+
+bool AudioPolicyManager::IsPersonalizedSpatializationSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->IsPersonalizedSpatializationSupported(ret);
     return ret;
 }
 
@@ -3850,6 +3926,69 @@ int32_t AudioPolicyManager::TriggerAudioZoneVolumeSync()
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->TriggerAudioZoneVolumeSync();
 }
+
+bool AudioPolicyManager::IsAudioSeparationEffectSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->IsAudioSeparationEffectSupported(ret);
+    return ret;
+}
+
+int32_t AudioPolicyManager::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+}
+
+int32_t AudioPolicyManager::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioSeparationEffectVolume(type, volume);
+}
+
+int32_t AudioPolicyManager::OnAudioSeparationEffectEnabledChange(
+    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "Audio separation effect enabled change callback is nullptr");
+
+    int32_t registerRet = callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable ? SUCCESS :
+        RegisterPolicyCallbackClientFunc(gsp);
+    CHECK_AND_RETURN_RET_LOG(registerRet == SUCCESS, registerRet,
+        "RegisterPolicyCallbackClientFunc failed in OnAudioSeparationEffectEnabledChange");
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].mutex);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, SUCCESS,
+        "audioPolicyClientStubCB_ is nullptr");
+    audioPolicyClientStubCB_->AddAudioSeparationEffectEnabledChangeCallback(callback);
+    size_t callbackSize = audioPolicyClientStubCB_->GetAudioSeparationEffectEnabledChangeCallbackSize();
+    CHECK_AND_RETURN_RET_LOG(callbackSize >= 1, ERROR, "Add callback failed");
+    CHECK_AND_RETURN_RET(callbackSize == 1, SUCCESS);
+    callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable = true;
+    SetClientCallbacksEnable(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, true);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::OffAudioSeparationEffectEnabledChange()
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].mutex);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, SUCCESS,
+        "audioPolicyClientStubCB_ is nullptr");
+    audioPolicyClientStubCB_->RemoveAudioSeparationEffectEnabledChangeCallback();
+    size_t callbackSize = audioPolicyClientStubCB_->GetAudioSeparationEffectEnabledChangeCallbackSize();
+    CHECK_AND_RETURN_RET(callbackSize == 0, SUCCESS);
+    callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable = false;
+    SetClientCallbacksEnable(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, false);
+    return SUCCESS;
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

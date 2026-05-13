@@ -948,19 +948,24 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 
 void AudioAdapterManager::SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device)
 {
-    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device null");
     AUDIO_INFO_LOG("Set %{public}s no mute for ringer", device->GetName().c_str());
-    ringerNoMuteDevice_ = device;
+    {
+        std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+        ringerNoMuteDevice_ = device;
+    }
     SetVolumeDbForDeviceInPipe(device, STREAM_RING);
 }
 
 void AudioAdapterManager::ClearDeviceNoMuteForRinger()
 {
-    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
     AUDIO_INFO_LOG("clear no mute device for ringer");
-    auto tmp = ringerNoMuteDevice_;
-    ringerNoMuteDevice_ = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> tmp;
+    {
+        std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+        tmp = ringerNoMuteDevice_;
+        ringerNoMuteDevice_ = nullptr;
+    }
     CHECK_AND_RETURN(tmp != nullptr);
     SetVolumeDbForDeviceInPipe(tmp, STREAM_RING);
 }
@@ -1060,10 +1065,14 @@ bool AudioAdapterManager::GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceD
     AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
-    if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
-        AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
-        return false;
+    {
+        std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+        if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
+            AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
+            return false;
+        }
     }
+
     return volumeDataMaintainer_.LoadMuteFromMap(device, streamType, zoneId);
 }
 
@@ -4289,6 +4298,12 @@ void AudioAdapterManager::ApplySystemVolumeProxy(int32_t zoneId,
         isMuted = false;
         volumeDb = 1.0f;
     }
+}
+
+int32_t AudioAdapterManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "ServiceAdapter is null");
+    return audioServiceAdapter_->UpdatePersonalizedHRTFBin(fd, length);
 }
 } // namespace AudioStandard
 } // namespace OHOS

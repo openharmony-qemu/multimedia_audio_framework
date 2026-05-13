@@ -1879,6 +1879,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
             name = "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT";
             break;
+        case SOURCE_TYPE_INTERPHONE:
+            name = "INTERPHONE";
+            break;
         default:
             name = "UNKNOWN";
     }
