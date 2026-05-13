@@ -3926,6 +3926,69 @@ int32_t AudioPolicyManager::TriggerAudioZoneVolumeSync()
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->TriggerAudioZoneVolumeSync();
 }
+
+bool AudioPolicyManager::IsAudioSeparationEffectSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->IsAudioSeparationEffectSupported(ret);
+    return ret;
+}
+
+int32_t AudioPolicyManager::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+}
+
+int32_t AudioPolicyManager::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioSeparationEffectVolume(type, volume);
+}
+
+int32_t AudioPolicyManager::OnAudioSeparationEffectEnabledChange(
+    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "Audio separation effect enabled change callback is nullptr");
+
+    int32_t registerRet = callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable ? SUCCESS :
+        RegisterPolicyCallbackClientFunc(gsp);
+    CHECK_AND_RETURN_RET_LOG(registerRet == SUCCESS, registerRet,
+        "RegisterPolicyCallbackClientFunc failed in OnAudioSeparationEffectEnabledChange");
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].mutex);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, SUCCESS,
+        "audioPolicyClientStubCB_ is nullptr");
+    audioPolicyClientStubCB_->AddAudioSeparationEffectEnabledChangeCallback(callback);
+    size_t callbackSize = audioPolicyClientStubCB_->GetAudioSeparationEffectEnabledChangeCallbackSize();
+    CHECK_AND_RETURN_RET_LOG(callbackSize >= 1, ERROR, "Add callback failed");
+    CHECK_AND_RETURN_RET(callbackSize == 1, SUCCESS);
+    callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable = true;
+    SetClientCallbacksEnable(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, true);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::OffAudioSeparationEffectEnabledChange()
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].mutex);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, SUCCESS,
+        "audioPolicyClientStubCB_ is nullptr");
+    audioPolicyClientStubCB_->RemoveAudioSeparationEffectEnabledChangeCallback();
+    size_t callbackSize = audioPolicyClientStubCB_->GetAudioSeparationEffectEnabledChangeCallbackSize();
+    CHECK_AND_RETURN_RET(callbackSize == 0, SUCCESS);
+    callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable = false;
+    SetClientCallbacksEnable(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, false);
+    return SUCCESS;
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

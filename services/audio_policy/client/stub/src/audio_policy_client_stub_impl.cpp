@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
+#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1607,6 +1608,16 @@ int32_t AudioPolicyClientStubImpl::OnPersonalizedSpatializationEnabledChangeForA
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::OnAudioSeparationEffectEnabledChange(bool enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSeparationEffectEnabledChangeMutex_);
+    for (const auto &callback : audioSeparationEffectEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+        callback->OnAudioSeparationEffectEnabledChange(enabled);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
@@ -1794,6 +1805,27 @@ size_t AudioPolicyClientStubImpl::GetCurrentSpatialAudioSourceTypeChangeCallback
 {
     std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
     return spatialAudioSourceTypeChangeCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::AddAudioSeparationEffectEnabledChangeCallback(
+    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSeparationEffectEnabledChangeMutex_);
+    audioSeparationEffectEnabledChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSeparationEffectEnabledChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSeparationEffectEnabledChangeMutex_);
+    audioSeparationEffectEnabledChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetAudioSeparationEffectEnabledChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSeparationEffectEnabledChangeMutex_);
+    return audioSeparationEffectEnabledChangeCallbackList_.size();
 }
 
 int32_t AudioPolicyClientStubImpl::AddPersonalizedSpatializationEnabledChangeCallback(

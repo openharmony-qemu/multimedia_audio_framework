@@ -65,6 +65,10 @@ enum HdiSetParamCommandCode {
     HDI_PERSONALIZED_HRTF_BIN_INFO = 22,
 };
 
+enum AudioSeparationVolumeType {
+    VOLUME_TYPE_VOCAL = 0,
+};
+
 enum AudioTwsMode : int32_t {
     TWS_MODE_DEFAULT = 0,
     TWS_MODE_LISTEN = 1,

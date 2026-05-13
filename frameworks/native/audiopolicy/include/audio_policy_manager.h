@@ -35,6 +35,7 @@
 #include "audio_debug_info.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
+#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -810,6 +811,13 @@ public:
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs);
     int32_t TriggerAudioZoneVolumeSync();
+
+    bool IsAudioSeparationEffectSupported();
+    int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId = -1);
+    int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
+    int32_t OnAudioSeparationEffectEnabledChange(
+        const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
+    int32_t OffAudioSeparationEffectEnabledChange();
 
 private:
     AudioPolicyManager() {}

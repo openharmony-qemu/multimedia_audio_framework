@@ -22,6 +22,7 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "i_hpae_manager.h"
+#include <cinttypes>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -920,6 +921,25 @@ void AudioEffectService::UpdateVoipByAppMuteHintLocked(bool enable, uint32_t tri
     }
     HPAE::IHpaeManager::GetHpaeManager().SetAppsEnhanceMuteState(lastVoipBypassTriggerSessionId_, enable);
     AUDIO_INFO_LOG("voip bypass trigger by app-configured mute hint, enable:%{public}d", enable);
+}
+
+bool AudioEffectService::IsAudioSeparationEffectSupported()
+{
+    AUDIO_INFO_LOG("IsAudioSeparationEffectSupported called");
+    return true;
+}
+
+int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled: enabled=%{public}d, uid=%{public}d, streamId=%{public}" PRId64,
+        enabled, uid, streamId);
+    return AUDIO_OK;
+}
+
+int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+{
+    AUDIO_INFO_LOG("SetAudioSeparationEffectVolume: type=%{public}d, volume=%{public}f", type, volume);
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

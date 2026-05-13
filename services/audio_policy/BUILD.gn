@@ -367,10 +367,14 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "INPUT_FEATURE_INDEPENDENT_MODE" ]
   }
 
-  public_configs = [ ":audio_policy_public_config" ]
+  public_configs = [
+    ":audio_policy_public_config",
+    "../audio_service/idl:audio_policy_sa_idl_config",
+  ]
 
   deps = [
     "../../services/audio_service/idl:audio_framework_interface",
+    "../../services/audio_service/idl:audio_policy_idl_callback",
     "../../frameworks/native/audioadapter:pro_audio_service_adapter",
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioinnercall:audio_inner_call",
@@ -588,6 +592,7 @@ config("audio_policy_client_config") {
     "server/proxy/include",
     "server/stub/include",
     "server/service/service_main/include",
+    "server/domain/effect/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audiodefinitions/include",

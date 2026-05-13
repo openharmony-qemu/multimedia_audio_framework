@@ -45,11 +45,20 @@ private:
     static napi_value GetSupportedAudioEffectProperty(napi_env env, napi_callback_info info);
     static napi_value GetAudioEffectProperty(napi_env env, napi_callback_info info);
     static napi_value SetAudioEffectProperty(napi_env env, napi_callback_info info);
+    
+    static napi_value IsAudioSeparationEffectSupported(napi_env env, napi_callback_info info);
+    static napi_value SetAudioSeparationEffectEnabled(napi_env env, napi_callback_info info);
+    static napi_value SetAudioSeparationEffectVolume(napi_env env, napi_callback_info info);
+    static napi_value OnAudioSeparationEffectEnabledChange(napi_env env, napi_callback_info info);
+    static napi_value OffAudioSeparationEffectEnabledChange(napi_env env, napi_callback_info info);
 
     napi_env env_;
     AudioEffectManager *audioEffectMngr_;
     int32_t cachedClientId_ = -1;
+    
+    std::shared_ptr<AudioSeparationEffectEnabledChangeCallback>
+        audioSeparationEffectEnabledChangeCallbackNapi_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif /* NAPI_AUDIO_EFFECT_MANAGER_H */
+#endif // NAPI_AUDIO_EFFECT_MANAGER_H

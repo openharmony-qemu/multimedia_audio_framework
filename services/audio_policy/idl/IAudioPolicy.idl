@@ -354,4 +354,7 @@ interface IAudioPolicy {
     void IsPersonalizedSpatializationEnabled([in] String address, [out] boolean ret);
     void SetPersonalizedSpatializationEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
     void DownloadPersonalizedHRTF([in] FileDescriptor fd, [in] long length);
+    void IsAudioSeparationEffectSupported([out] boolean ret);
+    void SetAudioSeparationEffectEnabled([in] boolean enabled, [in] int uid, [in] long streamId);
+    void SetAudioSeparationEffectVolume([in] int type, [in] double volume);
 }
