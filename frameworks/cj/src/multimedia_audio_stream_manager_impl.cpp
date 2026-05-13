@@ -50,15 +50,17 @@ CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_
         return CArrI32();
     }
     CArrI32 arr {};
-    arr.size = static_cast<int64_t>(audioSceneEffectInfo.mode.size());
+    size_t modeSize = audioSceneEffectInfo.mode.size();
+    arr.size = static_cast<int64_t>(modeSize);
     if (arr.size == 0) {
         return CArrI32();
     }
-    int32_t mallocSize = static_cast<int32_t>(sizeof(int32_t)) * static_cast<int32_t>(arr.size);
-    if (mallocSize > static_cast<int32_t>(sizeof(int32_t) * MAX_MEM_MALLOC_SIZE)) {
+    constexpr size_t maxCount = MAX_MEM_MALLOC_SIZE / sizeof(int32_t);
+    if (modeSize > maxCount) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrI32();
     }
+    size_t mallocSize = sizeof(int32_t) * modeSize;
     auto head = static_cast<int32_t*>(malloc(mallocSize));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
@@ -70,7 +72,7 @@ CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_
         *errorCode = CJ_ERR_SYSTEM;
         return CArrI32();
     }
-    for (int32_t i = 0; i < static_cast<int32_t>(arr.size); i++) {
+    for (size_t i = 0; i < modeSize; i++) {
         head[i] = static_cast<int32_t>(audioSceneEffectInfo.mode[i]);
     }
     arr.head = head;
@@ -87,27 +89,30 @@ CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeI
         return CArrAudioRendererChangeInfo();
     }
     CArrAudioRendererChangeInfo arrInfo {};
-    arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
+    size_t infoSize = audioRendererChangeInfos.size();
+    arrInfo.size = static_cast<int64_t>(infoSize);
     if (arrInfo.size == 0) {
         return CArrAudioRendererChangeInfo();
     }
-    int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
-    if (mallocSize > static_cast<int32_t>(sizeof(CAudioRendererChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
+    constexpr size_t maxCount = MAX_MEM_MALLOC_SIZE / sizeof(CAudioRendererChangeInfo);
+    if (infoSize > maxCount) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();
     }
+    
+    size_t mallocSize = sizeof(CAudioRendererChangeInfo) * infoSize;
     auto head = static_cast<CAudioRendererChangeInfo*>(malloc(mallocSize));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return CArrAudioRendererChangeInfo();
     }
-    arrInfo.head = head;
     if (memset_s(head, mallocSize, 0, mallocSize) != EOK) {
         free(head);
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();
     }
-    for (int32_t i = 0; i < static_cast<int32_t>(audioRendererChangeInfos.size()); i++) {
+    arrInfo.head = head;
+    for (size_t i = 0; i < infoSize; i++) {
         Convert2CAudioRendererChangeInfo(head[i], *(audioRendererChangeInfos[i]), errorCode);
         if (*errorCode != SUCCESS_CODE) {
             FreeCArrAudioRendererChangeInfo(arrInfo);
@@ -127,28 +132,33 @@ CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
+    
     CArrAudioCapturerChangeInfo arrInfo {};
-    arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
-    if (arrInfo.size == 0) {
+    size_t infoSize = audioCapturerChangeInfos.size();
+    arrInfo.size = static_cast<int64_t>(infoSize);
+    if (infoSize == 0) {
         return CArrAudioCapturerChangeInfo();
     }
-    int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
-    if (mallocSize > static_cast<int32_t>(sizeof(AudioCapturerChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
+    
+    constexpr size_t maxCount = MAX_MEM_MALLOC_SIZE / sizeof(CAudioCapturerChangeInfo);
+    if (infoSize > maxCount) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
+    
+    size_t mallocSize = sizeof(CAudioCapturerChangeInfo) * infoSize;
     auto head = static_cast<CAudioCapturerChangeInfo*>(malloc(mallocSize));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return CArrAudioCapturerChangeInfo();
     }
-    arrInfo.head = head;
-    if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
+    if (memset_s(head, mallocSize, 0, mallocSize) != EOK) {
         free(head);
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
-    for (int32_t i = 0; i < static_cast<int32_t>(audioCapturerChangeInfos.size()); i++) {
+    arrInfo.head = head;
+    for (size_t i = 0; i < infoSize; i++) {
         Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), errorCode);
         if (*errorCode != SUCCESS_CODE) {
             FreeCArrAudioCapturerChangeInfo(arrInfo);
