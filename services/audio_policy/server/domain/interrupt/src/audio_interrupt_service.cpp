@@ -2949,7 +2949,8 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
         std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpAudioFocuInfoList = newAudioFocuInfoList;
         for (auto iter = newAudioFocuInfoList.begin(); iter != newAudioFocuInfoList.end(); ++iter) {
             AudioInterrupt inprocessing = iter->first;
-            CHECK_AND_CONTINUE(!ShouldSkipStandbyFocus(iter->first.streamId, iter->second));
+            CHECK_AND_CONTINUE_LOG(iter->second != AudioFocuState::STANDBY, "the current stream %{public}u focus "
+                "state is standby, ignore directly", iter->first.streamId);
             if (IsSameAppInShareMode(incoming, inprocessing) || iter->second == PLACEHOLDER) { continue; }
             auto audioFocusTypePair = std::make_pair(inprocessing.audioFocusType, incoming.audioFocusType);
             if (focusCfgMap_.find(audioFocusTypePair) == focusCfgMap_.end()) {
@@ -2977,15 +2978,6 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
     }
 
     return newAudioFocuInfoList;
-}
-
-bool AudioInterruptService::ShouldSkipStandbyFocus(uint32_t streamId, AudioFocuState state)
-{
-    if (state != AudioFocuState::STANDBY) {
-        return false;
-    }
-    AUDIO_INFO_LOG("stream %{public}u focus state is standby, skip", streamId);
-    return true;
 }
 
 bool AudioInterruptService::UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry,
