@@ -360,7 +360,8 @@ AudioRendererInfo AudioRendererImpl::GetRendererInfoSync()
 AudioStreamInfo AudioRendererImpl::GetStreamInfoSync()
 {
     AudioStreamInfo emptyStreamInfo {
-        .samplingRate = ohos::multimedia::audio::AudioSamplingRate::key_t::SAMPLE_RATE_48000,
+        .samplingRate = AudioSamplingRateOrInt::make_type_enum(
+            ohos::multimedia::audio::AudioSamplingRate::key_t::SAMPLE_RATE_48000),
         .channels = ohos::multimedia::audio::AudioChannel::key_t::CHANNEL_2,
         .sampleFormat = ohos::multimedia::audio::AudioSampleFormat::key_t::SAMPLE_FORMAT_S16LE,
         .encodingType = ohos::multimedia::audio::AudioEncodingType::key_t::ENCODING_TYPE_RAW,
