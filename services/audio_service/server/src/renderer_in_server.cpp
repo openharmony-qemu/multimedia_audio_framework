@@ -3320,15 +3320,23 @@ int32_t RendererInServer::SelectModeAndWriteData(int8_t *inputData, size_t reque
 
 int32_t RendererInServer::CreateServerBuffer()
 {
+    uint32_t sizeInFrame = bufferTotalSizeInFrame_;
     if (processConfig_.rendererInfo.isStatic) {
         CHECK_AND_RETURN_RET_LOG(processConfig_.staticBufferInfo.sharedMemory_ != nullptr,
             ERR_OPERATION_FAILED, "sharedMemory is nullptr");
-        uint32_t totalSizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame_;
-        audioServerBuffer_ = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame, byteSizePerFrame_,
-            AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERROR, "SetStaticClientBuffer failed!");
-        AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
+        sizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame_;
+    }
+    // create OHAudioBuffer in server
+    audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(sizeInFrame, byteSizePerFrame_);
+    CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+        BootAnimationState::CREATE_FROM_LOCAL), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "CreateFromLocal failed!");
+    memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
+        audioServerBuffer_->GetDataSize());
+    int32_t ret = InitBufferStatus();
+    AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
 
+    if (processConfig_.rendererInfo.isStatic) {
         staticBufferProvider_ =
             AudioStaticBufferProvider::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
         CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr,
@@ -3340,18 +3348,6 @@ int32_t RendererInServer::CreateServerBuffer()
         CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr,
             ERR_OPERATION_FAILED, "staticBufferProcessor_ is nullptr!");
         ProcessAndSetStaticBuffer();
-    } else {
-        // create OHAudioBuffer in server
-        audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
-        CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
-            BootAnimationState::CREATE_FROM_LOCAL), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
-
-        // we need to clear data buffer to avoid dirty data.
-        memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
-            audioServerBuffer_->GetDataSize());
-        int32_t ret = InitBufferStatus();
-        AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
     }
     return SUCCESS;
 }

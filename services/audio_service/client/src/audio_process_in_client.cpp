@@ -199,6 +199,7 @@ public:
 private:
 
     bool InitAudioBuffer();
+    bool CopyStaticBufferData();
 
     void CallClientHandleCurrent();
     void CheckOperations();
@@ -700,6 +701,23 @@ void AudioProcessInClientInner::UpdateLatencyTimestamp(std::string &timestamp, b
     gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
+bool AudioProcessInClientInner::CopyStaticBufferData()
+{
+    audioBuffer_->SetStaticMode(true);
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_->GetDataBase() != nullptr, false,
+        "audioBuffer_->GetDataBase() is nullptr");
+
+    auto sharedMemory = processConfig_.staticBufferInfo.sharedMemory_;
+    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr && sharedMemory->GetSize() == audioBuffer_->GetDataSize(),
+        false, "sharedMemory %{public}d is inValid!", sharedMemory != nullptr);
+    int32_t copyRet = memcpy_s(audioBuffer_->GetDataBase(), audioBuffer_->GetDataSize(),
+        sharedMemory->GetBase(), sharedMemory->GetSize());
+    CHECK_AND_RETURN_RET_LOG(copyRet == SUCCESS,
+        false, "memcpy static buffer data failed, ret:%{public}d", copyRet);
+    AUDIO_INFO_LOG("Static mode: copied data from client to server buffer, size:%{public}zu", sharedMemory->GetSize());
+    return true;
+}
+
 bool AudioProcessInClientInner::InitAudioBuffer()
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processProxy_ != nullptr, false,
@@ -748,7 +766,7 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     AUDIO_INFO_LOG("CallbackBufferSize is %{public}zu", clientSpanSizeInByte_);
 
     if (processConfig_.rendererInfo.isStatic) {
-        audioBuffer_->SetStaticMode(true);
+        CHECK_AND_RETURN_RET_LOG(CopyStaticBufferData(), false, "CopyStaticBufferData failed");
     }
     return true;
 }

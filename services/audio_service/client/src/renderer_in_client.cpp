@@ -243,6 +243,26 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     return config;
 }
 
+int32_t RendererInClientInner::CopyStaticBufferData()
+{
+    clientBuffer_->SetStaticMode(true);
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_->GetDataBase() != nullptr, ERR_OPERATION_FAILED,
+        "clientBuffer_->GetDataBase() is nullptr");
+
+    auto sharedMemory = staticBufferInfo_.sharedMemory_;
+    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr && sharedMemory->GetSize() == clientBuffer_->GetDataSize(),
+        ERR_OPERATION_FAILED, "sharedMemory %{public}d is inValid!", sharedMemory != nullptr);
+    
+    int32_t copyRet = memcpy_s(clientBuffer_->GetDataBase(), clientBuffer_->GetDataSize(),
+        sharedMemory->GetBase(), sharedMemory->GetSize());
+    CHECK_AND_RETURN_RET_LOG(copyRet == SUCCESS, ERR_OPERATION_FAILED,
+        "memcpy static buffer data failed, ret: %{public}d", copyRet);
+    
+    AUDIO_INFO_LOG("Static mode: copied data from client to server buffer, size:%{public}zu",
+        clientBuffer_->GetDataSize());
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::InitSharedBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
@@ -266,9 +286,9 @@ int32_t RendererInClientInner::InitSharedBuffer()
         "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
     if (rendererInfo_.isStatic) {
-        clientBuffer_->SetStaticMode(true);
+        CHECK_AND_RETURN_RET_LOG(CopyStaticBufferData() == SUCCESS, ERR_OPERATION_FAILED,
+            "CopyStaticBufferData failed");
     }
-
     return SUCCESS;
 }
 

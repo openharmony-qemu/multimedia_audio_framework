@@ -281,6 +281,7 @@ private:
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
+    int32_t CopyStaticBufferData();
 
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
