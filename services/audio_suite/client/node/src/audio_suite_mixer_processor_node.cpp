@@ -35,6 +35,17 @@ constexpr uint32_t SECONDS_TO_MS = 1000;
 constexpr float MIXER_STREAM_VOLUME_MIN = 0.0f;
 constexpr float MIXER_STREAM_VOLUME_MAX = 1.0f;
 constexpr uint32_t SAMPLES_EVEN_MULTIPLE = 2;
+constexpr size_t FORMAT_S24_BYTES = 3;
+constexpr int BIT_LEN_8 = 8;
+constexpr int BIT_LEN_16 = 16;
+constexpr size_t BIT_LEN_24 = 24;
+constexpr int64_t INT24_MAX = (1 << (BIT_LEN_24 - 1)) - 1;
+constexpr int64_t INT24_MIN = -(1 << (BIT_LEN_24 - 1));
+constexpr int32_t U8_FORMAT_ZERO_OFFSET = 0x80;
+constexpr int64_t BIT_MASK = 0xFF;
+constexpr size_t LSB_BYTE_INDEX = 0;
+constexpr size_t MID_BYTE_INDEX = 1;
+constexpr size_t MSB_BYTE_INDEX = 2;
 
 MixerProcessorNode::MixerProcessorNode()
     : isInitialized_(false)
@@ -55,7 +66,7 @@ void MixerProcessorNode::Destroy()
     AUDIO_DEBUG_LOG("MixerProcessor::Destroy end");
 }
 
-int32_t MixerProcessorNode::Init(const AudioFormat &format)
+int32_t MixerProcessorNode::Init(const AudioFormat &format, bool enableLimiter)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (isInitialized_) {
@@ -70,7 +81,8 @@ int32_t MixerProcessorNode::Init(const AudioFormat &format)
     }
 
     format_ = format;
-    if (limiter_ == nullptr) {
+    enableLimiter_ = enableLimiter;
+    if (enableLimiter_ && limiter_ == nullptr) {
         limiter_ = std::make_unique<AudioLimiter>(0);
     }
 
@@ -142,6 +154,8 @@ int32_t MixerProcessorNode::ProcessCheck(const std::vector<AudioMixStream> &stre
 
     uint32_t inputDataSize = streams[0].dataSize;
     for (size_t i = 0; i < streams.size(); ++i) {
+        CHECK_AND_RETURN_RET_LOG(streams[i].data != nullptr, ERR_INVALID_PARAM,
+            "Stream %{public}zu data is nullptr", i);
         CHECK_AND_RETURN_RET_LOG(streams[i].dataSize == inputDataSize, ERR_INVALID_PARAM,
             "Stream %{public}zu dataSize mismatch", i);
         CHECK_AND_RETURN_RET_LOG(streams[i].volume >= MIXER_STREAM_VOLUME_MIN &&
@@ -160,9 +174,11 @@ int32_t MixerProcessorNode::ProcessCheck(const std::vector<AudioMixStream> &stre
         return ERR_INVALID_PARAM;
     }
 
-    // The number of samples in a single channel must be an even multiple
-    CHECK_AND_RETURN_RET_LOG(frameCount % SAMPLES_EVEN_MULTIPLE == 0, ERR_INVALID_PARAM,
-        "Single-channel samples:%{public}u must be an even multiple", frameCount);
+    if (enableLimiter_) {
+        // The number of samples in a single channel must be an even multiple
+        CHECK_AND_RETURN_RET_LOG(frameCount % SAMPLES_EVEN_MULTIPLE == 0, ERR_INVALID_PARAM,
+            "Single-channel samples:%{public}u must be an even multiple", frameCount);
+    }
     // Maximum length cannot exceed 60ms
     uint32_t maxDataLen = channels * bitDepth_ * sampleRate * MIXER_PROCESS_DATA_MAX_MS / SECONDS_TO_MS;
     CHECK_AND_RETURN_RET_LOG(inputDataSize <= maxDataLen, ERR_INVALID_PARAM,
@@ -172,7 +188,7 @@ int32_t MixerProcessorNode::ProcessCheck(const std::vector<AudioMixStream> &stre
         "Output buffer capacity %{public}u insufficient for inputDataSize %{public}u", outCapacity, inputDataSize);
 
     // Initialize only on first time, report error if length changes later
-    if (streams[0].dataSize != chunkSize_) {
+    if (enableLimiter_ && streams[0].dataSize != chunkSize_) {
         if (chunkSize_ == 0) {
             int32_t ret = limiter_->SetConfig(frameCount * STEREO * sizeof(float),
                 sizeof(float), static_cast<int32_t>(format_.rate), STEREO);
@@ -224,6 +240,35 @@ int32_t MixerProcessorNode::Process(const std::vector<AudioMixStream> &streams,
     int32_t ret = ProcessCheck(streams, outData, outCapacity, outSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ProcessCheck failed, ret: %{public}d", ret);
 
+    if (enableLimiter_) {
+        return MixerLimiter(streams, outData, outCapacity, outSize);
+    } else {
+        switch (format_.format) {
+            case AudioSampleFormat::SAMPLE_U8:
+                MixU8Volume(streams, outData, outCapacity, outSize);
+                return SUCCESS;
+            case AudioSampleFormat::SAMPLE_S16LE:
+                MixS16Volume(streams, outData, outCapacity, outSize);
+                return SUCCESS;
+            case AudioSampleFormat::SAMPLE_S24LE:
+                MixS24Volume(streams, outData, outCapacity, outSize);
+                return SUCCESS;
+            case AudioSampleFormat::SAMPLE_S32LE:
+                MixS32Volume(streams, outData, outCapacity, outSize);
+                return SUCCESS;
+            case AudioSampleFormat::SAMPLE_F32LE:
+                MixF32Volume(streams, outData, outCapacity, outSize);
+                return SUCCESS;
+            default:
+                AUDIO_ERR_LOG("mixer error, format:%{public}u invalid", format_.format);
+                return ERR_INVALID_PARAM;
+        }
+    }
+}
+
+int32_t MixerProcessorNode::MixerLimiter(const std::vector<AudioMixStream> &streams,
+    void *outData, uint32_t outCapacity, uint32_t *outSize)
+{
     uint32_t expectedDataSize = streams[0].dataSize;
     uint32_t sampleCount = expectedDataSize / bitDepth_;
     uint32_t frameCount = sampleCount / format_.audioChannelInfo.numChannels;
@@ -231,7 +276,7 @@ int32_t MixerProcessorNode::Process(const std::vector<AudioMixStream> &streams,
     limiterOutput_.resize(frameCount * STEREO);
     float *mixOut = mixOutput_.data();
 
-    ret = MixStreams(streams, sampleCount, frameCount, mixOut);
+    int32_t ret = MixStreams(streams, sampleCount, frameCount, mixOut);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "MixStreams failed, ret: %{public}d", ret);
 
     ret = limiter_->Process(frameCount * STEREO, mixOut, limiterOutput_.data());
@@ -257,6 +302,98 @@ int32_t MixerProcessorNode::Process(const std::vector<AudioMixStream> &streams,
 
     *outSize = expectedDataSize;
     return SUCCESS;
+}
+
+void MixerProcessorNode::MixU8Volume(const std::vector<AudioMixStream> &streams,
+    void *outData, uint32_t outCapacity, uint32_t *outSize)
+{
+    size_t loopCount = streams[0].dataSize / sizeof(uint8_t);
+    uint8_t *dstPtr = reinterpret_cast<uint8_t *>(outData);
+    for (size_t offset = 0; loopCount > 0; loopCount--) {
+        int32_t sum = 0;
+        for (size_t i = 0; i < streams.size(); i++) {
+            uint8_t *srcPtr = reinterpret_cast<uint8_t *>(streams[i].data) + offset;
+            sum += (static_cast<int32_t>(*srcPtr) - U8_FORMAT_ZERO_OFFSET);
+        }
+        offset++;
+        sum = sum > INT8_MAX ? INT8_MAX : (sum < INT8_MIN ? INT8_MIN : sum);
+        *dstPtr++ = sum + U8_FORMAT_ZERO_OFFSET;
+    }
+    *outSize = streams[0].dataSize;
+}
+
+void MixerProcessorNode::MixS16Volume(const std::vector<AudioMixStream> &streams,
+    void *outData, uint32_t outCapacity, uint32_t *outSize)
+{
+    size_t loopCount = streams[0].dataSize / sizeof(int16_t);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(outData);
+    for (size_t offset = 0; loopCount > 0; loopCount--) {
+        int32_t sum = 0;
+        for (size_t i = 0; i < streams.size(); i++) {
+            int16_t *srcPtr = reinterpret_cast<int16_t *>(streams[i].data) + offset;
+            sum += *srcPtr;
+        }
+        offset++;
+        *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
+    }
+    *outSize = streams[0].dataSize;
+}
+
+void MixerProcessorNode::MixS24Volume(const std::vector<AudioMixStream> &streams,
+    void *outData, uint32_t outCapacity, uint32_t *outSize)
+{
+    size_t loopCount = streams[0].dataSize / FORMAT_S24_BYTES;
+    uint8_t *dstPtr = reinterpret_cast<uint8_t *>(outData);
+    for (size_t offset = 0; loopCount > 0; loopCount--, offset += FORMAT_S24_BYTES) {
+        int64_t sum = 0;
+        for (size_t i = 0; i < streams.size(); i++) {
+            uint8_t *srcBuffer = reinterpret_cast<uint8_t *>(streams[i].data) + offset;
+            uint32_t srcAudioBuffer24Bit = (srcBuffer[MSB_BYTE_INDEX] << BIT_LEN_16) |
+                (srcBuffer[MID_BYTE_INDEX] << BIT_LEN_8) | srcBuffer[LSB_BYTE_INDEX];
+            int32_t srcAudioData24Bit = (static_cast<int32_t>(srcAudioBuffer24Bit) << BIT_LEN_8) >> BIT_LEN_8;
+            sum += srcAudioData24Bit;
+        }
+        sum = std::min(INT24_MAX, std::max(INT24_MIN, sum));
+        *dstPtr++ = static_cast<uint8_t>(sum & BIT_MASK);
+        *dstPtr++ = static_cast<uint8_t>((sum >> BIT_LEN_8) & BIT_MASK);
+        *dstPtr++ = static_cast<uint8_t>((sum >> BIT_LEN_16) & BIT_MASK);
+    }
+    *outSize = streams[0].dataSize;
+}
+
+void MixerProcessorNode::MixS32Volume(const std::vector<AudioMixStream> &streams,
+    void *outData, uint32_t outCapacity, uint32_t *outSize)
+{
+    size_t loopCount = streams[0].dataSize / sizeof(int32_t);
+    int32_t *dstPtr = reinterpret_cast<int32_t *>(outData);
+    for (size_t offset = 0; loopCount > 0; loopCount--) {
+        int64_t sum = 0;
+        for (size_t i = 0; i < streams.size(); i++) {
+            int32_t *srcPtr = reinterpret_cast<int32_t *>(streams[i].data) + offset;
+            sum += *srcPtr;
+        }
+        offset++;
+        sum = sum > INT32_MAX ? INT32_MAX : (sum < INT32_MIN ? INT32_MIN : sum);
+        *dstPtr++ = static_cast<int32_t>(sum);
+    }
+    *outSize = streams[0].dataSize;
+}
+
+void MixerProcessorNode::MixF32Volume(const std::vector<AudioMixStream> &streams,
+    void *outData, uint32_t outCapacity, uint32_t *outSize)
+{
+    size_t loopCount = streams[0].dataSize / sizeof(float);
+    float *dstPtr = reinterpret_cast<float *>(outData);
+    for (size_t offset = 0; loopCount > 0; loopCount--) {
+        float sum = 0.0f;
+        for (size_t i = 0; i < streams.size(); i++) {
+            float *srcPtr = reinterpret_cast<float *>(streams[i].data) + offset;
+            sum += *srcPtr;
+        }
+        offset++;
+        *dstPtr++ = sum;
+    }
+    *outSize = streams[0].dataSize;
 }
 
 } // namespace AudioSuite

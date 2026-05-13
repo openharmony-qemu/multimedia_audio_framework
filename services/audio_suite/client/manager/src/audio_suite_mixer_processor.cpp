@@ -26,13 +26,13 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-std::unique_ptr<MixerProcessor> MixerProcessorManager::Create(const AudioFormat &format)
+std::unique_ptr<MixerProcessor> MixerProcessorManager::Create(const AudioFormat &format, bool enableLimiter)
 {
-    AUDIO_INFO_LOG("MixerProcessorManager::Create");
+    AUDIO_INFO_LOG("Mixer processor create, enableLimiter: %{public}d", enableLimiter);
     std::unique_ptr<MixerProcessorNode> node = std::make_unique<MixerProcessorNode>();
     CHECK_AND_RETURN_RET_LOG(node != nullptr, nullptr, "create MixerProcessorNode failed");
 
-    int32_t ret = node->Init(format);
+    int32_t ret = node->Init(format, enableLimiter);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "MixerProcessorNode::Init failed, ret: %{public}d", ret);
 
     return node;
