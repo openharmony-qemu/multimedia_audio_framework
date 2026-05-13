@@ -47,10 +47,12 @@ private:
     bool IsScoDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    int FindHighestPriorityDevice(std::string &highestPriorityMac);
+    int FindHighestPriorityDevice();
     
     std::vector<StreamDeviceInfo> outputStreamDevices_;
     std::vector<StreamDeviceInfo> inputStreamDevices_;
+    int cachedHighestPriority_ = 0;
+    std::string cachedHighestPriorityMac_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
