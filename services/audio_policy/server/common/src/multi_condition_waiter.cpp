@@ -29,20 +29,22 @@ namespace AudioStandard {
 
 MultiConditionWaiter::MultiConditionWaiter(std::shared_ptr<MultiConditionWaiterData> data) : data_(data)
 {}
+
 bool MultiConditionWaiter::IsCompleted(uint64_t targetConditionMask) const
 {
     CHECK_AND_RETURN_RET(data_ != nullptr, false);
-    return (data_->completedConditionMask_.load() & targetConditionMask) == targetConditionMask;
+    return (data_->completedConditionMask_.load(std::memory_order_acquire) & targetConditionMask) ==
+        targetConditionMask;
 }
 
 MultiConditionWaiter::WaitCountGuard::WaitCountGuard(std::atomic<int32_t> &waitCount) : waitCount_(waitCount)
 {
-    oldCount_ = waitCount_.fetch_add(1);
+    oldCount_ = waitCount_.fetch_add(1, std::memory_order_relaxed);
 }
 
 MultiConditionWaiter::WaitCountGuard::~WaitCountGuard()
 {
-    waitCount_.fetch_sub(1);
+    waitCount_.fetch_sub(1, std::memory_order_relaxed);
 }
 
 int32_t MultiConditionWaiter::WaitCountGuard::GetOldCount() const
@@ -111,7 +113,7 @@ void MultiConditionNotifier::NotifySuccess(uint64_t completedConditionMask)
 
     {
         std::lock_guard<std::mutex> lock(data_->mutex_);
-        data_->completedConditionMask_.fetch_or(completedConditionMask);
+        data_->completedConditionMask_.fetch_or(completedConditionMask, std::memory_order_release);
         AUDIO_INFO_LOG("Wait condition mask done: 0x%{public}" PRIx64, completedConditionMask);
     }
     data_->cv_.notify_all();
