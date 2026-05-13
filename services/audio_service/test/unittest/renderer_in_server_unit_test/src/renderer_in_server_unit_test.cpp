@@ -4286,5 +4286,50 @@ HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_ZeroSpan
     rendererInServer->spanSizeInFrame_ = 0;
     rendererInServer->RefreshServerBufferForSpanSizeUpdate();
 }
+
+/**
+ * @tc.name  : Test CreateServerBuffer branch
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_CreateServerBuffer_NonStatic_001
+ * @tc.desc  : Test CreateServerBuffer with isStatic=false, verify staticBufferProvider/staticBufferProcessor are null.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServer_CreateServerBuffer_NonStatic_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.isStatic = false;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    
+    EXPECT_EQ(rendererInServer->staticBufferProvider_, nullptr);
+    EXPECT_EQ(rendererInServer->staticBufferProcessor_, nullptr);
+}
+
+/**
+ * @tc.name  : Test CreateServerBuffer branch
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_CreateServerBuffer_Static_001
+ * @tc.desc  : Test CreateServerBuffer with isStatic=true, verify staticBufferProvider/staticBufferProcessor are created.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServer_CreateServerBuffer_Static_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.isStatic = true;
+    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(1024, "test_static_buffer");
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    
+    EXPECT_NE(rendererInServer->staticBufferProvider_, nullptr);
+    EXPECT_NE(rendererInServer->staticBufferProcessor_, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
