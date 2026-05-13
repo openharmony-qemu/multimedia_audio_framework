@@ -659,7 +659,8 @@ napi_value NapiAudioSpatializationManager::updatePersonalizedSpatializationEnabl
             "audio spatialization manager state is error.");
         if (argc == ARGS_TWO) {
             bool isPersonalizedSpatializationSupported = napiAudioSpatializationManager->
-                audioSpatializationMngr_->IsSpatializationSupportedForDevice(context->deviceDescriptor);
+                audioSpatializationMngr_->IsSpatializationSupportedForDevice(context->deviceDescriptor) &&
+                napiAudioSpatializationManager->audioSpatializationMngr_->IsPersonalizedSpatializationSupported();
             context->intValue = isPersonalizedSpatializationSupported ?
                 napiAudioSpatializationManager->audioSpatializationMngr_->SetPersonalizedSpatializationEnabled(
                     context->deviceDescriptor, context->personalizedSpatializationEnable) : ERR_DEVICE_NOT_SUPPORTED;
@@ -1701,9 +1702,12 @@ napi_value NapiAudioSpatializationManager::executeDownloadPersonalizedHRTF(
         CHECK_AND_RETURN_LOG(CheckAudioSpatializationManagerStatus(napiAudioSpatializationManager, context),
             "audio spatialization manager state is error.");
 
-        int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->DownloadPersonalizedHRTF(
+        bool isPersonalizedSpatializationSupported = napiAudioSpatializationManager->audioSpatializationMngr_->
+            IsPersonalizedSpatializationSupported();
+        int32_t ret = isPersonalizedSpatializationSupported ?
+            napiAudioSpatializationManager->audioSpatializationMngr_->DownloadPersonalizedHRTF(
             context->audioHRTFAnonymousDescriptor.fd,
-            context->audioHRTFAnonymousDescriptor.length);
+            context->audioHRTFAnonymousDescriptor.length) : ERR_DEVICE_NOT_SUPPORTED;
 
         switch (ret) {
             case SUCCESS:
