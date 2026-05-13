@@ -72,6 +72,12 @@ typedef struct RemoteAdapterWrapper {
     bool isValid_ = true;
 } RemoteAdapterWrapper;
 
+typedef struct RemoteParameter {
+    AudioParamKey key_ = AudioParamKey::NONE;
+    std::string condition_ = "";
+    std::string value_ = "";
+} RemoteParameter;
+
 class RemoteDeviceManager : public IDeviceManager {
 public:
     RemoteDeviceManager() = default;
@@ -137,12 +143,16 @@ private:
     void DestroyAllChannels(const std::string &adapterName);
     int32_t HandleAdapterParamChangeEvent(const std::string &adapterName, const AudioParamKey key,
         const char *condition, const char *value);
+    void CacheAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
+        const std::string &value);
+    void ResendCachedAudioParameter(const std::string &adapterName);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr int32_t EVENT_DES_SIZE = 60;
     static constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
     static constexpr int32_t PARAMS_STATE_NUM = 2;
+    static constexpr int32_t MAX_AUDIO_PARAM_CACHE_NUM = 5;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr char ROUTE_ENABLE = '1';
@@ -156,6 +166,8 @@ private:
     std::unordered_map<std::string, IAudioAdapterCallback*> adapterParamCallbacks_;
     std::mutex adapterParamCallbackMtx_;
     SinkCallbackWrapper callback_ = {};
+    std::unordered_map<std::string, RemoteParameter> audioParamCache_;
+    std::mutex audioParamCacheMtx_;
 };
 
 } // namespace AudioStandard
