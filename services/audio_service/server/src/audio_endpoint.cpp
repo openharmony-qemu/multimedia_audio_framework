@@ -589,7 +589,10 @@ bool AudioEndpointInner::ConfigOutputPoint(const AudioEndpointConfig &endpointCo
     }
 
     IAudioSinkAttr attr = InitSinkAttr(endpointConfig);
-    if (!sink->IsInited()) {
+    if (deviceInfo_.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        sink->Init(attr);
+        CHECK_AND_RETURN_RET_LOG(sink->IsInited(), false, "Init sink fail");
+    } else if (!sink->IsInited()) {
         AUDIO_INFO_LOG("need Init sink:%{public}u", fastRenderId_);
         sink->Init(attr);
         CHECK_AND_RETURN_RET_LOG(sink->IsInited(), false, "Init sink fail");
