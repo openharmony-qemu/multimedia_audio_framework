@@ -1482,9 +1482,9 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
         attr.routeFlag = pipeInfo->routeFlag_;
         pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
+        std::string idInfo = HDI_ID_INFO_DEFAULT;
+        HdiIdType idType = HDI_ID_TYPE_PRIMARY;
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
-            std::string idInfo = HDI_ID_INFO_DEFAULT;
-            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
             GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) ||
                 (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP_FAST)) {
@@ -1495,8 +1495,6 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             }
             result = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else if (IsDirectRoute(pipeInfo->routeFlag_)) {
-            std::string idInfo = HDI_ID_INFO_DEFAULT;
-            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
             GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_DIRECT;
@@ -1506,7 +1504,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             }
             audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else {
-            std::string idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
+            idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
             result = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
