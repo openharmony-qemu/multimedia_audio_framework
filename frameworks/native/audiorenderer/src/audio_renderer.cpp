@@ -3206,8 +3206,8 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
 
 int32_t AudioRendererPrivate::SetSpeed(float speed)
 {
-    AUDIO_INFO_LOG("set speed %{public}f", speed);
-    CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
+    const double eps = 1e-6;
+    CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL - eps) && (speed <= GetMaxSpeed() + eps),
         ERR_INVALID_PARAM, "invaild speed index");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -3225,6 +3225,14 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
 
     SetSonicPitch(AudioSpeed::GetPitchForSpeed(speed));
     return SUCCESS;
+}
+
+float AudioRendererPrivate::GetMaxSpeed()
+{
+    if (PermissionUtil::VerifySystemPermission()) {
+        return MAX_STREAM_SPEED_LEVEL_FOR_AVPLAYER;
+    }
+    return MAX_STREAM_SPEED_LEVEL;
 }
 
 int32_t AudioRendererPrivate::SetSonicPitch(float pitch)
