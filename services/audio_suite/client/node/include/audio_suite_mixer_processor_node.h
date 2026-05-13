@@ -34,7 +34,7 @@ public:
     MixerProcessorNode();
     ~MixerProcessorNode() override;
 
-    int32_t Init(const AudioFormat &format);
+    int32_t Init(const AudioFormat &format, bool enableLimiter = true);
     int32_t Process(const std::vector<AudioMixStream> &streams,
         void *outData, uint32_t outCapacity, uint32_t *outSize) override;
     void Destroy() override;
@@ -45,8 +45,21 @@ private:
         uint32_t sampleCount, uint32_t frameCount, float *mixOut);
     int32_t ProcessCheck(const std::vector<AudioMixStream> &streams,
         void *outData, uint32_t outCapacity, uint32_t *outSize);
+    int32_t MixerLimiter(const std::vector<AudioMixStream> &streams,
+        void *outData, uint32_t outCapacity, uint32_t *outSize);
+    void MixU8Volume(const std::vector<AudioMixStream> &streams,
+        void *outData, uint32_t outCapacity, uint32_t *outSize);
+    void MixS16Volume(const std::vector<AudioMixStream> &streams,
+        void *outData, uint32_t outCapacity, uint32_t *outSize);
+    void MixS24Volume(const std::vector<AudioMixStream> &streams,
+        void *outData, uint32_t outCapacity, uint32_t *outSize);
+    void MixS32Volume(const std::vector<AudioMixStream> &streams,
+        void *outData, uint32_t outCapacity, uint32_t *outSize);
+    void MixF32Volume(const std::vector<AudioMixStream> &streams,
+        void *outData, uint32_t outCapacity, uint32_t *outSize);
 
     std::mutex mutex_;
+    bool enableLimiter_ = true;
     AudioFormat format_;
     bool formatConvert_ = false;
     bool channelConvert_ = false;

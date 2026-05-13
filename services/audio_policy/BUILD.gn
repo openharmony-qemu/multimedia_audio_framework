@@ -976,6 +976,7 @@ ohos_shared_library("audio_policy_common") {
     "i18n:intl_util",
     "ipc:ipc_core",
     "resource_management:global_resmgr",
+    "icu:shared_icuuc",
   ]
 
   cflags = [ "-Os" ]

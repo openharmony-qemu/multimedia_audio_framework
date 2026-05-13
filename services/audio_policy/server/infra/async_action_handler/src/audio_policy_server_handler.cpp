@@ -35,6 +35,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
+static const int32_t FOCUS_REQUESTED_TIMEOUT_SECONDS = 60;
 
 static std::string GeneratePidsStrForPrinting(
     const std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> &unorderedMap)
@@ -1144,6 +1145,10 @@ void AudioPolicyServerHandler::HandleRequestCateGoryEvent(const AppExecFwk::Inne
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioXCollie audioXCollie("AudioPolicyServerHandler::HandleRequestCateGoryEvent", FOCUS_REQUESTED_TIMEOUT_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("HandleRequestCateGoryEvent timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {

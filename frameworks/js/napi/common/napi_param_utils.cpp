@@ -748,7 +748,9 @@ napi_status NapiParamUtils::SetAudioSpatialEnabledStateForDevice(const napi_env 
 {
     (void)napi_create_object(env, &result);
     napi_value jsArray;
-    NapiParamUtils::SetDeviceDescriptor(env, audioSpatialEnabledStateForDevice.deviceDescriptor, jsArray);
+    napi_status ret =
+        NapiParamUtils::SetDeviceDescriptor(env, audioSpatialEnabledStateForDevice.deviceDescriptor, jsArray);
+    CHECK_AND_RETURN_RET_LOG(ret == napi_ok, ret, "Set Device Descriptor fail");
     napi_set_named_property(env, result, "deviceDescriptor", jsArray);
 
     NapiParamUtils::SetValueBoolean(env, "enabled", audioSpatialEnabledStateForDevice.enabled, result);
@@ -761,7 +763,9 @@ napi_status NapiParamUtils::SetPersonalizedSpatialEnabledStateForDevice(const na
 {
     (void)napi_create_object(env, &result);
     napi_value jsArray;
-    NapiParamUtils::SetDeviceDescriptor(env, personalizedSpatialEnabledStateForDevice.deviceDescriptor, jsArray);
+    napi_status ret =
+        NapiParamUtils::SetDeviceDescriptor(env, personalizedSpatialEnabledStateForDevice.deviceDescriptor, jsArray);
+    CHECK_AND_RETURN_RET_LOG(ret == napi_ok, ret, "Set Device Descriptor fail");
     napi_set_named_property(env, result, "deviceDescriptor", jsArray);
 
     NapiParamUtils::SetValueBoolean(env, "enabled", personalizedSpatialEnabledStateForDevice.enabled, result);

@@ -263,6 +263,11 @@ public:
         return streamInfo_.channels > AudioChannel::STEREO;
     }
 
+    bool IsLoopbackStream() const
+    {
+        return rendererInfo_.isLoopback || capturerInfo_.isLoopback;
+    }
+
     void ResetToNormalRoute(bool updateRoute);
 
     bool IsOldRouteOffload() const
@@ -393,6 +398,15 @@ public:
             }
         }
         return false;
+    }
+
+    HdPlaybackMode GetHdPlaybackMode()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.empty() || newDeviceDescs_.front() == nullptr) {
+            return HD_NOT_SUPPORTED;
+        }
+        return newDeviceDescs_.front()->GetHdPlaybackMode();
     }
 
     uint32_t GetUltraFastFlag()

@@ -651,7 +651,7 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
         }
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
-            AUDIO_ERR_LOG("engine CreateNode failed, pipeline is nullptr.");
+            AUDIO_ERR_LOG("engine RenderFrame failed, pipeline is nullptr.");
             managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
         }

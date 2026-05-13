@@ -50,6 +50,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const size_t MAX_LENGTH_STRING = 64;
 
 typedef void (*TestFuncs)();
 
@@ -83,7 +84,7 @@ void FlushDfxMsgFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioInterruptDfxCollector dfxCollector;
     uint32_t index = 0;
-    uint32_t appUid = GetData<uint32_t>();
+    uint32_t appUid = fdp.ConsumeIntegral<uint32_t>();
     std::list<InterruptDfxInfo> dfxInfoList;
     dfxCollector.dfxInfos_[index] = dfxInfoList;
     dfxCollector.FlushDfxMsg(index, appUid);
@@ -101,11 +102,11 @@ void GetDfxIndexesFuzzTest(FuzzedDataProvider& fdp)
 void WriteEffectMsgFuzzTest(FuzzedDataProvider& fdp)
 {
     InterruptDfxBuilder dfxBuilder;
-    uint8_t appstate = GetData<uint32_t>();
-    std::string bundleName = "com.ohos.test";
+    uint8_t appstate = fdp.ConsumeIntegral<uint8_t>();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_LENGTH_STRING);
     AudioInterrupt audioInterrupt;
     int32_t hintTypeCount = static_cast<int32_t>(InterruptHint::INTERRUPT_HINT_UNMUTE) + 1;
-    InterruptHint hintType = static_cast<InterruptHint>(GetData<uint8_t>() % hintTypeCount);
+    InterruptHint hintType = static_cast<InterruptHint>(fdp.ConsumeIntegral<uint8_t>() % hintTypeCount);
     dfxBuilder.WriteEffectMsg(appstate, bundleName, audioInterrupt, hintType);
 }
 
@@ -121,8 +122,8 @@ void WriteInfoMsgFuzzTest(FuzzedDataProvider& fdp)
 void WriteActionMsgFuzzTest(FuzzedDataProvider& fdp)
 {
     InterruptDfxBuilder dfxBuilder;
-    uint8_t infoIndex = GetData<uint32_t>();
-    uint8_t effectIdx = GetData<uint32_t>();
+    uint8_t infoIndex = fdp.ConsumeIntegral<uint8_t>();
+    uint8_t effectIdx = fdp.ConsumeIntegral<uint8_t>();
     InterruptStage stage = INTERRUPT_STAGE_STOP;
     dfxBuilder.WriteActionMsg(infoIndex, effectIdx, stage);
 }
@@ -130,48 +131,52 @@ void WriteActionMsgFuzzTest(FuzzedDataProvider& fdp)
 void GetFloatValueFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    float value = GetData<float>();
-    std::string key = "test";
-    std::string tableType = "test";
+    float value = fdp.ConsumeFloatingPoint<float>();
+    std::string key = fdp.ConsumeRandomLengthString(MAX_LENGTH_STRING);
+    std::string tableType = fdp.ConsumeRandomLengthString(MAX_LENGTH_STRING);
     settingProvider.GetFloatValue(key, value, tableType);
 }
 
 void SetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    bool isDataShareReady = false;
+    bool isDataShareReady = fdp.ConsumeBool();
     settingProvider.SetDataShareReady(isDataShareReady);
 }
 
 void IsValidKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    std::string key = "test";
+    std::string key = fdp.ConsumeRandomLengthString(MAX_LENGTH_STRING);
     settingProvider.IsValidKey(key);
 }
 
 void ParseFirstOfKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    size_t pos = 0;
-    size_t len = 1;
-    std::string input = "test";
+    std::string input = fdp.PickValueInArray({"test"});
+    size_t inputLen = input.length();
+    size_t pos = fdp.ConsumeIntegralInRange<size_t>(0, inputLen);
+    size_t len = fdp.ConsumeIntegralInRange<size_t>(1, inputLen);
+
     settingProvider.ParseFirstOfKey(pos, len, input);
 }
 
 void ParseJsonArrayFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    std::string input = "{'aa':'bb'}";
-    settingProvider.ParseJsonArray(input);
+    std::string key = fdp.ConsumeRandomLengthString(MAX_LENGTH_STRING);
+    std::string  value = fdp.ConsumeRandomLengthString(MAX_LENGTH_STRING);
+    std::string input = "{\"" + key + "\":\"" + value + "\"}";
 }
 
 void ParseSecondOfValueFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    size_t pos = 0;
-    size_t len = 1;
-    std::string input = "test";
+    std::string input = fdp.PickValueInArray({"test"});
+    size_t inputLen = input.length();
+    size_t pos = fdp.ConsumeIntegralInRange<size_t>(0, inputLen);
+    size_t len = fdp.ConsumeIntegralInRange<size_t>(1, inputLen);
     settingProvider.ParseSecondOfValue(pos, len, input);
 }
 

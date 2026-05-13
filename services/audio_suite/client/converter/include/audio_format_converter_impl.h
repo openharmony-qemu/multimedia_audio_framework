@@ -21,6 +21,7 @@
 #include "audio_suite_format_conversion.h"
 #include "audio_format_converter.h"
 #include "audio_suite_raw_format_conversion.h"
+#include "audio_errors.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -72,14 +73,14 @@ public:
 
     int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) override;
 
-    AudioConvertResult Process(const uint8_t* inData, uint32_t inSampleCount) override;
+    AudioConvertResult SyncProcess(const uint8_t* inData, uint32_t inBytes) override;
 
     void Destroy() override;
 
     PcmBufferFormat inputFormat_;
     PcmBufferFormat outputFormat_;
-    std::unique_ptr<AudioSuiteFormatConversion> formatConversion_;
-    std::unique_ptr<AudioSuiteRawFormatConversion> rawFormatConversion_;
+    std::unique_ptr<AudioSuiteFormatConversion> formatConversion_ = nullptr;
+    std::unique_ptr<AudioSuiteRawFormatConversion> rawFormatConversion_ = nullptr;
     bool destroyed_ = false;
     std::mutex mutex_;
     std::vector<uint8_t> outputDataVector_;
@@ -121,9 +122,8 @@ private:
         uint32_t outputBytesPerFrame);
     int32_t ProcessConversion(void* audioData, uint32_t outputCapacity,
         uint32_t* outputSize, uint32_t outputBytesPerFrame, uint32_t maxOutputFrames);
-    AudioConvertResult ValidateBasicParams(const uint8_t* inData, uint32_t inSampleCount);
-    AudioConvertResult ValidateSampleRateParams(uint32_t inSampleCount);
-    AudioConvertResult ValidateMinBytesParams(uint32_t inSampleCount, uint32_t inputBytes);
+    AudioConvertResult ValidateBasicParams(const uint8_t* inData, uint32_t inBytes);
+    AudioConvertResult ValidateSampleRateParams(uint32_t inBytes);
     AudioConvertResult ExecuteConversion(const uint8_t* inData, uint32_t inputBytes);
     
     std::shared_ptr<FormatConverterDataCallback> dataCallback_;

@@ -2285,7 +2285,8 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     OnRemoteDeviceStatusUpdatedWhenNoRunningStream(descs.front());
     audioRouterSelectStrategy_.UpdateCurrentOutputDevice(SYSTEM_UID, descs);
     AUDIO_DEBUG_LOG("currentActiveDevice %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
-    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
+    bool enableSetVoiceCallVolume = !IsDeviceSwitching(reason);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front(), enableSetVoiceCallVolume);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_ = descs;
@@ -2877,6 +2878,8 @@ void AudioCoreService::HandleDualStartClient(std::vector<std::pair<DeviceType, D
 void AudioCoreService::ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN(streamDesc != nullptr && streamDesc->IsDeviceRemote());
+    auto hdPlayMode = streamDesc->GetHdPlaybackMode();
+    CHECK_AND_RETURN_LOG(hdPlayMode != HdPlaybackMode::DEVICE_LEVEL, "device level hdPlay, skip reset");
     AUDIO_INFO_LOG("originalFlag: %{public}d, oldOriginalFlag: %{public}d", streamDesc->rendererInfo_.originalFlag,
         streamDesc->oldOriginalFlag_);
     streamDesc->ResetOriginalFlag();

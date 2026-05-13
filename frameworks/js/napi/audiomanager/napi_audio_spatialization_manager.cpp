@@ -955,9 +955,6 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeCallback
     if (!napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_) {
         napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_ =
             std::make_shared<NapiAudioSpatializationEnabledChangeCallback>(env);
-        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_ != nullptr,
-            "NapiAudioSpatializationManager: Memory Allocation Failed !!");
-
         int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
             RegisterSpatializationEnabledEventListener(
             napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_);
@@ -982,9 +979,6 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeForCurre
     if (!napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_) {
         napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_ =
             std::make_shared<NapiAudioCurrentSpatializationEnabledChangeCallback>(env);
-        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_ !=
-            nullptr, "NapiAudioSpatializationManager: Memory Allocation Failed !!");
-
         int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
             RegisterSpatializationEnabledForCurrentDeviceEventListener(
             napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_);
@@ -1010,9 +1004,6 @@ void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(n
     if (!napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_) {
         napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_ =
             std::make_shared<NapiAudioHeadTrackingEnabledChangeCallback>(env);
-        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_ != nullptr,
-            "NapiAudioSpatializationManager: Memory Allocation Failed !!");
-
         int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
             RegisterHeadTrackingEnabledEventListener(
             napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_);
@@ -1037,10 +1028,6 @@ void NapiAudioSpatializationManager::RegisterAdaptiveSpatialRenderingEnabledChan
     if (!napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_) {
         napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_ =
             std::make_shared<NapiAdaptiveSpatialRenderingEnabledChangeCallback>(env);
-        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->
-            adaptiveSpatialRenderingEnabledChangeCallbackNapi_ != nullptr,
-            "NapiAudioSpatializationManager: Memory Allocation Failed !!");
-
         int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
             RegisterAdaptiveSpatialRenderingEnabledEventListener(
             napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_);
@@ -1065,10 +1052,6 @@ void NapiAudioSpatializationManager::RegisterPersonalizedSpatializationEnabledCh
     if (!napiAudioSpatializationManager->personalizedSpatializationEnabledChangeCallbackNapi_) {
         napiAudioSpatializationManager->personalizedSpatializationEnabledChangeCallbackNapi_ =
             std::make_shared<NapiPersonalizedSpatializationEnabledChangeCallback>(env);
-        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->
-            personalizedSpatializationEnabledChangeCallbackNapi_ != nullptr,
-            "NapiAudioSpatializationManager: Memory Allocation Failed !!");
-
         int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
             RegisterPersonalizedSpatializationEnabledEventListener(
             napiAudioSpatializationManager->personalizedSpatializationEnabledChangeCallbackNapi_);
@@ -1093,10 +1076,6 @@ void NapiAudioSpatializationManager::RegisterSpatialAudioSourceTypeChangeCallbac
     if (!napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_) {
         napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_ =
             std::make_shared<NapiSpatialAudioSourceTypeCallback>(env);
-        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->
-            spatialAudioSourceTypeChangeCallbackNapi_ != nullptr,
-            "NapiAudioSpatializationManager: Memory Allocation Failed !!");
-
         int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
             RegisterSpatialAudioSourceTypeEventListener(
             napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_);

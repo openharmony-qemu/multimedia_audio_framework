@@ -4692,7 +4692,8 @@ int32_t AudioPolicyServer::AddStreamIdToAudioZone(int32_t zoneId, uint32_t strea
 int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
-    CHECK_AND_RETURN_RET_LOG(streamId >= MIN_STREAMID && streamId <= MAX_STREAMID, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsValidRenderSessionId(streamId), ERR_INVALID_PARAM,
         "streamId is invalid");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);

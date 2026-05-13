@@ -1,0 +1,92 @@
+# Copyright (c) 2021-2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+group("fuzztest") {
+  testonly = true
+
+  deps = [
+    "audioa2dpdevice_fuzzer:fuzztest",
+    "audioa2dpoffloadmanager_fuzzer:fuzztest",
+    "audioactivedevice_fuzzer:fuzztest",
+    "audioadaptermanager_fuzzer:fuzztest",
+    "audiobackgroundmanager_fuzzer:fuzztest",
+    "audioclienttrackercallbacklistener_fuzzer:fuzztest",
+    "audiocollaborativeservice_fuzzer:fuzztest",
+    "audioconnecteddevice_fuzzer:fuzztest",
+    "audiocoreconfigmanager_fuzzer:fuzztest",
+    "audiocoreservice_fuzzer:fuzztest",
+    "audiocoreserviceentry_fuzzer:fuzztest",
+    "audiocoreserviceprivate_fuzzer:fuzztest",
+    "audiocoreserviceprivatemore_fuzzer:fuzztest",
+    "audiodevicecommon_fuzzer:fuzztest",
+    "audiodevicelock_fuzzer:fuzztest",
+    "audiodevicestatus_fuzzer:fuzztest",
+    "audioeffectservice_fuzzer:fuzztest",
+    "audioinjectorpolicy_fuzzer:fuzztest",
+    "audioinputthread_fuzzer:fuzztest",
+    "audiointerruptdfxcollector_fuzzer:fuzztest",
+    "audiointerruptgroupinfo_fuzzer:fuzztest",
+    "audiointerruptservice_fuzzer:fuzztest",
+    "audiointerruptservicemore_fuzzer:fuzztest",
+    "audiointerruptzone_fuzzer:fuzztest",
+    "audioiohandlemap_fuzzer:fuzztest",
+    "audioloudvolumemanager_fuzzer:fuzztest",
+    "audiooffloadstream_fuzzer:fuzztest",
+    "audiopipemanager_fuzzer:fuzztest",
+    "audiopipeselector_fuzzer:fuzztest",
+    "audiopnpserver_fuzzer:fuzztest",
+    # "audiopolicyanother_fuzzer:fuzztest",
+    # "audiopolicyclient_fuzzer:fuzztest",
+    "audiopolicymanager_fuzzer:fuzztest",
+    "audiopolicymanagerdevice_fuzzer:fuzztest",
+    "audiopolicymanagerlistenerstubimpl_fuzzer:fuzztest",
+    "audiopolicymanagerzone_fuzzer:fuzztest",
+    # "audiopolicymore_fuzzer:fuzztest",
+    # "audiopolicyservenhance_fuzzer:fuzztest",
+    "audiopolicyserver_fuzzer:fuzztest",
+    "audiopolicyservice_fuzzer:fuzztest",
+    # "audiopolicyserviceenhance_fuzzer:fuzztest",
+    # "audiopolicyservicemore_fuzzer:fuzztest",
+    # "audiopolicyservicespatialization_fuzzer:fuzztest",
+    "audiopolicystatemonitor_fuzzer:fuzztest",
+    "audiopolicystub_fuzzer:fuzztest",
+    "audiorecoverydevice_fuzzer:fuzztest",
+    "audioroutercenter_fuzzer:fuzztest",
+    "audiorouterinfra_fuzzer:fuzztest",
+    "audioroutermap_fuzzer:fuzztest",
+    "audiorouterselectstrategy_fuzzer:fuzztest",
+    "audiosafevolumenotificationimpl_fuzzer:fuzztest",
+    "audioselectinterface_fuzzer:fuzztest",
+    "audiosession_fuzzer:fuzztest",
+    "audiosocketthread_fuzzer:fuzztest",
+    "audiospatializationservice_fuzzer:fuzztest",
+    "audiostatemanager_fuzzer:fuzztest",
+    "audiostreamcollector_fuzzer:fuzztest",
+    "audiostreamidallocator_fuzzer:fuzztest",
+    "audiousbmanager_fuzzer:fuzztest",
+    "audioutils_fuzzer:fuzztest",
+    "audiovolume_fuzzer:fuzztest",
+    "audiovolumemanager_fuzzer:fuzztest",
+    "audiozone_fuzzer:fuzztest",
+    "audiozoneclientmanager_fuzzer:fuzztest",
+    "audiozoneservice_fuzzer:fuzztest",
+    "bluetoothdevicemanager_fuzzer:fuzztest",
+    "bluetoothscomanager_fuzzer:fuzztest",
+    "deviceinitcallback_fuzzer:fuzztest",
+    "devicestatuslistener_fuzzer:fuzztest",
+    "hpaemanager_fuzzer:fuzztest",
+    "sleaudiodevicemanager_fuzzer:fuzztest",
+    "sleaudiooperationcallbackstubimpl_fuzzer:fuzztest",
+    "volumedatamaintainer_fuzzer:fuzztest",
+  ]
+}
