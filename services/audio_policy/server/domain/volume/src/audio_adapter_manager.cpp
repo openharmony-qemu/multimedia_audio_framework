@@ -1499,7 +1499,6 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             HdiIdType idType = HDI_ID_TYPE_PRIMARY;
             GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
-                AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_DIRECT;
             } else {
                 attr.audioStreamFlag = AUDIO_FLAG_DIRECT;
