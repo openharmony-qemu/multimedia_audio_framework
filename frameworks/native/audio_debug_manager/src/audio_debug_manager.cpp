@@ -344,7 +344,7 @@ std::string AudioConcurrencyModeToString(AudioConcurrencyMode mode)
     return EnumToString(AUDIO_CONCURRENCY_MODE_MAP, mode);
 }
 
-std::string AudioFocuStateToString(AudioFocuState state)
+std::string AudioFocusStateToString(AudioFocuState state)
 {
     return EnumToString(AUDIO_FOCUS_STATE_MAP, state);
 }
@@ -783,20 +783,23 @@ std::string AudioDebugManagerPrivate::ParserAudioSessionDebugInfo(
 {
     std::stringstream ss;
     ss << "audioSession {\n"
-    << "  strategy: " << AudioConcurrencyModeToString(debugInfo.strategy.concurrencyMode) << "\n"
+    << "  strategy: " << AudioConcurrencyModeToString(debugInfo.strategy.concurrencyMode) << ",\n"
     << "  audioSessionScene: " << AudioSessionSceneToString(debugInfo.audioSessionScene) << ",\n"
-    << "  defaultDeviceType: " << DeviceTypeToString(debugInfo.defaultDeviceType) << "\n"
-    << "  state: " << AudioSessionStateToString(debugInfo.state) << ",\n"
-    << "  streamUsage: " << StreamUsageToString(debugInfo.streamUsage) << ",\n"
-    << "  focusState: " << AudioFocuStateToString(debugInfo.focusState) << "\n"
-    << "  pid: " << debugInfo.pid << ",\n"
-    << "  uid: " << debugInfo.uid << "\n"
+    << "  defaultDeviceType: " << DeviceTypeToString(debugInfo.defaultDeviceType) << ",\n"
+    << "  state: " << AudioSessionStateToString(debugInfo.state) << ",\n";
+    if (debugInfo.audioSessionScene != AudioSessionScene::INVALID) {
+        ss << "  fakeFocusState: " << AudioFocusStateToString(debugInfo.fakeFocusState) << ",\n";
+    }
+    ss << "  pid: " << debugInfo.pid << ",\n"
+    << "  uid: " << debugInfo.uid << ",\n"
     << "  streams: [\n";
     for (const auto &stream : debugInfo.streamInfos) {
         ss << "    {\n"
-        << "      streamId: " << stream.streamId << ",\n"
-        << "      streamType: " << AudioStreamTypeToString(stream.streamType) << ",\n"
-        << "      sourceType: " << SourceTypeToString(stream.sourceType) << "\n"
+        << "      streamId: " << stream.streamId << ",\n";
+        if (debugInfo.audioSessionScene == AudioSessionScene::INVALID) {
+            ss << "      focusState: " << AudioFocusStateToString(stream.focusState) << ",\n";
+        }
+        ss << "      streamType: " << AudioStreamTypeToString(stream.streamType) << "\n"
         << "    },\n";
     }
     ss << "  ]\n"

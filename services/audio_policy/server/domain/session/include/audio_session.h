@@ -80,7 +80,7 @@ public:
     void SetRegisterStateChangeCallbackFlag(const bool registerCallbackFlag,
         const bool activatedRegisterCallbackFlag = false);
     void GetStateChangeCallbackFlag(bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
-    void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
+    void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo, const bool isAudioSessionInterrupt);
     void SetFakeFocusInterruptEvent(const InterruptEventInternal &interruptEvent);
     InterruptEventInternal GetFakeFocusInterruptEvent();
 

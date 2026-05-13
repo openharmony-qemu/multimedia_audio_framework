@@ -812,12 +812,13 @@ AudioSessionActiveBehaviors AudioSessionService::GetSessionBehaviors(const int32
     return session->second->GetSessionBehaviors();
 }
 
-void AudioSessionService::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+void AudioSessionService::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo,
+    const bool isAudioSessionInterrupt)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(sessionDebugInfo.pid);
     if (session != sessionMap_.end()) {
-        session->second->GetSessionDebugInfo(sessionDebugInfo);
+        session->second->GetSessionDebugInfo(sessionDebugInfo, isAudioSessionInterrupt);
     }
 }
 } // namespace AudioStandard

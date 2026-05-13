@@ -3781,20 +3781,41 @@ void AudioInterruptService::GetFocusDebugInfoByStreamId(uint32_t streamId, Audio
 int32_t AudioInterruptService::GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET(sessionService_.IsAudioSessionActivated(pid), ERROR);
+    bool streamFlag = false;
     sessionDebugInfo.streamInfos.clear();
     for (const auto &zonePair : zonesMap_) {
         CHECK_AND_CONTINUE(zonePair.second != nullptr);
         for (const auto &audioFocusPair : zonePair.second->audioFocusInfoList) {
-            if (audioFocusPair.first.pid == pid && audioFocusPair.first.isAudioSessionInterrupt) {
-                sessionDebugInfo.focusState = audioFocusPair.second;
-                sessionDebugInfo.pid = audioFocusPair.first.pid;
-                sessionDebugInfo.uid = audioFocusPair.first.uid;
-                sessionService_.GetSessionDebugInfo(sessionDebugInfo);
+            CHECK_AND_CONTINUE(audioFocusPair.first.pid == pid);
+
+            if (streamFlag) {
+                AudioStreamDebugInfo streamDebugInfo;
+                streamDebugInfo.streamId = audioFocusPair.first.streamId;
+                streamDebugInfo.streamType = audioFocusPair.first.audioFocusType.streamType;
+                streamDebugInfo.focusState = audioFocusPair.second;
+                sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+                continue;
+            }
+            
+            sessionDebugInfo.pid = audioFocusPair.first.pid;
+            sessionDebugInfo.uid = audioFocusPair.first.uid;
+            sessionService_.GetSessionDebugInfo(sessionDebugInfo, audioFocusPair.first.isAudioSessionInterrupt);
+            
+            if (audioFocusPair.first.isAudioSessionInterrupt) {
+                sessionDebugInfo.fakeFocusState = audioFocusPair.second;
                 return SUCCESS;
             }
+            
+            AudioStreamDebugInfo streamDebugInfo;
+            streamDebugInfo.streamId = audioFocusPair.first.streamId;
+            streamDebugInfo.streamType = audioFocusPair.first.audioFocusType.streamType;
+            streamDebugInfo.focusState = audioFocusPair.second;
+            sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+            streamFlag = true;
         }
     }
-    return ERROR;
+    return streamFlag ? SUCCESS : ERROR;
 }
 
 void AudioInterruptService::RecordFocusHistory(const AudioInterrupt &currentInterrupt,
