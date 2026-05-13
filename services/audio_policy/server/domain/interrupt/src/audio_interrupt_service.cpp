@@ -1753,19 +1753,20 @@ int32_t AudioInterruptService::UpdateStreamFocusStateToStandby(int32_t pid, uint
             continue;
         }
         for (auto &iter : zonePair.second->audioFocusInfoList) {
-            if (iter.first.pid == pid && iter.first.isAudioSessionInterrupt) {
-                if (!sessionService_.IsAllStreamsInState(pid, AudioFocuState::STANDBY)) {
-                    SendActiveVolumeTypeChangeEvent(zonePair.first);
-                    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zonePair.first);
-                    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zonePair.first);
-                    AUDIO_INFO_LOG("streamId %{public}u state updated to STANDBY in session", streamId);
-                    return SUCCESS;
-                }
-                iter.second = AudioFocuState::STANDBY;
-                AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to STANDBY for pid %{public}d", pid);
-                ResumeAudioFocusList(zonePair.first, false);
+            if (iter.first.pid != pid || !iter.first.isAudioSessionInterrupt) {
+                continue;
+            }
+            if (!sessionService_.IsAllStreamsInState(pid, AudioFocuState::STANDBY)) {
+                SendActiveVolumeTypeChangeEvent(zonePair.first);
+                AudioScene targetAudioScene = GetHighestPriorityAudioScene(zonePair.first);
+                UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zonePair.first);
+                AUDIO_INFO_LOG("streamId %{public}u state updated to STANDBY in session", streamId);
                 return SUCCESS;
             }
+            iter.second = AudioFocuState::STANDBY;
+            AUDIO_INFO_LOG("isAudioSessionInterrupt stream updated to STANDBY for pid %{public}d", pid);
+            ResumeAudioFocusList(zonePair.first, false);
+            return SUCCESS;
         }
     }
 
@@ -2127,7 +2128,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         if (iterActive->second == AudioFocuState::STANDBY) {
             AUDIO_INFO_LOG("the active stream %{public}u focus state is standby, skip it.",
- 	                iterActive->first.streamId);
+                iterActive->first.streamId);
             ++iterActive;
             continue;
         }
@@ -2948,11 +2949,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
         std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpAudioFocuInfoList = newAudioFocuInfoList;
         for (auto iter = newAudioFocuInfoList.begin(); iter != newAudioFocuInfoList.end(); ++iter) {
             AudioInterrupt inprocessing = iter->first;
-            if (iter->second == AudioFocuState::STANDBY) {
-                AUDIO_INFO_LOG("the current stream %{public}u focus state is standby, ignore directly",
-                    iter->first.streamId);
-                continue;
-            }
+            CHECK_AND_CONTINUE(!ShouldSkipStandbyFocus(iter->first.streamId, iter->second));
             if (IsSameAppInShareMode(incoming, inprocessing) || iter->second == PLACEHOLDER) { continue; }
             auto audioFocusTypePair = std::make_pair(inprocessing.audioFocusType, incoming.audioFocusType);
             if (focusCfgMap_.find(audioFocusTypePair) == focusCfgMap_.end()) {
@@ -2971,14 +2968,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
                 IsGameAvoidCallbackCase(inprocessing)) {
                 focusEntry.hintType = INTERRUPT_HINT_PAUSE;
             }
-            auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
-            if (pos == HINT_STATE_MAP.end()) { continue; }
-            if (focusEntry.actionOn == CURRENT) {
-                iter->second = (pos->second > iter->second) ? pos->second : iter->second;
-            } else if (focusEntry.actionOn == INCOMING) {
-                AudioFocuState newState = pos->second;
-                incomingState = (newState > incomingState) ? newState : incomingState;
-            }
+            UpdateFocusStateByHintType(focusEntry, iter->second, incomingState);
         }
 
         if (incomingState == PAUSE) { newAudioFocuInfoList = tmpAudioFocuInfoList; }
@@ -2987,6 +2977,31 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
     }
 
     return newAudioFocuInfoList;
+}
+
+bool AudioInterruptService::ShouldSkipStandbyFocus(uint32_t streamId, AudioFocuState state)
+{
+    if (state != AudioFocuState::STANDBY) {
+        return false;
+    }
+    AUDIO_INFO_LOG("stream %{public}u focus state is standby, skip", streamId);
+    return true;
+}
+
+bool AudioInterruptService::UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry,
+    AudioFocuState &iterState, AudioFocuState &incomingState)
+{
+    auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
+    if (pos == HINT_STATE_MAP.end()) {
+        return false;
+    }
+    if (focusEntry.actionOn == CURRENT) {
+        iterState = (pos->second > iterState) ? pos->second : iterState;
+    } else if (focusEntry.actionOn == INCOMING) {
+        AudioFocuState newState = pos->second;
+        incomingState = (newState > incomingState) ? newState : incomingState;
+    }
+    return true;
 }
 
 void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,

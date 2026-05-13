@@ -1209,7 +1209,8 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAudioSession_St
     audioInterrupt.pid = pid;
     audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     
-    AudioScene scene = interruptServiceTest->GetHighestPriorityAudioSceneFromAudioSession(audioInterrupt, AUDIO_SCENE_DEFAULT);
+    AudioScene scene = interruptServiceTest->GetHighestPriorityAudioSceneFromAudioSession(audioInterrupt,
+        AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(scene, AUDIO_SCENE_DEFAULT);
     
     interruptServiceTest->sessionService_.DeactivateAudioSession(pid);

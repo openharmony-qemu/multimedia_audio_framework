@@ -418,6 +418,9 @@ private:
     void RecordFocusHistory(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         const InterruptEventInternal &interruptEvent);
     void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);
+    bool ShouldSkipStandbyFocus(uint32_t streamId, AudioFocuState state);
+    bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &iterState,
+        AudioFocuState &incomingState);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
