@@ -400,6 +400,15 @@ public:
         return false;
     }
 
+    HdPlaybackMode GetHdPlaybackMode()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.empty() || newDeviceDescs_.front() == nullptr) {
+            return HD_NOT_SUPPORTED;
+        }
+        return newDeviceDescs_.front()->GetHdPlaybackMode();
+    }
+
     uint32_t GetUltraFastFlag()
     {
         std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
