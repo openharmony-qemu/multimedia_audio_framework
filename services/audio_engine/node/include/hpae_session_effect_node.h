@@ -76,9 +76,13 @@ protected:
     void SetPrebufFilledForTest(bool filled) { prebufFilled_.store(filled); }
     bool GetPrebufFilled() const { return prebufFilled_.load(); }
     void SetStatusForTest(STATUS s) { status_ = s; }
+    void ResetTimestampsForTest() {
+        warmupStartTime_ = std::chrono::steady_clock::now();
+        pauseAccumulatedUs_ = 0;
+        pauseStartTime_ = std::chrono::steady_clock::time_point{};
+    }
     size_t GetPrebufTargetBytes() const;  // TEMP diag
     bool IsPaused() const { return isPaused_; }
-    uint32_t GetSilenceFrameCount() const { return silenceFrameCount_; }
     size_t GetTotalBytesIn() const { return totalBytesIn_; }
     size_t GetTotalBytesOut() const { return totalBytesOut_; }
     const SeProcessStats &GetStatsForTest() const { return stats_; }
@@ -105,6 +109,8 @@ private:
     // Close SE core logic (RewindBuffer + clear + bypass)
     void CloseSessionEffectCore();
 
+    uint32_t ComputeSkipFrames();
+
     // --- Phase 3C: Crossfade ---
     void ApplyInterceptingFadeIn(float *algoOutput, size_t sampleCount);
     void ApplyCrossfadeMix(float *algoOutput, const float *rawInput, size_t sampleCount);
@@ -115,7 +121,10 @@ private:
     std::thread preheatThread_;
     std::atomic<bool> stopRequested_{false};
     std::atomic<bool> prebufFilled_{false};
-    uint32_t silenceFrameCount_ = 0; // Dynamic count of silence frames during WARMING_UP + INTERCEPTING
+    // Time-based skip frame calculation
+    std::chrono::steady_clock::time_point warmupStartTime_;
+    uint64_t pauseAccumulatedUs_ = 0;
+    std::chrono::steady_clock::time_point pauseStartTime_;
     // --- Phase 3C: Latency tracking ---
     size_t totalBytesIn_ = 0;
     size_t totalBytesOut_ = 0;

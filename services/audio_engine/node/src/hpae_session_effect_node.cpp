@@ -33,6 +33,20 @@ static constexpr uint32_t FLUSH_PREHEAT_RATIO_DENOMINATOR = 30; // 3.0s denomina
 static constexpr uint32_t BACKOFF_MULTIPLIER = 2;
 } // namespace
 
+uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
+{
+    auto now = std::chrono::steady_clock::now();
+    int64_t elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(
+        now - warmupStartTime_).count();
+    elapsedUs -= static_cast<int64_t>(pauseAccumulatedUs_);
+    if (elapsedUs <= 0) {
+        return 0;
+    }
+    uint32_t sampleRate = audioConfig_.inputCfg.samplingRate;
+    return static_cast<uint32_t>(
+        (static_cast<uint64_t>(elapsedUs) * sampleRate + 500000) / 1000000);
+}
+
 static const char *StatusToString(HpaeSessionEffectNode::STATUS s)
 {
     switch (s) {
@@ -240,6 +254,9 @@ int32_t HpaeSessionEffectNode::StartEffect()
     // Resume from pause
     if (isPaused_) {
         isPaused_ = false;
+        auto now = std::chrono::steady_clock::now();
+        pauseAccumulatedUs_ += static_cast<uint64_t>(
+            std::chrono::duration_cast<std::chrono::microseconds>(now - pauseStartTime_).count());
 
         if (status_ == STATUS::WARMING_UP) {
             // Restart preheat thread — recompute prebuf in case config changed
@@ -249,7 +266,11 @@ int32_t HpaeSessionEffectNode::StartEffect()
             prebufTargetBytes_ = static_cast<size_t>(preheatFrames) * frameBytes;
             stopRequested_ = false;
             prebufFilled_ = false;
-            StartPreheatThread();
+            if (prebufTargetBytes_ > 0) {
+                StartPreheatThread();
+            } else {
+                prebufFilled_ = true;
+            }
             AUDIO_INFO_LOG("StartEffect resume: WARMING_UP, restart preheat, prebuf=%{public}zu",
                 prebufTargetBytes_);
         } else {
@@ -274,14 +295,19 @@ int32_t HpaeSessionEffectNode::StartEffect()
     AUDIO_INFO_LOG("StartEffect: prebufTargetBytes_=%{public}zu preheatFrames=%{public}u",
         prebufTargetBytes_, preheatFrames);
 
-    // Reset silence frame counter
-    silenceFrameCount_ = 0;
+    // Record warmup start timestamp for time-based skip calculation
+    warmupStartTime_ = std::chrono::steady_clock::now();
+    pauseAccumulatedUs_ = 0;
 
-    // Enter WARMING_UP and start preheat thread
+    // Enter WARMING_UP and start preheat thread (skip if no preheat needed)
     status_ = STATUS::WARMING_UP;
     stopRequested_ = false;
     prebufFilled_ = false;
-    StartPreheatThread();
+    if (prebufTargetBytes_ > 0) {
+        StartPreheatThread();
+    } else {
+        prebufFilled_ = true;
+    }
 
     return 0;
 }
@@ -314,6 +340,7 @@ int32_t HpaeSessionEffectNode::PauseEffect()
 
     // Set paused flag — status_ preserved for resume
     isPaused_ = true;
+    pauseStartTime_ = std::chrono::steady_clock::now();
 
     // Key: do NOT call effectInstance_->StopEffect() (no DISABLE)
     // This preserves algorithm state and caches for resume
@@ -325,7 +352,7 @@ int32_t HpaeSessionEffectNode::FlushEffect()
 {
     if (!effectInstance_) return 0;
     int32_t ret = effectInstance_->Flush();
-    silenceFrameCount_ = 0;
+    pauseAccumulatedUs_ = 0;
     totalBytesIn_ = 0;
     totalBytesOut_ = 0;
     stats_.Reset();
@@ -345,7 +372,12 @@ int32_t HpaeSessionEffectNode::FlushEffect()
 
         stopRequested_ = false;
         prebufFilled_ = false;
-        StartPreheatThread();
+        warmupStartTime_ = std::chrono::steady_clock::now();
+        if (prebufTargetBytes_ > 0) {
+            StartPreheatThread();
+        } else {
+            prebufFilled_ = true;
+        }
         AUDIO_INFO_LOG("FlushEffect: WARMING_UP restart preheat, prebufTarget=%{public}zu", prebufTargetBytes_);
     } else if (status_ == STATUS::INTERCEPTING || status_ == STATUS::ACTIVE) {
         // Running: restart preheat with larger prebuf (3.8s)
@@ -357,7 +389,12 @@ int32_t HpaeSessionEffectNode::FlushEffect()
         status_ = STATUS::WARMING_UP;
         stopRequested_ = false;
         prebufFilled_ = false;
-        StartPreheatThread();
+        warmupStartTime_ = std::chrono::steady_clock::now();
+        if (prebufTargetBytes_ > 0) {
+            StartPreheatThread();
+        } else {
+            prebufFilled_ = true;
+        }
         AUDIO_INFO_LOG("FlushEffect: restart preheat, prebufTarget=%{public}zu", prebufTargetBytes_);
     }
     // IDLE + not paused: only reset counters (already done above)
@@ -387,14 +424,13 @@ void HpaeSessionEffectNode::DoProcess()
         if (prebufFilled_.load()) {
             // Prebuf filled → send ENABLE to algorithm and transition to INTERCEPTING
             AUDIO_INFO_LOG("[SE::SessionEffectNode] WARMING_UP→INTERCEPTING reason=prebuffer filled "
-                "sessionId=%{public}u prebufBytes=%{public}zu silenceFrames=%{public}u",
-                GetSessionId(), prebufTargetBytes_, silenceFrameCount_);
+                "sessionId=%{public}u prebufBytes=%{public}zu",
+                GetSessionId(), prebufTargetBytes_);
             status_ = STATUS::INTERCEPTING;
             effectInstance_->StartEffect();  // ENABLE algorithm → FeedInput auto-trigger now active
             // Fall through to normal DoProcess (pull upstream + SignalProcess)
         } else {
             // Disconnect: don't pull upstream, output silence directly
-            silenceFrameCount_++;  // Count silence frames for pipeline latency compensation
             outputStream_.WriteDataToOutput(&silenceData_);
             return;
         }
@@ -467,23 +503,16 @@ void HpaeSessionEffectNode::StopPreheatThread()
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    // Feed upstream data to algorithm input cache
     FeedInputFromBuffer(inputs[0]);
 
-    // Check if algorithm has output (first process complete)
     HpaePcmBuffer *inputBuf = inputs[0];
     size_t channels = audioConfig_.inputCfg.channels;
     size_t byteLen = inputBuf->GetFrameLen() * channels * sizeof(float);
 
-    if (silenceFrameCount_ > 0) {
-        effectInstance_->SkipOutputFrames(silenceFrameCount_);
-        AUDIO_INFO_LOG("INTERCEPTING -> ACTIVE, skipped %{public}u stale frames",
-            silenceFrameCount_);
-    }
-    silenceFrameCount_ = 0;
-
+    uint32_t skipFrames = ComputeSkipFrames();
     int32_t ret = effectInstance_->ReadOutput(
-        reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
+        reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen,
+        &skipFrames);
     if (ret > 0) {
         ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(),
             inputBuf->GetFrameLen() * audioConfig_.inputCfg.channels);
@@ -491,8 +520,6 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
         return inputBuf;
     }
 
-    // No output yet → return silence, count it
-    silenceFrameCount_++;
     return &silenceData_;
 }
 

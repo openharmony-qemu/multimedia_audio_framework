@@ -33,16 +33,16 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-static constexpr uint32_t TEST_SESSION_ID = 42;
-static constexpr uint32_t TEST_NODE_ID = 100;
-static constexpr size_t TEST_FRAME_LEN = 960;
+static constexpr uint32_t testSessionId = 42;
+static constexpr uint32_t testNodeId = 100;
+static constexpr size_t testFrameLen = 960;
 
 static HpaeNodeInfo MakeTestNodeInfo()
 {
     HpaeNodeInfo info;
-    info.nodeId = TEST_NODE_ID;
-    info.sessionId = TEST_SESSION_ID;
-    info.frameLen = TEST_FRAME_LEN;
+    info.nodeId = testNodeId;
+    info.sessionId = testSessionId;
+    info.frameLen = testFrameLen;
     info.samplingRate = SAMPLE_RATE_48000;
     info.channels = STEREO;
     info.format = SAMPLE_F32LE;
@@ -82,18 +82,18 @@ protected:
 HWTEST_F(HpaeProcessClusterSeTest, HasSessionEffectNode, TestSize.Level0)
 {
     // 未创建 -> false
-    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(testSessionId));
 
     // 创建后 -> true
     auto instance = std::make_shared<EffectInstance>();
     instance->Init("test_effect", config_);
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
 
     // 销毁后 -> false
     uint64_t taskId = 0;
-    cluster_->DestroySessionEffectNode(TEST_SESSION_ID, taskId);
-    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    cluster_->DestroySessionEffectNode(testSessionId, taskId);
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(testSessionId));
 }
 
 // PC-1: CreateSessionEffectNode inserts node into processing chain
@@ -103,9 +103,9 @@ HWTEST_F(HpaeProcessClusterSeTest, CreateSessionEffectNode_connects, TestSize.Le
     instance->Init("test_effect", config_);
 
     int32_t ret = cluster_->CreateSessionEffectNode(
-        TEST_SESSION_ID, "test_effect", instance, config_);
+        testSessionId, "test_effect", instance, config_);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
 }
 
 // PC-2: DestroySessionEffectNode removes node and restores chain
@@ -113,37 +113,43 @@ HWTEST_F(HpaeProcessClusterSeTest, DestroySessionEffectNode_disconnects, TestSiz
 {
     auto instance = std::make_shared<EffectInstance>();
     instance->Init("test_effect", config_);
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    ASSERT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    ASSERT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
 
     uint64_t taskId = 0;
-    int32_t ret = cluster_->DestroySessionEffectNode(TEST_SESSION_ID, taskId);
+    int32_t ret = cluster_->DestroySessionEffectNode(testSessionId, taskId);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(testSessionId));
 }
 
 // PC-4: DoProcess with SessionEffectNode active
 HWTEST_F(HpaeProcessClusterSeTest, DoProcess_callsSignalProcess, TestSize.Level0)
 {
+    FakeAudioEffectLibEntry fake;
+    fake.SetPreheatFrames(0);
     auto instance = std::make_shared<EffectInstance>();
-    instance->Init("test_effect", config_);
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
-    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    auto lib = fake.GetLibrary();
+    instance->Init("test_effect", config_, &lib);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
 }
 
 // PC-5: SessionEffect start/stop control works
 HWTEST_F(HpaeProcessClusterSeTest, SessionEffectStart_stop, TestSize.Level0)
 {
+    FakeAudioEffectLibEntry fake;
+    fake.SetPreheatFrames(0);
     auto instance = std::make_shared<EffectInstance>();
-    instance->Init("test_effect", config_);
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    auto lib = fake.GetLibrary();
+    instance->Init("test_effect", config_, &lib);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
 
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
-    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    cluster_->SessionEffectStart(testSessionId);
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
 
-    cluster_->SessionEffectStop(TEST_SESSION_ID);
-    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));  // still exists after stop
+    cluster_->SessionEffectStop(testSessionId);
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(testSessionId));  // still exists after stop
 }
 
 // Stream data callback: fills PCM buffer with a constant float value.
@@ -220,7 +226,7 @@ protected:
         cluster_->Connect(sinkInput_);
 
         HpaeNodeInfo probeInfo = MakeTestNodeInfo();
-        probeInfo.nodeId = TEST_NODE_ID + 1;
+        probeInfo.nodeId = testNodeId + 1;
         probe_ = std::make_shared<ProbeNode>(probeInfo);
         probe_->Connect(cluster_);
     }
@@ -247,10 +253,10 @@ protected:
 HWTEST_F(HpaeProcessClusterSeDataflowTest, warmingUp_outputsSilence, TestSize.Level0)
 {
     auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
 
-    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    auto seNode = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(seNode, nullptr);
     EXPECT_EQ(seNode->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 
@@ -266,10 +272,10 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, intercepting_feedsAndOutputsSilence, 
 {
     fake_.SetPreheatFrames(1);  // Preheat exits after 1 frame
     auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
 
-    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    auto seNode = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(seNode, nullptr);
 
     // Wait for preheat to complete
@@ -295,39 +301,33 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, active_outputsAlgoData, TestSize.Leve
     fake_.SetPreheatFrames(0);       // Skip preheat entirely
     fake_.SetProcessThreshold(1920); // Match actual FeedInput size (960 frames * 2 ch)
     fake_.SetProcessDelayMs(0);      // Instant processing
+    fake_.SetOutputPersistent(true); // getOutput won't consume buffer, safe for skip
     auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
 
-    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    auto seNode = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(seNode, nullptr);
 
-    // PreheatFrames=0 → preheat exits instantly, prebufFilled=true
-    for (int i = 1; i <= 6; i++) {
-        probe_->DoProcess();
-        std::cout << "[DF3] #" << i << " status=" << static_cast<int>(seNode->GetStatus())
-                  << " feed=" << fake_.GetFeedInputCount()
-                  << " trigger=" << fake_.GetTriggerProcessCount()
-                  << " outBuf=" << fake_.GetProcessedOutputSize()
-                  << " getOut=" << fake_.GetGetOutputCount()
-                  << " accum=" << fake_.GetAccumulatedInputSize() << std::endl;
-    }
+    // #1: WARMING_UP→INTERCEPTING (prebufFilled=true from SetPreheatFrames(0))
+    probe_->DoProcess();
+    ASSERT_EQ(seNode->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
+    // #2: INTERCEPTING→ACTIVE (output now available from #1 processing)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    probe_->DoProcess();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     EXPECT_EQ(seNode->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
-    auto *out = probe_->GetCaptured();
-    ASSERT_NE(out, nullptr);
-    if (out->GetPcmDataBuffer() != nullptr) {
-        float *data = out->GetPcmDataBuffer();
-        size_t n = out->GetFrameLen() * out->GetChannelCount();
-        std::cout << "[DF3] output[0]=" << data[0] << " [1]=" << data[1]
-                  << " [" << (n/4) << "]=" << data[n/4]
-                  << " [" << (n/2) << "]=" << data[n/2]
-                  << " [" << (n-1) << "]=" << data[n-1]
-                  << " frames=" << out->GetFrameLen() << std::endl;
-    }
+
     // Verify SE node processed data (FeedInput+GetOutput called) — proves data flow works
     EXPECT_GE(fake_.GetFeedInputCount(), 2u);
     EXPECT_GE(fake_.GetGetOutputCount(), 1u);
+
+    // ACTIVE state: ProcessActive feeds input and reads algo output (proves ACTIVE data path)
+    fake_.Reset();
+    probe_->DoProcess();
+    EXPECT_GT(fake_.GetFeedInputCount(), 0u) << "FeedInput not called in ACTIVE state";
+    EXPECT_GT(fake_.GetGetOutputCount(), 0u) << "GetOutput not called in ACTIVE state";
 }
 
 // PC-DF-4: DestroySessionEffectNode — data flows through without SE
@@ -336,43 +336,44 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, destroy_restoresPassthrough, TestSize
     fake_.SetPreheatFrames(0);
     fake_.SetProcessThreshold(1920);
     fake_.SetProcessDelayMs(0);
+    fake_.SetOutputPersistent(true);
     auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
 
-    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    auto seNode = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(seNode, nullptr);
 
-    // Advance to ACTIVE state (need enough DoProcess for chain to prime + process)
-    for (int i = 0; i < 4; i++) {
-        probe_->DoProcess();
-    }
+    // Drive to ACTIVE
+    probe_->DoProcess();  // WARMING_UP→INTERCEPTING
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    probe_->DoProcess();  // INTERCEPTING→ACTIVE
     ASSERT_EQ(seNode->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
 
     uint64_t taskId = 0;
-    cluster_->DestroySessionEffectNode(TEST_SESSION_ID, taskId);
-    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    cluster_->DestroySessionEffectNode(testSessionId, taskId);
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(testSessionId));
 
     // After destroy, data flows through without SE processing
     probe_->DoProcess();
     auto *out = probe_->GetCaptured();
     ASSERT_NE(out, nullptr);
     // Verify passthrough: SE node no longer exists, data flows directly
-    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(testSessionId));
 }
 
 // PC-TOPO-1: CreateSessionEffectNode — topology correct
 HWTEST_F(HpaeProcessClusterSeDataflowTest, create_topo_correct, TestSize.Level0)
 {
     auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
 
-    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    auto seNode = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(seNode, nullptr);
     EXPECT_EQ(seNode->GetPreOutNum(), 1u);
 
     // ConverterNode's output should connect to SE
-    auto converterNode = cluster_->GetConverterNodeById(TEST_SESSION_ID);
+    auto converterNode = cluster_->GetConverterNodeById(testSessionId);
     ASSERT_NE(converterNode, nullptr);
     EXPECT_EQ(converterNode->GetOutputPortNum(), 1u);
 }
@@ -381,12 +382,12 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, create_topo_correct, TestSize.Level0)
 HWTEST_F(HpaeProcessClusterSeDataflowTest, destroy_topo_restored, TestSize.Level0)
 {
     auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
 
     uint64_t taskId = 0;
-    cluster_->DestroySessionEffectNode(TEST_SESSION_ID, taskId);
+    cluster_->DestroySessionEffectNode(testSessionId, taskId);
 
-    auto converterNode = cluster_->GetConverterNodeById(TEST_SESSION_ID);
+    auto converterNode = cluster_->GetConverterNodeById(testSessionId);
     ASSERT_NE(converterNode, nullptr);
     EXPECT_EQ(converterNode->GetOutputPortNum(), 1u);
 }
@@ -394,14 +395,17 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, destroy_topo_restored, TestSize.Level
 // PC-FLUSH-1: SessionEffectFlush forwards to node and returns SUCCESS
 HWTEST_F(HpaeProcessClusterSeTest, SessionEffectFlush_success, TestSize.Level0)
 {
+    FakeAudioEffectLibEntry fake;
+    fake.SetPreheatFrames(0);
     auto instance = std::make_shared<EffectInstance>();
-    instance->Init("test_effect", config_);
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
+    auto lib = fake.GetLibrary();
+    instance->Init("test_effect", config_, &lib);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
 
-    int32_t ret = cluster_->SessionEffectFlush(TEST_SESSION_ID);
+    int32_t ret = cluster_->SessionEffectFlush(testSessionId);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    auto node = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(node, nullptr);
     // FlushEffect restarts preheat thread; allow it to settle before tear-down
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -410,21 +414,24 @@ HWTEST_F(HpaeProcessClusterSeTest, SessionEffectFlush_success, TestSize.Level0)
 // PC-FLUSH-2: SessionEffectFlush returns ERR_EFFECT_NOT_BOUND when no SE
 HWTEST_F(HpaeProcessClusterSeTest, SessionEffectFlush_notBound, TestSize.Level0)
 {
-    int32_t ret = cluster_->SessionEffectFlush(TEST_SESSION_ID);
+    int32_t ret = cluster_->SessionEffectFlush(testSessionId);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
 }
 
 // PC-PAUSE-1: SessionEffectPause sets isPaused on node
 HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPause_success, TestSize.Level0)
 {
+    FakeAudioEffectLibEntry fake;
+    fake.SetPreheatFrames(0);
     auto instance = std::make_shared<EffectInstance>();
-    instance->Init("test_effect", config_);
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
+    auto lib = fake.GetLibrary();
+    instance->Init("test_effect", config_, &lib);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
 
-    int32_t ret = cluster_->SessionEffectPause(TEST_SESSION_ID);
+    int32_t ret = cluster_->SessionEffectPause(testSessionId);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    auto node = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(node, nullptr);
     EXPECT_TRUE(node->IsPaused());
 }
@@ -432,20 +439,23 @@ HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPause_success, TestSize.Level0)
 // PC-PAUSE-2: SessionEffectPause returns ERR_EFFECT_NOT_BOUND when no SE
 HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPause_notBound, TestSize.Level0)
 {
-    int32_t ret = cluster_->SessionEffectPause(TEST_SESSION_ID);
+    int32_t ret = cluster_->SessionEffectPause(testSessionId);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
 }
 
 // PC-MOVE-1: SessionEffectPrepareMoveStream calls CloseSessionEffectCore
 HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPrepareMoveStream_success, TestSize.Level0)
 {
+    FakeAudioEffectLibEntry fake;
+    fake.SetPreheatFrames(0);
     auto instance = std::make_shared<EffectInstance>();
-    instance->Init("test_effect", config_);
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
+    auto lib = fake.GetLibrary();
+    instance->Init("test_effect", config_, &lib);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
 
-    cluster_->SessionEffectPrepareMoveStream(TEST_SESSION_ID);
-    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    cluster_->SessionEffectPrepareMoveStream(testSessionId);
+    auto node = cluster_->GetSessionEffectNode(testSessionId);
     ASSERT_NE(node, nullptr);
     EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
 }
@@ -454,8 +464,201 @@ HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPrepareMoveStream_success, TestS
 HWTEST_F(HpaeProcessClusterSeTest, SessionEffectPrepareMoveStream_notBound, TestSize.Level0)
 {
     // void return — just verify no crash
-    cluster_->SessionEffectPrepareMoveStream(TEST_SESSION_ID);
+    cluster_->SessionEffectPrepareMoveStream(testSessionId);
     SUCCEED();
+}
+
+// T1: Connect with SE — no duplicate output ports on loudnessGainNode
+HWTEST_F(HpaeProcessClusterSeDataflowTest, connect_withSE_noDuplicateOutput, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    ASSERT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
+
+    auto seNode = cluster_->GetSessionEffectNode(testSessionId);
+    auto loudnessGain = cluster_->GetLoudnessGainNode(testSessionId);
+
+    cluster_->DisConnect(sinkInput_);
+    cluster_->Connect(sinkInput_);
+
+    ASSERT_NE(loudnessGain, nullptr);
+    EXPECT_EQ(loudnessGain->GetOutputPortNum(), 1u);
+    ASSERT_NE(seNode, nullptr);
+    EXPECT_EQ(seNode->GetOutputPortNum(), 1u);
+}
+
+// T3: Repeated Pause/Start — port count doesn't leak
+HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseStart_noConnectionLeak, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+
+    auto loudnessGain = cluster_->GetLoudnessGainNode(testSessionId);
+    ASSERT_NE(loudnessGain, nullptr);
+    size_t initialPortCount = loudnessGain->GetOutputPortNum();
+
+    for (int i = 0; i < 3; i++) {
+        cluster_->DisConnect(sinkInput_);
+        cluster_->Connect(sinkInput_);
+    }
+
+    EXPECT_EQ(loudnessGain->GetOutputPortNum(), initialPortCount);
+}
+
+// T4: DisConnect with SE — disconnects SE from loudnessGainNode
+HWTEST_F(HpaeProcessClusterSeDataflowTest, disconnect_withSE_disconnectsSE, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+
+    auto seNode = cluster_->GetSessionEffectNode(testSessionId);
+    auto loudnessGain = cluster_->GetLoudnessGainNode(testSessionId);
+    ASSERT_NE(seNode, nullptr);
+    ASSERT_NE(loudnessGain, nullptr);
+
+    // Before disconnect: chain intact
+    EXPECT_EQ(loudnessGain->GetOutputPortNum(), 1u);
+    EXPECT_EQ(seNode->GetOutputPortNum(), 1u);
+
+    // DisConnect
+    cluster_->DisConnect(sinkInput_);
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
+    EXPECT_EQ(loudnessGain->GetOutputPortNum(), 0u);
+
+    // Reconnect
+    cluster_->Connect(sinkInput_);
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
+    EXPECT_EQ(loudnessGain->GetOutputPortNum(), 1u);
+    EXPECT_EQ(seNode->GetOutputPortNum(), 1u);
+}
+
+// T5: Pause→Start WARMING_UP recovery (ProcessCluster layer)
+// SessionEffectStart directly sets WARMING_UP and starts preheat thread
+HWTEST_F(HpaeProcessClusterSeTest, pauseStart_warmingUp, TestSize.Level0)
+{
+    FakeAudioEffectLibEntry fake;
+    fake.SetPreheatFrames(0);
+    auto instance = std::make_shared<EffectInstance>();
+    auto lib = fake.GetLibrary();
+    instance->Init("test_effect", config_, &lib);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+
+    // SessionEffectStart directly sets WARMING_UP (no DoProcess needed)
+    cluster_->SessionEffectStart(testSessionId);
+    auto node = cluster_->GetSessionEffectNode(testSessionId);
+    ASSERT_NE(node, nullptr);
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    // Pause
+    cluster_->SessionEffectPause(testSessionId);
+    EXPECT_TRUE(node->IsPaused());
+    // Status preserved (WARMING_UP), preheat thread stopped
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    // Start — should resume from WARMING_UP
+    cluster_->SessionEffectStart(testSessionId);
+    EXPECT_FALSE(node->IsPaused());
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+}
+
+// T6: Pause→Start INTERCEPTING recovery (ProcessCluster layer, data flow)
+HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseStart_intercepting, TestSize.Level0)
+{
+    fake_.SetPreheatFrames(1);
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
+
+    auto node = cluster_->GetSessionEffectNode(testSessionId);
+    ASSERT_NE(node, nullptr);
+
+    // Wait for preheat to complete → INTERCEPTING
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    probe_->DoProcess();
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
+
+    // Pause
+    cluster_->SessionEffectPause(testSessionId);
+    EXPECT_TRUE(node->IsPaused());
+
+    // Start
+    cluster_->SessionEffectStart(testSessionId);
+    EXPECT_FALSE(node->IsPaused());
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
+
+    // Data flow verification: after resume, DoProcess should pull upstream data
+    fake_.Reset();
+    probe_->DoProcess();
+    EXPECT_GT(fake_.GetFeedInputCount(), 0u) << "FeedInput not called after resume — data path broken";
+}
+
+// T7: Pause→Start ACTIVE recovery (ProcessCluster layer, data flow)
+HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseStart_active, TestSize.Level0)
+{
+    fake_.SetPreheatFrames(0);
+    fake_.SetProcessThreshold(1920);
+    fake_.SetProcessDelayMs(0);
+    fake_.SetOutputPersistent(true);
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
+
+    auto node = cluster_->GetSessionEffectNode(testSessionId);
+    ASSERT_NE(node, nullptr);
+
+    // Drive to ACTIVE
+    probe_->DoProcess();  // WARMING_UP→INTERCEPTING
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    probe_->DoProcess();  // INTERCEPTING→ACTIVE
+    ASSERT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Pause
+    cluster_->SessionEffectPause(testSessionId);
+    EXPECT_TRUE(node->IsPaused());
+
+    // Start
+    cluster_->SessionEffectStart(testSessionId);
+    EXPECT_FALSE(node->IsPaused());
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Data flow verification
+    fake_.Reset();
+    probe_->DoProcess();
+    EXPECT_GT(fake_.GetFeedInputCount(), 0u) << "FeedInput not called after ACTIVE resume — data path broken";
+    EXPECT_GT(fake_.GetGetOutputCount(), 0u) << "GetOutput not called after ACTIVE resume — output path broken";
+}
+
+// T8: Pause→Flush→Start from IDLE restart (ProcessCluster layer)
+HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseFlushStart_fromIdle, TestSize.Level0)
+{
+    fake_.SetPreheatFrames(0);
+    fake_.SetProcessThreshold(1920);
+    fake_.SetProcessDelayMs(0);
+    fake_.SetOutputPersistent(true);
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(testSessionId);
+
+    auto node = cluster_->GetSessionEffectNode(testSessionId);
+    ASSERT_NE(node, nullptr);
+    probe_->DoProcess();  // WARMING_UP→INTERCEPTING
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    probe_->DoProcess();  // INTERCEPTING→ACTIVE
+    ASSERT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Pause
+    cluster_->SessionEffectPause(testSessionId);
+    EXPECT_TRUE(node->IsPaused());
+
+    // Flush — resets to IDLE, clears isPaused_
+    cluster_->SessionEffectFlush(testSessionId);
+    EXPECT_FALSE(node->IsPaused());
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
+
+    // Start — should go through first-start path → WARMING_UP
+    cluster_->SessionEffectStart(testSessionId);
+    EXPECT_FALSE(node->IsPaused());
+    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
 
 }  // namespace HPAE
