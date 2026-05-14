@@ -279,6 +279,8 @@ HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_003, TestSize.Level0)
 
 HWTEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfo_001, TestSize.Level0)
 {
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
     nodeInfo.frameLen = TEST_FRAMELEN1;
@@ -287,14 +289,28 @@ HWTEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfo_001, TestSize.
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
-    ModifyAudioEffectChainInfoReason testReason = static_cast<ModifyAudioEffectChainInfoReason>(2);
-    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
+    // ADD_AUDIO_EFFECT_CHAIN_INFO (enum value 0)
+    ModifyAudioEffectChainInfoReason addReason = ADD_AUDIO_EFFECT_CHAIN_INFO;
+    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, addReason);
+    std::string sessionId = std::to_string(TEST_ID);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.count(sessionId) > 0, true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionId].sceneType,
+        "EFFECT_NONE");
+    // Invalid effect scene - still adds with EFFECT_NONE scene type
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
-    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
+    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, addReason);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionId].sceneType,
+        "EFFECT_NONE");
+    // REMOVE_AUDIO_EFFECT_CHAIN_INFO (enum value 1)
+    ModifyAudioEffectChainInfoReason removeReason = REMOVE_AUDIO_EFFECT_CHAIN_INFO;
+    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, removeReason);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfo_001, TestSize.Level0)
 {
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
     nodeInfo.frameLen = TEST_FRAMELEN1;
@@ -303,9 +319,15 @@ HWTEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfo_001, TestSize.
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    // UpdateAudioEffectChainInfo calls UpdateMultichannelConfig, EffectVolumeUpdate, etc.
+    // Should not crash with valid effect scene
     hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
+    SUCCEED();
+    // Invalid effect scene should also not crash
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
     hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
+    SUCCEED();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, testHpaeRenderEffectNode_001, TestSize.Level0)
@@ -634,9 +656,14 @@ HWTEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfoWithRenderId_00
     hpaeRenderEffectNode->renderId_ = 100;
     hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
-    ModifyAudioEffectChainInfoReason testReason = static_cast<ModifyAudioEffectChainInfoReason>(2);
-    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
-    // Should not crash, and SessionInfoMapAdd should include renderId/deviceType
+    // ADD_AUDIO_EFFECT_CHAIN_INFO - should store renderId/deviceType in session info
+    ModifyAudioEffectChainInfoReason addReason = ADD_AUDIO_EFFECT_CHAIN_INFO;
+    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, addReason);
+    std::string sessionId = std::to_string(TEST_ID);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.count(sessionId) > 0, true);
+    auto &storedInfo = AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionId];
+    EXPECT_EQ(storedInfo.renderId, 100u);
+    EXPECT_EQ(storedInfo.deviceType, DEVICE_TYPE_SPEAKER);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -655,7 +682,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfoWithRenderId_00
     hpaeRenderEffectNode->renderId_ = 100;
     hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    // UpdateAudioEffectChainInfo calls UpdateMultichannelConfig(renderId path), EffectVolumeUpdate, etc.
     hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
+    SUCCEED();
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -677,7 +706,12 @@ HWTEST_F(HpaeRenderEffectNodeTest, testReconfigOutputBufferWithRenderId_001, Tes
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     hpaeRenderEffectNode->renderId_ = 100;
     hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    // ReconfigOutputBuffer calls GetOutputChannelInfo with renderId
     hpaeRenderEffectNode->ReconfigOutputBuffer();
+    // Verify node info is still valid after reconfig
+    HpaeNodeInfo &afterInfo = hpaeRenderEffectNode->GetNodeInfo();
+    EXPECT_EQ(afterInfo.nodeId, TEST_ID);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -724,7 +758,13 @@ HWTEST_F(HpaeRenderEffectNodeTest, testInitEffectBufferFromDisConnectWithRenderI
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     hpaeRenderEffectNode->renderId_ = 100;
     hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    // InitEffectBufferFromDisConnect calls InitAudioEffectChainDynamic with renderId
     hpaeRenderEffectNode->InitEffectBufferFromDisConnect();
+    // Verify chain still exists after init
+    std::string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneStr, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(key) > 0, true);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -886,6 +926,8 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateDefaultAudioEffectInner_MultiRenderId_0
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = chain;
 
     AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffectInner();
+    // EFFECT_NONE session should be skipped, so maxSessionID should be 100 (not 999)
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxSessionID_, 100u);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -936,6 +978,8 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateDefaultAudioEffectInner_MultiRenderId_0
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = chain;
 
     AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffectInner();
+    // Special and prior scene types should be skipped; only SCENE_MOVIE session 100 should count
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxSessionID_, 100u);
 
     AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -1008,6 +1052,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_001, Tes
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key2] = chain2;
 
     AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    // Verify chains still exist after UpdateStreamUsageInner
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(key1) > 0, true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(key2) > 0, true);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1068,6 +1115,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_002, Tes
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key2] = chain2;
 
     AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    // Verify chains still exist after UpdateStreamUsageInner
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(key1) > 0, true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(key2) > 0, true);
 
     AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -1104,6 +1154,8 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_003, Tes
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[oldKey] = chain;
 
     AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    // Verify old key chain still exists
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(oldKey) > 0, true);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1149,6 +1201,8 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_004, Tes
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = chain;
 
     AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    // Verify chain still exists after EFFECT_NONE session was skipped
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(key) > 0, true);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1163,6 +1217,8 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_005, Tes
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
 
     AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    // With empty maps, maxSessionID should remain 0
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxSessionID_, 0u);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 }  // namespace HPAE
