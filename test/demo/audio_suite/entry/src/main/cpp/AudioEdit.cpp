@@ -1979,7 +1979,7 @@ static napi_value Init(napi_env env, napi_value exports)
         {"audioConverterCreate", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioConverterGetFileInfo", nullptr, AudioConverterGetFileInfo, nullptr, nullptr,
          nullptr, napi_default, nullptr}
-    }; 
+    };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
     desc.insert(desc.end(), voiceChangeDescriptors.begin(), voiceChangeDescriptors.end());
     desc.insert(desc.end(), spaceRenderDescriptors.begin(), spaceRenderDescriptors.end());
