@@ -246,6 +246,14 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass
     return SUCCESS;
 }
 
+DeviceType HpaeSinkOutputNode::GetCurrentActiveDevice() const
+{
+    if (audioRendererSink_ == nullptr) {
+        return DEVICE_TYPE_NONE;
+    }
+    return audioRendererSink_->GetCurrentOutputDevice();
+}
+
 int32_t HpaeSinkOutputNode::GetAuxiliarySink(const std::string &sinkName)
 {
     AUDIO_INFO_LOG("spkName:%{public}s auxSinkEnable_:%{public}s", sinkName.c_str(),
@@ -692,6 +700,11 @@ void HpaeSinkOutputNode::SetCollaborationState(bool collaborationState)
 {
     collaborationState_ = collaborationState;
     AUDIO_INFO_LOG("collaborationState: %{public}d", collaborationState);
+}
+
+uint32_t HpaeSinkOutputNode::GetRenderId() const
+{
+    return renderId_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

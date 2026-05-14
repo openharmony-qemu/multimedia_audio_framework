@@ -114,6 +114,7 @@ public:
     MOCK_METHOD(void, SetDmDeviceType, (uint16_t dmDeviceType, DeviceType deviceType), (override));
 
     MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));
+    MOCK_METHOD(DeviceType, GetCurrentOutputDevice, (), (override));
 };
 
 // Mock INodeCallback

@@ -26,6 +26,7 @@
 #include "audio_utils.h"
 #include "audio_effect_log.h"
 #include "stream_dfx_manager.h"
+#include "parameters.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
@@ -38,7 +39,10 @@ static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
 static constexpr float SMALL_SIGNAL_NUM = 1e-6;
-
+namespace {
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
+}
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -61,6 +65,10 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
             directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // bt speaker
             collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // default speaker
         }
+    }
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        deviceType_ = static_cast<DeviceType>(nodeInfo.deviceType);
+        renderId_ = nodeInfo.renderId;
     }
     AUDIO_INFO_LOG("created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM
@@ -137,7 +145,8 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     auto rate = "rate[" + std::to_string(inputs[0]->GetSampleRate()) + "]_";
     auto ch = "ch[" + std::to_string(inputs[0]->GetChannelCount()) + "]_";
     auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
-    Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len);
+    auto render = "render[" + std::to_string(renderId_) + "]";
+    Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len + render);
 
     if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled() ||
         (inputs[0]->GetSampleRate() > DEFUALT_EFFECT_RATE &&
@@ -159,11 +168,17 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
         0
     );
 
-    int32_t ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr);
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+    int32_t ret;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, deviceType_, renderId_,
+            eBufferAttr);
+    } else {
+        ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr);
+    }
+    CHECK_AND_RETURN_RET(ret == SUCCESS,	 
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),	 
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,	 
+                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),	 
             "apply audio effect chain fail", false), inputs[0]));
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
@@ -306,7 +321,12 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
     if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
-    int32_t ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType);
+    int32_t ret;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType, deviceType_, renderId_);
+    } else {
+        ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType);
+    }
     CHECK_AND_RETURN_RET(ret == SUCCESS,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
@@ -341,7 +361,12 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
     if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
-    int32_t ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType);
+    int32_t ret;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType, deviceType_, renderId_);
+    } else {
+        ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType);
+    }
     CHECK_AND_RETURN_RET(ret == SUCCESS,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
@@ -380,6 +405,10 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
             info.channelLayout = nodeInfo.channelLayout;
             info.streamUsage = nodeInfo.effectInfo.streamUsage;
             info.systemVolumeType = static_cast<int32_t>(nodeInfo.effectInfo.systemVolumeType);
+            if (IS_DEVICE_ENHANCED_SUPPORTED) {
+                info.renderId = renderId_;
+                info.deviceType = deviceType_;
+            }
             ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
             break;
         }
@@ -403,7 +432,11 @@ void HpaeRenderEffectNode::UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo)
         audioSupportedSceneTypes.end()) {
         sceneType = audioSupportedSceneTypes.at(nodeInfo.effectInfo.effectScene);
     }
-    audioEffectChainManager->UpdateMultichannelConfig(sceneType);
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        audioEffectChainManager->UpdateMultichannelConfig(sceneType, deviceType_, renderId_);
+    } else {
+        audioEffectChainManager->UpdateMultichannelConfig(sceneType);
+    }
     audioEffectChainManager->EffectVolumeUpdate();
     audioEffectChainManager->UpdateDefaultAudioEffect();
     audioEffectChainManager->UpdateStreamUsage();
@@ -414,7 +447,13 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
     HpaeNodeInfo &effectNodeInfo = GetNodeInfo();
     uint32_t channels = static_cast<uint32_t>(effectNodeInfo.channels);
     uint64_t channelLayout = effectNodeInfo.channelLayout;
-    int32_t ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(sceneType_, channels, channelLayout);
+    int32_t ret;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(
+            sceneType_, deviceType_, renderId_, channels, channelLayout);
+    } else {
+        ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(sceneType_, channels, channelLayout);
+    }
     if (ret != SUCCESS || channels == 0 || channelLayout == 0) {
         AUDIO_WARNING_LOG("output channel info incorrect, scene type: %{public}s, "
             "channels: %{public}u, channelLayout: %{public}" PRIu64, sceneType_.c_str(), channels, channelLayout);
@@ -443,12 +482,24 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
+    bool isDownSampling;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(
+            sceneType_, deviceType_, renderId_);
+    } else {
+        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_);
+    }
     basicFormat.rate = static_cast<uint32_t>(basicFormat.rate) > DEFUALT_EFFECT_RATE &&
-        !AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_) ?
-        basicFormat.rate : static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+        !isDownSampling ? basicFormat.rate : static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
     uint64_t channelLayout = 0;
-    int32_t ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_,
-        basicFormat.audioChannelInfo.numChannels, channelLayout);
+    int32_t ret;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(
+            sceneType_, deviceType_, renderId_, basicFormat.audioChannelInfo.numChannels, channelLayout);
+    } else {
+        ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(
+            sceneType_, basicFormat.audioChannelInfo.numChannels, channelLayout);
+    }
     basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
     return ret;
 }
@@ -498,18 +549,18 @@ void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
-    audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_, deviceType_, renderId_);
+    } else {
+        audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);
+    }
     AUDIO_INFO_LOG("sceneType:%{public}s", sceneType_.c_str());
 }
 
 uint64_t HpaeRenderEffectNode::GetLatency(uint32_t sessionId)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioEffectChainManager != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-                BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "null audioEffectChainManager", false), 0));
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, 0, "null audioEffectChainManager");
     return audioEffectChainManager->GetLatency(std::to_string(sessionId)) * AUDIO_US_PER_MS;
 }
 } // namespace HPAE

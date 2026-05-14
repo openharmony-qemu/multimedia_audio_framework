@@ -2798,6 +2798,89 @@ HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkDeInit_NullSink, TestSize.L
     int32_t result = hpaeSinkOutputNode->RenderSinkDeInit();
     EXPECT_EQ(result, ERROR);
 }
+// ==================== New UT for GetRenderId and GetCurrentActiveDevice ====================
+
+/**
+ * @tc.name  : GetRenderId_Default_001
+ * @tc.type  : FUNC
+ * @tc.number: GetRenderId_Default_001
+ * @tc.desc  : Test GetRenderId returns HDI_INVALID_ID by default.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetRenderId_Default_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderId(), HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : GetRenderId_SetValue_001
+ * @tc.type  : FUNC
+ * @tc.number: GetRenderId_SetValue_001
+ * @tc.desc  : Test GetRenderId returns correct value after setting private member.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetRenderId_SetValue_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    hpaeSinkOutputNode->renderId_ = 100;
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderId(), 100u);
+}
+
+/**
+ * @tc.name  : GetCurrentActiveDevice_NullSink_001
+ * @tc.type  : FUNC
+ * @tc.number: GetCurrentActiveDevice_NullSink_001
+ * @tc.desc  : Test GetCurrentActiveDevice returns DEVICE_TYPE_NONE when sink is null.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetCurrentActiveDevice_NullSink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    // audioRendererSink_ is nullptr by default
+    EXPECT_EQ(hpaeSinkOutputNode->GetCurrentActiveDevice(), DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : GetCurrentActiveDevice_WithMockSink_001
+ * @tc.type  : FUNC
+ * @tc.number: GetCurrentActiveDevice_WithMockSink_001
+ * @tc.desc  : Test GetCurrentActiveDevice returns device from mock sink.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetCurrentActiveDevice_WithMockSink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    EXPECT_CALL(*mockSink, GetCurrentOutputDevice())
+        .WillOnce(Return(DEVICE_TYPE_SPEAKER));
+    EXPECT_EQ(hpaeSinkOutputNode->GetCurrentActiveDevice(), DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : GetCurrentActiveDevice_WithMockSink_002
+ * @tc.type  : FUNC
+ * @tc.number: GetCurrentActiveDevice_WithMockSink_002
+ * @tc.desc  : Test GetCurrentActiveDevice returns DEVICE_TYPE_BLUETOOTH_A2DP from mock sink.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetCurrentActiveDevice_WithMockSink_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    EXPECT_CALL(*mockSink, GetCurrentOutputDevice())
+        .WillOnce(Return(DEVICE_TYPE_BLUETOOTH_A2DP));
+    EXPECT_EQ(hpaeSinkOutputNode->GetCurrentActiveDevice(), DEVICE_TYPE_BLUETOOTH_A2DP);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

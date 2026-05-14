@@ -498,6 +498,673 @@ HWTEST_F(HpaeRenderEffectNodeTest, FaultCode_SplitCollaborativeData_InvalidChann
     int32_t ret = node->SplitCollaborativeData();
     EXPECT_EQ(ret, ERROR);
 }
+// ==================== New UT for renderId/deviceType logic in HpaeRenderEffectNode ====================
+
+HWTEST_F(HpaeRenderEffectNodeTest, testConstructorWithRenderId_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.renderId = 100;
+    nodeInfo.deviceType = static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    // Access private members via -fno-access-control
+    EXPECT_EQ(hpaeRenderEffectNode->renderId_, 100u);
+    EXPECT_EQ(hpaeRenderEffectNode->deviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testConstructorWithInvalidRenderId_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.renderId = HDI_INVALID_ID; // Invalid renderId
+    nodeInfo.deviceType = static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    // renderId_ should remain default 0 when nodeInfo.renderId == HDI_INVALID_ID
+    EXPECT_EQ(hpaeRenderEffectNode->renderId_, 0u);
+    EXPECT_EQ(hpaeRenderEffectNode->deviceType_, DEVICE_TYPE_INVALID);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testConstructorWithRenderId_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.renderId = 200;
+    nodeInfo.deviceType = static_cast<int32_t>(DEVICE_TYPE_BLUETOOTH_A2DP);
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    EXPECT_EQ(hpaeRenderEffectNode->renderId_, 200u);
+    EXPECT_EQ(hpaeRenderEffectNode->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testCreateAudioEffectChainWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneStr = "SCENE_MUSIC";
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    // Set private members to simulate renderId path
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testCreateAudioEffectChainWithoutRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    // renderId_ default 0, should use old path
+    EXPECT_EQ(hpaeRenderEffectNode->renderId_, 0u);
+    EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcessWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneStr = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneStr, DEVICE_TYPE_SPEAKER, 100);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    std::vector<HpaePcmBuffer *> inputs;
+    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    hpaePcmBuffer.SetBufferSilence(true);
+    inputs.emplace_back(&hpaePcmBuffer);
+    EXPECT_NE(hpaeRenderEffectNode->SignalProcess(inputs), nullptr);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfoWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    ModifyAudioEffectChainInfoReason testReason = static_cast<ModifyAudioEffectChainInfoReason>(2);
+    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
+    // Should not crash, and SessionInfoMapAdd should include renderId/deviceType
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfoWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testReconfigOutputBufferWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneStr = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneStr, DEVICE_TYPE_SPEAKER, 100);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    hpaeRenderEffectNode->ReconfigOutputBuffer();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testGetExpectedInputChannelInfoWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneStr = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneStr, DEVICE_TYPE_SPEAKER, 100);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioBasicFormat basicFormat;
+    basicFormat.rate = SAMPLE_RATE_48000;
+    basicFormat.audioChannelInfo.numChannels = STEREO;
+    int32_t ret = hpaeRenderEffectNode->GetExpectedInputChannelInfo(basicFormat);
+    EXPECT_EQ(ret, SUCCESS);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testInitEffectBufferFromDisConnectWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneStr = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneStr, DEVICE_TYPE_SPEAKER, 100);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    hpaeRenderEffectNode->InitEffectBufferFromDisConnect(true);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, testReleaseAudioEffectChainWithRenderId_001, TestSize.Level0)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneStr = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneStr, DEVICE_TYPE_SPEAKER, 100);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    hpaeRenderEffectNode->renderId_ = 100;
+    hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+// ==================== UpdateDefaultAudioEffectInner / UpdateStreamUsageInner multi-renderId UTs ====================
+
+constexpr uint32_t UT_INFOCHANNELS = 2;
+constexpr uint64_t UT_INFOCHANNELLAYOUT = 0x3;
+constexpr int32_t UT_DEFAULT_DSP_STREAMUSAGE = 1;
+constexpr int32_t UT_DEFAULT_STREAM_OR_VOLUME_TYPE = 1;
+
+/**
+* @tc.name   : Test UpdateDefaultAudioEffectInner with multi-renderId sessions
+* @tc.number : UpdateDefaultAudioEffectInner_MultiRenderId_001
+* @tc.desc   : Test UpdateDefaultAudioEffectInner per-renderId grouping.
+*              Sessions with different renderId should update their own Chain independently.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateDefaultAudioEffectInner_MultiRenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    SessionEffectInfo info1;
+    info1.sceneMode = "EFFECT_DEFAULT";
+    info1.sceneType = "SCENE_MOVIE";
+    info1.channels = UT_INFOCHANNELS;
+    info1.channelLayout = UT_INFOCHANNELLAYOUT;
+    info1.streamUsage = UT_DEFAULT_DSP_STREAMUSAGE;
+    info1.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+    info1.renderId = 1;
+    info1.deviceType = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = info1;
+
+    SessionEffectInfo info2 = info1;
+    info2.renderId = 2;
+    info2.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["200"] = info2;
+
+    SessionEffectInfo info3 = info1;
+    info3.renderId = 1;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["50"] = info3;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_MOVIE"] = {"50", "100", "200"};
+
+    const char *sceneType = "SCENE_MOVIE";
+    std::string key1 = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_MOVIE", DEVICE_TYPE_SPEAKER, 1);
+    std::string key2 = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_MOVIE", DEVICE_TYPE_BLUETOOTH_A2DP, 2);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain1 =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    std::shared_ptr<AudioEffectChain> chain2 =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key1] = chain1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key2] = chain2;
+
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffectInner();
+
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxSessionID_, 200u);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateDefaultAudioEffectInner with single renderId (old path)
+* @tc.number : UpdateDefaultAudioEffectInner_MultiRenderId_002
+* @tc.desc   : Test UpdateDefaultAudioEffectInner old path uses old key format.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateDefaultAudioEffectInner_MultiRenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    SessionEffectInfo info1;
+    info1.sceneMode = "EFFECT_DEFAULT";
+    info1.sceneType = "SCENE_MOVIE";
+    info1.channels = UT_INFOCHANNELS;
+    info1.channelLayout = UT_INFOCHANNELLAYOUT;
+    info1.streamUsage = UT_DEFAULT_DSP_STREAMUSAGE;
+    info1.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+    info1.renderId = 0;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = info1;
+
+    SessionEffectInfo info2 = info1;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["200"] = info2;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_MOVIE"] = {"100", "200"};
+
+    std::string oldKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    const char *sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[oldKey] = chain;
+
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffectInner();
+
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxSessionID_, 200u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxDefaultSessionIDToSceneType_, "SCENE_MOVIE");
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateDefaultAudioEffectInner skips EFFECT_NONE sessions
+* @tc.number : UpdateDefaultAudioEffectInner_MultiRenderId_003
+* @tc.desc   : Test UpdateDefaultAudioEffectInner skips sessions with EFFECT_NONE scene mode.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateDefaultAudioEffectInner_MultiRenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    SessionEffectInfo infoNone;
+    infoNone.sceneMode = "EFFECT_NONE";
+    infoNone.sceneType = "SCENE_MOVIE";
+    infoNone.channels = UT_INFOCHANNELS;
+    infoNone.channelLayout = UT_INFOCHANNELLAYOUT;
+    infoNone.streamUsage = UT_DEFAULT_DSP_STREAMUSAGE;
+    infoNone.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+    infoNone.renderId = 1;
+    infoNone.deviceType = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["999"] = infoNone;
+
+    SessionEffectInfo infoNormal = infoNone;
+    infoNormal.sceneMode = "EFFECT_DEFAULT";
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = infoNormal;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_MOVIE"] = {"999", "100"};
+
+    std::string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_MOVIE", DEVICE_TYPE_SPEAKER, 1);
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_MOVIE", true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = chain;
+
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffectInner();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateDefaultAudioEffectInner excludes special/prior scene types
+* @tc.number : UpdateDefaultAudioEffectInner_MultiRenderId_004
+* @tc.desc   : Test UpdateDefaultAudioEffectInner skips special scene types and prior scene types.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateDefaultAudioEffectInner_MultiRenderId_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.insert("SCENE_VOIP");
+    AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
+    AudioEffectChainManager::GetInstance()->priorSceneList_.push_back("SCENE_RING");
+
+    SessionEffectInfo baseInfo;
+    baseInfo.sceneMode = "EFFECT_DEFAULT";
+    baseInfo.channels = UT_INFOCHANNELS;
+    baseInfo.channelLayout = UT_INFOCHANNELLAYOUT;
+    baseInfo.streamUsage = UT_DEFAULT_DSP_STREAMUSAGE;
+    baseInfo.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+    baseInfo.renderId = 1;
+
+    SessionEffectInfo infoSpecial = baseInfo;
+    infoSpecial.sceneType = "SCENE_VOIP";
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["500"] = infoSpecial;
+
+    SessionEffectInfo infoPrior = baseInfo;
+    infoPrior.sceneType = "SCENE_RING";
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["600"] = infoPrior;
+
+    SessionEffectInfo infoNormal = baseInfo;
+    infoNormal.sceneType = "SCENE_MOVIE";
+    infoNormal.deviceType = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = infoNormal;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_VOIP"] = {"500"};
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_RING"] = {"600"};
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_MOVIE"] = {"100"};
+
+    std::string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_MOVIE", DEVICE_TYPE_SPEAKER, 1);
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_MOVIE", true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = chain;
+
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffectInner();
+
+    AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateDefaultAudioEffectInner with empty session map
+* @tc.number : UpdateDefaultAudioEffectInner_MultiRenderId_005
+* @tc.desc   : Test UpdateDefaultAudioEffectInner handles empty session map gracefully.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateDefaultAudioEffectInner_MultiRenderId_005, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffectInner();
+
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxSessionID_, 0u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxDefaultSessionIDToSceneType_, "");
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateStreamUsageInner with multi-renderId special scene types
+* @tc.number : UpdateStreamUsageInner_MultiRenderId_001
+* @tc.desc   : Test UpdateStreamUsageInner per-renderId grouping for special scene types.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.insert("SCENE_VOIP");
+
+    SessionEffectInfo baseInfo;
+    baseInfo.sceneMode = "EFFECT_DEFAULT";
+    baseInfo.channels = UT_INFOCHANNELS;
+    baseInfo.channelLayout = UT_INFOCHANNELLAYOUT;
+    baseInfo.streamUsage = UT_DEFAULT_DSP_STREAMUSAGE;
+    baseInfo.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+
+    SessionEffectInfo info1 = baseInfo;
+    info1.sceneType = "SCENE_VOIP";
+    info1.renderId = 1;
+    info1.deviceType = DEVICE_TYPE_SPEAKER;
+    info1.streamUsage = 1;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = info1;
+
+    SessionEffectInfo info2 = baseInfo;
+    info2.sceneType = "SCENE_VOIP";
+    info2.renderId = 2;
+    info2.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    info2.streamUsage = 2;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["200"] = info2;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_VOIP"] = {"100", "200"};
+
+    std::string key1 = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_VOIP", DEVICE_TYPE_SPEAKER, 1);
+    std::string key2 = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_VOIP", DEVICE_TYPE_BLUETOOTH_A2DP, 2);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain1 =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_VOIP", true);
+    std::shared_ptr<AudioEffectChain> chain2 =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_VOIP", true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key1] = chain1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key2] = chain2;
+
+    AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateStreamUsageInner with multi-renderId prior scene types
+* @tc.number : UpdateStreamUsageInner_MultiRenderId_002
+* @tc.desc   : Test UpdateStreamUsageInner per-renderId grouping for prior scene types.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
+    AudioEffectChainManager::GetInstance()->priorSceneList_.push_back("SCENE_RING");
+
+    SessionEffectInfo baseInfo;
+    baseInfo.sceneMode = "EFFECT_DEFAULT";
+    baseInfo.channels = UT_INFOCHANNELS;
+    baseInfo.channelLayout = UT_INFOCHANNELLAYOUT;
+    baseInfo.streamUsage = UT_DEFAULT_DSP_STREAMUSAGE;
+    baseInfo.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+
+    SessionEffectInfo info1 = baseInfo;
+    info1.sceneType = "SCENE_RING";
+    info1.renderId = 1;
+    info1.deviceType = DEVICE_TYPE_SPEAKER;
+    info1.streamUsage = 3;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = info1;
+
+    SessionEffectInfo info1b = baseInfo;
+    info1b.sceneType = "SCENE_RING";
+    info1b.renderId = 1;
+    info1b.deviceType = DEVICE_TYPE_SPEAKER;
+    info1b.streamUsage = 1;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["50"] = info1b;
+
+    SessionEffectInfo info2 = baseInfo;
+    info2.sceneType = "SCENE_RING";
+    info2.renderId = 2;
+    info2.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    info2.streamUsage = 4;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["200"] = info2;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_RING"] = {"50", "100", "200"};
+
+    std::string key1 = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_RING", DEVICE_TYPE_SPEAKER, 1);
+    std::string key2 = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_RING", DEVICE_TYPE_BLUETOOTH_A2DP, 2);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain1 =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_RING", true);
+    std::shared_ptr<AudioEffectChain> chain2 =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_RING", true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key1] = chain1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key2] = chain2;
+
+    AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+
+    AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateStreamUsageInner with old path (no multi-device)
+* @tc.number : UpdateStreamUsageInner_MultiRenderId_003
+* @tc.desc   : Test UpdateStreamUsageInner old path uses old key format for special scene types.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.insert("SCENE_VOIP");
+
+    SessionEffectInfo info;
+    info.sceneMode = "EFFECT_DEFAULT";
+    info.sceneType = "SCENE_VOIP";
+    info.channels = UT_INFOCHANNELS;
+    info.channelLayout = UT_INFOCHANNELLAYOUT;
+    info.streamUsage = 5;
+    info.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+    info.renderId = 0;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = info;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_VOIP"] = {"100"};
+
+    std::string oldKey = "SCENE_VOIP_&_DEVICE_TYPE_SPEAKER";
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_VOIP", true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[oldKey] = chain;
+
+    AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateStreamUsageInner skips EFFECT_NONE in per-renderId path
+* @tc.number : UpdateStreamUsageInner_MultiRenderId_004
+* @tc.desc   : Test UpdateStreamUsageInner skips sessions with EFFECT_NONE scene mode.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.insert("SCENE_VOIP");
+
+    SessionEffectInfo baseInfo;
+    baseInfo.channels = UT_INFOCHANNELS;
+    baseInfo.channelLayout = UT_INFOCHANNELLAYOUT;
+    baseInfo.streamUsage = UT_DEFAULT_DSP_STREAMUSAGE;
+    baseInfo.systemVolumeType = UT_DEFAULT_STREAM_OR_VOLUME_TYPE;
+
+    SessionEffectInfo infoNone = baseInfo;
+    infoNone.sceneMode = "EFFECT_NONE";
+    infoNone.sceneType = "SCENE_VOIP";
+    infoNone.renderId = 1;
+    infoNone.deviceType = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["999"] = infoNone;
+
+    SessionEffectInfo infoNormal = baseInfo;
+    infoNormal.sceneMode = "EFFECT_DEFAULT";
+    infoNormal.sceneType = "SCENE_VOIP";
+    infoNormal.renderId = 1;
+    infoNormal.deviceType = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["100"] = infoNormal;
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_["SCENE_VOIP"] = {"999", "100"};
+
+    std::string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        "SCENE_VOIP", DEVICE_TYPE_SPEAKER, 1);
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::shared_ptr<AudioEffectChain> chain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_VOIP", true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = chain;
+
+    AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateStreamUsageInner with empty maps
+* @tc.number : UpdateStreamUsageInner_MultiRenderId_005
+* @tc.desc   : Test UpdateStreamUsageInner handles empty special/prior sets gracefully.
+*/
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_005, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->UpdateStreamUsageInner();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

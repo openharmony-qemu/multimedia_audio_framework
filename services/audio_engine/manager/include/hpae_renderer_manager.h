@@ -166,6 +166,8 @@ private:
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
     void StopInterphoneSinkIfNeeded();
 
+    DeviceType GetCurrentSinkDeviceType();
+
 private:
 
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
@@ -191,6 +193,7 @@ private:
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
     bool isReloadManagerFromCollStateChange_ = false;
+    uint32_t renderId_ = HDI_INVALID_ID;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
