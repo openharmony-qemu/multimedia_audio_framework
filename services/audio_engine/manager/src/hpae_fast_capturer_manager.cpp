@@ -709,7 +709,7 @@ int32_t HpaeFastCapturerManager::RemoveCaptureInjector(
     const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
 {
     auto request = [this, sinkOutputNode] {
-        Trace trace("HpaeFastCapturerManager::AddCaptureInjector");
+        Trace trace("HpaeFastCapturerManager::RemoveCaptureInjector");
         AUDIO_INFO_LOG("remove capture injector");
         CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
         CHECK_AND_RETURN_LOG(injectorFmtConverterNodeMap_.find(sinkOutputNode) != injectorFmtConverterNodeMap_.end() &&
