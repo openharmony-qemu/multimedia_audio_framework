@@ -301,7 +301,7 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
     return nodeInfo.sceneType;
 }
 
-void HpaeRendererManager::DisconnectNodeFromEffectChain(const HpaeNodeInfo &nodeInfo)
+void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
 {
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
         "could not find processorType %{public}d", nodeInfo.sceneType);

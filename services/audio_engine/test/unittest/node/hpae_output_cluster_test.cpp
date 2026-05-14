@@ -275,7 +275,7 @@ HWTEST_F(HpaeOutputClusterTest, FaultCode_NotifyStreamChangeToSink_NullSinkOutpu
         STREAM_USAGE_MEDIA, RENDERER_RUNNING, TEST_NOTIFY_SESSION_ID);
     SUCCEED();
 }
-// ==================== New UT for GetRenderId and GetCurrentActiveDevice ====================
+// ==================== New UT for GetRenderId and GetCurrentOutputDevice ====================
 
 /**
  * @tc.name  : GetRenderId_Default_001
@@ -296,11 +296,11 @@ HWTEST_F(HpaeOutputClusterTest, GetRenderId_Default_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : GetCurrentActiveDevice_NullSink_001
+ * @tc.name  : GetCurrentOutputDevice_NullSink_001
  * @tc.type  : FUNC
- * @tc.desc  : Test GetCurrentActiveDevice returns DEVICE_TYPE_NONE when sink is null.
+ * @tc.desc  : Test GetCurrentOutputDevice returns DEVICE_TYPE_NONE when sink is null.
  */
-HWTEST_F(HpaeOutputClusterTest, GetCurrentActiveDevice_NullSink_001, TestSize.Level0)
+HWTEST_F(HpaeOutputClusterTest, GetCurrentOutputDevice_NullSink_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = 100;
@@ -310,7 +310,7 @@ HWTEST_F(HpaeOutputClusterTest, GetCurrentActiveDevice_NullSink_001, TestSize.Le
     nodeInfo.format = SAMPLE_F32LE;
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     // hpaeSinkOutputNode_->audioRendererSink_ is nullptr by default
-    EXPECT_EQ(hpaeOutputCluster->GetCurrentActiveDevice(), DEVICE_TYPE_NONE);
+    EXPECT_EQ(hpaeOutputCluster->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
 }
 
 /**

@@ -320,7 +320,7 @@ HWTEST_F(HpaeRemoteOutputClusterTest, TransStreamUsageToSplitSceneType_05, TestS
     EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_ULTRASONIC, mode3), HPAE_SCENE_SPLIT_MEDIA);
     EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MOVIE, mode3), HPAE_SCENE_SPLIT_MEDIA);
 }
-// ==================== New UT for GetRenderId and GetCurrentActiveDevice ====================
+// ==================== New UT for GetRenderId and GetCurrentOutputDevice ====================
 
 /**
  * @tc.name  : GetRenderId_Default_001
@@ -342,11 +342,11 @@ HWTEST_F(HpaeRemoteOutputClusterTest, GetRenderId_Default_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : GetCurrentActiveDevice_NullSink_001
+ * @tc.name  : GetCurrentOutputDevice_NullSink_001
  * @tc.type  : FUNC
- * @tc.desc  : Test GetCurrentActiveDevice returns DEVICE_TYPE_NONE when sink is null.
+ * @tc.desc  : Test GetCurrentOutputDevice returns DEVICE_TYPE_NONE when sink is null.
  */
-HWTEST_F(HpaeRemoteOutputClusterTest, GetCurrentActiveDevice_NullSink_001, TestSize.Level0)
+HWTEST_F(HpaeRemoteOutputClusterTest, GetCurrentOutputDevice_NullSink_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = 100;
@@ -357,7 +357,7 @@ HWTEST_F(HpaeRemoteOutputClusterTest, GetCurrentActiveDevice_NullSink_001, TestS
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceClass = "remote";
     auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
-    EXPECT_EQ(hpaeRemoteOutputCluster->GetCurrentActiveDevice(), DEVICE_TYPE_NONE);
+    EXPECT_EQ(hpaeRemoteOutputCluster->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
 }
 
 /**

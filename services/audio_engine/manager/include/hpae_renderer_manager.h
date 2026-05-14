@@ -149,7 +149,7 @@ private:
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void SwitchBypassState(const std::shared_ptr<HpaeSinkInputNode> &node,
         HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
-    void DisconnectNodeFromEffectChain(const HpaeNodeInfo &nodeInfo);
+    void DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
     /**
      * @brief Refresh the usage and type of the cluster corresponding to the given scene type.

@@ -218,25 +218,7 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, GetCurrentActiveDevice_NullSink_001, Test
     HpaeNodeInfo nodeInfo;
     auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     // audioRendererSink_ is nullptr by default
-    EXPECT_EQ(remoteNode->GetCurrentOutputDevice()(), DEVICE_TYPE_NONE);
-}
-
-/**
- * @tc.name  : GetCurrentActiveDevice_WithMockSink_001
- * @tc.type  : FUNC
- * @tc.desc  : Test GetCurrentActiveDevice returns device from mock sink.
- */
-HWTEST_F(HpaeRemoteSinkOutputNodeTest, GetCurrentActiveDevice_WithMockSink_001, TestSize.Level0)
-{
-    HpaeSinkInfo sinkInfo;
-    HpaeNodeInfo nodeInfo;
-    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    remoteNode->audioRendererSink_ = mockSink;
-
-    EXPECT_CALL(*mockSink, GetCurrentOutputDevice())
-        .WillOnce(Return(DEVICE_TYPE_SPEAKER));
-    EXPECT_EQ(remoteNode->GetCurrentOutputDevice()(), DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(remoteNode->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

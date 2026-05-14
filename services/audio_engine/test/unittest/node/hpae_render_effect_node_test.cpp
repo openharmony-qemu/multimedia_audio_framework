@@ -724,7 +724,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testInitEffectBufferFromDisConnectWithRenderI
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     hpaeRenderEffectNode->renderId_ = 100;
     hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
-    hpaeRenderEffectNode->InitEffectBufferFromDisConnect(true);
+    hpaeRenderEffectNode->InitEffectBufferFromDisConnect();
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 

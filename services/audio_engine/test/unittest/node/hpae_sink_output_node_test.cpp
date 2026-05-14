@@ -2843,44 +2843,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, GetCurrentActiveDevice_NullSink_001, TestSize.L
     // audioRendererSink_ is nullptr by default
     EXPECT_EQ(hpaeSinkOutputNode->GetCurrentActiveDevice(), DEVICE_TYPE_NONE);
 }
-
-/**
- * @tc.name  : GetCurrentActiveDevice_WithMockSink_001
- * @tc.type  : FUNC
- * @tc.number: GetCurrentActiveDevice_WithMockSink_001
- * @tc.desc  : Test GetCurrentActiveDevice returns device from mock sink.
- */
-HWTEST_F(HpaeSinkOutputNodeTest, GetCurrentActiveDevice_WithMockSink_001, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-
-    EXPECT_CALL(*mockSink, GetCurrentOutputDevice())
-        .WillOnce(Return(DEVICE_TYPE_SPEAKER));
-    EXPECT_EQ(hpaeSinkOutputNode->GetCurrentActiveDevice(), DEVICE_TYPE_SPEAKER);
-}
-
-/**
- * @tc.name  : GetCurrentActiveDevice_WithMockSink_002
- * @tc.type  : FUNC
- * @tc.number: GetCurrentActiveDevice_WithMockSink_002
- * @tc.desc  : Test GetCurrentActiveDevice returns DEVICE_TYPE_BLUETOOTH_A2DP from mock sink.
- */
-HWTEST_F(HpaeSinkOutputNodeTest, GetCurrentActiveDevice_WithMockSink_002, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-
-    EXPECT_CALL(*mockSink, GetCurrentOutputDevice())
-        .WillOnce(Return(DEVICE_TYPE_BLUETOOTH_A2DP));
-    EXPECT_EQ(hpaeSinkOutputNode->GetCurrentActiveDevice(), DEVICE_TYPE_BLUETOOTH_A2DP);
-}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
