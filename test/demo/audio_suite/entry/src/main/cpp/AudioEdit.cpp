@@ -1771,12 +1771,12 @@ static napi_value AudioConverterGetFileInfo(napi_env env, napi_callback_info inf
 static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) {
     napi_value result;
     napi_get_boolean(env, false, &result);
-    
+
     if (!g_audioSuiteEngine) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: g_audioSuiteEngine is nullptr");
         return result;
     }
-    
+
     // Generate timestamp and file path
     auto now = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::to_time_t(now);
@@ -1787,11 +1787,11 @@ static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) {
                     << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_mday << "_" << std::setw(TIMESTAMP_DATE_WIDTH)
                     << tm->tm_hour << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_min << std::setw(TIMESTAMP_DATE_WIDTH)
                     << tm->tm_sec;
-    
+
     std::string dirPath = "/storage/Users/currentUser/Download/src.main.audiodemo/printfile/";
     std::string filePath = dirPath + "/audio_snapshot_" + timestampStream.str() + ".txt";
     mkdir(dirPath.c_str(), DIRECTORY_PERMISSIONS);
-    
+
     // Open file
     int fd = open(filePath.c_str(), O_WRONLY | O_CREAT, FILE_PERMISSIONS);
     if (fd < 0) {
@@ -1807,12 +1807,12 @@ static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) {
     // Output to file
     OH_AudioSuite_Result ret = OH_AudioSuite_PrintInfo(g_audioSuiteEngine, nullptr, fd);
     close(fd);
-    
+
     if (ret != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile failed: %{public}u", ret);
         return result;
     }
-    
+
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile success");
     napi_get_boolean(env, true, &result);
     return result;
