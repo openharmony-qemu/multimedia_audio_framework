@@ -9,7 +9,6 @@
 #include <string>
 #include <map>
 #include <algorithm>
-#include <sstream>
 #include <sys/stat.h>
 #include <new>
 #include "napi/native_api.h"
@@ -26,6 +25,7 @@
 #include "audioEffectNode/VoiceBeautifier.h"
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <filemanagement/file_uri/oh_file_uri.h>
 #include "callback/RegisterCallback.h"
 #include "audioSuiteError/AudioSuiteError.h"
@@ -45,6 +45,7 @@
 #include "realTimePlay/RealTimePlaying.h"
 #include "multiPipelineEdit/MultiPipelineEdit.h"
 #include "audioRecord/AudioRecord.h"
+#include "AudioRenderer.h"
 #include "timeline/Timeline_napi.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
@@ -56,7 +57,7 @@
 #include <cmath>
 
 const int GLOBAL_RESMGR = 0xFF00;
-const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
+static char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
 
 const int MAX_PLAY_RESULT_BUFFER_SIZE = 1024 * 1024 * 1024;
 
@@ -153,6 +154,38 @@ const int32_t OFFSET_TWENTY_FOUR = 24;
 const int32_t INVALID_FD = -1;
 const char DATA_CHUNK_ID[] = {'d', 'a', 't', 'a'};
 const int32_t DATA_HEADER_INDEX[] = {'R', 'I', 'F', 'F'};
+
+ const int32_t DIRECTORY_PERMISSIONS = 0755; 
+ const int32_t FILE_PERMISSIONS = 0644; 
+ const int32_t TM_YEAR_BASE = 1900; 
+ const int32_t TM_MONTH_OFFSET = 1; 
+ 
+ 
+ // Timestamp format constants 
+ const int32_t TIMESTAMP_YEAR_WIDTH = 4; 
+ const int32_t TIMESTAMP_DATE_WIDTH = 2; 
+ 
+ 
+ // Return codes 
+ const int32_t RETURN_SUCCESS = 0; 
+ const int32_t RETURN_FAILED = 1; 
+ 
+ 
+ // Pipeline indices 
+ const int32_t FIRST_PIPELINE_INDEX = 0; 
+ 
+ 
+ // Threadsafe function parameters 
+ const int32_t TSFN_INITIAL_QUEUE_SIZE = 0; 
+ const int32_t TSFN_THREAD_COUNT = 1; 
+ 
+ 
+ // Callback argument counts 
+ const int32_t ARG_COUNT_1 = 1; 
+ const int32_t ARG_COUNT_2 = 2; 
+ const int32_t ARG_COUNT_3 = 3; 
+ const int32_t ARG_COUNT_4 = 4; 
+ const int32_t ARG_COUNT_5 = 5;
 
 static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
 {
@@ -882,7 +915,15 @@ static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "g_writeDataBufferMap size %{public}d",
         g_writeDataBufferMap.size());
     ProcessPipeline();
-    g_playTotalAudioData = (char *)malloc(MAX_PLAY_RESULT_BUFFER_SIZE);
+     g_playFinishedFlag = false;	 
+     g_playResultTotalSize = 0; 
+
+     if (g_playTotalAudioData != nullptr) { 
+         free(g_playTotalAudioData); 
+         g_playTotalAudioData = nullptr; 
+     } 
+     g_playTotalAudioData = (char *)calloc(1, MAX_PLAY_RESULT_BUFFER_SIZE);
+
     // start
     OH_AudioRenderer_Start(audioRenderer);
     return nullptr;
@@ -965,13 +1006,16 @@ static napi_value SetIsRecord(napi_env env, napi_callback_info info)
     napi_status status = napi_get_value_bool(env, argv[ARG_0], &isRecord);
     if (status != napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetIsRecord status: %{public}d", static_cast<int>(status));
+        delete[] argv;
         return nullptr;
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "SetIsRecord isRecord: %{public}s", isRecord ? "true" : "false");
+    g_isRecord = isRecord;
     if (isRecord) {
         g_playResultTotalSize = 0;
     }
+    delete[] argv;
     return nullptr;
 }
  
@@ -985,7 +1029,7 @@ static napi_value SetSeparationMode(napi_env env, napi_callback_info info)
     napi_status status = napi_get_value_uint32(env, argv[0], &g_separationMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "SetSeparationMode g_separationMode: %{public}d", g_separationMode);
-    
+    delete[] argv;
     return ReturnResult(env, static_cast<AudioSuiteResult>(status));
 }
 
