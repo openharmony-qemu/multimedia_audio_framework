@@ -2204,7 +2204,7 @@ int32_t AudioCapturerPrivate::CheckDegradeFallback(AudioStreamParams audioStream
         "buffer length is not process frame aligned");
     return SUCCESS;
 }
-
+111
 int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
     size_t &micInBufSize, size_t &ecBufSize)
 {
