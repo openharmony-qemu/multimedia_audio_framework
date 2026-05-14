@@ -2127,8 +2127,6 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
     InterruptDfxBuilder dfxBuilder;
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         if (iterActive->second == AudioFocuState::STANDBY) {
-            AUDIO_INFO_LOG("the active stream %{public}u focus state is standby, skip it.",
-                iterActive->first.streamId);
             ++iterActive;
             continue;
         }
