@@ -330,6 +330,9 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
     AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
     NotifyServiceReady();
+#ifdef AUDIO_WIRED_DETECT
+    AudioPnpServer::GetAudioPnpServer().init();
+#endif
 }
 
 void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex serviceIndex)
