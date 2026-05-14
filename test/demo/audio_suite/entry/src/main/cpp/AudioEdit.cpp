@@ -44,8 +44,8 @@
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
 #include "multiPipelineEdit/MultiPipelineEdit.h"
-#include "audioRecord/AudioRecord.h"
 #include "AudioRenderer.h"
+#include "audioRecord/AudioRecord.h"
 #include "timeline/Timeline_napi.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
@@ -57,7 +57,7 @@
 #include <cmath>
 
 const int GLOBAL_RESMGR = 0xFF00;
-static char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
+static const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
 
 const int MAX_PLAY_RESULT_BUFFER_SIZE = 1024 * 1024 * 1024;
 
@@ -65,6 +65,8 @@ const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int INPUTNODES_SIZE2 = 2;
+const int32_t BITDEPTH_MODE_INT = 0; 
+const int32_t BITDEPTH_MODE_FLOAT = 0;
 
 OH_AudioConverter* g_converter = nullptr;
 uint8_t *g_inputData = nullptr;
