@@ -65,7 +65,7 @@ const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int INPUTNODES_SIZE2 = 2;
-const int32_t BITDEPTH_MODE_INT = 0; 
+const int32_t BITDEPTH_MODE_INT = 0;
 const int32_t BITDEPTH_MODE_FLOAT = 0;
 
 OH_AudioConverter* g_converter = nullptr;
@@ -1768,7 +1768,8 @@ static napi_value AudioConverterGetFileInfo(napi_env env, napi_callback_info inf
 }
 
 // Test the function of outputting PrintInfo to a file.（fd >= 0）
-static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) {
+static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) 
+{
     napi_value result;
     napi_get_boolean(env, false, &result);
 
