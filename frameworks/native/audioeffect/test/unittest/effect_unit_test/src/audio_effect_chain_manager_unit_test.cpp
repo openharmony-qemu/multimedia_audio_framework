@@ -5063,7 +5063,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_Rend
     string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
-        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+        TEST_DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
 
     // Create a chain and set up shared default scenario
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
@@ -5122,7 +5122,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_RenderI
     string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
-        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+        TEST_DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
 
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
@@ -5153,7 +5153,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_RenderI
     string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
-        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+        TEST_DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
 
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
@@ -5340,11 +5340,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_00
     string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
-        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+        TEST_DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
 
     // Create a chain for default scene
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
-        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+        TEST_DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
 
     auto defaultChain = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultKey];
 
@@ -5496,7 +5496,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_Rende
     string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
-        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+        TEST_DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
 
     // Create chain
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
