@@ -509,6 +509,28 @@ void AudioCoreServiceOnCheckActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)
     audioCoreService->FetchAndActivateOutputDevice(deviceDesc, streamDesc);
 }
 
+void AudioCoreServiceCheckInterphoneFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    audioCoreService->Init();
+
+    StreamUsage streamUsage = ConsumeEnum<StreamUsage>(fdp);
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = ConsumeEnum<DeviceType>(fdp);
+    desc->deviceRole_ = ConsumeEnum<DeviceRole>(fdp);
+    desc->networkId_ = fdp.ConsumeRandomLengthString(THRESHOLD);
+    desc->deviceCategory_ = ConsumeEnum<DeviceCategory>(fdp);
+
+    bool hasPairDevice = fdp.ConsumeBool();
+    if (hasPairDevice) {
+        desc->pairDeviceDescriptor_ = std::make_shared<AudioDeviceDescriptor>();
+        desc->pairDeviceDescriptor_->deviceType_ = ConsumeEnum<DeviceType>(fdp);
+        desc->pairDeviceDescriptor_->deviceRole_ = ConsumeEnum<DeviceRole>(fdp);
+    }
+
+    AudioPolicyUtils::CheckInterphone(streamUsage, desc);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -556,7 +578,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioCoreServiceA2dpOffloadGetRenderPositionFuzzTest,
     AudioCoreServiceInVideoCommFastBlockListFuzzTest,
     AudioCoreServiceSetQueryBundleNameListCallbackFuzzTest,
-    AudioCoreServiceOnCheckActiveMusicTimeFuzzTest,
+    AudioCoreServiceOnCheckActiveMusicTimeFuzzTest, AudioCoreServiceCheckInterphoneFuzzTest,
     });
     func(fdp);
 }
