@@ -35,16 +35,10 @@ void AudioPnpInputOpenFuzzTest(FuzzedDataProvider& fdp)
     AudioInputThread::AudioPnpInputOpen();
 }
 
-void AudioPnpInputPollAndReadFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioInputThread::AudioPnpInputPollAndRead();
-}
-
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
         AudioPnpInputOpenFuzzTest,
-        AudioPnpInputPollAndReadFuzzTest,
     });
     func(fdp);
 }

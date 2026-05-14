@@ -106,7 +106,7 @@ OH_AudioCommon_Result OH_AudioDebugManager_PrintLoopbackInfo(
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    uintptr_t loopbackKey = reinterpret_cast<uintptr_t>(ConvertLoopback(loopback));
+    uint32_t loopbackKey = reinterpret_cast<uint32_t>(ConvertLoopback(loopback));
     return ConvertDebugManager(debugManager)->PrintAudioLoopbackDebugInfo(loopbackKey, fd) == 0
         ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
 }

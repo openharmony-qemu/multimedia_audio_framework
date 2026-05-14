@@ -15,6 +15,7 @@
 
 #include "audio_loopback_wrapper.h"
 #include "audio_policy_log.h"
+#include "audio_debug_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,10 +34,14 @@ AudioLoopbackWrapper::AudioLoopbackWrapper(AudioLoopbackMode mode, LoopbackType 
 AudioLoopbackWrapper::~AudioLoopbackWrapper()
 {
     AUDIO_INFO_LOG("AudioLoopbackWrapper destroyed");
-    
+
     if (loopbackProxy_ != nullptr) {
         AudioPolicyManager::GetInstance().DestroyLoopback(type_);
         loopbackProxy_ = nullptr;
+    }
+
+    if (debugKey_ != 0) {
+        (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(debugKey_);
     }
 
     callbackStub_ = nullptr;

@@ -709,7 +709,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_024, TestSize.Level1)
     int32_t zoneId = 1;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 0;
     };
 
@@ -738,7 +738,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_025, TestSize.Level1)
     int32_t zoneId = 0;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 0;
     };
 
@@ -2137,7 +2137,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 0;
     };
 
@@ -2199,7 +2199,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_001, TestSize.Level1)
     auto interruptServiceTest = server->interruptService_;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2227,7 +2227,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_002, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2253,7 +2253,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_003, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2283,7 +2283,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_004, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2312,7 +2312,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_005, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2381,7 +2381,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_006, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         if (uid == 2) {
             return 1;
         }
@@ -2421,7 +2421,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_007, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -5441,7 +5441,7 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateTest_001, TestSize.Level1
     auto streams = audioSession->GetStreams();
     for (const auto &[stream, state] : streams) {
         if (stream.streamId == streamId) {
-            EXPECT_EQ(state, AudioFocuState::STANDBY);
+            EXPECT_EQ(state, AudioFocuState::ACTIVE);
         }
     }
 }

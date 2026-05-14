@@ -806,6 +806,7 @@ int32_t HpaeFastSinkOutputNode::WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, ui
         GetDfxStreamInfo().channels);
     int32_t vol = channelVolumes.channel == 0 ? 0 : std::accumulate(channelVolumes.volStart,
         channelVolumes.volStart + channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
+    vol = isExistLoopback_ ? 1 : vol;
     ZeroVolumeCheck(vol);
     UpdateSilentState(writeBuf.buffer, writeBuf.dataLength);
     UpdateAmplitudeIfNeeded(writeBuf);
@@ -977,7 +978,6 @@ void HpaeFastSinkOutputNode::UpdateAmplitudeIfNeeded(BufferDesc &writeBuf)
 void HpaeFastSinkOutputNode::ZeroVolumeCheck(int32_t vol)
 {
     CHECK_AND_RETURN(needCheckZeroVolume_);
-    CHECK_AND_RETURN(!isExistLoopback_);
     if (currentOutputDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         return;
     }

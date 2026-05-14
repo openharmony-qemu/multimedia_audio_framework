@@ -39,7 +39,7 @@ shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage
     const uint32_t sessionID)
 {
     auto desc = AudioRouterSelectStrategy::GetInstance().GetCallDefaultOutputDevice(clientUID, sessionID);
-    if (desc == nullptr) {
+    if (desc == nullptr || !AudioPolicyUtils::CheckInterphone(streamUsage, desc)) {
         desc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice(streamUsage);
     }
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,

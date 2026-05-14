@@ -1016,5 +1016,175 @@ void NapiSpatialAudioSourceTypeCallback::OnJsCallbackSpatialAudioSourceType(
     napi_acquire_threadsafe_function(amSpatialAudioSourceTypeTsfn_);
     napi_call_threadsafe_function(amSpatialAudioSourceTypeTsfn_, event, napi_tsfn_blocking);
 }
+
+NapiPersonalizedSpatializationEnabledChangeCallback::NapiPersonalizedSpatializationEnabledChangeCallback(
+    napi_env env) : env_(env)
+{
+    AUDIO_DEBUG_LOG("NapiPersonalizedSpatializationEnabledChangeCallback: instance create");
+}
+
+NapiPersonalizedSpatializationEnabledChangeCallback::~NapiPersonalizedSpatializationEnabledChangeCallback()
+{
+    if (regAmPersonalizedSpatializationTsfn_) {
+        napi_release_threadsafe_function(amPersonalizedSpatializationTsfn_, napi_tsfn_abort);
+    }
+    AUDIO_DEBUG_LOG("NapiPersonalizedSpatializationEnabledChangeCallback: instance destroy");
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::SavePersonalizedSpatializationEnabledChangeCallbackReference(
+    napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    napi_ref callback = nullptr;
+    const int32_t refCount = ARGS_ONE;
+
+    std::string taskName = "NapiPersonalizedSpatializationEnabledChangeCallback::destroy";
+    for (auto it = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
+        it != personalizedSpatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
+    }
+
+    napi_status status = napi_create_reference(env_, args, refCount, &callback);
+    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+        "NapiPersonalizedSpatializationEnabledChangeCallback: creating reference for callback fail");
+
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
+    CHECK_AND_RETURN_LOG(cb != nullptr,
+        "NapiPersonalizedSpatializationEnabledChangeCallback: creating callback failed");
+
+    personalizedSpatializationEnabledChangeCbForAnyDeviceList_.push_back(cb);
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::CreatePersonalizedSpatializationTsfn(napi_env env)
+{
+    regAmPersonalizedSpatializationTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioPersonalizedSpatializationEnabled";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        PersonalizedSpatializationEnabledTsfnFinalize, nullptr, SafeJsCallbackPersonalizedSpatializationEnabledWork,
+        &amPersonalizedSpatializationTsfn_);
+}
+
+bool NapiPersonalizedSpatializationEnabledChangeCallback::GetPersonalizedSpatializationTsfnFlag()
+{
+    return regAmPersonalizedSpatializationTsfn_;
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::RemovePersonalizedSpatialEnabledChangeCallbackReference(
+    napi_env env, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
+        it != personalizedSpatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
+        if (isSameCallback) {
+            AUDIO_INFO_LOG("RemovePersonalizedSpatializationEnabledChangeCallback: find js callback, delete it");
+            napi_delete_reference(env, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+            personalizedSpatializationEnabledChangeCbForAnyDeviceList_.erase(it);
+            return;
+        }
+    }
+    AUDIO_INFO_LOG("RemovePersonalizedSpatialEnabledChangeCallbackReference: js callback no find");
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::RemoveAllPersonalizedSpatialEnabledChangeCallbackReference()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
+        it != personalizedSpatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        napi_delete_reference(env_, (*it)->cb_);
+        (*it)->cb_ = nullptr;
+    }
+    personalizedSpatializationEnabledChangeCbForAnyDeviceList_.clear();
+    AUDIO_INFO_LOG("RemoveAllPersonalizedSpatialEnabledChangeCallbackReference: remove all js callbacks success");
+}
+
+int32_t NapiPersonalizedSpatializationEnabledChangeCallback::GetPersonalizedSpatializationEnabledChangeCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return personalizedSpatializationEnabledChangeCbForAnyDeviceList_.size();
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
+{
+    AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChange by the specified device entered");
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
+        it != personalizedSpatializationEnabledChangeCbForAnyDeviceList_.end(); it++) {
+        std::unique_ptr<AudioPersonalizedSpatializationEnabledJsCallback> cb =
+            std::make_unique<AudioPersonalizedSpatializationEnabledJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
+        cb->callback = (*it);
+        cb->deviceDescriptor = deviceDescriptor;
+        cb->enabled = enabled;
+        OnJsCallbackPersonalizedSpatializationEnabled(cb);
+    }
+
+    return;
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::SafeJsCallbackPersonalizedSpatializationEnabledWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioPersonalizedSpatializationEnabledJsCallback *event =
+        reinterpret_cast<AudioPersonalizedSpatializationEnabledJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackPersonalizedSpatializationEnabled: no memory");
+    std::shared_ptr<AudioPersonalizedSpatializationEnabledJsCallback> safeContext(
+        static_cast<AudioPersonalizedSpatializationEnabledJsCallback*>(data),
+        [](AudioPersonalizedSpatializationEnabledJsCallback *ptr) {
+            delete ptr;
+    });
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackPersonalizedSpatializationEnabledWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
+        napi_value args[ARGS_ONE] = { nullptr };
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+
+        AudioPersonalizedSpatialEnabledChangeForAnyDevice audioPersonalizedSpatialEnabledChangeForAnyDevice;
+        audioPersonalizedSpatialEnabledChangeForAnyDevice.deviceDescriptor = event->deviceDescriptor;
+        audioPersonalizedSpatialEnabledChangeForAnyDevice.enabled = event->enabled;
+        NapiParamUtils::SetPersonalizedSpatialEnabledStateForDevice(env,
+            audioPersonalizedSpatialEnabledChangeForAnyDevice, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call personalized spatial rendering enabled callback");
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::PersonalizedSpatializationEnabledTsfnFinalize(
+    napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("PersonalizedSpatializationEnabledTsfnFinalize: safe thread resource release.");
+}
+
+void NapiPersonalizedSpatializationEnabledChangeCallback::OnJsCallbackPersonalizedSpatializationEnabled(
+    std::unique_ptr<AudioPersonalizedSpatializationEnabledJsCallback> &jsCb)
+{
+    if (jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackPersonalizedSpatializationEnabled: jsCb.get() is null");
+        return;
+    }
+
+    AudioPersonalizedSpatializationEnabledJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+
+    napi_acquire_threadsafe_function(amPersonalizedSpatializationTsfn_);
+    napi_call_threadsafe_function(amPersonalizedSpatializationTsfn_, event, napi_tsfn_blocking);
+}
 } // namespace AudioStandard
 } // namespace OHOS

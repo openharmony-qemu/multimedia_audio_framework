@@ -18,7 +18,10 @@
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include "audio_effect.h"
+#include "audio_spatialization_manager.h"
+#include "audio_separation_effect_enabled_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -59,6 +62,13 @@ public:
      * @since 13
      */
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+
+    bool IsAudioSeparationEffectSupported();
+    int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId = -1);
+    int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
+    int32_t OnAudioSeparationEffectEnabledChange(
+        const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
+    int32_t OffAudioSeparationEffectEnabledChange();
 };
 
 } // namespace AudioStandard

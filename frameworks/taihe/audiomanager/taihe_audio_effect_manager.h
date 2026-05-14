@@ -40,9 +40,19 @@ public:
     void SetAudioEffectProperty(array_view<AudioEffectProperty> propertyArray);
     array<AudioEffectProperty> GetAudioEffectProperty();
 
+    bool IsAudioSeparationEffectSupported();
+    void SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, optional<int64_t> streamId);
+    void OnAudioSeparationEffectEnabledChange(callback_view<void(bool)> callback);
+    void OffAudioSeparationEffectEnabledChange(optional_view<callback<void(bool)>> callback);
+    void SetAudioSeparationEffectVolume(OHOS::AudioStandard::AudioSeparationVolumeType type, double volume);
+
 private:
     OHOS::AudioStandard::AudioEffectManager *audioEffectMngr_;
     int32_t cachedClientId_ = -1;
+
+    std::shared_ptr<OHOS::AudioStandard::AudioSeparationEffectEnabledChangeCallback>
+        separationEffectEnabledChangeCallback_ = nullptr;
+    std::mutex mutex_;
 };
 }  // namespace ANI::Audio
 #endif // TAIHE_AUDIO_EFFECT_MANAGER_H

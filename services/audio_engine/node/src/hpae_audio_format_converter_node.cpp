@@ -136,8 +136,7 @@ void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *in
     // Step 1b: Pull-Ahead -- if not enough data accumulated and credit available, actively pull from upstream
     AudioChannelInfo inChannelInfo = channelConverter_.GetInChannelInfo();
     AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
-    bool needsAccumulation = (resampler_->GetInRate() != resampler_->GetOutRate()) ||
-        (inChannelInfo.numChannels != outChannelInfo.numChannels);
+    bool needsAccumulation = (resampler_->GetInRate() != resampler_->GetOutRate());
     AUDIO_DEBUG_LOG("NodeId %{public}d: inRate=%{public}u->outRate=%{public}u, "
         "inCh=%{public}u->outCh=%{public}u, inputFrameLen=%{public}u, unprocessedFrames=%{public}u, "
         "threshold=%{public}u, credit=%{public}u/%{public}u, needsAccumulation=%{public}d",
@@ -279,16 +278,23 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
         }
     }
     // update sample rate
-    if (resampler_->GetOutRate() != sampleRate) {
+    uint32_t oldOutRate = resampler_->GetOutRate();
+    if (oldOutRate != sampleRate) {
         HILOG_COMM_INFO("[CheckUpdateOutInfo]NodeId: %{public}d, update output sample rate: "
-            "%{public}d -> %{public}d", GetNodeId(), resampler_->GetOutRate(), sampleRate);
+            "%{public}d -> %{public}d", GetNodeId(), oldOutRate, sampleRate);
         resampler_->UpdateRates(resampler_->GetInRate(), sampleRate);
     }
 
     HpaeNodeInfo nodeInfo = GetNodeInfo();
     nodeInfo.channels = (AudioChannel)numChannels;
     nodeInfo.channelLayout = (AudioChannelLayout)channelLayout;
-    nodeInfo.samplingRate = (AudioSamplingRate)resampler_->GetOutRate();
+    uint32_t newOutRate = resampler_->GetOutRate();
+    nodeInfo.samplingRate = (AudioSamplingRate)newOutRate;
+    // Proportionally update frameLen when output rate changes to preserve time duration
+    if (oldOutRate != 0 && oldOutRate != newOutRate) {
+        nodeInfo.frameLen = static_cast<uint32_t>(
+            static_cast<uint64_t>(nodeInfo.frameLen) * newOutRate / oldOutRate);
+    }
     SetNodeInfo(nodeInfo);
     return true;
 }

@@ -546,38 +546,6 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningOutputStreamDescs()
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto &it : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
-        for (auto &desc : it->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            streamDescs.push_back(desc);
-        }
-    }
-    return streamDescs;
-}
-
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningInputStreamDescs()
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto &it : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_INPUT, "not input pipe");
-        for (auto &desc : it->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            streamDescs.push_back(desc);
-        }
-    }
-    return streamDescs;
-}
-
 bool AudioPipeManager::HasRunningScoOutputStream()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -1474,6 +1442,16 @@ std::string AudioPipeManager::GetModuleName(std::shared_ptr<AudioPipeInfo> pipeI
     std::string moduleName = networkId != LOCAL_NETWORK_ID ?
         AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole) : "";
     return moduleName;
+}
+
+bool AudioPipeManager::IsValidRenderSessionId(const uint32_t sessionId)
+{
+    auto outputDescs = GetAllOutputStreamDescs();
+    auto it = std::find_if(outputDescs.begin(), outputDescs.end(),
+        [sessionId](const std::shared_ptr<AudioStreamDescriptor> &desc) {
+            return desc != nullptr && desc->sessionId_ == sessionId;
+        });
+    return it != outputDescs.end();
 }
 
 AudioVolumeType AudioPipeManager::GetVolumeTypeFromStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)

@@ -78,6 +78,7 @@ void RendererInServerUnitTest::SetUp(void)
     processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     streamListener = streamListenerHolder;
+    stateListener = streamListenerHolder;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
 }
 
@@ -4075,8 +4076,28 @@ HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_001, Tes
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
 
-    ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate();
+    ret = rendererInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
     EXPECT_NE(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test GetRendererFlagsByRoute API
+ * @tc.type  : FUNC
+ * @tc.number: GetRendererFlagsByRoute_001
+ * @tc.desc  : Cover normal, fast, and voip fast route mapping.
+ */
+HWTEST_F(RendererInServerUnitTest, GetRendererFlagsByRoute_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_NE(nullptr, rendererInServer);
+
+    EXPECT_EQ(rendererInServer->GetRendererFlagsByRoute(0), AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(rendererInServer->GetRendererFlagsByRoute(AUDIO_OUTPUT_FLAG_FAST), AUDIO_FLAG_MMAP);
+    EXPECT_EQ(rendererInServer->GetRendererFlagsByRoute(AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP),
+        AUDIO_FLAG_VOIP_FAST);
 }
 
 /**
@@ -4284,7 +4305,7 @@ HWTEST_F(RendererInServerUnitTest, RefreshServerBufferForSpanSizeUpdate_ZeroSpan
     ASSERT_EQ(SUCCESS, ret);
 
     rendererInServer->spanSizeInFrame_ = 0;
-    rendererInServer->RefreshServerBufferForSpanSizeUpdate();
+    rendererInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
 }
 
 /**

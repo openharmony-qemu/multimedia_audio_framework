@@ -1104,6 +1104,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
     capturerProxyObj_->SaveCapturerObj(weak_from_this());
 
     audioStream_->SetCapturerInfo(capturerInfo_);
+    SetInnerStreamFastStatusChangeCallback(audioStream_);
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
@@ -1290,8 +1291,12 @@ int32_t AudioCapturerPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
 void AudioCapturerPrivate::SetFastStatusChangeCallback(
     const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback)
 {
-    std::lock_guard lock(fastStatusChangeCallbackMutex_);
-    fastStatusChangeCallback_ = callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        fastStatusChangeCallback_ = callback;
+    }
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    SetInnerStreamFastStatusChangeCallback(currentStream);
 }
 
 void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
@@ -2639,6 +2644,7 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetClientDeviceId(appInfo_.deviceId);
     audioStream->SetCapturerInfo(info.capturerInfo);
+    SetInnerStreamFastStatusChangeCallback(audioStream);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, ERROR,
         HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"),
@@ -2906,10 +2912,30 @@ void AudioCapturerPrivate::FastStatusChangeCallback(FastStatus status)
 {
     FastStatus newStatus = GetFastStatusInner();
     if (newStatus != status) {
-        if (fastStatusChangeCallback_ != nullptr) {
-            fastStatusChangeCallback_->OnFastStatusChange(newStatus);
-        }
+        NotifyFastStatusChange(newStatus);
     }
+}
+
+void AudioCapturerPrivate::NotifyFastStatusChange(FastStatus status)
+{
+    std::shared_ptr<AudioCapturerFastStatusChangeCallback> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(callback != nullptr, "fastStatusChangeCallback_ is nullptr");
+    callback->OnFastStatusChange(status);
+}
+
+void AudioCapturerPrivate::SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    CHECK_AND_RETURN_LOG(audioStream != nullptr, "audioStream is nullptr");
+    std::weak_ptr<AudioCapturerPrivate> weakCapturer = weak_from_this();
+    audioStream->SetFastStatusChangeCallback([weakCapturer] (FastStatus status) {
+        auto capturer = weakCapturer.lock();
+        CHECK_AND_RETURN_LOG(capturer != nullptr, "capturer is nullptr");
+        capturer->NotifyFastStatusChange(status);
+    });
 }
 
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()

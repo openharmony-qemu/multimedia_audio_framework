@@ -17,6 +17,7 @@
 
 #include <map>
 #include <memory>
+#include <functional>
 #include "timestamp.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
@@ -329,6 +330,8 @@ public:
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
+
+    virtual void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &) {};
 
     virtual DeviceType GetDefaultOutputDevice() = 0;
 

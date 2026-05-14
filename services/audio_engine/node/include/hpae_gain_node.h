@@ -15,6 +15,7 @@
 
 #ifndef HPAE_GAIN_NODE_H
 #define HPAE_GAIN_NODE_H
+#include <memory>
 #include "hpae_plugin_node.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
@@ -22,6 +23,8 @@
 #endif
 namespace OHOS {
 namespace AudioStandard {
+class StreamVolume;
+class PipeVolume;
 namespace HPAE {
 
 enum class FadeOutState {
@@ -63,6 +66,8 @@ private:
 #endif
     bool collFadeInState_ = false;
     FadeOutState collFadeOutState_ = FadeOutState::NO_FADEOUT;
+    std::shared_ptr<StreamVolume> streamVolume_;
+    std::shared_ptr<PipeVolume> pipeVolume_;
 };
 
 }  // namespace HPAE

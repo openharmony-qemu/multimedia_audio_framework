@@ -32,9 +32,15 @@ namespace HPAE {
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
-    uint32_t frameDurationMs = nodeInfo.frameLen * AUDIO_MS_PER_S /
-        (nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
-    nodeInfo.frameLen = sinkInfo.samplingRate * frameDurationMs / AUDIO_MS_PER_S;
+    uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    if (effectiveRate == 0 || sinkInfo.samplingRate == 0) {
+        AUDIO_ERR_LOG("ProcessCluster invalid rate: effectiveRate=%{public}u sinkRate=%{public}d",
+            effectiveRate, sinkInfo.samplingRate);
+        nodeInfo.frameLen = sinkInfo.frameLen; // fallback
+    } else {
+        // mixerNode operates at sink rate, compute frameLen directly from sink rate.
+        nodeInfo.frameLen = CalculateFrameLenBySampleRate(sinkInfo.samplingRate);
+    }
     nodeInfo.samplingRate = sinkInfo.samplingRate;
     // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.
     // so we need to make a prediction here on the output of the formatConverter node.

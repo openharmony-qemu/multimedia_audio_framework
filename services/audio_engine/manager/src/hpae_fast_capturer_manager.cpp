@@ -492,6 +492,10 @@ void HpaeFastCapturerManager::Process()
             sourceOutputNode->DoProcess();
         }
     }
+    int64_t wakeUpTime = ClockTime::GetCurNano();
+    CHECK_AND_RETURN_LOG(sourceInputNode_ && sourceInputNode_->PrepareNextLoop(wakeUpTime),
+        "PrepareNextLoop failed");
+    ClockTime::AbsoluteSleep(wakeUpTime);
 }
 
 void HpaeFastCapturerManager::HandleMsg()
@@ -569,8 +573,14 @@ int32_t HpaeFastCapturerManager::AddAllNodesToSource(const std::vector<HpaeCaptu
 
 void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect)
 {
-    uint32_t sessionId = moveInfo.sessionId;
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceOutputNode is null");
+    HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
+    uint32_t sessionId = nodeInfo.sessionId;
+    Trace trace("HpaeFastCapturerManager::AddSingleNodeToSource[" + std::to_string(sessionId) + "]");
+    AUDIO_INFO_LOG("[FinishMove] session:%{public}u to source:fast", sessionId);
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
+        HPAE_STREAM_CLASS_TYPE_RECORD);
+
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     if (!SafeGetMap(converterNodeMap_, sessionId) && sourceInputNode_ != nullptr) {

@@ -948,19 +948,24 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 
 void AudioAdapterManager::SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device)
 {
-    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device null");
     AUDIO_INFO_LOG("Set %{public}s no mute for ringer", device->GetName().c_str());
-    ringerNoMuteDevice_ = device;
+    {
+        std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+        ringerNoMuteDevice_ = device;
+    }
     SetVolumeDbForDeviceInPipe(device, STREAM_RING);
 }
 
 void AudioAdapterManager::ClearDeviceNoMuteForRinger()
 {
-    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
     AUDIO_INFO_LOG("clear no mute device for ringer");
-    auto tmp = ringerNoMuteDevice_;
-    ringerNoMuteDevice_ = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> tmp;
+    {
+        std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+        tmp = ringerNoMuteDevice_;
+        ringerNoMuteDevice_ = nullptr;
+    }
     CHECK_AND_RETURN(tmp != nullptr);
     SetVolumeDbForDeviceInPipe(tmp, STREAM_RING);
 }
@@ -1060,10 +1065,14 @@ bool AudioAdapterManager::GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceD
     AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
-    if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
-        AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
-        return false;
+    {
+        std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+        if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
+            AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
+            return false;
+        }
     }
+
     return volumeDataMaintainer_.LoadMuteFromMap(device, streamType, zoneId);
 }
 
@@ -1480,9 +1489,11 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
     int32_t result = SUCCESS;
     if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
         IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
+        attr.routeFlag = pipeInfo->routeFlag_;
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
+        std::string idInfo = HDI_ID_INFO_DEFAULT;
+        HdiIdType idType = HDI_ID_TYPE_PRIMARY;
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
-            std::string idInfo = HDI_ID_INFO_DEFAULT;
-            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
             GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) ||
                 (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP_FAST)) {
@@ -1493,18 +1504,16 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             }
             result = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else if (IsDirectRoute(pipeInfo->routeFlag_)) {
-            std::string idInfo = HDI_ID_INFO_DEFAULT;
-            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
             GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
-                AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_DIRECT;
             } else {
                 attr.audioStreamFlag = AUDIO_FLAG_DIRECT;
+                idInfo = HDI_ID_INFO_DIRECT;
             }
             audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else {
-            std::string idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
+            idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
             result = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
@@ -4217,7 +4226,7 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeTy
         "device is in pass-through mode");
     CHECK_AND_RETURN_LOG(device->volumeBehavior_.controlMode != HILINK_MODE, "device is in hi-link mode");
 
-    bool isMuted = GetStreamMuteInternal(device, volumeType);
+    bool isMuted = GetStreamMuteForVolumeSet(device, volumeType);
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
     SaveSystemVolumeForSwitchDevice(device, volumeType, volumeLevel);
 
@@ -4287,6 +4296,12 @@ void AudioAdapterManager::ApplySystemVolumeProxy(int32_t zoneId,
         isMuted = false;
         volumeDb = 1.0f;
     }
+}
+
+int32_t AudioAdapterManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "ServiceAdapter is null");
+    return audioServiceAdapter_->UpdatePersonalizedHRTFBin(fd, length);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1419,11 +1419,13 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
     int32_t volumeLevel = 8;
     auto devDesc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
     devDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(devDesc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {devDesc});
     auto ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
     auto devDesc2 = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     devDesc2->deviceId_ = 1002;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(devDesc2);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {devDesc2});
     ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);

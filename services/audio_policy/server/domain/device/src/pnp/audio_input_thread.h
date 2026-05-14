@@ -29,7 +29,6 @@ using namespace std;
 class AudioInputThread {
 public:
     static int32_t AudioPnpInputOpen();
-    static int32_t AudioPnpInputPollAndRead();
     static AudioEvent audioInputEvent_;
 
 private:

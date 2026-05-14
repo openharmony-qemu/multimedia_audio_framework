@@ -27,6 +27,7 @@
 #include "audio_active_device.h"
 #include "audio_zone_service.h"
 #include "stream_dfx_manager.h"
+#include <unistd.h>
 #include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
@@ -34,6 +35,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
+static const int32_t FOCUS_REQUESTED_TIMEOUT_SECONDS = 60;
 
 static std::string GeneratePidsStrForPrinting(
     const std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> &unorderedMap)
@@ -398,14 +400,20 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
     const uint32_t &streamId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
-    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(eventContextObj != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "EventContextObj get nullptr", false),
+        "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     AUDIO_INFO_LOG("Send interrupt event with streamId callback, streamId = %{public}u", streamId);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            INTERRUPT_CALLBACK_NULL_POINTER, "Send INTERRUPT_EVENT_WITH_STREAMID event failed", false),
+        "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
     return ret;
 }
 
@@ -745,6 +753,33 @@ bool AudioPolicyServerHandler::SendSpatialAudioSourceTypeChangeEvent(SpatialAudi
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendPersonalizedSpatializationEnabledChangeForAnyDeviceEvent(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->personalizedSpatializationEnabled = enabled;
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE event failed");
+    AUDIO_INFO_LOG("Send PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE event");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendAudioSeparationEffectEnabledChangeEvent(const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->audioSeparationEffectEnabled = enabled;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -968,7 +1003,7 @@ void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t cli
             STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
         return;
     }
-    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid]);
+    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid], OUTPUT_DEVICE);
     CHECK_AND_RETURN(zoneId != 0);
     auto tmpDeviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
         STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
@@ -996,7 +1031,7 @@ bool AudioPolicyServerHandler::IsTargetZoneForVolumeKeyEvent(int32_t pid, int32_
 {
     CHECK_AND_RETURN_RET(pidUidMap_.count(pid) > 0, true);
     int32_t uid = pidUidMap_[pid];
-    int zoneIdForUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    int zoneIdForUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
     AUDIO_INFO_LOG("uid: %{public}d, zoneId: %{public}d, target zoneId: %{public}d, is target zone: %{public}s",
         uid, zoneIdForUid, zoneId, zoneId == zoneIdForUid ? "true" : "false");
     return zoneId == zoneIdForUid;
@@ -1110,6 +1145,10 @@ void AudioPolicyServerHandler::HandleRequestCateGoryEvent(const AppExecFwk::Inne
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioXCollie audioXCollie("AudioPolicyServerHandler::HandleRequestCateGoryEvent", FOCUS_REQUESTED_TIMEOUT_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("HandleRequestCateGoryEvent timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
@@ -2036,6 +2075,43 @@ void AudioPolicyServerHandler::HandleSpatialAudioSourceTypeChange(const AppExecF
     }
 }
 
+void AudioPolicyServerHandler::HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    AUDIO_INFO_LOG("AudioPolicyServerHandler::HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent");
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> personalizedSpatializationEnabledChangeCb = it->second;
+        CHECK_AND_CONTINUE_LOG(personalizedSpatializationEnabledChangeCb != nullptr,
+            "PersonalizedSpatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
+        CHECK_AND_CONTINUE(clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE]);
+        personalizedSpatializationEnabledChangeCb->OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+            eventContextObj->descriptor, eventContextObj->personalizedSpatializationEnabled);
+    }
+}
+
+void AudioPolicyServerHandler::HandleAudioSeparationEffectEnabledChangeEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> separationEnabledChangeCb = it->second;
+        CHECK_AND_CONTINUE_LOG(separationEnabledChangeCb != nullptr,
+            "separationEnabledChangeCb : nullptr for client : %{public}d", it->first);
+        CHECK_AND_CONTINUE(clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE]);
+        separationEnabledChangeCb->OnAudioSeparationEffectEnabledChange(
+            eventContextObj->audioSeparationEffectEnabled);
+    }
+}
+
 // Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
@@ -2153,6 +2229,12 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
             break;
         case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
             HandleVolumeDegreeEvent(event);
+            break;
+        case EventAudioServerCmd::PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
+            HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(event);
+            break;
+        case EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE:
+            HandleAudioSeparationEffectEnabledChangeEvent(event);
             break;
         default:
             break;

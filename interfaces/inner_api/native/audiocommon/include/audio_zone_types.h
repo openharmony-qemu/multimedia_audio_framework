@@ -76,6 +76,8 @@ public:
 
     virtual void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) = 0;
 
+    virtual int32_t GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds) = 0;
+
     virtual const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
 
     virtual const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
@@ -112,6 +114,10 @@ public:
     virtual int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
     
     virtual int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams) = 0;
+
+    virtual int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) = 0;
+
+    virtual int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) = 0;
 
     virtual void SetZoneDeviceVisible(bool visible) = 0;
 

@@ -26,21 +26,17 @@
 #include "audio_suite_log.h"
 #include "audio_suite_space_render_algo_interface_impl.h"
 #include "audio_suite_algo_interface.h"
+#include "audio_suite_serializer.h"
 #include "audio_hms_space_render_api.h"
 #include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
-constexpr uint32_t SPACE_RENDER_POSITIONS_PARAMS_NUM = 3;
-constexpr uint32_t SPACE_RENDER_ROTATION_PARAMS_NUM = 5;
-constexpr uint32_t SPACE_RENDER_EXTENSION_PARAMS_NUM = 2;
 
 constexpr uint32_t PARAMS_NUM_ZERO = 0;
 constexpr uint32_t PARAMS_NUM_ONE = 1;
 constexpr uint32_t PARAMS_NUM_TWO = 2;
-constexpr uint32_t PARAMS_NUM_THREE = 3;
-constexpr uint32_t PARAMS_NUM_FOUR = 4;
 
 const std::string SPACE_RENDER_POSITIONS_MOD = "AudioSpaceRenderPositionParams";
 const std::string SPACE_RENDER_ROTATION_MOD = "AudioSpaceRenderRotationParams";
@@ -112,36 +108,19 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Deinit()
     return SUCCESS;
 }
 
-std::vector<std::string> SplitString(const std::string &str, char delimiter)
-{
-    std::vector<std::string> tokens;
-    std::string token;
-    std::istringstream iss(str);
- 
-    while (std::getline(iss, token, delimiter)) {
-        tokens.push_back(token);
-    }
- 
-    return tokens;
-}
-
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetPositionParameter(const std::string &paramValue)
 {
     spaceRenderParam_.mode = SPACE_RENDER_MODE_STATIC;
-    std::vector<std::string> tokens = SplitString(paramValue, ',');
- 
-    CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_POSITIONS_PARAMS_NUM,
-        ERR_INVALID_PARAM, "Invalid Position parameter format.");
- 
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ZERO],
-        spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]), ERROR,
-        "Position convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ZERO].c_str());
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ONE],
-        spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]), ERROR,
-        "Position convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ONE].c_str());
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_TWO],
-        spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]), ERROR,
-        "Position convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_TWO].c_str());
+    
+    AudioSpaceRenderPositionParams params;
+    if (!Serializer<AudioSpaceRenderPositionParams>::Deserialize(paramValue, params)) {
+        AUDIO_ERR_LOG("Invalid Position parameter format.");
+        return ERR_INVALID_PARAM;
+    }
+    
+    spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = params.x;
+    spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = params.y;
+    spaceRenderParam_.cartPoint[PARAMS_NUM_TWO] = params.z;
 
     AUDIO_INFO_LOG("SpaceRender set Position x :%{public}f y :%{public}f z :%{public}f",
         spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO],
@@ -152,32 +131,18 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetPositionParameter(const std::stri
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetRotationParameter(const std::string &paramValue)
 {
     spaceRenderParam_.mode = SPACE_RENDER_MODE_ROTATION;
-    std::vector<std::string> tokens = SplitString(paramValue, ',');
- 
-    CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_ROTATION_PARAMS_NUM,
-        ERR_INVALID_PARAM, "Invalid Rotation parameter format.");
-
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ZERO],
-        spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]), ERROR,
-        "Rotation convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ZERO].c_str());
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ONE],
-        spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]), ERROR,
-        "Rotation convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ONE].c_str());
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_TWO],
-        spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]), ERROR,
-        "Rotation convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_TWO].c_str());
-
-    int32_t rotationTime;
-    CHECK_AND_RETURN_RET_LOG(StringConverter(tokens[PARAMS_NUM_THREE],
-        rotationTime), ERROR,
-        "Rotation convert string to int value error, invalid data is %{public}s", tokens[PARAMS_NUM_THREE].c_str());
-    spaceRenderParam_.rotationTime = static_cast<float>(rotationTime);
-
-    int32_t rotationDirection;
-    CHECK_AND_RETURN_RET_LOG(StringConverter(tokens[PARAMS_NUM_FOUR],
-        rotationDirection), ERROR,
-        "Rotation convert string to int value error, invalid data is %{public}s", tokens[PARAMS_NUM_FOUR].c_str());
-    spaceRenderParam_.rotationDirection = static_cast<SpaceRenderRotationMode>(rotationDirection);
+    
+    AudioSpaceRenderRotationParams params;
+    if (!Serializer<AudioSpaceRenderRotationParams>::Deserialize(paramValue, params)) {
+        AUDIO_ERR_LOG("Invalid Rotation parameter format.");
+        return ERR_INVALID_PARAM;
+    }
+    
+    spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = params.x;
+    spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = params.y;
+    spaceRenderParam_.cartPoint[PARAMS_NUM_TWO] = params.z;
+    spaceRenderParam_.rotationTime = static_cast<float>(params.surroundTime);
+    spaceRenderParam_.rotationDirection = static_cast<SpaceRenderRotationMode>(params.surroundDirection);
 
     AUDIO_INFO_LOG(
         "SpaceRender set Rotation x :%{public}f y :%{public}f z :%{public}f time :%{public}f Direction :%{public}d",
@@ -190,17 +155,15 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetRotationParameter(const std::stri
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetExtensionParameter(const std::string &paramValue)
 {
     spaceRenderParam_.mode = SPACE_RENDER_MODE_EXPAND;
-    std::vector<std::string> tokens = SplitString(paramValue, ',');
- 
-    CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_EXTENSION_PARAMS_NUM,
-        ERR_INVALID_PARAM, "Invalid Extension parameter format.");
-
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ZERO],
-        spaceRenderParam_.expandRadius), ERROR,
-        "Extension convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ZERO].c_str());
-    CHECK_AND_RETURN_RET_LOG(StringConverter(tokens[PARAMS_NUM_ONE],
-        spaceRenderParam_.expandAngle), ERROR,
-        "Extension convert string to int value error, invalid data is %{public}s", tokens[PARAMS_NUM_ONE].c_str());
+    
+    AudioSpaceRenderExtensionParams params;
+    if (!Serializer<AudioSpaceRenderExtensionParams>::Deserialize(paramValue, params)) {
+        AUDIO_ERR_LOG("Invalid Extension parameter format.");
+        return ERR_INVALID_PARAM;
+    }
+    
+    spaceRenderParam_.expandRadius = params.extRadius;
+    spaceRenderParam_.expandAngle = params.extAngle;
 
     AUDIO_INFO_LOG(
         "SpaceRender set Rotation Radius :%{public}f Angle :%{public}d",
@@ -244,10 +207,12 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetPositionParameter(std::string &pa
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_STATIC,
         ERR_INVALID_PARAM, "Mode is not Position.");
- 
-    paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
-        std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
-        std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]);
+    
+    AudioSpaceRenderPositionParams params;
+    params.x = spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO];
+    params.y = spaceRenderParam_.cartPoint[PARAMS_NUM_ONE];
+    params.z = spaceRenderParam_.cartPoint[PARAMS_NUM_TWO];
+    paramValue = Serializer<AudioSpaceRenderPositionParams>::Serialize(params);
 
     return SUCCESS;
 }
@@ -257,13 +222,13 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetRotationParameter(std::string &pa
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_ROTATION,
         ERR_INVALID_PARAM, "Mode is not rotation.");
 
-    int32_t rotationTime = static_cast<int32_t>(spaceRenderParam_.rotationTime);
-
-    paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
-        std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
-        std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]) + "," +
-        std::to_string(rotationTime) + "," +
-        std::to_string(spaceRenderParam_.rotationDirection);
+    AudioSpaceRenderRotationParams params;
+    params.x = spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO];
+    params.y = spaceRenderParam_.cartPoint[PARAMS_NUM_ONE];
+    params.z = spaceRenderParam_.cartPoint[PARAMS_NUM_TWO];
+    params.surroundTime = static_cast<int32_t>(spaceRenderParam_.rotationTime);
+    params.surroundDirection = static_cast<AudioSurroundDirection>(spaceRenderParam_.rotationDirection);
+    paramValue = Serializer<AudioSpaceRenderRotationParams>::Serialize(params);
 
     return SUCCESS;
 }
@@ -272,9 +237,11 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetExtensionParameter(std::string &p
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_EXPAND,
         ERR_INVALID_PARAM, "Mode is not extension.");
- 
-    paramValue = std::to_string(spaceRenderParam_.expandRadius) + "," +
-        std::to_string(spaceRenderParam_.expandAngle);
+    
+    AudioSpaceRenderExtensionParams params;
+    params.extRadius = spaceRenderParam_.expandRadius;
+    params.extAngle = spaceRenderParam_.expandAngle;
+    paramValue = Serializer<AudioSpaceRenderExtensionParams>::Serialize(params);
 
     return SUCCESS;
 }

@@ -263,6 +263,7 @@ private:
     void ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
         &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
+    void UpdateAudioSceneForResult(AudioInterruptResult &result);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioFocusInfoList(const int32_t zoneId);
     void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);

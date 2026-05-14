@@ -57,6 +57,7 @@ public:
     int32_t Create();
     int32_t SetConfig(AudioStreamInfo inInfo, AudioStreamInfo outInfo);
     int32_t SetParam(const std::vector<uint8_t> &param);
+    int32_t GetParam(std::vector<uint8_t> &param);
     int32_t GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize);
     int32_t Prepare(const shared_ptr<AudioSharedMemory> &bufferIn, const shared_ptr<AudioSharedMemory> &bufferOut);
     int32_t Process(uint32_t inBufferSize, uint32_t outBufferSize);
@@ -73,9 +74,12 @@ private:
     uint32_t outBufferSize_ = 0;
     string chainName_;
     OfflineEffectIOConfig offlineConfig_ = {};
+    AudioEncodingType savedEncodingType_ = ENCODING_PCM;
     bool firstProcess_ = false;
     FILE *dumpFileIn_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
+    std::unique_ptr<int8_t[]> paramBufferIn_;
+    std::unique_ptr<int8_t[]> paramBufferOut_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

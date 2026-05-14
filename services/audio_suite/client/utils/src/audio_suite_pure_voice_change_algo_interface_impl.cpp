@@ -24,6 +24,7 @@
 #include <fstream>
 #include <cstdint>
 #include "audio_suite_log.h"
+#include "audio_suite_serializer.h"
 #include "audio_suite_pure_voice_change_algo_interface_impl.h"
 #include "audio_utils.h"
 
@@ -31,7 +32,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 namespace {
-constexpr int32_t NUMBER_OF_PARAMETER = 3;
 constexpr int32_t NUMBER_OF_CHANNEL = 2;
 const float PCM_SAMPLE_AVERAGE_FACTOR = 0.5f;
 const float PCM_SAMPLE_SCALE_FACTOR = 1.0f / 32768.0f;
@@ -149,47 +149,31 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Deinit()
     return SUCCESS;
 }
 
-static std::vector<float> ParseStringToIntArray(const std::string &str, char delimiter)
-{
-    std::vector<float> result;
-    std::string paramValue;
-    std::istringstream iss(str);
-
-    while (std::getline(iss, paramValue, delimiter)) {
-        if (!paramValue.empty()) {
-            float value;
-            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
-                "Pure voice change convert string to float value error, invalid data is %{public}s",
-                paramValue.c_str());
-            result.push_back(value);
-        }
-    }
-
-    return result;
-}
-
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::SetParameter(
     const std::string &paramType, const std::string &paramValue)
 {
-    std::vector<float> gainValue = ParseStringToIntArray(paramValue, ',');
+    AudioPureVoiceChangeOption option;
+    if (!Serializer<AudioPureVoiceChangeOption>::Deserialize(paramValue, option)) {
+        AUDIO_ERR_LOG("Failed to deserialize pure voice change parameters");
+        return ERROR;
+    }
+
+    auto typePtr = pureTypeMap.find(std::to_string(static_cast<int32_t>(option.optionType)));
     CHECK_AND_RETURN_RET_LOG(
-        gainValue.size() == NUMBER_OF_PARAMETER, ERROR, "Wrong number of parameters %{public}zu", gainValue.size());
-    auto typePtr = pureTypeMap.find(std::to_string(static_cast<int32_t>(gainValue[1])));
+        typePtr != pureTypeMap.end(), ERROR, "Unknown type %{public}d", static_cast<int32_t>(option.optionType));
+
+    auto typeSexPtr = pureSexTypeMap.find(std::to_string(static_cast<int32_t>(option.optionGender)));
     CHECK_AND_RETURN_RET_LOG(
-        typePtr != pureTypeMap.end(), ERROR, "Unknow type %{public}d", static_cast<int32_t>(gainValue[1]));
- 
-    auto typeSexPtr = pureSexTypeMap.find(std::to_string(static_cast<int32_t>(gainValue[0])));
-    CHECK_AND_RETURN_RET_LOG(
-        typeSexPtr != pureSexTypeMap.end(), ERROR, "Unknow Sex type %{public}d", static_cast<int32_t>(gainValue[0]));
- 
-    float pitch = static_cast<float>(gainValue[2]);
- 
+        typeSexPtr != pureSexTypeMap.end(), ERROR, "Unknown Sex type %{public}d",
+        static_cast<int32_t>(option.optionGender));
+
+    float pitch = option.pitch;
     CHECK_AND_RETURN_RET_LOG(
         (pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) || pitch == 0.0f,
         ERROR,
-        "Unknow Pitch value %{public}f",
+        "Unknown Pitch value %{public}f",
         pitch);
- 
+
     SpeakerSex valueSex = typeSexPtr->second;
     AudioVoiceMphTradType voiceType = typePtr->second;
     int32_t ret = vmAlgoApi_.setPara(handle_.data(), valueSex, voiceType, pitch);

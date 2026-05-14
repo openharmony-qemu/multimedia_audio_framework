@@ -58,8 +58,9 @@ public:
      * @brief Create mix processor
      * @param format Input and output audio format
      * @return Returns unique_ptr on success, nullptr on failure
+     * @param enableLimiter Enable limiter (default true)
      */
-    static std::unique_ptr<MixerProcessor> Create(const AudioFormat &format);
+    static std::unique_ptr<MixerProcessor> Create(const AudioFormat &format, bool enableLimiter = true);
 };
 
 } // namespace AudioSuite

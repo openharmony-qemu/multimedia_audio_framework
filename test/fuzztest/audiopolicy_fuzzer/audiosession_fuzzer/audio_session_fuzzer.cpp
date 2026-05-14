@@ -22,7 +22,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 
 typedef void (*TestFuncs)();
@@ -39,7 +38,8 @@ void SetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->SetAudioSessionScene(g_fuzzUtils.GetData<AudioSessionScene>());
+    int32_t sceneValue = fdp.ConsumeIntegral<int32_t>();
+    audioSession->SetAudioSessionScene(static_cast<AudioSessionScene>(sceneValue));
 }
 
 void GetStreamsFuzzTest(FuzzedDataProvider& fdp)
@@ -53,7 +53,8 @@ void GetFakeStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->SetAudioSessionScene(g_fuzzUtils.GetData<AudioSessionScene>());
+    int32_t sceneValue = fdp.ConsumeIntegral<int32_t>();
+    audioSession->SetAudioSessionScene(static_cast<AudioSessionScene>(sceneValue));
     audioSession->GetFakeStreamType();
 }
 
@@ -62,11 +63,13 @@ void AddStreamInfoFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt incomingInterrupt;
-    incomingInterrupt.isAudioSessionInterrupt = g_fuzzUtils.GetData<bool>();
+    incomingInterrupt.isAudioSessionInterrupt = fdp.ConsumeBool();
     audioSession->IsActivated();
     audioSession->IsSceneParameterSet();
-    incomingInterrupt.audioFocusType.streamType = g_fuzzUtils.GetData<AudioStreamType>();
-    incomingInterrupt.audioFocusType.sourceType = g_fuzzUtils.GetData<SourceType>();
+    int32_t streamTypeValue = fdp.ConsumeIntegral<int32_t>();
+    incomingInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(streamTypeValue);
+    int32_t sourceTypeValue = fdp.ConsumeIntegral<int32_t>();
+    incomingInterrupt.audioFocusType.sourceType = static_cast<SourceType>(sourceTypeValue);
     audioSession->AddStreamInfo({incomingInterrupt, ACTIVE});
 }
 
@@ -74,7 +77,7 @@ void RemoveStreamInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    uint32_t streamId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t streamId = fdp.ConsumeIntegral<int32_t>();
     audioSession->RemoveStreamInfo(streamId);
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = streamId;
@@ -101,7 +104,7 @@ void SaveFakeStreamIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->SaveFakeStreamId(g_fuzzUtils.GetData<uint32_t>());
+    audioSession->SaveFakeStreamId(fdp.ConsumeIntegral<uint32_t>());
 }
 
 void DumpFuzzTest(FuzzedDataProvider& fdp)
@@ -110,8 +113,9 @@ void DumpFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(audioSession != nullptr);
     std::string dumpString = "dumpString";
     AudioInterrupt audioInterrupt;
-    audioInterrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
-    audioInterrupt.audioFocusType.streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    audioInterrupt.streamId = fdp.ConsumeIntegral<uint32_t>();
+    int32_t streamTypeValue = fdp.ConsumeIntegral<int32_t>();
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(streamTypeValue);
     audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->Dump(dumpString);
     audioSession->ClearStreamInfo();
@@ -122,7 +126,7 @@ void UpdateSingleVoipStreamDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt interrupt;
-    interrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
+    interrupt.streamId = fdp.ConsumeIntegral<uint32_t>();
     audioSession->UpdateSingleVoipStreamDefaultOutputDevice(interrupt);
 }
 
@@ -148,7 +152,8 @@ void IsOutputDeviceConfigurableByStreamUsageFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->IsOutputDeviceConfigurableByStreamUsage(g_fuzzUtils.GetData<StreamUsage>());
+    int32_t streamUsageValue = fdp.ConsumeIntegral<int32_t>();
+    audioSession->IsOutputDeviceConfigurableByStreamUsage(static_cast<StreamUsage>(streamUsageValue));
 }
 
 void CanCurrentStreamSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -156,7 +161,8 @@ void CanCurrentStreamSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt interrupt;
-    interrupt.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    int32_t streamUsageValue = fdp.ConsumeIntegral<int32_t>();
+    interrupt.streamUsage = static_cast<StreamUsage>(streamUsageValue);
     audioSession->CanCurrentStreamSetDefaultOutputDevice(interrupt);
 }
 
@@ -165,8 +171,9 @@ void EnableSingleVoipStreamDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt interrupt;
-    interrupt.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
-    interrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
+    int32_t streamUsageValue = fdp.ConsumeIntegral<int32_t>();
+    interrupt.streamUsage = static_cast<StreamUsage>(streamUsageValue);
+    interrupt.streamId = fdp.ConsumeIntegral<int32_t>();
     audioSession->EnableSingleVoipStreamDefaultOutputDevice(interrupt);
 }
 
@@ -175,8 +182,9 @@ void EnableVoipStreamsDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt interrupt;
-    interrupt.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
-    interrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
+    int32_t streamUsageValue = fdp.ConsumeIntegral<int32_t>();
+    interrupt.streamUsage = static_cast<StreamUsage>(streamUsageValue);
+    interrupt.streamId = fdp.ConsumeIntegral<int32_t>();
     audioSession->AddStreamInfo({interrupt, ACTIVE});
     audioSession->EnableVoipStreamsDefaultOutputDevice();
     audioSession->ClearStreamInfo();
@@ -187,8 +195,10 @@ void EnableDefaultDeviceFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->IsActivated();
-    audioSession->SetSessionDefaultOutputDevice(g_fuzzUtils.GetData<DeviceType>());
-    audioSession->SetAudioSessionScene(g_fuzzUtils.GetData<AudioSessionScene>());
+    int32_t deviceTypeValue = fdp.ConsumeIntegral<int32_t>();
+    audioSession->SetSessionDefaultOutputDevice(static_cast<DeviceType>(deviceTypeValue));
+    int32_t sceneValue = fdp.ConsumeIntegral<int32_t>();
+    audioSession->SetAudioSessionScene(static_cast<AudioSessionScene>(sceneValue));
     audioSession->EnableDefaultDevice();
 }
 
@@ -196,7 +206,8 @@ void GetStreamUsageInnerFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->SetAudioSessionScene(g_fuzzUtils.GetData<AudioSessionScene>());
+    int32_t sceneValue = fdp.ConsumeIntegral<int32_t>();
+    audioSession->SetAudioSessionScene(static_cast<AudioSessionScene>(sceneValue));
     audioSession->GetStreamUsageInner();
 }
 
@@ -212,7 +223,8 @@ void IsAudioRendererEmptyFuzzTest(FuzzedDataProvider& fdp)
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     AudioInterrupt audioInterrupt;
-    audioInterrupt.audioFocusType.streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t streamTypeValue = fdp.ConsumeIntegral<int32_t>();
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(streamTypeValue);
     audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->IsAudioRendererEmpty();
     audioSession->ClearStreamInfo();
@@ -222,7 +234,8 @@ void GetSessionDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    int32_t deviceTypeValue = fdp.ConsumeIntegral<int32_t>();
+    DeviceType deviceType = static_cast<DeviceType>(deviceTypeValue);
     audioSession->GetSessionDefaultOutputDevice(deviceType);
 }
 

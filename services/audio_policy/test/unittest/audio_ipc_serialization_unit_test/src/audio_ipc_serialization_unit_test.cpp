@@ -283,11 +283,15 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneContext_001, TestSize.Level1)
     Parcel parcel;
     AudioZoneContext context = {};
     context.focusStrategy_ = AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY;
+    context.supportType_ = AudioZoneSupportType::RECORD_ONLY;
+    context.userId_ = TEST_VALUE_1;
 
     EXPECT_TRUE(context.Marshalling(parcel));
     auto newContext = std::shared_ptr<AudioZoneContext>(AudioZoneContext::Unmarshalling(parcel));
     ASSERT_NE(newContext, nullptr);
     EXPECT_TRUE(newContext->focusStrategy_ == context.focusStrategy_);
+    EXPECT_TRUE(newContext->supportType_ == context.supportType_);
+    EXPECT_TRUE(newContext->userId_ == context.userId_);
 }
 
 /**
@@ -304,6 +308,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneDescriptor_001, TestSize.Level1)
     descriptor.zoneId_ = TEST_VALUE_1;
     descriptor.name_ = TEST_STRING_VALUE_1;
     descriptor.uids_ = {TEST_VALUE_1, TEST_VALUE_2};
+    descriptor.supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_ONLY);
     descriptor.devices_.push_back(device);
 
     EXPECT_TRUE(descriptor.Marshalling(parcel));
@@ -311,6 +316,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneDescriptor_001, TestSize.Level1)
     ASSERT_NE(newDescriptor, nullptr);
     EXPECT_TRUE(newDescriptor->zoneId_ == descriptor.zoneId_);
     EXPECT_TRUE(newDescriptor->name_ == descriptor.name_);
+    EXPECT_TRUE(newDescriptor->supportType_ == descriptor.supportType_);
     EXPECT_TRUE(newDescriptor->uids_ == descriptor.uids_);
     EXPECT_TRUE(newDescriptor->devices_.size() == descriptor.devices_.size());
 }

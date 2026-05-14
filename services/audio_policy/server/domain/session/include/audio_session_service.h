@@ -96,6 +96,7 @@ public:
     void SetRegisterStateChangeCallbackFlag(int32_t callerPid, const bool stateChangeCallbackFlag);
     void GetStateChangeCallbackFlag(int32_t callerPid, bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
     void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
+    void SetFakeFocusInterruptEvent(int32_t callerpid, const InterruptEventInternal &interruptEvent);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

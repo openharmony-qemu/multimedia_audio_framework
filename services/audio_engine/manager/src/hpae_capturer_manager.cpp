@@ -210,6 +210,7 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
         auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
         if (collabInputCluster && sceneCluster->GetCapturerEffectConfig(collabNodeInfo,
             HPAE_SOURCE_BUFFER_TYPE_DEFAULT)) {
+            collabNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
             sceneCluster->DisConnectWithInfo(collabInputCluster, collabNodeInfo);
         }
     }
@@ -400,6 +401,7 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
             auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
             if (collabInputCluster && scnenCluster->GetCapturerEffectConfig(collabNodeInfo,
                 HPAE_SOURCE_BUFFER_TYPE_DEFAULT)) {
+                collabNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
                 scnenCluster->ConnectWithInfo(collabInputCluster, collabNodeInfo);
             }
         }
@@ -1149,6 +1151,8 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     sessionNodeMap_[sessionId].sourceType = nodeInfo.sourceType;
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
+        static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_RECORD);
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif

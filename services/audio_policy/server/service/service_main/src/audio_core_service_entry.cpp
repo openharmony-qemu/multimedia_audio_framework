@@ -398,17 +398,17 @@ int32_t AudioCoreService::EventEntry::SetInputDevice(const DeviceType deviceType
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
+    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId, const uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid, streamId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId)
+    AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId, const uint32_t streamId)
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
+    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId, uid, streamId);
 }
 
 int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
@@ -789,8 +789,9 @@ void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagBySessionId(uint32_t s
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
         sessionId, enabled);
-    coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled);
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    if (coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled)) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    }
 }
 
 void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled,
@@ -800,8 +801,9 @@ void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPi
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
         callerPid, enabled);
-    coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled);
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    if (coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled)) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    }
 }
 
 void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)

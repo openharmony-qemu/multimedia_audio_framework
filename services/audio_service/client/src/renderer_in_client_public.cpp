@@ -133,6 +133,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer for UPDATE_SPANSIZE failed:%{public}d", ret);
         AUDIO_INFO_LOG("UPDATE_SPANSIZE sessionId:%{public}u spanSizeInFrame:%{public}u cacheSizeInFrame:%{public}u",
             sessionId_, spanSizeInFrame_, cacheSizeInFrame_.load());
+        NotifyFastStatusChange(static_cast<FastStatus>(result));
         return SUCCESS;
     }
 
@@ -729,7 +730,7 @@ void RendererInClientInner::OnFirstFrameWriting()
     Trace trace("RendererInClientInner::OnFirstFrameWriting");
     AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
-    if (ipcStream_ != nullptr) {
+    if (IsFastStream() && ipcStream_ != nullptr) {
         ipcStream_->GetLatency(latency);
     }
 
@@ -2104,6 +2105,29 @@ FastStatus RendererInClientInner::GetFastStatus()
         return FASTSTATUS_FAST;
     }
     return FASTSTATUS_NORMAL;
+}
+
+void RendererInClientInner::SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback)
+{
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
+void RendererInClientInner::NotifyFastStatusChange(FastStatus status)
+{
+    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL) {
+        AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
+        return;
+    }
+    fastStatus_.store(status);
+
+    std::function<void(FastStatus)> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(static_cast<bool>(callback), "fast status change callback is null");
+    callback(status);
 }
 
 DeviceType RendererInClientInner::GetDefaultOutputDevice()

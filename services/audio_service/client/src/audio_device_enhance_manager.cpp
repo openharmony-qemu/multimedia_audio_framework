@@ -39,6 +39,9 @@ int32_t AudioDeviceEnhanceManager::IsEnhancedRoutingSupported(bool &supported)
 
 int32_t AudioDeviceEnhanceManager::SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "device descriptor is nullptr");
+    CHECK_AND_RETURN_RET_LOG(IsOutputDevice(desc->deviceType_, desc->deviceRole_), ERR_INVALID_PARAM,
+        "invalid output device type");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = { desc };
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_OPERATION_FAILED, "create renderer filter failed");
@@ -51,6 +54,9 @@ int32_t AudioDeviceEnhanceManager::SelectOutputDevice(const std::shared_ptr<Audi
 
 int32_t AudioDeviceEnhanceManager::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "device descriptor is nullptr");
+    CHECK_AND_RETURN_RET_LOG(IsInputDevice(desc->deviceType_, desc->deviceRole_), ERR_INVALID_PARAM,
+        "invalid input device type");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = { desc };
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED, "create capturer filter failed");
@@ -64,6 +70,10 @@ int32_t AudioDeviceEnhanceManager::SelectOutputDeviceForAudioRenderer(
     std::shared_ptr<AudioRenderer> &renderer, const std::shared_ptr<AudioDeviceDescriptor> &desc) const
 {
     CHECK_AND_RETURN_RET_LOG(renderer != nullptr, ERR_INVALID_PARAM, "renderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(renderer->GetStatus() != RENDERER_RELEASED, ERR_INVALID_PARAM, "renderer is released");
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "device descriptor is nullptr");
+    CHECK_AND_RETURN_RET_LOG(IsOutputDevice(desc->deviceType_, desc->deviceRole_), ERR_INVALID_PARAM,
+        "invalid output device type");
     return renderer->SelectOutputDevice(desc);
 }
 
@@ -71,6 +81,10 @@ int32_t AudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(
     std::shared_ptr<AudioCapturer> &capturer, const std::shared_ptr<AudioDeviceDescriptor> &desc) const
 {
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, ERR_INVALID_PARAM, "capturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(capturer->GetStatus() != CAPTURER_RELEASED, ERR_INVALID_PARAM, "capturer is released");
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "device descriptor is nullptr");
+    CHECK_AND_RETURN_RET_LOG(IsInputDevice(desc->deviceType_, desc->deviceRole_), ERR_INVALID_PARAM,
+        "invalid input device type");
     return capturer->SelectInputDevice(desc);
 }
 

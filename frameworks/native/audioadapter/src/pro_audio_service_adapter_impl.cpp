@@ -638,6 +638,21 @@ int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::stri
     return collaborativeUpdateResult_;
 }
 
+int32_t ProAudioServiceAdapterImpl::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    IHpaeManager::GetHpaeManager().UpdatePersonalizedHRTFBin(fd, length);
+    personalizedHRTFBinUpdateResult_ = ERROR;
+    isFinishPersonalizedHRTFBinUpdate_ = false;
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishPersonalizedHRTFBinUpdate_;
+    });
+
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_SAVE_HRTF_TIMEOUT, "TimeOut");
+    return personalizedHRTFBinUpdateResult_;
+}
+
 void ProAudioServiceAdapterImpl::LoadCollaborationConfig()
 {
     lock_guard<mutex> lock(lock_);
@@ -650,6 +665,15 @@ void ProAudioServiceAdapterImpl::OnGetCollaborativeUpdateCb(int32_t result)
     AUDIO_INFO_LOG("Result: %{public}d", result);
     isFinishCollaborativeUpdate_ = true;
     collaborativeUpdateResult_ = result;
+    callbackCV_.notify_all();
+}
+
+void ProAudioServiceAdapterImpl::OnUpdatePersonalizedHRTFBinCb(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    AUDIO_INFO_LOG("Result: %{public}d", result);
+    isFinishPersonalizedHRTFBinUpdate_ = true;
+    personalizedHRTFBinUpdateResult_ = result;
     callbackCV_.notify_all();
 }
 }  // namespace AudioStandard

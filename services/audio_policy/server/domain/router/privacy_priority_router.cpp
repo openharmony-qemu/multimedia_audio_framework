@@ -68,6 +68,9 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(Str
     if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         RemoveArmUsb(descs);
     }
+    descs.erase(remove_if(descs.begin(), descs.end(), [streamUsage](auto &item) {
+            return !AudioPolicyUtils::CheckInterphone(streamUsage, item);
+        }), descs.end());
 
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_OUTPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,

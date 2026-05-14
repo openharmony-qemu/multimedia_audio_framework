@@ -32,6 +32,8 @@ public:
 
     int32_t SetParam(const std::vector<uint8_t> &param) override;
 
+    int32_t GetParam(std::vector<uint8_t> &param) override;
+
     int32_t Prepare() override;
 
     int32_t GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize) override;

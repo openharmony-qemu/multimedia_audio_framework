@@ -742,5 +742,31 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, IsStreamTypeInUse_014, TestSize.Level4)
     bool result = audioAdapterManager->IsStreamTypeInUse(streamType, streamDesc);
     EXPECT_EQ(result, true);
 }
+
+/**
+* @tc.name: GetStreamMuteForVolumeSet
+* @tc.desc: Test GetStreamMuteForVolumeSet
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, GetStreamMuteForVolumeSet, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+
+    bool result = audioAdapterManager->GetStreamMuteForVolumeSet(device, STREAM_RING);
+    EXPECT_EQ(result, false);
+    result = audioAdapterManager->GetStreamMuteForVolumeSet(device, STREAM_MUSIC);
+    EXPECT_EQ(result, false);
+
+    audioAdapterManager->ringerNoMuteDevice_ = device;
+    result = audioAdapterManager->GetStreamMuteForVolumeSet(device, STREAM_RING);
+    EXPECT_EQ(result, false);
+    result = audioAdapterManager->GetStreamMuteForVolumeSet(device, STREAM_MUSIC);
+    EXPECT_EQ(result, false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

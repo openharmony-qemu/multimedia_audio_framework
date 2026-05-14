@@ -18,9 +18,8 @@ import audioNapi from 'libentry.so';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { initAllInputNode } from '../utils/autoTest/AsyncTask'
 import { getDateStringWithTimeStamp } from '../utils/Util'
+import { DirInitHelper, rootPath } from '../utils/DirInit'
 
-// root path of Auto Test APP
-const rootPath = `/storage/Users/currentUser/Download/src.main.audiodemo`;
 // the path to store all output audio files
 const outputPath = `${rootPath}/output_files`;
 // the path to store all input audio files of every test scene
@@ -37,38 +36,7 @@ const pipelineIdToPipelineInfoMap: Map<string, PipelineInfo> = new Map();
 const nodeInfoIdToNodeInfoMap: Map<string, NodeInfo> = new Map();
 const pipelineIdToSingleReportMap: Map<string, ExecuteReport> = new Map();
 
-const dirCheckList: string[] = ["expected_output", "output_files", "input_files", "case_json"];
 let preparedPipelineList: string[] = [];
-
-// init all folder required for running Auto Test
-async function initAutoTestDir() {
-  let documentSaveOptions = new picker.DocumentSaveOptions();
-  documentSaveOptions.pickerMode = 1;
-  let context = getContext() as common.Context;
-  let documentPicker = new picker.DocumentViewPicker(context);
-  documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
-    if (err) {
-      Logger.error(TAG,
-        `DocumentViewPicker.save failed with err, code is: ${err.code}, message is: ${err.message}`);
-      return;
-    }
-    Logger.info(TAG, 'documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
-    let uri = documentSaveResult[0];
-    let filePath = new fileUri.FileUri(uri + `/init.txt`).path;
-    try {
-      let file = fs.openSync(filePath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-      fs.writeSync(file.fd, new ArrayBuffer(0));
-      Logger.info(TAG, `audiodemo dir init success`);
-      fs.closeSync(file);
-      dirCheckList.forEach((dir: string) => {
-        let dirPath = new fileUri.FileUri(`${uri}/${dir}`).path;
-        fs.mkdirSync(dirPath);
-      })
-    } catch (err) {
-      Logger.error(TAG, `initAutoTestDir ERROR: ${err}`);
-    }
-  })
-}
 
 function getNodeTypeFromString(originStr: string): NodeType {
   let ret = InputStringToNodeTypeMap.get(originStr);
@@ -261,23 +229,16 @@ export struct AutoTest {
   @State executeResultSuccess: boolean = true;
   @State showExecuteResult: boolean = false;
   @State failedCases: string[] = [];
+  // Real-time playback state variables
+  @State isRealTimePlaying: boolean = false;
+  @State currentPlaybackProgress: number = 0;
+  @State audioRendererReady: boolean = false;
   pageInfos: NavPathStack = new NavPathStack();
 
   async aboutToAppear(): Promise<void> {
     Logger.info(TAG, 'AutoTest aboutToAppear');
-    try {
-      let fileList: string[] = fs.listFileSync(rootPath);
-      dirCheckList.forEach((check: string) => {
-        if (!fileList.find((ele: string) => ele != "init.txt" && ele === check)) {
-          Logger.info(TAG, `dir:${check} not existed`);
-          let dirPath = `${rootPath}/${check}`;
-          fs.mkdirSync(dirPath);
-        }
-      })
-    } catch (e) {
-      Logger.error(TAG, "rootPath is null, need init rootPath");
-      await initAutoTestDir();
-    }
+
+    await DirInitHelper.ensureDirExists();
 
     const dirPath = new fileUri.FileUri(rootPath + `/case_json`).path;
     let listFileOption: ListFileOptions = {
@@ -304,6 +265,7 @@ export struct AutoTest {
         let fileData: string = buffer.from(buf).toString();
         let obj = JSON.parse(fileData);
         jsonFileInfo.summary = Object(obj)["summary"];
+        jsonFileInfo.realTime = Object(obj)["realTime"] === true || Object(obj)["real_time"] === true;
         this.selectOptionList.push({ value: jsonFileInfo.summary });
         jsonSummaryToJsonFileInfoMap.set(jsonFileInfo.summary, jsonFileInfo);
         if (Object(obj)["scenes"] == undefined || !Array.isArray(Object(obj)["scenes"])) {
@@ -712,11 +674,57 @@ export struct AutoTest {
       this.totalFilesCount = jsonFiles.length;
       this.currentFileIndex = 0;
 
-      for (const jsonFile of jsonFiles) {
-        this.currentFileIndex++;
-        const result = await this.executeSingleFileWithSyncInit(jsonFile.summary, false);
+      Logger.info(TAG, `executeAllFile: Total test cases to execute: ${this.totalFilesCount}`);
 
-        if (result !== SUCCESS) {
+      // Separate real-time and offline test cases
+      const realTimeCases = jsonFiles.filter(jsonFile => jsonFile.realTime);
+      const offlineCases = jsonFiles.filter(jsonFile => !jsonFile.realTime);
+
+      Logger.info(TAG,
+        `executeAllFile: Real-time cases: ${realTimeCases.length}, Offline cases: ${offlineCases.length}`);
+
+      // Execute real-time cases first
+      Logger.info(TAG, `executeAllFile: === Starting real-time cases execution ===`);
+      for (const jsonFile of realTimeCases) {
+        this.currentFileIndex++;
+        Logger.info(TAG,
+          `executeAllFile: Executing REAL-TIME case ${this.currentFileIndex}/${this.totalFilesCount}: ${jsonFile.summary}`);
+
+        try {
+          const result = await this.executeSingleFileWithSyncInit(jsonFile.summary, false);
+
+          if (result !== SUCCESS) {
+            this.failedCases.push(jsonFile.summary);
+            Logger.error(TAG, `executeAllFile: Real-time case ${jsonFile.summary} FAILED`);
+          } else {
+            Logger.info(TAG, `executeAllFile: Real-time case ${jsonFile.summary} SUCCEEDED`);
+          }
+        } catch (error) {
+          Logger.error(TAG,
+            `executeAllFile: Exception while executing real-time case ${jsonFile.summary}: ${JSON.stringify(error)}`);
+          this.failedCases.push(jsonFile.summary);
+        }
+      }
+
+      // Execute offline cases
+      Logger.info(TAG, `executeAllFile: === Starting offline cases execution ===`);
+      for (const jsonFile of offlineCases) {
+        this.currentFileIndex++;
+        Logger.info(TAG,
+          `executeAllFile: Executing OFFLINE case ${this.currentFileIndex}/${this.totalFilesCount}: ${jsonFile.summary}`);
+
+        try {
+          const result = await this.executeSingleFileWithSyncInit(jsonFile.summary, false);
+
+          if (result !== SUCCESS) {
+            this.failedCases.push(jsonFile.summary);
+            Logger.error(TAG, `executeAllFile: Offline case ${jsonFile.summary} FAILED`);
+          } else {
+            Logger.info(TAG, `executeAllFile: Offline case ${jsonFile.summary} SUCCEEDED`);
+          }
+        } catch (error) {
+          Logger.error(TAG,
+            `executeAllFile: Exception while executing offline case ${jsonFile.summary}: ${JSON.stringify(error)}`);
           this.failedCases.push(jsonFile.summary);
         }
       }
@@ -725,23 +733,35 @@ export struct AutoTest {
       const totalTime = (endTime - startTime) / 1000;
 
       if (this.failedCases.length > 0) {
-        this.executeResultMessage = `执行完成！总耗时: ${totalTime.toFixed(2)}秒\n共${this.totalFilesCount}个用例，成功${this.totalFilesCount - this.failedCases.length}个，失败${this.failedCases.length}个\n失败用例：\n${this.failedCases.join('\n')}`;
+        Logger.error(TAG, `失败用例 ${this.failedCases}`);
+        this.executeResultMessage =
+          `执行完成！总耗时: ${totalTime.toFixed(2)}秒\n共${this.totalFilesCount}个用例，成功${this.totalFilesCount -
+            this.failedCases.length}个，失败${this.failedCases.length}个\n失败用例：\n${this.failedCases.join('\n')}`;
         this.executeResultSuccess = false;
+        Logger.error(TAG,
+          `executeAllFile completed with ${this.failedCases.length} failures in ${totalTime.toFixed(2)} seconds`);
       } else {
         this.executeResultMessage = `全部用例执行成功！总耗时: ${totalTime.toFixed(2)}秒`;
         this.executeResultSuccess = true;
+        Logger.info(TAG, `executeAllFile: All cases succeeded in ${totalTime.toFixed(2)} seconds`);
       }
       this.showExecuteResult = true;
+
+      // Generate comprehensive report for all cases
+      Logger.info(TAG, "executeAllFile: Generating comprehensive test report");
       await this.saveAllCaseExecuteReport();
+      Logger.info(TAG, "executeAllFile: Test report generated successfully");
     } catch (error) {
-      Logger.error(TAG, "An error occurred when executing all test cases", error);
-      this.executeResultMessage = `执行全部用例时发生错误`;
+      Logger.error(TAG, `executeAllFile: Critical error occurred: ${JSON.stringify(error)}`);
+      this.executeResultMessage = `执行全部用例时发生错误: ${error}`;
       this.executeResultSuccess = false;
       this.showExecuteResult = true;
     } finally {
       this.isExecutingAll = false;
       this.destroyPipeline();
-      Logger.info(TAG, "executeAllFile end");
+      const finalEndTime = new Date().getTime();
+      const finalTotalTime = (finalEndTime - startTime) / 1000;
+      Logger.info(TAG, `executeAllFile end - Total execution time: ${finalTotalTime.toFixed(2)} seconds`);
     }
   }
 
@@ -750,107 +770,293 @@ export struct AutoTest {
     this.autoTestProcessMap.clear();
     const jsonFileInfo = jsonSummaryToJsonFileInfoMap.get(fileSummary);
     if (jsonFileInfo == undefined || jsonFileInfo.sceneInfos.length == 0) {
+      Logger.error(TAG, `executeSingleFileWithSyncInit: Invalid jsonFileInfo for ${fileSummary}`);
       return FAILED;
-    } else if (jsonFileInfo.sceneInfos.length >= 1) {
+    }
+
+    try {
+      Logger.info(TAG, `executeSingleFileWithSyncInit: realTime mode=${jsonFileInfo.realTime}`);
+
       let status = this.initAllPipeline(jsonFileInfo);
       if (status != SUCCESS) {
         Logger.error(TAG, `initAllPipeline ERROR`);
         return FAILED;
       }
-      let taskExeStatus = await taskpool.execute(initAllInputNode, jsonFileInfo, sceneInfoIdToSceneInfoMap, pipelineIdToPipelineInfoMap);
+
+      let taskExeStatus = await taskpool.execute(initAllInputNode, jsonFileInfo,
+        sceneInfoIdToSceneInfoMap,
+        pipelineIdToPipelineInfoMap);
       if (taskExeStatus != SUCCESS) {
         Logger.error(TAG, `initAllInputNode ERROR`);
         return FAILED;
       }
       Logger.info(TAG, `initAllInputNode successed, ready to initAllEffectNode`);
+
       status = this.initAllEffectNode(jsonFileInfo);
       if (status != SUCCESS) {
         Logger.error(TAG, `initAllEffectNode ERROR`);
         return FAILED;
       }
       Logger.info(TAG, `initAllEffectNode successed, ready to render frame`);
-      let timer = setInterval(()=>{
-        Logger.error(TAG, `getAutoTestProcess start`);
-        let processObj: Record<string, number> = audioNapi.getAutoTestProcess();
-        let newMap = new Map(Object.entries(processObj));
-        let continueFlag: boolean = false;
-        if (newMap.size == 0) {
-          Logger.error(TAG, `newMap size is 0`);
-          clearInterval(timer);
-          return;
-        }
-        Logger.error(TAG, `newMap size is ${newMap.size}`);
-        if (this.autoTestProcessMap.size == 0) {
-          this.autoTestProcessMap = new Map(newMap);
-        } else if (newMap.size >= this.autoTestProcessMap.size) {
-          this.autoTestProcessMap = new Map(newMap);
-        }
 
-        this.autoTestProcessMap.forEach((value, key)=>{
-          Logger.error(TAG, `key:${key}----value:${value}`);
-          if (value < 100) {
-            continueFlag = true;
-          }
-        })
-        if (!continueFlag) {
-          Logger.info(TAG, `process done, ready to clear timer.`);
-          clearInterval(timer);
-          this.destroyPipeline();
-        }
-      }, 200);
-      let scenePromises = jsonFileInfo.sceneInfos.map(async (sceneInfoId: string) => {
-        const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
-        const pipelineId = sceneInfo?.pipelineId;
-        if (sceneInfo == undefined || pipelineId == undefined) {
-          Logger.error(TAG, `executeSingleFile get null sceneInfo`);
-          return FAILED;
-        }
-        const pipelineInfo = pipelineIdToPipelineInfoMap.get(pipelineId);
-        if (pipelineInfo == undefined) {
-          Logger.error(TAG, `executeSingleFile get null pipelineInfo`);
-          return FAILED;
-        }
+      // Choose execution path based on realTime flag
+      if (jsonFileInfo.realTime) {
+        Logger.info(TAG, '=== Real-time playback mode ===');
+        return await this.executeRealTimePlayback(jsonFileInfo, reportFlag);
+      } else {
+        Logger.info(TAG, '=== Standard offline mode ===');
+        return await this.executeStandardPlayback(jsonFileInfo, reportFlag);
+      }
 
-        let outputInfo = sceneInfo.outputFile;
-        const multiRenderFrameFlag = pipelineInfo.multiRenderFrameFlag;
-        if (jsonFileInfo.realTime) {
-          const buffer: object = await taskpool.execute(multiPipelineRealTimeSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
-          const saveResult = await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag);
-          if (saveResult !== SUCCESS) {
-            Logger.error(TAG, `saveSingleFile fail`)
-            Logger.info(TAG, `saveSingleFile Return Value: ${saveResult}`);
-            return FAILED;
-          }
-        } else {
-          const buffer: object = await taskpool.execute(multiPipelineSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
-          const saveResult = await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag);
-          if (saveResult !== SUCCESS) {
-            Logger.error(TAG, `saveSingleFile fail`)
-            Logger.info(TAG, `saveSingleFile Return Value: ${saveResult}`);
-            return FAILED;
-          }
-        }
-        this.generateSingleReportInfo(pipelineId);
-        return SUCCESS;
-      })
-      await Promise.all(scenePromises).then(async () => {
-        Logger.info(TAG, `scenePromises done `);
-
-        this.autoTestProcessMap.forEach((value, key) => {
-          if (value < 100) {
-            this.autoTestProcessMap.set(key, 100);
-            Logger.warn(TAG, `Force set process ${key} to 100% after all tasks completed`);
-          }
-        });
-
-        if (reportFlag) {
-          await this.saveSingleCaseExecuteReport(fileSummary);
-        }
-      })
+    } catch (error) {
+      Logger.error(TAG, `Test execution failed: ${error}`);
+      return FAILED;
+    } finally {
+      this.destroyPipeline();
     }
-    this.destroyPipeline();
+  }
+
+    // Execute standard offline playback (multi-pipeline)
+  async executeStandardPlayback(jsonFileInfo: JsonFileInfo, reportFlag: boolean): Promise<number> {
+    Logger.info(TAG, 'executeStandardPlayback start');
+
+    // Set up progress monitoring
+    let timer = setInterval(() => {
+      Logger.error(TAG, `getAutoTestProcess start`);
+      let processObj: Record<string, number> = audioNapi.getAutoTestProcess();
+      let newMap = new Map(Object.entries(processObj));
+      let continueFlag: boolean = false;
+      if (newMap.size == 0) {
+        Logger.error(TAG, `newMap size is 0`);
+        clearInterval(timer);
+        return;
+      }
+      Logger.error(TAG, `newMap size is ${newMap.size}`);
+      if (this.autoTestProcessMap.size == 0) {
+        this.autoTestProcessMap = new Map(newMap);
+      } else if (newMap.size >= this.autoTestProcessMap.size) {
+        this.autoTestProcessMap = new Map(newMap);
+      }
+
+      this.autoTestProcessMap.forEach((value, key) => {
+        Logger.error(TAG, `key:${key}----value:${value}`);
+        if (value < 100) {
+          continueFlag = true;
+        }
+      })
+      if (!continueFlag) {
+        Logger.info(TAG, `process done, ready to clear timer.`);
+        clearInterval(timer);
+      }
+    }, 200);
+
+    // Process all scenes
+    let scenePromises = jsonFileInfo.sceneInfos.map(async (sceneInfoId: string) => {
+      const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
+      const pipelineId = sceneInfo?.pipelineId;
+      if (sceneInfo == undefined || pipelineId == undefined) {
+        Logger.error(TAG, `executeStandardPlayback get null sceneInfo`);
+        return FAILED;
+      }
+      const pipelineInfo = pipelineIdToPipelineInfoMap.get(pipelineId);
+      if (pipelineInfo == undefined) {
+        Logger.error(TAG, `executeStandardPlayback get null pipelineInfo`);
+        return FAILED;
+      }
+
+      let outputInfo = sceneInfo.outputFile;
+      const multiRenderFrameFlag = pipelineInfo.multiRenderFrameFlag;
+
+      Logger.info(TAG, `Starting standard rendering for pipeline ${pipelineId}`);
+      try {
+        const buffer: object =
+          await taskpool.execute(multiPipelineSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
+        Logger.info(TAG, `Standard rendering completed for pipeline ${pipelineId}`);
+        const saveResult =
+          await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag,
+            jsonFileInfo.summary);
+        if (saveResult !== SUCCESS) {
+          Logger.error(TAG, `Standard playback: saveSingleFile failed for pipeline ${pipelineId}`);
+          Logger.info(TAG, `saveSingleFile Return Value: ${saveResult}`);
+          return FAILED;
+        }
+        Logger.info(TAG, `Standard playback: File saved successfully for pipeline ${pipelineId}`);
+      } catch (error) {
+        Logger.error(TAG, `Standard playback error: ${JSON.stringify(error)}`);
+        return FAILED;
+      }
+      this.generateSingleReportInfo(pipelineId);
+      return SUCCESS;
+    })
+
+    await Promise.all(scenePromises).then(async () => {
+      Logger.info(TAG, `scenePromises done `);
+
+      this.autoTestProcessMap.forEach((value, key) => {
+        if (value < 100) {
+          this.autoTestProcessMap.set(key, 100);
+          Logger.warn(TAG, `Force set process ${key} to 100% after all tasks completed`);
+        }
+      });
+
+      if (reportFlag) {
+        await this.saveSingleCaseExecuteReport(jsonFileInfo.summary);
+      }
+    })
+
+    Logger.info(TAG, `executeStandardPlayback completed`);
     return SUCCESS;
   }
+
+  // Execute real-time playback (single-pipeline with audio renderer)
+  async executeRealTimePlayback(jsonFileInfo: JsonFileInfo, reportFlag: boolean): Promise<number> {
+    Logger.info(TAG, 'executeRealTimePlayback start');
+
+    // Real-time playback only supports single scene
+    if (jsonFileInfo.sceneInfos.length > 1) {
+      Logger.error(TAG, 'Real-time playback only supports single scene');
+      return FAILED;
+    }
+
+    const sceneInfoId = jsonFileInfo.sceneInfos[0];
+    const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
+    const pipelineId = sceneInfo?.pipelineId;
+
+    if (sceneInfo == undefined || pipelineId == undefined) {
+      Logger.error(TAG, 'Invalid scene info for real-time playback');
+      return FAILED;
+    }
+
+    const outputInfo = sceneInfo.outputFile;
+    const pipelineInfo = pipelineIdToPipelineInfoMap.get(pipelineId);
+    let rendererInitialized = false;
+    let rendererStarted = false;
+
+    try {
+      // Set pipeline output format
+      Logger.info(TAG, `Setting pipeline output format: rate=${outputInfo.sampleRate}, ` +
+        `channels=${outputInfo.channels}, bits=${outputInfo.bitDepth}`);
+      audioNapi.multiPipelineEnvPrepare(pipelineId);
+      audioNapi.multiSetFormat(outputInfo.channels, outputInfo.sampleRate, outputInfo.bitDepth);
+
+      // 1. Initialize audio renderer
+      Logger.info(TAG, `Initializing audio renderer: rate=${outputInfo.sampleRate}, ` +
+        `channels=${outputInfo.channels}, bits=${outputInfo.bitDepth}`);
+
+      let ret = audioNapi.initAudioRenderer(
+        outputInfo.sampleRate,
+        outputInfo.channels,
+        outputInfo.bitDepth
+      );
+
+      if (ret != SUCCESS) {
+        Logger.error(TAG, `initAudioRenderer failed: ${ret}`);
+        return FAILED;
+      }
+
+      rendererInitialized = true;
+      this.audioRendererReady = true;
+
+      // 2. Set playback finished callback
+      let playbackFinished = false;
+      audioNapi.registerPlaybackFinishCallback(() => {
+        Logger.info(TAG, 'Playback finished callback triggered');
+        playbackFinished = true;
+      });
+
+      // 3. Enable recording (save output)
+      audioNapi.setRecordFlag(true);
+
+      // 4. Start real-time playback
+      Logger.info(TAG, 'Starting real-time audio renderer...');
+      this.isRealTimePlaying = true;
+
+      ret = audioNapi.startAudioRenderer();
+      if (ret != SUCCESS) {
+        Logger.error(TAG, `startAudioRenderer failed: ${ret}`);
+        return FAILED;
+      }
+
+      rendererStarted = true;
+
+      // 5. Wait for playback to complete (with timeout)
+      Logger.info(TAG, 'Waiting for playback to complete...');
+      const startTime = Date.now();
+      const timeout = 60 * 1000;
+
+      while (!playbackFinished) {
+        if (Date.now() - startTime > timeout) {
+          Logger.error(TAG, 'Real-time playback timeout');
+          return FAILED;
+        }
+        await this.sleep(100); // Check every 100ms
+      }
+
+      Logger.info(TAG, 'Playing finished,waiting for C++ cleanup...');
+      await this.sleep(500);;
+
+      // 6. Get recorded audio data
+      Logger.info(TAG, 'Getting recorded audio data...');
+      const audioBuffer = audioNapi.getRecordedAudioData();
+
+      if (audioBuffer == null || audioBuffer.byteLength == 0) {
+        Logger.error(TAG, 'No audio data recorded');
+        return FAILED;
+      }
+
+      Logger.info(TAG, `Recorded ${audioBuffer.byteLength} bytes of audio data`);
+
+      // 7. Save output file
+      const saveResult = await this.saveSingleFile(
+        pipelineId,
+        [audioBuffer],
+        ".wav",
+        outputInfo,
+        false,
+        jsonFileInfo.summary
+      );
+
+      if (saveResult !== SUCCESS) {
+        Logger.error(TAG, 'Failed to save output file');
+        return FAILED;
+      }
+
+      // 8. Generate test report
+      this.generateSingleReportInfo(pipelineId);
+
+      if (reportFlag) {
+        await this.saveSingleCaseExecuteReport(jsonFileInfo.summary);
+      }
+
+      Logger.info(TAG, 'Real-time playback completed successfully');
+      return SUCCESS;
+
+    } catch (error) {
+      Logger.error(TAG, `Real-time playback error: ${error}`);
+      return FAILED;
+
+    } finally {
+      // Clean up resources - always execute cleanup if renderer was initialized
+      this.isRealTimePlaying = false;
+      this.audioRendererReady = false;
+
+      if (rendererInitialized) {
+        Logger.info(TAG, 'Cleaning up audio renderer resources...');
+        if (rendererStarted) {
+          audioNapi.stopAudioRenderer();
+        }
+        audioNapi.releaseAudioRenderer();
+        audioNapi.unregisterPlaybackFinishCallback();
+        Logger.info(TAG, 'Audio renderer cleanup complete');
+      }
+    }
+  }
+
+  // Helper method: sleep
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   // sync init pipeline/inputNode/effectNode
   initAllPipeline(jsonFileInfo:JsonFileInfo): number {
     Logger.info(TAG, `initAllPipeline start`);
@@ -1075,26 +1281,50 @@ export struct AutoTest {
 
   destroyPipeline() {
     Logger.info(TAG, "destroyPipeline start");
-    if (preparedPipelineList.length == 0) {
-      return;
-    }
-    preparedPipelineList.forEach((pipelineId: string) => {
-      pipelineIdToPipelineInfoMap.get(pipelineId)?.inputIdList.forEach((inputId: string) => {
-        audioNapi.multiPipelineEnvPrepare(pipelineId);
-        audioNapi.multiDeleteSong(inputId);
+    try {
+      if (preparedPipelineList.length == 0) {
+        Logger.info(TAG, "destroyPipeline: No pipelines to destroy");
+        return;
+      }
+
+      Logger.info(TAG, `destroyPipeline: Destroying ${preparedPipelineList.length} pipelines`);
+      preparedPipelineList.forEach((pipelineId: string) => {
+        try {
+          pipelineIdToPipelineInfoMap.get(pipelineId)?.inputIdList.forEach((inputId: string) => {
+            try {
+              audioNapi.multiPipelineEnvPrepare(pipelineId);
+              audioNapi.multiDeleteSong(inputId);
+              Logger.info(TAG, `destroyPipeline: Deleted input ${inputId} from pipeline ${pipelineId}`);
+            } catch (error) {
+              Logger.error(TAG, `destroyPipeline: Error deleting input ${inputId}: ${JSON.stringify(error)}`);
+            }
+          })
+        } catch (error) {
+          Logger.error(TAG, `destroyPipeline: Error processing pipeline ${pipelineId}: ${JSON.stringify(error)}`);
+        }
       })
-    })
-    if (preparedPipelineList.length >= 1) {
-      audioNapi.destroyMultiPipeline();
-    } else {
-      Logger.error(TAG, 'pipelineList is blank while destroy');
+
+      if (preparedPipelineList.length >= 1) {
+        try {
+          audioNapi.destroyMultiPipeline();
+          Logger.info(TAG, "destroyPipeline: Multi-pipeline destroyed successfully");
+        } catch (error) {
+          Logger.error(TAG, `destroyPipeline: Error destroying multi-pipeline: ${JSON.stringify(error)}`);
+        }
+      } else {
+        Logger.error(TAG, 'destroyPipeline: pipelineList is blank while destroy');
+      }
+
+      preparedPipelineList.length = 0;
+      Logger.info(TAG, "destroyPipeline end - All resources cleaned up");
+    } catch (error) {
+      Logger.error(TAG, `destroyPipeline: Critical error: ${JSON.stringify(error)}`);
+      preparedPipelineList.length = 0;
     }
-    preparedPipelineList.length = 0;
-    Logger.info(TAG, "destroyPipeline end");
   }
 
   async saveSingleFile(pipelineId: string, pcmBuffer: ArrayBuffer[], audioFormate: string, outputInfo: OutputFile,
-    multiRenderFrameFlag: boolean): Promise<number> {
+    multiRenderFrameFlag: boolean, fileSummary: string = ''): Promise<number> {
 
     pcmBuffer.forEach((value: ArrayBuffer, index) => {
       Logger.info(TAG, `saveSingleFile pcmBuffer of ---${index}---length : ${value.byteLength}`)
@@ -1145,7 +1375,7 @@ export struct AutoTest {
         return FAILED;
       }
       if (expectedFileMd5 && !checkMd5IsEqual(outputFileMd5, expectedFileMd5)) {
-        this.failedCases.push(pipelineId);
+        this.failedCases.push(fileSummary || pipelineId);
         Logger.error(TAG,
           `file MD5 compare ERROR --- file:${outputFilePath}; md5Value:${outputFileMd5}; expectedMd5:${expectedFileMd5}`);
         Logger.error(TAG, `MD5 Verification failed`);
@@ -1156,7 +1386,7 @@ export struct AutoTest {
       }
       return SUCCESS;
     } catch (e) {
-      this.failedCases.push(pipelineId);
+      this.failedCases.push(fileSummary || pipelineId);
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
       return FAILED;
     }

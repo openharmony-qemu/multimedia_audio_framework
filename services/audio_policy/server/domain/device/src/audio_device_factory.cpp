@@ -27,6 +27,7 @@
 #include "audio_sle_device_behavior.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
+#include "sle_audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,7 +82,7 @@ int32_t AudioDeviceFactory::ActivateDevice(const std::shared_ptr<AudioStreamDesc
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             ERR_DEVICE_SWITCH_OPERATION_FAILED, "Active device failded", false),
         "ActivateDevice failed");
-
+    SleAudioDeviceManager::GetInstance().UpdateSleStreamTypeCount(streamDesc);
     activatedDevices_[deviceDesc->deviceId_] = deviceDesc;
     return result;
 }

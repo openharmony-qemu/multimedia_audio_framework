@@ -176,9 +176,8 @@ ohos_unittest("audio_zone_service_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_zone_service_unit_test/audio_zone_device_unit_test.cpp",
@@ -339,9 +338,8 @@ ohos_unittest("audio_zone_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "../../audio_policy/client/stub/src/audio_zone_client.cpp",
@@ -496,9 +494,8 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     #"./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
@@ -781,9 +778,8 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_service_second_unit_test.cpp",
@@ -921,9 +917,8 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_first_unit_test.cpp",
@@ -1103,9 +1098,8 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
@@ -1292,9 +1286,8 @@ ohos_unittest("audio_policy_service_third_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_third_unit_test.cpp",
@@ -1473,9 +1466,8 @@ ohos_unittest("audio_microphone_descriptor_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_microphone_descriptor_unit_test/src/audio_microphone_descriptor_unit_test.cpp",
@@ -1664,9 +1656,8 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_thirdext_unit_test.cpp",
@@ -1844,9 +1835,8 @@ ohos_unittest("audio_policy_service_extended_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_extended_unit_test.cpp",
@@ -3421,9 +3411,8 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_interrupt_service_pro_unit_test.cpp" ]
 
@@ -3442,6 +3431,12 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
@@ -4204,6 +4199,12 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "../../../services/audio_service:audio_service",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -4284,6 +4285,12 @@ ohos_unittest("audio_volume_utils_unit_test") {
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 
   external_deps = [
     "ability_base:session_info",
@@ -4366,6 +4373,12 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 
   external_deps = [
     "ability_base:session_info",
@@ -4456,6 +4469,12 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "../../../services/audio_service:audio_service",
   ]
 
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -4536,6 +4555,12 @@ ohos_unittest("audio_pipe_selector_route_selector_unit_test") {
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 
   external_deps = [
     "ability_base:session_info",
@@ -4843,6 +4868,12 @@ ohos_unittest("audio_state_manager_unit_test") {
     "../../../services/audio_service:audio_service",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 }
 
 ohos_unittest("audio_device_lock_unit_test") {
@@ -5062,6 +5093,12 @@ ohos_unittest("audio_usr_select_manager_unit_test") {
     "../../../services/audio_service:audio_service",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 }
 
 ohos_unittest("audio_session_unit_test") {
@@ -5271,9 +5308,9 @@ ohos_unittest("audio_background_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_background_manager_unit_test/src/audio_background_manager_unit_test.cpp",
@@ -5476,9 +5513,8 @@ ohos_unittest("audio_server_definitions_unit_test") {
     "c_utils:utils",
     "ipc:ipc_single",
     "hilog:libhilog",
+    "bounds_checking_function:libsec_static"
   ]
-
-  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
   sources = [ "./unittest/audio_definition_adapter_info_unit_test/src/audio_definition_adapter_info_unit_test.cpp" ]
 
@@ -5876,9 +5912,8 @@ ohos_unittest("audio_core_service_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
     "./unittest/audio_core_service_unit_test/src/audio_core_service_unit_test.cpp",
@@ -6046,9 +6081,8 @@ ohos_unittest("audio_core_service_utils_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [ "./unittest/audio_core_service_utils_unit_test/src/audio_core_service_utils_unit_test.cpp" ]
 
@@ -6192,6 +6226,12 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
 
   external_deps = [
     "ability_base:session_info",
@@ -6460,8 +6500,6 @@ ohos_unittest("client_type_manager_unit_test") {
 
   use_exceptions = true
 
-  public_external_deps = [ "ffrt:libffrt" ]
-
   cflags = [
     "-Wall",
     "-Werror",
@@ -6479,6 +6517,7 @@ ohos_unittest("client_type_manager_unit_test") {
     "c_utils:utils",
     "ipc:ipc_core",
     "hilog:libhilog",
+    "ffrt:libffrt",
   ]
 
   cflags += [ "--coverage" ]

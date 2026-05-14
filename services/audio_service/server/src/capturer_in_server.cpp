@@ -256,12 +256,40 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             HandleOperationFlushed();
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
+        case OPERATION_UPDATE_SPANSIZE:
+            RefreshServerBufferForSpanSizeUpdate(stateListener);
+            break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
     }
 }
 // LCOV_EXCL_STOP
+
+int32_t CapturerInServer::GetCapturerFlagsByRoute(uint32_t routeFlag)
+{
+    if (routeFlag & AUDIO_INPUT_FLAG_FAST) {
+        if (routeFlag & AUDIO_INPUT_FLAG_VOIP) {
+            return AUDIO_FLAG_VOIP_FAST;
+        } else {
+            return AUDIO_FLAG_MMAP;
+        }
+    }
+    return AUDIO_FLAG_NORMAL;
+}
+
+void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
+{
+    uint32_t newRouteFlag = stream_->GetRouteFlag();
+    int32_t capturerFlags = GetCapturerFlagsByRoute(newRouteFlag);
+    if (capturerFlags != processConfig_.capturerInfo.capturerFlags) {
+        AUDIO_INFO_LOG("Update processConfig_.capturerInfo.capturerFlags from %{public}u to %{public}u",
+            processConfig_.capturerInfo.capturerFlags, capturerFlags);
+        processConfig_.capturerInfo.capturerFlags = capturerFlags;
+        stateListener->OnOperationHandled(UPDATE_SPANSIZE, capturerFlags == AUDIO_FLAG_NORMAL ?
+            FASTSTATUS_NORMAL : FASTSTATUS_FAST);
+    }
+}
 
 void CapturerInServer::HandleOperationFlushed()
 {

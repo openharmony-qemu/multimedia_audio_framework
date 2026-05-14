@@ -250,7 +250,7 @@ void AudioPolicyServiceEnhanceFourFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList;
     preferredDeviceList.push_back(fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.GetVoipDeviceInfo(processConfig, deviceInfo, type, preferredDeviceList);
+    GetServerPtr()->audioPolicyService_.GetPreferredDeviceInfo(processConfig, deviceInfo, type, preferredDeviceList);
 
     std::shared_ptr<AudioSharedMemory> buffer;
     GetServerPtr()->audioPolicyService_.InitSharedVolume(buffer);

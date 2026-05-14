@@ -2308,8 +2308,8 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_003, TestSize.Level1)
 
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolume->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2342,10 +2342,10 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_004, TestSize.Level1)
 
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
-    StreamVolume streamVolume1(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    StreamVolume streamVolume2(anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, false);
-    audioVolume->streamVolume_.emplace(sessionId, streamVolume1);
-    audioVolume->streamVolume_.emplace(anotherSessionId, streamVolume2);
+    audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+    audioVolume->streamVolume_.emplace(anotherSessionId, std::make_shared<StreamVolume>(
+        anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, false));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2375,8 +2375,8 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_005, TestSize.Level1)
 
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolume->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2406,8 +2406,8 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
 
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
-    audioVolume->streamVolume_.emplace(sessionId, streamVolume);
+    audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2670,6 +2670,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
     desc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     auto ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
@@ -3525,6 +3526,89 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_017, TestSiz
 
     DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
     EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService with STREAM_USAGE_INTERPHONE
+ * @tc.number: AudioCoreServiceUnitTest_Interphone_001
+ * @tc.desc  : Test CreateRendererClient with STREAM_USAGE_INTERPHONE
+ */
+HWTEST_F(AudioCoreServiceUnitTest, AudioCoreServiceUnitTest_Interphone_001, TestSize.Level1)
+{
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamInfo.channels = STEREO;
+
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.streamUsage = STREAM_USAGE_INTERPHONE;
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_ = audioStreamInfo;
+    streamDesc->rendererInfo_ = rendererInfo;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService with STREAM_USAGE_INTERPHONE
+ * @tc.number: AudioCoreServiceUnitTest_Interphone_002
+ * @tc.desc  : Test CreateCapturerClient with SOURCE_TYPE_INTERPHONE
+ */
+HWTEST_F(AudioCoreServiceUnitTest, AudioCoreServiceUnitTest_Interphone_002, TestSize.Level1)
+{
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.channels = MONO;
+
+    AudioCapturerInfo capturerInfo = {};
+    capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    capturerInfo.capturerFlags = 0;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_ = audioStreamInfo;
+    streamDesc->capturerInfo_ = capturerInfo;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_MIC;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto result = GetServerPtr()->eventEntry_->CreateCapturerClient(streamDesc, flag, originalSessionId);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

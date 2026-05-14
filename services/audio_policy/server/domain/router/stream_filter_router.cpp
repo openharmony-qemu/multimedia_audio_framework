@@ -74,6 +74,7 @@ shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(Strea
 shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
     int32_t clientUID, const uint32_t sessionID)
 {
+    CHECK_AND_RETURN_RET(streamUsage != STREAM_USAGE_INTERPHONE, make_shared<AudioDeviceDescriptor>());
     DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;

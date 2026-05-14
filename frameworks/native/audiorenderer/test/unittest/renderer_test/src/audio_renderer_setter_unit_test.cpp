@@ -1842,6 +1842,41 @@ HWTEST(AudioRendererUnitTest, SetFastStatusChangeCallback_001, TestSize.Level2)
 }
 
 /**
+ * @tc.name  : Test SetInnerStreamFastStatusChangeCallback API.
+ * @tc.number: SetInnerStreamFastStatusChangeCallback_001
+ * @tc.desc  : Test inner stream fast status callback notifies AudioRenderer callback.
+ */
+HWTEST(AudioRendererUnitTest, SetInnerStreamFastStatusChangeCallback_001, TestSize.Level2)
+{
+    AppInfo appInfo = {};
+    auto audioRendererPrivate = std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo, false);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+    auto fastStatusChangeCallback = std::make_shared<RendererFastStatusChangeCallbackTest>();
+    auto audioStream = std::make_shared<TestAudioStremStub>();
+
+    audioRendererPrivate->SetFastStatusChangeCallback(fastStatusChangeCallback);
+    audioRendererPrivate->SetInnerStreamFastStatusChangeCallback(audioStream);
+    ASSERT_TRUE(static_cast<bool>(audioStream->fastStatusChangeCallback_));
+
+    audioStream->fastStatusChangeCallback_(FASTSTATUS_FAST);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+    EXPECT_EQ(fastStatusChangeCallback->status_, FASTSTATUS_FAST);
+
+    audioRendererPrivate->SetFastStatusChangeCallback(nullptr);
+    audioStream->fastStatusChangeCallback_(FASTSTATUS_NORMAL);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+
+    auto expiredAudioStream = std::make_shared<TestAudioStremStub>();
+    {
+        auto expiredRenderer = std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo, false);
+        expiredRenderer->SetInnerStreamFastStatusChangeCallback(expiredAudioStream);
+    }
+    ASSERT_TRUE(static_cast<bool>(expiredAudioStream->fastStatusChangeCallback_));
+    expiredAudioStream->fastStatusChangeCallback_(FASTSTATUS_FAST);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+}
+
+/**
  * @tc.name  : Test SetAudioHapticsSyncId API.
  * @tc.number: SetAudioHapticsSyncId_001
  * @tc.desc  : Test SetAudioHapticsSyncId interface.
@@ -2358,11 +2393,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FastStatusChangeCallback_001, TestS
 {
     AppInfo appInfo = {};
     shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->audioStream_ = std::make_shared<TestAudioStremStub>();
+    auto fastStatusChangeCallback = std::make_shared<RendererFastStatusChangeCallbackTest>();
+    audioRenderer->SetFastStatusChangeCallback(fastStatusChangeCallback);
 
-    FastStatus status = FASTSTATUS_NORMAL;
-    audioRenderer->FastStatusChangeCallback(status);
+    audioRenderer->FastStatusChangeCallback(FASTSTATUS_FAST);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 0);
+
+    audioRenderer->FastStatusChangeCallback(FASTSTATUS_NORMAL);
+    EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
+    EXPECT_EQ(fastStatusChangeCallback->status_, FASTSTATUS_FAST);
 }
 
 /**

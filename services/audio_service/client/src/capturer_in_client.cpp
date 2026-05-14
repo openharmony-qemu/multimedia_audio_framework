@@ -145,6 +145,11 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
 
+    if (operation == UPDATE_SPANSIZE) {
+        NotifyFastStatusChange(static_cast<FastStatus>(result));
+        return SUCCESS;
+    }
+
     AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
@@ -2207,6 +2212,29 @@ FastStatus CapturerInClientInner::GetFastStatus()
         return FASTSTATUS_FAST;
     }
     return FASTSTATUS_NORMAL;
+}
+
+void CapturerInClientInner::SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback)
+{
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
+void CapturerInClientInner::NotifyFastStatusChange(FastStatus status)
+{
+    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL) {
+        AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
+        return;
+    }
+    fastStatus_.store(status);
+
+    std::function<void(FastStatus)> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(static_cast<bool>(callback), "fast status change callback is null");
+    callback(status);
 }
 
 DeviceType CapturerInClientInner::GetDefaultOutputDevice()
