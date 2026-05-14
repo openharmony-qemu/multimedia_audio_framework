@@ -5807,19 +5807,32 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPipeInfoByDeviceTypeForEc_001, TestSize.Le
 */
 HWTEST_F(AudioCoreServiceUnitTest, GetEcType_001, TestSize.Level1)
 {
-    DeviceType inputDevice;
-    DeviceType outputDevice;
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EcType ecRet;
+    struct EcTypeTestCase {
+        DeviceType inputDevice;
+        DeviceType outputDevice;
+        EcType expectedEcType;
+    };
+    std::vector<EcTypeTestCase> testCases = {
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_SPEAKER, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_MIC, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET, EC_TYPE_DIFF_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_DP, EC_TYPE_DIFF_ADAPTER},
+        {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_ACCESSORY, DEVICE_TYPE_SPEAKER, EC_TYPE_DIFF_ADAPTER},
+        {DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_NEARLINK, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_NEARLINK, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_WIRED_MICIN, DEVICE_TYPE_SPEAKER, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_HDMI, EC_TYPE_NONE},
+    };
 
-    inputDevice = DEVICE_TYPE_MIC;
-    outputDevice = DEVICE_TYPE_SPEAKER;
-    ecRet = audioCoreService->GetEcType(inputDevice, outputDevice);
-    EXPECT_EQ(ecRet, EC_TYPE_SAME_ADAPTER);
-
-    outputDevice = DEVICE_TYPE_MIC;
-    ecRet = audioCoreService->GetEcType(inputDevice, outputDevice);
-    EXPECT_EQ(ecRet, EC_TYPE_NONE);
+    for (const auto &testCase : testCases) {
+        EcType ecRet = audioCoreService->GetEcType(testCase.inputDevice, testCase.outputDevice);
+        EXPECT_EQ(ecRet, testCase.expectedEcType)
+            << "inputDevice: " << testCase.inputDevice << ", outputDevice: " << testCase.outputDevice;
+    }
 }
 
 /**
