@@ -232,7 +232,7 @@ napi_value NapiAudioDebuggingManager::PrintLoopbackInfo(napi_env env, napi_callb
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    uint32_t loopbackKey = reinterpret_cast<uint32_t>(napiLoopback->loopback_.get());
+    uintptr_t loopbackKey = reinterpret_cast<uintptr_t>(napiLoopback->loopback_.get());
     if (AudioDebugManager::GetInstance().PrintAudioLoopbackDebugInfo(loopbackKey, fd) != SUCCESS) {
         NapiAudioError::ThrowError(env, "PrintLoopbackInfo failed", NAPI_ERR_SYSTEM);
     }
