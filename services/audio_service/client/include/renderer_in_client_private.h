@@ -259,6 +259,14 @@ public:
     {
         return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
     }
+
+    bool IsUltraFastStream() const
+    {
+        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+    }
+
+    void SetupFastStreamThreadPriority();
+
     void CheckAndProcessPendingSpanSize();
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

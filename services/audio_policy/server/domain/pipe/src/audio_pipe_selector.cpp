@@ -1062,6 +1062,12 @@ static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterP
         info.moduleInfo_.lib = "libmodule-hdi=-sink.z.so";
         info.moduleInfo_.name = "voip";
         info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "fast_usb_arm_output") {
+        info.moduleInfo_.className = info.GetUltraFastFlag() ? "usb_arm_ultra_fast" : "usb_arm_fast";
+        info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "usb_arm_ultra_fast_dump_file" : "usb_arm_fast_dump_file";
+        info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastUsbArmRendererSink" : "FastUsbArmRendererSink";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
     }
 }
 
@@ -1168,9 +1174,8 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.OpenMicSpeaker = pipeManager_->GetUpdateRouteSupport() ? "1" : "0";
 
     HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
-    HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]info.moduleInfo_.channels: %{public}s, "
-        "info.moduleInfo_.channelLayout: %{public}s", info.moduleInfo_.channels.c_str(),
-        info.moduleInfo_.channelLayout.c_str());
+    HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]channels: %{public}s, channelLayout: %{public}s",
+        info.moduleInfo_.channels.c_str(), info.moduleInfo_.channelLayout.c_str());
 
     info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
     info.moduleInfo_.renderInIdleState = pipeInfoPtr->paProp_.renderInIdleState_;
@@ -1178,6 +1183,13 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     if (!streamDesc->newDeviceDescs_.empty()) {
         UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
+
+    if (streamDesc->IsUltraFastRequested() &&
+        !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
+        info.SetUltraFastFlag(true);
+        streamDesc->SetUltraFastImplemented(true);
+    }
+
     // engine uses networkId to distinguish different renders,
     // so we need to set networkId after UpdateMouleInfoWitchDevice;
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
@@ -1189,11 +1201,6 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.pipeRole_ = pipeInfoPtr->role_;
     info.name_ = pipeInfoPtr->name_;
     info.InitAudioStreamInfo();
-
-    if (streamDesc->IsUltraFastRequested() && !AudioPipeManager::GetPipeManager()->HasRunningStream()) {
-        info.SetUltraFastFlag(true);
-        streamDesc->SetUltraFastImplemented(true);
-    }
 }
 
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(

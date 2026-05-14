@@ -3444,6 +3444,12 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
         cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
     }
+    if (processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
+        cacheCount = 0;
+        AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
+            "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
+        return SUCCESS;
+    }
     // 20 -> 40, 93 -> 120
     uint64_t numerator = static_cast<uint64_t>(cacheSizeInFrame) + spanSizeInFrame_ - 1;
     cacheCount = static_cast<uint32_t>(numerator / spanSizeInFrame_) + 1;
