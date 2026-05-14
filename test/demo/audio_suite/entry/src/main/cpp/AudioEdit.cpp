@@ -101,6 +101,15 @@ const int32_t BITS_PER_SAMPLE_16 = 16;
 const int32_t BITS_PER_SAMPLE_24 = 24;
 const int32_t BITS_PER_SAMPLE_32 = 32;
 
+// Sample format multiplier constants
+const int32_t SAMPLE_FORMAT_MULTIPLIER_1 = 1;
+const int32_t SAMPLE_FORMAT_MULTIPLIER_2 = 2;
+
+const int32_t ARGVNUM_0 = 0;
+const int32_t ARGVNUM_1 = 1;
+const int32_t ARGVNUM_2 = 2;
+const int32_t ARGVNUM_3 = 3;
+
 // WAV header info structure
 struct WavHeaderInfo {
     uint32_t samplingRate;
@@ -155,37 +164,27 @@ const int32_t INVALID_FD = -1;
 const char DATA_CHUNK_ID[] = {'d', 'a', 't', 'a'};
 const int32_t DATA_HEADER_INDEX[] = {'R', 'I', 'F', 'F'};
 
- const int32_t DIRECTORY_PERMISSIONS = 0755; 
- const int32_t FILE_PERMISSIONS = 0644; 
- const int32_t TM_YEAR_BASE = 1900; 
- const int32_t TM_MONTH_OFFSET = 1; 
- 
- 
- // Timestamp format constants 
- const int32_t TIMESTAMP_YEAR_WIDTH = 4; 
- const int32_t TIMESTAMP_DATE_WIDTH = 2; 
- 
- 
- // Return codes 
- const int32_t RETURN_SUCCESS = 0; 
- const int32_t RETURN_FAILED = 1; 
- 
- 
- // Pipeline indices 
- const int32_t FIRST_PIPELINE_INDEX = 0; 
- 
- 
- // Threadsafe function parameters 
- const int32_t TSFN_INITIAL_QUEUE_SIZE = 0; 
- const int32_t TSFN_THREAD_COUNT = 1; 
- 
- 
- // Callback argument counts 
- const int32_t ARG_COUNT_1 = 1; 
- const int32_t ARG_COUNT_2 = 2; 
- const int32_t ARG_COUNT_3 = 3; 
- const int32_t ARG_COUNT_4 = 4; 
- const int32_t ARG_COUNT_5 = 5;
+// Timestamp format constants
+const int32_t TIMESTAMP_YEAR_WIDTH = 4;
+const int32_t TIMESTAMP_DATE_WIDTH = 2;
+
+// Return codes
+const int32_t RETURN_SUCCESS = 0;
+const int32_t RETURN_FAILED = 1;
+
+// Pipeline indices
+const int32_t FIRST_PIPELINE_INDEX = 0;
+
+// Threadsafe function parameters
+const int32_t TSFN_INITIAL_QUEUE_SIZE = 0;
+const int32_t TSFN_THREAD_COUNT = 1;
+
+// Callback argument counts
+const int32_t ARG_COUNT_1 = 1;
+const int32_t ARG_COUNT_2 = 2;
+const int32_t ARG_COUNT_3 = 3;
+const int32_t ARG_COUNT_4 = 4;
+const int32_t ARG_COUNT_5 = 5;
 
 static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
 {
@@ -915,14 +914,14 @@ static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "g_writeDataBufferMap size %{public}d",
         g_writeDataBufferMap.size());
     ProcessPipeline();
-     g_playFinishedFlag = false;	 
-     g_playResultTotalSize = 0; 
+    g_playFinishedFlag = false;	 
+    g_playResultTotalSize = 0; 
 
-     if (g_playTotalAudioData != nullptr) { 
+    if (g_playTotalAudioData != nullptr) { 
          free(g_playTotalAudioData); 
          g_playTotalAudioData = nullptr; 
-     } 
-     g_playTotalAudioData = (char *)calloc(1, MAX_PLAY_RESULT_BUFFER_SIZE);
+    } 
+    g_playTotalAudioData = (char *)calloc(1, MAX_PLAY_RESULT_BUFFER_SIZE);
 
     // start
     OH_AudioRenderer_Start(audioRenderer);
@@ -1762,6 +1761,64 @@ static napi_value AudioConverterGetFileInfo(napi_env env, napi_callback_info inf
     return resultObj;
 }
 
+// Test the function of outputting PrintInfo to a file.（fd >= 0）
+static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) {
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+
+
+    if (!g_audioSuiteEngine) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: g_audioSuiteEngine is nullptr");
+        return result;
+    }
+
+
+    // Generate timestamp and file path
+    auto now = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(now);
+    std::tm *tm = std::localtime(&time);
+    std::ostringstream timestampStream;
+    timestampStream << std::setfill('0') << std::setw(TIMESTAMP_YEAR_WIDTH) << (tm->tm_year + TM_YEAR_BASE)
+                    << std::setw(TIMESTAMP_DATE_WIDTH) << (tm->tm_mon + TM_MONTH_OFFSET)
+                    << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_mday << "_" << std::setw(TIMESTAMP_DATE_WIDTH)
+                    << tm->tm_hour << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_min << std::setw(TIMESTAMP_DATE_WIDTH)
+                    << tm->tm_sec;
+
+
+    std::string dirPath = "/storage/Users/currentUser/Download/src.main.audiodemo/printfile/";
+    std::string filePath = dirPath + "/audio_snapshot_" + timestampStream.str() + ".txt";
+    mkdir(dirPath.c_str(), DIRECTORY_PERMISSIONS);
+
+
+    // Open file
+    int fd = open(filePath.c_str(), O_WRONLY | O_CREAT, FILE_PERMISSIONS);
+    if (fd < 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: open failed, errno=%{public}d",
+                     errno);
+        OH_AudioSuite_Result ret = OH_AudioSuite_PrintInfo(g_audioSuiteEngine, nullptr, INVALID_FD);
+        if (ret == AUDIOSUITE_SUCCESS) {
+            napi_get_boolean(env, true, &result);
+        }
+        return result;
+    }
+
+
+    // Output to file
+    OH_AudioSuite_Result ret = OH_AudioSuite_PrintInfo(g_audioSuiteEngine, nullptr, fd);
+    close(fd);
+
+
+    if (ret != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile failed: %{public}u", ret);
+        return result;
+    }
+
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile success");
+    napi_get_boolean(env, true, &result);
+    return result;
+}
+
 const std::vector<napi_property_descriptor> recordDescriptors = {
     {"audioCapturerInit", nullptr, AudioCapturerInit,
         nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -1879,7 +1936,19 @@ const std::vector<napi_property_descriptor> otherDescriptors = {
     {"ModifyRender", nullptr, ModifyRender, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"stopPipeline", nullptr, stopPipeline, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"setCurrentTime", nullptr, setCurrentTime, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr}
+    {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"testPrintInfoToFile", nullptr, TestPrintInfoToFile, nullptr, nullptr, nullptr, napi_default, nullptr},
+    // Real-time playback methods
+    {"initAudioRenderer", nullptr, InitAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"startAudioRenderer", nullptr, StartAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"stopAudioRenderer", nullptr, StopAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"releaseAudioRenderer", nullptr, ReleaseAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setRecordFlag", nullptr, SetRecordFlag, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getRecordedAudioData", nullptr, GetRecordedAudioData, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerPlaybackFinishCallback", nullptr, RegisterPlaybackFinishCallback, nullptr, nullptr, nullptr, napi_default,
+     nullptr},
+    {"unregisterPlaybackFinishCallback", nullptr, UnregisterPlaybackFinishCallback, nullptr, nullptr, nullptr,
+     napi_default, nullptr},
 };
 
 static napi_value Init(napi_env env, napi_value exports)
