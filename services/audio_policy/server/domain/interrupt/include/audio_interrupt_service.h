@@ -421,7 +421,7 @@ private:
     void RecordFocusHistory(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         const InterruptEventInternal &interruptEvent);
     void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);
-    bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &iterState,
+    bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &activeState,
         AudioFocuState &incomingState);
 
     // interrupt members

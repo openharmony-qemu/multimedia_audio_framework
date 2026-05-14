@@ -2988,14 +2988,14 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
 }
 
 bool AudioInterruptService::UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry,
-    AudioFocuState &iterState, AudioFocuState &incomingState)
+    AudioFocuState &activeState, AudioFocuState &incomingState)
 {
     auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
     if (pos == HINT_STATE_MAP.end()) {
         return false;
     }
     if (focusEntry.actionOn == CURRENT) {
-        iterState = (pos->second > iterState) ? pos->second : iterState;
+        activeState = (pos->second > activeState) ? pos->second : activeState;
     } else if (focusEntry.actionOn == INCOMING) {
         AudioFocuState newState = pos->second;
         incomingState = (newState > incomingState) ? newState : incomingState;
