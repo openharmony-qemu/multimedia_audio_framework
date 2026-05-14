@@ -15,6 +15,34 @@ import { taskpool } from '@kit.ArkTS';
 
 const TAG: string = 'AudioConversion';
 
+// Concurrent function for background audio conversion
+@Concurrent
+function convertAudioInBackground(
+  inputEncodingType: number,
+  inputSamplingRate: number,
+  inputChannelLayout: number,
+  inputSampleFormat: number,
+  outputEncodingType: number,
+  outputSamplingRate: number,
+  outputChannelLayout: number,
+  outputSampleFormat: number,
+  fd: number
+): ESObject {
+  let inputFormat: ESObject = {
+    encodingType: inputEncodingType,
+    samplingRate: inputSamplingRate,
+    channelLayout: inputChannelLayout,
+    sampleFormat: inputSampleFormat
+  };
+  let outputFormat: ESObject = {
+    encodingType: outputEncodingType,
+    samplingRate: outputSamplingRate,
+    channelLayout: outputChannelLayout,
+    sampleFormat: outputSampleFormat
+  };
+  return audioNapi.audioConverterCreate(inputFormat, outputFormat, fd);
+}
+
 // Sample format enum
 enum AudioSampleFormat {
   AUDIO_SAMPLE_U8 = 0,
@@ -128,12 +156,6 @@ function AudioConversionBuilder() {
 }
 
 export { AudioConversionBuilder };
-
-@Concurrent
-export async function audioConverterProcess(converterHandle: number): Promise<ArrayBuffer> {
-  let result = audioNapi.audioConverterProcess(converterHandle);
-  return result;
-}
 
 @Component
 export struct AudioConversion {
@@ -552,11 +574,11 @@ export struct AudioConversion {
     }
   }
 
-  selectOutputFileAndSave(data: ArrayBuffer | string, isFilePath: boolean): Promise<void> {
+  selectOutputFileAndSave(data: ArrayBuffer | string, isFilePath: boolean, extension: string = '.wav'): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         let documentSaveOptions = new picker.DocumentSaveOptions();
-        documentSaveOptions.newFileNames = [`converted_audio_${Date.now()}.wav`];
+        documentSaveOptions.newFileNames = [`converted_audio_${Date.now()}${extension}`];
 
         let context = getContext() as common.Context;
         let documentPicker = new picker.DocumentViewPicker(context);
@@ -706,43 +728,36 @@ export struct AudioConversion {
     let file = fs.openSync(path, fs.OpenMode.READ_ONLY);
 
     try {
-      const result = audioNapi.audioConverterCreate(
-        this.inputFormat, this.outputFormat, file.fd);
+      // Execute conversion in background thread using taskpool
+      const result = await taskpool.execute(
+        convertAudioInBackground,
+        this.inputFormat.encodingType,
+        this.inputFormat.samplingRate,
+        this.inputFormat.channelLayout,
+        this.inputFormat.sampleFormat,
+        this.outputFormat.encodingType,
+        this.outputFormat.samplingRate,
+        this.outputFormat.channelLayout,
+        this.outputFormat.sampleFormat,
+        file.fd
+      );
 
-      if (result <= 0) {
-        this.createResult = `Create converter failed, error code: ${result}`;
+      if (!result) {
+        this.createResult = 'Conversion failed';
         this.isConverting = false;
-        Logger.error(TAG, `AudioConverterCreate failed: ${result}`);
+        Logger.error(TAG, 'AudioConverterCreate failed: returned null');
         return false;
       }
 
-      this.converterHandle = result;
+      // result is the internal output file path
+      Logger.info(TAG, `Conversion output file: ${result}`);
+
+      // Show save dialog and copy file to user selected location (always save as WAV)
+      await this.selectOutputFileAndSave(result as string, true, '.wav');
+
       return true;
     } finally {
       fs.closeSync(file.fd);
-    }
-  }
-
-  private async processConversion(): Promise<void> {
-    this.processResult = 'Converting...';
-    const convertedData = await taskpool.execute(
-      audioConverterProcess, this.converterHandle);
-
-    if (convertedData) {
-      // Check if result is file path (string) or ArrayBuffer
-      if (typeof convertedData === 'string') {
-        // File mode: C++ layer saved to temp file
-        this.processResult = `Conversion complete, using file mode`;
-        await this.selectOutputFileAndSave(convertedData, true);
-      } else {
-        // Memory mode: data is in ArrayBuffer
-        const data = convertedData as ArrayBuffer;
-        this.processResult = `Conversion complete, output size: ${data.byteLength} bytes`;
-        await this.selectOutputFileAndSave(data, false);
-      }
-    } else {
-      this.processResult = 'Conversion failed';
-      Logger.error(TAG, 'AudioConverterProcess failed');
     }
   }
 
@@ -815,8 +830,9 @@ export struct AudioConversion {
       Logger.info(TAG, `WAV params: sampleRate=${sampleRate}, channels=${channels}, bitsPerSample=${bitsPerSample}`);
 
       // Get temp file size
-      const tempFile = fs.openSync(tempFilePath, fs.OpenMode.READ_ONLY);
-      const tempFileSize = fs.statSync(tempFile.fd).size;
+      const tempFile = await fs.open(tempFilePath, fs.OpenMode.READ_ONLY);
+      const tempFileStat = await fs.stat(tempFile.fd);
+      const tempFileSize = tempFileStat.size;
       Logger.info(TAG, `Temp file size: ${tempFileSize} bytes`);
 
       const dataSize = tempFileSize;
@@ -828,10 +844,10 @@ export struct AudioConversion {
       );
 
       // Open output file
-      const outputFile = fs.openSync(outputPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+      const outputFile = await fs.open(outputPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
 
       // Write header
-      fs.writeSync(outputFile.fd, header);
+      await fs.write(outputFile.fd, header);
 
       // Copy PCM data in chunks to avoid blocking UI
       const buffer = new ArrayBuffer(WAV_CHUNK_SIZE);
@@ -839,25 +855,27 @@ export struct AudioConversion {
 
       while (totalRead < tempFileSize) {
         const readSize = Math.min(WAV_CHUNK_SIZE, tempFileSize - totalRead);
-        const bytesRead = fs.readSync(tempFile.fd, buffer, { length: readSize });
+        const bytesRead = await fs.read(tempFile.fd, buffer, { length: readSize });
         if (bytesRead === 0) break;
 
-        fs.writeSync(outputFile.fd, buffer, { length: bytesRead });
+        await fs.write(outputFile.fd, buffer, { length: bytesRead });
         totalRead += bytesRead;
 
-        // Yield to UI thread periodically
+        // Yield to UI thread after each chunk to prevent blocking
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+
+        // Log progress periodically
         if (totalRead % (PROGRESS_UPDATE_INTERVAL * WAV_CHUNK_SIZE) === 0) {
-          await new Promise<void>(resolve => setTimeout(resolve, 0));
           Logger.info(TAG, `Progress: ${totalRead}/${tempFileSize} bytes (${((totalRead / tempFileSize) * 100).toFixed(1)}%)`);
         }
       }
 
-      fs.closeSync(tempFile.fd);
-      fs.closeSync(outputFile.fd);
+      await fs.close(tempFile.fd);
+      await fs.close(outputFile.fd);
 
       // Delete temp file
       try {
-        fs.unlinkSync(tempFilePath);
+        await fs.unlink(tempFilePath);
         Logger.info(TAG, `Temp file deleted: ${tempFilePath}`);
       } catch (e) {
         Logger.warn(TAG, `Failed to delete temp file: ${e}`);
@@ -871,24 +889,12 @@ export struct AudioConversion {
     }
   }
 
-  private destroyConverter(): void {
-    audioNapi.audioConverterDestroy(this.converterHandle);
-    this.converterHandle = 0;
-  }
-
   private cleanupOnError(): void {
     this.createResult = `Conversion failed`;
     this.processResult = `Conversion failed`;
     this.isConverting = false;
 
-    if (this.converterHandle !== 0) {
-      try {
-        audioNapi.audioConverterDestroy(this.converterHandle);
-        this.converterHandle = 0;
-      } catch (destroyError) {
-        Logger.error(TAG, `Failed to destroy converter: ${JSON.stringify(destroyError)}`);
-      }
-    }
+    this.converterHandle = 0;
   }
 
   async startConversion(): Promise<void> {
@@ -902,16 +908,12 @@ export struct AudioConversion {
         return;
       }
 
-      if (!await this.createConverter()) {
-        return;
+      const result = await this.createConverter();
+
+      if (result) {
+        this.createResult = 'Conversion completed';
       }
 
-      audioNapi.audioConverterSetInputCallback(this.converterHandle);
-
-      await this.processConversion();
-      this.destroyConverter();
-
-      this.createResult = 'Conversion completed';
       this.isConverting = false;
 
     } catch (e) {
