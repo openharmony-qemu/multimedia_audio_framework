@@ -301,6 +301,45 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
     return nodeInfo.sceneType;
 }
 
+void HpaeRendererManager::DisconnectNodeFromEffectChain(const HpaeNodeInfo &nodeInfo)
+{
+    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+        "could not find processorType %{public}d", nodeInfo.sceneType);
+    sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
+    sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
+    AUDIO_INFO_LOG("disconnected from sceneType %{public}d, current count is %{public}d",
+        nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]);
+    if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
+        AUDIO_INFO_LOG("sceneType default count is %{public}d",
+            sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
+    }
+    DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
+    sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+    sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererCreate(nodeInfo, sinkInfo_);
+}
+
+void HpaeRendererManager::SwitchBypassState(const std::shared_ptr<HpaeSinkInputNode> &node,
+    HpaeNodeInfo &nodeInfo, int32_t processClusterDecision)
+{
+    if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
+        processClusterDecision == USE_NONE_PROCESSCLUSTER) {
+        AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
+        DisconnectNodeFromEffectChain(nodeInfo);
+    } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
+        processClusterDecision != USE_NONE_PROCESSCLUSTER &&
+        GetProcessorType(nodeInfo.sessionId) == HPAE_SCENE_EFFECT_NONE) {
+        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(nodeInfo, sinkInfo_);
+        CreateProcessCluster(nodeInfo);
+        AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
+    } else {
+        AUDIO_INFO_LOG("sessionId: %{public}u refresh to %{public}d", nodeInfo.sessionId, processClusterDecision);
+        TriggerStreamState(nodeInfo.sessionId, node);
+        DeleteProcessCluster(nodeInfo.sessionId);
+        CreateProcessClusterAndConnect(nodeInfo);
+    }
+}
+
 void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node)
 {
     CHECK_AND_RETURN_LOG(node != nullptr, "sinkInputNode is nullptr");
@@ -319,35 +358,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     }
     if ((processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) ||
         (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass)) {
-        if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
-            processClusterDecision == USE_NONE_PROCESSCLUSTER) {
-            AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
-            CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
-                "could not find processorType %{public}d", nodeInfo.sceneType);
-            sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
-            sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
-            AUDIO_INFO_LOG("disconnected from sceneType %{public}d, current count is %{public}d",
-                nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]);
-            if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
-                sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
-                AUDIO_INFO_LOG("sceneType default count is %{public}d",
-                    sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
-            }
-            DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
-            sessionNodeMap_[nodeInfo.sessionId].bypass = true;
-            sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererCreate(nodeInfo, sinkInfo_);
-        } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
-            processClusterDecision != USE_NONE_PROCESSCLUSTER &&
-            GetProcessorType(nodeInfo.sessionId) == HPAE_SCENE_EFFECT_NONE) {
-            sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(nodeInfo, sinkInfo_);
-            CreateProcessCluster(nodeInfo);
-            AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
-        } else {
-            AUDIO_INFO_LOG("sessionId: %{public}u refresh to %{public}d", nodeInfo.sessionId, processClusterDecision);
-            TriggerStreamState(nodeInfo.sessionId, node);
-            DeleteProcessCluster(nodeInfo.sessionId);
-            CreateProcessClusterAndConnect(nodeInfo);
-        }
+        SwitchBypassState(node, nodeInfo, processClusterDecision);
     } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId) &&
         node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);

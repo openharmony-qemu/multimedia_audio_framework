@@ -39,14 +39,13 @@ static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
 static constexpr float SMALL_SIGNAL_NUM = 1e-6;
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 namespace {
 constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
-namespace OHOS {
-namespace AudioStandard {
-namespace HPAE {
-
 HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),

@@ -157,6 +157,8 @@ public:
     void LoadEffectProperties();
     ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType);
     int32_t GetOutputChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
+    int32_t GetOutputChannelInfo(const std::string &sceneType,
+        DeviceType deviceType, uint32_t renderId, uint32_t &channels, uint64_t &channelLayout);
     int32_t DeleteStreamVolume(const std::string StringSessionID);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
