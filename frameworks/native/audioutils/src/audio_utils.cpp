@@ -2631,7 +2631,7 @@ void BindBigAndMidCore()
 
 bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag)
 {
-    return ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLENMENTED);
+    return ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS
