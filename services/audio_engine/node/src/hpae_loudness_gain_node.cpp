@@ -221,8 +221,8 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
                     ERR_OPERATION_FAILED), "loudness lib handle create failed", false), ERROR));
         AudioEffectConfig ioBufferConfig;
         AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
-        ioBufferConfig.inputCfg = {pcmBufferInfo_.rate, pcmBufferInfo_.ch, DATA_FORMAT_F32, pcmBufferInfo_.channelLayout,
-            ENCODING_PCM};
+        ioBufferConfig.inputCfg = {pcmBufferInfo_.rate, pcmBufferInfo_.ch, DATA_FORMAT_F32,
+            pcmBufferInfo_.channelLayout, ENCODING_PCM};
         ioBufferConfig.outputCfg = ioBufferConfig.inputCfg;
         ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
         CHECK_AND_RETURN_RET(ret == 0,
