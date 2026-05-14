@@ -1949,7 +1949,7 @@ std::vector<std::pair<int32_t, AudioStreamType>> AudioStreamCollector::GetActive
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     std::vector<std::pair<int32_t, AudioStreamType>> result;
     for (auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING) {
+        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING && !changeInfo->backMute) {
             int32_t uid = changeInfo->clientUID;
             AudioStreamType streamType = GetStreamType(
                 changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage);
