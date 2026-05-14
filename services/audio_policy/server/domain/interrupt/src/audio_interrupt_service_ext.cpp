@@ -95,7 +95,7 @@ void AudioInterruptService::AudioInterruptDeathRecipient::OnRemoteDied(const wpt
 {
     std::shared_ptr<AudioInterruptService> service = service_.lock();
     if (service != nullptr) {
-        service->RemoveClient(ZONEID_DEFAULT, streamId_);
+        service->RemoveClient(streamId_);
     }
 }
 

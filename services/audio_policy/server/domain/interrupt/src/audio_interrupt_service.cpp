@@ -3427,33 +3427,31 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
 }
 
 // called when the client remote object dies
-void AudioInterruptService::RemoveClient(const int32_t zoneId, uint32_t streamId)
+void AudioInterruptService::RemoveClient(uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
-    AUDIO_INFO_LOG("Remove session: %{public}u in audioFocusInfoList", streamId);
-
-    auto itActiveZone = zonesMap_.find(ZONEID_DEFAULT);
-
     auto isSessionPresent = [&streamId] (const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
         return audioFocusInfo.first.streamId == streamId;
     };
-    auto iterActive = std::find_if((itActiveZone->second->audioFocusInfoList).begin(),
-        (itActiveZone->second->audioFocusInfoList).end(), isSessionPresent);
-    if (iterActive != (itActiveZone->second->audioFocusInfoList).end()) {
-        AudioInterrupt interruptToRemove = iterActive->first;
-        DeactivateAudioInterruptInternal(ZONEID_DEFAULT, interruptToRemove);
+    for (auto &zonePair : zonesMap_) {
+        CHECK_AND_CONTINUE(zonePair.second != nullptr);
+        auto iterActive = std::find_if((zonePair.second->audioFocusInfoList).begin(),
+            (zonePair.second->audioFocusInfoList).end(), isSessionPresent);
+        if (iterActive != (zonePair.second->audioFocusInfoList).end()) {
+            int32_t targetZoneId = zonePair.first;
+            AudioInterrupt interruptToRemove = iterActive->first;
+            DeactivateAudioInterruptInternal(targetZoneId, interruptToRemove);
+            AUDIO_INFO_LOG("Remove session: %{public}u in audioFocusInfoList from zone %{public}d",
+                streamId, targetZoneId);
+        }
+
+        // callback in zones map also need to be removed
+        if (zonePair.second->interruptCbsMap.find(streamId) != zonePair.second->interruptCbsMap.end()) {
+            zonePair.second->interruptCbsMap.erase(zonePair.second->interruptCbsMap.find(streamId));
+        }
     }
 
     interruptClients_.erase(streamId);
-
-    // callback in zones map also need to be removed
-    auto it = zonesMap_.find(zoneId);
-    if (it != zonesMap_.end() && it->second != nullptr &&
-        it->second->interruptCbsMap.find(streamId) != it->second->interruptCbsMap.end()) {
-        it->second->interruptCbsMap.erase(it->second->interruptCbsMap.find(streamId));
-        zonesMap_[zoneId] = it->second;
-    }
 }
 
 void AudioInterruptService::WriteFocusMigrateEvent(const int32_t &toZoneId)
