@@ -600,7 +600,7 @@ void AudioPolicyServiceGetProcessDeviceInfoFuzztest(const uint8_t *rawData, size
     GetServerPtr()->audioPolicyService_.GetProcessDeviceInfo(config, lockFlag, deviceInfo);
 }
 
-void AudioPolicyServiceGetPreferredDeviceInfoFuzztest(const uint8_t *rawData, size_t size)
+void AudioPolicyServiceGetVoipDeviceInfoFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -613,7 +613,7 @@ void AudioPolicyServiceGetPreferredDeviceInfoFuzztest(const uint8_t *rawData, si
     std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList;
     preferredDeviceList.push_back(fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    GetServerPtr()->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
 
 void AudioPolicyServiceInitSharedVolumeFuzztest(const uint8_t *rawData, size_t size)
@@ -953,7 +953,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceGetCurrentCapturerChangeInfosFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceUpdateDescWhenNoBTPermissionFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetProcessDeviceInfoFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredDeviceInfoFuzztest,
+    OHOS::AudioStandard::AudioPolicyServiceGetVoipDeviceInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceInitSharedVolumeFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetMaxRendererInstancesFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceRegisterBluetoothListenerFuzztest,
