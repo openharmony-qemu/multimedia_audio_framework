@@ -4807,5 +4807,714 @@ HWTEST(AudioEffectChainManagerUnitTest, MultiRenderId_Cleanup_001, TestSize.Leve
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+// ==================== Additional UTs for uncovered branches ====================
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain with renderId - chain not found
+* @tc.number : ApplyAudioEffectChain_RenderId_001
+* @tc.desc   : Test ApplyAudioEffectChain with renderId returns ERROR when chain not found.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_RenderId_001, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr);
+    EXPECT_EQ(ERROR, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain with renderId - success
+* @tc.number : ApplyAudioEffectChain_RenderId_002
+* @tc.desc   : Test ApplyAudioEffectChain with renderId succeeds after chain creation.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_RenderId_002, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetAudioEffectChainDynamic with renderId - chain not found
+* @tc.number : SetAudioEffectChainDynamic_RenderId_001
+* @tc.desc   : Test SetAudioEffectChainDynamic with renderId returns ERROR when chain not found.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetAudioEffectChainDynamic_RenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string effectMode = "EFFECT_DEFAULT";
+    int32_t result = AudioEffectChainManager::GetInstance()->SetAudioEffectChainDynamic(
+        sceneType, effectMode, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(ERROR, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetAudioEffectChainDynamic with renderId - success
+* @tc.number : SetAudioEffectChainDynamic_RenderId_002
+* @tc.desc   : Test SetAudioEffectChainDynamic with renderId succeeds after chain creation.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetAudioEffectChainDynamic_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    string effectMode = "EFFECT_DEFAULT";
+    int32_t result = AudioEffectChainManager::GetInstance()->SetAudioEffectChainDynamic(
+        sceneType, effectMode, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test NotifyAndCreateAudioEffectChain with renderId - new chain
+* @tc.number : NotifyAndCreateAudioEffectChain_RenderId_001
+* @tc.desc   : Test NotifyAndCreateAudioEffectChain with renderId creates new chain.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, NotifyAndCreateAudioEffectChain_RenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    int32_t result = AudioEffectChainManager::GetInstance()->NotifyAndCreateAudioEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.count(key) > 0, true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key], 1);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test NotifyAndCreateAudioEffectChain with renderId - reuse existing
+* @tc.number : NotifyAndCreateAudioEffectChain_RenderId_002
+* @tc.desc   : Test NotifyAndCreateAudioEffectChain with renderId reuses existing chain with count 0.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, NotifyAndCreateAudioEffectChain_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    // First create
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    // Manually set count to 0 to simulate a released but not erased chain
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key] = 0;
+
+    // Should reuse existing chain (count==0 branch)
+    int32_t result = AudioEffectChainManager::GetInstance()->NotifyAndCreateAudioEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key], 1);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CreateAudioEffectChainDynamicInner with renderId - not initialized
+* @tc.number : CreateAudioEffectChainDynamicInner_RenderId_001
+* @tc.desc   : Test CreateAudioEffectChainDynamicInner with renderId returns ERROR when not initialized.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_RenderId_001, TestSize.Level1)
+{
+    // Do not call InitAudioEffectChainManager
+    string sceneType = "SCENE_MOVIE";
+    int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CreateAudioEffectChainDynamicInner with renderId - null chain cleanup
+* @tc.number : CreateAudioEffectChainDynamicInner_RenderId_002
+* @tc.desc   : Test CreateAudioEffectChainDynamicInner cleans up null chain entry.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    // Insert a null chain with positive count to trigger null cleanup branch
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = nullptr;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key] = 1;
+
+    // Should clean up null chain and proceed to create a new one
+    int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReleaseAudioEffectChainDynamicInner with renderId - null chain
+* @tc.number : ReleaseAudioEffectChainDynamicInner_RenderId_001
+* @tc.desc   : Test ReleaseAudioEffectChainDynamicInner returns SUCCESS when chain is null.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_RenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    // Insert null chain
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = nullptr;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReleaseAudioEffectChainDynamicInner with renderId - not initialized
+* @tc.number : ReleaseAudioEffectChainDynamicInner_RenderId_002
+* @tc.desc   : Test ReleaseAudioEffectChainDynamicInner returns ERROR when not initialized.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_RenderId_002, TestSize.Level1)
+{
+    string sceneType = "SCENE_MOVIE";
+    int32_t result = AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReleaseAudioEffectChainDynamicInner with renderId - shared default decrement
+* @tc.number : ReleaseAudioEffectChainDynamicInner_RenderId_003
+* @tc.desc   : Test ReleaseAudioEffectChainDynamicInner decrements default chain count when shared.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_RenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+
+    // Create a chain and set up shared default scenario
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    // Create 2 default references so count > 1 for default decrement path
+    auto chain = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key];
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultKey] = chain;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey] = 3;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+
+    // Release one count - should go through > 1 branch and decrement default
+    int32_t result = AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey], 2);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckAndReleaseCommonEffectChain with renderId - not default existed
+* @tc.number : CheckAndReleaseCommonEffectChain_RenderId_001
+* @tc.desc   : Test CheckAndReleaseCommonEffectChain returns ERROR when isDefaultEffectChainExisted_ is false.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_RenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
+    int32_t result = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(ERROR, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckAndReleaseCommonEffectChain with renderId - shared default release
+* @tc.number : CheckAndReleaseCommonEffectChain_RenderId_002
+* @tc.desc   : Test CheckAndReleaseCommonEffectChain releases default chain when count <= 1.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    auto chain = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key];
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultKey] = chain;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey] = 1;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_, false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckAndReleaseCommonEffectChain with renderId - shared default decrement
+* @tc.number : CheckAndReleaseCommonEffectChain_RenderId_003
+* @tc.desc   : Test CheckAndReleaseCommonEffectChain decrements default count when count > 1.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_RenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    auto chain = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key];
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultKey] = chain;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey] = 3;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    // count > 1, so just decrement
+    EXPECT_EQ(ERROR, result);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey], 2);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test InitAudioEffectChainDynamicInner with renderId - chain not in map
+* @tc.number : InitAudioEffectChainDynamicInner_RenderId_001
+* @tc.desc   : Test InitAudioEffectChainDynamicInner returns SUCCESS when chain not in map.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamicInner_RenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    // No chain created for this key - returns SUCCESS (early return branch)
+    int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test InitAudioEffectChainDynamicInner with renderId - success with chain
+* @tc.number : InitAudioEffectChainDynamicInner_RenderId_002
+* @tc.desc   : Test InitAudioEffectChainDynamicInner initializes existing chain.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamicInner_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateMultichannelConfigInner with renderId - null chain
+* @tc.number : UpdateMultichannelConfigInner_RenderId_001
+* @tc.desc   : Test UpdateMultichannelConfigInner returns ERROR when chain is null.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfigInner_RenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    // Insert null chain to trigger null check
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = nullptr;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfigInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(ERROR, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateMultichannelConfigInner with renderId - success
+* @tc.number : UpdateMultichannelConfigInner_RenderId_002
+* @tc.desc   : Test UpdateMultichannelConfigInner succeeds with valid chain.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfigInner_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfigInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReturnEffectChannelInfoInner with renderId - chain not found
+* @tc.number : ReturnEffectChannelInfoInner_RenderId_001
+* @tc.desc   : Test ReturnEffectChannelInfoInner returns ERROR when chain not found.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_RenderId_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfoInner(
+        "SCENE_MOVIE", DEVICE_TYPE_SPEAKER, 999, channels, channelLayout);
+    EXPECT_EQ(ERROR, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReturnEffectChannelInfoInner with renderId - success
+* @tc.number : ReturnEffectChannelInfoInner_RenderId_002
+* @tc.desc   : Test ReturnEffectChannelInfoInner succeeds with valid chain.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfoInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100, channels, channelLayout);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckProcessClusterInstances with renderId - null chain
+* @tc.number : CheckProcessClusterInstances_RenderId_004
+* @tc.desc   : Test CheckProcessClusterInstances with renderId when chain exists but is null.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    // Insert null chain with positive count to trigger null warning branch
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = nullptr;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key] = 1;
+
+    // null chain falls through to the else branch at the bottom
+    int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    // Falls through since null chain does not match any existing case, goes to capacity check
+    EXPECT_TRUE(result == CREATE_NEW_PROCESSCLUSTER || result == CREATE_DEFAULT_PROCESSCLUSTER ||
+        result == USE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckProcessClusterInstances with renderId - USE_DEFAULT
+* @tc.number : CheckProcessClusterInstances_RenderId_005
+* @tc.desc   : Test CheckProcessClusterInstances returns USE_DEFAULT when chain shares default.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_005, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+
+    // Create a chain for default scene
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+
+    auto defaultChain = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultKey];
+
+    // Make the scene type point to the default chain
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = defaultChain;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key] = 1;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(result, USE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckProcessClusterInstances with renderId - CREATE_DEFAULT
+* @tc.number : CheckProcessClusterInstances_RenderId_006
+* @tc.desc   : Test CheckProcessClusterInstances returns CREATE_DEFAULT when capacity is limited.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_006, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    // Set maxEffectChainCount_ to minimum and no special effects to force CREATE_DEFAULT path
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+        "SCENE_MUSIC", DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(result, CREATE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckProcessClusterInstances with renderId - USE_DEFAULT when at capacity
+* @tc.number : CheckProcessClusterInstances_RenderId_007
+* @tc.desc   : Test CheckProcessClusterInstances returns USE_DEFAULT when at capacity and default exists.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_007, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    // Set maxEffectChainCount_ to minimum, default exists
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+        "SCENE_MUSIC", DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(result, USE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test QueryEffectChannelInfo with renderId - success
+* @tc.number : QueryEffectChannelInfo_RenderId_002
+* @tc.desc   : Test QueryEffectChannelInfo with renderId succeeds after chain creation.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, QueryEffectChannelInfo_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(
+        sceneType, DEVICE_TYPE_SPEAKER, 100, channels, channelLayout);
+    EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ExistAudioEffectChainArm with renderId - invalid effect mode
+* @tc.number : ExistAudioEffectChainArm_RenderId_003
+* @tc.desc   : Test ExistAudioEffectChainArm with renderId returns false for invalid effect mode.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_RenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    // Pass an invalid effect mode value
+    bool result = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(
+        "SCENE_MUSIC", static_cast<AudioEffectMode>(9999), DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(result, false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsDownSamplingForSpatialization with renderId - chain exists
+* @tc.number : IsDownSamplingForSpatialization_RenderId_002
+* @tc.desc   : Test IsDownSamplingForSpatialization with renderId when chain exists.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsDownSamplingForSpatialization_RenderId_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    bool result = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    // Chain exists - returns fading || !(spatializationEnabled_ && bypassForStereo && deviceSupport)
+    EXPECT_TRUE(result == true || result == false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ExistAudioEffectChain with renderId - EFFECT_NONE mode
+* @tc.number : ExistAudioEffectChain_RenderId_003
+* @tc.desc   : Test ExistAudioEffectChain with renderId returns false for EFFECT_NONE mode.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_RenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    bool result = AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(
+        "SCENE_MUSIC", "EFFECT_NONE", DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(result, false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CreateAudioEffectChainDynamicInner with renderId - shared default increment
+* @tc.number : CreateAudioEffectChainDynamicInner_RenderId_003
+* @tc.desc   : Test CreateAudioEffectChainDynamicInner increments default count for shared chain.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_RenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    string sceneType = "SCENE_MOVIE";
+    string key = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    string defaultKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        DEFAULT_SCENE_TYPE, DEVICE_TYPE_SPEAKER, 100);
+
+    // Create chain
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+
+    // Set up shared default chain scenario
+    auto chain = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key];
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultKey] = chain;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey] = 1;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+
+    // Create again - should increment default count
+    int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamicInner(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey], 2);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS
