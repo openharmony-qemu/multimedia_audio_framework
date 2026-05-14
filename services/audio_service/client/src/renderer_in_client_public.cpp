@@ -1827,8 +1827,9 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
         CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
         clientBuffer_->GetStaticPlayPosition(
             info.staticBufferInfo.currentLoopTimes_, info.staticBufferInfo.curStaticDataPos_);
-        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.bufferSize_ = staticBufferInfo_.bufferSize_;
         info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
+        info.staticSharedMemory = staticSharedMemory_;
         info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     }
 }

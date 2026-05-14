@@ -61,7 +61,8 @@ public:
     static constexpr int32_t PROCESS_VOLUME_MAX = 1 << 16; // 0 ~ 65536
     static bool CheckIfSupport(const AudioProcessConfig &config);
     static std::shared_ptr<AudioProcessInClient> Create(const AudioProcessConfig &config,
-        std::weak_ptr<FastAudioStream> weakStream);
+        std::weak_ptr<FastAudioStream> weakStream,
+        std::shared_ptr<AudioSharedMemory> sharedMemory = nullptr);
 
     virtual ~AudioProcessInClient() = default;
 

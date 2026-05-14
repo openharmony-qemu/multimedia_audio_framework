@@ -238,7 +238,8 @@ public:
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
 

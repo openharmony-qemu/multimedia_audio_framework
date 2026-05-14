@@ -140,7 +140,8 @@ public:
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     
-    bool Init(const AudioProcessConfig &config, std::weak_ptr<FastAudioStream> weakStream);
+    bool Init(const AudioProcessConfig &config, std::weak_ptr<FastAudioStream> weakStream,
+        std::shared_ptr<AudioSharedMemory> sharedMemory = nullptr);
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
 
@@ -341,6 +342,7 @@ private:
     std::mutex staticBufferMutex_;
     std::weak_ptr<AudioFirstFrameCallback> staticFirstFrameCallback_;
     std::atomic<bool> needNotifyStreamSilentChange_ = true;
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -418,7 +420,8 @@ void AudioProcessInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 }
 
 std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioProcessConfig &config,
-    std::weak_ptr<FastAudioStream> weakStream)
+    std::weak_ptr<FastAudioStream> weakStream,
+    std::shared_ptr<AudioSharedMemory> sharedMemory)
 {
     AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d, streamType %{public}d.",
         config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags, config.streamType);
@@ -459,7 +462,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
         "Create failed when iface_cast.");
     std::shared_ptr<AudioProcessInClientInner> process =
         std::make_shared<AudioProcessInClientInner>(iProcessProxy, isVoipMmap);
-    if (!process->Init(config, weakStream)) {
+    if (!process->Init(config, weakStream, sharedMemory)) {
         AUDIO_ERR_LOG("Init failed!");
         process = nullptr;
     }
@@ -707,14 +710,15 @@ bool AudioProcessInClientInner::CopyStaticBufferData()
     CHECK_AND_RETURN_RET_LOG(audioBuffer_->GetDataBase() != nullptr, false,
         "audioBuffer_->GetDataBase() is nullptr");
 
-    auto sharedMemory = processConfig_.staticBufferInfo.sharedMemory_;
-    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr && sharedMemory->GetSize() == audioBuffer_->GetDataSize(),
-        false, "sharedMemory %{public}d is inValid!", sharedMemory != nullptr);
+    CHECK_AND_RETURN_RET_LOG(staticSharedMemory_ != nullptr &&
+        staticSharedMemory_->GetSize() == audioBuffer_->GetDataSize(),
+        false, "staticSharedMemory_ %{public}d is inValid!", staticSharedMemory_ != nullptr);
     int32_t copyRet = memcpy_s(audioBuffer_->GetDataBase(), audioBuffer_->GetDataSize(),
-        sharedMemory->GetBase(), sharedMemory->GetSize());
+        staticSharedMemory_->GetBase(), staticSharedMemory_->GetSize());
     CHECK_AND_RETURN_RET_LOG(copyRet == SUCCESS,
         false, "memcpy static buffer data failed, ret:%{public}d", copyRet);
-    AUDIO_INFO_LOG("Static mode: copied data from client to server buffer, size:%{public}zu", sharedMemory->GetSize());
+    AUDIO_INFO_LOG("Static mode: copied data from client to server buffer, size:%{public}zu",
+        staticSharedMemory_->GetSize());
     return true;
 }
 
@@ -881,10 +885,12 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
 }
 
-bool AudioProcessInClientInner::Init(const AudioProcessConfig &config, std::weak_ptr<FastAudioStream> weakStream)
+bool AudioProcessInClientInner::Init(const AudioProcessConfig &config, std::weak_ptr<FastAudioStream> weakStream,
+    std::shared_ptr<AudioSharedMemory> sharedMemory)
 {
     AUDIO_INFO_LOG("Call Init.");
     processConfig_ = config;
+    staticSharedMemory_ = sharedMemory;
     clientByteSizePerFrame_ = GetFormatSize(config.streamInfo);
 
     AUDIO_DEBUG_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);

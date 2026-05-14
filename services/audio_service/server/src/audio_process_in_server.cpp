@@ -1544,9 +1544,9 @@ int32_t AudioProcessInServer::CreateServerBuffer()
     
     uint32_t sizeInFrame = totalSizeInframe_;
     if (processConfig_.rendererInfo.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(processConfig_.staticBufferInfo.sharedMemory_ != nullptr,
-            ERR_OPERATION_FAILED, "sharedMemory is nullptr");
-        sizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame;
+        CHECK_AND_RETURN_RET_LOG(processConfig_.staticBufferInfo.bufferSize_ > 0,
+            ERR_OPERATION_FAILED, "bufferSize is invalid");
+        sizeInFrame = processConfig_.staticBufferInfo.bufferSize_ / byteSizePerFrame;
     }
 
     processBuffer_ = OHAudioBufferBase::CreateFromLocal(sizeInFrame, byteSizePerFrame);

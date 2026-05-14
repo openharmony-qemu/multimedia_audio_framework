@@ -204,6 +204,7 @@ public:
     mutable bool isStillZeroStreamVolume_ = false;
     mutable std::shared_ptr<AudioDeviceDescriptor> selectedDevice_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 

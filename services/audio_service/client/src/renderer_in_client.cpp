@@ -249,12 +249,12 @@ int32_t RendererInClientInner::CopyStaticBufferData()
     CHECK_AND_RETURN_RET_LOG(clientBuffer_->GetDataBase() != nullptr, ERR_OPERATION_FAILED,
         "clientBuffer_->GetDataBase() is nullptr");
 
-    auto sharedMemory = staticBufferInfo_.sharedMemory_;
-    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr && sharedMemory->GetSize() == clientBuffer_->GetDataSize(),
-        ERR_OPERATION_FAILED, "sharedMemory %{public}d is inValid!", sharedMemory != nullptr);
+    CHECK_AND_RETURN_RET_LOG(staticSharedMemory_ != nullptr &&
+        staticSharedMemory_->GetSize() == clientBuffer_->GetDataSize(),
+        ERR_OPERATION_FAILED, "staticSharedMemory_ %{public}d is inValid!", staticSharedMemory_ != nullptr);
     
     int32_t copyRet = memcpy_s(clientBuffer_->GetDataBase(), clientBuffer_->GetDataSize(),
-        sharedMemory->GetBase(), sharedMemory->GetSize());
+        staticSharedMemory_->GetBase(), staticSharedMemory_->GetSize());
     CHECK_AND_RETURN_RET_LOG(copyRet == SUCCESS, ERR_OPERATION_FAILED,
         "memcpy static buffer data failed, ret: %{public}d", copyRet);
     
@@ -1441,10 +1441,12 @@ void RendererInClientInner::CheckOperations()
     }
 }
 
-void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+    std::shared_ptr<AudioSharedMemory> sharedMemory)
 {
     CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support!");
     staticBufferInfo_ = staticBufferInfo;
+    staticSharedMemory_ = sharedMemory;
 }
 
 void RendererInClientInner::CheckFrozenStateInStaticMode()

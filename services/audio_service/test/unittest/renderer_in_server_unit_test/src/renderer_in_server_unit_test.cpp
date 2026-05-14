@@ -4313,7 +4313,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServer_CreateServerBuffer_NonStatic
  * @tc.name  : Test CreateServerBuffer branch
  * @tc.type  : FUNC
  * @tc.number: RendererInServer_CreateServerBuffer_Static_001
- * @tc.desc  : Test CreateServerBuffer with isStatic=true, verify staticBufferProvider/staticBufferProcessor are created.
+ * @tc.desc  : Test CreateServerBuffer with isStatic=true, verify staticBufferProvider/Processor are created.
  */
 HWTEST_F(RendererInServerUnitTest, RendererInServer_CreateServerBuffer_Static_001, TestSize.Level1)
 {
@@ -4321,7 +4321,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServer_CreateServerBuffer_Static_00
         AudioChannelLayout::CH_LAYOUT_MONO);
     InitAudioProcessConfig(testStreamInfo);
     processConfig.rendererInfo.isStatic = true;
-    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(1024, "test_static_buffer");
+    processConfig.staticBufferInfo.bufferSize_ = 1024;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
     

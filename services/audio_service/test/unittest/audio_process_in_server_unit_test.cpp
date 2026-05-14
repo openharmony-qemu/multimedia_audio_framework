@@ -2529,7 +2529,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_001, TestSize.L
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.staticBufferInfo.bufferSize_ = 10;
     configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
@@ -2559,7 +2559,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_002, TestSize.L
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.staticBufferInfo.bufferSize_ = 10;
     configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
@@ -2590,7 +2590,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_stop_001, TestSize.Lev
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.staticBufferInfo.bufferSize_ = 10;
     configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
@@ -2619,7 +2619,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_configbuffer_001, Test
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.staticBufferInfo.bufferSize_ = 10;
     configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
@@ -2642,7 +2642,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeOut_001,
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.staticBufferInfo.bufferSize_ = 10;
     configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
@@ -2681,7 +2681,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeIn_001, 
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.staticBufferInfo.bufferSize_ = 10;
     configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
@@ -3333,13 +3333,13 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_CreateServerBuffer_Non
  * @tc.name  : Test CreateServerBuffer branch
  * @tc.type  : FUNC
  * @tc.number: AudioProcessInServer_CreateServerBuffer_Static_001
- * @tc.desc  : Test CreateServerBuffer with isStatic=true, verify staticBufferProvider/staticBufferProcessor are created.
+ * @tc.desc  : Test CreateServerBuffer with isStatic=true, verify staticBufferProvider/Processor are created.
  */
 HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_CreateServerBuffer_Static_001, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     configRet.rendererInfo.isStatic = true;
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(1024, "test_static_buffer");
+    configRet.staticBufferInfo.bufferSize_ = 1024;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     
