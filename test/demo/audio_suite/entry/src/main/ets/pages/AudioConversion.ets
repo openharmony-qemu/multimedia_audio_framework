@@ -1,1013 +1,1997 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd. 2026-2026. All rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <string>
+#include <map>
+#include <algorithm>
+#include <sys/stat.h>
+#include <new>
+#include "napi/native_api.h"
+#include <unistd.h>
+#include "hilog/log.h"
+#include "ohaudio/native_audiocapturer.h"
+#include "ohaudio/native_audiorenderer.h"
+#include "ohaudio/native_audiostreambuilder.h"
+#include "ohaudio/native_audiostream_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
+#include "NodeManager.h"
+#include "audioEffectNode/EffectNode.h"
+#include "audioEffectNode/VoiceBeautifier.h"
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <filemanagement/file_uri/oh_file_uri.h>
+#include "callback/RegisterCallback.h"
+#include "audioSuiteError/AudioSuiteError.h"
+#include "audioEffectNode/Input.h"
+#include "audioEffectNode/Output.h"
+#include "audioEffectNode/ParseNapiParam.h"
+#include "audioEffectNode/Equalizer.h"
+#include "audioEffectNode/SoundField.h"
+#include "audioEffectNode/NoiseReduction.h"
+#include "audioEffectNode/EnvEffect.h"
+#include "audioEffectNode/SpaceRender.h"
+#include "audioEffectNode/AissEffect.h"
+#include "audioEffectNode/SoundSpeedTone.h"
+#include "audioEffectNode/VoiceChange.h"
+#include "callback/RegisterCallbackNapi.h"
+#include "./utils/Utils.h"
+#include "realTimePlay/RealTimePlaying.h"
+#include "multiPipelineEdit/MultiPipelineEdit.h"
+#include "audioRecord/AudioRecord.h"
+#include "AudioRenderer.h"
+#include "timeline/Timeline_napi.h"
+#include <multimedia/player_framework/native_avdemuxer.h>
+#include <multimedia/player_framework/native_avsource.h>
+#include <multimedia/player_framework/native_avcodec_base.h>
+#include <multimedia/player_framework/native_avformat.h>
+#include <multimedia/player_framework/native_avbuffer.h>
+#include <fcntl.h>
+#include "ohaudiosuite/native_audio_converter.h"
+#include <cmath>
 
-import { Logger } from '../utils/Logger';
-import { StyleConst } from '../utils/StyleConst';
-import audioNapi from 'libentry.so';
-import { common } from '@kit.AbilityKit';
-import { picker } from '@kit.CoreFileKit';
-import { BusinessError } from '@kit.BasicServicesKit';
-import fs from '@ohos.file.fs';
-import { fileUri } from '@kit.CoreFileKit';
-import { taskpool } from '@kit.ArkTS';
+const int GLOBAL_RESMGR = 0xFF00;
+static char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
 
-const TAG: string = 'AudioConversion';
+const int MAX_PLAY_RESULT_BUFFER_SIZE = 1024 * 1024 * 1024;
 
-// Concurrent function for background audio conversion
-@Concurrent
-function convertAudioInBackground(
-  inputEncodingType: number,
-  inputSamplingRate: number,
-  inputChannelLayout: number,
-  inputSampleFormat: number,
-  outputEncodingType: number,
-  outputSamplingRate: number,
-  outputChannelLayout: number,
-  outputSampleFormat: number,
-  fd: number
-): ESObject {
-  let inputFormat: ESObject = {
-    encodingType: inputEncodingType,
-    samplingRate: inputSamplingRate,
-    channelLayout: inputChannelLayout,
-    sampleFormat: inputSampleFormat
-  };
-  let outputFormat: ESObject = {
-    encodingType: outputEncodingType,
-    samplingRate: outputSamplingRate,
-    channelLayout: outputChannelLayout,
-    sampleFormat: outputSampleFormat
-  };
-  return audioNapi.audioConverterCreate(inputFormat, outputFormat, fd);
-}
+const int SAMPLINGRATE_MULTI = 20;
+const int CHANNELCOUNT_MULTI = 1000;
+const int BITSPERSAMPLE_MULTI = 8;
+const int INPUTNODES_SIZE2 = 2;
 
-// Sample format enum
-enum AudioSampleFormat {
-  AUDIO_SAMPLE_U8 = 0,
-  AUDIO_SAMPLE_S16LE = 1,
-  AUDIO_SAMPLE_S24LE = 2,
-  AUDIO_SAMPLE_S32LE = 3,
-  AUDIO_SAMPLE_F32LE = 4
-}
+OH_AudioConverter* g_converter = nullptr;
+uint8_t *g_inputData = nullptr;
+uint32_t g_inputDataLen = 0;
+uint32_t g_outputDataLen = 0; // Length of the output data
+uint32_t g_dataOffset = 0; // Offset of the read data
 
-// Sample rate enum
-enum AudioSampleRate {
-  AUDIO_SAMPLE_RATE_8000 = 8000,
-  AUDIO_SAMPLE_RATE_11025 = 11025,
-  AUDIO_SAMPLE_RATE_12000 = 12000,
-  AUDIO_SAMPLE_RATE_16000 = 16000,
-  AUDIO_SAMPLE_RATE_22050 = 22050,
-  AUDIO_SAMPLE_RATE_24000 = 24000,
-  AUDIO_SAMPLE_RATE_32000 = 32000,
-  AUDIO_SAMPLE_RATE_44100 = 44100,
-  AUDIO_SAMPLE_RATE_48000 = 48000,
-  AUDIO_SAMPLE_RATE_64000 = 64000,
-  AUDIO_SAMPLE_RATE_88200 = 88200,
-  AUDIO_SAMPLE_RATE_96000 = 96000,
-  AUDIO_SAMPLE_RATE_176400 = 176400,
-  AUDIO_SAMPLE_RATE_192000 = 192000
-}
+// Output file and path
+static FILE* g_outputFile = nullptr;
+static char g_outputFilePath[512] = {0};
 
-// Encoding type enum
-enum AudioEncodingType {
-  AUDIO_ENCODING_TYPE_RAW = 0
-}
+// Input file state
+static int g_inputFd = -1;                    // Input file descriptor
+static uint32_t g_inputWavDataStart = 0;      // WAV data start position
+static uint32_t g_inputWavDataSize = 0;       // WAV data size
 
-// Channel layout enum
-enum AudioChannelLayout {
-  CH_LAYOUT_MONO = 4,
-  CH_LAYOUT_STEREO = 3,
-  CH_LAYOUT_STEREO_DOWNMIX = 1610612736,
-  CH_LAYOUT_2POINT1 = 11,
-  CH_LAYOUT_3POINT0 = 259,
-  CH_LAYOUT_SURROUND = 7,
-  CH_LAYOUT_3POINT1 = 15,
-  CH_LAYOUT_4POINT0 = 263,
-  CH_LAYOUT_QUAD_SIDE = 1539,
-  CH_LAYOUT_QUAD = 51,
-  CH_LAYOUT_2POINT0POINT2 = 206158430211,
-  CH_LAYOUT_4POINT1 = 271,
-  CH_LAYOUT_5POINT0 = 1543,
-  CH_LAYOUT_5POINT0_BACK = 55,
-  CH_LAYOUT_2POINT1POINT2 = 206158430219,
-  CH_LAYOUT_3POINT0POINT2 = 206158430215,
-  CH_LAYOUT_5POINT1 = 1551,
-  CH_LAYOUT_5POINT1_BACK = 63,
-  CH_LAYOUT_6POINT0 = 1799,
-  CH_LAYOUT_3POINT1POINT2 = 20495,
-  CH_LAYOUT_6POINT0_FRONT = 1731,
-  CH_LAYOUT_HEXAGONAL = 311,
-  CH_LAYOUT_6POINT1 = 1807,
-  CH_LAYOUT_6POINT1_BACK = 319,
-  CH_LAYOUT_6POINT1_FRONT = 1739,
-  CH_LAYOUT_7POINT0 = 1591,
-  CH_LAYOUT_7POINT0_FRONT = 1735,
-  CH_LAYOUT_7POINT1 = 1599,
-  CH_LAYOUT_OCTAGONAL = 1847,
-  CH_LAYOUT_5POINT1POINT2 = 206158431759,
-  CH_LAYOUT_7POINT1_WIDE = 255,
-  CH_LAYOUT_7POINT1_WIDE_BACK = 255
-}
+const uint32_t WAV_HEADER_SIZE = 44;
+const uint32_t INPUT_BUFFER_SIZE = 256 * 1024;
+const int32_t OUTPUT_BUFFER_SIZE = 1024 * 1024;
+const int32_t ZERO_OUTPUT_THRESHOLD = 10;
 
-// WAV file constants
-const WAV_HEADER_SIZE = 44;
-const WAV_CHUNK_SIZE = 1024 * 1024; // 1MB
-const PROGRESS_UPDATE_INTERVAL = 10; // Update progress every 10 chunks
-const MAX_CHANNELS = 8;
-const BITS_PER_SAMPLE_8 = 8;
-const BITS_PER_SAMPLE_16 = 16;
-const BITS_PER_SAMPLE_24 = 24;
-const BITS_PER_SAMPLE_32 = 32;
+const int32_t CHANNEL_COUNT_MONO = 1;
+const int32_t CHANNEL_COUNT_STEREO = 2;
+const int32_t CHANNEL_COUNT_2POINT1 = 3;
+const int32_t CHANNEL_COUNT_QUAD = 4;
+const int32_t CHANNEL_COUNT_5POINT0 = 5;
+const int32_t CHANNEL_COUNT_5POINT1 = 6;
+const int32_t CHANNEL_COUNT_7POINT0 = 7;
+const int32_t CHANNEL_COUNT_7POINT1 = 8;
 
-// WAV header offset constants
-const WAV_OFFSET_RIFF = 0;
-const WAV_OFFSET_FILE_SIZE = 4;
-const WAV_OFFSET_WAVE = 8;
-const WAV_OFFSET_FMT = 12;
-const WAV_OFFSET_FMT_CHUNK_SIZE = 16;
-const WAV_OFFSET_AUDIO_FORMAT = 20;
-const WAV_OFFSET_NUM_CHANNELS = 22;
-const WAV_OFFSET_SAMPLE_RATE = 24;
-const WAV_OFFSET_BYTE_RATE = 28;
-const WAV_OFFSET_BLOCK_ALIGN = 32;
-const WAV_OFFSET_BITS_PER_SAMPLE = 34;
-const WAV_OFFSET_DATA = 36;
-const WAV_OFFSET_DATA_SIZE = 40;
+// Bits per sample constants
+const int32_t BITS_PER_SAMPLE_8 = 8;
+const int32_t BITS_PER_SAMPLE_16 = 16;
+const int32_t BITS_PER_SAMPLE_24 = 24;
+const int32_t BITS_PER_SAMPLE_32 = 32;
 
-// WAV audio format constants
-const WAV_AUDIO_FORMAT_PCM = 1;
-const WAV_AUDIO_FORMAT_IEEE_FLOAT = 3;
-const WAV_FMT_CHUNK_SIZE = 16;
-const WAV_DATA_CHUNK_HEADER_SIZE = 36;
+// Sample format multiplier constants
+const int32_t SAMPLE_FORMAT_MULTIPLIER_1 = 1;
+const int32_t SAMPLE_FORMAT_MULTIPLIER_2 = 2;
 
-// Audio converter format
-interface AudioConverterFormat {
-  encodingType: number;
-  samplingRate: number;
-  channelLayout: number;
-  sampleFormat: number;
-}
+const int32_t ARGVNUM_0 = 0;
+const int32_t ARGVNUM_1 = 1;
+const int32_t ARGVNUM_2 = 2;
+const int32_t ARGVNUM_3 = 3;
 
-@Builder
-function AudioConversionBuilder() {
-  AudioConversion()
-}
+// WAV header info structure
+struct WavHeaderInfo {
+    uint32_t samplingRate;
+    uint16_t numChannels;
+    uint16_t bitsPerSample;
+    uint16_t audioFormat;
+};
 
-export { AudioConversionBuilder };
+// File info structure
+struct FileInfo {
+    uint32_t samplingRate;
+    uint16_t numChannels;
+    int64_t channelLayout;
+    int32_t sampleFormat;
+    off_t fileSize;
+};
 
-@Component
-export struct AudioConversion {
-  pageInfos: NavPathStack = new NavPathStack();
-  @State message: string = '音频格式转换';
-  @State converterHandle: number = 0;
-  @State createResult: string = '';
-  @State processResult: string = '';
-  @State selectedFileUri: string = '';
-  @State selectedFileName: string = '';
-  @State fileInfo: audioNapi.AudioFileInfo | null = null;
-  @State fileFd: number = -1;
-  @State outputFilePath: string = '';
-  @State outputFileName: string = '';
-  @State inputFormat: AudioConverterFormat = {
-    encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
-    samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
-    channelLayout: 3,
-    sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE
-  };
-  @State outputFormat: AudioConverterFormat = {
-    encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
-    samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_48000,
-    channelLayout: 3,
-    sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE
-  };
-  @State isConverting: boolean = false;
-  private context = getContext(this) as common.UIAbilityContext;
+// Process state structure
+struct ProcessState {
+    int32_t bufferSize;
+    int32_t processCount;
+    int32_t zeroOutputCount;
+    bool hasError;
+};
 
-  @Builder
-  buildHeaderSection() {
-    Column() {
-      Text(this.message)
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 10, bottom: 10 })
+// WAV file info structure
+struct WavFileInfo {
+    uint32_t dataStart;
+    uint32_t dataSize;
+    bool isValid;
+};
 
-      Button('选择音频文件')
-        .width('90%')
-        .height(40)
-        .margin({ top: 5 })
-        .onClick(() => {
-          this.selectAudioFile();
-        })
+const int32_t WAV_RIFF_HEADER_SIZE = 12; // WAV RIFF: 12
+const int32_t WAV_CHUNK_HEADER_SIZE = 8; // WAV: 8
+const int32_t WAV_CHUNK_SIZE_OFFSET = 4; // WAV: 4
 
-      Text(this.selectedFileName)
-        .fontSize(12)
-        .fontColor(Color.Yellow)
-        .margin({ top: 3, bottom: 5 })
+const int32_t WAV_AUDIO_FORMAT_OFFSET = 20; // WAV: 20
+const int32_t WAV_SAMPLE_RATE_OFFSET = 24; // WAV: 24
+const int32_t WAV_NUM_CHANNELS_OFFSET = 22; // WAV: 22
+const int32_t WAV_BITS_PER_SAMPLE_OFFSET = 34; // WAV: 34
+const int32_t SAMPLING_FORMAT_THREE = 3;
+
+const int32_t INDEXTWO = 2;
+const int32_t INDEXTHREE = 3;
+
+const int32_t OFFSET_TWO = 2;
+const int32_t OFFSET_THREE = 3;
+const int32_t OFFSET_EIGHT = 8;
+const int32_t OFFSET_SIXTEEN = 16;
+const int32_t OFFSET_TWENTY_FOUR = 24;
+const int32_t INVALID_FD = -1;
+const char DATA_CHUNK_ID[] = {'d', 'a', 't', 'a'};
+const int32_t DATA_HEADER_INDEX[] = {'R', 'I', 'F', 'F'};
+const int32_t DIRECTORY_PERMISSIONS = 0755;
+const int32_t FILE_PERMISSIONS = 0644;
+const int32_t TM_YEAR_BASE = 1900;
+const int32_t TM_MONTH_OFFSET = 1;
+
+// Timestamp format constants
+const int32_t TIMESTAMP_YEAR_WIDTH = 4;
+const int32_t TIMESTAMP_DATE_WIDTH = 2;
+
+// Return codes
+const int32_t RETURN_SUCCESS = 0;
+const int32_t RETURN_FAILED = 1;
+
+// Pipeline indices
+const int32_t FIRST_PIPELINE_INDEX = 0;
+
+// Threadsafe function parameters
+const int32_t TSFN_INITIAL_QUEUE_SIZE = 0;
+const int32_t TSFN_THREAD_COUNT = 1;
+
+// Callback argument counts
+const int32_t ARG_COUNT_1 = 1;
+const int32_t ARG_COUNT_2 = 2;
+const int32_t ARG_COUNT_3 = 3;
+const int32_t ARG_COUNT_4 = 4;
+const int32_t ARG_COUNT_5 = 5;
+
+static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioEditNodeInit start");
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    // Parsing Work Mode
+
+    // Create Engine
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_Create(&g_audioSuiteEngine);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest OH_AudioEditEngine_Create result: %{public}d",
+        static_cast<int>(result));
+    // Determine the current work mode based on the input parameters
+    unsigned int mode = -1;
+    napi_status status = napi_get_value_uint32(env, argv[0], &mode);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest OH_AudioEditEngine_CreatePipeline"
+            "napi_get_value_uint32 error: %{public}d", status);
+        result = OH_AudioSuiteEngine_Destroy(g_audioSuiteEngine);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+            "audioEditTest OH_audioSuiteEngine_Destroy result: %{public}d", static_cast<int>(result));
+        delete[] argv;
+        return nullptr;
     }
-    .width('90%')
-  }
-
-  @Builder
-  buildInputFormatSection() {
-    if (this.fileInfo) {
-      Column() {
-        Text('输入格式（自动解析）')
-          .fontSize(14)
-          .fontWeight(FontWeight.Bold)
-          .margin({ bottom: 5 })
-          .fontColor(Color.Green)
-
-        Row() {
-          Text(`采样率: ${this.inputFormat.samplingRate}Hz`)
-            .fontSize(12)
-            .fontColor(Color.Gray)
-          Blank()
-          Text(`声道: ${this.fileInfo?.numChannels ?? 0}`)
-            .fontSize(12)
-            .fontColor(Color.Gray)
-        }
-        .width('100%')
-        .margin({ bottom: 3 })
-
-        Row() {
-          Text(`采样格式: ${this.getSampleFormatName(this.inputFormat.sampleFormat)}`)
-            .fontSize(12)
-            .fontColor(Color.Gray)
-        }
-        .width('100%')
-      }
-      .width('90%')
-      .padding(10)
-      .backgroundColor('#1A1A1A')
-      .borderRadius(8)
-      .margin({ top: 5, bottom: 5 })
-    }
-  }
-
-  @Builder
-  buildOutputConfigSection() {
-    Column() {
-      this.FormatConfigSection('输出格式', this.outputFormat, (newFormat: AudioConverterFormat) => {
-        this.outputFormat = {
-          encodingType: newFormat.encodingType,
-          samplingRate: newFormat.samplingRate,
-          channelLayout: newFormat.channelLayout,
-          sampleFormat: newFormat.sampleFormat
-        };
-      }, false)
-    }
-    .width('90%')
-    .margin({ top: 5, bottom: 10 })
-  }
-
-  @Builder
-  buildConversionControls() {
-    if (this.createResult) {
-      Text(this.createResult)
-        .fontSize(12)
-        .fontColor(Color.Yellow)
-        .margin({ top: 3, bottom: 3 })
-    }
-
-    if (!this.isConverting) {
-      Button('开始转换')
-        .width('90%')
-        .height(40)
-        .margin({ top: 5 })
-        .enabled(this.selectedFileUri !== '' && this.fileInfo !== null)
-        .onClick(() => {
-          this.startConversion();
-        })
-
-      if (this.processResult) {
-        Text(this.processResult)
-          .fontSize(12)
-          .fontColor(Color.Yellow)
-          .margin({ top: 3, bottom: 3 })
-      }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---AudioEditNodeInit--workMode==%{public}d",
+        mode);
+    OH_AudioSuite_PipelineWorkMode workMode;
+    if (mode == OH_AudioSuite_PipelineWorkMode::AUDIOSUITE_PIPELINE_EDIT_MODE) {
+        workMode = OH_AudioSuite_PipelineWorkMode::AUDIOSUITE_PIPELINE_EDIT_MODE;
+    } else if (mode == OH_AudioSuite_PipelineWorkMode::AUDIOSUITE_PIPELINE_REALTIME_MODE) {
+        workMode = OH_AudioSuite_PipelineWorkMode::AUDIOSUITE_PIPELINE_REALTIME_MODE;
     } else {
-      Text('转换中...')
-        .fontSize(18)
-        .fontColor(Color.Green)
-        .margin({ top: 20, bottom: 20 })
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest OH_AudioEditEngine_CreatePipeline workMode error: %{public}d", workMode);
+        result = OH_AudioSuiteEngine_Destroy(g_audioSuiteEngine);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+            "audioEditTest OH_audioSuiteEngine_Destroy result: %{public}d", static_cast<int>(result));
+        delete[] argv;
+        return nullptr;
     }
-  }
+    // Create Pipeline
+    result = OH_AudioSuiteEngine_CreatePipeline(g_audioSuiteEngine, &g_audioSuitePipeline, workMode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d", static_cast<int>(result));
+    // Instantiate NodeManager
+    g_singlePipelineNodeManager = std::make_shared<NodeManager>(g_audioSuitePipeline);
+    g_nodeManager = g_singlePipelineNodeManager;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest createNodeManager result: %{public}d",
+        static_cast<int>(g_nodeManager->getAllNodes().size()));
 
-  build() {
-    NavDestination() {
-      Scroll() {
-        Column() {
-          this.buildHeaderSection()
-          this.buildInputFormatSection()
-          this.buildOutputConfigSection()
-          this.buildConversionControls()
-        }
-        .width('100%')
-        .padding({ left: 10, right: 10 })
-      }
-      .width('100%')
-      .height('100%')
-      .backgroundColor('#8161c4')
+    napi_value napiValue;
+    napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
+    return napiValue;
+}
+
+// deallocate memory
+static void Clear()
+{
+    // Release the map memory
+    g_writeDataBufferMap.clear();
+    for (auto &pair : g_userDataMap) {
+        delete pair.second; // Delete the object pointed to by the pointer
     }
-    .onReady((context: NavDestinationContext) => {
-      this.pageInfos = context.pathStack;
-    })
-    .title('音频格式转换')
-    .height('100%')
-    .width('100%')
-  }
+    g_userDataMap.clear();
+    Timeline::GetInstance().DeleteAllAudioTrack();
+}
 
-  @Builder
-  buildSampleRateSelector(isInput: boolean, onChange: (format: AudioConverterFormat) => void) {
-    Row() {
-      Text('采样率:')
-        .width('30%')
-      Select([
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_8000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_11025.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_12000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_16000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_22050.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_24000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_32000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_44100.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_48000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_64000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_88200.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_96000.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_176400.toString() },
-        { value: AudioSampleRate.AUDIO_SAMPLE_RATE_192000.toString() }
-      ])
-        .selected(this.getSampleRateIndex(isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate))
-        .onSelect((index: number) => {
-          const rates = [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000,
-            88200, 96000, 176400, 192000];
-          Logger.info(TAG,
-            `${isInput ? 'Input' : 'Output'} samplingRate selected: index=${index}, ` +
-              `value=${rates[index]}`);
-          let newFormat: AudioConverterFormat = {
-            encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
-            samplingRate: rates[index],
-            channelLayout: isInput ? this.inputFormat.channelLayout : this.outputFormat.channelLayout,
-            sampleFormat: isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat
-          };
-          onChange(newFormat);
-          Logger.info(TAG,
-            `${isInput ? 'Input' : 'Output'}Format updated: ${JSON.stringify(newFormat)}`);
-        })
+// release selected inputNode
+static void ClearByInputId(const std::string& inputId, long startTime)
+{
+    auto it = g_writeDataBufferMap.find(inputId.c_str() + std::to_string(startTime));
+    if (it != g_writeDataBufferMap.end()) {
+        g_writeDataBufferMap.erase(it);
     }
-    .width('100%')
-    .margin({ bottom: 5 })
-  }
+    bool ret = Timeline::GetInstance().DeleteAudioTrack(inputId);
+}
 
-  @Builder
-  buildChannelLayoutSelector(isInput: boolean, onChange: (format: AudioConverterFormat) => void) {
-    Row() {
-      Text('声道布局:')
-        .width('30%')
-      Select([
-        { value: 'MONO' },
-        { value: 'STEREO' },
-        { value: 'STEREO_DOWNMIX' },
-        { value: '2POINT1' },
-        { value: '3POINT0' },
-        { value: 'SURROUND' },
-        { value: '3POINT1' },
-        { value: '4POINT0' },
-        { value: 'QUAD_SIDE' },
-        { value: 'QUAD' },
-        { value: '2POINT0POINT2' },
-        { value: '4POINT1' },
-        { value: '5POINT0' },
-        { value: '5POINT0_BACK' },
-        { value: '2POINT1POINT2' },
-        { value: '3POINT0POINT2' },
-        { value: '5POINT1' },
-        { value: '5POINT1_BACK' },
-        { value: '6POINT0' },
-        { value: '3POINT1POINT2' },
-        { value: '6POINT0_FRONT' },
-        { value: 'HEXAGONAL' },
-        { value: '6POINT1' },
-        { value: '6POINT1_BACK' },
-        { value: '6POINT1_FRONT' },
-        { value: '7POINT0' },
-        { value: '7POINT0_FRONT' },
-        { value: '7POINT1' },
-        { value: 'OCTAGONAL' },
-        { value: '5POINT1POINT2' },
-        { value: '7POINT1_WIDE' },
-        { value: '7POINT1_WIDE_BACK' }
-      ])
-        .selected(this.getChannelLayoutIndex(isInput ? this.inputFormat.channelLayout :
-          this.outputFormat.channelLayout))
-        .onSelect((index: number) => {
-          Logger.info(TAG,
-            `${isInput ? 'Input' : 'Output'} channelLayout selected: index=${index}, ` +
-              `value=${[4, 3, 1610612736, 11, 259, 7, 15, 263, 1539, 51, 206158430211, 271, 1543, 55,
-                206158430219, 206158430215, 1551, 63, 1799, 20495, 1731, 311, 1807, 319, 1739, 1591, 1735, 1599, 1847,
-                206158431759, 255, 255][index]}`);
+static napi_value AudioEditDestory(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioEditDestory start");
+    Clear();
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_DestroyPipeline(g_audioSuitePipeline);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "audioEditTest OH_audioSuiteEngine_DestroyPipeline result: %{public}d", static_cast<int>(result));
+    result = OH_AudioSuiteEngine_Destroy(g_audioSuiteEngine);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest OH_audioSuiteEngine_Destroy result: %{public}d",
+        static_cast<int>(result));
+    napi_value napiValue;
+    napi_create_int64(env, static_cast<int>(result), &napiValue);
+    return napiValue;
+}
 
-          const layouts = [4, 3, 1610612736, 11, 259, 7, 15, 263, 1539, 51, 206158430211, 271, 1543, 55,
-            206158430219, 206158430215, 1551, 63, 1799, 20495, 1731, 311, 1807, 319, 1739, 1591, 1735, 1599, 1847,
-            206158431759, 255, 255];
-          let newFormat: AudioConverterFormat = {
-            encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
-            samplingRate: isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate,
-            channelLayout: layouts[index],
-            sampleFormat: isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat
-          };
-          onChange(newFormat);
-          Logger.info(TAG,
-            `${isInput ? 'Input' : 'Output'}Format updated: ${JSON.stringify(newFormat)}`);
-        })
+static napi_value SetFormat(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat start");
+    size_t argc = 4;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    // Get Number of channels
+    unsigned int channels;
+    napi_get_value_uint32(env, argv[ARG_0], &channels);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat channels is %{public}d", channels);
+    // Get Sampling Rate
+    unsigned int sampleRate;
+    napi_get_value_uint32(env, argv[ARG_1], &sampleRate);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat sampleRate is %{public}d", sampleRate);
+    // Get bit depth
+    unsigned int bitsPerSample;
+    napi_get_value_uint32(env, argv[ARG_2], &bitsPerSample);
+    // Get the bit depth type.
+    unsigned int bitsPerSampleMode;
+    napi_get_value_uint32(env, argv[ARG_3], &bitsPerSampleMode);
+    ConvertBitsPerSample(bitsPerSample, bitsPerSampleMode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "audioEditTest SetFormat bitsPerSample: %{public}d, bitsPerSampleMode: %{public}d",
+        bitsPerSample, bitsPerSampleMode);
+
+    // Set Sampling Rate
+    g_audioFormatOutput.samplingRate = SetSamplingRate(sampleRate);
+    // Set audio channels
+    g_audioFormatOutput.channelCount = channels;
+    g_audioFormatOutput.channelLayout = SetChannelLayout(channels);
+    // Set bit depth
+    g_audioFormatOutput.sampleFormat = SetSampleFormat(bitsPerSample);
+    // Set the encoding format
+    g_audioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &g_audioFormatOutput);
+    napi_value napiValue;
+    napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
+    return napiValue;
+}
+
+static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest InitByPipelineCascad start");
+    size_t argc = 5;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    AudioParamsByCascad params;
+    napi_status status = ParseArgumentsByCascad(env, argv, params);
+    
+    // Obtains the audio buffer
+    void *pcmBuffer = nullptr;
+    size_t pcmBufferSize = static_cast<size_t>(params.pcmBufferSize);
+    status = napi_get_arraybuffer_info(env, argv[ARG_4], &pcmBuffer, &pcmBufferSize);
+    g_totalSize = params.pcmBufferSize;
+    if (g_totalBuff != nullptr) {
+        free(g_totalBuff);
+        g_totalBuff = nullptr;
     }
-    .width('100%')
-    .margin({ bottom: 5 })
-  }
-
-  @Builder
-  buildSampleFormatSelector(isInput: boolean, onChange: (format: AudioConverterFormat) => void) {
-    Row() {
-      Text('采样格式:')
-        .width('30%')
-      Select([
-        { value: 'U8' },
-        { value: 'S16LE' },
-        { value: 'S24LE' },
-        { value: 'S32LE' },
-        { value: 'F32LE' }
-      ])
-        .selected(this.getSampleFormatIndex(isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat))
-        .onSelect((index: number) => {
-          Logger.info(TAG,
-            `${isInput ? 'Input' : 'Output'} sampleFormat selected: index=${index}, ` +
-              `value=${[AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE,
-                AudioSampleFormat.AUDIO_SAMPLE_S24LE, AudioSampleFormat.AUDIO_SAMPLE_S32LE,
-                AudioSampleFormat.AUDIO_SAMPLE_F32LE][index]}`);
-
-          const sampleFormats = [
-            AudioSampleFormat.AUDIO_SAMPLE_U8,
-            AudioSampleFormat.AUDIO_SAMPLE_S16LE,
-            AudioSampleFormat.AUDIO_SAMPLE_S24LE,
-            AudioSampleFormat.AUDIO_SAMPLE_S32LE,
-            AudioSampleFormat.AUDIO_SAMPLE_F32LE
-          ];
-          let newFormat: AudioConverterFormat = {
-            encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
-            samplingRate: isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate,
-            channelLayout: isInput ? this.inputFormat.channelLayout : this.outputFormat.channelLayout,
-            sampleFormat: sampleFormats[index]
-          };
-          onChange(newFormat);
-          Logger.info(TAG,
-            `${isInput ? 'Input' : 'Output'}Format updated: ${JSON.stringify(newFormat)}`);
-        })
+    g_totalBuff = (char *)malloc(g_totalSize);
+    
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(status));
     }
-    .width('100%')
-    .margin({ bottom: 5 })
-  }
+    std::copy(static_cast<char *>(pcmBuffer), static_cast<char *>(pcmBuffer) + g_totalSize, g_totalBuff);
+    
+    napi_value napiValue;
+    OH_AudioSuite_Result result;
+    ManageInputNodes(env, params, result, napiValue);
+    ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+}
 
-  @Builder
-  FormatConfigSection(title: string, format: AudioConverterFormat, onChange: (format: AudioConverterFormat) => void,
-    isInput: boolean)
-  {
-    Column() {
-      Text(title)
-        .fontSize(16)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 10, bottom: 5 })
+// Import Audio Call
+void UpdateRecordAudioParam(int sampleRate, int channels, int bitsPerSample)
+{
+    g_samplingRate = sampleRate;
+    g_channelCount = channels;
+    g_bitsPerSample = bitsPerSample;
+}
 
-      this.buildSampleRateSelector(isInput, onChange)
-      this.buildChannelLayoutSelector(isInput, onChange)
-      this.buildSampleFormatSelector(isInput, onChange)
+static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioInAndOutInit start");
+    AudioParams params;
+    napi_status status = ParseArguments(env, info, params);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(status));
     }
-    .width('100%')
-    .padding(8)
-    .backgroundColor(0x33000000)
-    .borderRadius(8)
-  }
-
-  getSampleRateIndex(rate: number): number {
-    const rates = [
-      AudioSampleRate.AUDIO_SAMPLE_RATE_8000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_11025,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_12000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_16000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_22050,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_24000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_32000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_48000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_64000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_88200,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_96000,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_176400,
-      AudioSampleRate.AUDIO_SAMPLE_RATE_192000];
-    return rates.indexOf(rate);
-  }
-
-  getChannelLayoutIndex(layout: number): number {
-    const layouts = [
-      AudioChannelLayout.CH_LAYOUT_MONO,
-      AudioChannelLayout.CH_LAYOUT_STEREO,
-      AudioChannelLayout.CH_LAYOUT_STEREO_DOWNMIX,
-      AudioChannelLayout.CH_LAYOUT_2POINT1,
-      AudioChannelLayout.CH_LAYOUT_3POINT0,
-      AudioChannelLayout.CH_LAYOUT_SURROUND,
-      AudioChannelLayout.CH_LAYOUT_3POINT1,
-      AudioChannelLayout.CH_LAYOUT_4POINT0,
-      AudioChannelLayout.CH_LAYOUT_QUAD_SIDE,
-      AudioChannelLayout.CH_LAYOUT_QUAD,
-      AudioChannelLayout.CH_LAYOUT_2POINT0POINT2,
-      AudioChannelLayout.CH_LAYOUT_4POINT1,
-      AudioChannelLayout.CH_LAYOUT_5POINT0,
-      AudioChannelLayout.CH_LAYOUT_5POINT0_BACK,
-      AudioChannelLayout.CH_LAYOUT_2POINT1POINT2,
-      AudioChannelLayout.CH_LAYOUT_3POINT0POINT2,
-      AudioChannelLayout.CH_LAYOUT_5POINT1,
-      AudioChannelLayout.CH_LAYOUT_5POINT1_BACK,
-      AudioChannelLayout.CH_LAYOUT_6POINT0,
-      AudioChannelLayout.CH_LAYOUT_3POINT1POINT2,
-      AudioChannelLayout.CH_LAYOUT_6POINT0_FRONT,
-      AudioChannelLayout.CH_LAYOUT_HEXAGONAL,
-      AudioChannelLayout.CH_LAYOUT_6POINT1,
-      AudioChannelLayout.CH_LAYOUT_6POINT1_BACK,
-      AudioChannelLayout.CH_LAYOUT_6POINT1_FRONT,
-      AudioChannelLayout.CH_LAYOUT_7POINT0,
-      AudioChannelLayout.CH_LAYOUT_7POINT0_FRONT,
-      AudioChannelLayout.CH_LAYOUT_7POINT1,
-      AudioChannelLayout.CH_LAYOUT_OCTAGONAL,
-      AudioChannelLayout.CH_LAYOUT_5POINT1POINT2,
-      AudioChannelLayout.CH_LAYOUT_7POINT1_WIDE,
-      AudioChannelLayout.CH_LAYOUT_7POINT1_WIDE_BACK];
-    return layouts.indexOf(layout);
-  }
-
-  getSampleFormatIndex(sampleFormat: number): number {
-    const sampleFormats =
-      [AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE, AudioSampleFormat.AUDIO_SAMPLE_S24LE,
-        AudioSampleFormat.AUDIO_SAMPLE_S32LE, AudioSampleFormat.AUDIO_SAMPLE_F32LE];
-    return sampleFormats.indexOf(sampleFormat);
-  }
-
-
-  selectAudioFile(): void {
-    try {
-      let documentPicker = new picker.DocumentViewPicker(this.context);
-      documentPicker.select((err: ESObject, documentSelectResult: Array<string>) => {
-        if (err) {
-          Logger.error(TAG, `selectAudioFile error: ${JSON.stringify(err)}`);
-          return;
-        }
-        if (documentSelectResult && documentSelectResult.length > 0) {
-          this.selectedFileUri = documentSelectResult[0];
-          const uri = new fileUri.FileUri(this.selectedFileUri);
-          this.selectedFileName = uri.name || 'Selected File';
-          this.parseAudioFileFormat();
-        }
-      });
-    } catch (e) {
-      Logger.error(TAG, `selectAudioFile error: ${JSON.stringify(e)}`);
+    OH_AVSource *source = OH_AVSource_CreateWithFD(params.fd, 0, params.fileLength);
+    if (source == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-  }
-
-  selectOutputFileAndSave(data: ArrayBuffer | string, isFilePath: boolean, extension: string = '.wav'): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        let documentSaveOptions = new picker.DocumentSaveOptions();
-        documentSaveOptions.newFileNames = [`converted_audio_${Date.now()}${extension}`];
-
-        let context = getContext() as common.Context;
-        let documentPicker = new picker.DocumentViewPicker(context);
-
-        documentPicker.save(documentSaveOptions, async (err: BusinessError, documentSaveResult: Array<string>) => {
-          if (err) {
-            Logger.error(TAG, `DocumentViewPicker.save failed: ${err.code}, ${err.message}`);
-            this.processResult = 'Save dialog cancelled or failed';
-            resolve();
-            return;
-          }
-
-          if (documentSaveResult && documentSaveResult.length > 0) {
-            this.outputFilePath = documentSaveResult[0];
-            const uri = new fileUri.FileUri(this.outputFilePath);
-            this.outputFileName = uri.name || 'Output File';
-            Logger.info(TAG, `User selected save path: ${this.outputFilePath}`);
-
-            if (isFilePath) {
-              await this.saveToFileFromPath(data as string);
-            } else {
-              await this.saveToOutputPath(data as ArrayBuffer);
-            }
-          }
-          resolve();
-        });
-      } catch (err) {
-        Logger.error(TAG, `selectOutputFileAndSave error: ${JSON.stringify(err)}`);
-        this.processResult = 'Save dialog error';
-        reject(err);
-      }
-    });
-  }
-
-  async parseAudioFileFormat(): Promise<void> {
-    if (!this.selectedFileUri) {
-      Logger.error(TAG, 'No file selected');
-      return;
+    OH_AVFormat *trackFormat = OH_AVSource_GetTrackFormat(source, 0);
+    if (trackFormat == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-
-    const file = fs.openSync(this.selectedFileUri, fs.OpenMode.READ_ONLY);
-    this.fileFd = file.fd;
-
-    try {
-      const fileInfo = audioNapi.audioConverterGetFileInfo(this.fileFd);
-
-      if (fileInfo) {
-        this.fileInfo = fileInfo;
-        this.inputFormat = {
-          encodingType: fileInfo.encodingType,
-          samplingRate: fileInfo.samplingRate,
-          channelLayout: fileInfo.channelLayout,
-          sampleFormat: fileInfo.sampleFormat
-        };
-
-        Logger.info(TAG, `Parsed input format: encodingType=${fileInfo.encodingType}, ` +
-          `samplingRate=${fileInfo.samplingRate}, channelLayout=${fileInfo.channelLayout}, ` +
-          `sampleFormat=${fileInfo.sampleFormat}, numChannels=${fileInfo.numChannels}`);
-
-        this.createResult =
-          `Auto parsed: ${fileInfo.samplingRate}Hz, ` +
-            `${fileInfo.numChannels} channels, ` +
-            `${this.getSampleFormatName(fileInfo.sampleFormat)}`;
-      } else {
-        Logger.error(TAG, 'Failed to parse audio file');
-        this.createResult = 'Failed to parse audio file format';
-      }
-    } catch (e) {
-      Logger.error(TAG, `parseAudioFileFormat error: ${JSON.stringify(e)}`);
-      this.createResult = 'Error parsing audio file format';
-    } finally {
-      fs.closeSync(file.fd);
+    // Sampling rate, channel, bit depth
+    int32_t sampleRate;
+    int32_t channels;
+    int32_t bitsPerSample;
+    if (!GetAudioProperties(trackFormat, &sampleRate, &channels, &bitsPerSample)) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-  }
-
-  getChannelCount(channelLayout: number): number {
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_MONO) {
-      return 1;
-    }
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_STEREO ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_STEREO_DOWNMIX) {
-      return 2;
-    }
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_2POINT1 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_3POINT0 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_SURROUND) {
-      return 3;
-    }
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_2POINT0POINT2 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_3POINT1 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_4POINT0 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_QUAD ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_QUAD_SIDE) {
-      return 4;
-    }
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_2POINT1POINT2 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_4POINT1 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_5POINT0 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_5POINT0_BACK ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_3POINT0POINT2) {
-      return 5;
-    }
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_5POINT1 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_5POINT1_BACK ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_6POINT0 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_HEXAGONAL ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_6POINT0_FRONT ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_3POINT1POINT2) {
-      return 6;
-    }
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_6POINT1 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_6POINT1_BACK ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_6POINT1_FRONT ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_7POINT0 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_7POINT0_FRONT) {
-      return 7;
-    }
-    if (channelLayout === AudioChannelLayout.CH_LAYOUT_5POINT1POINT2 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_7POINT1 ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_7POINT1_WIDE ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_7POINT1_WIDE_BACK ||
-      channelLayout === AudioChannelLayout.CH_LAYOUT_OCTAGONAL) {
-      return 8;
-    }
-    return 2;
-  }
-
-  getSampleFormatName(sampleFormat: number): string {
-    switch (sampleFormat) {
-      case AudioSampleFormat.AUDIO_SAMPLE_U8:
-        return 'U8';
-      case AudioSampleFormat.AUDIO_SAMPLE_S16LE:
-        return 'S16LE';
-      case AudioSampleFormat.AUDIO_SAMPLE_S24LE:
-        return 'S24LE';
-      case AudioSampleFormat.AUDIO_SAMPLE_S32LE:
-        return 'S32LE';
-      case AudioSampleFormat.AUDIO_SAMPLE_F32LE:
-        return 'F32LE';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  private async createConverter(): Promise<boolean> {
-    let path: string = new fileUri.FileUri(this.selectedFileUri).path;
-    let file = fs.openSync(path, fs.OpenMode.READ_ONLY);
-
-    try {
-      // Execute conversion in background thread using taskpool
-      const result = await taskpool.execute(
-        convertAudioInBackground,
-        this.inputFormat.encodingType,
-        this.inputFormat.samplingRate,
-        this.inputFormat.channelLayout,
-        this.inputFormat.sampleFormat,
-        this.outputFormat.encodingType,
-        this.outputFormat.samplingRate,
-        this.outputFormat.channelLayout,
-        this.outputFormat.sampleFormat,
-        file.fd
-      );
-
-      if (!result) {
-        this.createResult = 'Conversion failed';
-        this.isConverting = false;
-        Logger.error(TAG, 'AudioConverterCreate failed: returned null');
-        return false;
-      }
-
-      // result is the internal output file path
-      Logger.info(TAG, `Conversion output file: ${result}`);
-
-      // Show save dialog and copy file to user selected location (always save as WAV)
-      await this.selectOutputFileAndSave(result as string, true, '.wav');
-
-      return true;
-    } finally {
-      fs.closeSync(file.fd);
-    }
-  }
-
-  private async saveToOutputPath(data: ArrayBuffer): Promise<void> {
-    try {
-      if (!data || data.byteLength === 0) {
-        Logger.error(TAG, 'No converted data to save');
-        this.processResult = 'Save failed: No converted data';
-        return;
-      }
-
-      Logger.info(TAG, `Converted data size: ${data.byteLength} bytes`);
-
-      let outputPath: string;
-      let fileName: string;
-
-      if (this.outputFilePath) {
-        outputPath = this.outputFilePath;
-        fileName = this.outputFileName;
-      } else {
-        Logger.error(TAG, 'No output path selected');
-        this.processResult = 'Save failed: No output path selected';
-        return;
-      }
-
-      const channels = this.getChannelCount(this.outputFormat.channelLayout);
-      const bitsPerSample = this.getBitsPerSample(this.outputFormat.sampleFormat);
-      const sampleRate = this.outputFormat.samplingRate;
-
-      Logger.info(TAG, `WAV params: sampleRate=${sampleRate}, channels=${channels}, bitsPerSample=${bitsPerSample}`);
-
-      const wavFileData = this.writeWavFileHeaderCorrected(
-        data, sampleRate, channels, bitsPerSample, this.outputFormat.sampleFormat
-      );
-
-      Logger.info(TAG, `WAV file size: ${wavFileData.byteLength} bytes`);
-
-      let file = fs.openSync(outputPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-      const writeLen = fs.writeSync(file.fd, wavFileData);
-      fs.closeSync(file.fd);
-
-      Logger.info(TAG, `Save file success: ${writeLen} bytes`);
-      this.processResult = `Conversion complete and saved to: ${fileName}`;
-    } catch (error) {
-      Logger.error(TAG, `saveToOutputPath failed: ${JSON.stringify(error)}`);
-      this.processResult = 'Save file error';
-    }
-  }
-
-  private async saveToFileFromPath(tempFilePath: string): Promise<void> {
-    try {
-      Logger.info(TAG, `saveToFileFromPath: ${tempFilePath}`);
-
-      let outputPath: string;
-      let fileName: string;
-
-      if (this.outputFilePath) {
-        outputPath = this.outputFilePath;
-        fileName = this.outputFileName;
-      } else {
-        Logger.error(TAG, 'No output path selected');
-        this.processResult = 'Save failed: No output path selected';
-        return;
-      }
-
-      const channels = this.getChannelCount(this.outputFormat.channelLayout);
-      const bitsPerSample = this.getBitsPerSample(this.outputFormat.sampleFormat);
-      const sampleRate = this.outputFormat.samplingRate;
-
-      Logger.info(TAG, `WAV params: sampleRate=${sampleRate}, channels=${channels}, bitsPerSample=${bitsPerSample}`);
-
-      // Get temp file size
-      const tempFile = await fs.open(tempFilePath, fs.OpenMode.READ_ONLY);
-      const tempFileStat = await fs.stat(tempFile.fd);
-      const tempFileSize = tempFileStat.size;
-      Logger.info(TAG, `Temp file size: ${tempFileSize} bytes`);
-
-      const dataSize = tempFileSize;
-      const totalSize = dataSize + WAV_HEADER_SIZE; // WAV header is 44 bytes
-
-      // Create WAV header
-      const header = this.createWavHeader(
-        dataSize, sampleRate, channels, bitsPerSample, this.outputFormat.sampleFormat
-      );
-
-      // Open output file
-      const outputFile = await fs.open(outputPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-
-      // Write header
-      await fs.write(outputFile.fd, header);
-
-      // Copy PCM data in chunks to avoid blocking UI
-      const buffer = new ArrayBuffer(WAV_CHUNK_SIZE);
-      let totalRead = 0;
-
-      while (totalRead < tempFileSize) {
-        const readSize = Math.min(WAV_CHUNK_SIZE, tempFileSize - totalRead);
-        const bytesRead = await fs.read(tempFile.fd, buffer, { length: readSize });
-        if (bytesRead === 0) break;
-
-        await fs.write(outputFile.fd, buffer, { length: bytesRead });
-        totalRead += bytesRead;
-
-        // Yield to UI thread after each chunk to prevent blocking
-        await new Promise<void>(resolve => setTimeout(resolve, 0));
-
-        // Log progress periodically
-        if (totalRead % (PROGRESS_UPDATE_INTERVAL * WAV_CHUNK_SIZE) === 0) {
-          Logger.info(TAG, `Progress: ${totalRead}/${tempFileSize} bytes (${((totalRead / tempFileSize) * 100).toFixed(1)}%)`);
-        }
-      }
-
-      await fs.close(tempFile.fd);
-      await fs.close(outputFile.fd);
-
-      // Delete temp file
-      try {
-        await fs.unlink(tempFilePath);
-        Logger.info(TAG, `Temp file deleted: ${tempFilePath}`);
-      } catch (e) {
-        Logger.warn(TAG, `Failed to delete temp file: ${e}`);
-      }
-
-      Logger.info(TAG, `Save file success: ${totalSize} bytes`);
-      this.processResult = `Conversion complete and saved to: ${fileName}`;
-    } catch (error) {
-      Logger.error(TAG, `saveToFileFromPath failed: ${JSON.stringify(error)}`);
-      this.processResult = 'Save file error';
-    }
-  }
-
-  private cleanupOnError(): void {
-    this.createResult = `Conversion failed`;
-    this.processResult = `Conversion failed`;
-    this.isConverting = false;
-
-    this.converterHandle = 0;
-  }
-
-  async startConversion(): Promise<void> {
-    this.isConverting = true;
-    this.createResult = 'Converting...';
-
-    try {
-      if (this.selectedFileUri === '') {
-        this.createResult = 'Please select audio file first';
-        this.isConverting = false;
-        return;
-      }
-
-      const result = await this.createConverter();
-
-      if (result) {
-        this.createResult = 'Conversion completed';
-      }
-
-      this.isConverting = false;
-
-    } catch (e) {
-      Logger.error(TAG, `startConversion error: ${JSON.stringify(e)}`);
-      this.cleanupOnError();
-    }
-  }
-
-  // Auxiliary method: get bit depth based on sample format
-  private getBitsPerSample(sampleFormat: number): number {
-    switch (sampleFormat) {
-      case AudioSampleFormat.AUDIO_SAMPLE_U8:
-        return BITS_PER_SAMPLE_8;
-      case AudioSampleFormat.AUDIO_SAMPLE_S16LE:
-        return BITS_PER_SAMPLE_16;
-      case AudioSampleFormat.AUDIO_SAMPLE_S24LE:
-        return BITS_PER_SAMPLE_24;
-      case AudioSampleFormat.AUDIO_SAMPLE_S32LE:
-      case AudioSampleFormat.AUDIO_SAMPLE_F32LE:
-        return BITS_PER_SAMPLE_32;
-      default:
-        return BITS_PER_SAMPLE_16;
-    }
-  }
-
-  private validateWavParameters(channels: number, sampleRate: number, bitsPerSample: number): void {
-    if (channels <= 0 || channels > MAX_CHANNELS) {
-      Logger.error(TAG, `unknown channel: ${channels}, WAV Supports 1~${MAX_CHANNELS} channels.`);
-      throw new Error(`Invalid channel count: ${channels}`);
-    }
-
-    if (sampleRate <= 0) {
-      Logger.error(TAG, `unknown sampleRate: ${sampleRate}`);
-      throw new Error(`Invalid sample rate: ${sampleRate}`);
-    }
-
-    if (bitsPerSample !== BITS_PER_SAMPLE_8 && bitsPerSample !== BITS_PER_SAMPLE_16 &&
-      bitsPerSample !== BITS_PER_SAMPLE_24 && bitsPerSample !== BITS_PER_SAMPLE_32) {
-      Logger.error(TAG, `unknown bitsPerSample: ${bitsPerSample}, Supports ${BITS_PER_SAMPLE_8},${BITS_PER_SAMPLE_16},${BITS_PER_SAMPLE_24},${BITS_PER_SAMPLE_32}-bit.`);
-      throw new Error(`Unsupported bits per sample: ${bitsPerSample}`);
-    }
-  }
-
-  private createWavHeader(dataSize: number, sampleRate: number, channels: number,
-    bitsPerSample: number, sampleFormat: number): ArrayBuffer {
-    const header = new ArrayBuffer(WAV_HEADER_SIZE);
-    const dv = new DataView(header);
-
-    const writeString = (dv: DataView, offset: number, string: string) => {
-      for (let i = 0; i < string.length; i++) {
-        dv.setUint8(offset + i, string.charCodeAt(i));
-      }
+    std::vector<std::string> audioFormat = {
+        std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)
     };
-
-    writeString(dv, WAV_OFFSET_RIFF, 'RIFF');
-    const totalDataLen = dataSize + WAV_DATA_CHUNK_HEADER_SIZE;
-    dv.setUint32(WAV_OFFSET_FILE_SIZE, totalDataLen, true);
-    writeString(dv, WAV_OFFSET_WAVE, 'WAVE');
-
-    writeString(dv, WAV_OFFSET_FMT, 'fmt ');
-    dv.setUint32(WAV_OFFSET_FMT_CHUNK_SIZE, WAV_FMT_CHUNK_SIZE, true);
-
-    if (bitsPerSample === BITS_PER_SAMPLE_32 && sampleFormat === AudioSampleFormat.AUDIO_SAMPLE_F32LE) {
-      dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_IEEE_FLOAT, true);
+    CallStringArrayCallback(audioFormat);
+    // Create a corresponding unsealer for the resource instance
+    UpdateRecordAudioParam(sampleRate, channels, bitsPerSample);
+    OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
+    if (demuxer == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
+    }
+    AudioFormat format{sampleRate, channels, bitsPerSample, params.startTime};
+    RunAudioThread(demuxer, params.fileLength, params.inputId, format);
+    napi_value napiValue;
+    OH_AudioSuite_Result result;
+    Node inputNode = g_nodeManager->GetNodeById(params.inputId);
+    if (inputNode.id.empty()) {
+        CreateInputNode(env, params.inputId, napiValue, result);
     } else {
-      dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_PCM, true);
+        UpdateInputNodeParams updateInputNodeParams;
+        updateInputNodeParams.inputId = params.inputId;
+        updateInputNodeParams.channels = channels;
+        updateInputNodeParams.sampleRate = sampleRate;
+        updateInputNodeParams.bitsPerSample = bitsPerSample;
+        UpdateInputNode(result, updateInputNodeParams);
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+    }
+    ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+}
+
+OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size)
+{
+    OH_AudioSuite_Result result = OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
+    Node nextNode;
+    if (size > INPUTNODES_SIZE2) {
+        while (node.type != OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER) {
+            nextNode = g_nodeManager->GetNodeById(node.nextNodeId);
+            result = g_nodeManager->removeNode(node.id);
+            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+                return result;
+            }
+            node = nextNode;
+        }
+    } else if (size == INPUTNODES_SIZE2) {
+        while (node.type != OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT) {
+            nextNode = g_nodeManager->GetNodeById(node.nextNodeId);
+            result = g_nodeManager->removeNode(node.id);
+            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+                return result;
+            }
+            node = nextNode;
+        }
+    } else {
+        while (!node.id.empty()) {
+            nextNode = g_nodeManager->GetNodeById(node.nextNodeId);
+            result = g_nodeManager->removeNode(node.id);
+            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+                return result;
+            }
+            node = nextNode;
+        }
+    }
+    return OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
+}
+
+// Delete audio
+static napi_value DeleteSong(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong start");
+
+    OH_AudioSuite_Result result;
+    napi_value napiValue;
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    // Get the inputId parameter
+    std::string inputId;
+    napi_status status = ParseNapiString(env, argv[0], inputId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong inputId is %{public}s",
+        inputId.c_str());
+    
+    const std::vector<Node> inputNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong inputNodes length is %{public}d",
+        static_cast<int>(inputNodes.size()));
+
+    Node node = g_nodeManager->GetNodeById(inputId);
+    Node nextNode;
+    if (node.id.empty()) {
+        napi_create_int64(env, static_cast<int>(result), &napiValue);
+        delete[] argv;
+        return napiValue;
+    }
+    
+    if (inputNodes.size() <= 0) {
+        napi_create_int64(env, static_cast<int>(-1), &napiValue);
+        delete[] argv;
+        return napiValue;
+    } else {
+        result = DeleteNodeOfSong(node, inputNodes.size());
     }
 
-    dv.setUint16(WAV_OFFSET_NUM_CHANNELS, channels, true);
-    dv.setUint32(WAV_OFFSET_SAMPLE_RATE, sampleRate, true);
-
-    const byteRate = sampleRate * channels * (bitsPerSample / 8);
-    dv.setUint32(WAV_OFFSET_BYTE_RATE, byteRate, true);
-
-    const blockAlign = channels * (bitsPerSample / 8);
-    dv.setUint16(WAV_OFFSET_BLOCK_ALIGN, blockAlign, true);
-    dv.setUint16(WAV_OFFSET_BITS_PER_SAMPLE, bitsPerSample, true);
-
-    writeString(dv, WAV_OFFSET_DATA, 'data');
-    dv.setUint32(WAV_OFFSET_DATA_SIZE, dataSize, true);
-
-    return header;
-  }
-
-  private writeWavFileHeaderCorrected(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
-    bitsPerSample: number, sampleFormat: number): ArrayBuffer {
-    this.validateWavParameters(channels, sampleRate, bitsPerSample);
-    const header = this.createWavHeader(pcmBuffer.byteLength, sampleRate, channels, bitsPerSample, sampleFormat);
-    const viewWavHeader = new Uint8Array(header);
-    const viewPcm = new Uint8Array(pcmBuffer);
-    const resultBuffer = new ArrayBuffer(viewWavHeader.byteLength + viewPcm.byteLength);
-    const resultView = new Uint8Array(resultBuffer);
-    resultView.set(viewWavHeader);
-    resultView.set(viewPcm, viewWavHeader.length);
-    return resultBuffer;
-  }
+    napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
+    return napiValue;
 }
+
+// Delete Node
+static napi_value DeleteNode(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteNode start");
+
+    OH_AudioSuite_Result result;
+    napi_value napiValue;
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    // Get the nodeId parameter
+    std::string nodeId;
+    napi_status status = ParseNapiString(env, argv[0], nodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteNode nodeId is %{public}s",
+        nodeId.c_str());
+    
+    result = g_nodeManager->removeNode(nodeId);
+
+    napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
+    return napiValue;
+}
+
+// Method for Setting Equalizer Mode
+static napi_value SetEqualizerMode(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEqualizerMode start");
+    unsigned int equalizerMode = -1;
+    std::string equalizerId;
+    std::string inputId;
+    napi_status status = GetEqModeParameters(env, info, equalizerMode, equalizerId, inputId);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+    }
+
+    // Create Equalizer Effect Node
+    Node eqNode = GetOrCreateEqualizerNodeByMode(equalizerId, inputId);
+    if (!eqNode.physicalNode) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
+    }
+    bool bypass = equalizerMode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(eqNode.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---SetEqualizerMode OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+    }
+    if (bypass) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+    }
+    result =
+        OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, SetEqualizerMode(equalizerMode));
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+}
+
+// Sets the equalizer band gain
+static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEqualizerFrequencyBandGains start");
+    OH_EqualizerFrequencyBandGains frequencyBandGains;
+    EqBandGainsParams params;
+    napi_status status = GetEqBandGainsParameters(env, info, frequencyBandGains, params);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+    }
+    // Create Equalizer Effect Node
+    Node eqNode = GetOrCreateEqualizerNodeByGains(params.equalizerId, params.inputId, params.selectedNodeId);
+    if (!eqNode.physicalNode) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
+    }
+
+    OH_AudioSuite_Result result =
+        OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, frequencyBandGains);
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+}
+
+// Set up the speed and pitch effect node
+static napi_value SetSoundSpeedTone(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetSoundSpeedTone start");
+    size_t argc = 5;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    SoundSpeedToneParams params;
+    napi_status status = GetSoundSpeedToneParameters(env, argv, params);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+    }
+    // Create Sonic Sound Adjustment Point
+    Node soundSpeedToneNode = GetOrCreateSpeedToneNode(params.soundSpeedToneId, params.inputId, params.selectedNodeId);
+    if (!soundSpeedToneNode.physicalNode) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_CREATE_NODE_ERROR);
+    }
+    OH_AudioSuite_Result result =
+        OH_AudioSuiteEngine_SetTempoAndPitch(soundSpeedToneNode.physicalNode, params.soundSpeed, params.soundTone);
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+}
+
+static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SaveFileBuffer start");
+    ResetAllIsResetTotalWriteAudioDataSize();
+    RenDerFrame();
+
+    napi_value napiValue = nullptr;
+    void *arrayBufferData = nullptr;
+    napi_status status = napi_create_arraybuffer(env, g_totalSize, &arrayBufferData, &napiValue);
+    if (status != napi_ok || arrayBufferData == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+            "audioEditTest OH_AudioSuiteEngine_RenderFrame status: %{public}d", static_cast<int>(status));
+        if (g_totalBuff != nullptr) {
+            free(g_totalBuff);
+            g_totalBuff = nullptr;
+        }
+        // Failed to create ArrayBuffer; returned an ArrayBuffer with a size of 0
+        napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
+        return napiValue;
+    } else {
+        std::copy(g_totalBuff, g_totalBuff + g_totalSize, static_cast<char *>(arrayBufferData));
+        if (g_totalBuff != nullptr) {
+            free(g_totalBuff);
+            g_totalBuff = nullptr;
+        }
+        return napiValue;
+    }
+}
+
+static napi_value startVBEffect(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---IN");
+    size_t argc = 4;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    // inputId
+    std::string inputId;
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---inputId==%{public}s",
+                 inputId.c_str());
+    // Get parameters 2, beautify types
+    int mode = -1;
+    napi_get_value_int32(env, argv[ARG_1], &mode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect--mode==%{public}zd", mode);
+    // Get parameters 3 and effect node ID
+    std::string voiceBeautifierId;
+    status = ParseNapiString(env, argv[ARG_2], voiceBeautifierId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", voiceBeautifierId.c_str());
+    // Get the ID of the currently selected node
+    std::string selectNodeId;
+    status = ParseNapiString(env, argv[ARG_3], selectNodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---selectNodeId==%{public}s",
+                 selectNodeId.c_str());
+     // Invoke the interface for adding beautification effects node
+    napi_value ret;
+    int result = AddVBEffectNode(inputId, mode, voiceBeautifierId, selectNodeId);
+
+    napi_create_int64(env, result, &ret);
+    delete[] argv;
+    return ret;
+}
+static napi_value resetVBEffect(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---resetVBEffect---IN");
+
+    int mode = -1;
+    std::string inputId;
+    std::string voiceBeautifierId;
+    // Parsing Parameters
+    napi_status status = getResetVBParameters(env, info, inputId, mode, voiceBeautifierId);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+    }
+    napi_value ret;
+    int result = ModifyVBEffectNode(inputId, mode, voiceBeautifierId);
+    napi_create_int64(env, result, &ret);
+    return ret;
+}
+
+static napi_status ParseFieldEffectParams(napi_env env, napi_callback_info info, FieldEffectParams& params)
+{
+    size_t argc = 4;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_status status = ParseNapiString(env, argv[ARG_0], params.inputId);
+    napi_get_value_uint32(env, argv[ARG_1], &params.mode);
+    status = ParseNapiString(env, argv[ARG_2], params.fieldEffectId);
+    status = ParseNapiString(env, argv[ARG_3], params.selectedNodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "audioEditTest FieldEffect inputId==%{public}s mode==%{public}zd, " \
+        "fieldEffectId==%{public}s, selectedNodeId==%{public}s", \
+        params.inputId.c_str(),
+        params.mode,
+        params.fieldEffectId.c_str(),
+        params.selectedNodeId.c_str());
+    delete[] argv;
+    return status;
+}
+
+static napi_value startFieldEffect(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startFieldEffect start");
+    FieldEffectParams params;
+    napi_status status = ParseFieldEffectParams(env, info, params);
+    OH_SoundFieldType type = getSoundFieldTypeByNum(params.mode);
+    napi_value ret;
+    Node node = CreateNodeByType(params.fieldEffectId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD);
+    bool bypass = params.mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---startFieldEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (bypass) {
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest startFieldEffect OH_AudioEditEngine_SetSoundFiledType ERROR!");
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (params.selectedNodeId.empty()) {
+        int res = AddEffectNodeToNodeManager(params.inputId, params.fieldEffectId);
+        if (res != 0) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                "audioEditTest startFieldEffect AddEffectNodeToNodeManager ERROR!");
+            napi_create_int64(env, res, &ret);
+            return ret;
+        }
+    } else {
+        result = g_nodeManager->insertNode(params.fieldEffectId, params.selectedNodeId, Direction::LATER);
+        if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect insertNode ERROR!");
+            napi_create_int64(env, result, &ret);
+            return ret;
+        }
+    }
+
+    napi_create_int64(env, result, &ret);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect: operation success");
+    return ret;
+}
+
+static napi_status ParseResetFieldEffectParams(napi_env env, napi_callback_info info,
+    std::string& inputId, unsigned int& mode, std::string& fieldEffectId)
+{
+    size_t argc = 3;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect inputId is %{public}s",
+        inputId.c_str());
+    napi_get_value_uint32(env, argv[ARG_1], &mode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect mode is %{public}zd", mode);
+    status = ParseNapiString(env, argv[ARG_2], fieldEffectId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest fieldEffectId is %{public}s",
+        fieldEffectId.c_str());
+    delete[] argv;
+    return status;
+}
+
+static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect start");
+    std::string inputId;
+    unsigned int mode = -1;
+    std::string fieldEffectId;
+    napi_status status = ParseResetFieldEffectParams(env, info, inputId, mode, fieldEffectId);
+
+    OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
+
+    napi_value ret;
+    Node node = g_nodeManager->GetNodeById(fieldEffectId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest get node is %{public}s", node.id.c_str());
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---resetFieldEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (bypass) {
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
+    if (result != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest OH_AudioSuiteEngine_SetSoundFieldType ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+
+    napi_create_int64(env, result, &ret);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect: operation success");
+    return ret;
+}
+
+static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---getAudioOfTap---IN");
+
+    napi_value napiValue = nullptr;
+    void *data;
+    napi_create_arraybuffer(env, g_tapDataTotalSize, &data, &napiValue);
+    std::copy(
+        reinterpret_cast<const char*>(g_tapTotalBuff),
+        reinterpret_cast<const char*>(g_tapTotalBuff) + g_tapDataTotalSize,
+        reinterpret_cast<char*>(data));
+    std::fill(
+        reinterpret_cast<char*>(g_tapTotalBuff),
+        reinterpret_cast<char*>(g_tapTotalBuff) + g_tapDataTotalSize,
+        0);
+    g_tapDataTotalSize = 0;
+    return napiValue;
+}
+
+static napi_value Record(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest Record start");
+    g_isRecord = true;
+    return nullptr;
+}
+
+static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest RealTimeSaveFileBuffer start");
+    ResetAllIsResetTotalWriteAudioDataSize();
+    g_isRecord = false;
+    napi_value napiValue = nullptr;
+    void *arrayBufferData = nullptr;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "audioEditTest RealTimeSaveFileBuffer g_playResultTotalSize is %{public}d", g_playResultTotalSize);
+    napi_status status = napi_create_arraybuffer(env, g_playResultTotalSize, &arrayBufferData, &napiValue);
+    if (status != napi_ok || arrayBufferData == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest napi_create_arraybuffer status: %{public}d",
+            static_cast<int>(status));
+        g_playResultTotalSize = 0;
+        if (g_playTotalAudioData != nullptr) {
+            free(g_playTotalAudioData);
+            g_playTotalAudioData = nullptr;
+        }
+        // Failed to create ArrayBuffer; returned an ArrayBuffer with a size of 0
+        napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
+        return napiValue;
+    } else {
+        std::copy(g_playTotalAudioData, g_playTotalAudioData + g_playResultTotalSize,
+            static_cast<char *>(arrayBufferData));
+        if (g_playTotalAudioData != nullptr) {
+            free(g_playTotalAudioData);
+            g_playTotalAudioData = nullptr;
+        }
+        g_playResultTotalSize = 0;
+        return napiValue;
+    }
+}
+
+static napi_value AudioRendererInit(napi_env env, napi_callback_info info)
+{
+    ReleaseExistingResources();
+    // Create Constructor
+    OH_AudioStream_Type type = OH_AudioStream_Type::AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStreamBuilder_Create(&rendererBuilder, type);
+
+    // Get bit depth
+    int32_t bitsPerSample = 0;
+    OH_AudioStream_SampleFormat streamSampleFormat;
+    GetBitsPerSampleAndStreamFormat(g_audioFormatOutput, &bitsPerSample, &streamSampleFormat);
+
+    // Set the audio sampling rate
+    OH_AudioStreamBuilder_SetSamplingRate(rendererBuilder, g_audioFormatOutput.samplingRate);
+    // Set audio channels
+    OH_AudioStreamBuilder_SetChannelCount(rendererBuilder, g_audioFormatOutput.channelCount);
+    // Set the audio sampling format
+    OH_AudioStreamBuilder_SetSampleFormat(rendererBuilder, streamSampleFormat);
+    // Set the encoding type for the audio stream
+    OH_AudioStreamBuilder_SetEncodingType(rendererBuilder, AUDIOSTREAM_ENCODING_TYPE_RAW);
+    // Set up the working scenario for outputting audio streams
+    OH_AudioStreamBuilder_SetRendererInfo(rendererBuilder, AUDIOSTREAM_USAGE_MUSIC);
+    // Set the length of audioDataSize (the size of the data to be played)
+    g_playDataSize = SAMPLINGRATE_MULTI * g_audioFormatOutput.samplingRate *
+        g_audioFormatOutput.channelCount * bitsPerSample / BITSPERSAMPLE_MULTI / CHANNELCOUNT_MULTI;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "audioEditTest AudioRendererInit g_playDataSize: %{public}d, samplingRate: %{public}d, "
+        "channelCount: %{public}d, bitsPerSample: %{public}d",
+        g_playDataSize, g_audioFormatOutput.samplingRate, g_audioFormatOutput.channelCount, bitsPerSample);
+    OH_AudioStreamBuilder_SetFrameSizeInCallback(rendererBuilder, g_playDataSize);
+
+    // Configure the callback function for writing audio data
+    OH_AudioRenderer_OnWriteDataCallback rendererCallbacks = PlayAudioRendererOnWriteData;
+    OH_AudioStreamBuilder_SetRendererWriteDataCallback(rendererBuilder, rendererCallbacks, nullptr);
+
+    // create OH_AudioRenderer
+    OH_AudioStreamBuilder_GenerateRenderer(rendererBuilder, &audioRenderer);
+    return nullptr;
+}
+
+static napi_value AudioRendererDestory(napi_env env, napi_callback_info info)
+{
+    napi_value napiValue = nullptr;
+    if (audioRenderer) {
+        // Releasing a Playback Instance
+        OH_AudioStream_Result result = OH_AudioRenderer_Release(audioRenderer);
+        // Release Constructor
+        result = OH_AudioStreamBuilder_Destroy(rendererBuilder);
+        napi_create_int64(env, static_cast<int>(result), &napiValue);
+        audioRenderer = nullptr;
+        rendererBuilder = nullptr;
+    }
+    return napiValue;
+}
+
+// Start playing
+static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "g_writeDataBufferMap size %{public}d",
+        g_writeDataBufferMap.size());
+    ProcessPipeline();
+    g_playFinishedFlag = false;
+    g_playResultTotalSize = 0;
+
+    if (g_playTotalAudioData != nullptr) {
+        free(g_playTotalAudioData);
+        g_playTotalAudioData = nullptr;
+    }
+    g_playTotalAudioData = (char *)calloc(1, MAX_PLAY_RESULT_BUFFER_SIZE);
+
+    // start
+    OH_AudioRenderer_Start(audioRenderer);
+    return nullptr;
+}
+
+// pause playback
+static napi_value AudioRendererPause(napi_env env, napi_callback_info info)
+{
+    // pause
+    OH_AudioRenderer_Pause(audioRenderer);
+    return nullptr;
+}
+
+// Stop playing
+static napi_value AudioRendererStop(napi_env env, napi_callback_info info)
+{
+    // stop
+    OH_AudioRenderer_Stop(audioRenderer);
+    // Stop pipeline
+    OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
+    return nullptr;
+}
+
+// Get the playback status.
+static napi_value GetRendererState(napi_env env, napi_callback_info info)
+{
+    OH_AudioStream_State state;
+    OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
+    napi_value sum;
+    napi_create_int32(env, state, &sum);
+
+    return sum;
+}
+
+// Whether to reset totalWriteAudioDataSize
+static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info info)
+{
+    // Buffer for writing audio, starting from the beginning
+    ResetAllIsResetTotalWriteAudioDataSize();
+    // Save the audio that reported the error from the beginning again
+    g_playResultTotalSize = 0;
+    return nullptr;
+}
+
+// Get the effect node options.
+static napi_value getOptions(napi_env env, napi_callback_info info)
+{
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_value napiValue;
+    
+    // Get nodeId
+    std::string nodeId;
+    ParseNapiString(env, argv[0], nodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions nodeId is %{public}s", nodeId.c_str());
+    Node node = g_nodeManager->GetNodeById(nodeId);
+    // Get effect parameters based on different effect types
+    std::string type = g_nodeManager->GetOptionsByType(node);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions type is %{public}s", type.c_str());
+    napi_create_string_utf8(env, type.c_str(), NAPI_AUTO_LENGTH, &napiValue);
+    delete[] argv;
+    return napiValue;
+}
+
+static napi_value getEffectNodeList(napi_env env, napi_callback_info info)
+{
+    // Returns the JS array
+    return GetSupportedAudioNodeTypes(env);
+}
+
+static napi_value SetIsRecord(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetIsRecord start");
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+ 
+    bool isRecord;
+    napi_status status = napi_get_value_bool(env, argv[ARG_0], &isRecord);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetIsRecord status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return nullptr;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "SetIsRecord isRecord: %{public}s", isRecord ? "true" : "false");
+    g_isRecord = isRecord;
+    if (isRecord) {
+        g_playResultTotalSize = 0;
+    }
+    delete[] argv;
+    return nullptr;
+}
+ 
+static napi_value SetSeparationMode(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetSeparationMode start");
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+ 
+    napi_status status = napi_get_value_uint32(env, argv[0], &g_separationMode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "SetSeparationMode g_separationMode: %{public}d", g_separationMode);
+    delete[] argv;
+    return ReturnResult(env, static_cast<AudioSuiteResult>(status));
+}
+
+static napi_value clear(napi_env env, napi_callback_info info)
+{
+    Clear();
+    return nullptr;
+}
+
+static napi_value clearByInputId(napi_env env, napi_callback_info info)
+{
+    size_t argc = 2;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+ 
+    std::string inputId;
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
+    int64_t startTime = 0;
+    status = napi_get_value_int64(env, argv[ARG_1], &startTime);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "inputId is: %{public}s", inputId.c_str());
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetIsRecord status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return nullptr;
+    }
+    ClearByInputId(inputId, startTime);
+    delete[] argv;
+    return nullptr;
+}
+
+static napi_value ModifyRender(napi_env env, napi_callback_info info)
+{
+    return ModifyRenderTrack(env, info);
+}
+
+static napi_value stopPipeline(napi_env env, napi_callback_info info)
+{
+    // Shut down the pipeline
+    OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
+    return nullptr;
+}
+
+static napi_value setCurrentTime(napi_env env, napi_callback_info info)
+{
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    long currentTime = 0;
+    napi_status status = napi_get_value_int64(env, argv[0], &currentTime);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "setCurrentTime g_currentTime: %{public}ld", currentTime);
+    Timeline::GetInstance().ResetCurrent(currentTime);
+    return nullptr;
+}
+
+static napi_value SetEffectNodeBypass(napi_env env, napi_callback_info info)
+{
+    size_t argc = 3;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+    std::string inputId;
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return result;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "inputId is: %{public}s", inputId.c_str());
+    std::string effectNodeId;
+    status = ParseNapiString(env, argv[ARG_1], effectNodeId);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return result;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "effectNodeId is: %{public}s", effectNodeId.c_str());
+    bool isBypass = false;
+    status = napi_get_value_bool(env, argv[ARG_2], &isBypass);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return result;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "isBypass is: %{public}d", isBypass);
+    delete[] argv;
+    Node effectNode = g_nodeManager->GetNodeById(effectNodeId);
+    if (!effectNode.physicalNode) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass get effectNode error, effectNodeId: %{public}s", effectNodeId.c_str());
+        return result;
+    }
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_BypassEffectNode(effectNode.physicalNode, isBypass);
+    if (ret != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}u", ret);
+        return result;
+    }
+    napi_get_boolean(env, true, &result);
+    return result;
+}
+
+
+// Parse audio format from NAPI object. OH_AudioConverter_Create NAPI binding.
+static bool ParseAudioFormat(napi_env env, napi_value formatObj, OH_AudioConverter_Format &format)
+{
+    napi_value encodingTypeProp;
+    napi_get_named_property(env, formatObj, "encodingType", &encodingTypeProp);
+    napi_status status = napi_get_value_int32(env, encodingTypeProp, reinterpret_cast<int32_t*>(&format.encodingType));
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse encodingType failed");
+        return false;
+    }
+
+    napi_value samplingRateProp;
+    napi_get_named_property(env, formatObj, "samplingRate", &samplingRateProp);
+    int32_t samplingRateValue;
+    status = napi_get_value_int32(env, samplingRateProp, &samplingRateValue);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse samplingRate failed");
+        return false;
+    }
+    format.samplingRate = static_cast<OH_Audio_SampleRate>(samplingRateValue);
+
+    napi_value channelLayoutProp;
+    napi_get_named_property(env, formatObj, "channelLayout", &channelLayoutProp);
+    status = napi_get_value_int64(env, channelLayoutProp, reinterpret_cast<int64_t*>(&format.channelLayout));
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse channelLayout failed");
+        return false;
+    }
+
+    napi_value sampleFormatProp;
+    napi_get_named_property(env, formatObj, "sampleFormat", &sampleFormatProp);
+    status = napi_get_value_int32(env, sampleFormatProp, reinterpret_cast<int32_t*>(&format.sampleFormat));
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse sampleFormat failed");
+        return false;
+    }
+
+    return true;
+}
+
+// Parse WAV file and extract data information
+static bool ParseWavFile(int fd, off_t fileSize, WavFileInfo &wavInfo)
+{
+    uint8_t header[WAV_HEADER_SIZE];
+    int headerRead = read(fd, header, WAV_HEADER_SIZE);
+    if (headerRead < WAV_HEADER_SIZE) {
+        return false;
+    }
+
+    if (header[0] != DATA_HEADER_INDEX[0] || header[1] != DATA_HEADER_INDEX[1] ||
+        header[INDEXTWO] != DATA_HEADER_INDEX[INDEXTWO] || header[INDEXTHREE] != DATA_HEADER_INDEX[INDEXTHREE]) {
+        return false;
+    }
+
+    lseek(fd, WAV_RIFF_HEADER_SIZE, SEEK_SET);
+    bool foundDataChunk = false;
+    uint8_t chunkHeader[WAV_CHUNK_HEADER_SIZE];
+
+    while (!foundDataChunk) {
+        int bytesRead = read(fd, chunkHeader, WAV_CHUNK_HEADER_SIZE);
+        if (bytesRead < WAV_CHUNK_HEADER_SIZE) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Failed to find data chunk");
+            break;
+        }
+
+        // Check if it's a data chunk
+        if (chunkHeader[0] == DATA_CHUNK_ID[0] && chunkHeader[1] == DATA_CHUNK_ID[1] &&
+            chunkHeader[INDEXTWO] == DATA_CHUNK_ID[INDEXTWO] && chunkHeader[INDEXTHREE] == DATA_CHUNK_ID[INDEXTHREE]) {
+            foundDataChunk = true;
+            wavInfo.dataSize = *reinterpret_cast<uint32_t*>(&chunkHeader[WAV_CHUNK_SIZE_OFFSET]);
+            wavInfo.dataStart = lseek(fd, 0, SEEK_CUR);
+        } else {
+            uint32_t chunkSize = *reinterpret_cast<uint32_t*>(&chunkHeader[WAV_CHUNK_SIZE_OFFSET]);
+            lseek(fd, chunkSize, SEEK_CUR);
+        }
+
+        // Prevent infinite loops
+        if (lseek(fd, 0, SEEK_CUR) >= fileSize) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Reached end of file without finding data chunk");
+            break;
+        }
+    }
+
+    wavInfo.isValid = foundDataChunk;
+    return foundDataChunk;
+}
+
+// Read file data - save WAV info for on-demand reading
+static bool ReadFileData(int fd, off_t fileSize, bool isWavFile, const WavFileInfo &wavInfo)
+{
+    uint32_t bytesToRead = 0;
+
+    if (isWavFile) {
+        g_inputWavDataStart = wavInfo.dataStart;
+        g_inputWavDataSize = wavInfo.dataSize;
+        bytesToRead = (wavInfo.dataSize > 0 && wavInfo.dataSize < (fileSize - wavInfo.dataStart)) ?
+                      wavInfo.dataSize : (fileSize - wavInfo.dataStart);
+    } else {
+        g_inputWavDataStart = 0;
+        g_inputWavDataSize = 0;
+        bytesToRead = fileSize;
+    }
+    g_inputDataLen = bytesToRead;
+    g_dataOffset = 0;
+
+    return true;
+}
+
+// Clear old input and output data
+static void ClearOldData()
+{
+    if (g_inputData != nullptr) {
+        delete[] g_inputData;
+        g_inputData = nullptr;
+        g_inputDataLen = 0;
+    }
+
+    g_inputWavDataStart = 0;
+    g_inputWavDataSize = 0;
+}
+
+// Validate and get file size
+static bool ValidateAndGetFileSize(int fd, off_t &fileSize)
+{
+    fileSize = lseek(fd, 0, SEEK_END);
+    if (fileSize < 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Invalid file size: %{public}ld bytes", fileSize);
+        return false;
+    }
+    lseek(fd, 0, SEEK_SET);
+    return true;
+}
+
+// Create final result value
+static napi_value CreateFinalResult(napi_env env, bool hasError)
+{
+    napi_value napiValue;
+    if (hasError || g_outputDataLen == 0) {
+        napi_get_null(env, &napiValue);
+        return napiValue;
+    }
+
+    // Close file and return file path
+    if (g_outputFile != nullptr) {
+        fclose(g_outputFile);
+        g_outputFile = nullptr;
+    }
+    napi_create_string_utf8(env, g_outputFilePath, strlen(g_outputFilePath), &napiValue);
+    return napiValue;
+}
+
+// Reset output data and offset
+static void ResetOutputData()
+{
+    if (g_outputFile != nullptr) {
+        fclose(g_outputFile);
+        g_outputFile = nullptr;
+    }
+    g_outputDataLen = 0;
+    g_dataOffset = 0;
+    g_outputFilePath[0] = '\0';
+    // Note: Don't reset g_inputDataLen here as input data is still needed
+}
+
+// Accumulate output data
+static bool AccumulateOutputData(const void *outputData, int32_t outputSize)
+{
+    if (g_outputFile == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Output file is not open");
+        return false;
+    }
+
+    size_t written = fwrite(outputData, 1, outputSize, g_outputFile);
+    if (written != static_cast<size_t>(outputSize)) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Failed to write to output file: written=%{public}zu, expected=%{public}d",
+                     written, outputSize);
+        return false;
+    }
+    g_outputDataLen += outputSize;
+    return true;
+}
+
+// Handle process output data
+static bool HandleProcessOutput(void *outputData, int32_t outputSize, ProcessState &state)
+{
+    if (outputSize > 0) {
+        if (!AccumulateOutputData(outputData, outputSize)) {
+            state.hasError = true;
+            return false; // Stop processing
+        }
+        state.zeroOutputCount = 0;
+    } else {
+        state.zeroOutputCount++;
+        if (state.zeroOutputCount >= ZERO_OUTPUT_THRESHOLD) {
+            return false; // Processing complete
+        }
+    }
+    return true; // Continue processing
+}
+
+// Validate input data
+static bool ValidateInputData()
+{
+    if (g_inputData == nullptr || g_inputDataLen == 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Input data is null or empty, g_inputData=%{public}p, g_inputDataLen=%{public}u", g_inputData,
+                     g_inputDataLen);
+        return false;
+    }
+    return true;
+}
+
+// Generate output file path with timestamp
+static void GenerateOutputFilePath(char *buffer, size_t bufferSize)
+{
+    std::ostringstream oss;
+    oss << "/data/storage/el2/base/haps/entry/files/converted_audio_"
+        << static_cast<long long>(time(nullptr)) << ".pcm";
+    std::string path = oss.str();
+    size_t copyLen = (path.length() < bufferSize - 1) ? path.length() : bufferSize - 1;
+    std::copy(path.begin(), path.begin() + copyLen, buffer);
+    buffer[copyLen] = '\0';
+}
+
+static bool InitializeProcessParameters(ProcessState &state)
+{
+    state.bufferSize = OUTPUT_BUFFER_SIZE;
+    state.processCount = 0;
+    state.zeroOutputCount = 0;
+    state.hasError = false;
+
+    GenerateOutputFilePath(g_outputFilePath, sizeof(g_outputFilePath));
+    g_outputFile = fopen(g_outputFilePath, "wb");
+    if (g_outputFile == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Failed to open output file: %{public}s", g_outputFilePath);
+        state.hasError = true;
+        return false;
+    }
+    return true;
+}
+
+// Process single iteration
+static bool ProcessIteration(OH_AudioConverter *converter, ProcessState &state)
+{
+    int32_t currentBufferSize = state.bufferSize;
+    void *outputData = new (std::nothrow) uint8_t[currentBufferSize];
+    if (outputData == nullptr) {
+        state.hasError = true;
+        return false;
+    }
+
+    int32_t outputSize = 0;
+    OH_AudioConverter_Result result = OH_AudioConverter_Process(converter, outputData, currentBufferSize, &outputSize);
+    state.processCount++;
+
+    if (result != AUDIOCONVERTER_SUCCESS) {
+        state.hasError = true;
+        delete[] static_cast<uint8_t*>(outputData);
+        return false; // Stop processing
+    }
+    if (!HandleProcessOutput(outputData, outputSize, state)) {
+        delete[] static_cast<uint8_t*>(outputData);
+        return false;
+    }
+
+    delete[] static_cast<uint8_t*>(outputData);
+    return true; // Continue processing
+}
+
+// Parse converter arguments
+static bool ParseConverterArguments(napi_env env, napi_value argv[],
+                                    OH_AudioConverter_Format &inputFormat,
+                                    OH_AudioConverter_Format &outputFormat,
+                                    int32_t &fd)
+{
+    if (!ParseAudioFormat(env, argv[0], inputFormat)) {
+        return false;
+    }
+    if (!ParseAudioFormat(env, argv[1], outputFormat)) {
+        return false;
+    }
+    napi_status status = napi_get_value_int32(env, argv[INDEXTWO], &fd);
+    return status == napi_ok && fd >= 0;
+}
+
+// Initialize input data
+static bool InitializeInputData(int32_t fd, off_t fileSize)
+{
+    g_inputFd = -1;
+    ClearOldData();
+
+    if (!ValidateAndGetFileSize(fd, fileSize)) {
+        return false;
+    }
+
+    g_inputFd = dup(fd);
+    if (g_inputFd < 0) {
+        return false;
+    }
+
+    g_inputData = new (std::nothrow) uint8_t[INPUT_BUFFER_SIZE];
+    if (g_inputData == nullptr) {
+        close(g_inputFd);
+        g_inputFd = -1;
+        return false;
+    }
+    return true;
+}
+
+// Cleanup input data resources
+static void CleanupInputData()
+{
+    if (g_inputData != nullptr) {
+        delete[] g_inputData;
+        g_inputData = nullptr;
+        g_inputDataLen = 0;
+    }
+
+    if (g_inputFd >= 0) {
+        close(g_inputFd);
+        g_inputFd = -1;
+    }
+
+    g_inputWavDataStart = 0;
+    g_inputWavDataSize = 0;
+}
+
+// Read and validate input file
+static bool ReadInputFile(int32_t fd, off_t fileSize)
+{
+    WavFileInfo wavInfo = {WAV_HEADER_SIZE, 0, false};
+    bool isWavFile = ParseWavFile(fd, fileSize, wavInfo);
+    if (!ReadFileData(fd, fileSize, isWavFile, wavInfo)) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Failed to read file data");
+        CleanupInputData();
+        return false;
+    }
+    return true;
+}
+
+// Cleanup conversion resources
+static void CleanupConversion()
+{
+    if (g_converter != nullptr) {
+        OH_AudioConverter_Destroy(g_converter);
+        g_converter = nullptr;
+    }
+    CleanupInputData();
+}
+
+// Run conversion process
+static bool RunConversionProcess(ProcessState &state)
+{
+    if (!ValidateInputData()) {
+        return false;
+    }
+
+    ResetOutputData();
+    if (!InitializeProcessParameters(state)) {
+        return false;
+    }
+
+    while (ProcessIteration(g_converter, state)) {
+        continue;
+    }
+    return true;
+}
+
+// AudioConverter C callback function - called by converter engine
+static int32_t AudioConverterRequestDataCallback(void *userData, const void **outInputData,
+                                                 OH_AudioConverter_InputStatus *outStatus)
+{
+    if (g_inputFd < 0 || g_dataOffset >= g_inputDataLen) {
+        *outInputData = nullptr;
+        *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
+        return 0;
+    }
+    off_t filePos = g_inputWavDataStart + g_dataOffset;
+    uint32_t remainingData = g_inputDataLen - g_dataOffset;
+    uint32_t dataSizeToReturn = (remainingData > INPUT_BUFFER_SIZE) ? INPUT_BUFFER_SIZE : remainingData;
+
+    off_t seekResult = lseek(g_inputFd, filePos, SEEK_SET);
+    if (seekResult < 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "lseek failed: filePos=%{public}ld, errno=%{public}d", filePos, errno);
+        *outInputData = nullptr;
+        *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
+        return 0;
+    }
+
+    ssize_t bytesRead = read(g_inputFd, g_inputData, dataSizeToReturn);
+    if (bytesRead <= 0) {
+        *outInputData = nullptr;
+        *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
+        return 0;
+    }
+    *outInputData = g_inputData;
+    *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
+    g_dataOffset += bytesRead;
+    return bytesRead;
+}
+
+static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
+{
+    size_t argc = INDEXTHREE;
+    napi_value argv[INDEXTHREE];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    OH_AudioConverter_Format inputFormat;
+    OH_AudioConverter_Format outputFormat;
+    int32_t fd = INVALID_FD;
+
+    if (!ParseConverterArguments(env, argv, inputFormat, outputFormat, fd)) {
+        return nullptr;
+    }
+
+    off_t fileSize = 0;
+    if (!ValidateAndGetFileSize(fd, fileSize)) {
+        return nullptr;
+    }
+
+    if (!InitializeInputData(fd, fileSize)) {
+        return nullptr;
+    }
+
+    if (!ReadInputFile(fd, fileSize)) {
+        return nullptr;
+    }
+
+    OH_AudioConverter_Result createResult =
+        OH_AudioConverter_Create(&inputFormat, &outputFormat, &g_converter);
+
+    if (createResult != AUDIOCONVERTER_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "OH_AudioConverter_Create failed: %{public}d",
+                     static_cast<int>(createResult));
+        CleanupConversion();
+        return CreateFinalResult(env, true);
+    }
+    OH_AudioConverter_Result callbackResult =
+        OH_AudioConverter_SetInputCallback(g_converter, AudioConverterRequestDataCallback, nullptr);
+    if (callbackResult != AUDIOCONVERTER_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "OH_AudioConverter_SetInputCallback failed: %{public}d",
+                     static_cast<int>(callbackResult));
+        CleanupConversion();
+        return CreateFinalResult(env, true);
+    }
+
+    ProcessState state;
+    if (!RunConversionProcess(state)) {
+        CleanupConversion();
+        return CreateFinalResult(env, true);
+    }
+
+    CleanupConversion();
+    return CreateFinalResult(env, state.hasError);
+}
+
+static int32_t GetSampleFormatFromBits(uint16_t bitsPerSample, uint16_t audioFormat)
+{
+    int32_t sampleFormat;
+    switch (bitsPerSample) {
+        case BITS_PER_SAMPLE_8: sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_U8; break;
+        case BITS_PER_SAMPLE_16: sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE; break;
+        case BITS_PER_SAMPLE_24: sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE; break;
+        case BITS_PER_SAMPLE_32:
+            if (audioFormat == SAMPLING_FORMAT_THREE) {
+                sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
+            } else {
+                sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE;
+            }
+            break;
+        default:
+            OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, TAG,
+                         "Unsupported bits per sample: %{public}u, defaulting to F32LE", bitsPerSample);
+            sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
+    }
+    return sampleFormat;
+}
+
+static int64_t GetChannelLayoutFromChannels(uint16_t numChannels)
+{
+    int64_t channelLayout;
+    switch (numChannels) {
+        case CHANNEL_COUNT_MONO: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_MONO; break;
+        case CHANNEL_COUNT_STEREO: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO; break;
+        case CHANNEL_COUNT_2POINT1: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_2POINT1; break;
+        case CHANNEL_COUNT_QUAD: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_QUAD; break;
+        case CHANNEL_COUNT_5POINT0: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_5POINT0; break;
+        case CHANNEL_COUNT_5POINT1: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_5POINT1; break;
+        case CHANNEL_COUNT_7POINT0: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_6POINT1; break;
+        case CHANNEL_COUNT_7POINT1: channelLayout = OH_AudioChannelLayout::CH_LAYOUT_7POINT1; break;
+        default:
+            channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    }
+    return channelLayout;
+}
+
+static bool ReadWavHeader(int fd, uint8_t* header, int size)
+{
+    int headerRead = read(fd, header, size);
+    if (headerRead < size) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Failed to read WAV header");
+        return false;
+    }
+
+    if (header[0] != DATA_HEADER_INDEX[0] || header[1] != DATA_HEADER_INDEX[1] ||
+        header[INDEXTWO] != DATA_HEADER_INDEX[INDEXTWO] ||
+        header[INDEXTHREE] != DATA_HEADER_INDEX[INDEXTHREE]) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Not a valid WAV file");
+        return false;
+    }
+
+    return true;
+}
+
+static napi_value CreateFileInfoObject(napi_env env, const FileInfo &fileInfo)
+{
+    napi_value resultObj;
+    napi_create_object(env, &resultObj);
+
+    napi_value samplingRateValue;
+    napi_create_int32(env, static_cast<int32_t>(fileInfo.samplingRate), &samplingRateValue);
+    napi_set_named_property(env, resultObj, "samplingRate", samplingRateValue);
+
+    napi_value channelLayoutValue;
+    napi_create_int64(env, fileInfo.channelLayout, &channelLayoutValue);
+    napi_set_named_property(env, resultObj, "channelLayout", channelLayoutValue);
+
+    napi_value numChannelsValue;
+    napi_create_int32(env, static_cast<int32_t>(fileInfo.numChannels), &numChannelsValue);
+    napi_set_named_property(env, resultObj, "numChannels", numChannelsValue);
+
+    napi_value sampleFormatValue;
+    napi_create_int32(env, fileInfo.sampleFormat, &sampleFormatValue);
+    napi_set_named_property(env, resultObj, "sampleFormat", sampleFormatValue);
+
+    napi_value encodingTypeValue;
+    napi_create_int32(env, OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW,
+                      &encodingTypeValue);
+    napi_set_named_property(env, resultObj, "encodingType", encodingTypeValue);
+
+    napi_value fileSizeValue;
+    napi_create_int64(env, static_cast<int64_t>(fileInfo.fileSize), &fileSizeValue);
+    napi_set_named_property(env, resultObj, "fileSize", fileSizeValue);
+
+    return resultObj;
+}
+
+static bool ValidateFileDescriptor(napi_env env, napi_value argv[], int32_t& fd)
+{
+    napi_status status = napi_get_value_int32(env, argv[0], &fd);
+    if (status != napi_ok || fd < 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Invalid file descriptor");
+        return false;
+    }
+    return true;
+}
+
+static bool ReadAndParseWavHeader(int fd, uint8_t *header, WavHeaderInfo &headerInfo)
+{
+    if (!ReadWavHeader(fd, header, WAV_HEADER_SIZE)) {
+        return false;
+    }
+
+    headerInfo.samplingRate = header[WAV_SAMPLE_RATE_OFFSET] |
+                              (header[WAV_SAMPLE_RATE_OFFSET + 1] << OFFSET_EIGHT) |
+                              (header[WAV_SAMPLE_RATE_OFFSET + OFFSET_TWO] << OFFSET_SIXTEEN) |
+                              (header[WAV_SAMPLE_RATE_OFFSET + OFFSET_THREE] << OFFSET_TWENTY_FOUR);
+    headerInfo.numChannels = header[WAV_NUM_CHANNELS_OFFSET] |
+                             (header[WAV_NUM_CHANNELS_OFFSET + 1] << OFFSET_EIGHT);
+    headerInfo.bitsPerSample = header[WAV_BITS_PER_SAMPLE_OFFSET] |
+                               (header[WAV_BITS_PER_SAMPLE_OFFSET + 1] << OFFSET_EIGHT);
+    headerInfo.audioFormat = header[WAV_AUDIO_FORMAT_OFFSET] |
+                             (header[WAV_AUDIO_FORMAT_OFFSET + 1] << OFFSET_EIGHT);
+    return true;
+}
+
+static napi_value AudioConverterGetFileInfo(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "AudioConverterGetFileInfo start");
+
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    int32_t fd = INVALID_FD;
+    if (!ValidateFileDescriptor(env, argv, fd)) {
+        return nullptr;
+    }
+
+    off_t fileSize = 0;
+    if (!ValidateAndGetFileSize(fd, fileSize)) {
+        return nullptr;
+    }
+
+    uint8_t header[WAV_HEADER_SIZE];
+    WavHeaderInfo headerInfo = {0};
+
+    if (!ReadAndParseWavHeader(fd, header, headerInfo)) {
+        close(fd);
+        return nullptr;
+    }
+
+    close(fd);
+    int32_t sampleFormat = GetSampleFormatFromBits(headerInfo.bitsPerSample, headerInfo.audioFormat);
+    int64_t channelLayout = GetChannelLayoutFromChannels(headerInfo.numChannels);
+    FileInfo fileInfo;
+    fileInfo.samplingRate = headerInfo.samplingRate;
+    fileInfo.numChannels = headerInfo.numChannels;
+    fileInfo.channelLayout = channelLayout;
+    fileInfo.sampleFormat = sampleFormat;
+    fileInfo.fileSize = fileSize;
+
+    napi_value resultObj = CreateFileInfoObject(env, fileInfo);
+    return resultObj;
+}
+
+// Test the function of outputting PrintInfo to a file.（fd >= 0）
+static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) {
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+    
+    if (!g_audioSuiteEngine) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: g_audioSuiteEngine is nullptr");
+        return result;
+    }
+    
+    // Generate timestamp and file path
+    auto now = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(now);
+    std::tm *tm = std::localtime(&time);
+    std::ostringstream timestampStream;
+    timestampStream << std::setfill('0') << std::setw(TIMESTAMP_YEAR_WIDTH) << (tm->tm_year + TM_YEAR_BASE)
+                    << std::setw(TIMESTAMP_DATE_WIDTH) << (tm->tm_mon + TM_MONTH_OFFSET)
+                    << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_mday << "_" << std::setw(TIMESTAMP_DATE_WIDTH)
+                    << tm->tm_hour << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_min << std::setw(TIMESTAMP_DATE_WIDTH)
+                    << tm->tm_sec;
+    
+    std::string dirPath = "/storage/Users/currentUser/Download/src.main.audiodemo/printfile/";
+    std::string filePath = dirPath + "/audio_snapshot_" + timestampStream.str() + ".txt";
+    mkdir(dirPath.c_str(), DIRECTORY_PERMISSIONS);
+    
+    // Open file
+    int fd = open(filePath.c_str(), O_WRONLY | O_CREAT, FILE_PERMISSIONS);
+    if (fd < 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: open failed, errno=%{public}d",
+                     errno);
+        OH_AudioSuite_Result ret = OH_AudioSuite_PrintInfo(g_audioSuiteEngine, nullptr, INVALID_FD);
+        if (ret == AUDIOSUITE_SUCCESS) {
+            napi_get_boolean(env, true, &result);
+        }
+        return result;
+    }
+
+    // Output to file
+    OH_AudioSuite_Result ret = OH_AudioSuite_PrintInfo(g_audioSuiteEngine, nullptr, fd);
+    close(fd);
+    
+    if (ret != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile failed: %{public}u", ret);
+        return result;
+    }
+    
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile success");
+    napi_get_boolean(env, true, &result);
+    return result;
+}
+
+const std::vector<napi_property_descriptor> recordDescriptors = {
+    {"audioCapturerInit", nullptr, AudioCapturerInit,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"audioCapturerStart", nullptr, AudioCapturerStart, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"audioCapturerStop", nullptr, AudioCapturerStop, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"audioCapturerRelease", nullptr, AudioCapturerRelease, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getAudioFrames", nullptr, GetAudioFrames, nullptr, nullptr, 0, napi_default, nullptr },
+    {"audioCapturerPause", nullptr, AudioCapturerPause, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"mixRecordBuffer", nullptr, MixRecordBuffer, nullptr, nullptr, 0, napi_default, nullptr },
+    {"mixPlayInitBuffer", nullptr, MixPlayInitBuffer, nullptr, nullptr, 0, napi_default, nullptr },
+    {"clearRecordBuffer", nullptr, ClearRecordBuffer, nullptr, nullptr, 0, napi_default, nullptr },
+    {"realPlayRecordBuffer", nullptr, RealPlayRecordBuffer, nullptr, nullptr, 0, napi_default, nullptr }
+};
+
+const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
+    {"audioEditNodeInitMultiPipeline", nullptr, AudioEditNodeInitMultiPipeline,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAudioInAndOutInit", nullptr, MultiAudioInAndOutInit,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiPipelineEnvPrepare", nullptr, MultiPipelineEnvPrepare,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiSetFormat", nullptr, MultiSetFormat,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiSaveFileBuffer", nullptr, MultiSaveFileBuffer,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiGetSecondOutputAudio", nullptr, MultiGetSecondOutputAudio,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiDeleteSong", nullptr, MultiDeleteSong,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"destroyMultiPipeline", nullptr, DestroyMultiPipeline,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAudioRendererInit", nullptr, MultiAudioRendererInit,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAudioRendererStart", nullptr, MultiAudioRendererStart,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiRealTimeSaveFileBuffer", nullptr, MultiRealTimeSaveFileBuffer,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getAutoTestProcess", nullptr, GetAutoTestProcess,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+};
+
+const std::vector<napi_property_descriptor> voiceChangeDescriptors = {
+    {"startGeneralVoiceChange", nullptr, StartGeneralVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"resetGeneralVoiceChange", nullptr, ResetGeneralVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"startPureVoiceChange", nullptr, StartPureVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"resetPureVoiceChange", nullptr, ResetPureVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr },
+};
+
+const std::vector<napi_property_descriptor> spaceRenderDescriptors = {
+    {"StartFixedPositionEffect", nullptr, StartFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"StartDynamicRenderEffect", nullptr, StartDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"StartExpandEffect", nullptr, StartExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetFixedPositionEffect", nullptr, ResetFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetDynamicRenderEffect", nullptr, ResetDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetExpandEffect", nullptr, ResetExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetFixedPositionParams", nullptr, GetFixedPositionParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetDynamicRenderParams", nullptr, GetDynamicRenderParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetExpandParams", nullptr, GetExpandParams, nullptr, nullptr, nullptr, napi_default, nullptr}
+};
+
+const std::vector<napi_property_descriptor> timelineDescriptors = {
+    {"addAudioTrack", nullptr, AddAudioTrack, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteAudioTrack", nullptr, DeleteAudioTrack, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"setAudioTrackSilent", nullptr, SetAudioTrackSilent, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"addAudioAsset", nullptr, AddAudioAsset, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"updateAudioAsset", nullptr, UpdateAudioAsset, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteAudioAsset", nullptr, DeleteAudioAsset, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"setAudioAssetStartTime", nullptr, SetAudioAssetStartTime, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setAudioAssetPcmBufferLength", nullptr, SetAudioAssetPcmBufferLength,
+        nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"addAudioAssetEffectNode", nullptr, AddAudioAssetEffectNode, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"deleteAudioAssetEffectNode", nullptr, DeleteAudioAssetEffectNode,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"clearTimeline", nullptr, ClearTimeline, nullptr, nullptr, nullptr, napi_default, nullptr },
+};
+
+const std::vector<napi_property_descriptor> callbackDescriptors = {
+    {"registerFinishedCallback", nullptr, RegisterFinishedCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr},
+    {"registerStringCallback", nullptr, RegisterStringCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerAudioCacheCallback", nullptr, RegisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr},
+    {"unregisterFinishedCallback", nullptr, UnregisterFinishedCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr},
+    {"unregisterAudioFormatCallback", nullptr, UnregisterAudioFormatCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr},
+    {"unregisterStringCallback", nullptr, UnregisterStringCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"unregisterAudioCacheCallback", nullptr, UnregisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr}
+};
+
+const std::vector<napi_property_descriptor> otherDescriptors = {
+    {"saveFileBuffer", nullptr, SaveFileBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"startFieldEffect", nullptr, startFieldEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"startVBEffect", nullptr, startVBEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"addAudioSeparation", nullptr, addAudioSeparation, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"addNoiseReduction", nullptr, addNoiseReduction, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"resetFieldEffect", nullptr, resetFieldEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"resetVBEffect", nullptr, resetVBEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteNoiseReduction", nullptr, deleteNoiseReduction, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteSong", nullptr, DeleteSong, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteAudioSeparation", nullptr, deleteAudioSeparation, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getAudioOfTap", nullptr, getAudioOfTap, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"startEnvEffect", nullptr, startEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"resetEnvEffect", nullptr, resetEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getEffectNodeList", nullptr, getEffectNodeList, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setSoundSpeedTone", nullptr, SetSoundSpeedTone, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setIsRecord", nullptr, SetIsRecord, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setSeparationMode", nullptr, SetSeparationMode, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"clear", nullptr, clear, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"clearByInputId", nullptr, clearByInputId, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ModifyRender", nullptr, ModifyRender, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"stopPipeline", nullptr, stopPipeline, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setCurrentTime", nullptr, setCurrentTime, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"testPrintInfoToFile", nullptr, TestPrintInfoToFile, nullptr, nullptr, nullptr, napi_default, nullptr},
+    // Real-time playback methods
+    {"initAudioRenderer", nullptr, InitAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"startAudioRenderer", nullptr, StartAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"stopAudioRenderer", nullptr, StopAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"releaseAudioRenderer", nullptr, ReleaseAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setRecordFlag", nullptr, SetRecordFlag, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getRecordedAudioData", nullptr, GetRecordedAudioData, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerPlaybackFinishCallback", nullptr, RegisterPlaybackFinishCallback, nullptr, nullptr, nullptr, napi_default,
+     nullptr},
+    {"unregisterPlaybackFinishCallback", nullptr, UnregisterPlaybackFinishCallback, nullptr, nullptr, nullptr,
+     napi_default, nullptr},
+};
+
+static napi_value Init(napi_env env, napi_value exports)
+{
+    std::vector<napi_property_descriptor> desc = {
+        {"record", nullptr, Record, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioRendererInit", nullptr, AudioRendererInit, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioRendererDestory", nullptr, AudioRendererDestory, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioRendererStart", nullptr, AudioRendererStart, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioRendererPause", nullptr, AudioRendererPause, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioRendererStop", nullptr, AudioRendererStop, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"getRendererState", nullptr, GetRendererState, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"resetTotalWriteAudioDataSize", nullptr, ResetTotalWriteAudioDataSize, nullptr, nullptr, nullptr, napi_default,
+         nullptr},
+        {"realTimeSaveFileBuffer", nullptr, RealTimeSaveFileBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioEditNodeInit", nullptr, AudioEditNodeInit, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioInAndOutInit", nullptr, AudioInAndOutInit, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"initByPipelineCascad", nullptr, InitByPipelineCascad, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioEditDestory", nullptr, AudioEditDestory, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setFormat", nullptr, SetFormat, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setEqualizerMode", nullptr, SetEqualizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setEqualizerFrequencyBandGains", nullptr, SetEqualizerFrequencyBandGains, nullptr, nullptr, nullptr,
+         napi_default, nullptr},
+        {"audioConverterCreate", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioConverterGetFileInfo", nullptr, AudioConverterGetFileInfo, nullptr, nullptr,
+         nullptr, napi_default, nullptr}
+    };
+    desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
+    desc.insert(desc.end(), voiceChangeDescriptors.begin(), voiceChangeDescriptors.end());
+    desc.insert(desc.end(), spaceRenderDescriptors.begin(), spaceRenderDescriptors.end());
+    desc.insert(desc.end(), recordDescriptors.begin(), recordDescriptors.end());
+    desc.insert(desc.end(), timelineDescriptors.begin(), timelineDescriptors.end());
+    desc.insert(desc.end(), callbackDescriptors.begin(), callbackDescriptors.end());
+    desc.insert(desc.end(), otherDescriptors.begin(), otherDescriptors.end());
+    napi_define_properties(env, exports, desc.size(), desc.data());
+    return exports;
+}
+
+static napi_module demoModule = {
+    .nm_version = 1,
+    .nm_flags = 0,
+    .nm_filename = nullptr,
+    .nm_register_func = Init,
+    .nm_modname = "entry",
+    .nm_priv = ((void *)0),
+    .reserved = {0},
+};
+
+extern "C" __attribute__((constructor)) void RegisterEntryModule(void) { napi_module_register(&demoModule); }
