@@ -95,6 +95,8 @@ public:
     // Implement by self (end)
 
 protected:
+    static constexpr int32_t MAX_GET_POSITION_TRY_COUNT = 200;
+
     // Funcs to handle pipe info
     virtual void InitPipeInfo(uint32_t id, HdiAdapterType adapter, uint32_t routeFlag,
         std::vector<DeviceType> devices = { DEVICE_TYPE_NONE });

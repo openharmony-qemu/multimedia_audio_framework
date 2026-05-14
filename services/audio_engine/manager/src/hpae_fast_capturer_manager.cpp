@@ -220,6 +220,7 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
 int32_t HpaeFastCapturerManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    hpaeSignalProcessThread_->SetFastThread(true);
     auto request = [this, isReload] {
         int32_t ret = InitCapturerManager();
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
@@ -491,6 +492,10 @@ void HpaeFastCapturerManager::Process()
             sourceOutputNode->DoProcess();
         }
     }
+    int64_t wakeUpTime = ClockTime::GetCurNano();
+    CHECK_AND_RETURN_LOG(sourceInputNode_ && sourceInputNode_->PrepareNextLoop(wakeUpTime),
+        "PrepareNextLoop failed");
+    ClockTime::AbsoluteSleep(wakeUpTime);
 }
 
 void HpaeFastCapturerManager::HandleMsg()
@@ -568,8 +573,14 @@ int32_t HpaeFastCapturerManager::AddAllNodesToSource(const std::vector<HpaeCaptu
 
 void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect)
 {
-    uint32_t sessionId = moveInfo.sessionId;
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceOutputNode is null");
+    HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
+    uint32_t sessionId = nodeInfo.sessionId;
+    Trace trace("HpaeFastCapturerManager::AddSingleNodeToSource[" + std::to_string(sessionId) + "]");
+    AUDIO_INFO_LOG("[FinishMove] session:%{public}u to source:fast", sessionId);
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
+        HPAE_STREAM_CLASS_TYPE_RECORD);
+
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     if (!SafeGetMap(converterNodeMap_, sessionId) && sourceInputNode_ != nullptr) {
@@ -602,6 +613,7 @@ int32_t HpaeFastCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sour
 {
     if (!IsInit()) {
         hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+        hpaeSignalProcessThread_->SetFastThread(true);
     }
     auto request = [this, sourceInfo, isReload] {
         for (const auto &[sessionId, node] : sourceOutputNodeMap_) {

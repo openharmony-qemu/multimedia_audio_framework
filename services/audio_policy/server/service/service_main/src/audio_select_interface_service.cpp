@@ -35,6 +35,7 @@
 #include "audio_bluetooth_manager.h"
 #include "audio_scene_manager.h"
 #include "hisysevent.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -158,7 +159,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     SelectOutputDeviceLog(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
         selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION, "DeviceCheck no success");
- 
+
     int32_t res = SUCCESS;
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
@@ -173,25 +174,29 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     SetDeviceEnableAndUsage(selectedDesc[0]);
 
     if (audioDeviceSelectMode == SELECT_STRATEGY_STREAM || audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT) {
-        CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid > 0, ERR_INVALID_OPERATION, "Invalid uid");
+        CHECK_AND_CALL_FUNC_RETURN_RET(audioRendererFilter->uid > 0, ERR_INVALID_OPERATION,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM, "SelectOutputDevice: invalid uid", false));
         AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(audioRendererFilter->uid,
             audioRendererFilter->streamId, selectedDesc[0]);
     } else if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     } else {
         res = SetRenderDeviceForUsage(strUsage, selectedDesc[0], audioRendererFilter->uid);
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
+        CHECK_AND_CALL_FUNC_RETURN_RET(res == SUCCESS, res,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SelectOutputDevice: SetRenderDeviceForUsage failed", false));
     }
-    
+
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
-    
+
     // If the selected device is virtual device, connect it.
     if (AudioDeviceManager::GetAudioDeviceManager().IsVirtualConnectedDevice(selectedDesc[0])) {
         int32_t ret = AudioRecoveryDevice::GetInstance().ConnectVirtualDevice(selectedDesc[0]);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Connect device [%{public}s] failed",
-            AudioPolicyUtils::GetInstance().GetEncryptAddr(selectedDesc[0]->macAddress_).c_str());
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            IPCSkeleton::GetCallingUid(), ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "ConnectVirtualDevice fail", false));
         return SUCCESS;
     }
 
@@ -214,6 +219,10 @@ void AudioSelectInterfaceService::SelectOutputDeviceLog(sptr<AudioRendererFilter
         selectedDesc[0]->deviceType_, selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID,
         AudioPolicyUtils::GetInstance().GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
         audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingUid(), audioDeviceSelectMode);
+    CHECK_AND_CALL_FUNC_RETURN(selectedDesc.size() == 1 && selectedDesc[0] &&
+        selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM, "SelectOutputDevice: DeviceCheck no success", false));
 }
 
 void AudioSelectInterfaceService::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
@@ -376,7 +385,8 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
         return SUCCESS;
     }
     auto ret = RefreshVirtualDevice(selectedDesc[0]);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+        IPCSkeleton::GetCallingUid(), ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "RefreshVirtualDevice failed", false));
 
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
         srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -599,7 +609,8 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
         }
         if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE) {
             CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");

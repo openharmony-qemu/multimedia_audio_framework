@@ -66,7 +66,15 @@ export const registerAudioCacheCallback: (callBackFull: Function) => boolean;
 export const unregisterAudioCacheCallback: () => void;
 export const ModifyRender: (notRenderTrackIds: string[], renderTrackIds: string[]) => void;
 export const setCurrentTime: (currentTime: number) => void;
-export const setEffectNodeBypass: (inputId: string, effectId: string, is: boolean) => boolean;
+export const setEffectNodeBypass: (inputId: string, effectId: string, isBypass: boolean) => boolean;
+export const initAudioRenderer: (sampleRate: number, channels: number, bitDepth: number) => number;
+export const startAudioRenderer: () => number;
+export const setRecordFlag: (enable: boolean) => void;
+export const registerPlaybackFinishCallback: (callback: () => void) => void;
+export const getRecordedAudioData: () => ArrayBuffer | null;
+export const stopAudioRenderer: () => number;
+export const releaseAudioRenderer: () => void;
+export const unregisterPlaybackFinishCallback: () => void;
 export const audioConverterCreate: (inputFormat: {
   encodingType: number;
   samplingRate: number;
@@ -87,3 +95,4 @@ export interface AudioFileInfo {
   fileSize: number;
 }
 export const audioConverterGetFileInfo: (fd: number) => AudioFileInfo;
+export const testPrintInfoToFile: () => boolean;

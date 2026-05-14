@@ -20,6 +20,7 @@
 #include <memory>
 #include <mutex>
 
+#include "audio_errors.h"
 #include "audio_suite_pcm_buffer.h"
 
 namespace OHOS {
@@ -34,8 +35,8 @@ enum class InputDataStatus {
 };
 
 struct AudioConvertResult {
-    uint8_t* outData = nullptr;       // Output data buffer
-    uint32_t outSampleCount = 0;      // Number of output samples
+    uint8_t* outData = nullptr;       // Output data buffer(Internal allocation and management)
+    uint32_t outByteCount = 0;        // Number of output bytes
     int32_t errCode = SUCCESS;
 };
 
@@ -61,7 +62,7 @@ public:
 
     virtual int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) = 0;
 
-    virtual AudioConvertResult Process(const uint8_t* inData, uint32_t inSampleCount) = 0;
+    virtual AudioConvertResult SyncProcess(const uint8_t* inData, uint32_t inBytes) = 0;
 
     virtual void Destroy() = 0;
 private:

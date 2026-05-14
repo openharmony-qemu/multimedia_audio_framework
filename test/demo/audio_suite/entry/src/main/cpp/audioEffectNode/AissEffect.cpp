@@ -27,51 +27,115 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *AISS_TAG = "[AudioEditTestApp_AISS_cpp]";
 
-napi_value addAudioSeparation(napi_env env, napi_callback_info info)
-{
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation---IN");
-    size_t argc = 5;
-    napi_value argv[5] = {nullptr};
-    napi_value ret = nullptr;
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
+// Argument counts
+const int32_t ARG_COUNT_5 = 5;
+const int32_t ARG_COUNT_1 = 1;
+const int32_t MIN_ARGS_3 = 3;
+const int32_t MIN_ARGS_4 = 4;
+const int32_t MIN_ARGS_5 = 5;
 
-    std::string uuidStr;
-    std::string inputIdStr;
+// Default values
+const bool DEFAULT_IS_ALL_SEP = false;
+
+// Array indices
+const int32_t FIRST_OUTPUT_NODE_INDEX = 0;
+
+struct AudioSeparationParams {
+    std::string uuid;
+    std::string inputId;
     std::string selectedNodeId;
-    bool isAllSep = false;
-    if (ParseNapiString(env, argv[ARG_1], uuidStr) != napi_ok ||
-        ParseNapiString(env, argv[ARG_2], inputIdStr) != napi_ok ||
-        ParseNapiString(env, argv[ARG_3], selectedNodeId) != napi_ok ||
-        napi_get_value_bool(env, argv[ARG_4], &isAllSep) != napi_ok) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Parse params failed");
-        return ret;
+    bool isAllSep;
+};
+
+static bool ParseAudioSeparationParams(napi_env env, napi_callback_info info, AudioSeparationParams &params)
+{
+    size_t argc = ARG_COUNT_5;
+    napi_value argv[ARG_COUNT_5] = {nullptr};
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation argc: %{public}d", (int)argc);
+
+    params.isAllSep = false;
+
+    if (argc < MIN_ARGS_3) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Invalid argc: %{public}d", (int)argc);
+        return false;
     }
 
-    Node node = CreateNodeByType(uuidStr, EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
-    if (!node.physicalNode) return ret;
+    if (ParseNapiString(env, argv[ARG_1], params.uuid) != napi_ok ||
+        ParseNapiString(env, argv[ARG_2], params.inputId) != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Parse params failed");
+        return false;
+    }
 
-    OH_AudioSuite_Result result = AUDIOSUITE_ERROR_SYSTEM;
-    if (isAllSep) {
+    if (argc >= MIN_ARGS_4) {
+        if (ParseNapiString(env, argv[ARG_3], params.selectedNodeId) != napi_ok) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Parse selectedNodeId failed");
+            return false;
+        }
+    }
+
+    if (argc >= MIN_ARGS_5) {
+        if (napi_get_value_bool(env, argv[ARG_4], &params.isAllSep) != napi_ok) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Parse isAllSep failed");
+            return false;
+        }
+    }
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG,
+                 "uuid:%{public}s, inputId:%{public}s,"
+                 "selectedNodeId:%{public}s, isAllSep:%{public}d",
+                 params.uuid.c_str(), params.inputId.c_str(), params.selectedNodeId.c_str(), params.isAllSep);
+    return true;
+}
+
+static OH_AudioSuite_Result InsertAudioSeparationNode(const AudioSeparationParams &params)
+{
+    if (params.isAllSep) {
         auto outputNodes = g_nodeManager->getNodesByType(OUTPUT_NODE_TYPE_DEFAULT);
         if (outputNodes.empty()) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "No output node found");
-            return ret;
+            return AUDIOSUITE_ERROR_SYSTEM;
         }
-        result = g_nodeManager->insertNode(uuidStr, outputNodes[0].id, BEFORE);
-    } else {
-        result = selectedNodeId.empty() ?
-            (OH_AudioSuite_Result)AddEffectNodeToNodeManager(inputIdStr, uuidStr) :
-            g_nodeManager->insertNode(uuidStr, selectedNodeId, LATER);
+        return g_nodeManager->insertNode(params.uuid, outputNodes[FIRST_OUTPUT_NODE_INDEX].id, BEFORE);
     }
 
+    if (params.selectedNodeId.empty()) {
+        return (OH_AudioSuite_Result)AddEffectNodeToNodeManager(params.inputId, params.uuid);
+    }
+    return g_nodeManager->insertNode(params.uuid, params.selectedNodeId, LATER);
+}
+
+napi_value addAudioSeparation(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation---IN");
+
+    AudioSeparationParams params;
+    if (!ParseAudioSeparationParams(env, info, params)) {
+        napi_value ret;
+        napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
+        return ret;
+    }
+
+    Node node = CreateNodeByType(params.uuid, EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
+    if (!node.physicalNode) {
+        napi_value ret;
+        napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
+        return ret;
+    }
+
+    OH_AudioSuite_Result result = InsertAudioSeparationNode(params);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "insertNode failed: %d", (int)result);
+        napi_value ret;
+        napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
         return ret;
     }
 
     g_multiRenderFrameFlag = true;
     if (g_threadPipelineManager) g_threadPipelineManager->multiRenderFrameFlag = true;
+
+    napi_value ret;
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation: success");
     return ret;

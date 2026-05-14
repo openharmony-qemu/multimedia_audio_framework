@@ -227,6 +227,17 @@ bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout 
     return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
+int32_t HpaePolicyManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET(audioEffectChainManager != nullptr,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+        BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
+        "null audioEffectChainManager", false), ERR_ILLEGAL_STATE));
+    return audioEffectChainManager->UpdatePersonalizedHRTFBin(fd, length);
+}
+
 int32_t HpaePolicyManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();

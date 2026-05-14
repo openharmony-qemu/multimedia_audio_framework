@@ -347,4 +347,14 @@ interface IAudioPolicy {
     void CreateLoopback([in] int mode, [in] int type, [in] IRemoteObject cbObject, [out] IRemoteObject loopback,
         [out] int ret);
     void DestroyLoopback([in] int type, [out] int ret);
+    void GetAudioZoneForApp([in] List<int> userIds, [out] List<int> retUserIds);
+    void AddStreamIdToAudioZone([in] int zoneId, [in] unsigned int streamId);
+    void RemoveStreamIdFromAudioZone([in] int zoneId, [in] unsigned int streamId);
+    void IsPersonalizedSpatializationSupported([out] boolean ret);
+    void IsPersonalizedSpatializationEnabled([in] String address, [out] boolean ret);
+    void SetPersonalizedSpatializationEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
+    void DownloadPersonalizedHRTF([in] FileDescriptor fd, [in] long length);
+    void IsAudioSeparationEffectSupported([out] boolean ret);
+    void SetAudioSeparationEffectEnabled([in] boolean enabled, [in] int uid, [in] long streamId);
+    void SetAudioSeparationEffectVolume([in] int type, [in] double volume);
 }

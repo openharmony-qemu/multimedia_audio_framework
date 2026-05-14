@@ -93,6 +93,22 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
 };
 
+class AudioPersonalizedSpatializationEnabledChangeCallback {
+public:
+    virtual ~AudioPersonalizedSpatializationEnabledChangeCallback() = default;
+
+    /**
+     * @brief AudioPersonalizedSpatializationEnabledChangeCallback will be executed
+     * when personalized spatialization enabled state changes
+     *
+     * @param deviceDescriptor audio device description.
+     * @param enabled the personalized spatialization enabled state.
+     * @since 26
+     */
+    virtual void OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
+};
+
 class AudioSpatialAudioSourceTypeChangeCallback {
 public:
     virtual ~AudioSpatialAudioSourceTypeChangeCallback() = default;
@@ -237,6 +253,16 @@ public:
         const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback);
 
     /**
+     * @brief Register the personalized spatialization enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t RegisterPersonalizedSpatializationEnabledEventListener(
+        const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &callback);
+
+    /**
      * @brief Register the spatial audio source type change callback listener
      *
      * @return Returns {@link SUCCESS} if audio source type changed; returns an error code
@@ -283,6 +309,15 @@ public:
     int32_t UnregisterAdaptiveSpatialRenderingEnabledEventListener();
 
     /**
+     * @brief Unregister the personalized spatialization enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t UnregisterPersonalizedSpatializationEnabledEventListener();
+
+    /**
      * @brief Unregister spatial audio source type change callback listener
      *
      * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
@@ -322,6 +357,14 @@ public:
      * @since 11
      */
     bool IsHeadTrackingSupportedForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+
+    /**
+     * @brief Check whether the personalized spatialization is supported
+     *
+     * @return Returns <b>true</b> if the personalized spatialization is supported; returns <b>false</b> otherwise.
+     * @since 26
+     */
+    bool IsPersonalizedSpatializationSupported();
 
     /**
      * @brief Update the state of the spatial Device
@@ -391,6 +434,32 @@ public:
      */
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+
+    /**
+     * @brief Check whether the personalized spatialization is enabled by the specified device.
+     *
+     * @return Returns <b>true</b> if the personalized spatialization is successfully enabled;
+     * returns <b>false</b> otherwise.
+     * @since 26
+     */
+    bool IsPersonalizedSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+
+    /**
+     * @brief Set the personalized spatialization enabled or disabled by the specified device.
+     *
+     * @return Returns success or not
+     * @since 26
+     */
+    int32_t SetPersonalizedSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    
+    /**
+     * @brief Downloads personalized HRTF data and save HRTF on disk.
+     *
+     * @return Returns success or not
+     * @since 26
+     */
+    int32_t DownloadPersonalizedHRTF(const int32_t fd, const int64_t length);
 
     /**
      * @brief Get current spatial audio source type.

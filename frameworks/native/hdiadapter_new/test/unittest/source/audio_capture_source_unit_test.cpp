@@ -52,6 +52,8 @@ public:
         struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo);
     static int32_t AudioCaptureCaptureFrameEc003(
         struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo);
+    static int32_t AudioCaptureCaptureFrameCamcorder(
+        struct IAudioCapture *self, int8_t *frame, uint32_t *frameLen, uint64_t *replyBytes);
 protected:
     static uint32_t primaryId_;
     static uint32_t usbId_;
@@ -151,6 +153,28 @@ int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc003(
     frameInfo->frameEc = frameEc;
     frameInfo->frame = frame;
     frameInfo->replyBytes = 1024; // 1024: replyBytes
+    return 0;
+}
+
+int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameCamcorder(
+    struct IAudioCapture *self, int8_t *frame, uint32_t *frameLen, uint64_t *replyBytes)
+{
+    const int8_t source[] = {
+        21, 22, 23, 24,
+        25, 26, 27, 28,
+        1, 2, 3, 4, 5, 6, 7, 8,
+        9, 10, 11, 12, 13, 14, 15, 16
+    };
+    uint32_t copyLen = static_cast<uint32_t>(sizeof(source));
+    if (frameLen != nullptr && *frameLen < copyLen) {
+        copyLen = *frameLen;
+    }
+    for (uint32_t i = 0; i < copyLen; ++i) {
+        frame[i] = source[i];
+    }
+    if (replyBytes != nullptr) {
+        *replyBytes = copyLen;
+    }
     return 0;
 }
 
@@ -706,6 +730,43 @@ HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test CaptureFrame API
+ * @tc.number : CaptureFrame_001
+ * @tc.desc   : Test camcorder capture frame interleave raw and mic-in channels
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrame_001, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+    IAudioSourceAttr attr = {};
+    attr.adapterName = "primary";
+    attr.sampleRate = SAMPLE_RATE_48000;
+    attr.channel = STEREO;
+    attr.format = SAMPLE_S16LE;
+    attr.channelLayout = CH_LAYOUT_STEREO;
+    attr.deviceType = DEVICE_TYPE_MIC;
+    attr.openMicSpeaker = 1;
+    attr.sourceType = SOURCE_TYPE_CAMCORDER;
+    attr.channelMicIn = CHANNEL_4;
+    source_->Init(attr);
+    ASSERT_NE(source_->audioCapture_, nullptr);
+    source_->audioCapture_->CaptureFrame = AudioCaptureCaptureFrameCamcorder;
+    source_->started_.store(true);
+
+    std::vector<int8_t> buffer(24, 0); // two 6-channel S16LE frames
+    uint64_t replyBytes = 0;
+    int32_t ret = source_->CaptureFrame(reinterpret_cast<char *>(buffer.data()), buffer.size(), replyBytes);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(replyBytes, buffer.size());
+    std::vector<int8_t> expect {
+        21, 22, 23, 24, 1, 2, 3, 4, 5, 6, 7, 8,
+        25, 26, 27, 28, 9, 10, 11, 12, 13, 14, 15, 16
+    };
+    EXPECT_EQ(buffer, expect);
+    source_->DeInit();
+}
+
+/**
  * @tc.name   : Test UsbSource API
  * @tc.number : UsbSourceUnitTest_001
  * @tc.desc   : Test usb source create
@@ -1083,6 +1144,8 @@ HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_AI);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_UNPROCESS);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_LIVE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_LIVE);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_NORMAL);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC);
@@ -1170,6 +1233,27 @@ HWTEST_F(AudioCaptureSourceUnitTest, UpdateRawSampleAttr_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test UpdateRawSampleAttr API
+ * @tc.number : UpdateRawSampleAttr_003
+ * @tc.desc   : Test UpdateRawSampleAttr API for SOURCE_TYPE_CAMCORDER
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, UpdateRawSampleAttr_003, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+
+    captureSource->attr_.sourceType = SOURCE_TYPE_CAMCORDER;
+    captureSource->attr_.formatMicIn = SAMPLE_S24LE;
+    captureSource->attr_.sampleRateMicIn = SAMPLE_RATE_48000;
+    captureSource->attr_.channelMicIn = CHANNEL_4;
+
+    struct AudioSampleAttributes param;
+    captureSource->UpdateRawSampleAttr(param);
+    EXPECT_EQ(param.rawSampleAttributes.rawFormat, AUDIO_FORMAT_TYPE_PCM_24_BIT);
+    EXPECT_EQ(param.rawSampleAttributes.rawSampleRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(param.rawSampleAttributes.rawChannelLayout, CH_LAYOUT_QUAD);
+}
+
+/**
  * @tc.name   : Test GetUniqueIdBySourceType API
  * @tc.number : GetUniqueIdBySourceType_012
  * @tc.desc   : Test GetUniqueIdBySourceType for AUDIO_INPUT_INTERPHON_TYPE
@@ -1182,6 +1266,35 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_012, TestSize.Level
     captureSource->attr_.hdiSourceType = "AUDIO_INPUT_INTERPHON_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHONE * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_013
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_013, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_LIVE;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_LIVE_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_LIVE * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_014
+ * @tc.desc   : Test GetUniqueIdBySourceType for AUDIO_INPUT_CAMCORDER_TYPE
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_014, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    captureSource->attr_.sourceType = SOURCE_TYPE_CAMCORDER;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_CAMCORDER_TYPE";
+    uint32_t id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_CAMCORDER * UNIQUE_ID_INTERVAL);
 }
 
 /**
@@ -1256,6 +1369,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, DestructorThreadSafety_002, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = primarySource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
     primarySource_ = nullptr;
     EXPECT_EQ(primarySource_, nullptr);
 }
@@ -1379,6 +1493,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, DestructorCaptureThreadJoinable_001, TestSi
     if (ret == SUCCESS && captureSource->IsInited()) {
         ret = captureSource->Start();
         if (ret == SUCCESS) {
+            captureSource->DeInit();
             captureSource = nullptr;
             EXPECT_EQ(captureSource, nullptr);
             return;

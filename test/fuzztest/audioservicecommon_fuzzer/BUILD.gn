@@ -48,6 +48,12 @@ ohos_fuzztest("AudioServiceCommonFuzzTest") {
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
   ]
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+  }
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",

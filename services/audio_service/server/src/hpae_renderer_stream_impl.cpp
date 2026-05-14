@@ -48,15 +48,13 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
+static constexpr float FRAME_LEN_2_5MS_IN_MS = 2.5f;
 static constexpr uint64_t FRAME_LEN_5MS = 5;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint64_t FIXED_LATENCY_IN_MS = 40;
 static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
-// to judge whether customSampleRate is multiples of 50
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_A2DP = "a2dp";
@@ -68,17 +66,20 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     processConfig_ = processConfig;
     usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
-    if (usedSampleRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
-        spanSizeInFrame_ = FRAME_LEN_20MS * usedSampleRate_ / AUDIO_MS_PER_S;
-    } else if (usedSampleRate_ == SAMPLE_RATE_11025) {
-        spanSizeInFrame_ = FRAME_LEN_40MS * usedSampleRate_ / AUDIO_MS_PER_S;
-    } else {
-        spanSizeInFrame_ = FRAME_LEN_100MS * usedSampleRate_ / AUDIO_MS_PER_S;
-    }
+    
     if (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST &&
         processConfig_.isInnerCapturer == false) {
-        spanSizeInFrame_ = FRAME_LEN_5MS * usedSampleRate_ / AUDIO_MS_PER_S;
-        AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
+        if (IsUltraFastStreamAndRoute(processConfig_.ultraFastFlag)) {
+            spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_2_5MS_IN_MS * usedSampleRate_ / AUDIO_MS_PER_S);
+            AUDIO_INFO_LOG("ultra fast for spanSizeInFrame_ to 2.5ms: %{public}zu", spanSizeInFrame_);
+        } else {
+            spanSizeInFrame_ = FRAME_LEN_5MS * usedSampleRate_ / AUDIO_MS_PER_S;
+            AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
+        }
+    } else {
+        spanSizeInFrame_ = FRAME_LEN_20MS * usedSampleRate_ / AUDIO_MS_PER_S;
+        AUDIO_INFO_LOG("RendererStream: unified 20ms span, usedSampleRate=%{public}u, spanSizeInFrame=%{public}zu",
+            usedSampleRate_, spanSizeInFrame_);
     }
     if ((processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST ||
         processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_VOIP_FAST ||

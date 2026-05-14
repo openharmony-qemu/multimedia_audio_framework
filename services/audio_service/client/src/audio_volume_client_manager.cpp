@@ -19,6 +19,7 @@
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,16 +74,25 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
 #endif
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
-            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    ERR_SET_VOLUME_PERMISSION_DENIED, "SetVolume permission denied", true),
+                "No system permission");
             break;
         }
         default:
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                ERR_SET_VOLUME_NOT_SUPPORTED, "SetVolume volumeType not supported", true);
             AUDIO_ERR_LOG("volumeType[%{public}d] is not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, uid == 0, 0, uid);
+    int32_t ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, uid == 0, 0, uid);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_SET_VOLUME_FAILED, "SetVolume failed", true));
+    return ret;
 }
 
 int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -153,10 +163,15 @@ int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t 
 #endif
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
-            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    ERR_GET_VOLUME_FAILED, "GetVolume permission denied", true),
+                "No system permission");
             break;
         }
         default:
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                ERR_GET_VOLUME_NOT_SUPPORTED, "GetVolume volumeType not supported", true);
             AUDIO_ERR_LOG("volumeType[%{public}d] is not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
@@ -270,16 +285,25 @@ int32_t AudioVolumeClientManager::SetMute(AudioVolumeType volumeType, bool mute,
 #endif
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
-            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    ERR_SET_VOLUME_PERMISSION_DENIED, "SetMute permission denied", true),
+                "No system permission");
             break;
         }
         default:
-            AUDIO_ERR_LOG("volumeType=%{public}d not supported", volumeType);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                ERR_SET_VOLUME_NOT_SUPPORTED, "SetMute volumeType not supported", true);
+            AUDIO_ERR_LOG("volumeType[%{public}d] not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true, deviceType);
+    int32_t ret = AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true, deviceType);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_SET_VOLUME_FAILED, "SetMute failed", true));
+    return ret;
 }
 
 bool AudioVolumeClientManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -450,11 +474,17 @@ int32_t AudioVolumeClientManager::RegisterSystemVolumeChangeCallback(const int32
 {
     AUDIO_DEBUG_LOG("AudioVolumeClientManager RegisterSystemVolumeChangeCallback");
 
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_VOLUME_CALLBACK_NULL_POINTER, "RegisterSystemVolumeChangeCallback callback is nullptr", true),
         "RegisterSystemVolumeChangeCallback callback is nullptr");
     volumeChangeClientPid_ = clientPid;
 
-    return AudioPolicyManager::GetInstance().SetSystemVolumeChangeCallback(clientPid, callback);
+    int32_t ret = AudioPolicyManager::GetInstance().SetSystemVolumeChangeCallback(clientPid, callback);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_VOLUME_CALLBACK_REGISTER_FAILED, "RegisterSystemVolumeChangeCallback failed", true));
+    return ret;
 }
 
 int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
@@ -462,9 +492,9 @@ int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeCallback(const int
 {
     AUDIO_DEBUG_LOG("UnregisterSystemVolumeChangeCallback");
     int32_t ret = AudioPolicyManager::GetInstance().UnsetSystemVolumeChangeCallback(callback);
-    if (!ret) {
-        AUDIO_DEBUG_LOG("UnsetSystemVolumeChangeCallback success");
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_VOLUME_CALLBACK_UNREGISTER_FAILED, "UnregisterSystemVolumeChangeCallback failed", true));
     return ret;
 }
 
@@ -791,17 +821,28 @@ int32_t AudioVolumeClientManager::RegisterStreamVolumeChangeCallback(const int32
 {
     AUDIO_DEBUG_LOG("register StreamVolumeChangeCallback clientPid:%{public}d", clientPid);
 
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_VOLUME_CALLBACK_NULL_POINTER, "RegisterStreamVolumeChangeCallback callback is nullptr", true),
+        "callback is nullptr");
     volumeChangeClientPid_ = clientPid;
 
-    return AudioPolicyManager::GetInstance().SetStreamVolumeChangeCallback(clientPid, streamUsages, callback);
+    int32_t ret = AudioPolicyManager::GetInstance().SetStreamVolumeChangeCallback(clientPid, streamUsages, callback);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_VOLUME_CALLBACK_REGISTER_FAILED, "RegisterStreamVolumeChangeCallback failed", true));
+    return ret;
 }
 
 int32_t AudioVolumeClientManager::UnregisterStreamVolumeChangeCallback(const int32_t clientPid,
     const std::shared_ptr<StreamVolumeChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("unregister StreamVolumeChangeCallback clientPid:%{public}d", clientPid);
-    return AudioPolicyManager::GetInstance().UnsetStreamVolumeChangeCallback(callback);
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetStreamVolumeChangeCallback(callback);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            ERR_VOLUME_CALLBACK_UNREGISTER_FAILED, "UnregisterStreamVolumeChangeCallback failed", true));
+    return ret;
 }
 
 int32_t AudioVolumeClientManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,

@@ -702,9 +702,68 @@ void AudioSpatializationServiceSetSpatializationSceneTypeAllTypesFuzzTest(Fuzzed
     }
 }
 
-void Test(FuzzedDataProvider& fdp)
+void AudioSpatializationServiceIsPersonalizedSpatializationSupportedFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto func = fdp.PickValueInArray({
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    if (ptrAudioSpatializationService == nullptr) {
+        return;
+    }
+    ptrAudioSpatializationService->IsPersonalizedSpatializationSupported();
+}
+
+void AudioSpatializationServiceIsPersonalizedSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    if (ptrAudioSpatializationService == nullptr) {
+        return;
+    }
+
+    std::string address = "test_address";
+    ptrAudioSpatializationService->IsPersonalizedSpatializationEnabled(address);
+}
+
+void AudioSpatializationServiceSetPersonalizedSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    if (ptrAudioSpatializationService == nullptr) {
+        return;
+    }
+
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    const bool enable = GetData<bool>();
+
+    ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+}
+
+void AudioSpatializationServiceHandlePersonalizedSpatializationEnabledChangeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    if (ptrAudioSpatializationService == nullptr) {
+        return;
+    }
+
+    const bool enable = GetData<bool>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ptrAudioSpatializationService->HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice, enable);
+}
+
+void AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    if (ptrAudioSpatializationService == nullptr) {
+        return;
+    }
+
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    selectedAudioDevice->macAddress_ = "00:11:22:33:44:55";
+    const bool enable = GetData<bool>();
+    ptrAudioSpatializationService->spatializationStateFlag_.personalizedSpatializationEnabled = !enable;
+    ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+}
+
+using FuzzTestFunc = void (*)(FuzzedDataProvider& fdp);
+static constexpr FuzzTestFunc ALL_FUZZ_TESTS[] = {
     UpdateCurrentDeviceFuzzTest,
     RemoveOldestDeviceFuzzTest,
     UpdateDeviceSpatialMapInfoFuzzTest,
@@ -750,9 +809,19 @@ void Test(FuzzedDataProvider& fdp)
     AudioSpatializationServiceUpdateRendererInfoMultipleFuzzTest,
     AudioSpatializationServiceIsHeadTrackingDataRequestedDifferentDeviceFuzzTest,
     AudioSpatializationServiceSetSpatializationSceneTypeAllTypesFuzzTest,
-    });
+    AudioSpatializationServiceIsPersonalizedSpatializationSupportedFuzzTest,
+    AudioSpatializationServiceIsPersonalizedSpatializationEnabledFuzzTest,
+    AudioSpatializationServiceSetPersonalizedSpatializationEnabledFuzzTest,
+    AudioSpatializationServiceHandlePersonalizedSpatializationEnabledChangeFuzzTest,
+    AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzzTest,
+};
+
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray(ALL_FUZZ_TESTS);
     func(fdp);
 }
+
 void Init(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {

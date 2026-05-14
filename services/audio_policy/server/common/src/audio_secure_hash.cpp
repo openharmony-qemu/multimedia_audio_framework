@@ -94,9 +94,9 @@ unsigned char* AudioSecureHash::AudioSecureHashAlgo(const unsigned char *d, size
     // illegal state, d == nullptr && n > 0
     CHECK_AND_RETURN_RET_LOG(d != nullptr || n == 0, nullptr, "illegal parameter");
 
-    static unsigned char staticBuffer[SHA256_DIGEST_LENGTH];
+    thread_local unsigned char defaultBuffer[SHA256_DIGEST_LENGTH];
     if (md == nullptr) {
-        md = staticBuffer;
+        md = defaultBuffer;
     }
 
     AlgoCTX ctx;
@@ -219,6 +219,7 @@ static bool AlgoFinal(unsigned char *md, AlgoCTX* c)
 {
     unsigned char tmp[64];
     size_t len = c->num;
+    CHECK_AND_RETURN_RET(len < sizeof(tmp), false);
 
     // copy remaining data
     if (len > 0) {

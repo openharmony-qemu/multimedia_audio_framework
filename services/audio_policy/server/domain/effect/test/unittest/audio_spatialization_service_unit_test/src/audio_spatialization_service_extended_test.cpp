@@ -29,6 +29,9 @@ static const std::string SPATIALIZATION_SUPPORTED_LABEL = "SPATIALIZATION";
 static const std::string HEAD_TRACKING_SUPPORTED_LABEL = "HEADTRACKING";
 static const std::string TEST_SUPPORTED_LABEL = "TEST_LABEL";
 static const std::string TEST_MAC_ADDRESS = "00:11:22:33:44:55";
+static const std::string PERSONALIZED_SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL =
+    "PERSONALIZED_SPATIALIZATION_AND_HEADTRACKING";
+static const std::string PERSONALIZED_SPATIALIZATION_SUPPORTED_LABEL = "PERSONALIZED_SPATIALIZATION";
 
 void AudioSpatializationServiceUnitTest::SetUpTestCase(void) {}
 void AudioSpatializationServiceUnitTest::TearDownTestCase(void) {}
@@ -66,7 +69,12 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_001, Tes
     EffectChain effectChain3(sName, applyVec, sLabel);
     sLabel = TEST_SUPPORTED_LABEL;
     EffectChain effectChain4(sName, applyVec, sLabel);
-    std::vector<EffectChain> effectChains = {effectChain1, effectChain2, effectChain3, effectChain4};
+    sLabel = PERSONALIZED_SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL;
+    EffectChain effectChain5(sName, applyVec, sLabel);
+    sLabel = PERSONALIZED_SPATIALIZATION_SUPPORTED_LABEL;
+    EffectChain effectChain6(sName, applyVec, sLabel);
+    std::vector<EffectChain> effectChains = {effectChain1, effectChain2, effectChain3, effectChain4, effectChain5,
+        effectChain6};
     sSpatializationService_->Init(effectChains);
     EXPECT_TRUE(sSpatializationService_->isSpatializationSupported_);
     EXPECT_TRUE(sSpatializationService_->isHeadTrackingSupported_);
@@ -93,6 +101,8 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_002, Tes
         SPATIALIZATION_SERVICE_OK);
     EXPECT_EQ(sSpatializationService_->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
+    EXPECT_EQ(sSpatializationService_->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable),
+        SPATIALIZATION_SERVICE_OK);
 }
 
 /**
@@ -114,6 +124,8 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_003, Tes
     EXPECT_EQ(sSpatializationService_->SetSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
     EXPECT_EQ(sSpatializationService_->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable),
+        SPATIALIZATION_SERVICE_OK);
+    EXPECT_EQ(sSpatializationService_->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
 
     sSpatializationService_->currentDeviceAddress_ = "00:11:22:33:44:66";

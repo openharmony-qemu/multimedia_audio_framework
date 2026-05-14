@@ -171,9 +171,9 @@ public:
     int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
         int32_t callerUid = INVALID_UID);
     void RefreshAudioSceneAfterDelay(const int32_t zoneId);
-    int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     void GetFocusDebugInfoByStreamId(uint32_t streamId, AudioDebugInfo &audioDebugInfo);
     int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
+    std::vector<int32_t> FindAudioZonesByPid(int32_t pid);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -263,6 +263,7 @@ private:
     void ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
         &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
+    void UpdateAudioSceneForResult(AudioInterruptResult &result);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioFocusInfoList(const int32_t zoneId);
     void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);
@@ -317,6 +318,7 @@ private:
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
+    int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);

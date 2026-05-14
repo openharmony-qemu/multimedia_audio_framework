@@ -373,11 +373,13 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
         (routeFlag & AUDIO_INPUT_FLAG_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_UNPROCESS) ||
+        (routeFlag & AUDIO_INPUT_FLAG_LIVE) ||
         (routeFlag & AUDIO_INPUT_FLAG_ULTRASONIC) ||
         (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) ||
         (routeFlag & AUDIO_INPUT_FLAG_RAW_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_INTERPHONE) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
+        (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
@@ -539,38 +541,6 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
         CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
         if (it->pipeRole_ == PIPE_ROLE_INPUT) {
             streamDescs.insert(streamDescs.end(), it->streamDescriptors_.begin(), it->streamDescriptors_.end());
-        }
-    }
-    return streamDescs;
-}
-
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningOutputStreamDescs()
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto &it : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
-        for (auto &desc : it->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            streamDescs.push_back(desc);
-        }
-    }
-    return streamDescs;
-}
-
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningInputStreamDescs()
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto &it : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_INPUT, "not input pipe");
-        for (auto &desc : it->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            streamDescs.push_back(desc);
         }
     }
     return streamDescs;
@@ -1111,7 +1081,7 @@ bool AudioPipeManager::HasPrimarySink()
     return false;
 }
 
-bool AudioPipeManager::HasRunningStream()
+bool AudioPipeManager::HasRunningStream(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &pipeInfo : curPipeList_) {
@@ -1119,6 +1089,7 @@ bool AudioPipeManager::HasRunningStream()
         for (auto &desc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             CHECK_AND_CONTINUE(desc->IsRunning());
+            CHECK_AND_CONTINUE_LOG(sessionId != desc->sessionId_, "sessionId matches %{public}u", sessionId);
             return true;
         }
     }
@@ -1472,6 +1443,16 @@ std::string AudioPipeManager::GetModuleName(std::shared_ptr<AudioPipeInfo> pipeI
     std::string moduleName = networkId != LOCAL_NETWORK_ID ?
         AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole) : "";
     return moduleName;
+}
+
+bool AudioPipeManager::IsValidRenderSessionId(const uint32_t sessionId)
+{
+    auto outputDescs = GetAllOutputStreamDescs();
+    auto it = std::find_if(outputDescs.begin(), outputDescs.end(),
+        [sessionId](const std::shared_ptr<AudioStreamDescriptor> &desc) {
+            return desc != nullptr && desc->sessionId_ == sessionId;
+        });
+    return it != outputDescs.end();
 }
 
 AudioVolumeType AudioPipeManager::GetVolumeTypeFromStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)

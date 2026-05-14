@@ -113,12 +113,14 @@ void AddAudioSessionFuzzTest(FuzzedDataProvider& fdp)
     int32_t sessionStrategy = 0;
 
     AudioInterrupt incomingInterrupt;
-    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    int32_t streamTypeValue = fdp.ConsumeIntegral<int32_t>();
+    incomingInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(streamTypeValue);
+    int32_t sourceTypeValue = fdp.ConsumeIntegral<int32_t>();
+    incomingInterrupt.audioFocusType.sourceType = static_cast<SourceType>(sourceTypeValue);
     AudioInterrupt activeInterrupt;
-    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    activeInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(streamTypeValue);
     AudioFocusEntry focusEntry;
-    focusEntry.isReject = false;
+    focusEntry.isReject = fdp.ConsumeBool();
 
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
@@ -134,14 +136,14 @@ void MoreFuzzTest(FuzzedDataProvider& fdp)
     interruptService->GetAudioServerProxy();
     interruptService->WriteServiceStartupError();
 
-    int32_t pid = GetData<int32_t>();
+    int32_t pid = fdp.ConsumeIntegral<int32_t>();
     interruptService->OnSessionTimeout(pid);
     interruptService->HandleSessionTimeOutEvent(pid);
 }
 
 void ClearAudioFocusInfoListOnAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
 {
-    int id = GetData<int>();
+    int32_t id = fdp.ConsumeIntegral<int32_t>();
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     interruptService->ClearAudioFocusInfoListOnAccountsChanged(id, 1);
 }
@@ -160,9 +162,9 @@ void AddSetAudioManagerInterruptCallbackFuzzTest(FuzzedDataProvider& fdp)
     }
     interruptService->SetAudioManagerInterruptCallback(object);
 
-    int32_t zoneId = GetData<int32_t>();
-    uint32_t sessionId = GetData<uint32_t>();
-    uint32_t uid = GetData<uint32_t>();
+    int32_t zoneId = fdp.ConsumeIntegral<int32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t uid = fdp.ConsumeIntegral<uint32_t>();
     interruptService->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
 

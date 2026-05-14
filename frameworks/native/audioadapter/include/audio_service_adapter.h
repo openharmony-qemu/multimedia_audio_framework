@@ -272,6 +272,13 @@ public:
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
 
     /**
+     * @brief update Update PersonalizedHRTFBin
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) = 0;
+
+    /**
      * @brief Load Collaboration Config
      *
      * @return {@link true} if support, {@link false} otherwise

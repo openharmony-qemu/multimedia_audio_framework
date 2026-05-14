@@ -59,6 +59,8 @@ int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const
 
 int32_t VADeviceBrokerStubImpl::OnDevicesDisconnected(const VADevice &device)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        PermissionUtil::VerifySystemPermission(), ERROR, "disconnect virtual audio denied: no system permission");
     auto sharedDevice = std::make_shared<VADevice>(device);
     VADeviceManager::GetInstance().OnDevicesDisconnected(sharedDevice);
     return SUCCESS;

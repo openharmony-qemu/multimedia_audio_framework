@@ -81,6 +81,8 @@ public:
         const bool activatedRegisterCallbackFlag = false);
     void GetStateChangeCallbackFlag(bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag);
     void GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo);
+    void SetFakeFocusInterruptEvent(const InterruptEventInternal &interruptEvent);
+    InterruptEventInternal GetFakeFocusInterruptEvent();
 
 private:
     StreamUsage GetStreamUsageInner();
@@ -102,6 +104,7 @@ private:
     // These are streams included in audiosession focus.
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
     uint32_t fakeStreamId_ {0};
+    InterruptEventInternal fakeFocusInterruptEvent_ = {};
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
     AudioDeviceDescriptor deviceDescriptor_;

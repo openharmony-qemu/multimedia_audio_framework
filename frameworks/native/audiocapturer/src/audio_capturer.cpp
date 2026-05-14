@@ -203,6 +203,11 @@ static inline bool IsMicInEcRequested(const AudioCapturerOptions &capturerOption
         capturerOptions.ecStreamInfo.channels > CHANNEL_UNKNOW;
 }
 
+static inline bool IsMicInRequested(const AudioCapturerOptions &capturerOptions)
+{
+    return capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW;
+}
+
 static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
@@ -224,6 +229,14 @@ static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions 
             (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
             capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
             AUDIO_ERR_LOG("Create failed: ec samplingRate and format should follow process stream");
+            return false;
+        }
+    }
+
+    if (sourceType == SOURCE_TYPE_CAMCORDER && IsMicInRequested(capturerOptions)) {
+        if ((capturerOptions.micInStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
+            capturerOptions.micInStreamInfo.format != capturerOptions.streamInfo.format)) {
+            AUDIO_ERR_LOG("Create failed: camcorder mic-in samplingRate and format should follow process stream");
             return false;
         }
     }
@@ -983,7 +996,7 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
         capturerInfo_.sourceType, GetStatus() == CAPTURER_RUNNING);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "select input device failed", true),
+            ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "select input device failed", true),
         "select input device failed");
     return SUCCESS;
 }
@@ -994,7 +1007,7 @@ int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<Audio
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED, "create capturer filter failed", true),
+            ERR_RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED, "create capturer filter failed", true),
         "create capturer filter failed");
     audioCapturerFilter->uid = static_cast<int32_t>(getuid());
     audioCapturerFilter->capturerInfo = capturerInfo_;
@@ -1091,6 +1104,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
     capturerProxyObj_->SaveCapturerObj(weak_from_this());
 
     audioStream_->SetCapturerInfo(capturerInfo_);
+    SetInnerStreamFastStatusChangeCallback(audioStream_);
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
@@ -1277,8 +1291,12 @@ int32_t AudioCapturerPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
 void AudioCapturerPrivate::SetFastStatusChangeCallback(
     const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback)
 {
-    std::lock_guard lock(fastStatusChangeCallbackMutex_);
-    fastStatusChangeCallback_ = callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        fastStatusChangeCallback_ = callback;
+    }
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    SetInnerStreamFastStatusChangeCallback(currentStream);
 }
 
 void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
@@ -1554,6 +1572,13 @@ int32_t AudioCapturerPrivate::CheckForStartImpl(CapturerState state)
     return SUCCESS;
 }
 
+void AudioCapturerPrivate::SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+    const std::string &erroDesc, bool isClient, CapturerState state) const
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(uid, errorCode, erroDesc, isClient);
+    audioStream_->SetFocusState(static_cast<StreamFocusState>(state));
+}
+
 int32_t AudioCapturerPrivate::StartImpl()
 {
     AsyncCheckAudioCapturer("Start");
@@ -1570,18 +1595,19 @@ int32_t AudioCapturerPrivate::StartImpl()
     std::unique_lock<std::mutex> audioInterruptLock(audioInterruptMutex_);
     AudioInterrupt audioInterrupt = audioInterrupt_;
     audioInterruptLock.unlock();
+    audioStream_->SetFocusState(FOCUS_STARTING);
     ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"),
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_START_OPERATION_FAILED, "[Start]ActivateAudioInterrupt Failed", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()), RECORD_START_OPERATION_FAILED,
+            "[Start]ActivateAudioInterrupt Failed", true, state));
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_CALL_FUNC_RETURN_RET(!isVoiceCallCapturer_, SUCCESS,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_START_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            RECORD_START_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true, state));
     ret = CheckForStartImpl(state);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_START_ILLEGAL_STATE, "CheckForStartImpl fail", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            RECORD_START_ILLEGAL_STATE, "CheckForStartImpl fail", true, state));
     bool result = audioStream_->StartAudioStream();
     if (!result) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -1657,7 +1683,8 @@ bool AudioCapturerPrivate::Pause() const
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_PAUSE_ILLEGAL_STATE, "Operation failed, in switching", true),
         "Operation failed, in switching");
-
+    CapturerState state = GetStatusInner();
+    audioStream_->SetFocusState(FOCUS_APP_PAUSING);
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
@@ -1668,8 +1695,8 @@ bool AudioCapturerPrivate::Pause() const
 
     // When the cellular call stream is pausing, only need to deactivate audio interrupt.
     CHECK_AND_CALL_FUNC_RETURN_RET(!isVoiceCallCapturer_, true,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_PAUSE_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()), RECORD_PAUSE_ILLEGAL_STATE,
+            "isVoiceCallCapturer_ skip", true, state));
     if (capturerInfo_.loopBackEffectEnabled) {
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
@@ -1690,6 +1717,8 @@ int32_t AudioCapturerPrivate::StopImpl() const
         "Operation failed, in switching");
 
     WriteOverflowEvent();
+    CapturerState state = GetStatusInner();
+    audioStream_->SetFocusState(FOCUS_APP_STOPPING);
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -1698,8 +1727,8 @@ int32_t AudioCapturerPrivate::StopImpl() const
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET(isVoiceCallCapturer_ != true, SUCCESS,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_STOP_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            RECORD_STOP_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true, state));
     if (capturerInfo_.loopBackEffectEnabled) {
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
@@ -1846,11 +1875,36 @@ void AudioCapturerInterruptCallbackImpl::FinishSwitch()
     AUDIO_INFO_LOG("SwitchStream finish, notify interrupt callback");
 }
 
+bool AudioCapturerInterruptCallbackImpl::NoNeedNotifyEvent(const InterruptEvent &interruptEvent)
+{
+    StreamFocusState currentFocusState = audioStream_->GetFocusState();
+    bool noNeedSendNotify = (currentFocusState == FOCUS_STARTING || currentFocusState == FOCUS_RUNNING
+        || currentFocusState == FOCUS_STOPPED || currentFocusState == FOCUS_APP_STOPPING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is pause, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    noNeedSendNotify = (currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_STARTING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_STOP && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is stop, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    noNeedSendNotify = (currentFocusState == FOCUS_STARTING  || currentFocusState == FOCUS_RUNNING
+        || currentFocusState ==FOCUS_STOPPED || currentFocusState == FOCUS_APP_STOPPING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_RESUME && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is resume, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    return false;
+}
+
 void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     AUDIO_INFO_LOG("NotifyEvent: Hint: %{public}d, eventType: %{public}d",
         interruptEvent.hintType, interruptEvent.eventType);
-
+    if (NoNeedNotifyEvent(interruptEvent) == true) {
+        return;
+    }
     if (cb_ != nullptr) {
         cb_->OnInterrupt(interruptEvent);
         AUDIO_DEBUG_LOG("OnInterrupt : NotifyEvent to app complete");
@@ -1859,25 +1913,26 @@ void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
     }
 }
 
-int32_t AudioCapturerInterruptCallbackImpl::InterruptHintResumeHandle(State currentState)
+int32_t AudioCapturerInterruptCallbackImpl::InterruptHintResumeHandle(StreamFocusState focusState)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((currentState == PAUSED || currentState == PREPARED) &&
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((focusState == FOCUS_PAUSED || focusState == FOCUS_PREPARED) &&
         isForcePaused_ == true, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CALLBACK_ILLEGAL_STATE, "OnInterrupt state check failed", true),
-        "OnInterrupt state %{public}d or not forced pause %{public}d before", currentState, isForcePaused_);
+        "OnInterrupt streamFocusState %{public}d or not forced pause %{public}d before", focusState, isForcePaused_);
     AUDIO_INFO_LOG("set force pause false");
     isForcePaused_ = false;
     return SUCCESS;
 }
 
-int32_t AudioCapturerInterruptCallbackImpl::InterruptHintPauseHandle(State currentState)
+int32_t AudioCapturerInterruptCallbackImpl::InterruptHintPauseHandle(StreamFocusState focusState)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentState == RUNNING || currentState == PREPARED, ERR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(focusState == FOCUS_RUNNING || focusState == FOCUS_PREPARED
+        || focusState == FOCUS_STARTING, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CALLBACK_ILLEGAL_STATE, "OnInterrupt state no need to pause", true),
-        "OnInterrupt state %{public}d, no need to pause",
-        currentState); // Just Pause, do not deactivate here
+        "OnInterrupt streamFocusState %{public}d, no need to pause", focusState); // Just Pause, do not deactivate here
+    audioStream_->SetFocusState(FOCUS_SYSTEM_PAUSING);
     (void)audioStream_->PauseAudioStream();
     AUDIO_INFO_LOG("set force pause true");
     isForcePaused_ = true;
@@ -1916,12 +1971,12 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
         CHECK_AND_CALL_FUNC_RETURN_LOG(audioStream_ != nullptr,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_CALLBACK_ILLEGAL_STATE, "Stream is not alive", true), "Stream is not alive");
-        State currentState = audioStream_->GetState();
+        StreamFocusState currentFocusState = audioStream_->GetFocusState();
 
         int32_t interruptRet = 0;
         switch (interruptEvent.hintType) {
             case INTERRUPT_HINT_RESUME:
-                interruptRet = InterruptHintResumeHandle(currentState);
+                interruptRet = InterruptHintResumeHandle(currentFocusState);
                 CHECK_AND_CALL_FUNC_RETURN(interruptRet == SUCCESS,
                     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                         RECORD_CALLBACK_ILLEGAL_STATE, "InterruptHintResumeHandle failed", true));
@@ -1930,12 +1985,13 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
                 NotifyEvent(event);
                 return;
             case INTERRUPT_HINT_PAUSE:
-                interruptRet = InterruptHintPauseHandle(currentState);
+                interruptRet = InterruptHintPauseHandle(currentFocusState);
                 CHECK_AND_CALL_FUNC_RETURN(interruptRet == SUCCESS,
                     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                         RECORD_CALLBACK_ILLEGAL_STATE, "InterruptHintPauseHandle failed", true));
                 break;
             case INTERRUPT_HINT_STOP:
+                audioStream_->SetFocusState(FOCUS_SYSTEM_STOPPING);
                 (void)audioStream_->StopAudioStream();
                 break;
             default:
@@ -2588,6 +2644,7 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetClientDeviceId(appInfo_.deviceId);
     audioStream->SetCapturerInfo(info.capturerInfo);
+    SetInnerStreamFastStatusChangeCallback(audioStream);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, ERROR,
         HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"),
@@ -2855,10 +2912,30 @@ void AudioCapturerPrivate::FastStatusChangeCallback(FastStatus status)
 {
     FastStatus newStatus = GetFastStatusInner();
     if (newStatus != status) {
-        if (fastStatusChangeCallback_ != nullptr) {
-            fastStatusChangeCallback_->OnFastStatusChange(newStatus);
-        }
+        NotifyFastStatusChange(newStatus);
     }
+}
+
+void AudioCapturerPrivate::NotifyFastStatusChange(FastStatus status)
+{
+    std::shared_ptr<AudioCapturerFastStatusChangeCallback> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(callback != nullptr, "fastStatusChangeCallback_ is nullptr");
+    callback->OnFastStatusChange(status);
+}
+
+void AudioCapturerPrivate::SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    CHECK_AND_RETURN_LOG(audioStream != nullptr, "audioStream is nullptr");
+    std::weak_ptr<AudioCapturerPrivate> weakCapturer = weak_from_this();
+    audioStream->SetFastStatusChangeCallback([weakCapturer] (FastStatus status) {
+        auto capturer = weakCapturer.lock();
+        CHECK_AND_RETURN_LOG(capturer != nullptr, "capturer is nullptr");
+        capturer->NotifyFastStatusChange(status);
+    });
 }
 
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()

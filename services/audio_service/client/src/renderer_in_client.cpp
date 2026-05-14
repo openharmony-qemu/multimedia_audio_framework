@@ -238,6 +238,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.staticBufferInfo = staticBufferInfo_;
 
+    config.ultraFastFlag = curStreamParams_.ultraFastFlag;
+
     clientConfig_ = config;
 
     return config;
@@ -1502,5 +1504,32 @@ void RendererInClientInner::CheckAndProcessPendingSpanSize()
         "rendererFlags:0x%{public}x",
         spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInFrame_.load(), rendererInfo_.rendererFlags);
 }
+
+void RendererInClientInner::UpdateStreamState(State state)
+{
+   // When updating the stream state, the focus state is updated synchronously.
+    state_ = state;
+    streamFocusState_ = static_cast<StreamFocusState>(state);
+}
+
+StreamFocusState RendererInClientInner::GetFocusState()
+{
+    std::lock_guard lock(focusStatusMutex_);
+    return streamFocusState_;
+}
+ 
+void RendererInClientInner::SetFocusState(StreamFocusState state)
+{
+    std::lock_guard lock(focusStatusMutex_);
+    streamFocusState_ = state;
+}
+
+void RendererInClientInner::SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+    const std::string &erroDesc, bool isClient, State state)
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(uid, errorCode, erroDesc, isClient);
+    streamFocusState_ = static_cast<StreamFocusState>(state);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

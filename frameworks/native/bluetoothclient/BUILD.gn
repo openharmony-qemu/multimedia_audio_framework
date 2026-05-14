@@ -38,6 +38,7 @@ audio_ohos_library("audio_bluetooth_client") {
   include_dirs = [
     "../../../services/audio_policy/server/include/service/interface",
     "../../../services/audio_service/client/include",
+    "../../../services/audio_service/common/include/dfx",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../audioutils/include",
@@ -45,6 +46,7 @@ audio_ohos_library("audio_bluetooth_client") {
 
   deps = [
     "../../../services/audio_policy:audio_foundation",
+    "../../../services/audio_service:audio_common",
     "../audioutils:audio_utils",
   ]
 

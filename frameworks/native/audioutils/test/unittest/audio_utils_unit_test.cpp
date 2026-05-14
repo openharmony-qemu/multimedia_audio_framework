@@ -1253,6 +1253,34 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_008, TestSize.Level0
 }
 
 /**
+ * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
+ * @tc.type  : FUNC
+ * @tc.number: AudioInfoDumpUtils_GetSourceName_009
+ * @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return INTERPHONE
+ *             when sourceType is SOURCE_TYPE_INTERPHONE
+ */
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_009, TestSize.Level0)
+{
+    SourceType sourceType = SOURCE_TYPE_INTERPHONE;
+    const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
+    EXPECT_EQ(sourceName, "INTERPHONE");
+}
+
+/**
+ * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
+ * @tc.type  : FUNC
+ * @tc.number: AudioInfoDumpUtils_GetSourceName_010
+ * @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return UNKNOWN
+ *             when sourceType is other number
+ */
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_010, TestSize.Level0)
+{
+    SourceType sourceType = static_cast<SourceType>(SOURCE_TYPE_INTERPHONE + 99);
+    const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
+    EXPECT_EQ(sourceName, "UNKNOWN");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetDeviceVolumeTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetDeviceVolumeTypeName_001

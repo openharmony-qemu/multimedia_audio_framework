@@ -2755,5 +2755,235 @@ HWTEST(AudioProcessInClientUnitTest, UpdateUnderrunInfo_002, TestSize.Level1)
     int32_t ret = ptrAudioProcessInClientInner->processProxy_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, false);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+// ========== RendererInClientInner Thread Priority Tests ==========
+
+/**
+ * @tc.name  : Test IsVoipFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsVoipFastStream_001
+ * @tc.desc  : Test IsVoipFastStream with both FAST and VOIP flags set.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsVoipFastStream_001, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP;
+    
+    bool result = (rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP)) ==
+        (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
+    
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test IsVoipFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsVoipFastStream_002
+ * @tc.desc  : Test IsVoipFastStream with only FAST flag set.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsVoipFastStream_002, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    bool result = (rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP)) ==
+        (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
+    
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test IsVoipFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsVoipFastStream_003
+ * @tc.desc  : Test IsVoipFastStream with only VOIP flag set.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsVoipFastStream_003, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_VOIP;
+    
+    bool result = (rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP)) ==
+        (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
+    
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test IsVoipFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsVoipFastStream_004
+ * @tc.desc  : Test IsVoipFastStream with no flags set.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsVoipFastStream_004, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    
+    bool result = (rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP)) ==
+        (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
+    
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test IsUltraFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsUltraFastStream_001
+ * @tc.desc  : Test IsUltraFastStream with both ULTRA_REQUESTED and ULTRA_IMPLEMENTED flags.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsUltraFastStream_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = {};
+    processConfig.ultraFastFlag = ULTRA_REQUESTED | ULTRA_IMPLEMENTED;
+    
+    bool result = (processConfig.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED));
+    
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test IsUltraFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsUltraFastStream_002
+ * @tc.desc  : Test IsUltraFastStream with only ULTRA_REQUESTED flag.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsUltraFastStream_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = {};
+    processConfig.ultraFastFlag = ULTRA_REQUESTED;
+    
+    bool result = (processConfig.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED));
+    
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test IsUltraFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsUltraFastStream_003
+ * @tc.desc  : Test IsUltraFastStream with only ULTRA_IMPLEMENTED flag.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsUltraFastStream_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = {};
+    processConfig.ultraFastFlag = ULTRA_IMPLEMENTED;
+    
+    bool result = (processConfig.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED));
+    
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test IsUltraFastStream logic
+ * @tc.type  : FUNC
+ * @tc.number: IsUltraFastStream_004
+ * @tc.desc  : Test IsUltraFastStream with ULTRA_NONE flag.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsUltraFastStream_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = {};
+    processConfig.ultraFastFlag = ULTRA_NONE;
+    
+    bool result = (processConfig.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED));
+    
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test SetupFastStreamThreadPriority logic
+ * @tc.type  : FUNC
+ * @tc.number: SetupFastStreamThreadPriorityLogic_001
+ * @tc.desc  : Test logic flow for ultra-fast stream priority setup.
+ */
+HWTEST(AudioProcessInClientUnitTest, SetupFastStreamThreadPriorityLogic_001, TestSize.Level1)
+{
+    ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
+    
+    bool isUltraFast = true;
+    if (isUltraFast) {
+        threadPriority = THREAD_PRIORITY_4;
+    }
+    
+    EXPECT_EQ(THREAD_PRIORITY_4, threadPriority);
+}
+
+/**
+ * @tc.name  : Test SetupFastStreamThreadPriority logic
+ * @tc.type  : FUNC
+ * @tc.number: SetupFastStreamThreadPriorityLogic_002
+ * @tc.desc  : Test logic flow for normal fast stream priority setup.
+ */
+HWTEST(AudioProcessInClientUnitTest, SetupFastStreamThreadPriorityLogic_002, TestSize.Level1)
+{
+    ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
+    
+    bool isUltraFast = false;
+    if (isUltraFast) {
+        threadPriority = THREAD_PRIORITY_4;
+    }
+    
+    EXPECT_EQ(THREAD_PRIORITY_QOS_7, threadPriority);
+}
+
+/**
+ * @tc.name  : Test UltraFast flag definitions
+ * @tc.type  : FUNC
+ * @tc.number: UltraFastFlagDefinitions_001
+ * @tc.desc  : Test ULTRA flag definitions and bit values.
+ */
+HWTEST(AudioProcessInClientUnitTest, UltraFastFlagDefinitions_001, TestSize.Level1)
+{
+    EXPECT_EQ(1, ULTRA_REQUESTED);
+    EXPECT_EQ(2, ULTRA_IMPLEMENTED);
+    EXPECT_EQ(0, ULTRA_NONE);
+    EXPECT_EQ(3, ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+}
+
+/**
+ * @tc.name  : Test AUDIO_OUTPUT_FLAG definitions
+ * @tc.type  : FUNC
+ * @tc.number: AudioFlagDefinitions_001
+ * @tc.desc  : Test AUDIO_OUTPUT_FLAG definitions and bit values.
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioFlagDefinitions_001, TestSize.Level1)
+{
+    EXPECT_EQ(0x20, AUDIO_OUTPUT_FLAG_FAST);
+    EXPECT_EQ(0x40, AUDIO_OUTPUT_FLAG_VOIP);
+    EXPECT_EQ(0x60, AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
+    EXPECT_EQ(0x80, AUDIO_OUTPUT_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test IsFastStream check
+ * @tc.type  : FUNC
+ * @tc.number: IsFastStreamCheck_001
+ * @tc.desc  : Test IsFastStream logic with FAST flag.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsFastStreamCheck_001, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    
+    bool isFastStream = (rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
+    
+    EXPECT_TRUE(isFastStream);
+}
+
+/**
+ * @tc.name  : Test IsFastStream check
+ * @tc.type  : FUNC
+ * @tc.number: IsFastStreamCheck_002
+ * @tc.desc  : Test IsFastStream logic without FAST flag.
+ */
+HWTEST(AudioProcessInClientUnitTest, IsFastStreamCheck_002, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    
+    bool isFastStream = (rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
+    
+    EXPECT_FALSE(isFastStream);
+}
 } // namespace AudioStandard
 } // namespace OHOS

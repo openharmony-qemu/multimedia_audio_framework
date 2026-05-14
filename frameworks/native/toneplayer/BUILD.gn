@@ -76,6 +76,7 @@ if (!audio_framework_feature_dtmf_tone) {
       "init:libbegetutil",
       "ipc:ipc_single",
       "samgr:samgr_proxy",
+      "bounds_checking_function:libsec_shared",
     ]
 
     if (audio_telephony_core_service_enable) {
@@ -88,7 +89,6 @@ if (!audio_framework_feature_dtmf_tone) {
       defines += [ "AUIDO_TEL_CELLULAR_DATA_ENABLE" ]
     }
 
-    public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
     version_script = "../../../audio_framework.versionscript"
     innerapi_tags = [ "platformsdk" ]

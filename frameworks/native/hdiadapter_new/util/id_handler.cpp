@@ -102,8 +102,10 @@ uint32_t IdHandler::GetRenderIdByDeviceClassSub(const std::string &deviceClass, 
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOIP);
     } else if (deviceClass == "primary_mmap_voip") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP);
-    } else if (deviceClass == "primary_mmap") {
+    } else if (deviceClass == "primary_mmap" || deviceClass == "ultra_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "usb_arm_fast" || deviceClass == "usb_arm_ultra_fast") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB);
     } else if (deviceClass == "primary_direct") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DIRECT);
     } else if (deviceClass == "Virtual_Injector") {
@@ -120,6 +122,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t route
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
     } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_LIVE) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE);
     } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
@@ -128,6 +132,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t route
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_RAW_AI);
     } else if (routeFlag == AUDIO_INPUT_FLAG_INTERPHONE) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_CAMCORDER) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_CAMCORDER);
     }
     return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
 }

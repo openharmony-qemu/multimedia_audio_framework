@@ -23,6 +23,14 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioSecureHash {
 public:
+    /**
+     * @brief Compute SHA-256 hash.
+     * @param d Input data, can be nullptr if n == 0.
+     * @param n Length of input data in bytes.
+     * @param md Output buffer for hash, must be at least SHA256_DIGEST_LENGTH (32) bytes.
+     *           If nullptr, an internal thread-local buffer is used.
+     * @return Pointer to hash output (32 bytes), or nullptr on error.
+     */
     static unsigned char *AudioSecureHashAlgo(const unsigned char *d, size_t n, unsigned char *md);
 private:
     AudioSecureHash() = delete;

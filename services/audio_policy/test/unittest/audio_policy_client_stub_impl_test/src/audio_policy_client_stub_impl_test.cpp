@@ -1838,6 +1838,45 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_086, TestSize.Le
 
 /**
 * @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_087
+* @tc.desc  : Test OnPersonalizedSpatializationEnabledChangeForAnyDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_087, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioPersonalizedSpatializationEnabledChangeCallback>();
+    int32_t result = audioPolicyClient->AddPersonalizedSpatializationEnabledChangeCallback(cb);
+    EXPECT_EQ(result, SUCCESS);
+
+    bool enabled = true;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioPolicyClient->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
+
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_088
+* @tc.desc  : Test OnPersonalizedSpatializationEnabledChangeForAnyDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_088, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioPersonalizedSpatializationEnabledChangeCallback>();
+    int32_t result = audioPolicyClient->AddPersonalizedSpatializationEnabledChangeCallback(cb);
+    EXPECT_EQ(result, SUCCESS);
+
+    bool enabled = false;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioPolicyClient->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
 * @tc.number: AudioPolicyClientStubImpl_MultiCallback_001
 * @tc.desc  : Test adding multiple output callbacks for same uid and streamUsage.
 */

@@ -117,8 +117,8 @@ struct AudioLoopbackDebugInfo {
     int32_t volume = 0;
 
     // Stream states
-    RendererState uplinkStreamState = RENDERER_INVALID;
-    CapturerState downlinkStreamState = CAPTURER_INVALID;
+    CapturerState uplinkStreamState = CAPTURER_INVALID;
+    RendererState downlinkStreamState = RENDERER_INVALID;
 };
 
 struct AudioStreamDebugInfo : public Parcelable {

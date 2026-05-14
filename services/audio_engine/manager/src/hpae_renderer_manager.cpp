@@ -47,7 +47,7 @@ namespace {
     const std::string USB_SINK_NAME = "usb";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
     constexpr size_t RENDERER_REQUEST_COUNT = CURRENT_REQUEST_COUNT;
-    constexpr int32_t COLL_ALING_COUNT = 5; // 5 frames
+    constexpr int32_t COLL_ALING_COUNT = 10; // 10 frames = 200 ms
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
@@ -110,20 +110,17 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = sinkInfo_.frameLen;
+    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    AdjustFrameLen(nodeInfo, outNodeInfo);
     node->SetNodeInfo(nodeInfo);
     node->SetIsLowLatency(false);
     uint32_t sessionId = nodeInfo.sessionId;
 
     sinkInputNodeMap_[sessionId] = node;
-    HpaeNodeInfo outNodeInfo;
-    outNodeInfo.frameLen = sinkInfo_.frameLen;
-    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
-    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
-    if (frameLenAdjusted) {
-        node->SetNodeInfo(nodeInfo);
-        TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
-            static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
-    }
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
+        static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 #ifdef ENABLE_HIDUMP_DFX
@@ -900,6 +897,10 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             ? sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
             "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
+        auto converter = sceneClusterMap_[sceneType]->GetConverterNodeById(sessionId);
+        if (converter != nullptr) {
+            converter->FlushBuffers();
+        }
         CHECK_AND_RETURN_LOG(isNeedInitEffectBufferFlagMap_.find(sessionId) != isNeedInitEffectBufferFlagMap_.end(),
             "isNeedInitEffectBufferFlagMap no find sessionId %{public}u", sessionId);
         if (isNeedInitEffectBufferFlagMap_[sessionId] == true) {
@@ -1566,6 +1567,7 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
             GetEncryptStr(sinkInfo_.deviceName).c_str(), state);
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
+            sinkInputNodeMap_[sessionId]->SetOffloadType(state);
         } else {
             AUDIO_ERR_LOG("not find sessionId %{public}u", sessionId);
         }
@@ -1696,7 +1698,7 @@ void HpaeRendererManager::EnableCollaboration()
     isReloadManagerFromCollStateChange_ = false;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
-        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE || nodeInfo.effectInfo.effectScene == SCENE_MUSIC) {
             AUDIO_INFO_LOG("move to coll sessionId %{public}u, state: %{public}d", key,
                 static_cast<int32_t>(node->GetState()));
             if (node->GetState() == HPAE_SESSION_RUNNING) {
