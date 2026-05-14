@@ -160,6 +160,8 @@ export { AudioConversionBuilder };
 @Component
 export struct AudioConversion {
   pageInfos: NavPathStack = new NavPathStack();
+  outputFilePath: string = '';
+  fileFd: number = -1;
   @State message: string = '音频格式转换';
   @State converterHandle: number = 0;
   @State createResult: string = '';
@@ -167,8 +169,6 @@ export struct AudioConversion {
   @State selectedFileUri: string = '';
   @State selectedFileName: string = '';
   @State fileInfo: audioNapi.AudioFileInfo | null = null;
-  @State fileFd: number = -1;
-  @State outputFilePath: string = '';
   @State outputFileName: string = '';
   @State inputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
