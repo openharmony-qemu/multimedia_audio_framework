@@ -2019,6 +2019,8 @@ int32_t AudioPolicyServer::ExcludeOutputDevices(int32_t audioDevUsageIn,
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(audioDevUsageIn);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "No system permission");
+    CHECK_AND_RETURN_RET_LOG(!newAudioDeviceDescriptors.empty() && newAudioDeviceDescriptors[0] != nullptr,
+        ERROR, "audioDeviceDescriptors is empty or audioDeviceDescriptors[0] is nullptr");
     return eventEntry_->ExcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
@@ -2029,7 +2031,8 @@ int32_t AudioPolicyServer::UnexcludeOutputDevices(int32_t audioDevUsageIn,
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(audioDevUsageIn);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "No system permission");
-
+    CHECK_AND_RETURN_RET_LOG(!newAudioDeviceDescriptors.empty() && newAudioDeviceDescriptors[0] != nullptr,
+        ERROR, "audioDeviceDescriptors is empty or audioDeviceDescriptors[0] is nullptr");
     return eventEntry_->UnexcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
