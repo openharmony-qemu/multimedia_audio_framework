@@ -658,7 +658,7 @@ int32_t CapturerInServer::SetMuteHint(bool mute)
     int32_t ret = GetSessionId(sessionId);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "SetMuteHint failed to get sessionId", false),
+            RECORD_CONFIG_ILLEGAL_STATE, "SetMuteHint failed to get sessionId", false),
         "SetMuteHint failed to get sessionId");
 
     return CoreServiceHandler::GetInstance().SetCapturerMuteHint(sessionId, mute);
@@ -858,7 +858,7 @@ void CapturerInServer::RebuildCaptureInjector()
 {
     CHECK_AND_CALL_FUNC_RETURN_LOG(rebuildFlag_,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "no need to rebuild", false),
+            RECORD_CONFIG_ILLEGAL_STATE, "no need to rebuild", false),
         "no need to rebuild");
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
@@ -1104,7 +1104,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE,
         ERR_INVALID_OPERATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "This not a inner-cap source", false),
+            RECORD_CONFIG_NOT_SUPPORTED, "This not a inner-cap source", false),
         "This not a inner-cap source!");
 
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
@@ -1351,7 +1351,7 @@ void CapturerInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
 {
     CHECK_AND_CALL_FUNC_RETURN(sourceType == SOURCE_TYPE_VOICE_COMMUNICATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "sourceType not VOICE_COMMUNICATION", false));
+            RECORD_CONFIG_INVALID_PARAM, "sourceType not VOICE_COMMUNICATION", false));
     InitCallbackHandler();
     std::lock_guard<std::mutex> lock(runnerMutex_);
     CHECK_AND_CALL_FUNC_RETURN(callbackHandler_ != nullptr,

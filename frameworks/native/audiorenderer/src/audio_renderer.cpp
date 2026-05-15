@@ -3521,7 +3521,7 @@ void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 
     CHECK_AND_CALL_FUNC_RETURN_REPORT(audioStream_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_CONFING_NULL_POINTER, "audio stream is null", false),
+            PLAY_CONFIG_NULL_POINTER, "audio stream is null", false),
         HILOG_COMM_ERROR("[SetAudioHapticsSyncId]audio stream is null"));
 
     if (audioHapticsSyncId > 0) {
@@ -3540,7 +3540,7 @@ void AudioRendererPrivate::ResetFirstFrameState()
 
     CHECK_AND_CALL_FUNC_RETURN_REPORT(audioStream_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_CONFING_NULL_POINTER, "audio stream is null", false),
+            PLAY_CONFIG_NULL_POINTER, "audio stream is null", false),
         HILOG_COMM_ERROR("[ResetFirstFrameState]audio stream is null"));
 
     audioStream_->ResetFirstFrameState();

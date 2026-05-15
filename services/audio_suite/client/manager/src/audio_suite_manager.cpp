@@ -1074,7 +1074,7 @@ void AudioSuiteManager::OnDisConnectNodes(int32_t result)
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(
-                ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING, result),
+                ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, result),
             "DisConnectNodes fail.", true);
     }
 
