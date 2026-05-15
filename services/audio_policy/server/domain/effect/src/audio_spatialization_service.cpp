@@ -1112,10 +1112,8 @@ void AudioSpatializationService::UpdateSpatialStateToNewDevice(const AudioSpatia
     std::string encryptedAddress = GetSha256EncryptAddress(audioSpatialDeviceState.address);
     CHECK_AND_RETURN(!addressToSpatialEnabledMap_.count(encryptedAddress));
     addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled = false;
-    addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled =
-        audioSpatialDeviceState.isSpatializationSupported && isSpatializationSupported_;
-    addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled =
-        audioSpatialDeviceState.isSpatializationSupported && isSpatializationSupported_;
+    addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled = false;
+    addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled = false;
 }
 } // namespace AudioStandard
 } // namespace OHOS
