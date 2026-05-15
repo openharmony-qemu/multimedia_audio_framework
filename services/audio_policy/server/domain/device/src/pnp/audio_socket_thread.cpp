@@ -186,11 +186,11 @@ void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchSta
         AUDIO_ERR_LOG("audioEvent is null!");
         return;
     }
-
+    static uint32_t h2wTypeLast = PNP_DEVICE_HEADSET;
     switch (switchState) {
         case REMOVE_AUDIO_DEVICE:
             audioEvent->eventType = PNP_EVENT_DEVICE_REMOVE;
-            audioEvent->deviceType = PNP_DEVICE_HEADSET;
+            audioEvent->deviceType = h2wTypeLast;
             AUDIO_INFO_LOG("FRONT-HEADSET: REMOVED");
             break;
         case ADD_DEVICE_HEADSET:
@@ -213,6 +213,7 @@ void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchSta
             AUDIO_ERR_LOG("Unknown h2w switchState: %{public}c", switchState);
             break;
     }
+    h2wTypeLast = audioEvent->deviceType;
 }
 
 int32_t AudioSocketThread::ProcessSwitchDeviceConfig(AudioEvent *audioEvent, const char *switchName,
