@@ -52,6 +52,22 @@ using namespace OHOS::AudioStandard::HPAE;
 std::mutex AudioSuitePipeline::allocateIdLock;
 uint32_t AudioSuitePipeline::allocateId = 0;
 
+const std::unordered_map<AudioNodeType, 
+    std::function<std::shared_ptr<AudioNode>()>> AudioSuitePipeline::effectNodeFactory_ = {
+    {NODE_TYPE_EQUALIZER, []() { return std::make_shared<AudioSuiteEqNode>(); }},
+    {NODE_TYPE_ENVIRONMENT_EFFECT, []() { return std::make_shared<AudioSuiteEnvNode>(); }},
+    {NODE_TYPE_GENERAL_VOICE_CHANGE, []() { return std::make_shared<AudioSuiteGeneralVoiceChangeNode>(); }},
+    {NODE_TYPE_PURE_VOICE_CHANGE, []() { return std::make_shared<AudioSuitePureVoiceChangeNode>(); }},
+    {NODE_TYPE_VOICE_BEAUTIFIER, []() { return std::make_shared<AudioSuiteVoiceBeautifierNode>(); }},
+    {NODE_TYPE_NOISE_REDUCTION, []() { return std::make_shared<AudioSuiteNrNode>(); }},
+    {NODE_TYPE_SOUND_FIELD, []() { return std::make_shared<AudioSuiteSoundFieldNode>(); }},
+    {NODE_TYPE_AUDIO_MIXER, []() { return std::make_shared<AudioSuiteMixerNode>(); }},
+    {NODE_TYPE_AUDIO_SEPARATION, []() { return std::make_shared<AudioSuiteAissNode>(); }},
+    {NODE_TYPE_TEMPO_PITCH, []() { return std::make_shared<AudioSuiteTempoPitchNode>(); }},
+    {NODE_TYPE_SPACE_RENDER, []() { return std::make_shared<AudioSuiteSpaceRenderNode>(); }},
+    {NODE_TYPE_HOA_RENDER, []() { return std::make_shared<AudioSuiteHoaRenderNode>(); }}
+};
+
 AudioSuitePipeline::AudioSuitePipeline(PipelineWorkMode mode)
     : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_TEMPO_PITCH + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
 {
@@ -398,58 +414,27 @@ uint32_t AudioSuitePipeline::GetMaxNodeNumsForType(AudioNodeType type)
 
 std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilder builder)
 {
-    std::shared_ptr<AudioNode> node = nullptr;
     AudioFormat audioFormat = builder.nodeFormat;
 
     if (builder.nodeType == NODE_TYPE_INPUT) {
         AUDIO_INFO_LOG("Create AudioInputNode");
-        node = std::make_shared<AudioInputNode>(audioFormat);
-    } else if (builder.nodeType == NODE_TYPE_EQUALIZER) {
-        AUDIO_INFO_LOG("Create AudioSuiteEqNode");
-        node = std::make_shared<AudioSuiteEqNode>();
-    } else if (builder.nodeType == NODE_TYPE_ENVIRONMENT_EFFECT) {
-        AUDIO_INFO_LOG("Create AudioSuiteEnvNode");
-        node = std::make_shared<AudioSuiteEnvNode>();
-    } else if (builder.nodeType == NODE_TYPE_GENERAL_VOICE_CHANGE) {
-        AUDIO_INFO_LOG("Create AudioSuiteGeneralVoiceChangeNode");
-        node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
-    } else if (builder.nodeType == NODE_TYPE_PURE_VOICE_CHANGE) {
-        AUDIO_INFO_LOG("Create AudioSuitePureVoiceChangeNode");
-        node = std::make_shared<AudioSuitePureVoiceChangeNode>();
-    } else if (builder.nodeType == NODE_TYPE_OUTPUT) {
+        return std::make_shared<AudioInputNode>(audioFormat);
+    }
+    if (builder.nodeType == NODE_TYPE_OUTPUT) {
         AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
-        node = std::static_pointer_cast<AudioNode>(outputNode_);
-    } else if (builder.nodeType == NODE_TYPE_VOICE_BEAUTIFIER) {
-        AUDIO_INFO_LOG("Create AudioSuiteVoiceBeautifierNode");
-        node = std::make_shared<AudioSuiteVoiceBeautifierNode>();
-    } else if (builder.nodeType == NODE_TYPE_NOISE_REDUCTION) {
-        AUDIO_INFO_LOG("Create AudioSuiteNrNode");
-        node = std::make_shared<AudioSuiteNrNode>();
-    } else if (builder.nodeType == NODE_TYPE_SOUND_FIELD) {
-        AUDIO_INFO_LOG("Create AudioSuiteSoundFieldNode");
-        node = std::make_shared<AudioSuiteSoundFieldNode>();
-    } else if (builder.nodeType == NODE_TYPE_AUDIO_MIXER) {
-        AUDIO_INFO_LOG("Create AudioSuiteMixerNode");
-        node = std::make_shared<AudioSuiteMixerNode>();
-    } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
-        AUDIO_INFO_LOG("Create AudioSuiteAissNode");
-        node = std::make_shared<AudioSuiteAissNode>();
-    } else if (builder.nodeType == NODE_TYPE_TEMPO_PITCH) {
-        AUDIO_INFO_LOG("Create AudioSuiteTempoPitchNode");
-        node = std::make_shared<AudioSuiteTempoPitchNode>();
-    } else if (builder.nodeType == NODE_TYPE_SPACE_RENDER) {
-        AUDIO_INFO_LOG("Create AudioSuiteSpaceRenderNode");
-        node = std::make_shared<AudioSuiteSpaceRenderNode>();
-} else if (builder.nodeType == NODE_TYPE_HOA_RENDER) {
-        AUDIO_INFO_LOG("Create AudioSuiteHoaRenderNode");
-        node = std::make_shared<AudioSuiteHoaRenderNode>();
-    } else {
-        AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
-            static_cast<int32_t>(builder.nodeType));
+        return std::static_pointer_cast<AudioNode>(outputNode_);
     }
 
-    return node;
+    auto it = effectNodeFactory_.find(builder.nodeType);
+    if (it != effectNodeFactory_.end()) {
+        AUDIO_INFO_LOG("Create node type = %{public}d", static_cast<int32_t>(builder.nodeType));
+        return it->second();
+    }
+
+    AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
+        static_cast<int32_t>(builder.nodeType));
+    return nullptr;
 }
 
 int32_t AudioSuitePipeline::DestroyNode(uint32_t nodeId)

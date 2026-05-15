@@ -55,20 +55,25 @@ int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Init()
         "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     algoApi_.getSize = reinterpret_cast<FunAudioHvsGetSize>(dlsym(libHandle_, "AudioHvsGetSize"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.getSize != nullptr, ERROR, "Failed to get symbol AudioHvsGetSize");
-
     algoApi_.initAlgo = reinterpret_cast<FunAudioHvsInit>(dlsym(libHandle_, "AudioHvsInit"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.initAlgo != nullptr, ERROR, "Failed to get symbol AudioHvsInit");
-
     algoApi_.setParaAlgo = reinterpret_cast<FunAudioHvsSetPara>(dlsym(libHandle_, "AudioHvsSetPara"));
- 	CHECK_AND_RETURN_RET_LOG(algoApi_.setParaAlgo != nullptr, ERROR, "Failed to get symbol AudioHvsSetPara");
-
     algoApi_.applyAlgo = reinterpret_cast<FunAudioHvsApply>(dlsym(libHandle_, "AudioHvsApply"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol AudioHvsApply");
+
+    bool loadAlgoApiFail = algoApi_.getSize == nullptr || algoApi_.initAlgo == nullptr ||
+                           algoApi_.setParaAlgo == nullptr || algoApi_.applyAlgo == nullptr;
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
+        Deinit();
+        return ERROR;
+    }
 
     AudioHvsMemSize memSize = {0, 0};
     int32_t ret = algoApi_.getSize(&memSize);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_HVS_OK, ret, "AudioHvsGetSize failed, ret = %{public}d", ret);
+    if (ret != AUDIO_HVS_OK) {
+        AUDIO_ERR_LOG("AudioHvsGetSize failed, ret = %{public}d", ret);
+        Deinit();
+        return ret;
+    }
 
     if (memSize.handleSize > 0) {
         algoHandle_.resize(memSize.handleSize, 0);
@@ -78,10 +83,18 @@ int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Init()
     }
 
     ret = algoApi_.initAlgo(algoHandle_.data(), scratchBuf_.data());
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_HVS_OK, ret, "AudioHvsInit failed, ret = %{public}d", ret);
+    if (ret != AUDIO_HVS_OK) {
+        AUDIO_ERR_LOG("AudioHvsInit failed, ret = %{public}d", ret);
+        Deinit();
+        return ret;
+    }
 
     ret = algoApi_.setParaAlgo(algoHandle_.data(), scratchBuf_.data());
- 	CHECK_AND_RETURN_RET_LOG(ret == AUDIO_HVS_OK, ret, "AudioHvsSetPara failed, ret = %{public}d", ret);
+    if (ret != AUDIO_HVS_OK) {
+        AUDIO_ERR_LOG("AudioHvsSetPara failed, ret = %{public}d", ret);
+        Deinit();
+        return ret;
+    }
 
     isHoaAlgoInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteHoaRenderAlgoInterfaceImpl::Init end");

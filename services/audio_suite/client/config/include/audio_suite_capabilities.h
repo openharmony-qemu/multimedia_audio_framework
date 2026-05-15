@@ -17,6 +17,7 @@
 #define AUDIO_SUITE_CAPABILITIES_H
 
 #include <dlfcn.h>
+#include <functional>
 #include "audio_suite_base.h"
 #include "audio_suite_capabilities_parser.h"
 #include "imedia_api.h"
@@ -70,6 +71,7 @@ private:
     int32_t LoadHoaRenderCapability(NodeParameter &np);
     std::unordered_map<AudioNodeType, NodeParameter> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;
+    std::unordered_map<AudioNodeType, std::function<int32_t(NodeParameter&)>> loadCapabilityFuncs_;
 };
 
 class DlHandleGuard {

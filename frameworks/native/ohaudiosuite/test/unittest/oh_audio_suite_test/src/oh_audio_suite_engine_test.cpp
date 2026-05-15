@@ -3849,7 +3849,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_HoaRenderNodeConnection_001
 
     // Create HoaRenderNode
     OH_AudioNode *hoaRenderNode = nullptr;
-    CreateNode(pipeline, EFFECT_NODE_TYPE_HOA_RENDER, &hoaRenderNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_HOA_SPACE_RENDER, &hoaRenderNode);
 
     // Create OutputNode
     OH_AudioNode *outputNode = nullptr;
@@ -3967,7 +3967,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_HoaRenderNodeConnection_003
 
     // Create HoaRenderNode
     OH_AudioNode *hoaRenderNode = nullptr;
-    CreateNode(pipeline, EFFECT_NODE_TYPE_HOA_RENDER, &hoaRenderNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_HOA_SPACE_RENDER, &hoaRenderNode);
 
     // Create OutputNode
     OH_AudioNode *outputNode = nullptr;
@@ -3984,7 +3984,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_HoaRenderNodeConnection_003
     ret = OH_AudioSuiteEngine_ConnectNodes(hoaRenderNode, outputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
+    ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_STATE);
 
     ret = OH_AudioSuiteEngine_DestroyNode(inputNode);

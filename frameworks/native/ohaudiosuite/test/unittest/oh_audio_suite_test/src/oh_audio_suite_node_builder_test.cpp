@@ -270,7 +270,7 @@ HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_006, Te
     ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_1600;
+    audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_16000;
     ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 

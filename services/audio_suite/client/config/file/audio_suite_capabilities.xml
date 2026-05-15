@@ -26,6 +26,6 @@
         <nodeType name="GENERAL_CHANGE" soName="libaudio_voice_morph_bgm.z.so" soPath="/system/lib64/" general="yes" realtimeFactor="0.15" frameLen="960"/>
         <nodeType name="TEMPO_PITCH" soName="libaudio_variable_speed.z.so,libaudio_pitch_change.z.so" soPath="/system/lib64/" general="yes" realtimeFactor="0.2" frameLen="960"/>
         <nodeType name="SPACE_RENDER" soName="libspace_render.z.so" soPath="/system/lib64/" general="yes" realtimeFactor="0.15" frameLen="960"/>
-        <nodeType name="HOA_RENDER" soName="libhvs_rendering.z.so" soPath="/system/lib64/" general="yes" realtimeFactor="0.15" frameLen="960"/>
+        <nodeType name="HOA_RENDER" soName="libhvs_rendering.z.so" soPath="/system/lib64/" general="yes" realtimeFactor="0.15" frameLen="480"/>
     </nodeCapability>
 </audioSuiteCapabilities>

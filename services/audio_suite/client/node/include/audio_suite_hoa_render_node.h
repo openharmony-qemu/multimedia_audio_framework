@@ -29,10 +29,20 @@ public:
 
     int32_t Init() override;
     int32_t DeInit() override;
+    int32_t DoProcess(uint32_t needDataLength) override;
     int32_t PrintNodeInfo(std::string &nodeInfo) override;
-
+private:
+    int32_t ObtainProcessedData();
+    int32_t InitHoaCacheLength(uint32_t needDataLength);
+    int32_t GetProcessedToBuffer();
+    int32_t ProcessAlgoChunks();
 private:
     bool isInit_ = false;
+    AudioSuiteRingBuffer inputBuffer_;
+    AudioSuiteRingBuffer outputBuffer_;
+    std::vector<uint8_t> algoInputBuffer_;
+    std::vector<uint8_t> algoOutputBuffer_;
+    bool upstreamFinished_ = false;
 };
 
 }  // namespace AudioSuite
