@@ -61,14 +61,27 @@ static const char *StatusToString(HpaeSessionEffectNode::STATUS s)
 
 HpaeSessionEffectNode::HpaeSessionEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeSessionEffectNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
+#endif
     AUDIO_INFO_LOG("SessionId:%{public}u created", GetSessionId());
 }
 
 HpaeSessionEffectNode::~HpaeSessionEffectNode()
 {
     StopPreheatThread();
-    AUDIO_INFO_LOG("SessionId:%{public}u destructing", GetSessionId());
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
+#endif
     effectInstance_.reset();
+    AUDIO_INFO_LOG("SessionId:%{public}u destructing", GetSessionId());
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
