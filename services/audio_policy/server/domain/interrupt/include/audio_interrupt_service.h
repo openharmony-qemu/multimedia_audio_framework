@@ -102,6 +102,7 @@ public:
         const sptr<IRemoteObject> &object, uint32_t uid);
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t streamId);
     bool AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingStreamId);
+    bool AudioInterruptIsStandbyInFocusList(const int32_t zoneId, const uint32_t incomingStreamId);
     AudioInterruptResult ActivateAudioInterrupt(
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
     AudioInterruptResult DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
@@ -131,6 +132,8 @@ public:
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
+    int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
+    int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
     int32_t UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId);
     int32_t UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId);
 
@@ -265,6 +268,9 @@ private:
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void UpdateAudioSceneForResult(AudioInterruptResult &result);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
+    bool ProcessActiveInterruptContinue(const AudioFocusEntry &focusEntry,
+        const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
+        AudioFocuState activeState);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioFocusInfoList(const int32_t zoneId);
     void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);
     bool EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
@@ -419,6 +425,8 @@ private:
     void RecordFocusHistory(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         const InterruptEventInternal &interruptEvent);
     void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);
+    bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &activeState,
+        AudioFocuState &incomingState);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
