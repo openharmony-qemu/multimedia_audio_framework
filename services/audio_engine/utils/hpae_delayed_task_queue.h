@@ -40,7 +40,6 @@ private:
         uint64_t taskId;
         std::chrono::steady_clock::time_point deadline;
         std::function<void()> task;
-        bool cancelled = false;
     };
     std::list<DelayedTaskEntry> tasks_;
     uint64_t nextId_ = 1;

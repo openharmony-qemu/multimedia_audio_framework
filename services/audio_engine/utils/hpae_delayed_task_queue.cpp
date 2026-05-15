@@ -32,7 +32,7 @@ uint64_t HpaeDelayedTaskQueue::PostDelayedTask(uint64_t delayMs, std::function<v
 {
     auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(delayMs);
     uint64_t id = nextId_++;
-    DelayedTaskEntry entry{id, deadline, std::move(task), false};
+    DelayedTaskEntry entry{id, deadline, std::move(task)};
 
     auto it = tasks_.begin();
     while (it != tasks_.end() && it->deadline <= deadline) {
@@ -58,7 +58,7 @@ void HpaeDelayedTaskQueue::ProcessExpiredTasks()
     while (!tasks_.empty() && tasks_.front().deadline <= now) {
         auto entry = std::move(tasks_.front());
         tasks_.pop_front();
-        if (!entry.cancelled && entry.task) {
+        if (entry.task) {
             entry.task();
         }
     }
@@ -67,14 +67,12 @@ void HpaeDelayedTaskQueue::ProcessExpiredTasks()
 uint64_t HpaeDelayedTaskQueue::GetNextDelayMs() const
 {
     for (const auto &entry : tasks_) {
-        if (!entry.cancelled) {
-            auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
-                entry.deadline - std::chrono::steady_clock::now());
-            if (remaining.count() <= 0) {
-                return 1;  // Avoid indefinite wait in caller when deadline just passed
-            }
-            return static_cast<uint64_t>(remaining.count());
+        auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
+            entry.deadline - std::chrono::steady_clock::now());
+        if (remaining.count() <= 0) {
+            return 1;  // Avoid indefinite wait in caller when deadline just passed
         }
+        return static_cast<uint64_t>(remaining.count());
     }
     return 0;
 }
