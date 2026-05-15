@@ -673,7 +673,7 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
     // UpdatePlaybackCaptureConfig will only work for InnerCap streams.
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_OPERATION, "This is not a PLAYBACK_CAPTURE stream", true);
+            RECORD_CONFIG_INVALID_OPERATION, "This is not a PLAYBACK_CAPTURE stream", true);
         AUDIO_WARNING_LOG("This is not a PLAYBACK_CAPTURE stream.");
         return ERR_INVALID_OPERATION;
     }
@@ -681,19 +681,19 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (config.filterOptions.usages.size() == 0 && config.filterOptions.pids.size() == 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "Both usages and pids are empty", true);
+            RECORD_CONFIG_INVALID_PARAM, "Both usages and pids are empty", true);
         AUDIO_WARNING_LOG("Both usages and pids are empty!");
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "Failed with null audioStream_", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "Failed with null audioStream_", true),
         "Failed with null audioStream_");
 
     return audioStream_->UpdatePlaybackCaptureConfig(config);
 #else
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "Inner capture is not supported", true);
+            RECORD_CONFIG_NOT_SUPPORTED, "Inner capture is not supported", true);
     AUDIO_WARNING_LOG("Inner capture is not supported.");
     return ERR_NOT_SUPPORTED;
 #endif
@@ -1808,12 +1808,12 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC, ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "Please set the buffer duration between 5ms ~ 20ms", true),
+            RECORD_CONFIG_INVALID_PARAM, "Please set the buffer duration between 5ms ~ 20ms", true),
         "Error: Please set the buffer duration between 5ms ~ 20ms");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
 }
@@ -2079,7 +2079,7 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
 {
     if (targetSources.size() <= 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "TargetSources size is 0", true);
+            RECORD_CONFIG_INVALID_PARAM, "TargetSources size is 0", true);
         AUDIO_ERR_LOG("TargetSources size is 0, set audio source concurrency failed.");
         return ERR_INVALID_PARAM;
     }
@@ -2094,7 +2094,7 @@ int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
     CapturerState state = GetStatusInner();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "incorrect state", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "incorrect state", true),
         "incorrect state:%{public}d", state);
     audioInterrupt_.strategy = strategy;
     AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
@@ -2105,13 +2105,13 @@ int32_t AudioCapturerPrivate::SetMuteHint(bool mute)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(GetStatus() == CAPTURER_RUNNING, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "SetMuteHint only support running state", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "SetMuteHint only support running state", true),
         "SetMuteHint only support running state");
 
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
 
     return currentStream->SetMuteHint(mute);
@@ -2124,7 +2124,7 @@ int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     int32_t ret = currentStream->SetCaptureMode(captureMode);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
@@ -2164,24 +2164,36 @@ int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
     return ret;
 }
 
-int32_t AudioCapturerPrivate::CheckDegradeFallback(AudioStreamParams audioStreamParams, bool degradeFallback,
-    size_t validDataLength, const size_t processFrameSize, size_t &processBufSize,
+int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
     size_t &micInBufSize, size_t &ecBufSize)
 {
+    processBufSize = 0;
+    micInBufSize = 0;
+    ecBufSize = 0;
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "bufDesc buffer is null");
+
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+
+    AudioStreamParams audioStreamParams;
+    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
+    int32_t sampleByteSize = GetFormatByteSize(audioStreamParams.format);
+    CHECK_AND_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM, "invalid sample format");
+    const size_t processFrameSize =
+        static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
+    CHECK_AND_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM, "invalid process frame size");
+    bool degradeFallback = IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams);
+
+    size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
+        bufDesc.dataLength : bufDesc.bufLength;
     if (!degradeFallback) {
         MicInEcBufferLayout layout {};
-        int32_t ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_SEND_DATA_OPERATION_FAILED, "ParseMicInEcBufferLayout failed", true),
-            "ParseMicInEcBufferLayout failed");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_SEND_DATA_INVALID_PARAM, "buffer length is invalid", true),
+        ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+        CHECK_AND_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
             "buffer length is invalid");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_SEND_DATA_INVALID_PARAM, "buffer length is not frame aligned", true),
+        CHECK_AND_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
             "buffer length is not frame aligned");
         size_t frameCount = validDataLength / layout.byteSizePerFrame;
         processBufSize = frameCount * layout.processChannels * layout.byteSizePerSample;
@@ -2190,65 +2202,9 @@ int32_t AudioCapturerPrivate::CheckDegradeFallback(AudioStreamParams audioStream
         return SUCCESS;
     }
 
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength >= processFrameSize, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "buffer length is invalid", true),
-        "buffer length is invalid");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processFrameSize != 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "processFrameSize is 0", true),
-        "processFrameSize is 0");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength % processFrameSize == 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "buffer length is not process frame aligned", true),
+    CHECK_AND_RETURN_RET_LOG(validDataLength >= processFrameSize, ERROR_INVALID_PARAM, "buffer length is invalid");
+    CHECK_AND_RETURN_RET_LOG(validDataLength % processFrameSize == 0, ERROR_INVALID_PARAM,
         "buffer length is not process frame aligned");
-    return SUCCESS;
-}
-
-int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
-    size_t &micInBufSize, size_t &ecBufSize)
-{
-    processBufSize = 0;
-    micInBufSize = 0;
-    ecBufSize = 0;
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "bufDesc buffer is null", true),
-        "bufDesc buffer is null");
-
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_ILLEGAL_STATE, "audioStream_ is nullptr", true),
-        "audioStream_ is nullptr");
-
-    AudioStreamParams audioStreamParams;
-    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_OPERATION_FAILED, "GetAudioStreamInfo failed", true),
-        "GetAudioStreamInfo failed");
-    int32_t sampleByteSize = GetFormatByteSize(audioStreamParams.format);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "invalid sample format", true),
-        "invalid sample format");
-    const size_t processFrameSize =
-        static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "invalid process frame size", true),
-        "invalid process frame size");
-    bool degradeFallback = IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams);
-
-    size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
-        bufDesc.dataLength : bufDesc.bufLength;
-    ret = CheckDegradeFallback(audioStreamParams, degradeFallback, validDataLength, processFrameSize,
-        processBufSize, micInBufSize, ecBufSize);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "CheckDegradeFallback fail", true),
-        "CheckDegradeFallback fail");
     size_t frameCount = validDataLength / processFrameSize;
     processBufSize = frameCount * processFrameSize;
     micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) *
@@ -3387,7 +3343,7 @@ int32_t AudioCapturerPrivate::SetInMainThreadState(bool isInMainThread)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     if (!isFirstTimeSetMainThreadState_) {
         return ERROR_ILLEGAL_STATE;

@@ -979,7 +979,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateAudioPipeVolume_001, TestSize.Level1
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-    
+
     std::vector<PipeDeviceVolumeInfo> emptyList;
     audioAdapterManager->UpdateAudioPipeVolume(emptyList);
 }
@@ -993,7 +993,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateAudioPipeVolume_002, TestSize.Level1
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-    
+
     std::vector<PipeDeviceVolumeInfo> infoList;
     PipeDeviceVolumeInfo info;
     info.ioHandle_ = 100;
@@ -1001,7 +1001,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateAudioPipeVolume_002, TestSize.Level1
     info.deviceDesc_->deviceType_ = DEVICE_TYPE_SPEAKER;
     info.volumeTypes_.insert(STREAM_MUSIC);
     infoList.push_back(info);
-    
+
     audioAdapterManager->UpdateAudioPipeVolume(infoList);
 }
 
@@ -1014,7 +1014,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, RemoveAudioPipeVolume_001, TestSize.Level1
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-    
+
     uint32_t ioHandle = 100;
     audioAdapterManager->RemoveAudioPipeVolume(ioHandle);
 }
@@ -1028,7 +1028,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateVolumeForAllPipes_001, TestSize.Leve
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-    
+
     audioAdapterManager->UpdateVolumeForAllPipes();
 }
 
@@ -1041,7 +1041,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateTypeVolumeForAllPipes_001, TestSize.
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-    
+
     AudioVolumeType volumeType = STREAM_MUSIC;
     audioAdapterManager->UpdateTypeVolumeForAllPipes(volumeType);
 }
@@ -1055,7 +1055,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateTypeVolumeForAllPipes_002, TestSize.
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-    
+
     AudioVolumeType volumeType = STREAM_VOICE_CALL;
     audioAdapterManager->UpdateTypeVolumeForAllPipes(volumeType);
 }
@@ -1478,5 +1478,136 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_HdPlaybackMode_002, TestS
     IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
     EXPECT_EQ(attr.hdPlayBackMode, 0);
 }
+
+/**
+ * @tc.name: Test GetAudioSinkAttr UltraFast Period
+ * @tc.number: GetAudioSinkAttr_UltraFastPeriod_001
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with ultra_fast className calculates period for 2.5ms latency
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_UltraFastPeriod_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "ultra_fast";
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.format = "s16le";
+
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+
+    // Expected: period = (48000 * 2 * 2) * 2.5 / 1000 = 240 frames
+    EXPECT_EQ(attr.period, 480u);
+    EXPECT_EQ(attr.sampleRate, 48000u);
+    EXPECT_EQ(attr.channel, 2u);
+}
+
+/**
+ * @tc.name: Test GetAudioSinkAttr UltraFast Period S32LE
+ * @tc.number: GetAudioSinkAttr_UltraFastPeriod_002
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with ultra_fast and S32LE format calculates correct period
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_UltraFastPeriod_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "ultra_fast";
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.format = "s32le";
+
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+
+    // Expected: period = (48000 * 2 * 4) * 2.5 / 1000 = 480 frames (S32LE = 4 bytes)
+    EXPECT_EQ(attr.period, 960u);
+    EXPECT_EQ(attr.sampleRate, 48000u);
+    EXPECT_EQ(attr.channel, 2u);
+}
+
+/**
+ * @tc.name: Test GetAudioSinkAttr Non-UltraFast Period Default
+ * @tc.number: GetAudioSinkAttr_NonUltraFastPeriod_001
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with non-ultra_fast className returns period=0 (default)
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_NonUltraFastPeriod_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "primary_mmap";
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.format = "s16le";
+
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+
+    // Expected: period = 0 (default for non-ultra_fast)
+    EXPECT_EQ(attr.period, 0u);
+    EXPECT_EQ(attr.sampleRate, 48000u);
+    EXPECT_EQ(attr.channel, 2u);
+}
+
+/**
+ * @tc.name: Test GetAudioSinkAttr UltraFast Period U8 Format
+ * @tc.number: GetAudioSinkAttr_UltraFastPeriod_003
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with ultra_fast and U8 format calculates correct period
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_UltraFastPeriod_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "ultra_fast";
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.format = "u8";
+
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+
+    // Expected: period = (48000 * 2 * 1) * 2.5 / 1000 = 120 frames (U8 = 1 byte)
+    EXPECT_EQ(attr.period, 480u);
+    EXPECT_EQ(attr.sampleRate, 48000u);
+    EXPECT_EQ(attr.channel, 2u);
+}
+
+/**
+ * @tc.name: Test GetAudioSinkAttr UltraFast Period S24LE Format
+ * @tc.number: GetAudioSinkAttr_UltraFastPeriod_004
+ * @tc.type: FUNC
+ * @tc.desc: Test GetAudioSinkAttr with ultra_fast and S24LE format calculates correct period
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_UltraFastPeriod_004, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    EXPECT_NE(audioAdapterManager, nullptr);
+
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "ultra_fast";
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.format = "s24le";
+
+    IAudioSinkAttr attr = audioAdapterManager->GetAudioSinkAttr(audioModuleInfo);
+
+    // Expected: period = (48000 * 2 * 3) * 2.5 / 1000 = 360 frames (S24 = 3 bytes)
+    EXPECT_EQ(attr.period, 720u);
+    EXPECT_EQ(attr.sampleRate, 48000u);
+    EXPECT_EQ(attr.channel, 2u);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

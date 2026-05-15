@@ -623,11 +623,9 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     }
 
     int32_t ret = SUCCESS;
-    if (isRunning) {
-        ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(deviceType, clientUid,
-            sessionID, streamUsage);
-    }
-    if (ret == NEED_TO_FETCH || forceFetch) {
+    ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(deviceType, clientUid,
+        sessionID, streamUsage);
+    if ((isRunning && ret == NEED_TO_FETCH) || forceFetch) {
         AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;

@@ -113,28 +113,24 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     if (func_ == nullptr) {
         return;
     }
-    CArrUI8 arr {};
     BufferDesc buf {};
     audioRenderer_->GetBufferDesc(buf);
     if (buf.buffer == nullptr) {
         return;
     }
+    CArrUI8 arr {};
     arr.size = std::min(length, buf.bufLength);
-    int32_t mallocSize = static_cast<int32_t>(sizeof(uint8_t)) * static_cast<int32_t>(arr.size);
-    if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(uint8_t) * MAX_MEM_MALLOC_SIZE)) {
+    constexpr size_t maxMallocSize = MAX_MEM_MALLOC_SIZE;
+    if (arr.size == 0 || arr.size > maxMallocSize) {
         return;
     }
-    arr.head = static_cast<uint8_t*>(malloc(mallocSize));
+    arr.head = static_cast<uint8_t*>(malloc(arr.size));
     if (arr.head == nullptr) {
         return;
     }
-    if (memset_s(arr.head, mallocSize, 0, mallocSize) != EOK) {
+    if (memcpy_s(arr.head, arr.size, buf.buffer, arr.size) != EOK) {
         free(arr.head);
-        arr.head = nullptr;
         return;
-    }
-    for (int32_t i = 0; i < static_cast<int32_t>(arr.size); i++) {
-        arr.head[i] = buf.buffer[i];
     }
     func_(arr);
     free(arr.head);

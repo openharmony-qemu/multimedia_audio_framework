@@ -330,6 +330,9 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
     AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
     NotifyServiceReady();
+#ifdef AUDIO_WIRED_DETECT
+    AudioPnpServer::GetAudioPnpServer().init();
+#endif
 }
 
 void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -401,6 +404,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
     AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId, const uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    if (coreService_ == nullptr) {
+        AUDIO_INFO_LOG("coreService_ is nullptr");
+        return std::vector<std::shared_ptr<AudioDeviceDescriptor>>();
+    }
     return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid, streamId);
 }
 
@@ -646,6 +653,7 @@ int32_t AudioCoreService::EventEntry::ExcludeOutputDevices(AudioDeviceUsage audi
 {
     Trace trace("AudioCoreService::EventEntry::ExcludeOutputDevices");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "coreService_ is nullptr");
     return coreService_->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
@@ -653,6 +661,7 @@ int32_t AudioCoreService::EventEntry::UnexcludeOutputDevices(AudioDeviceUsage au
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "coreService_ is nullptr");
     return coreService_->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 

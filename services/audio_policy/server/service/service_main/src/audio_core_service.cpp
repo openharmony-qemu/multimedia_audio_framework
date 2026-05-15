@@ -1993,21 +1993,27 @@ int32_t AudioCoreService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
 int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
-    auto sessionId = mode == AUDIO_MODE_RECORD ?
-        streamChangeInfo.audioCapturerChangeInfo.sessionId : streamChangeInfo.audioRendererChangeInfo.sessionId;
-    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
-    auto uid = GetRealUid(streamDesc);
+    auto uid = SYSTEM_UID;
     if (mode == AUDIO_MODE_RECORD) {
         audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
             streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
         if (apiVersion > 0 && apiVersion < API_11) {
             CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
+            std::shared_ptr<AudioStreamDescriptor> streamDesc =
+                pipeManager_->GetStreamDescById(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+            CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "streamDesc is nullptr");
+            uid = GetRealUid(streamDesc);
             audioDeviceCommon_.UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
                 std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_
                 .Get1stCurrentInputDevice(uid)), false, false);
         }
     } else if (apiVersion > 0 && apiVersion < API_11) {
+        if (pipeManager_) {
+            auto streamDesc = pipeManager_->GetStreamDescById(streamChangeInfo.audioRendererChangeInfo.sessionId);
+            if (streamDesc) {
+                uid = GetRealUid(streamDesc);
+            }
+        }
         audioDeviceCommon_.UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo,
             std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_
             .Get1stCurrentOutputDevice(uid)), false, false);

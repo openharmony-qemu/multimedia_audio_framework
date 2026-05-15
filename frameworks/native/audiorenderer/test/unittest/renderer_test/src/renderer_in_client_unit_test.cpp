@@ -4724,5 +4724,82 @@ HWTEST(RendererInClientPublicNewUnitTest, NotifyFastStatusChange_001, TestSize.L
     EXPECT_EQ(notifyCount, 1);
 }
 
+// ========== SetupFastStreamThreadPriority Tests ==========
+
+/**
+ * @tc.name  : Test SetupFastStreamThreadPriority
+ * @tc.type  : FUNC
+ * @tc.number: SetupFastStreamThreadPriority_UltraFast_001
+ * @tc.desc  : Test SetupFastStreamThreadPriority for ultra fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_UltraFast_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->clientConfig_.ultraFastFlag = ULTRA_REQUESTED | ULTRA_IMPLEMENTED;
+    
+    sptr<IpcStreamTest> ipcStreamTest = sptr<IpcStreamTest>::MakeSptr();
+    rendererInClientInner->ipcStream_ = ipcStreamTest;
+    
+    EXPECT_TRUE(rendererInClientInner->IsFastStream());
+    EXPECT_TRUE(rendererInClientInner->IsUltraFastStream());
+}
+
+/**
+ * @tc.name  : Test SetupFastStreamThreadPriority
+ * @tc.type  : FUNC
+ * @tc.number: SetupFastStreamThreadPriority_NormalFast_001
+ * @tc.desc  : Test SetupFastStreamThreadPriority for normal fast stream.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NormalFast_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->clientConfig_.ultraFastFlag = ULTRA_NONE;
+    
+    sptr<IpcStreamTest> ipcStreamTest = sptr<IpcStreamTest>::MakeSptr();
+    rendererInClientInner->ipcStream_ = ipcStreamTest;
+    
+    EXPECT_TRUE(rendererInClientInner->IsFastStream());
+    EXPECT_FALSE(rendererInClientInner->IsUltraFastStream());
+}
+
+/**
+ * @tc.name  : Test SetupFastStreamThreadPriority
+ * @tc.type  : FUNC
+ * @tc.number: SetupFastStreamThreadPriority_NoIpcStream_001
+ * @tc.desc  : Test SetupFastStreamThreadPriority when ipcStream is nullptr.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NoIpcStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->clientConfig_.ultraFastFlag = ULTRA_REQUESTED | ULTRA_IMPLEMENTED;
+    rendererInClientInner->ipcStream_ = nullptr;
+    
+    EXPECT_TRUE(rendererInClientInner->IsFastStream());
+    EXPECT_TRUE(rendererInClientInner->IsUltraFastStream());
+}
+
+/**
+ * @tc.name  : Test SetupFastStreamThreadPriority
+ * @tc.type  : FUNC
+ * @tc.number: SetupFastStreamThreadPriority_NormalStream_001
+ * @tc.desc  : Test SetupFastStreamThreadPriority for normal stream (not fast).
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NormalStream_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    rendererInClientInner->clientConfig_.ultraFastFlag = ULTRA_NONE;
+    
+    EXPECT_FALSE(rendererInClientInner->IsFastStream());
+    EXPECT_FALSE(rendererInClientInner->IsUltraFastStream());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

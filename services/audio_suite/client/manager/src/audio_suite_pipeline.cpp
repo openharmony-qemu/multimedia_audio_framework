@@ -680,7 +680,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
+                               BusinessScenario::CONFIG, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
                 "ConnectNodes failed, srcNodeId can not same destNodeId.", true);
             AUDIO_ERR_LOG("ConnectNodes failed, srcNodeId can not same destNodeId.");
             TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
@@ -691,7 +691,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_INVALID_PARAM),
+                               BusinessScenario::CONFIG, ERR_INVALID_PARAM),
                 "ConnectNodes failed, node id is invailed.", true);
             AUDIO_ERR_LOG("ConnectNodes failed, node id is invailed.");
             TriggerCallback(CONNECT_NODES, ERR_INVALID_PARAM);
@@ -711,7 +711,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
+                               BusinessScenario::CONFIG, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
                 "The current node type does not support this connection method.", true);
             AUDIO_ERR_LOG("ConnectNodes src: %{public}d,dest: %{public}d error.",
                 srcNode->GetNodeType(), destNode->GetNodeType());
@@ -768,7 +768,7 @@ int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t dest
     if (outputNode_ == nullptr) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING,
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
                            ERR_ILLEGAL_STATE),
             "ConnectNodes failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("ConnectNodes failed, pipeline running, can not find output node.");
@@ -779,7 +779,7 @@ int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t dest
     if (IsConnected(outputNode_->GetAudioNodeId(), srcNodeId)) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING,
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
                            ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
             "onnectNodes failed, pipeline running", true);
         AUDIO_ERR_LOG("ConnectNodes failed, pipeline running srcNode = %{public}d can not is used node.", srcNodeId);
@@ -877,7 +877,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::CONFING, ERR_ILLEGAL_STATE),
+                           BusinessScenario::CONFIG, ERR_ILLEGAL_STATE),
             "DisConnectNodes failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("DisConnectNodes failed, pipeline running, can not find output node.");
         return ERR_ILLEGAL_STATE;
@@ -892,7 +892,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::CONFING, ERR_NOT_SUPPORTED),
+                           BusinessScenario::CONFIG, ERR_NOT_SUPPORTED),
             "destNode not midx node.", true);
         return ERR_NOT_SUPPORTED;
     }
@@ -901,7 +901,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::CONFING, ERR_ILLEGAL_STATE),
+                           BusinessScenario::CONFIG, ERR_ILLEGAL_STATE),
             "srcNode not connet destNode", true);
         return ERR_ILLEGAL_STATE;
     }
@@ -910,7 +910,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::CONFING, ERR_NOT_SUPPORTED),
+                           BusinessScenario::CONFIG, ERR_NOT_SUPPORTED),
             "midx node only one connected", true);
         return ERR_NOT_SUPPORTED;
     }
@@ -1083,7 +1083,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ERR_INVALID_PARAM),
+                               BusinessScenario::CONFIG, ERR_INVALID_PARAM),
                 "SetOptions failed, node id is invailed.", true);
             AUDIO_ERR_LOG("SetOptions failed, node id is invailed.");
             TriggerCallback(SET_OPTIONS, ERR_INVALID_PARAM);
@@ -1097,7 +1097,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFING, ret),
+                               BusinessScenario::CONFIG, ret),
                 "The SetOptions node interface reports an error.", true);
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
             TriggerCallback(SET_OPTIONS, ret);

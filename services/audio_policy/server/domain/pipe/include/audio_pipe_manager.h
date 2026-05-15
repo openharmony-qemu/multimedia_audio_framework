@@ -146,7 +146,7 @@ public:
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
-    bool HasRunningStream();
+    bool HasRunningStream(uint32_t sessionId = 0);
     bool IsA2dpUsed();
     bool HasFastOutputPipe();
     bool HasUltraFastStreamRequest();

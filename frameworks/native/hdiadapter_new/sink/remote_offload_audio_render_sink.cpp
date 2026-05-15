@@ -318,7 +318,7 @@ void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, co
     CHECK_AND_RETURN(IsValidState());
     int32_t ret = audioRender_->SetExtraParams(value.c_str());
     CHECK_AND_CALL_FUNC_RETURN_LOG(ret == SUCCESS,
-        ReportHdPlayError(HDPLAY_CONFING_OPERATION_FAILED,
+        ReportHdPlayError(HDPLAY_CONFIG_OPERATION_FAILED,
             "audioRender_ set parameter fail, error code: " + std::to_string(ret)),
         "set parameter fail, error code: %{public}d", ret);
 }
@@ -710,7 +710,7 @@ void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
     CHECK_AND_RETURN(IsValidState());
     int32_t ret = audioRender_->SetRenderSpeed(speed);
     CHECK_AND_CALL_FUNC_RETURN_LOG(ret == SUCCESS,
-        ReportHdPlayError(HDPLAY_CONFING_OPERATION_FAILED,
+        ReportHdPlayError(HDPLAY_CONFIG_OPERATION_FAILED,
             "audioRender_ set speed fail, ret: " + std::to_string(ret)),
         "set speed fail, ret: %{public}d", ret);
 
@@ -748,7 +748,7 @@ int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &
         std::string appInfoStr = GenerateAppsUidStr(appsUid_);
         int32_t ret = audioRender_->SetExtraParams(appInfoStr.c_str());
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE,
-            ReportHdPlayError(HDPLAY_CONFING_INVALID_HANDLE, "audioRender_ SetExtraParams error"),
+            ReportHdPlayError(HDPLAY_CONFIG_INVALID_HANDLE, "audioRender_ SetExtraParams error"),
             "SetExtraParams error");
         AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
     }
@@ -800,7 +800,7 @@ int32_t RemoteOffloadAudioRenderSink::SetBufferSize(uint32_t sizeMs)
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioRender_->ReqMmapBuffer(size, desc);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
-        ReportHdPlayError(HDPLAY_CONFING_OPERATION_FAILED, "audioRender_ set buffer size fail"),
+        ReportHdPlayError(HDPLAY_CONFIG_OPERATION_FAILED, "audioRender_ set buffer size fail"),
         "set buffer size fail");
     return SUCCESS;
 }
@@ -1057,7 +1057,7 @@ int32_t RemoteOffloadAudioRenderSink::SetVolumeInner(float left, float right)
     int32_t ret = audioRender_->SetVolume(volume);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set volume fail");
-        ReportHdPlayError(HDPLAY_CONFING_VOLUME_OPERATION_FAILED, "audioRender_ set volume fail");
+        ReportHdPlayError(HDPLAY_CONFIG_VOLUME_OPERATION_FAILED, "audioRender_ set volume fail");
     }
 
     return ret;
