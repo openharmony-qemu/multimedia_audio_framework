@@ -70,7 +70,7 @@ public:
     void TriggerClientWake();
     void SetDirect(bool isDirect);
     bool GetDirect() const noexcept;
-    bool IsNonStandardSampleRate() const;
+    bool GetIsNonStandardSampleRate() const;
     void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
 
     bool isConnected_ = false;

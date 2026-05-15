@@ -311,7 +311,7 @@ bool HpaeSinkInputNode::GetDirect() const noexcept
     return isDirect_;
 }
 
-bool HpaeSinkInputNode::IsNonStandardSampleRate() const
+bool HpaeSinkInputNode::GetIsNonStandardSampleRate() const
 {
     return isNonStandardSampleRate_;
 }
