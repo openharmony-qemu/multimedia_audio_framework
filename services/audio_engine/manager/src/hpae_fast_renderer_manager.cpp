@@ -110,6 +110,7 @@ int32_t HpaeFastRendererManager::ConnectInputCluster(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(sinkInputNode != nullptr, ERROR, "node not found");
     auto gainNode = SafeGetMap(gainNodeMap_, sessionId);
     auto converter = SafeGetMap(converterNodeMap_, sessionId);
+    gainNode->ResetVolume();
     mixerNode_->Connect(gainNode);
     gainNode->Connect(converter);
     converter->Connect(sinkInputNode);
