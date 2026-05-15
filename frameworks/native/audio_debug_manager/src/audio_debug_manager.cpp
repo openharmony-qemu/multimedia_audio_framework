@@ -661,7 +661,7 @@ int32_t AudioDebugManagerPrivate::GetAudioLoopbackDebugInfo(uint32_t loopbackKey
         std::lock_guard<std::mutex> lock(loopbackMutex_);
         auto callbackIter = audioLoopbackDebugCallbacks_.find(loopbackKey);
         if (callbackIter == audioLoopbackDebugCallbacks_.end() || callbackIter->second == nullptr) {
-            AUDIO_WARNING_LOG("Get loopback debug info failed: callback not found, key:%{public}" PRIuPTR, loopbackKey);
+            AUDIO_WARNING_LOG("Get loopback debug info failed: callback not found, key:%{public}u", loopbackKey);
             return ERR_ILLEGAL_STATE;
         }
         debugCallback = callbackIter->second;
@@ -728,12 +728,12 @@ int32_t AudioDebugManagerPrivate::PrintAudioLoopbackDebugInfo(uint32_t loopbackK
 {
     AudioLoopbackDebugInfo debugInfo;
     if (GetAudioLoopbackDebugInfo(loopbackKey, debugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print loopback debug info failed: get info failed, key:%{public}" PRIuPTR, loopbackKey);
+        AUDIO_WARNING_LOG("Print loopback debug info failed: get info failed, key:%{public}u", loopbackKey);
         return ERR_ILLEGAL_STATE;
     }
     const std::string parsedDebugInfo = ParserAudioLoopbackDebugInfo(debugInfo);
     if (PrintfAudioDebugInfo(fd, parsedDebugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print loopback debug info failed: output failed, key:%{public}" PRIuPTR, loopbackKey);
+        AUDIO_WARNING_LOG("Print loopback debug info failed: output failed, key:%{public}u", loopbackKey);
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;
@@ -753,7 +753,7 @@ int32_t AudioDebugManagerPrivate::PrintAllAudioLoopbacksDebugInfo(int32_t fd) co
     int32_t ret = SUCCESS;
     for (const auto key : loopbackKeys) {
         if (PrintAudioLoopbackDebugInfo(key, fd) != SUCCESS) {
-            AUDIO_WARNING_LOG("Print loopback debug info failed in batch, key:%{public}" PRIuPTR, key);
+            AUDIO_WARNING_LOG("Print loopback debug info failed in batch, key:%{public}u", key);
             ret = ERR_OPERATION_FAILED;
         }
     }
