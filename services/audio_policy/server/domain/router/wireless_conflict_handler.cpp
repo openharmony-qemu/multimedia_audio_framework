@@ -96,7 +96,7 @@ bool WirelessConflictHandler::AllScoPairSelected()
     return allScoPair;
 }
 
-int WirelessConflictHandler::FindHighestPriorityDevice()
+void WirelessConflictHandler::FindHighestPriorityDevice()
 {
     cachedHighestPriority_ = 0;
     cachedHighestPriorityMac_.clear();
@@ -120,13 +120,11 @@ int WirelessConflictHandler::FindHighestPriorityDevice()
     findPriority(inputStreamDevices_, false, true);
     
     if (cachedHighestPriority_ > 0) {
-        return cachedHighestPriority_;
+        return;
     }
     
     findPriority(outputStreamDevices_, true, false);
     findPriority(inputStreamDevices_, false, false);
-    
-    return cachedHighestPriority_;
 }
 
 bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
@@ -140,7 +138,7 @@ bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor
         return true;
     }
     
-    return cachedHighestPriorityMac_ != device->macAddress_;
+    return cachedHighestPriority_ > 0 && cachedHighestPriorityMac_ != device->macAddress_;
 }
 
 void WirelessConflictHandler::SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
