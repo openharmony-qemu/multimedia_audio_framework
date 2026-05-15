@@ -895,7 +895,7 @@ int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expect
         IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING,
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
                            ERR_AUDIO_SUITE_NODE_NOT_EXIST),
             "node does not exist.", true),
         "%{public}s failed, node does not exist.", funcName);
@@ -904,7 +904,7 @@ int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expect
         (node->GetNodeType() == expectedType), ERR_NOT_SUPPORTED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFING,
+            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
                            ERR_NOT_SUPPORTED),
             "Node type does not match the parameters.", true),
         "%{public}s failed, node type = %{public}d must be %{public}d type.", funcName,
@@ -955,7 +955,7 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
                 StreamDfxManager::GetInstance().SendAudioErrorEvent(
                     static_cast<int32_t>(getuid()),
                     BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                                   BusinessScenario::CONFING, ERR_INVALID_PARAM),
+                                   BusinessScenario::CONFIG, ERR_INVALID_PARAM),
                     "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
                 "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
         }

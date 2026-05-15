@@ -160,11 +160,12 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     );
 
     int32_t ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr);
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, inputs[0],
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
-            "apply audio effect chain fail", false), inputs[0]));
+            "apply audio effect chain fail", false),
+        "apply audio effect chain fail, ret: %{public}d", ret);
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &effectOutput_;
@@ -172,11 +173,12 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
 int32_t HpaeRenderEffectNode::SplitCollaborativeData()
 {
-    CHECK_AND_RETURN_RET(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4), ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-            "collaborative channel count is invalid", false), ERROR));
+            "collaborative channel count is invalid", false),
+        "collaborative channel count is invalid, count: %{public}d", CHANNEL_4);
     // need to check whether the sample rate or frame length changes
     // currently, sample rate and frame length will not change
     float *tempOutput = effectOutput_.GetPcmDataBuffer();
@@ -288,11 +290,12 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     // todo: if boot music, do not create audio effect
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioEffectChainManager != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "null audioEffectChainManager", false), ERR_INVALID_HANDLE));
+            "null audioEffectChainManager", false),
+        "null audioEffectChainManager");
     std::string sceneType = "EFFECT_NONE";
     const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
     if (audioSupportedSceneTypes.find(nodeInfo.effectInfo.effectScene) !=
@@ -307,11 +310,12 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
         return SUCCESS;
     }
     int32_t ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType);
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
-            "create effect chain fail", false), ERROR));
+            "create effect chain fail", false),
+        "create effect chain fail, ret: %{public}d", ret);
     AUDIO_INFO_LOG("Success, sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     return SUCCESS;
@@ -323,11 +327,12 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     // todo: if boot music, do not release audio effect
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioEffectChainManager != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::RELEASE, ERR_NULL_POINTER),
-            "null audioEffectChainManager", false), ERR_INVALID_HANDLE));
+            "null audioEffectChainManager", false),
+        "null audioEffectChainManager");
     std::string sceneType = "EFFECT_NONE";
     const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
     if (audioSupportedSceneTypes.find(nodeInfo.effectInfo.effectScene) !=
@@ -342,11 +347,12 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
         return SUCCESS;
     }
     int32_t ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType);
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::RELEASE, ERR_OPERATION_FAILED),
-            "release effect chain fail", false), ERROR));
+            "release effect chain fail", false),
+        "release effect chain fail, ret: %{public}d", ret);
     AUDIO_INFO_LOG("Success, sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     return SUCCESS;
@@ -505,11 +511,12 @@ void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
 uint64_t HpaeRenderEffectNode::GetLatency(uint32_t sessionId)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioEffectChainManager != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, 0,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "null audioEffectChainManager", false), 0));
+            "null audioEffectChainManager", false),
+        "null audioEffectChainManager");
     return audioEffectChainManager->GetLatency(std::to_string(sessionId)) * AUDIO_US_PER_MS;
 }
 } // namespace HPAE

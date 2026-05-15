@@ -487,11 +487,11 @@ int32_t FastAudioStream::SetMuteHint(bool mute)
     AUDIO_INFO_LOG("FastAudioStream: SetMuteHint %{public}s", mute ? "true" : "false");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(eMode_ == AUDIO_MODE_RECORD, ERR_NOT_SUPPORTED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "SetMuteHint not supported in playback mode", true),
+            RECORD_CONFIG_NOT_SUPPORTED, "SetMuteHint not supported in playback mode", true),
         "FastAudioStream: SetMuteHint not supported in playback mode");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "null process", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "null process", true),
         "FastAudioStream: failed: null process");
     return processClient_->SetMuteHint(mute);
 }
@@ -617,7 +617,7 @@ int32_t FastAudioStream::SetCaptureMode(AudioCaptureMode captureMode)
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureMode == CAPTURE_MODE_CALLBACK && eMode_ == AUDIO_MODE_RECORD,
         ERR_INVALID_OPERATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "not supported", true),
+            RECORD_CONFIG_NOT_SUPPORTED, "not supported", true),
         "%{public}s: not supported.", logTag_.c_str());
     return SUCCESS;
 }
@@ -633,7 +633,7 @@ int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapt
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback && processClient_ && eMode_ == AUDIO_MODE_RECORD,
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "callback or client is nullptr or mode is not record", true),
+            RECORD_CONFIG_INVALID_PARAM, "callback or client is nullptr or mode is not record", true),
         "%{public}s: callback or client is nullptr or mode is not record.",
         logTag_.c_str());
     micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(callback);

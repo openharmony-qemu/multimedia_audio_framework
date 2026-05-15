@@ -104,11 +104,12 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
 {
     Trace trace("HpaeLoudnessGainNode::SignalProcess");
 
-    CHECK_AND_RETURN_RET((!inputs.empty()) && inputs[0],
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((!inputs.empty()) && inputs[0], &silenceData_,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
-            "input is empty", false), &silenceData_));
+            "input is empty", false),
+        "NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
 
     CHECK_AND_RETURN_RET((!IsFloatValueEqual(loudnessGain_, 0.0f)), inputs[0]);
     CheckUpdateInfo(inputs[0]);
@@ -132,11 +133,12 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
         };
         CHECK_AND_RETURN_RET(handle_, inputs[0]);
         int32_t ret = (*handle_)->process(handle_, &inBuffer, &outBuffer);
-        CHECK_AND_RETURN_RET(ret == 0,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == 0, inputs[0],
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                    BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
-                "loudness algo lib process failed", false), inputs[0]));
+                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
+            "loudness algo lib process failed", false),
+            "loudness algo lib process failed, ret: %{public}d", ret);
     }
 
     loudnessGainOutput_.SetBufferState(inputs[0]->GetBufferState());
@@ -177,17 +179,19 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
 int32_t HpaeLoudnessGainNode::ReleaseHandle(float loudnessGain)
 {
     AUDIO_INFO_LOG("Releasing...");
-    CHECK_AND_RETURN_RET(handle_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(handle_, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "no handle.", false), ERROR));
+            "no handle.", false),
+        "no handle.");
     int32_t ret = audioEffectLibHandle_->releaseEffect(handle_);
-    CHECK_AND_RETURN_RET(ret == 0,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == 0, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::RELEASE, ERR_OPERATION_FAILED),
-            "handle releasing failed.", false), ERROR));
+            "handle releasing failed.", false),
+        "handle releasing failed, ret: %{public}d", ret);
     handle_ = nullptr;
     loudnessGain_ = loudnessGain;
     return SUCCESS;
@@ -195,10 +199,11 @@ int32_t HpaeLoudnessGainNode::ReleaseHandle(float loudnessGain)
 
 int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
 {
-    CHECK_AND_RETURN_RET(!IsFloatValueEqual(loudnessGain_, loudnessGain),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!IsFloatValueEqual(loudnessGain_, loudnessGain), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::CREATE,
-                ERR_INVALID_PARAM), "same loudnessGain, skip", false), SUCCESS));
+                ERR_INVALID_PARAM), "same loudnessGain, skip", false),
+        "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     if (!dlHandle_ || !audioEffectLibHandle_) {
         linearGain_ = LoudnessDbToLinearGain(loudnessGain);
@@ -216,30 +221,34 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
     if (IsFloatValueEqual(loudnessGain_, 0.0f)) {
         AUDIO_INFO_LOG("Creating handle...");
         int32_t ret = audioEffectLibHandle_->createEffect(LOUDNESS_DESCRIPTOR, &handle_);
-        CHECK_AND_RETURN_RET(ret == 0,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == 0, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::CREATE,
-                    ERR_OPERATION_FAILED), "loudness lib handle create failed", false), ERROR));
+                    ERR_OPERATION_FAILED), "loudness lib handle create failed", false),
+            "loudness lib handle create failed, ret: %{public}d", ret);
         AudioEffectConfig ioBufferConfig;
         AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
         ioBufferConfig.inputCfg = {SAMPLE_RATE, pcmBufferInfo_.ch, DATA_FORMAT_F32, pcmBufferInfo_.channelLayout,
             ENCODING_PCM};
         ioBufferConfig.outputCfg = ioBufferConfig.inputCfg;
         ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET(ret == 0,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == 0, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::START,
-                    ERR_OPERATION_FAILED), "Loudness algo lib EFFECT_CMD_INIT failed", false), ERROR));
+                    ERR_OPERATION_FAILED), "Loudness algo lib EFFECT_CMD_INIT failed", false),
+            "Loudness algo lib EFFECT_CMD_INIT failed, ret: %{public}d", ret);
         ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET(ret == 0,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == 0, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::START,
-                    ERR_OPERATION_FAILED), "Loudness algo lib EFFECT_CMD_ENABLE failed", false), ERROR));
+                    ERR_OPERATION_FAILED), "Loudness algo lib EFFECT_CMD_ENABLE failed", false),
+            "Loudness algo lib EFFECT_CMD_ENABLE failed, ret: %{public}d", ret);
         ret = (*handle_)->command(handle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET(ret == 0,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == 0, ERROR,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::CREATE,
-                    ERR_INVALID_PARAM), "Loudness algo lib EFFECT_CMD_SET_CONFIG failed", false), ERROR));
+                    ERR_INVALID_PARAM), "Loudness algo lib EFFECT_CMD_SET_CONFIG failed", false),
+            "Loudness algo lib EFFECT_CMD_SET_CONFIG failed, ret: %{public}d", ret);
     }
     std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + MAX_PARAM_INDEX * sizeof(int32_t));
     AudioEffectParam *effectParam = reinterpret_cast<AudioEffectParam*>(paramBuffer.data());
@@ -248,17 +257,20 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
     effectParam->valueSize = 0;
     int32_t *data = &(effectParam->data[0]);
     data[COMMAND_CODE_INDEX] = EFFECT_SET_PARAM;
-    CHECK_AND_RETURN_RET(memcpy_s(&data[LOUDNESS_GAIN_INDEX], sizeof(float), &loudnessGain, sizeof(float)) == 0,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        memcpy_s(&data[LOUDNESS_GAIN_INDEX], sizeof(float), &loudnessGain, sizeof(float)) == 0, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM), "memcpy failed", false), ERROR));
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM), "memcpy failed", false),
+        "memcpy failed");
 
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle_)->command(handle_, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::SEND_DATA,
-                ERR_OPERATION_FAILED), "Loudness algo lib EFFECT_CMD_SET_PARAM failed", false), ERROR));
+                ERR_OPERATION_FAILED), "Loudness algo lib EFFECT_CMD_SET_PARAM failed", false),
+        "Loudness algo lib EFFECT_CMD_SET_PARAM failed, ret: %{public}d", ret);
     loudnessGain_ = loudnessGain;
 
     return SUCCESS;

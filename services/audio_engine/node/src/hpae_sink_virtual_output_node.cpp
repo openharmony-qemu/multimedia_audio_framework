@@ -113,11 +113,12 @@ int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &
     Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData " + GetTraceInfo());
     std::lock_guard<std::mutex> lock(mutex_);
     DoProcessInner();
-    CHECK_AND_RETURN_RET(buffer != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-            "Invalid nullptr buffer provided", false), ERROR_INVALID_PARAM));
+            "Invalid nullptr buffer provided", false),
+        "Invalid nullptr buffer provided");
     memset_s(buffer, bufferSize, 0, bufferSize);
     size_t outputSizeInt = outputAudioBuffer_.DataSize() * static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) /
         sizeof(float);
@@ -199,11 +200,12 @@ StreamManagerState HpaeSinkVirtualOutputNode::GetState()
 
 int32_t HpaeSinkVirtualOutputNode::RenderSinkInit()
 {
-    CHECK_AND_RETURN_RET(ringCache_ != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ringCache_ != nullptr, ERR_INVALID_OPERATION,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "init fail, ringcache is null", false), ERR_INVALID_OPERATION));
+            "init fail, ringcache is null", false),
+        "init fail, ringcache is null");
     SetSinkState(STREAM_MANAGER_IDLE);
     return SUCCESS;
 }
@@ -266,11 +268,12 @@ uint32_t HpaeSinkVirtualOutputNode::GetLatency()
 bool HpaeSinkVirtualOutputNode::GetIsReadFinished()
 {
     OptResult result = ringCache_->GetWritableSize();
-    CHECK_AND_RETURN_RET(result.ret == OPERATION_SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
-            "ringCache get writable invalid size", false), false));
+            "ringCache get writable invalid size", false),
+        "ringCache get writable invalid size : %{public}zu", result.size);
     return result.size != 0;
 }
 
