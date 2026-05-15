@@ -384,7 +384,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
+    if (updatedDesc.connectState_ != VIRTUAL_CONNECTED) {
+        AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
+    }
     if (!NeedUpdatePreferredDevice(updatedDesc)) {
         return;
     }
