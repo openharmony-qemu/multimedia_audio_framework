@@ -691,6 +691,26 @@ HWTEST_F(HpaeProcessClusterSeTest, GetNodeInputFormatInfo_forces48kWhenSE, TestS
     EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
 }
 
+// DESTROY-1: DestroyNodes cleans idSessionEffectMap_ when SE node exists
+HWTEST_F(HpaeProcessClusterSeTest, DestroyNodes_cleansSessionEffectMap, TestSize.Level0)
+{
+    // Create SE node
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster_->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+    ASSERT_TRUE(cluster_->HasSessionEffectNode(testSessionId));
+
+    // DestroyNodes should clean up SE node
+    int32_t ret = cluster_->DestroyNodes(testSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(testSessionId));
+
+    // Verify other maps also cleaned
+    EXPECT_EQ(cluster_->GetConverterNodeCount(), 0);
+    EXPECT_EQ(cluster_->GetGainNodeCount(), 0);
+    EXPECT_EQ(cluster_->GetLoudnessGainNodeCount(), 0);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

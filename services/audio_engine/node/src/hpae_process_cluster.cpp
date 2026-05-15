@@ -289,6 +289,11 @@ int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
 int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET(CheckNodes(sessionId) == SUCCESS, ERROR);
+    auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
+    if (seNode) {
+        seNode->DropEffect();
+        idSessionEffectMap_.erase(sessionId);
+    }
     idConverterMap_.erase(sessionId);
     idLoudnessGainNodeMap_.erase(sessionId);
     idGainMap_.erase(sessionId);
