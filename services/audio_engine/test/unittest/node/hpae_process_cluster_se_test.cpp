@@ -676,10 +676,10 @@ HWTEST_F(HpaeProcessClusterSeTest, GetNodeInputFormatInfo_forces48kWhenSE, TestS
     cluster->CreateNodes(sinkInput);
     cluster->Connect(sinkInput);
 
-    // Without SE node, rate should be sink rate (96k)
+    // Without SE node, renderEffectNode clamps rate to 48k
     AudioBasicFormat fmt;
     cluster->GetNodeInputFormatInfo(testSessionId, fmt);
-    EXPECT_EQ(fmt.rate, SAMPLE_RATE_96000);
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
 
     // Create SE node
     auto instance = std::make_shared<EffectInstance>();
