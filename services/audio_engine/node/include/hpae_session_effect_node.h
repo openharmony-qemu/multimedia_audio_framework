@@ -75,7 +75,8 @@ protected:
     void SetPrebufFilledForTest(bool filled) { prebufFilled_.store(filled); }
     bool GetPrebufFilled() const { return prebufFilled_.load(); }
     void SetStatusForTest(STATUS s) { status_ = s; }
-    void ResetTimestampsForTest() {
+    void ResetTimestampsForTest()
+    {
         warmupStartTime_ = std::chrono::steady_clock::now();
         pauseAccumulatedUs_ = 0;
         pauseStartTime_ = std::chrono::steady_clock::time_point{};

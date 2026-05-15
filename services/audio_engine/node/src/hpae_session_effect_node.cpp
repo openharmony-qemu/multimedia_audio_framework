@@ -31,6 +31,7 @@ namespace {
 static constexpr uint32_t FLUSH_PREHEAT_RATIO_NUMERATOR = 38; // 3.8s numerator
 static constexpr uint32_t FLUSH_PREHEAT_RATIO_DENOMINATOR = 30; // 3.0s denominator
 static constexpr uint32_t BACKOFF_MULTIPLIER = 2;
+static constexpr int32_t HALF_DIVISOR = 2;
 } // namespace
 
 uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
@@ -43,7 +44,7 @@ uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
         return 0;
     }
     return static_cast<uint32_t>(
-        (elapsedUs + FRAME_LEN_20MS * MILLISECOND_PER_SECOND / 2)
+        (elapsedUs + FRAME_LEN_20MS * MILLISECOND_PER_SECOND / HALF_DIVISOR)
         / (FRAME_LEN_20MS * MILLISECOND_PER_SECOND));
 }
 
