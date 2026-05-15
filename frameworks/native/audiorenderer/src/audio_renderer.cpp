@@ -1101,6 +1101,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
     if (!result) {
         streamInfo.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        streamInfo.customSampleRate = audioStreamParams.customSampleRate;
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         streamInfo.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);

@@ -1369,6 +1369,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, DestructorThreadSafety_002, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = primarySource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
     primarySource_ = nullptr;
     EXPECT_EQ(primarySource_, nullptr);
 }
@@ -1492,6 +1493,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, DestructorCaptureThreadJoinable_001, TestSi
     if (ret == SUCCESS && captureSource->IsInited()) {
         ret = captureSource->Start();
         if (ret == SUCCESS) {
+            captureSource->DeInit();
             captureSource = nullptr;
             EXPECT_EQ(captureSource, nullptr);
             return;
