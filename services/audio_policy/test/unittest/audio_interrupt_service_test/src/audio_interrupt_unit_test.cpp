@@ -6323,7 +6323,8 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateToActive_003, TestSize.Le
     testInterrupt.pid = callerPid;
     testInterrupt.streamId = streamId;
     testInterrupt.isAudioSessionInterrupt = true;
-    interruptServiceTest->zonesMap_[targetZoneId]->audioFocusInfoList.push_back({testInterrupt, AudioFocuState::STANDBY});
+    interruptServiceTest->zonesMap_[targetZoneId]->audioFocusInfoList.push_back({testInterrupt,
+        AudioFocuState::STANDBY});
 
     AudioSessionStrategy strategy;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
