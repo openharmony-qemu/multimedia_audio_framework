@@ -293,8 +293,8 @@ private:
 
     bool IsConfigInfoHasAttribute(std::list<ConfigInfo> &configInfos, std::string value);
 
-    int32_t GetPreferredDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
+    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     void CreateRecoveryThread();
 
@@ -317,6 +317,13 @@ private:
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
     int32_t HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
+    int32_t HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config,
+    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
+    int32_t HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config,
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
+    bool IsVoipStreamUsage(StreamUsage streamUsage);
     void SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
         const AudioDeviceDescriptor &sourceDesc, DeviceRole role);
 private:
