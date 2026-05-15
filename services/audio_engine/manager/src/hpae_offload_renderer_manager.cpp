@@ -247,11 +247,12 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
 
 int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
 {
-    CHECK_AND_RETURN_RET(curNode_ != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(curNode_ != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "curNode_ not exist, fail to create offload nodes", false), ERROR));
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "curNode_ not exist, fail to create offload nodes", false),
+        "curNode_ not exist, fail to create offload nodes");
     HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
     outputNodeInfo.sessionId = curNode_->GetSessionId();
     outputNodeInfo.streamType = curNode_->GetStreamType();
@@ -282,12 +283,13 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
  
 int32_t HpaeOffloadRendererManager::DestroyOffloadNodes()
 {
-    CHECK_AND_RETURN_RET(curNode_ != nullptr && converterForLoudness_ != nullptr &&
-        loudnessGainNode_ != nullptr && converterForOutput_ != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(curNode_ != nullptr && converterForLoudness_ != nullptr &&
+        loudnessGainNode_ != nullptr && converterForOutput_ != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::RELEASE, ERR_NULL_POINTER),
-            "offload nodes not exist, fail to destroy offload nodes", false), ERROR));
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "offload nodes not exist, fail to destroy offload nodes", false),
+        "offload nodes not exist, fail to destroy offload nodes");
     AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes: "
         "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u,limiterNodeId %{public}u,"
         " converterForOutputNodeId %{public}u ",
@@ -909,7 +911,7 @@ int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessio
         if (sessionId == curNode_->GetSessionId()) {
             sinkOutputNode_->SetOffloadRenderCallbackType(type);
         } else {
-            AUDIO_ERR_LOG("curNode_ sessionId is %{public}u but set %{public}u",
+            AUDIO_WARNING_LOG("curNode_ sessionId is %{public}u but set %{public}u",
                 curNode_->GetSessionId(), sessionId);
         }
     };
@@ -929,7 +931,7 @@ void HpaeOffloadRendererManager::SetSpeed(uint32_t sessionId, float speed)
         if (sessionId == curNode_->GetSessionId()) {
             sinkOutputNode_->SetSpeed(speed);
         } else {
-            AUDIO_ERR_LOG("curNode_ sessionId is %{public}u but set %{public}u",
+            AUDIO_WARNING_LOG("curNode_ sessionId is %{public}u but set %{public}u",
                 curNode_->GetSessionId(), sessionId);
         }
     };
@@ -945,11 +947,12 @@ std::vector<SinkInput> HpaeOffloadRendererManager::GetAllSinkInputsInfo()
 int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo)
 {
     auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET(node,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(node, ERR_INVALID_OPERATION,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "GetSinkInputInfo not find sessionId", false), ERR_INVALID_OPERATION));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "GetSinkInputInfo not find sessionId", false),
+        "GetSinkInputInfo not find sessionId %{public}u", sessionId);
     sinkInputInfo.nodeInfo = node->GetNodeInfo();
     sinkInputInfo.rendererSessionInfo.state = node->GetState();
     return SUCCESS;
@@ -1100,16 +1103,18 @@ int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float lo
 
 int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
-    CHECK_AND_RETURN_RET(loudnessGainNode_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(loudnessGainNode_, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "gainNode does not exist", false), ERROR));
-    CHECK_AND_RETURN_RET(loudnessGainNode_->GetSessionId() == sessionId,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            "gainNode does not exist", false),
+        "sessionId %{public}d, gainNode does not exist", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_INVALID_PARAM),
-            "loudness node sessionId does not match", false), ERROR));
+            "loudness node sessionId does not match", false),
+        "loudness node sessionId does not match, sessionId %{public}u", sessionId);
     basicFormat.audioChannelInfo.channelLayout = (AudioChannelLayout)sinkInfo_.channelLayout;
     basicFormat.audioChannelInfo.numChannels = (uint32_t)sinkInfo_.channels;
     basicFormat.rate = sinkInfo_.samplingRate;

@@ -31,31 +31,34 @@ HpaeManagerImpl::HpaeManagerImpl()
 
 int32_t HpaeManagerImpl::Init()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->Init();
 }
 
 int32_t HpaeManagerImpl::DeInit()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::RELEASE, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->DeInit();
 }
 
 int32_t HpaeManagerImpl::RegisterSerivceCallback(const std::weak_ptr<AudioServiceHpaeCallback> &callback)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CALLBACK, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CALLBACK, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->RegisterSerivceCallback(callback);
 }
 
@@ -98,95 +101,104 @@ void HpaeManagerImpl::DumpSourceOutputsInfo()
 
 uint32_t HpaeManagerImpl::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, 0,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "manager is nullptr", false), 0));
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->OpenAudioPort(audioModuleInfo);
 }
 
 uint32_t HpaeManagerImpl::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, static_cast<uint32_t>(-1),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "manager is nullptr", false), static_cast<uint32_t>(-1)));
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->ReloadAudioPort(audioModuleInfo);
 }
 
 int32_t HpaeManagerImpl::CloseAudioPort(int32_t audioHandleIndex)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->CloseAudioPort(audioHandleIndex);
 }
 
 int32_t HpaeManagerImpl::GetSinkInfoByIdx(const int32_t &sinkIdx,
     std::function<void(const HpaeSinkInfo &sinkInfo, int32_t result)> callback)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetSinkInfoByIdx(sinkIdx, callback);
 }
 
 int32_t HpaeManagerImpl::GetSourceInfoByIdx(const int32_t &sourceIdx,
     std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetSourceInfoByIdx(sourceIdx, callback);
 }
 
 int32_t HpaeManagerImpl::GetAllSinkInputs()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetAllSinkInputs();
 }
 
 int32_t HpaeManagerImpl::GetAllSourceOutputs()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetAllSourceOutputs();
 }
 
 int32_t HpaeManagerImpl::MoveSourceOutputByIndexOrName(
     uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::START, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->MoveSourceOutputByIndexOrName(sourceOutputId,
         sourceIndex, std::move(sourceName));
 }
 
 int32_t HpaeManagerImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::START, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->MoveSinkInputByIndexOrName(sinkInputId,
         sinkIndex, std::move(sinkName));
 }
@@ -199,214 +211,235 @@ void HpaeManagerImpl::HandleMsg()
 
 bool HpaeManagerImpl::IsInit()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), false));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->IsInit();
 }
 
 bool HpaeManagerImpl::IsRunning()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), false));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->IsRunning();
 }
 
 bool HpaeManagerImpl::IsMsgProcessing()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), false));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->IsMsgProcessing();
 }
 
 // async interface
 int32_t HpaeManagerImpl::SetDefaultSink(std::string name)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetDefaultSink(std::move(name));
 }
 
 int32_t HpaeManagerImpl::SetDefaultSource(std::string name)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetDefaultSource(std::move(name));
 }
 
 int32_t HpaeManagerImpl::SuspendAudioDevice(std::string &audioPortName, bool isSuspend)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SuspendAudioDevice(audioPortName, isSuspend);
 }
 
 int32_t HpaeManagerImpl::StopAudioPort(const std::string &audioPortName)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->StopAudioPort(audioPortName);
 }
 
 bool HpaeManagerImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), false));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetSinkMute(sinkName, isMute, isSync);
 }
 
 int32_t HpaeManagerImpl::SetSourceOutputMute(int32_t uid, bool setMute)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetSourceOutputMute(uid, setMute);
 }
 
 int32_t HpaeManagerImpl::SetSourceOutputMuteByStreamId(int32_t sessionId, bool setMute)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetSourceOutputMuteByStreamId(sessionId, setMute);
 }
 
 int32_t HpaeManagerImpl::GetAllSinks()
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetAllSinks();
 }
 
 // play and record stream interface
 int32_t HpaeManagerImpl::CreateStream(const HpaeStreamInfo &streamInfo)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->CreateStream(streamInfo);
 }
 
 int32_t HpaeManagerImpl::DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::RELEASE, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->DestroyStream(streamClassType, sessionId);
 }
 
 int32_t HpaeManagerImpl::Start(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::START, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->Start(streamClassType, sessionId);
 }
 
 int32_t HpaeManagerImpl::StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::START, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->StartWithSyncId(streamClassType, sessionId, syncId);
 }
 
 int32_t HpaeManagerImpl::Pause(HpaeStreamClassType streamClassType, uint32_t sessionId, bool isStandby)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::PAUSE, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::PAUSE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->Pause(streamClassType, sessionId, isStandby);
 }
 
 int32_t HpaeManagerImpl::Flush(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::FLUSH, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::FLUSH, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->Flush(streamClassType, sessionId);
 }
 
 int32_t HpaeManagerImpl::Drain(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->Drain(streamClassType, sessionId);
 }
 
 int32_t HpaeManagerImpl::Stop(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->Stop(streamClassType, sessionId);
 }
 
 int32_t HpaeManagerImpl::Release(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::RELEASE, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->Release(streamClassType, sessionId);
 }
 
 int32_t HpaeManagerImpl::RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
     const std::weak_ptr<IStreamStatusCallback> &callback)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CALLBACK, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CALLBACK, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->RegisterStatusCallback(streamClassType, sessionId, callback);
 }
 
@@ -428,153 +461,167 @@ int32_t HpaeManagerImpl::GetStreamRouteFlag(HpaeStreamClassType streamClassType,
 int32_t HpaeManagerImpl::RegisterReadCallback(uint32_t sessionId,
     const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CALLBACK, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CALLBACK, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->RegisterReadCallback(sessionId, callback);
 }
 
 int32_t HpaeManagerImpl::GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetSourceOutputInfo(sessionId, streamInfo);
 }
 
 // play stream interface
 int32_t HpaeManagerImpl::SetClientVolume(uint32_t sessionId, float volume)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetClientVolume(sessionId, volume);
 }
 
 int32_t HpaeManagerImpl::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetLoudnessGain(sessionId, loudnessGain);
 }
 
 int32_t HpaeManagerImpl::SetRate(uint32_t sessionId, int32_t rate)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetRate(sessionId, rate);
 }
 
 int32_t HpaeManagerImpl::SetAudioEffectMode(uint32_t sessionId, int32_t effectMode)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetAudioEffectMode(sessionId, effectMode);
 }
 
 int32_t HpaeManagerImpl::GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetAudioEffectMode(sessionId, effectMode);
 }
 
 int32_t HpaeManagerImpl::SetPrivacyType(uint32_t sessionId, int32_t privacyType)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetPrivacyType(sessionId, privacyType);
 }
 
 int32_t HpaeManagerImpl::GetPrivacyType(uint32_t sessionId, int32_t &privacyType)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetPrivacyType(sessionId, privacyType);
 }
 
 int32_t HpaeManagerImpl::RegisterWriteCallback(uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CALLBACK, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CALLBACK, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->RegisterWriteCallback(sessionId, callback);
 }
 
 int32_t HpaeManagerImpl::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetOffloadPolicy(sessionId, state);
 }
 
 size_t HpaeManagerImpl::GetWritableSize(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, static_cast<size_t>(0),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), static_cast<size_t>(0)));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetWritableSize(sessionId);
 }
-
 int32_t HpaeManagerImpl::UpdateSpatializationState(
     uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->UpdateSpatializationState(sessionId, spatializationEnabled, headTrackingEnabled);
 }
 
 int32_t HpaeManagerImpl::UpdateMaxLength(uint32_t sessionId, uint32_t maxLength)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->UpdateMaxLength(sessionId, maxLength);
 }
 
 int32_t HpaeManagerImpl::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetOffloadRenderCallbackType(sessionId, type);
 }
 
@@ -601,80 +648,88 @@ void HpaeManagerImpl::SetOutputDeviceSink(int32_t device, const std::string &sin
 
 int32_t HpaeManagerImpl::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->UpdateSpatializationState(spatializationState);
 }
 
 int32_t HpaeManagerImpl::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->UpdateSpatialDeviceType(spatialDeviceType);
 }
 
 int32_t HpaeManagerImpl::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetSpatializationSceneType(spatializationSceneType);
 }
 
 int32_t HpaeManagerImpl::EffectRotationUpdate(const uint32_t rotationState)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->EffectRotationUpdate(rotationState);
 }
 
 int32_t HpaeManagerImpl::SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetEffectSystemVolume(systemVolumeType, systemVolume);
 }
 
 int32_t HpaeManagerImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetAbsVolumeStateToEffect(absVolumeState);
 }
 int32_t HpaeManagerImpl::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetAudioEffectProperty(propertyArray);
 }
 
 int32_t HpaeManagerImpl::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetAudioEffectProperty(propertyArray);
 }
 
@@ -713,63 +768,69 @@ void HpaeManagerImpl::InitAudioEnhanceChainManager(const std::vector<EffectChain
 
 int32_t HpaeManagerImpl::SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetOutputDevice(renderId, outputDevice);
 }
 
 int32_t HpaeManagerImpl::SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetVolumeInfo(volumeType, systemVol);
 }
 
 int32_t HpaeManagerImpl::SetMicrophoneMuteInfo(const bool &isMute)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetMicrophoneMuteInfo(isMute);
 }
 
 int32_t HpaeManagerImpl::SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetStreamVolumeInfo(sessionId, streamVol);
 }
 
 int32_t HpaeManagerImpl::SetAudioEnhanceProperty(
     const AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
 int32_t HpaeManagerImpl::GetAudioEnhanceProperty(
     AudioEffectPropertyArray &propertyArray, DeviceType deviceType)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
@@ -794,42 +855,46 @@ void HpaeManagerImpl::NotifyAccountsChanged()
 
 bool HpaeManagerImpl::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), false));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->IsAcousticEchoCancelerSupported(sourceType);
 }
 
 bool HpaeManagerImpl::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), false));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetEffectLiveParameter(params);
 }
 
 bool HpaeManagerImpl::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), false));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->GetEffectLiveParameter(subKeys, result);
 }
 
 int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
@@ -847,11 +912,12 @@ void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSession
 
 bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), false));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
@@ -879,31 +945,34 @@ void HpaeManagerImpl::RemoveCaptureInjector(
 int32_t HpaeManagerImpl::PeekAudioData(
     const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
 
 int32_t HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->UpdateCollaborativeProductId(productId);
 }
 
 int32_t HpaeManagerImpl::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERR_ILLEGAL_STATE));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->UpdatePersonalizedHRTFBin(fd, length);
 }
 
@@ -933,11 +1002,12 @@ int32_t HpaeManagerImpl::SetAissEnabledByUid(int32_t uid, bool enabled)
 
 int32_t HpaeManagerImpl::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERROR));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetAuxiliarySinkEnable(isEnabled);
 }
 
@@ -961,11 +1031,12 @@ void HpaeManagerImpl::SetSinkMuteForSwitchDevice(const std::string &deviceClass,
 
 int32_t HpaeManagerImpl::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute)
 {
-    CHECK_AND_RETURN_RET(manager_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
-        "manager is nullptr", false), ERROR));
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
     return manager_->SetAppsEnhanceMuteState(sessionId, isMute);
 }
 

@@ -290,11 +290,12 @@ void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor& devices,
     } else {
         auto deviceSize = deviceDescriptors.size();
         devices.size = static_cast<int64_t>(deviceSize);
-        int32_t mallocSize = static_cast<int32_t>(sizeof(CDeviceDescriptor)) * static_cast<int32_t>(deviceSize);
-        if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CDeviceDescriptor) * MAX_MEM_MALLOC_SIZE)) {
+        constexpr size_t maxCount = MAX_MEM_MALLOC_SIZE / sizeof(CDeviceDescriptor);
+        if (deviceSize == 0 || deviceSize > maxCount) {
             *errorCode = CJ_ERR_SYSTEM;
             return;
         }
+        size_t mallocSize = sizeof(CDeviceDescriptor) * deviceSize;
         CDeviceDescriptor* device = static_cast<CDeviceDescriptor*>(malloc(mallocSize));
         if (device == nullptr) {
             *errorCode = CJ_ERR_NO_MEMORY;
@@ -306,7 +307,7 @@ void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor& devices,
             return;
         }
         devices.head = device;
-        for (int32_t i = 0; i < static_cast<int32_t>(deviceSize); i++) {
+        for (size_t i = 0; i < deviceSize; i++) {
             AudioDeviceDescriptor dInfo(AudioDeviceDescriptor::DEVICE_INFO);
             ConvertAudioDeviceDescriptor2DeviceInfo(dInfo, deviceDescriptors[i]);
             Convert2CDeviceDescriptor(&(device[i]), dInfo, errorCode);

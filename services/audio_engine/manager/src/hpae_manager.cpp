@@ -144,10 +144,12 @@ HpaeManager::~HpaeManager()
 int32_t HpaeManager::Init()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET(!IsInit(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::CREATE, ERR_ILLEGAL_STATE), "already inited", false), SUCCESS));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!IsInit(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+                BusinessScenario::CREATE, ERR_ILLEGAL_STATE),
+            "already inited", false),
+        "already inited");
     if (!hpaeManagerThread_) {
         sinkSourceIndex_ = 0;
         hpaeManagerThread_ = std::make_unique<HpaeManagerThread>();
@@ -270,10 +272,12 @@ int32_t HpaeManager::GetAllSinks()
 int32_t HpaeManager::DeInit()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET(IsInit(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::RELEASE, ERR_ILLEGAL_STATE), "isn't inited", false), SUCCESS));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(IsInit(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
+            "isn't inited", false),
+        "isn't inited");
     // Stop worker thread first to avoid racing with ProcessExpiredTasks.
     // Order matters: thread stop → SessionEffectManager::Deinit() → CancelAll delayed tasks.
     if (hpaeManagerThread_ != nullptr) {
@@ -782,11 +786,12 @@ int32_t HpaeManager::GetSourceInfoByIdx(const int32_t &sourceIdx,
 
 int32_t HpaeManager::SetDefaultSink(std::string name)
 {
-    CHECK_AND_RETURN_RET(!name.empty(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_INVALID_PARAM),
-        "invalid sink name", false), ERROR_INVALID_PARAM));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_INVALID_PARAM),
+            "invalid sink name", false),
+        "invalid sink name");
     auto request = [this, name]() {
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", GetEncryptStr(name).c_str());
         if (name == defaultSink_) {
@@ -820,11 +825,12 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
 
 int32_t HpaeManager::SetDefaultSource(std::string name)
 {
-    CHECK_AND_RETURN_RET(!name.empty(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::CREATE, ERR_INVALID_PARAM),
-        "invalid source name", false), ERROR_INVALID_PARAM));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::CREATE, ERR_INVALID_PARAM),
+            "invalid source name", false),
+        "invalid source name");
     auto request = [this, name]() {
         if (name == defaultSource_) {
             AUDIO_INFO_LOG("source is same as default source");
@@ -1367,12 +1373,13 @@ void HpaeManager::HandleUpdateSpanSize(uint32_t sessionId, uint32_t spanSizeInFr
 
 bool HpaeManager::IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState)
 {
-    CHECK_AND_RETURN_RET(!(operation == OPERATION_STOPPED && currentState != HPAE_SESSION_STOPPING) &&
-        !(operation == OPERATION_PAUSED && currentState != HPAE_SESSION_PAUSING),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::STOP, ERR_ILLEGAL_STATE),
-        "stopped or paused, currentState:" + std::to_string(currentState), false), false));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!(operation == OPERATION_STOPPED && currentState != HPAE_SESSION_STOPPING) &&
+        !(operation == OPERATION_PAUSED && currentState != HPAE_SESSION_PAUSING), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::STOP, ERR_ILLEGAL_STATE),
+            "stopped or paused, currentState:" + std::to_string(currentState), false),
+        "stopped or paused, currentState:%{public}d", currentState);
     return true;
 }
 
@@ -1700,19 +1707,21 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
 bool HpaeManager::ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId)
 {
     if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-        CHECK_AND_RETURN_RET(rendererIdStreamInfoMap_.find(sessionId) != rendererIdStreamInfoMap_.end() &&
-            rendererIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererIdStreamInfoMap_.find(sessionId) != rendererIdStreamInfoMap_.end() &&
+            rendererIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED, false,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "renderer session: " + std::to_string(sessionId) + " already released", false), false));
+            "renderer session: " + std::to_string(sessionId) + " already released", false),
+            "renderer session: %{public}u already released", sessionId);
     } else if (streamType == HPAE_STREAM_CLASS_TYPE_RECORD) {
-        CHECK_AND_RETURN_RET(capturerIdStreamInfoMap_.find(sessionId) != capturerIdStreamInfoMap_.end() &&
-            capturerIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(capturerIdStreamInfoMap_.find(sessionId) != capturerIdStreamInfoMap_.end() &&
+            capturerIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED, false,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "capturer session: " + std::to_string(sessionId) + " already released", false), false));
+            "capturer session: " + std::to_string(sessionId) + " already released", false),
+            "capturer session: %{public}u already released", sessionId);
     } else {
         AUDIO_WARNING_LOG("streamType[%{public}d] is invalid", streamType);
         return false;
@@ -2475,16 +2484,18 @@ void HpaeManager::UpdateParamExtra(const std::string &mainkey, const std::string
 bool HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeStreamInfo &streamInfo)
 {
     auto rendererManager = SafeGetMap(rendererManagerMap_, sinkName);
-    CHECK_AND_RETURN_RET(rendererManager,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "can not find sink in rendererManagerMap_", false), false));
-    CHECK_AND_RETURN_RET(rendererManager->IsInit(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "sink is not init", false), false));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererManager, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "can not find sink in rendererManagerMap_", false),
+        "can not find sink[%{public}s] in rendererManagerMap_", GetEncryptStr(sinkName).c_str());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererManager->IsInit(), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "sink is not init", false),
+        "sink[%{public}s] is not init", GetEncryptStr(sinkName).c_str());
     rendererManager->CreateStream(streamInfo);
     if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         rendererIdSinkNameMap_[streamInfo.sessionId] = sinkName;
@@ -2645,11 +2656,12 @@ void HpaeManager::LoadEffectLive()
 
 bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
-    CHECK_AND_RETURN_RET(!params.empty(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
-            BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-        "params is empty", false), false));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!params.empty(), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+            "params is empty", false),
+        "params is empty");
     const auto &[paramKey, paramValue] = params[0];
     if (paramKey != "live_effect_enable" || (paramValue != "NRON" && paramValue != "NROFF")) {
         AUDIO_ERR_LOG("Parameter Error");
@@ -2833,11 +2845,12 @@ int32_t HpaeManager::PeekAudioData(
 {
     std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
     auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
-    CHECK_AND_RETURN_RET(sinkVirtualOutputNode != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "sinkPort not exit", false), ERROR_INVALID_PARAM));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "sinkPort not exit", false),
+        "sinkPort[%{public}u] not exit", sinkPortIndex);
     return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
 }
 

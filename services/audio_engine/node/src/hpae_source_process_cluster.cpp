@@ -114,12 +114,13 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceProcessCluster::GetOutputPort(HpaeNodeInf
         AUDIO_INFO_LOG("Config of sourceOutputNode is same with capture mixerNode");
         return mixerNode_->GetOutputPort();
     }
-    CHECK_AND_RETURN_RET(SafeGetMap(fmtConverterNodeMap_, sourceOutputNodeKey),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(fmtConverterNodeMap_, sourceOutputNodeKey),
+        mixerNode_->GetOutputPort(),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "not find the sourceOutputNodeKey = " + sourceOutputNodeKey, false),
-        mixerNode_->GetOutputPort()));
+            "not find the sourceOutputNodeKey", false),
+        "not find the sourceOutputNodeKey = %{public}s", sourceOutputNodeKey.c_str());
     if (isDisConnect && fmtConverterNodeMap_[sourceOutputNodeKey]->GetOutputPortNum() <= 1) {
         // disconnect fmtConverterNode->upEffectNode
         AUDIO_INFO_LOG("disconnect fmtConverterNode between mixerNode[[%{public}s] and sourceoutputnode[%{public}s]",
@@ -220,11 +221,12 @@ size_t HpaeSourceProcessCluster::GetOutputPortNum()
 
 int32_t HpaeSourceProcessCluster::CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr)
 {
-    CHECK_AND_RETURN_RET(captureEffectNode_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureEffectNode_, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
                 BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "captureEffectNode_ is nullptr", false), ERROR_ILLEGAL_STATE));
+            "captureEffectNode_ is nullptr", false),
+        "captureEffectNode_ is nullptr");
     HpaeNodeInfo nodeInfo;
     if (captureEffectNode_->CaptureEffectCreate(sceneKeyCode, attr) != 0 || !GetCapturerEffectConfig(nodeInfo)) {
         captureEffectNode_ = nullptr;
@@ -238,11 +240,12 @@ int32_t HpaeSourceProcessCluster::CaptureEffectCreate(uint64_t sceneKeyCode, Cap
 
 int32_t HpaeSourceProcessCluster::CaptureEffectRelease(uint64_t sceneKeyCode)
 {
-    CHECK_AND_RETURN_RET(captureEffectNode_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureEffectNode_, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::RELEASE, ERR_NULL_POINTER),
-            "captureEffectNode_ is nullptr", false), ERROR_ILLEGAL_STATE));
+            "captureEffectNode_ is nullptr", false),
+        "captureEffectNode_ is nullptr");
     mixerNode_->DisConnectWithInfo(captureEffectNode_, GetNodeInfo());
     return captureEffectNode_->CaptureEffectRelease(sceneKeyCode);
 }
@@ -270,21 +273,23 @@ uint32_t HpaeSourceProcessCluster::GetConverterNodeCount()
 
 size_t HpaeSourceProcessCluster::GetPreOutNum()
 {
-    CHECK_AND_RETURN_RET(captureEffectNode_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureEffectNode_, 0,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "captureEffectNode_ is nullptr", false), 0));
+            "captureEffectNode_ is nullptr", false),
+        "captureEffectNode_ is nullptr");
     return captureEffectNode_->GetPreOutNum();
 }
 
 int32_t HpaeSourceProcessCluster::SetAppsEnhanceMuteState(bool isMute)
 {
-    CHECK_AND_RETURN_RET(captureEffectNode_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureEffectNode_, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
                 BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "captureEffectNode_ is nullptr", false), ERROR_ILLEGAL_STATE));
+            "captureEffectNode_ is nullptr", false),
+        "captureEffectNode_ is nullptr");
     return captureEffectNode_->SetAppsEnhanceMuteState(isMute);
 }
 }  // namespace HPAE

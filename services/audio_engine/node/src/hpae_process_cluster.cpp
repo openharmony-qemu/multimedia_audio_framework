@@ -255,11 +255,12 @@ void HpaeProcessCluster::DisConnectMixerNode()
 
 int32_t HpaeProcessCluster::CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
-    CHECK_AND_RETURN_RET(preNode != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(preNode != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "Fail create all nodes", false), ERROR));
+            "Fail create all nodes", false),
+        "Fail create all nodes");
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
     uint32_t sessionId = preNodeInfo.sessionId;
     CreateConverterNode(sessionId, preNodeInfo);
@@ -428,11 +429,12 @@ int32_t HpaeProcessCluster::SetLoudnessGain(uint32_t sessionId, float loudnessGa
 {
     AUDIO_INFO_LOG("set sessionId %{public}d loudness gain to %{public}f", sessionId, loudnessGain);
     std::shared_ptr<HpaeLoudnessGainNode> loudneesGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET(loudneesGainNode,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(loudneesGainNode, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "loudnessGainNode does not exist", false), ERROR));
+            "loudnessGainNode does not exist", false),
+        "sessionId %{public}d loudnessGainNode doesNodeExists", sessionId);
     return loudneesGainNode->SetLoudnessGain(loudnessGain);
 }
 

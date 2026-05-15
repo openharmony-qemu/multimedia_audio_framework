@@ -378,11 +378,12 @@ uint64_t HpaeSinkInputNode::GetLatency()
 int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET(writeCallback,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(writeCallback, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "writeCallback is null, fatal err", false), ERROR));
+            "writeCallback is null, fatal err", false),
+        "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload enable or direct, never force data
     bool forceData = (offloadEnable_ | isDirect_) ? false : true;
@@ -417,11 +418,12 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 bool HpaeSinkInputNode::QueryUnderrun()
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET(writeCallback,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(writeCallback, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "writeCallback is null, fatal err", false), false));
+            "writeCallback is null, fatal err", false),
+        "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     return writeCallback->OnQueryUnderrun();
 }
 

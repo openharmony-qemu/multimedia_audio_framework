@@ -673,7 +673,7 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
     // UpdatePlaybackCaptureConfig will only work for InnerCap streams.
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_OPERATION, "This is not a PLAYBACK_CAPTURE stream", true);
+            RECORD_CONFIG_INVALID_OPERATION, "This is not a PLAYBACK_CAPTURE stream", true);
         AUDIO_WARNING_LOG("This is not a PLAYBACK_CAPTURE stream.");
         return ERR_INVALID_OPERATION;
     }
@@ -681,19 +681,19 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (config.filterOptions.usages.size() == 0 && config.filterOptions.pids.size() == 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "Both usages and pids are empty", true);
+            RECORD_CONFIG_INVALID_PARAM, "Both usages and pids are empty", true);
         AUDIO_WARNING_LOG("Both usages and pids are empty!");
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "Failed with null audioStream_", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "Failed with null audioStream_", true),
         "Failed with null audioStream_");
 
     return audioStream_->UpdatePlaybackCaptureConfig(config);
 #else
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "Inner capture is not supported", true);
+            RECORD_CONFIG_NOT_SUPPORTED, "Inner capture is not supported", true);
     AUDIO_WARNING_LOG("Inner capture is not supported.");
     return ERR_NOT_SUPPORTED;
 #endif
@@ -1808,12 +1808,12 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC, ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "Please set the buffer duration between 5ms ~ 20ms", true),
+            RECORD_CONFIG_INVALID_PARAM, "Please set the buffer duration between 5ms ~ 20ms", true),
         "Error: Please set the buffer duration between 5ms ~ 20ms");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
 }
@@ -2079,7 +2079,7 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
 {
     if (targetSources.size() <= 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "TargetSources size is 0", true);
+            RECORD_CONFIG_INVALID_PARAM, "TargetSources size is 0", true);
         AUDIO_ERR_LOG("TargetSources size is 0, set audio source concurrency failed.");
         return ERR_INVALID_PARAM;
     }
@@ -2094,7 +2094,7 @@ int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
     CapturerState state = GetStatusInner();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "incorrect state", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "incorrect state", true),
         "incorrect state:%{public}d", state);
     audioInterrupt_.strategy = strategy;
     AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
@@ -2105,13 +2105,13 @@ int32_t AudioCapturerPrivate::SetMuteHint(bool mute)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(GetStatus() == CAPTURER_RUNNING, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "SetMuteHint only support running state", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "SetMuteHint only support running state", true),
         "SetMuteHint only support running state");
 
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
 
     return currentStream->SetMuteHint(mute);
@@ -2124,7 +2124,7 @@ int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     int32_t ret = currentStream->SetCaptureMode(captureMode);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
@@ -3343,7 +3343,7 @@ int32_t AudioCapturerPrivate::SetInMainThreadState(bool isInMainThread)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     if (!isFirstTimeSetMainThreadState_) {
         return ERROR_ILLEGAL_STATE;

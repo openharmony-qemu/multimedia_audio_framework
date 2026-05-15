@@ -47,7 +47,7 @@ private:
     bool IsScoDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    int FindHighestPriorityDevice();
+    void FindHighestPriorityDevice();
     
     std::vector<StreamDeviceInfo> outputStreamDevices_;
     std::vector<StreamDeviceInfo> inputStreamDevices_;
