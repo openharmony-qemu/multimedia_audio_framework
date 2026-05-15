@@ -264,7 +264,7 @@ private:
         const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);
     bool IsDeviceTypeSupportingSpatialization();
     void ActivateHeadTracking();
- 	void DeactivateHeadTracking();
+    void DeactivateHeadTracking();
     std::string GetEffectChainByMode(std::string effectChainKey);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;

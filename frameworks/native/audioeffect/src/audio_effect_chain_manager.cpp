@@ -874,6 +874,7 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &
 {
     Trace trace("AudioEffectChainManager::InitAudioEffectChainDynamic: " + sceneType +
         "_r_" + std::to_string(renderId));
+    CHECK_AND_RETURN_RET_LOG(isNeedInitEffectBuffer_, SUCCESS, "no need InitEffectBuffer");
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     return InitAudioEffectChainDynamicInner(sceneType, deviceType, renderId);
 }
