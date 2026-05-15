@@ -1565,6 +1565,8 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_RANGING:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
         case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
             return NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
         case StreamUsage::STREAM_USAGE_INTERPHONE:
@@ -1734,6 +1736,8 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
         case STREAM_USAGE_VOICE_RINGTONE:
+        case STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
+        case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
         case STREAM_USAGE_ANNOUNCEMENT:
         case STREAM_USAGE_EMERGENCY:
         case STREAM_USAGE_INTERPHONE:

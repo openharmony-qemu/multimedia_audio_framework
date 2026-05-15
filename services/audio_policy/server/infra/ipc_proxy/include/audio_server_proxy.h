@@ -44,8 +44,10 @@ public:
         return instance;
     }
     const sptr<IStandardAudioService> GetAudioServerProxy();
-    int32_t SetAudioSceneProxy(AudioScene audioScene, BluetoothOffloadState state);
+    int32_t SetAudioSceneProxy(AudioScene audioScene, BluetoothOffloadState state,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID);
     int32_t SetAudioSceneForPipeProxy(uint32_t pipeId, AudioScene audioScene, bool scoExcludeFlag);
+    int32_t CreateCallTransferProxy();
     float GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType = SOURCE_TYPE_INVALID);
     int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);

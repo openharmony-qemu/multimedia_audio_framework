@@ -28,9 +28,11 @@ bool WirelessConflictHandler::IsCallStreamUsage(StreamUsage streamUsage)
 {
     return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
            streamUsage == STREAM_USAGE_RINGTONE ||
-           streamUsage == STREAM_USAGE_VOICE_RINGTONE;
+           streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
 }
 
 bool WirelessConflictHandler::IsForcedRouterType(RouterType routerType)

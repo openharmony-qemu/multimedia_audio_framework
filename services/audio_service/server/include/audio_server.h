@@ -121,8 +121,10 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId) override;
-    int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
+    int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
     int32_t SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag) override;
+    int32_t CreateCallTransferProxy() override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<StringPair>& kvpairs) override;
@@ -489,7 +491,8 @@ private:
     bool UpdateAudioParameterInfo(const std::string &key, const std::string &value,
         AudioParamKey &parmKey, std::string &valueNew, std::string &halName);
     const std::string GetVAParameter(const std::string &key);
-    int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
+    int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
+        bool scoExcludeFlag, int32_t phoneCallSceneType = SCENE_TYPE_INVALID);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t GetExtraParametersInner(const std::string &mainKey,

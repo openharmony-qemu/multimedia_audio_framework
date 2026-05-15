@@ -65,8 +65,12 @@ public:
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
     int32_t SetDeviceConnectedFlag(bool flag) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
     int32_t GetAudioScene(void) override;
+
+    int32_t SetPhoneCallSceneType(int32_t type) override;
+    int32_t CreateCallTransfer() override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
     void ResetActiveDeviceForDisconnect(DeviceType device) override;
@@ -115,6 +119,7 @@ private:
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
     void UpdateNearlinkOutputRoute();
+    int32_t SelectSceneToHdi(AudioScene audioScene, bool scoExcludeFlag);
     int32_t HandleSwitchDeviceMuteState(bool mute, bool &applyVolume);
     int32_t SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute);
     int32_t SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute);

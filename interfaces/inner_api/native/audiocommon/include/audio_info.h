@@ -962,6 +962,26 @@ enum AudioScene : int32_t {
     AUDIO_SCENE_MAX,
 };
 
+/**
+ * @brief Phone call scene type enum
+ * Used to distinguish normal cellular call and transfer call
+ * @since 26
+ */
+enum PhoneCallSceneType : int32_t {
+    /**
+     * Invalid type (default value)
+     */
+    SCENE_TYPE_INVALID = -1,
+    /**
+     * Normal cellular call (MODEM call)
+     */
+    SCENE_TYPE_MODEM = 0,
+    /**
+     * Transfer call (phone acts as Bluetooth device for another phone)
+     */
+    SCENE_TYPE_TRANSFER = 1,
+};
+
 enum AudioDeviceUsage : uint32_t {
     /**
      * Media output devices.

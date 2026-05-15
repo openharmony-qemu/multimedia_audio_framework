@@ -395,23 +395,25 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         return;
     }
 
-    bool isModemCallRunning = audioSceneManager_.IsInPhoneCallScene();
-    if (isModemCallRunning) {
-        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
-    } else {
-        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
-    }
-    FetchDeviceInfo info = {
-        STREAM_USAGE_VOICE_MODEM_COMMUNICATION, "CheckModemScene"
-    };
-    descs = audioRouterCenter_.FetchOutputDevices(info);
-    CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
-    pipeManager_->UpdateModemStreamDevice(descs);
     auto modemMap = pipeManager_->GetModemCommunicationMap();
     CHECK_AND_RETURN_LOG(!modemMap.empty(), "modem communication map is empty");
     auto streamDesc = modemMap.begin()->second;
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     auto uid = GetRealUid(streamDesc);
+
+    StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+    bool isTransferCall = (streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION);
+    bool isCallRunning = audioSceneManager_.IsInPhoneCallScene();
+    if (isCallRunning) {
+        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
+    } else {
+        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
+    }
+    FetchDeviceInfo info = { streamUsage, "CheckModemScene" };
+    descs = audioRouterCenter_.FetchOutputDevices(info);
+    CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
+    pipeManager_->UpdateModemStreamDevice(descs);
+
     AudioDeviceDescriptor curDesc = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
     AUDIO_INFO_LOG("Current output device %{public}d, update route %{public}d, reason %{public}d",
         curDesc.deviceType_, descs.front()->deviceType_, static_cast<int32_t>(reason));
@@ -419,7 +421,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
 
     // If the modem call is in progress, and the device is currently switching,
     // and the current output device is different from the target device, then mute to avoid pop issue.
-    if (isModemCallRunning && IsDeviceSwitching(reason) && !curDesc.IsSameDeviceDesc(*descs.front())) {
+    if (isCallRunning && IsDeviceSwitching(reason) && !curDesc.IsSameDeviceDesc(*descs.front())) {
         SetVoiceCallMuteForSwitchDevice();
         needUnmuteVoiceCall_ = true;
         SetUpdateModemRouteFinished(false);
@@ -428,8 +430,36 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
             &AudioCoreService::UnmuteVoiceCallAfterMuteDuration, this, muteDuration, descs.front());
         switchThread.detach();
     }
-    CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
+    if (!isTransferCall) {
+        CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
+    }
     CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+}
+
+void AudioCoreService::CheckTransferRingtoneScene(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (!pipeManager_->IsStreamUsageActive(STREAM_USAGE_VOICE_TRANSFER_RINGTONE)) {
+        return;
+    }
+    
+    FetchDeviceInfo info = {
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE, "CheckTransferRingtoneScene"
+    };
+    descs = audioRouterCenter_.FetchOutputDevices(info);
+    CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice transfer ringtone failed");
+
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> transferRingtoneStreams =
+        pipeManager_->GetStreamDescsByStreamUsage(STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
+    AUDIO_INFO_LOG("Transfer ringtone streams count: %{public}zu, devices count: %{public}zu, "
+        "device types: %{public}d, %{public}d",
+        transferRingtoneStreams.size(), descs.size(),
+        descs.size() > 0 ? descs[0]->deviceType_ : -1,
+        descs.size() > 1 ? descs[1]->deviceType_ : -1);
+    for (auto &streamDesc : transferRingtoneStreams) {
+        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+        streamDesc->SwapAndUpdateNewDeviceDescs(descs);
+    }
 }
 
 void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason)
@@ -494,7 +524,39 @@ int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDevi
         streamCollector_.UpdateRendererDeviceInfo(GetRealUid(it->second), it->first, desc);
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(it->second);
     }
+
+    bool isCallRunning = audioSceneManager_.IsInPhoneCallScene();
+    auto streamDesc = modemSessionMap.begin()->second;
+    CheckAndCreateCallTransferForTransferCall(streamDesc, isCallRunning);
+
     return SUCCESS;
+}
+
+// Called after the first route update when call is connected and after SCO is established.
+// For transfer call scenario, SCO must be established before voice call can proceed.
+void AudioCoreService::CheckAndCreateCallTransferForTransferCall(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, bool isCallRunning)
+{
+    AUDIO_INFO_LOG("streamDesc=%{public}p, streamUsage=%{public}d, callTransferCreated=%{public}d",
+        streamDesc.get(), streamDesc != nullptr ? streamDesc->rendererInfo_.streamUsage : -1, callTransferCreated_);
+
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+
+    if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
+        return;
+    }
+
+    if (callTransferCreated_) {
+        return;
+    }
+
+    if (!isCallRunning) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("Transfer call first route update after SCO established, calling CreateCallTransferAfter");
+    audioSceneManager_.CreateCallTransferAfter();
+    callTransferCreated_ = true;
 }
 
 uint32_t AudioCoreService::GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc)
@@ -1689,7 +1751,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
     AUDIO_DEBUG_LOG("[PipeExecInfo] Update route streamUsage:%{public}d, devicetype:[%{public}s]",
         streamUsage, streamDesc->GetNewDevicesTypeString().c_str());
-    
+
     if (IS_DEVICE_ENHANCED_SUPPORTED) {
         AudioScene pipeScene = CalculatePipeAudioScene(pipeId);
         AudioServerProxy::GetInstance().SetAudioSceneForPipeProxy(pipeId, pipeScene, false);
@@ -1753,7 +1815,8 @@ AudioScene AudioCoreService::CalculatePipeAudioScene(uint32_t pipeId)
             } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
                        streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
                 streamScene = AUDIO_SCENE_PHONE_CHAT;
-            } else if (streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+            } else if (streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+               streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
                 streamScene = AUDIO_SCENE_VOICE_RINGING;
             } else if (streamUsage == STREAM_USAGE_RINGTONE) {
                 streamScene = AUDIO_SCENE_RINGING;
@@ -1879,8 +1942,6 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.front(), sessionId) !=
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.back(), sessionId)) {
             AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
-            audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG,
-                pipeManager_->QueryPipeIdBySessionId(sessionId));
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
                 AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
@@ -2786,12 +2847,12 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
         audioIOHandleMap_.MuteSinkPort(newSinkName, DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS, true, false);
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-        ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
         MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true, false);
     } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-        ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true, false);
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {

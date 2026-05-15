@@ -41,6 +41,8 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_001, TestSize.Level1)
     EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VIDEO_COMMUNICATION));
     EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_RINGTONE));
     EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_RINGTONE));
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
     EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_MUSIC));
     EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_MEDIA));
     EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_UNKNOWN));
@@ -371,6 +373,34 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_018, TestSize.Level1)
     
     outputDevice->macAddress_ = "00:11:22:33:44:55";
     EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler IsCallStreamUsage with transfer stream usages.
+ * @tc.number: WirelessConflictHandler_019
+ * @tc.desc  : Test IsCallStreamUsage with VOICE_TRANSFER_COMMUNICATION and VOICE_TRANSFER_RINGTONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_019, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler GetPriority with transfer stream usage.
+ * @tc.number: WirelessConflictHandler_020
+ * @tc.desc  : Test GetPriority for STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_020, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_TRANSFER_RINGTONE,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
 }
 
 } // namespace AudioStandard

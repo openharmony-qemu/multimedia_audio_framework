@@ -549,9 +549,14 @@ private:
         bool handleFlag, const std::string &address, ConnectState connectState, bool isVrSupported = true);
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
+    int32_t GetPhoneCallSceneType(AudioScene audioScene, AudioScene lastAudioScene);
+    void CheckTransferRingtoneScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+         const AudioStreamDeviceChangeReasonExt reason);
     void CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason);
     bool CheckRingAndVoipStreamRunning();
     int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    void CheckAndCreateCallTransferForTransferCall(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, bool isCallRunning);
     uint32_t GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc);
     void UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration, std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyUnmuteVoiceCall();
@@ -763,6 +768,8 @@ private:
     void CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, uint32_t& audioFlag);
+    int32_t CreateCallCommunicationRenderer(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        uint32_t &audioFlag, uint32_t sessionId);
     int32_t CheckCapturerStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
     void UnloadInnerCapturerSink(std::string moduleName);
@@ -855,6 +862,7 @@ private:
 
     bool hearingAidCallFlag_ = false;
     bool hearingAidReloadFlag_ = false;
+    bool callTransferCreated_ = false;
     std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
 
     bool isPolicyConfigParsered_ = false;

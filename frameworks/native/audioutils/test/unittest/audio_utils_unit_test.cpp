@@ -3663,5 +3663,54 @@ HWTEST(AudioUtilsUnitTest, ConvertAudioRenderRateToSpeed_001, TestSize.Level1)
     ret = ConvertAudioRenderRateToSpeed(renderRate);
     EXPECT_FLOAT_EQ(ret, 1.0f);
 }
+
+/**
+* @tc.name  : Test IsRingerStreamUsage API
+* @tc.type  : FUNC
+* @tc.number: IsRingerStreamUsage_001
+* @tc.desc  : Test IsRingerStreamUsage with ringer stream usages.
+*/
+HWTEST(AudioUtilsUnitTest, IsRingerStreamUsage_001, TestSize.Level1)
+{
+    EXPECT_TRUE(Util::IsRingerStreamUsage(STREAM_USAGE_VOICE_RINGTONE));
+    EXPECT_TRUE(Util::IsRingerStreamUsage(STREAM_USAGE_RINGTONE));
+    EXPECT_TRUE(Util::IsRingerStreamUsage(STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+    EXPECT_FALSE(Util::IsRingerStreamUsage(STREAM_USAGE_ALARM));
+    EXPECT_FALSE(Util::IsRingerStreamUsage(STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(Util::IsRingerStreamUsage(STREAM_USAGE_MEDIA));
+    EXPECT_FALSE(Util::IsRingerStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
+}
+
+/**
+* @tc.name  : Test IsRingerOrAlarmerStreamUsage API with transfer ringtone
+* @tc.type  : FUNC
+* @tc.number: IsRingerOrAlarmerStreamUsage_001
+* @tc.desc  : Test IsRingerOrAlarmerStreamUsage includes VOICE_TRANSFER_RINGTONE.
+*/
+HWTEST(AudioUtilsUnitTest, IsRingerOrAlarmerStreamUsage_001, TestSize.Level1)
+{
+    EXPECT_TRUE(Util::IsRingerOrAlarmerStreamUsage(STREAM_USAGE_ALARM));
+    EXPECT_TRUE(Util::IsRingerOrAlarmerStreamUsage(STREAM_USAGE_VOICE_RINGTONE));
+    EXPECT_TRUE(Util::IsRingerOrAlarmerStreamUsage(STREAM_USAGE_RINGTONE));
+    EXPECT_TRUE(Util::IsRingerOrAlarmerStreamUsage(STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+    EXPECT_FALSE(Util::IsRingerOrAlarmerStreamUsage(STREAM_USAGE_MUSIC));
+}
+
+/**
+* @tc.name  : Test VolumeUtils stream usage mapping with transfer stream usages
+* @tc.type  : FUNC
+* @tc.number: VolumeUtils_TransferStreamUsage_001
+* @tc.desc  : Test VolumeUtils maps VOICE_TRANSFER_COMMUNICATION and VOICE_TRANSFER_RINGTONE correctly.
+*/
+HWTEST(AudioUtilsUnitTest, VolumeUtils_TransferStreamUsage_001, TestSize.Level1)
+{
+    AudioVolumeType voiceCallType = VolumeUtils::GetVolumeTypeFromStreamUsage(
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION);
+    EXPECT_EQ(voiceCallType, STREAM_VOICE_CALL);
+
+    AudioVolumeType ringType = VolumeUtils::GetVolumeTypeFromStreamUsage(
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
+    EXPECT_EQ(ringType, STREAM_RING);
+}
 } // namespace AudioStandard
 } // namespace OHOS

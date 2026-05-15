@@ -48,7 +48,8 @@ const sptr<IStandardAudioService> AudioServerProxy::GetAudioServerProxy()
     return gsp;
 }
 
-int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, BluetoothOffloadState state)
+int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, BluetoothOffloadState state,
+    int32_t phoneCallSceneType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
@@ -57,7 +58,7 @@ int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, BluetoothOff
     if (AudioRouterSelectStrategy::GetInstance().GetScoExcluded()) {
         scoExcludeFlag = true;
     }
-    int32_t result = gsp->SetAudioScene(audioScene, state, scoExcludeFlag);
+    int32_t result = gsp->SetAudioScene(audioScene, state, scoExcludeFlag, phoneCallSceneType);
     IPCSkeleton::SetCallingIdentity(identity);
     return result;
 }
@@ -68,6 +69,16 @@ int32_t AudioServerProxy::SetAudioSceneForPipeProxy(uint32_t pipeId, AudioScene 
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t result = gsp->SetAudioSceneForPipe(pipeId, audioScene, scoExcludeFlag);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return result;
+}
+
+int32_t AudioServerProxy::CreateCallTransferProxy()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t result = gsp->CreateCallTransferProxy();
     IPCSkeleton::SetCallingIdentity(identity);
     return result;
 }

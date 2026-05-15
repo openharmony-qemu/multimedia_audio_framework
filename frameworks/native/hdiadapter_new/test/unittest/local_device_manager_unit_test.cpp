@@ -119,5 +119,114 @@ HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_DumpInfo_001, TestSize.L
     EXPECT_NE(dumpString.find("captureNum: 1"), std::string::npos);
     EXPECT_NE(dumpString.find("local/local_null"), std::string::npos);
 }
+
+/**
+ * @tc.name   : LocalDeviceManager_SetPhoneCallSceneType_001
+ * @tc.number : LocalDeviceManager_SetPhoneCallSceneType_001
+ * @tc.desc   : Test SetPhoneCallSceneType with invalid type.
+ */
+HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_SetPhoneCallSceneType_001, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    int32_t ret = manager.SetPhoneCallSceneType(adapterName_, -1);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    ret = manager.SetPhoneCallSceneType(adapterName_, 2);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name   : LocalDeviceManager_SetPhoneCallSceneType_002
+ * @tc.number : LocalDeviceManager_SetPhoneCallSceneType_002
+ * @tc.desc   : Test SetPhoneCallSceneType with null adapter.
+ */
+HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_SetPhoneCallSceneType_002, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    auto wrapper = std::make_shared<LocalAdapterWrapper>();
+    wrapper->adapter_ = nullptr;
+    manager.adapters_[adapterName_] = wrapper;
+
+    int32_t ret = manager.SetPhoneCallSceneType(adapterName_, SCENE_TYPE_MODEM);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : LocalDeviceManager_SetPhoneCallSceneType_003
+ * @tc.number : LocalDeviceManager_SetPhoneCallSceneType_003
+ * @tc.desc   : Test SetPhoneCallSceneType with valid MODEM type and adapter exists.
+ */
+HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_SetPhoneCallSceneType_003, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    auto wrapper = std::make_shared<LocalAdapterWrapper>();
+    wrapper->adapter_ = reinterpret_cast<struct IAudioAdapter *>(0x1);
+    manager.adapters_[adapterName_] = wrapper;
+
+    int32_t ret = manager.SetPhoneCallSceneType(adapterName_, SCENE_TYPE_MODEM);
+    EXPECT_NE(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : LocalDeviceManager_SetPhoneCallSceneType_004
+ * @tc.number : LocalDeviceManager_SetPhoneCallSceneType_004
+ * @tc.desc   : Test SetPhoneCallSceneType with valid TRANSFER type and adapter exists.
+ */
+HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_SetPhoneCallSceneType_004, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    auto wrapper = std::make_shared<LocalAdapterWrapper>();
+    wrapper->adapter_ = reinterpret_cast<struct IAudioAdapter *>(0x1);
+    manager.adapters_[adapterName_] = wrapper;
+
+    int32_t ret = manager.SetPhoneCallSceneType(adapterName_, SCENE_TYPE_TRANSFER);
+    EXPECT_NE(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(manager.currentPhoneCallSceneType_.load(), SCENE_TYPE_TRANSFER);
+}
+
+/**
+ * @tc.name   : LocalDeviceManager_CreateCallTransfer_001
+ * @tc.number : LocalDeviceManager_CreateCallTransfer_001
+ * @tc.desc   : Test CreateCallTransfer with null adapter.
+ */
+HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_CreateCallTransfer_001, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    auto wrapper = std::make_shared<LocalAdapterWrapper>();
+    wrapper->adapter_ = nullptr;
+    manager.adapters_[adapterName_] = wrapper;
+
+    int32_t ret = manager.CreateCallTransfer(adapterName_);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : LocalDeviceManager_CreateCallTransfer_002
+ * @tc.number : LocalDeviceManager_CreateCallTransfer_002
+ * @tc.desc   : Test CreateCallTransfer with adapter not loaded.
+ */
+HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_CreateCallTransfer_002, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+
+    int32_t ret = manager.CreateCallTransfer(adapterName_);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : LocalDeviceManager_CreateCallTransfer_003
+ * @tc.number : LocalDeviceManager_CreateCallTransfer_003
+ * @tc.desc   : Test CreateCallTransfer with valid adapter.
+ */
+HWTEST_F(LocalDeviceManagerUnitTest, LocalDeviceManager_CreateCallTransfer_003, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    auto wrapper = std::make_shared<LocalAdapterWrapper>();
+    wrapper->adapter_ = reinterpret_cast<struct IAudioAdapter *>(0x1);
+    manager.adapters_[adapterName_] = wrapper;
+
+    int32_t ret = manager.CreateCallTransfer(adapterName_);
+    EXPECT_NE(ret, ERR_INVALID_HANDLE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

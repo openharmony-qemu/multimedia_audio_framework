@@ -115,6 +115,8 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(Stre
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     RouterType &routerType, const RouterType &bypassType, const RouterType &bypassWithSco)
 {
+    bool isTransferCall = (streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION);
+    
     for (auto &router : callRenderRouters_) {
         if (router->GetRouterType() == bypassType || router->GetRouterType() == bypassWithSco) {
             AUDIO_INFO_LOG("Fetch call render device bypass %{public}d, bypassWithSco %{public}d",
@@ -123,6 +125,10 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
+            if (isTransferCall && IsBlockedDeviceForTransferCall(desc)) {
+                AUDIO_INFO_LOG("Transfer call blocked device type: %{public}d", desc->deviceType_);
+                continue;
+            }
             routerType = router->GetRouterType();
             return desc;
         }
@@ -133,6 +139,8 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
 vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID, RouterType &routerType)
 {
+    bool isTransferRing = (streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
+    
     for (auto &router : ringRenderRouters_) {
         CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
         vector<shared_ptr<AudioDeviceDescriptor>> descs = router->GetRingRenderDevices(streamUsage, clientUID);
@@ -140,6 +148,10 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
         if (descs.front() != nullptr && descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
             AUDIO_INFO_LOG("RingRender streamUsage %{public}d clientUID %{public}d"
                 " fetch descs front:%{public}d", streamUsage, clientUID, descs.front()->deviceType_);
+            if (isTransferRing && IsBlockedDeviceForTransferCall(descs.front())) {
+                AUDIO_INFO_LOG("Transfer ring blocked device type: %{public}d", descs.front()->deviceType_);
+                continue;
+            }
             routerType = router->GetRouterType();
             if (descs.size() > 1 && VolumeUtils::IsPCVolumeEnable()) {
                 vector<shared_ptr<AudioDeviceDescriptor>> newDescs;
@@ -150,7 +162,8 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
         }
     }
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
-    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         AudioRingerMode curRingerMode = AudioPolicyManagerFactory::GetAudioPolicyManager().GetRingerMode();
         if (curRingerMode == RINGER_MODE_NORMAL) {
             descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
@@ -647,6 +660,26 @@ bool AudioRouterCenter::IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc)
 #ifdef FEATURE_DEVICE_MANAGER
     return desc->dmDeviceType_ == DistributedHardware::DEVICE_TYPE_CAR;
 #endif
+    return false;
+}
+
+bool AudioRouterCenter::IsBlockedDeviceForTransferCall(shared_ptr<AudioDeviceDescriptor> desc)
+{
+    if (desc == nullptr) {
+        return false;
+    }
+    
+    DeviceType type = desc->deviceType_;
+    
+    if (type == DEVICE_TYPE_BLUETOOTH_SCO ||
+        type == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        type == DEVICE_TYPE_NEARLINK ||
+        type == DEVICE_TYPE_REMOTE_CAST ||
+        desc->networkId_ != LOCAL_NETWORK_ID) {
+        AUDIO_INFO_LOG("Transfer call/ring blocked device: %{public}d, networkId: %{public}s",
+            type, desc->networkId_.c_str());
+        return true;
+    }
     return false;
 }
 

@@ -327,15 +327,16 @@ static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag
 #endif
 }
 
-static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
+static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag,
+    int32_t phoneCallSceneType = SCENE_TYPE_INVALID)
 {
     std::shared_ptr<IAudioRenderSink> usbSink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     if (usbSink != nullptr && usbSink->IsInited()) {
-        usbSink->SetAudioScene(audioScene, scoExcludeFlag);
+        usbSink->SetAudioScene(audioScene, scoExcludeFlag, phoneCallSceneType);
     }
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
     if (primarySink != nullptr && primarySink->IsInited()) {
-        primarySink->SetAudioScene(audioScene, scoExcludeFlag);
+        primarySink->SetAudioScene(audioScene, scoExcludeFlag, phoneCallSceneType);
     }
 }
 
@@ -1612,17 +1613,20 @@ int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId, const std
     return sink->SetVolume(volume, volume);
 }
 
-int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag)
+int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag,
+    int32_t phoneCallSceneType)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, a2dpOffloadFlag, scoExcludeFlag);
+    AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, "
+        "scoExcludeFlag: %{public}d, phoneCallSceneType: %{public}d",
+        audioScene, a2dpOffloadFlag, scoExcludeFlag, phoneCallSceneType);
     AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
     CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "param is invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), scoExcludeFlag);
+    return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag),
+        scoExcludeFlag, phoneCallSceneType);
 }
 
 int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag)
@@ -1666,16 +1670,29 @@ int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, b
 }
 
 int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
-    bool scoExcludeFlag)
+    bool scoExcludeFlag, int32_t phoneCallSceneType)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     SetAudioSceneForAllSource(audioScene, scoExcludeFlag);
-    SetAudioSceneForAllSink(audioScene, scoExcludeFlag);
+    SetAudioSceneForAllSink(audioScene, scoExcludeFlag, phoneCallSceneType);
     audioScene_ = audioScene;
     SetAudioBalanceStatus();
+    return SUCCESS;
+}
+
+int32_t AudioServer::CreateCallTransferProxy()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED,
+        "refused for uid %{public}d", callingUid);
+
+    auto primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, false);
+    if (primarySink != nullptr) {
+        primarySink->CreateCallTransfer();
+    }
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

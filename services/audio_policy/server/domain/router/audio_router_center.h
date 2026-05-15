@@ -167,6 +167,7 @@ private:
         const uint32_t streamId = INVALID_STREAM_ID);
     bool IsWirelessPrivacyDevice(shared_ptr<AudioDeviceDescriptor> desc);
     bool IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc);
+    bool IsBlockedDeviceForTransferCall(shared_ptr<AudioDeviceDescriptor> desc);
 
     void StartArbiterContext();
     void StopArbiterContext();

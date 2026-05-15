@@ -67,7 +67,8 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(Str
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     RouterBase::ClearConflictDevice(descs, GetRouterType());
 
-    if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
         RemoveArmUsb(descs);
     }
     descs.erase(remove_if(descs.begin(), descs.end(), [streamUsage](auto &item) {
@@ -99,7 +100,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
@@ -123,6 +125,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
                 break;
             case STREAM_USAGE_VOICE_RINGTONE:
             case STREAM_USAGE_RINGTONE:
+            case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
                 if (curRingerMode == RINGER_MODE_NORMAL) {
                     // Add default devices at same time only in ringer normal mode.
                     descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());

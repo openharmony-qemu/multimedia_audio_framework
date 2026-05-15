@@ -28,7 +28,8 @@ namespace AudioStandard {
 shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     const uint32_t sessionID)
 {
-    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         AUDIO_INFO_LOG("Ringtone skip user select");
         return make_shared<AudioDeviceDescriptor>();
     }
@@ -98,7 +99,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
     shared_ptr<AudioDeviceDescriptor> selectedDesc =
-        (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) ?
+        (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
+         streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) ?
         GetCallRenderDevice(streamUsage, clientUID) : GetMediaRenderDevice(streamUsage, clientUID);
 
     if (!selectedDesc.get() || selectedDesc->getType() == DEVICE_TYPE_NONE) {
@@ -121,6 +123,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
                 break;
             case STREAM_USAGE_VOICE_RINGTONE:
             case STREAM_USAGE_RINGTONE:
+            case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
                 if (curRingerMode == RINGER_MODE_NORMAL) {
                     // Add default devices at same time only in ringer normal mode.
                     descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
