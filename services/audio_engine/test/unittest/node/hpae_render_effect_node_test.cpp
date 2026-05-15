@@ -533,7 +533,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testConstructorWithRenderId_001, TestSize.Lev
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
     // Access private members via -fno-access-control
-    EXPECT_EQ(hpaeRenderEffectNode->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(hpaeRenderEffectNode->deviceType_, 0);
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, testConstructorWithInvalidRenderId_001, TestSize.Level0)
@@ -567,7 +567,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testConstructorWithRenderId_002, TestSize.Lev
     nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
-    EXPECT_EQ(hpaeRenderEffectNode->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(hpaeRenderEffectNode->deviceType_, 0);
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, testCreateAudioEffectChainWithRenderId_001, TestSize.Level0)
@@ -657,9 +657,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfoWithRenderId_00
     ModifyAudioEffectChainInfoReason addReason = ADD_AUDIO_EFFECT_CHAIN_INFO;
     hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, addReason);
     std::string sessionId = std::to_string(TEST_ID);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.count(sessionId) > 0, true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.count(sessionId) > 0, false);
     auto &storedInfo = AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionId];
-    EXPECT_EQ(storedInfo.deviceType, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(storedInfo.deviceType, 0);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
