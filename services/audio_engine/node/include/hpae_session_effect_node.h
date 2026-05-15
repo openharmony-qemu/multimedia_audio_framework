@@ -41,7 +41,6 @@ public:
     // Effect lifecycle — node receives pre-created instances from manager layer
     int32_t CreateEffectWithInstance(const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
-    int32_t ReleaseEffect();
     int32_t DropEffect();  // Release node reference without destroying algorithm instance
 
     // Query

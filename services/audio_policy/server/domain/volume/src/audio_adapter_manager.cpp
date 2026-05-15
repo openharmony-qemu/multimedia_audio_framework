@@ -1491,9 +1491,9 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
         attr.routeFlag = pipeInfo->routeFlag_;
         pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
+        std::string idInfo = HDI_ID_INFO_DEFAULT;
+        HdiIdType idType = HDI_ID_TYPE_PRIMARY;
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
-            std::string idInfo = HDI_ID_INFO_DEFAULT;
-            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
             GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) ||
                 (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP_FAST)) {
@@ -1504,18 +1504,16 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             }
             result = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else if (IsDirectRoute(pipeInfo->routeFlag_)) {
-            std::string idInfo = HDI_ID_INFO_DEFAULT;
-            HdiIdType idType = HDI_ID_TYPE_PRIMARY;
             GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
-                AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_DIRECT;
             } else {
                 attr.audioStreamFlag = AUDIO_FLAG_DIRECT;
+                idInfo = HDI_ID_INFO_DIRECT;
             }
             audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else {
-            std::string idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
+            idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
             result = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
@@ -2190,6 +2188,16 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     if (!audioModuleInfo.hdPlayBackMode.empty()) {
         attr.hdPlayBackMode = static_cast<int32_t>(std::stoul(audioModuleInfo.hdPlayBackMode));
     }
+
+    // Calculate period for ultra_fast to achieve 2.5ms low latency
+    if (audioModuleInfo.className == "ultra_fast" || audioModuleInfo.className == "usb_arm_ultra_fast") {
+        uint32_t formatByteSize = GetFormatByteSize(attr.format);
+        attr.period = static_cast<uint32_t>(
+            static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *
+            ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
+        AUDIO_INFO_LOG("GetAudioSinkAttr: ultra_fast period=%{public}u (2.5ms latency)", attr.period);
+    }
+
     return attr;
 }
 

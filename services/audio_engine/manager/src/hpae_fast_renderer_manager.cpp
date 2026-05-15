@@ -217,6 +217,10 @@ void HpaeFastRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSink
     if (sinkOutputNode_ != nullptr) {
         sinkOutputNode_->RefreshSpanSize(spanSizeUpdated);
     }
+    const auto outNodeInfo = sinkOutputNode_->GetNodeInfo();
+    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
+    AUDIO_INFO_LOG("[FinishMode] session:%{public}u sinkSpanUpdated:%{public}d inputFrameLenAdjusted:%{public}d "
+        "newFrameLen:%{public}u", sessionId, spanSizeUpdated, frameLenAdjusted, nodeInfo.frameLen);
     node->SetNodeInfo(nodeInfo);
     node->SetIsLowLatency(true);
     sinkInputNodeMap_[sessionId] = node;

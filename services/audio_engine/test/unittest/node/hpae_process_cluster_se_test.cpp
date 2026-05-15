@@ -661,6 +661,36 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseFlushStart_fromIdle, TestSize.Le
     EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
 
+// RATE-1: GetNodeInputFormatInfo returns 48kHz when SessionEffectNode is present
+HWTEST_F(HpaeProcessClusterSeTest, GetNodeInputFormatInfo_forces48kWhenSE, TestSize.Level0)
+{
+    // Setup: cluster with sink rate = 96kHz, loudness OFF
+    HpaeNodeInfo nodeInfo = MakeTestNodeInfo();
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInput = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    cluster->CreateNodes(sinkInput);
+    cluster->Connect(sinkInput);
+
+    // Without SE node, rate should be sink rate (96k)
+    AudioBasicFormat fmt;
+    cluster->GetNodeInputFormatInfo(testSessionId, fmt);
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_96000);
+
+    // Create SE node
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster->CreateSessionEffectNode(testSessionId, "test_effect", instance, config_);
+
+    // With SE node, rate should be forced to 48k
+    cluster->GetNodeInputFormatInfo(testSessionId, fmt);
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

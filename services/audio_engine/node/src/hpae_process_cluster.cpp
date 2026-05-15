@@ -319,7 +319,14 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
     }
     // get format info from effect node
     CHECK_AND_RETURN_RET(renderEffectNode_, SUCCESS);
-    return renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
+    int32_t ret = renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
+
+    // SessionEffectNode (AISS) requires 48kHz input
+    if (SafeGetMap(idSessionEffectMap_, sessionId)) {
+        basicFormat.rate = SAMPLE_RATE_48000;
+    }
+
+    return ret;
 }
 
 int32_t HpaeProcessCluster::AudioRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)

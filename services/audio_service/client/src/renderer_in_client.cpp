@@ -238,6 +238,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.staticBufferInfo = staticBufferInfo_;
 
+    config.ultraFastFlag = curStreamParams_.ultraFastFlag;
+
     clientConfig_ = config;
 
     return config;
@@ -274,12 +276,12 @@ int32_t RendererInClientInner::InitSharedBuffer()
 
 bool RendererInClientInner::IsLowLatencyRenderer() const
 {
-    return rendererInfo_.rendererFlags == AUDIO_FLAG_MMAP || rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_FAST;
+    return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST);
 }
 
 uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
 {
-    if (!IsLowLatencyRenderer() && spanSizeInFrame_ == 0) {
+    if (!IsLowLatencyRenderer()) {
         return OLD_BUF_DURATION_IN_USEC;
     }
     uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :

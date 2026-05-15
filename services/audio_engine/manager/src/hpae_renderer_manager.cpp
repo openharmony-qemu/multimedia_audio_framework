@@ -111,12 +111,15 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = sinkInfo_.frameLen;
+    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    AdjustFrameLen(nodeInfo, outNodeInfo);
     node->SetNodeInfo(nodeInfo);
     node->SetIsLowLatency(false);
     uint32_t sessionId = nodeInfo.sessionId;
 
     sinkInputNodeMap_[sessionId] = node;
-    node->SetNodeInfo(nodeInfo);
     TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
         static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
     SetSessionState(sessionId, node->GetState());

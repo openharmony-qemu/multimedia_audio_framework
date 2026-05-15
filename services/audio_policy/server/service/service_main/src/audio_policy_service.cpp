@@ -95,9 +95,6 @@ bool AudioPolicyService::Init(void)
     audioEffectService_.EffectServiceInit();
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_EFFECT_CONFIG, ClockTime::GetCurMilli());
     audioDeviceManager_.ParseDeviceXml();
-#ifdef AUDIO_WIRED_DETECT
-    audioPnpServer_.init();
-#endif
     audioGlobalConfigManager_.ParseGlobalConfigXml();
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_GLOBAL_CONFIG, ClockTime::GetCurMilli());
 
@@ -144,7 +141,7 @@ void AudioPolicyService::Deinit(void)
     audioIOHandleMap_.DeInit();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
 #ifdef AUDIO_WIRED_DETECT
-    audioPnpServer_.StopPnpServer();
+    AudioPnpServer::GetAudioPnpServer().StopPnpServer();
 #endif
 
     if (isBtListenerRegistered) {

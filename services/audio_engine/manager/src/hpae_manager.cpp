@@ -3008,6 +3008,14 @@ void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
 
 int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
 {
+    // AISS requires stereo input — reject non-stereo streams
+    auto it = rendererIdStreamInfoMap_.find(sessionId);
+    if (it != rendererIdStreamInfoMap_.end() && it->second.streamInfo.channels != STEREO) {
+        AUDIO_INFO_LOG("BindAndCreateAiss: rejected, channels=%{public}u != STEREO, sessionId=%{public}u",
+            it->second.streamInfo.channels, sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED);
+    }
+
     AudioEffectConfig audioConfig = MakeAissAudioConfig();
     std::shared_ptr<EffectInstance> instance;
     int32_t ret = sessionEffectManager_->BindSessionEffect(

@@ -559,20 +559,20 @@ AudioSessionActiveBehaviors AudioSession::GetSessionBehaviors()
     return behaviorFlags_;
 }
 
-void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo, const bool isAudioSessionInterrupt)
 {
     sessionDebugInfo.strategy = strategy_;
-    sessionDebugInfo.audioSessionScene = audioSessionScene_;
     sessionDebugInfo.defaultDeviceType = defaultDeviceType_;
     sessionDebugInfo.state = state_;
-    sessionDebugInfo.streamUsage = GetSessionStreamUsage();
-    sessionDebugInfo.streamInfos.clear();
-    for (const auto &iter : interruptMap_) {
-        AudioStreamDebugInfo streamDebugInfo;
-        streamDebugInfo.streamId = iter.second.first.streamId;
-        streamDebugInfo.streamType = iter.second.first.audioFocusType.streamType;
-        streamDebugInfo.sourceType = iter.second.first.audioFocusType.sourceType;
-        sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+    if (isAudioSessionInterrupt) {
+        sessionDebugInfo.audioSessionScene = audioSessionScene_;
+        sessionDebugInfo.streamInfos.clear();
+        for (const auto &iter : interruptMap_) {
+            AudioStreamDebugInfo streamDebugInfo;
+            streamDebugInfo.streamId = iter.second.first.streamId;
+            streamDebugInfo.streamType = iter.second.first.audioFocusType.streamType;
+            sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+        }
     }
 }
 } // namespace AudioStandard

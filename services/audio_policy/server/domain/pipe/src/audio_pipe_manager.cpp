@@ -546,38 +546,6 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningOutputStreamDescs()
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto &it : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
-        for (auto &desc : it->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            streamDescs.push_back(desc);
-        }
-    }
-    return streamDescs;
-}
-
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRunningInputStreamDescs()
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto &it : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_INPUT, "not input pipe");
-        for (auto &desc : it->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            streamDescs.push_back(desc);
-        }
-    }
-    return streamDescs;
-}
-
 bool AudioPipeManager::HasRunningScoOutputStream()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -1113,7 +1081,7 @@ bool AudioPipeManager::HasPrimarySink()
     return false;
 }
 
-bool AudioPipeManager::HasRunningStream()
+bool AudioPipeManager::HasRunningStream(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &pipeInfo : curPipeList_) {
@@ -1121,6 +1089,7 @@ bool AudioPipeManager::HasRunningStream()
         for (auto &desc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             CHECK_AND_CONTINUE(desc->IsRunning());
+            CHECK_AND_CONTINUE_LOG(sessionId != desc->sessionId_, "sessionId matches %{public}u", sessionId);
             return true;
         }
     }

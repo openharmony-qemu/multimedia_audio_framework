@@ -252,9 +252,6 @@ private:
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
-#ifdef AUDIO_WIRED_DETECT
-        audioPnpServer_(AudioPnpServer::GetAudioPnpServer()),
-#endif
         audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
@@ -375,9 +372,6 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-#ifdef AUDIO_WIRED_DETECT
-    AudioPnpServer &audioPnpServer_;
-#endif
     AudioGlobalConfigManager &audioGlobalConfigManager_;
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,

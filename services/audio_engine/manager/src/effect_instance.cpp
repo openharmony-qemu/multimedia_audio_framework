@@ -303,6 +303,7 @@ int32_t EffectInstance::TriggerProcess()
 
 int32_t EffectInstance::Flush()
 {
+    ClearBuffers();
     if (!hasHandle_ || effectHandle_ == nullptr) {
         return 0;
     }

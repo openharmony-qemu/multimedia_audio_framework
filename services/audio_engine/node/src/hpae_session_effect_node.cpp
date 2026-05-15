@@ -42,9 +42,9 @@ uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
     if (elapsedUs <= 0) {
         return 0;
     }
-    uint32_t sampleRate = audioConfig_.inputCfg.samplingRate;
     return static_cast<uint32_t>(
-        (static_cast<uint64_t>(elapsedUs) * sampleRate + 500000) / 1000000);
+        (elapsedUs + FRAME_LEN_20MS * MILLISECOND_PER_SECOND / 2)
+        / (FRAME_LEN_20MS * MILLISECOND_PER_SECOND));
 }
 
 static const char *StatusToString(HpaeSessionEffectNode::STATUS s)
@@ -191,23 +191,6 @@ int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effec
     effectName_ = effectName;
     audioConfig_ = config;
     AUDIO_INFO_LOG("create effect with instance %{public}s", effectName.c_str());
-    return 0;
-}
-
-int32_t HpaeSessionEffectNode::ReleaseEffect()
-{
-    StopPreheatThread();  // Always join if joinable (safe no-op if not)
-    if (effectInstance_) {
-        effectInstance_->StopEffect();  // DISABLE if not already
-        effectInstance_->Release();
-        effectInstance_.reset();
-    }
-    AUDIO_INFO_LOG("[SE::SessionEffectNode] %s→IDLE reason=ReleaseEffect sessionId=%{public}u",
-        StatusToString(status_), GetSessionId());
-    status_ = STATUS::IDLE;
-    totalBytesIn_ = 0;
-    totalBytesOut_ = 0;
-    stats_.Reset();
     return 0;
 }
 

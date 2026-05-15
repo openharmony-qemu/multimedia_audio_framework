@@ -373,7 +373,7 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     CHECK_AND_RETURN_RET(converterForLoudness_, SUCCESS);
 
     // Session Effect: disconnect SE node from chain (no bypass reconnect).
-    // Do NOT ReleaseEffect here — that happens in DeleteInputSession after this returns.
+    // Do NOT DropEffect here — that happens in DeleteInputSession after this returns.
     if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
         && converterForLoudness_ != nullptr) {
         loudnessGainNode_->DisConnect(sessionEffectNode_);

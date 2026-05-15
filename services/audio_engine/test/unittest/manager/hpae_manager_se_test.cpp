@@ -330,6 +330,56 @@ HWTEST_F(HpaeManagerSeTest, DestroyStream_resetsToPending, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->boundUid_, testUid);
 }
 
+// CH-1: BindAndCreateAiss rejects non-stereo streams
+HWTEST_F(HpaeManagerSeTest, SetAissEnabled_multiChannelRejected, TestSize.Level0)
+{
+    // Inject a running music stream with multi-channel (5.1)
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = testSessionId;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.uid = testUid;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.channelLayout = CH_LAYOUT_5POINT1;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    hpaeManager_->rendererIdStreamInfoMap_[testSessionId] = {streamInfo, HPAE_SESSION_RUNNING};
+
+    int32_t ret = hpaeManager_->SetAissEnabled(testSessionId, true);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
+}
+
+// CH-2: BindAndCreateAiss succeeds for stereo stream
+HWTEST_F(HpaeManagerSeTest, SetAissEnabled_stereoAccepted, TestSize.Level0)
+{
+    // Inject a running music stream with stereo
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = testSessionId;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.uid = testUid;
+    streamInfo.channels = STEREO;
+    streamInfo.channelLayout = CH_LAYOUT_STEREO;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    hpaeManager_->rendererIdStreamInfoMap_[testSessionId] = {streamInfo, HPAE_SESSION_RUNNING};
+
+    int32_t ret = hpaeManager_->SetAissEnabled(testSessionId, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+// CH-3: EnableAissByUid rejects multi-channel stream
+HWTEST_F(HpaeManagerSeTest, EnableAissByUid_multiChannelRejected, TestSize.Level0)
+{
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = testSessionId;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.uid = testUid;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.channelLayout = CH_LAYOUT_5POINT1;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    hpaeManager_->rendererIdStreamInfoMap_[testSessionId] = {streamInfo, HPAE_SESSION_RUNNING};
+
+    int32_t ret = hpaeManager_->SetAissEnabledByUid(testUid, true);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
+}
+
 // --- E2E Tests: Init + DeactivateThread + HandleRequests pattern ---
 // RM.SendRequest passes IsInit() check and enqueues the message, even if the thread is null.
 // After DeactivateThread(), isInit_ stays true but hpaeSignalProcessThread_ is null.
