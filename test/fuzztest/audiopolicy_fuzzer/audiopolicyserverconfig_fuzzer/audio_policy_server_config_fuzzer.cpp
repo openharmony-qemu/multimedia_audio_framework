@@ -14,6 +14,7 @@
  */
 
 #include <iostream>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include "audio_policy_server.h"
@@ -30,12 +31,66 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t LIMITSIZE = 4;
+const size_t MAX_CONCURRENCY_MAP_SIZE = 16;
+
+const std::array<AudioPipeType, 22> PIPE_TYPES = {
+    PIPE_TYPE_UNKNOWN,
+    PIPE_TYPE_OUT_NORMAL,
+    PIPE_TYPE_IN_NORMAL,
+    PIPE_TYPE_OUT_LOWLATENCY,
+    PIPE_TYPE_IN_LOWLATENCY,
+    PIPE_TYPE_OUT_CELLULAR_CALL,
+    PIPE_TYPE_IN_CELLULAR_CALL,
+    PIPE_TYPE_OUT_VOIP,
+    PIPE_TYPE_IN_VOIP,
+    PIPE_TYPE_OUT_OFFLOAD,
+    PIPE_TYPE_OUT_MULTICHANNEL,
+    PIPE_TYPE_OUT_DIRECT_NORMAL,
+    PIPE_TYPE_IN_NORMAL_AI,
+    PIPE_TYPE_IN_NORMAL_UNPROCESS,
+    PIPE_TYPE_IN_NORMAL_ULTRASONIC,
+    PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION,
+    PIPE_TYPE_OUT_HWDECODING,
+    PIPE_TYPE_IN_NORMAL_RAW_AI,
+    PIPE_TYPE_OUT_3DA_DIRECT,
+    PIPE_TYPE_OUT_INTERPHONE,
+    PIPE_TYPE_IN_INTERPHONE,
+    static_cast<AudioPipeType>(-1),
+};
+
+const std::array<ConcurrencyAction, 5> CONCURRENCY_ACTIONS = {
+    PLAY_BOTH,
+    CONCEDE_INCOMING,
+    CONCEDE_EXISTING,
+    CONCEDE_BOTH,
+    static_cast<ConcurrencyAction>(-1),
+};
+
+template<typename T, size_t N>
+T PickValue(FuzzedDataProvider &fdp, const std::array<T, N> &values)
+{
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, N - 1)];
+}
 
 void AudioConcurrencyParserLoadConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyMap;
-    concurrencyMap[std::make_pair(PIPE_TYPE_UNKNOWN, PIPE_TYPE_UNKNOWN)] = PLAY_BOTH;
-    concurrencyMap[std::make_pair(PIPE_TYPE_OUT_NORMAL, PIPE_TYPE_OUT_NORMAL)] = CONCEDE_EXISTING;
+    size_t mapSize = fdp.ConsumeIntegralInRange<size_t>(0, MAX_CONCURRENCY_MAP_SIZE);
+    for (size_t i = 0; i < mapSize; ++i) {
+        AudioPipeType existingPipe = PickValue(fdp, PIPE_TYPES);
+        AudioPipeType incomingPipe = PickValue(fdp, PIPE_TYPES);
+        ConcurrencyAction action = PickValue(fdp, CONCURRENCY_ACTIONS);
+        if (fdp.ConsumeBool()) {
+            existingPipe = static_cast<AudioPipeType>(fdp.ConsumeIntegral<int32_t>());
+        }
+        if (fdp.ConsumeBool()) {
+            incomingPipe = static_cast<AudioPipeType>(fdp.ConsumeIntegral<int32_t>());
+        }
+        if (fdp.ConsumeBool()) {
+            action = static_cast<ConcurrencyAction>(fdp.ConsumeIntegral<int32_t>());
+        }
+        concurrencyMap[std::make_pair(existingPipe, incomingPipe)] = action;
+    }
     AudioConcurrencyParser audioConcurrencyParser;
     audioConcurrencyParser.LoadConfig(concurrencyMap);
 }

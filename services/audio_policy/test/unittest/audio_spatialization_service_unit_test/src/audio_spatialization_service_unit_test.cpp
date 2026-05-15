@@ -856,11 +856,16 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_038, Tes
     ptrAudioSpatializationService->spatializationEnabledReal_ = true;
     ptrAudioSpatializationService->headTrackingEnabledReal_ = true;
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = true;
+    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = true;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = false;
+    result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
+    EXPECT_EQ(result, SUCCESS);
+
+    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = false;
     result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -903,11 +908,16 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_040, Tes
     ptrAudioSpatializationService->spatializationEnabledReal_ = false;
     ptrAudioSpatializationService->headTrackingEnabledReal_ = false;
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = false;
+    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = false;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = true;
+    result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
+    EXPECT_EQ(result, SUCCESS);
+
+    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = true;
     result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -1141,6 +1151,79 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_053, Tes
     EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
 
     ptrAudioSpatializationService->HandleAdaptiveSpatialRenderingEnabledChange(selectedAudioDevice, enable);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_055
+* @tc.desc  : Test AudioSpatializationService::IsPersonalizedSpatializationEnabled
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_055, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const std::string address = "12345";
+    auto result = ptrAudioSpatializationService->IsPersonalizedSpatializationEnabled(address);
+
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_056
+* @tc.desc  : Test AudioSpatializationService::SetPersonalizedSpatializationEnabled
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_056, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    const bool enable = true;
+
+    auto result = ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+
+    EXPECT_EQ(result, SPATIALIZATION_SERVICE_OK);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_057
+* @tc.desc  : Test AudioSpatializationService::HandlePersonalizedSpatializationEnabledChange
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_057, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const bool enable = true;
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = nullptr;
+
+    ptrAudioSpatializationService->HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice, enable);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_058
+* @tc.desc  : Test AudioSpatializationService::HandlePersonalizedSpatializationEnabledChange
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_058, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const bool enable = true;
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+
+    EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
+
+    ptrAudioSpatializationService->HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice, enable);
 }
 
 /**

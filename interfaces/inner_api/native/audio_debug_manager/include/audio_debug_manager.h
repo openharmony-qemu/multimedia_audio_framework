@@ -47,10 +47,10 @@ public:
     virtual int32_t UnregisterAudioCapturer(uintptr_t capturerKey) = 0;
     virtual int32_t PrintAudioCapturerDebugInfo(uintptr_t capturerKey, int32_t fd) const = 0;
 
-    virtual int32_t RegisterAudioLoopback(uintptr_t loopbackKey,
+    virtual int32_t RegisterAudioLoopback(uint32_t &loopbackKey,
         const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback) = 0;
-    virtual int32_t UnregisterAudioLoopback(uintptr_t loopbackKey) = 0;
-    virtual int32_t PrintAudioLoopbackDebugInfo(uintptr_t loopbackKey, int32_t fd) const = 0;
+    virtual int32_t UnregisterAudioLoopback(uint32_t loopbackKey) = 0;
+    virtual int32_t PrintAudioLoopbackDebugInfo(uint32_t loopbackKey, int32_t fd) const = 0;
 
     virtual int32_t SetAudioSessionCallback(
         const std::shared_ptr<AudioSessionDebugCallback> &debugCallback) = 0;

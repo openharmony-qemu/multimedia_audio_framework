@@ -26,7 +26,7 @@ class MockAudioZoneService : public AudioZoneService {
 public:
     MockAudioZoneService() = default;
     virtual ~MockAudioZoneService() = default;
-    MOCK_METHOD(std::string, FindAudioZoneNameByUid, (int32_t uid), (override));
+    MOCK_METHOD(std::string, FindAudioZoneNameByUid, (int32_t uid, DeviceRole deviceRole), (override));
 };
 } // namespace AudioStandard
 } // namespace OHOS

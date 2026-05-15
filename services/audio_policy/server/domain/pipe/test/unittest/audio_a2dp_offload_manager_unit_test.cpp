@@ -14,6 +14,7 @@
  */
 
 #include "audio_a2dp_offload_manager_unit_test.h"
+#include "audio_device_manager.h"
 #include "audio_router_select_strategy.h"
 
 using namespace testing::ext;
@@ -203,6 +204,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, T
     auto deviceDescriptor = make_shared<AudioDeviceDescriptor>();
     deviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceDescriptor->deviceId_ = 1001;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(deviceDescriptor);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDescriptor});
     testManager_->GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_NE(testManager_, nullptr);
@@ -219,6 +221,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_002, T
     auto deviceDescriptor = make_shared<AudioDeviceDescriptor>();
     deviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceDescriptor->deviceId_ = 1001;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(deviceDescriptor);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDescriptor});
     testManager_->GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_NE(testManager_, nullptr);
@@ -563,6 +566,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_002, TestSize.Lev
 
     auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
     desc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
 
     auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_NONE, allRunningA2dpInfos);
@@ -580,6 +584,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, JudgeA2dpOffloadFlag_003, TestSize.Lev
 
     auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     desc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
 
     auto flag = testManager_->JudgeA2dpOffloadFlag(DEVICE_TYPE_NONE, allRunningA2dpInfos);

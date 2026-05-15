@@ -46,5 +46,31 @@ int32_t AudioEffectManager::GetAudioEffectProperty(AudioEffectPropertyArray &pro
     return AudioPolicyManager::GetInstance().GetAudioEffectProperty(propertyArray);
 }
 
+bool AudioEffectManager::IsAudioSeparationEffectSupported()
+{
+    return AudioPolicyManager::GetInstance().IsAudioSeparationEffectSupported();
+}
+
+int32_t AudioEffectManager::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
+{
+    return AudioPolicyManager::GetInstance().SetAudioSeparationEffectEnabled(enabled, uid, streamId);
+}
+
+int32_t AudioEffectManager::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
+{
+    return AudioPolicyManager::GetInstance().SetAudioSeparationEffectVolume(type, volume);
+}
+
+int32_t AudioEffectManager::OnAudioSeparationEffectEnabledChange(
+    const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().OnAudioSeparationEffectEnabledChange(callback);
+}
+
+int32_t AudioEffectManager::OffAudioSeparationEffectEnabledChange()
+{
+    return AudioPolicyManager::GetInstance().OffAudioSeparationEffectEnabledChange();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

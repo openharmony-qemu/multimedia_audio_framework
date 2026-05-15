@@ -87,5 +87,6 @@ ohos_unittest("audio_device_common_unit_next_test") {
   deps = [
     "../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../audio_policy:audio_policy_service_static",
+    "../../../../../services/audio_service:audio_common",
   ]
 }

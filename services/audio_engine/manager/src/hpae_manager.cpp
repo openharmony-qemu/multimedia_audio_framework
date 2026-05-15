@@ -1109,6 +1109,7 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
             sinkInput->SetState(movingIds_[sessionId]);
         }
         sinkInput->SetOffloadEnabled(rendererIdStreamInfoMap_[sessionId].offloadEnable);
+        sinkInput->SetOffloadType(rendererIdStreamInfoMap_[sessionId].offloadType);
         sinkInput->SetSpeed(rendererIdStreamInfoMap_[sessionId].speed);
         movingIds_.erase(sessionId);
     }
@@ -1985,6 +1986,14 @@ int32_t HpaeManager::GetStreamRouteFlag(HpaeStreamClassType streamClassType, uin
         std::string sinkName = rendererIdSinkNameMap_[sessionId];
         if (rendererManagerMap_.find(sinkName) != rendererManagerMap_.end()) {
             routeFlag = rendererManagerMap_[sinkName]->GetSinkInfo().routeFlag;
+            return SUCCESS;
+        }
+    }
+    if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
+        capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
+        std::string sinkName = capturerIdSourceNameMap_[sessionId];
+        if (capturerManagerMap_.find(sinkName) != capturerManagerMap_.end()) {
+            routeFlag = capturerManagerMap_[sinkName]->GetSourceInfo().routeFlag;
             return SUCCESS;
         }
     }
@@ -2873,6 +2882,18 @@ int32_t HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
         auto serviceCallback = serviceCallback_.lock();
         CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
         serviceCallback->OnGetCollaborativeUpdateCb(result);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    auto request = [this, fd, length]() {
+        int32_t result = HpaePolicyManager::GetInstance().UpdatePersonalizedHRTFBin(fd, length);
+        auto serviceCallback = serviceCallback_.lock();
+        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
+        serviceCallback->OnUpdatePersonalizedHRTFBinCb(result);
     };
     SendRequest(request, __func__);
     return SUCCESS;

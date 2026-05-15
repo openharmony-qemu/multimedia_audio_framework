@@ -252,9 +252,6 @@ private:
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
-#ifdef AUDIO_WIRED_DETECT
-        audioPnpServer_(AudioPnpServer::GetAudioPnpServer()),
-#endif
         audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
@@ -296,7 +293,7 @@ private:
 
     bool IsConfigInfoHasAttribute(std::list<ConfigInfo> &configInfos, std::string value);
 
-    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
+    int32_t GetPreferredDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     void CreateRecoveryThread();
@@ -320,11 +317,6 @@ private:
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
     int32_t HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
-    int32_t HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
-    int32_t HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
-    bool IsVoipStreamUsage(StreamUsage streamUsage);
     void SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
         const AudioDeviceDescriptor &sourceDesc, DeviceRole role);
 private:
@@ -380,9 +372,6 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-#ifdef AUDIO_WIRED_DETECT
-    AudioPnpServer &audioPnpServer_;
-#endif
     AudioGlobalConfigManager &audioGlobalConfigManager_;
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,

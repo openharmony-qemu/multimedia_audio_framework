@@ -109,7 +109,7 @@ public:
         PreferredType preferredType);
     void ClearWirelessPreferredDevicesIfNeeded(PreferredType preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
-
+    static bool CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

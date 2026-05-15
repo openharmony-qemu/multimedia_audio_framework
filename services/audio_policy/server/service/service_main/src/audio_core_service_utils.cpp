@@ -113,7 +113,8 @@ void AudioCoreServiceUtils::SortOutputStreamDescsForUsage(
     for (auto &streamDesc : streamDescs) {
         if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
             streamDescsPriority[streamDesc->sessionId_] = FIRST_STREAM_PRIORITY;
         } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
                 streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {

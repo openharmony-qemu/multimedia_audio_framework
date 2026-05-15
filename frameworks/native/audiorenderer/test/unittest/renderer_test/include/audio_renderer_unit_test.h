@@ -132,14 +132,26 @@ public:
     void GetRestoreInfo(RestoreInfo &restoreInfo) override {};
     float GetDuckVolume() override { return RenderUT::DUCK_VOLUME; }
     int32_t SetDuckVolume(float volume) override { return SUCCESS; }
+    void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback) override
+    {
+        fastStatusChangeCallback_ = callback;
+    }
 
     State state_ = State::RUNNING;
     RestoreStatus restoreStatus_ = NO_NEED_FOR_RESTORE;
+    std::function<void(FastStatus)> fastStatusChangeCallback_;
 };
 
 class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
 public:
-    void OnFastStatusChange(FastStatus status) override { return; }
+    void OnFastStatusChange(FastStatus status) override
+    {
+        notifyCount_++;
+        status_ = status;
+    }
+
+    int32_t notifyCount_ = 0;
+    FastStatus status_ = FASTSTATUS_INVALID;
 };
 
 class AudioRendererWriteCallbackMock : public AudioRendererWriteCallback {

@@ -38,6 +38,8 @@ static const std::string DEVICE_NAME_INNER_CAP = "InnerCapturerSink";
 static const std::string DEVICE_NAME_CAST_INNER_CAP = "RemoteCastInnerCapturer";
 static const std::string DEVICE_CLASS_VOIP_DIRECT = "voip";
 static const std::string DEVICE_CLASS_DIRECT = "direct";
+static const std::string DEVICE_CLASS_USB_FAST = "usb_arm_fast";
+static const std::string DEVICE_CLASS_USB_ULTRA_FAST = "usb_arm_ultra_fast";
 std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManager(HpaeSinkInfo &sinkInfo)
 {
     if (sinkInfo.deviceClass == DEVICE_CLASS_OFFLOAD || sinkInfo.deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD) {
@@ -46,7 +48,9 @@ std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManage
     } else if (sinkInfo.deviceClass ==  DEVICE_CLASS_PRIMARY_MMAP ||
         sinkInfo.deviceClass == DEVICE_CLASS_PRIMARY_MMAP_VOIP ||
         sinkInfo.deviceClass == DEVICE_CLASS_A2DP_VOIP ||
-        sinkInfo.deviceClass == DEVICE_CLASS_ULTRA_FAST) {
+        sinkInfo.deviceClass == DEVICE_CLASS_ULTRA_FAST ||
+        sinkInfo.deviceClass == DEVICE_CLASS_USB_FAST ||
+        sinkInfo.deviceClass == DEVICE_CLASS_USB_ULTRA_FAST) {
         AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeFastRendererManager");
         return std::make_shared<HpaeFastRendererManager>(sinkInfo);
     } else if ((sinkInfo.deviceName.compare(0, DEVICE_NAME_INNER_CAP.length(), DEVICE_NAME_INNER_CAP) == 0)
@@ -109,10 +113,16 @@ int32_t IHpaeRendererManager::SetSinkVirtualOutputNode(
 bool IHpaeRendererManager::AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNodeInfo &outNodeInfo)
 {
     // Check if input node's frameLen needs to modify.
-    const std::size_t inFrameLenUs = inNodeInfo.frameLen * AUDIO_US_PER_MS / inNodeInfo.samplingRate;
-    const std::size_t outFrameLenUs = outNodeInfo.frameLen * AUDIO_US_PER_MS / outNodeInfo.samplingRate;
+    uint32_t inRate = inNodeInfo.GetEffectiveSampleRate();
+    uint32_t outRate = outNodeInfo.GetEffectiveSampleRate();
+    if (inRate == 0 || outRate == 0) {
+        AUDIO_ERR_LOG("AdjustFrameLen invalid rate: inRate=%{public}u outRate=%{public}u", inRate, outRate);
+        return false;
+    }
+    const std::size_t inFrameLenUs = static_cast<std::size_t>(inNodeInfo.frameLen) * AUDIO_US_PER_MS / inRate;
+    const std::size_t outFrameLenUs = static_cast<std::size_t>(outNodeInfo.frameLen) * AUDIO_US_PER_MS / outRate;
     if (inFrameLenUs != outFrameLenUs) {
-        inNodeInfo.frameLen = outFrameLenUs * inNodeInfo.samplingRate / AUDIO_US_PER_MS;
+        inNodeInfo.frameLen = static_cast<uint32_t>(outFrameLenUs * inRate / AUDIO_US_PER_MS);
         return true;
     }
     return false;

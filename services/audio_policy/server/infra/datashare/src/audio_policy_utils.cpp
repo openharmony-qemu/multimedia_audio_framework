@@ -69,9 +69,11 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {FILE_SOURCE, TYPE_FILE_IO},
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
     {PRIMARY_UNPROCESS_MIC, TYPE_PRIMARY},
+    {PRIMARY_LIVE_MIC, TYPE_PRIMARY},
     {PRIMARY_VOICE_RECOGNITION_MIC, TYPE_PRIMARY},
     {PRIMARY_RAW_AI_MIC, TYPE_PRIMARY},
     {PRIMARY_INTERPHON_MIC, TYPE_PRIMARY},
+    {PRIMARY_CAMCORDER, TYPE_PRIMARY},
 };
 
 std::set<DeviceType> AudioPolicyUtils::needDeclaredDevices = {
@@ -85,9 +87,11 @@ static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
     switch (routeFlag) {
         case AUDIO_INPUT_FLAG_AI:               return PRIMARY_AI_MIC;
         case AUDIO_INPUT_FLAG_UNPROCESS:        return PRIMARY_UNPROCESS_MIC;
+        case AUDIO_INPUT_FLAG_LIVE:             return PRIMARY_LIVE_MIC;
         case AUDIO_INPUT_FLAG_ULTRASONIC:       return PRIMARY_ULTRASONIC_MIC;
         case AUDIO_INPUT_FLAG_VOICE_RECOGNITION:return PRIMARY_VOICE_RECOGNITION_MIC;
         case AUDIO_INPUT_FLAG_RAW_AI:           return PRIMARY_RAW_AI_MIC;
+        case AUDIO_INPUT_FLAG_CAMCORDER:        return PRIMARY_CAMCORDER;
         default:                                return PRIMARY_MIC;
     }
 }
@@ -535,10 +539,12 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {FILE_SOURCE, FILE_CLASS},
         {BLUETOOTH_MIC, A2DP_CLASS},
         {PRIMARY_AI_MIC, PRIMARY_CLASS},
+        {PRIMARY_LIVE_MIC, PRIMARY_CLASS},
         {PORT_NONE, INVALID_CLASS},
         {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
         {PRIMARY_VOICE_RECOGNITION_MIC, PRIMARY_CLASS},
         {PRIMARY_RAW_AI_MIC, PRIMARY_CLASS},
+        {PRIMARY_CAMCORDER, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -810,7 +816,8 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC
         || deviceName == PRIMARY_ULTRASONIC_MIC ||
         deviceName == PRIMARY_VOICE_RECOGNITION_MIC || deviceName == PRIMARY_RAW_AI_MIC ||
-        deviceName == PRIMARY_INTERPHON_MIC) {
+        deviceName == PRIMARY_INTERPHON_MIC || deviceName == PRIMARY_LIVE_MIC ||
+        deviceName == PRIMARY_CAMCORDER) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
@@ -855,6 +862,7 @@ AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage 
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_INTERPHONE:
             return CALL_OUTPUT_DEVICES;
         default:
             return MEDIA_OUTPUT_DEVICES;
@@ -1035,6 +1043,31 @@ void AudioPolicyUtils::ClearWirelessPreferredDevicesIfNeeded(PreferredType prefe
     } else if (preferredType == AUDIO_CALL_CAPTURE || preferredType == AUDIO_RECORD_CAPTURE) {
         ClearInputWirelessPreferred(desc, preferredType);
     }
+}
+
+bool AudioPolicyUtils::CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (desc && usage == STREAM_USAGE_INTERPHONE) {
+        AUDIO_INFO_LOG("id=%{public}d, type=%{public}d, isLocal=%{public}d, role=%{public}d, "
+            "pairId=%{public}d, pairType=%{public}d", desc->deviceId_, desc->deviceType_,
+            desc->networkId_ == LOCAL_NETWORK_ID, desc->deviceRole_,
+            desc->pairDeviceDescriptor_ ? desc->pairDeviceDescriptor_->deviceId_ : 0,
+            desc->pairDeviceDescriptor_ ? desc->pairDeviceDescriptor_->deviceType_ : 0);
+        switch (desc->deviceType_) {
+            case DEVICE_TYPE_USB_ARM_HEADSET:
+            case DEVICE_TYPE_EARPIECE:
+            case DEVICE_TYPE_HEARING_AID:
+                return false;
+            case DEVICE_TYPE_BLUETOOTH_SCO:
+            case DEVICE_TYPE_NEARLINK:
+                return desc->deviceCategory_ != BT_WATCH && desc->deviceCategory_ != BT_HEARAID;
+            case DEVICE_TYPE_SPEAKER:
+                return desc->networkId_ == LOCAL_NETWORK_ID;
+            default:
+                return desc->pairDeviceDescriptor_ && desc->networkId_ == LOCAL_NETWORK_ID;
+        }
+    }
+    return true;
 }
 
 int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)

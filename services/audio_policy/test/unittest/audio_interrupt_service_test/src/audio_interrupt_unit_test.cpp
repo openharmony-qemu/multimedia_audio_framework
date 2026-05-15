@@ -709,7 +709,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_024, TestSize.Level1)
     int32_t zoneId = 1;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 0;
     };
 
@@ -738,7 +738,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_025, TestSize.Level1)
     int32_t zoneId = 0;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 0;
     };
 
@@ -1586,8 +1586,8 @@ HWTEST_F(AudioInterruptUnitTest, AudioPolicyServer_001, TestSize.Level1)
  
     AudioInterrupt audioInterrupt;
     int32_t zoneID = 456;
-    pid_t pid = 1;
-    pid_t uid = 1;
+    audioInterrupt.pid = getpid();
+    audioInterrupt.uid = getuid();
     int32_t strategy = 0;
     server->interruptService_ = std::make_shared<AudioInterruptService>();
     int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
@@ -2466,7 +2466,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 0;
     };
 
@@ -2528,7 +2528,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_001, TestSize.Level1)
     auto interruptServiceTest = server->interruptService_;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2556,7 +2556,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_002, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2582,7 +2582,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_003, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2612,7 +2612,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_004, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2641,7 +2641,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_005, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -2710,7 +2710,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_006, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         if (uid == 2) {
             return 1;
         }
@@ -2750,7 +2750,7 @@ HWTEST_F(AudioInterruptUnitTest, MigrateAudioInterruptZone_007, TestSize.Level1)
     server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
         return 1;
     };
 
@@ -5770,7 +5770,7 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateTest_001, TestSize.Level1
     auto streams = audioSession->GetStreams();
     for (const auto &[stream, state] : streams) {
         if (stream.streamId == streamId) {
-            EXPECT_EQ(state, AudioFocuState::STANDBY);
+            EXPECT_EQ(state, AudioFocuState::ACTIVE);
         }
     }
 }
@@ -6368,6 +6368,139 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateToActive_004, TestSize.Le
 
     int32_t ret = interruptServiceTest->UpdateStreamFocusStateToActive(callerPid, streamId);
     EXPECT_EQ(ret, SUCCESS);
+ * @tc.name  : Test UpdateMediaWithMixStrategy_001
+ * @tc.number: UpdateMediaWithMixStrategy
+ * @tc.desc  : Test UpdateMediaWithMixStrategy_001
+ */
+HWTEST_F(AudioInterruptUnitTest, UpdateMediaWithMixStrategy_001, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptStrategy->UpdateMediaWithMixStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
+ 
+    incomingInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS;
+    activeInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    audioInterruptStrategy->UpdateMediaWithMixStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
+ 
+    incomingInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS;
+    activeInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    audioInterruptStrategy->UpdateMediaWithMixStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+ 
+    incomingInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    activeInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS;
+    audioInterruptStrategy->UpdateMediaWithMixStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
+ 
+    incomingInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    audioInterruptStrategy->UpdateMediaWithMixStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
+}
+ 
+/**
+ * @tc.name  : Test UpdateMediaWithDuckStrategy_001
+ * @tc.number: UpdateMediaWithDuckStrategy
+ * @tc.desc  : Test UpdateMediaWithDuckStrategy_001
+ */
+HWTEST_F(AudioInterruptUnitTest, UpdateMediaWithDuckStrategy_001, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptStrategy->UpdateMediaWithDuckStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+ 
+    incomingInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterruptStrategy->UpdateMediaWithDuckStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+ 
+    incomingInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    activeInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    audioInterruptStrategy->UpdateMediaWithDuckStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+ 
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterruptStrategy->UpdateMediaWithDuckStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+}
+ 
+/**
+ * @tc.name  : Test UpdateMediaWithDuckStrategy_002
+ * @tc.number: UpdateMediaWithDuckStrategy
+ * @tc.desc  : Test UpdateMediaWithDuckStrategy_002
+ */
+HWTEST_F(AudioInterruptUnitTest, UpdateMediaWithDuckStrategy_002, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+ 
+    auto interruptService = GetTnterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+ 
+    incomingInterrupt.pid = 2;
+    strategyTest.concurrencyMode = AudioConcurrencyMode::DUCK_OTHERS;
+    auto ret1 = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret1.retCode);
+ 
+    interruptService->sessionService_.MarkSystemApp(incomingInterrupt.pid);
+    EXPECT_TRUE(interruptService->sessionService_.IsSystemApp(incomingInterrupt.pid));
+    audioInterruptStrategy->UpdateMediaWithDuckStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+}
+ 
+/**
+ * @tc.name  : Test UpdateMediaWithDuckStrategy_003
+ * @tc.number: UpdateMediaWithDuckStrategy
+ * @tc.desc  : Test UpdateMediaWithDuckStrategy_003
+ */
+HWTEST_F(AudioInterruptUnitTest, UpdateMediaWithDuckStrategy_003, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+ 
+    auto interruptService = GetTnterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+ 
+    activeInterrupt.pid = 1;
+    strategyTest.concurrencyMode = AudioConcurrencyMode::DUCK_OTHERS;
+    auto ret1 = interruptService->ActivateAudioSession(0, activeInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret1.retCode);
+ 
+    interruptService->sessionService_.MarkSystemApp(activeInterrupt.pid);
+    EXPECT_TRUE(interruptService->sessionService_.IsSystemApp(activeInterrupt.pid));
+    audioInterruptStrategy->UpdateMediaWithDuckStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_DUCK);
 }
 
 } // namespace AudioStandard

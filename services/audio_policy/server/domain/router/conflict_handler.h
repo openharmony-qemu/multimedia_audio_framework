@@ -31,6 +31,7 @@ struct StreamDeviceInfo {
     SourceType sourceType = SOURCE_TYPE_INVALID;
     std::shared_ptr<AudioDeviceDescriptor> device = nullptr;
     RouterType routerType = ROUTER_TYPE_NONE;
+    bool isRunning = false;
 };
 
 class ConflictHandler {

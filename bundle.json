@@ -111,7 +111,8 @@
             "ringtone_library",
             "frame_aware_sched",
             "window_manager",
-            "call_manager"
+            "call_manager",
+            "icu"
           ],
           "third_party": []
         },
@@ -359,6 +360,16 @@
                   "audio_format_converter.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosuite/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_suite:audio_pcm_process",
+              "header": {
+                "header_files": [
+                  "audio_pcm_process.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audio_pcm_process/include/"
               }
             },
             {

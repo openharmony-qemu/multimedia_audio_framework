@@ -622,6 +622,8 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
     HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT = 16,
     HDI_CAPTURE_OFFSET_INTERPHONE = 17,
+    HDI_CAPTURE_OFFSET_LIVE = 21,
+    HDI_CAPTURE_OFFSET_CAMCORDER = 23,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -678,6 +680,8 @@ float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
 uint64_t HexStrToNum(const std::string &str);
 
 void BindBigAndMidCore();
+
+bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

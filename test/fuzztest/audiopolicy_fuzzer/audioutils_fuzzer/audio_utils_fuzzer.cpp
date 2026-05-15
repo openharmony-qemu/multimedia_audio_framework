@@ -243,6 +243,12 @@ void VolumeRampFuzzTest(FuzzedDataProvider& fdp)
     volumeRamp->Terminate();
 }
 
+void GetSourceNameFuzzTest(FuzzedDataProvider& fdp)
+{
+    SourceType sourceType = GetData<SourceType>();
+    AudioInfoDumpUtils::GetSourceName(sourceType);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -253,6 +259,7 @@ void Test(FuzzedDataProvider& fdp)
     GetTimeFuzzTest,
     AudioBlendFuzzTest,
     VolumeRampFuzzTest,
+    GetSourceNameFuzzTest,
     });
     func(fdp);
 }

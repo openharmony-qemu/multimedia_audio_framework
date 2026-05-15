@@ -96,6 +96,7 @@ audio_ohos_library("audio_suite") {
       "client/utils/src/audio_suite_pcm_buffer.cpp",
       "client/utils/src/audio_suite_format_conversion.cpp",
       "client/utils/src/audio_suite_algo_interface.cpp",
+      "client/utils/src/audio_suite_serializer.cpp",
       "client/utils/src/audio_suite_eq_algo_interface_impl.cpp",
       "client/utils/src/audio_suite_env_algo_interface_impl.cpp",
       "client/utils/src/audio_suite_nr_algo_interface_impl.cpp",
@@ -141,6 +142,55 @@ audio_ohos_library("audio_suite") {
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
+
+audio_ohos_library("audio_pcm_process") {
+  stack_protector_ret = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = true
+
+  if (audio_framework_feature_audiosuite_support) {
+    include_dirs = [
+      "client/converter/include",
+      "client/manager/include",
+      "client/pcm_process/include",
+      "client/utils/include",
+      "client/node/include",
+      "../../interfaces/inner_api/native/audiocommon/include/",
+      "../../interfaces/inner_api/native/audiosuite/include",
+      "../../interfaces/inner_api/native/audio_pcm_process/include",
+      "../audio_engine/utils/",
+      "../audio_engine/plugin/channel_converter/include/",
+    ]
+
+    sources = [ "client/pcm_process/src/audio_pcm_process_impl.cpp" ]
+
+    deps = [
+      ":audio_suite",
+      "../audio_engine:audio_engine_plugins",
+      "../../frameworks/native/audioutils:audio_utils",
+      "../audio_service:audio_common",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+    ]
+  }
+
+  # innerapi_tags = [ "chipsetsdk" ]
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
 
 ohos_prebuilt_etc("audio_suite_capabilities") {
   source = "client/config/file/audio_suite_capabilities.xml"

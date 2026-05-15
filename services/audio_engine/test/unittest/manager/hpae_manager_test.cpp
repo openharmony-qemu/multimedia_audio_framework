@@ -2460,7 +2460,26 @@ HWTEST_F(HpaeManagerUnitTest, GetStreamSpanSize_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->CloseAudioPort(callback->GetPortId()), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-hpaeManager_->DeInit();
+    hpaeManager_->DeInit();
+}
+
+HWTEST_F(HpaeManagerUnitTest, GetStreamRouteFlag_Record_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    sourceInfo.routeFlag = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerIdSourceNameMap_[TEST_CAPTURE_SESSION_ID] = "mic";
+    hpaeManager_->capturerManagerMap_["mic"] = capturerManager;
+
+    uint32_t routeFlag = 0;
+    int32_t ret = hpaeManager_->GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_RECORD, TEST_CAPTURE_SESSION_ID, routeFlag);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(routeFlag, sourceInfo.routeFlag);
+
+    hpaeManager_->capturerManagerMap_.clear();
+    ret = hpaeManager_->GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_RECORD, TEST_CAPTURE_SESSION_ID, routeFlag);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
 
 HWTEST_F(HpaeManagerUnitTest, GetRendererManagerByDeviceClass_EmptyString_003, TestSize.Level1)

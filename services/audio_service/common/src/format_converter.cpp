@@ -189,7 +189,7 @@ bool FormatConverter::DataAccumulationWithoutVolume(const std::vector<AudioStrea
     CHECK_AND_RETURN_RET(CheckStreamDataVaild(srcDataList, dstData), false);
 
     if (dstData.streamInfo.format == SAMPLE_S16LE) {
-        MixS16WithoutVolume(srcDataList, dstData);
+        MixS16Volume(srcDataList, dstData); // process data with stream volume.
     } else {
         AUDIO_ERR_LOG("Invalid format: %{public}d", static_cast<int32_t>(dstData.streamInfo.format));
     }

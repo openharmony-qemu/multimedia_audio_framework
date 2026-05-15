@@ -235,11 +235,7 @@ ohos_unittest("audio_policy_service_ext_unit_test") {
     "accessibility:accessibility_common",
     "accessibility:accessibilityconfig",
     "ability_runtime:wantagent_innerkits",
-  ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
+    "ffrt:libffrt",
     "libxml2:libxml2",
   ]
 

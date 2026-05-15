@@ -41,6 +41,7 @@
 #include "audio_loud_volume_manager.h"
 #include "audio_core_service.h"
 #include "audio_interrupt_service.h"
+#include "stream_dfx_manager.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -190,7 +191,8 @@ int32_t AudioVolumeManager::ClearLoudVolumeHoldMapForCall()
 {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     if (loudVolumeManager_ != nullptr) {
-        loudVolumeManager_->ClearLoudVolumeHoldMap(LoudVolumeHoldType::LOUD_VOLUME_MODE_VOICE);
+        (void)loudVolumeManager_->ReloadLoudVolumeModeSwitch(LoudVolumeHoldType::LOUD_VOLUME_MODE_VOICE,
+            SetLoudVolMode::LOUD_VOLUME_SWITCH_OFF);
     }
     return SUCCESS;
 #endif
@@ -547,6 +549,9 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, con
         }
     } while (0);
     CheckReduceOtherActiveVolume(streamType, volume.VolumeLevel());
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_SET_VOLUME_FAILED, "Set system volume level failed", false));
     return ret;
 }
 
@@ -658,8 +663,11 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress,
     VolumeScale &volume, bool internalCall)
 {
     volume.SetMaxVolumeLevel(GetMaxVolumeLevel(STREAM_MUSIC));
-    CHECK_AND_RETURN_RET_LOG(volume.IsVolumeDegreeValid(GetMinVolumeDegree(STREAM_MUSIC), MAX_VOLUME_DEGREE),
-        ERR_INVALID_PARAM, "invalid input, volumeDegree:[%{public}d]", volume.VolumeDegree());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        volume.IsVolumeDegreeValid(GetMinVolumeDegree(STREAM_MUSIC), MAX_VOLUME_DEGREE),
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_SET_VOLUME_INVALID_PARAM, "Invaild volume parameter in SetA2dpDevieVolume", false),
+        "invalid input, volumeDegree:[%{public}d]", volume.VolumeDegree());
 
     if (audioA2dpDevice_.SetA2dpDeviceVolume(macAddress, volume) == false) {
         return ERROR;
@@ -728,8 +736,11 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     VolumeScale &volume, bool internalCall)
 {
     volume.SetMaxVolumeLevel(GetMaxVolumeLevel(streamType));
-    CHECK_AND_RETURN_RET_LOG(volume.IsVolumeDegreeValid(GetMinVolumeDegree(streamType), MAX_VOLUME_DEGREE),
-        ERR_INVALID_PARAM, "invalid input, volumeDegree:[%{public}d]", volume.VolumeDegree());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        volume.IsVolumeDegreeValid(GetMinVolumeDegree(streamType), MAX_VOLUME_DEGREE),
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_SET_VOLUME_INVALID_PARAM, "Invaild volume parameter in SetNearlinkDeviceVolume", false),
+        "invalid input, volumeDegree:[%{public}d]", volume.VolumeDegree());
 
     int32_t volumeLevel = volume.VolumeLevel();
     int32_t ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolume(macAddress, streamType, volume);
@@ -1332,6 +1343,9 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
         curOutputDeviceType = deviceType;
     }
     result = HandleStreamMute(streamType, mute, streamUsage, curOutputDeviceType, desc, zoneId);
+    CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_SET_VOLUME_FAILED, "SetStreamMute failed", false));
     return result;
 }
 
@@ -1901,7 +1915,10 @@ int32_t AudioVolumeManager::SetRingerMode(AudioRingerMode inputRingerMode, bool 
     std::shared_ptr<AudioCoreService> coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_UNKNOWN, "coreService is nullptr");
     int32_t ret = coreService->SetRingerMode(ringerMode);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set ringer mode!");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+            ERR_SET_VOLUME_FAILED, "SetRingerMode failed", false),
+        "Fail to set ringer mode!");
 
     // need to set volume according to ringermode
     bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;

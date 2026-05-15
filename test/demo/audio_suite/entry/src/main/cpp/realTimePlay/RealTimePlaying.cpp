@@ -3,6 +3,7 @@
  */
 
 #include "RealTimePlaying.h"
+#include <cstring>
 #include "hilog/log.h"
 #include "../audioEffectNode/Input.h"
 #include "ohaudiosuite/native_audio_suite_engine.h"
@@ -157,6 +158,7 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
                      "audioEditTest PlayAudioRendererOnWriteData renderer or audioData is nullptr");
         return AUDIO_DATA_CALLBACK_RESULT_INVALID;
     }
+    std::fill(static_cast<char*>(audioData), static_cast<char*>(audioData) + audioDataSize, 0);
     int32_t writeSize = 0;
     if (!g_playFinishedFlag) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
@@ -214,6 +216,11 @@ void ReleaseExistingResources()
         // Release Constructor
         OH_AudioStreamBuilder_Destroy(rendererBuilder);
         rendererBuilder = nullptr;
+    }
+    if (g_playTotalAudioData != nullptr) {
+        free(g_playTotalAudioData);
+        g_playTotalAudioData = nullptr;
+        g_playResultTotalSize = 0;
     }
 }
 

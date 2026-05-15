@@ -805,7 +805,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
     std::unique_lock<std::mutex> statusLock(loopMutex_);
     callbackLoop_ = std::thread([this, weakStream] {
         ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
-        if (processConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED)) {
+        if (IsUltraFastStreamAndRoute(processConfig_.ultraFastFlag)) {
             BindBigAndMidCore();
             threadPriority = THREAD_PRIORITY_4;
         }

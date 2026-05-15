@@ -62,6 +62,15 @@ public:
     int32_t SetParamOfflineEffectChain(const std::vector<uint8_t> &param);
 
     /**
+     * @brief Get parameter for the offline audio effect chain
+     *
+     * @param param Output offline audio effect parameter
+     * @return The result of the getparam, 0 for success, other for error code
+     * @since 15
+     */
+    int32_t GetParamOfflineEffectChain(std::vector<uint8_t> &param);
+
+    /**
      * @brief Prepare the offline audio effect chain
      *
      * @param bufIn Input audio sharedmemory buffer

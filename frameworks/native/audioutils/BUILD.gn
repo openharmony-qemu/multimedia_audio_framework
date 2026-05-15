@@ -56,7 +56,6 @@ ohos_shared_library("audio_utils") {
     "./src/volume_utils.cpp",
   ]
 
-  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -75,6 +74,7 @@ ohos_shared_library("audio_utils") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
+    "bounds_checking_function:libsec_shared",
   ]
 
   if (sonic_enable == true) {

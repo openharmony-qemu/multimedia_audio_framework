@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr size_t MAX_PARAM_SIZE = 1000;
+static constexpr size_t MAX_PARAM_SIZE = 4096;
 OfflineAudioEffectChainImpl::OfflineAudioEffectChainImpl(const std::string &effectChainName)
 {
     chainName_ = effectChainName;
@@ -75,6 +75,13 @@ int32_t OfflineAudioEffectChainImpl::SetParam(const std::vector<uint8_t> &param)
     std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     return offlineStreamInClient_->SetParamOfflineEffectChain(param);
+}
+
+int32_t OfflineAudioEffectChainImpl::GetParam(std::vector<uint8_t> &param)
+{
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
+    CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
+    return offlineStreamInClient_->GetParamOfflineEffectChain(param);
 }
 
 int32_t OfflineAudioEffectChainImpl::GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize)

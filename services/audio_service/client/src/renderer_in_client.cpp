@@ -238,6 +238,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.staticBufferInfo = staticBufferInfo_;
 
+    config.ultraFastFlag = curStreamParams_.ultraFastFlag;
+
     clientConfig_ = config;
 
     return config;
@@ -274,12 +276,12 @@ int32_t RendererInClientInner::InitSharedBuffer()
 
 bool RendererInClientInner::IsLowLatencyRenderer() const
 {
-    return rendererInfo_.rendererFlags == AUDIO_FLAG_MMAP || rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_FAST;
+    return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST);
 }
 
 uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
 {
-    if (!IsLowLatencyRenderer() && spanSizeInFrame_ == 0) {
+    if (!IsLowLatencyRenderer()) {
         return OLD_BUF_DURATION_IN_USEC;
     }
     uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :
@@ -1502,5 +1504,32 @@ void RendererInClientInner::CheckAndProcessPendingSpanSize()
         "rendererFlags:0x%{public}x",
         spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInFrame_.load(), rendererInfo_.rendererFlags);
 }
+
+void RendererInClientInner::UpdateStreamState(State state)
+{
+   // When updating the stream state, the focus state is updated synchronously.
+    state_ = state;
+    streamFocusState_ = static_cast<StreamFocusState>(state);
+}
+
+StreamFocusState RendererInClientInner::GetFocusState()
+{
+    std::lock_guard lock(focusStatusMutex_);
+    return streamFocusState_;
+}
+ 
+void RendererInClientInner::SetFocusState(StreamFocusState state)
+{
+    std::lock_guard lock(focusStatusMutex_);
+    streamFocusState_ = state;
+}
+
+void RendererInClientInner::SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+    const std::string &erroDesc, bool isClient, State state)
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(uid, errorCode, erroDesc, isClient);
+    streamFocusState_ = static_cast<StreamFocusState>(state);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
