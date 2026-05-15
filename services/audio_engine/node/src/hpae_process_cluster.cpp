@@ -513,6 +513,7 @@ int32_t HpaeProcessCluster::DestroySessionEffectNode(uint32_t sessionId, uint64_
         loudnessGainNode->DisConnect(node);
         node->DisConnect(converterNode);
         loudnessGainNode->Connect(converterNode);
+        converterNode->FlushBuffers();  // Clear residual SE output from processedBuffer_
     }
 
     node->DropEffect();  // Don't destroy algorithm — SessionEffectManager manages lifecycle

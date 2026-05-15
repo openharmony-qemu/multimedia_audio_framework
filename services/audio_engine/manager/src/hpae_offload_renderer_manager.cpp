@@ -1186,6 +1186,7 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode()
         loudnessGainNode_->DisConnect(sessionEffectNode_);
         sessionEffectNode_->DisConnect(converterForLoudness_);
         loudnessGainNode_->Connect(converterForLoudness_);
+        converterForLoudness_->FlushBuffers();  // Clear residual SE output from processedBuffer_
     }
 
     sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
