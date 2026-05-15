@@ -6369,6 +6369,7 @@ HWTEST_F(AudioInterruptUnitTest, UpdateStreamFocusStateToActive_004, TestSize.Le
 
     int32_t ret = interruptServiceTest->UpdateStreamFocusStateToActive(callerPid, streamId);
     EXPECT_EQ(ret, SUCCESS);
+}
 
 /**
  * @tc.name  : Test UpdateMediaWithMixStrategy_001
