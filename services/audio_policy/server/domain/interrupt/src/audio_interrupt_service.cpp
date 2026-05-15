@@ -1732,6 +1732,16 @@ int32_t AudioInterruptService::FindAndUpdateFocusState(uint32_t streamId, AudioF
     return -1;
 }
 
+int32_t AudioInterruptService::NotifyStreamStandby(int32_t pid, uint32_t streamId)
+{
+    return UpdateStreamFocusStateToStandby(pid, streamId);
+}
+
+int32_t AudioInterruptService::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
+{
+    return UpdateStreamFocusStateToActive(pid, streamId);
+}
+
 int32_t AudioInterruptService::UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId)
 {
     std::unique_lock<std::mutex> lock(mutex_);

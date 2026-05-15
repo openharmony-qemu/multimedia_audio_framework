@@ -339,10 +339,6 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
-    int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
-
-    int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
-
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
