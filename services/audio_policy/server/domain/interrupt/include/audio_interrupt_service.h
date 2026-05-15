@@ -286,7 +286,7 @@ private:
         int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
     void SendActiveVolumeTypeChangeEvent(const int32_t zoneId);
-    void RemoveClient(const int32_t zoneId, uint32_t streamId);
+    void RemoveClient(uint32_t streamId);
     void RemoveFocusInfo(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList,
         std::shared_ptr<AudioInterruptZone> &zoneInfo,

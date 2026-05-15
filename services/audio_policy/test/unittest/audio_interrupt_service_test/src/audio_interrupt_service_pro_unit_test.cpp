@@ -681,7 +681,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, RemoveClient_004, TestSize.Level4)
     zone1->interruptCbsMap.insert({streamId, nullptr});
     audioInterruptService_->zonesMap_.insert({zoneId, zone1});
 
-    audioInterruptService_->RemoveClient(zoneId, streamId);
+    audioInterruptService_->RemoveClient(streamId);
     EXPECT_EQ(audioInterruptService_->zonesMap_.size(), 1);
 }
 
