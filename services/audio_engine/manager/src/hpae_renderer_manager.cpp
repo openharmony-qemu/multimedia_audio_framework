@@ -1167,6 +1167,18 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
             RefreshProcessClusterByDevice();
         });
     }
+    int32_t ret = InitOutputCluster();
+    if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE) || isReload == true) {
+        InitDefaultNodeInfo();
+    }
+    if (isNeedCallBack == true) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+    }
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::InitOutputCluster()
+{
     int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
@@ -1186,13 +1198,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
     isInit_.store(ret == SUCCESS);
     renderId_ = outputCluster_->GetRenderId();
     AUDIO_INFO_LOG("init sink:%{public}s, renderid:%{public}u", sinkInfo_.deviceName.c_str(), renderId_);
-    if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE) || isReload == true) {
-        InitDefaultNodeInfo();
-    }
-    if (isNeedCallBack == true) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
-    }
-    return SUCCESS;
+    return ret;
 }
 
 void HpaeRendererManager::InitDefaultNodeInfo()

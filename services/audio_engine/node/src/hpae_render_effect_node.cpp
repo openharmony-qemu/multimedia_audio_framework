@@ -174,10 +174,10 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     } else {
         ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr);
     }
-    CHECK_AND_RETURN_RET(ret == SUCCESS,	 
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),	 
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,	 
-                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),	 
+    CHECK_AND_RETURN_RET(ret == SUCCESS,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
             "apply audio effect chain fail", false), inputs[0]));
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());

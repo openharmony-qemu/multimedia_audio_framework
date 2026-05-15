@@ -170,6 +170,7 @@ private:
     void StopInterphoneSinkIfNeeded();
 
     DeviceType GetCurrentSinkDeviceType();
+    int32_t InitOutputCluster();
 
 private:
 
