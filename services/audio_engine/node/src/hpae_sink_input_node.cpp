@@ -378,7 +378,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
             "writeCallback is null, fatal err", false), ERROR));
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload enable, direct, or non-standard sample rate: never force data
-    bool forceData = (offloadEnable_ | isDirect_ | isNonStandardSampleRate_) ? false : true;
+    bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_) ? false : true;
     uint64_t latency = 0;
     OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();
