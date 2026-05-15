@@ -1572,10 +1572,8 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     if (!ReadInputFile(fd, fileSize)) {
         return nullptr;
     }
-
     OH_AudioConverter_Result createResult =
         OH_AudioConverter_Create(&inputFormat, &outputFormat, &g_converter);
-
     if (createResult != AUDIOCONVERTER_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
                      "OH_AudioConverter_Create failed: %{public}d",
@@ -1583,6 +1581,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
         CleanupConversion();
         return CreateFinalResult(env, true);
     }
+
     OH_AudioConverter_Result callbackResult =
         OH_AudioConverter_SetInputCallback(g_converter, AudioConverterRequestDataCallback, nullptr);
     if (callbackResult != AUDIOCONVERTER_SUCCESS) {
@@ -1598,7 +1597,6 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
         CleanupConversion();
         return CreateFinalResult(env, true);
     }
-
     CleanupConversion();
     return CreateFinalResult(env, state.hasError);
 }
@@ -1768,7 +1766,7 @@ static napi_value AudioConverterGetFileInfo(napi_env env, napi_callback_info inf
 }
 
 // Test the function of outputting PrintInfo to a file.（fd >= 0）
-static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info) 
+static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
 {
     napi_value result;
     napi_get_boolean(env, false, &result);
