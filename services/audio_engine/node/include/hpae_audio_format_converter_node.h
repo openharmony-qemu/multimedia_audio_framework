@@ -100,7 +100,7 @@ private:
     uint32_t pullAheadCredit_ = 0;
     uint32_t pullAheadMaxCredit_ = 0;
 
-    uint32_t frameLenInMs_ = 0;
+    float frameLenInMs_ = 0.0f;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
