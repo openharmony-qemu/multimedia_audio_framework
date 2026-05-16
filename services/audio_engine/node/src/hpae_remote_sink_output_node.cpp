@@ -211,6 +211,14 @@ int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &devic
     return SUCCESS;
 }
 
+DeviceType HpaeRemoteSinkOutputNode::GetCurrentOutputDevice() const
+{
+    if (audioRendererSink_ == nullptr) {
+        return DEVICE_TYPE_NONE;
+    }
+    return audioRendererSink_->GetCurrentOutputDevice();
+}
+
 int32_t HpaeRemoteSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 {
     if (audioRendererSink_ == nullptr) {
@@ -397,6 +405,11 @@ int32_t HpaeRemoteSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &apps
             "audioRendererSink_ not init", false),
         "audioRendererSink_ not init");
     return audioRendererSink_->UpdateAppsUid(appsUid);
+}
+
+uint32_t HpaeRemoteSinkOutputNode::GetRenderId() const
+{
+    return renderId_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -147,6 +147,9 @@ private:
     int32_t DeleteProcessCluster(uint32_t sessionId, bool needInitEffect = true);
     int32_t DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
+    void SwitchBypassState(const std::shared_ptr<HpaeSinkInputNode> &node,
+        HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
+    void DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
     /**
      * @brief Refresh the usage and type of the cluster corresponding to the given scene type.
@@ -165,6 +168,9 @@ private:
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
     void StopInterphoneSinkIfNeeded();
+
+    DeviceType GetCurrentSinkDeviceType();
+    int32_t InitOutputCluster();
 
 private:
 
@@ -191,6 +197,7 @@ private:
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
     bool isReloadManagerFromCollStateChange_ = false;
+    uint32_t renderId_ = HDI_INVALID_ID;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
