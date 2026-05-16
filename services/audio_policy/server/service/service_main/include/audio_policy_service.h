@@ -318,8 +318,8 @@ private:
     int32_t HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
     int32_t HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config,
-    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
     int32_t HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config,
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);

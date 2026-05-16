@@ -281,7 +281,7 @@ int32_t AudioSelectInterfaceService::SetRenderDeviceForUsage(StreamUsage streamU
         desc : std::make_shared<AudioDeviceDescriptor>(**itr));
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
 
-    auto callerUid = uid == -1 ? IPCSkeleton::GetCallingUid() : uid;
+    auto callerUid = uid == INVALID_UID ? IPCSkeleton::GetCallingUid() : uid;
     if (preferredType == AUDIO_CALL_RENDER) {
         int32_t PreferUid = GetPreferredUid(callerUid);
         AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, callerUid, "SelectOutputDevice");
