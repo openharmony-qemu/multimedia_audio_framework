@@ -19,6 +19,8 @@
 #include <cstdint>
 #include <memory>
 
+#define INVALID_DEBUGKEY 0
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -37,15 +39,15 @@ public:
     virtual int32_t PrintAllAudioCapturersDebugInfo(int32_t fd) const = 0;
     virtual int32_t PrintAllAudioLoopbacksDebugInfo(int32_t fd) const = 0;
 
-    virtual int32_t RegisterAudioRenderer(uintptr_t rendererKey,
+    virtual int32_t RegisterAudioRenderer(uint32_t &rendererKey,
         const std::shared_ptr<AudioRendererDebugCallback> &debugCallback) = 0;
-    virtual int32_t UnregisterAudioRenderer(uintptr_t rendererKey) = 0;
-    virtual int32_t PrintAudioRendererDebugInfo(uintptr_t rendererKey, int32_t fd) const = 0;
+    virtual int32_t UnregisterAudioRenderer(uint32_t rendererKey) = 0;
+    virtual int32_t PrintAudioRendererDebugInfo(uint32_t rendererKey, int32_t fd) const = 0;
 
-    virtual int32_t RegisterAudioCapturer(uintptr_t capturerKey,
+    virtual int32_t RegisterAudioCapturer(uint32_t &capturerKey,
         const std::shared_ptr<AudioCapturerDebugCallback> &debugCallback) = 0;
-    virtual int32_t UnregisterAudioCapturer(uintptr_t capturerKey) = 0;
-    virtual int32_t PrintAudioCapturerDebugInfo(uintptr_t capturerKey, int32_t fd) const = 0;
+    virtual int32_t UnregisterAudioCapturer(uint32_t capturerKey) = 0;
+    virtual int32_t PrintAudioCapturerDebugInfo(uint32_t capturerKey, int32_t fd) const = 0;
 
     virtual int32_t RegisterAudioLoopback(uint32_t &loopbackKey,
         const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback) = 0;

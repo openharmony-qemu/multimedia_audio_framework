@@ -92,17 +92,25 @@ private:
     std::weak_ptr<AudioCapturer> audioCapturer_;
 };
 
-static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapturer> &audioCapturer)
+static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapturerPrivate> &audioCapturer)
 {
-    if (audioCapturer == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "AudioCapturer is nullptr");
     auto debugCallback = std::make_shared<AudioCapturerDebugCallbackImpl>(std::weak_ptr<AudioCapturer>(audioCapturer));
-    if (debugCallback == nullptr) {
-        return;
-    }
-    (void)AudioDebugManager::GetInstance().RegisterAudioCapturer(
-        reinterpret_cast<uintptr_t>(audioCapturer.get()), debugCallback);
+    CHECK_AND_RETURN_LOG(debugCallback != nullptr, "Create capturer debug callback failed");
+    uint32_t debugKey = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioCapturer(debugKey, debugCallback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != INVALID_DEBUGKEY,
+        "Register capturer debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
+    audioCapturer->debugKey_ = debugKey;
+    AUDIO_INFO_LOG("Register capturer debug manager success, debugKey:%{public}u", debugKey);
+}
+
+static void UnregisterAudioCapturerDebugManager(uint32_t &debugKey)
+{
+    CHECK_AND_RETURN_LOG(debugKey != INVALID_DEBUGKEY, "Unregister capturer debug manager: debugKey is invalid");
+    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(debugKey);
+    AUDIO_INFO_LOG("Unregister capturer debug manager, debugKey:%{public}u", debugKey);
+    debugKey = INVALID_DEBUGKEY;
 }
 
 AudioCapturer::~AudioCapturer() = default;
@@ -1774,7 +1782,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
-    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioCapturerDebugManager(debugKey_);
     if (capturerInfo_.loopBackEffectEnabled) {
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
