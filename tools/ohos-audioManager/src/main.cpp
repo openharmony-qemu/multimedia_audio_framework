@@ -108,7 +108,7 @@ AudioVolumeType ParseVolumeType(const std::string& typeStr) {
     return ParseExtendedVolumeType(typeStr);
 }
 
-DeviceType ParseBasicDeviceType(const std::string& typeStr) {
+DeviceType ParseBasicDeviceTypePart1(const std::string& typeStr) {
     if (typeStr == "DEVICE_TYPE_INVALID" || typeStr == "invalid") {
         return DeviceType::DEVICE_TYPE_INVALID;
     }
@@ -130,6 +130,10 @@ DeviceType ParseBasicDeviceType(const std::string& typeStr) {
     if (typeStr == "DEVICE_TYPE_BLUETOOTH_A2DP" || typeStr == "bluetooth_a2dp") {
         return DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     }
+    return DeviceType::DEVICE_TYPE_NONE;
+}
+
+DeviceType ParseBasicDeviceTypePart2(const std::string& typeStr) {
     if (typeStr == "DEVICE_TYPE_MIC" || typeStr == "mic") {
         return DeviceType::DEVICE_TYPE_MIC;
     }
@@ -146,6 +150,14 @@ DeviceType ParseBasicDeviceType(const std::string& typeStr) {
         return DeviceType::DEVICE_TYPE_USB_DEVICE;
     }
     return DeviceType::DEVICE_TYPE_NONE;
+}
+
+DeviceType ParseBasicDeviceType(const std::string& typeStr) {
+    DeviceType part1Result = ParseBasicDeviceTypePart1(typeStr);
+    if (part1Result != DeviceType::DEVICE_TYPE_NONE) {
+        return part1Result;
+    }
+    return ParseBasicDeviceTypePart2(typeStr);
 }
 
 DeviceType ParseExtendedDeviceType(const std::string& typeStr) {
