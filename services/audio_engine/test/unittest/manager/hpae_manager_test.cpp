@@ -893,6 +893,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Lev
     AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+    sleep(1);
     hpaeManager_->SetDefaultSource(audioModuleInfo.name);
     HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
     hpaeManager_->CreateStream(streamInfo);
@@ -948,6 +949,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002, TestSize.Lev
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    sleep(1);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetDefaultSource(audioModuleInfo.name);
     HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
