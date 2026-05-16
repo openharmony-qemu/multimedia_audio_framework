@@ -557,6 +557,11 @@ public:
         return sharedAudioRenderer_->GetRendererDebugInfo(debugInfo);
     }
 
+    uint32_t GetRendererDebugKey() const override
+    {
+        return sharedAudioRenderer_->GetRendererDebugKey();
+    }
+
     int32_t SetPitch(float pitch) override
     {
         return sharedAudioRenderer_->SetPitch(pitch);
