@@ -372,7 +372,7 @@ constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operati
     return static_cast<int32_t>((static_cast<uint32_t>(category) << PROBLEM_CATEGORY_BIT_NUM) |
         (static_cast<uint32_t>(operationType) << OPERATION_TYPE_BIT_NUM) |
         (static_cast<uint32_t>(scenario) << BUSINESS_SCENARIO_BIT_NUM) |
-        ((BASE_AUDIO_ERR_OFFSET - detail) & 0xFF));
+        (static_cast<uint32_t>(BASE_AUDIO_ERR_OFFSET - detail) & 0xFFu));
 }
 
 // PLAY_CREATE
