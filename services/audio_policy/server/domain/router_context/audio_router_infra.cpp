@@ -1069,7 +1069,7 @@ void AudioRouterInfra::ClearWirelessSelectDevice(const std::shared_ptr<AudioDevi
         auto &streamSelectDevices = context->streamSelectDevices_;
         auto it = streamSelectDevices.begin();
         while (it != streamSelectDevices.end()) {
-            if (IsWirelessDevice(it->second) && it->second->deviceRole_ == DEVICE_ROLE_OUTPUT) {
+            if (IsWirelessDevice(it->second) && it->second->deviceRole_ == OUTPUT_DEVICE) {
                 it = streamSelectDevices.erase(it);
             } else {
                 ++it;
