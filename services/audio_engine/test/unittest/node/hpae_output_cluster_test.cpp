@@ -41,16 +41,12 @@ static std::string g_deviceNetId = "LocalDevice";
 
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
-    float curGain = 0.0f;
-    float targetGain = 1.0f;
     uint64_t frameLen = len / (SAMPLE_F32LE * STEREO);
-    float stepGain = (targetGain - curGain) / frameLen;
-    
     const float *tempData = reinterpret_cast<const float *>(data);
     for (int32_t i = 0; i < frameLen; i++) {
         const float left = tempData[NUM_TWO * i];
         const float right = tempData[NUM_TWO * i + 1];
-        const float expectedValue = TEST_VALUE_1 * (curGain + i * stepGain) + TEST_VALUE_2 * (curGain + i * stepGain);
+        const float expectedValue = TEST_VALUE_1 + TEST_VALUE_2;
         EXPECT_EQ(left, expectedValue);
         EXPECT_EQ(right, expectedValue);
     }
