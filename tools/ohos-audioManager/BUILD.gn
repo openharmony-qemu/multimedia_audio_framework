@@ -52,6 +52,7 @@ ohos_cli_executable("ohos-audioManager") {
 
   external_deps = [
     "cJSON:cjson",
+    "c_utils:c_utils",
     "hilog:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
