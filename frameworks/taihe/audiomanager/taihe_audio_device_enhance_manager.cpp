@@ -76,6 +76,10 @@ void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceSync(AudioDeviceDescriptor
     CHECK_AND_RETURN_LOG(audioDeviceEnhanceMngr_ != nullptr, "audioDeviceEnhanceMngr_ is nullptr");
     int32_t ret = audioDeviceEnhanceMngr_->SelectOutputDevice(selectedAudioDevice);
     if (ret != OHOS::AudioStandard::SUCCESS) {
+        if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "invalid param");
+            return;
+        }
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
     }
 }
@@ -105,6 +109,10 @@ void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceForAudioRendererSync(
     int32_t ret = audioDeviceEnhanceMngr_->SelectOutputDeviceForAudioRenderer(
         taiheRenderer->audioRenderer_, selectedAudioDevice);
     if (ret != OHOS::AudioStandard::SUCCESS) {
+        if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "invalid param");
+            return;
+        }
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDeviceForAudioRenderer failed");
     }
 }
@@ -122,6 +130,10 @@ void AudioDeviceEnhanceManagerImpl::SelectInputDeviceSync(AudioDeviceDescriptor 
     CHECK_AND_RETURN_LOG(audioDeviceEnhanceMngr_ != nullptr, "audioDeviceEnhanceMngr_ is nullptr");
     int32_t ret = audioDeviceEnhanceMngr_->SelectInputDevice(selectedAudioDevice);
     if (ret != OHOS::AudioStandard::SUCCESS) {
+        if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "invalid param");
+            return;
+        }
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectInputDevice failed");
     }
 }
@@ -151,6 +163,10 @@ void AudioDeviceEnhanceManagerImpl::SelectInputDeviceForAudioCapturerSync(
     int32_t ret = audioDeviceEnhanceMngr_->SelectInputDeviceForAudioCapturer(
         taiheCapturer->audioCapturer_, selectedAudioDevice);
     if (ret != OHOS::AudioStandard::SUCCESS) {
+        if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "invalid param");
+            return;
+        }
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectInputDeviceForAudioCapturer failed");
     }
 }
