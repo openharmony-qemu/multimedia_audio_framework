@@ -15,44 +15,102 @@
 
 #include <securec.h>
 
+#include <string>
+
 #include "audio_log.h"
 #include "device_init_callback.h"
-#include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-const int32_t TEST_DEVICE_NAME_LENGTH = 4;
+const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
 
-typedef void (*TestFuncs)();
+void CopyStringToArray(const std::string &src, char *dest, size_t destLen)
+{
+    if (dest == nullptr || destLen == 0) {
+        return;
+    }
+    std::string value = src.substr(0, destLen - 1);
+    if (strncpy_s(dest, destLen, value.c_str(), value.length()) != EOK) {
+        dest[0] = '\0';
+    }
+}
+
+std::string MakeExtraData(FuzzedDataProvider& fdp)
+{
+    std::string fuzzValue = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    auto extraData = fdp.PickValueInArray<std::string>({
+        fuzzValue,
+        "",
+        "{\"CAR_BRAND\\}",
+        "{\"CAR_BRAND\\:B}",
+        "{\"CAR_BRAND\\:BUGATTI}",
+        "{\"CAR_BRAND\\:\"BUGATTI\"}",
+        "{\"CAR_BRAND\\:\\\"BUGATTI\\\",\"OTHER\":1}",
+        "{\\\"\\\"CAR_BRAND\\\\\\\": \\\"\\\\\\\"\\\\\\\\\\\\\\\"Bugatti\\\"}",
+    });
+    if (fdp.ConsumeBool()) {
+        extraData += fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    }
+    return extraData;
+}
+
+DistributedHardware::DmDeviceInfo MakeDmDeviceInfo(FuzzedDataProvider& fdp)
+{
+    DistributedHardware::DmDeviceInfo dmDeviceInfo;
+    CopyStringToArray(fdp.ConsumeRandomLengthString(MAX_STRING_LEN), dmDeviceInfo.deviceName, DM_MAX_DEVICE_NAME_LEN);
+    CopyStringToArray(fdp.ConsumeRandomLengthString(MAX_STRING_LEN), dmDeviceInfo.networkId, DM_MAX_DEVICE_ID_LEN);
+    dmDeviceInfo.deviceTypeId = static_cast<decltype(dmDeviceInfo.deviceTypeId)>(fdp.ConsumeIntegral<int32_t>());
+    dmDeviceInfo.extraData = MakeExtraData(fdp);
+    return dmDeviceInfo;
+}
 
 void DeviceStatusCallbackImplOnDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<DeviceStatusCallbackImpl> deviceStatusCallbackImpl = make_shared<DeviceStatusCallbackImpl>();
     CHECK_AND_RETURN(deviceStatusCallbackImpl != nullptr);
-    DistributedHardware::DmDeviceBasicInfo dmDeviceBasicInfo;
-    strncpy_s(dmDeviceBasicInfo.deviceName, DM_MAX_DEVICE_NAME_LEN,
-        "test", TEST_DEVICE_NAME_LENGTH);
-    deviceStatusCallbackImpl->OnDeviceChanged(dmDeviceBasicInfo);
+    auto dmDeviceInfo = MakeDmDeviceInfo(fdp);
+    deviceStatusCallbackImpl->OnDeviceChanged(dmDeviceInfo);
+}
+
+void DeviceStatusCallbackImplOnDeviceOnlineFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<DeviceStatusCallbackImpl> deviceStatusCallbackImpl = make_shared<DeviceStatusCallbackImpl>();
+    CHECK_AND_RETURN(deviceStatusCallbackImpl != nullptr);
+    auto dmDeviceInfo = MakeDmDeviceInfo(fdp);
+    deviceStatusCallbackImpl->OnDeviceOnline(dmDeviceInfo);
 }
 
 void DeviceStatusCallbackImplOnDeviceOfflineFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<DeviceStatusCallbackImpl> deviceStatusCallbackImpl = make_shared<DeviceStatusCallbackImpl>();
     CHECK_AND_RETURN(deviceStatusCallbackImpl != nullptr);
-    DistributedHardware::DmDeviceInfo dmDeviceInfo;
-    strncpy_s(dmDeviceInfo.deviceName, DM_MAX_DEVICE_NAME_LEN,
-        "test", TEST_DEVICE_NAME_LENGTH);
+    auto dmDeviceInfo = MakeDmDeviceInfo(fdp);
     deviceStatusCallbackImpl->OnDeviceOffline(dmDeviceInfo);
+}
+
+void DeviceStatusCallbackImplBasicInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<DeviceStatusCallbackImpl> deviceStatusCallbackImpl = make_shared<DeviceStatusCallbackImpl>();
+    CHECK_AND_RETURN(deviceStatusCallbackImpl != nullptr);
+    DistributedHardware::DmDeviceBasicInfo dmDeviceBasicInfo;
+    CopyStringToArray(fdp.ConsumeRandomLengthString(MAX_STRING_LEN),
+        dmDeviceBasicInfo.deviceName, DM_MAX_DEVICE_NAME_LEN);
+    deviceStatusCallbackImpl->OnDeviceChanged(dmDeviceBasicInfo);
+    deviceStatusCallbackImpl->OnDeviceOnline(dmDeviceBasicInfo);
+    deviceStatusCallbackImpl->OnDeviceOffline(dmDeviceBasicInfo);
+    deviceStatusCallbackImpl->OnDeviceReady(dmDeviceBasicInfo);
 }
 
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
-    DeviceStatusCallbackImplOnDeviceChangedFuzzTest,
-    DeviceStatusCallbackImplOnDeviceOfflineFuzzTest,
+        DeviceStatusCallbackImplOnDeviceChangedFuzzTest,
+        DeviceStatusCallbackImplOnDeviceOnlineFuzzTest,
+        DeviceStatusCallbackImplOnDeviceOfflineFuzzTest,
+        DeviceStatusCallbackImplBasicInfoFuzzTest,
     });
     func(fdp);
 }
@@ -65,6 +123,9 @@ void Init()
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
+    if (data == nullptr || size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
