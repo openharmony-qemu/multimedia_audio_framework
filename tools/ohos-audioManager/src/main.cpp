@@ -47,7 +47,7 @@ static const char* gToolDescription = "Audio management tool for controlling vol
 #define REGISTER_CMD(name, desc, usage, params, examples, handler) \
     gCommands[name] = {name, desc, usage, params, examples, handler}
 
-AudioVolumeType ParseVolumeType(const std::string& typeStr) {
+AudioVolumeType ParseBasicVolumeType(const std::string& typeStr) {
     if (typeStr == "STREAM_MUSIC" || typeStr == "music") {
         return AudioVolumeType::STREAM_MUSIC;
     }
@@ -72,6 +72,10 @@ AudioVolumeType ParseVolumeType(const std::string& typeStr) {
     if (typeStr == "STREAM_ACCESSIBILITY" || typeStr == "accessibility") {
         return AudioVolumeType::STREAM_ACCESSIBILITY;
     }
+    return AudioVolumeType::STREAM_MUSIC;
+}
+
+AudioVolumeType ParseExtendedVolumeType(const std::string& typeStr) {
     if (typeStr == "STREAM_VOICE_RING" || typeStr == "voice_ring") {
         return AudioVolumeType::STREAM_VOICE_RING;
     }
@@ -94,6 +98,14 @@ AudioVolumeType ParseVolumeType(const std::string& typeStr) {
         return AudioVolumeType::STREAM_ALL;
     }
     return AudioVolumeType::STREAM_MUSIC;
+}
+
+AudioVolumeType ParseVolumeType(const std::string& typeStr) {
+    AudioVolumeType basicType = ParseBasicVolumeType(typeStr);
+    if (basicType != AudioVolumeType::STREAM_MUSIC || typeStr == "STREAM_MUSIC" || typeStr == "music") {
+        return basicType;
+    }
+    return ParseExtendedVolumeType(typeStr);
 }
 
 DeviceType ParseBasicDeviceType(const std::string& typeStr) {
@@ -185,7 +197,7 @@ DeviceFlag ParseDeviceFlag(const std::string& flagStr) {
     return DeviceFlag::OUTPUT_DEVICES_FLAG;
 }
 
-std::string VolumeTypeToString(AudioVolumeType type) {
+std::string BasicVolumeTypeToString(AudioVolumeType type) {
     switch (type) {
         case AudioVolumeType::STREAM_MUSIC:
             return "STREAM_MUSIC";
@@ -203,6 +215,13 @@ std::string VolumeTypeToString(AudioVolumeType type) {
             return "STREAM_SYSTEM";
         case AudioVolumeType::STREAM_ACCESSIBILITY:
             return "STREAM_ACCESSIBILITY";
+        default:
+            return "STREAM_MUSIC";
+    }
+}
+
+std::string ExtendedVolumeTypeToString(AudioVolumeType type) {
+    switch (type) {
         case AudioVolumeType::STREAM_VOICE_RING:
             return "STREAM_VOICE_RING";
         case AudioVolumeType::STREAM_NAVIGATION:
@@ -222,7 +241,15 @@ std::string VolumeTypeToString(AudioVolumeType type) {
     }
 }
 
-std::string DeviceTypeToString(DeviceType type) {
+std::string VolumeTypeToString(AudioVolumeType type) {
+    std::string basicResult = BasicVolumeTypeToString(type);
+    if (basicResult != "STREAM_MUSIC" || type == AudioVolumeType::STREAM_MUSIC) {
+        return basicResult;
+    }
+    return ExtendedVolumeTypeToString(type);
+}
+
+std::string BasicDeviceTypeToString(DeviceType type) {
     switch (type) {
         case DeviceType::DEVICE_TYPE_INVALID:
             return "DEVICE_TYPE_INVALID";
@@ -248,6 +275,13 @@ std::string DeviceTypeToString(DeviceType type) {
             return "DEVICE_TYPE_REMOTE_CAST";
         case DeviceType::DEVICE_TYPE_USB_DEVICE:
             return "DEVICE_TYPE_USB_DEVICE";
+        default:
+            return "DEVICE_TYPE_NONE";
+    }
+}
+
+std::string ExtendedDeviceTypeToString(DeviceType type) {
+    switch (type) {
         case DeviceType::DEVICE_TYPE_HDMI:
             return "DEVICE_TYPE_HDMI";
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
@@ -267,6 +301,14 @@ std::string DeviceTypeToString(DeviceType type) {
         default:
             return "DEVICE_TYPE_NONE";
     }
+}
+
+std::string DeviceTypeToString(DeviceType type) {
+    std::string basicResult = BasicDeviceTypeToString(type);
+    if (basicResult != "DEVICE_TYPE_NONE" || type == DeviceType::DEVICE_TYPE_NONE) {
+        return basicResult;
+    }
+    return ExtendedDeviceTypeToString(type);
 }
 
 int CmdGetVolume(int argc, char** argv) {
