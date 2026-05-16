@@ -304,12 +304,11 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     // todo: if boot music, do not create audio effect
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::CREATE, ERR_NULL_POINTER),
-            "null audioEffectChainManager", false),
-        "null audioEffectChainManager");
+            BusinessScenario::CREATE, ERR_NULL_POINTER), "null audioEffectChainManager", false),
+            "null audioEffectChainManager");
     std::string sceneType = "EFFECT_NONE";
     const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
     if (audioSupportedSceneTypes.find(nodeInfo.effectInfo.effectScene) !=
