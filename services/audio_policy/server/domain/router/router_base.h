@@ -171,7 +171,7 @@ public:
         handlers.clear();
     }
 
-    void ClearConflictDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList, RouterType routerType) 
+    void ClearConflictDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList, RouterType routerType)
     {
         for (auto iter = deviceList.begin(); iter != deviceList.end();) {
             bool hasConflict = false;
