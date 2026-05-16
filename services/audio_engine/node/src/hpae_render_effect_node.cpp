@@ -304,7 +304,7 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     // todo: if boot music, do not create audio effect
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_NULL_POINTER),
@@ -329,8 +329,8 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
     } else {
         ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType);
     }
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
             "create effect chain fail", false),
@@ -371,8 +371,8 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
     } else {
         ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType);
     }
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::RELEASE, ERR_OPERATION_FAILED),
             "release effect chain fail", false),
