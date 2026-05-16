@@ -99,6 +99,7 @@ void AudioRouterIndependentStrategy::SetMediaOutputDevice(int32_t uid, uint32_t 
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
+    AudioRouterInfra::GetInstance().ClearWirelessSelectDevice(simpleDesc);
     if (uid != SYSTEM_UID && ValidStreamId(streamId)) {
         AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);
     } else {

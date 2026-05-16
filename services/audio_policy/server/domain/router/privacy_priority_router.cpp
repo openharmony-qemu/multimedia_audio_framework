@@ -28,6 +28,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetMediaRenderDevice(St
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_OUTPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);
@@ -64,6 +65,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(Str
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
 
     if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         RemoveArmUsb(descs);
@@ -83,6 +85,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(So
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePrivacyDevices();
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
@@ -103,6 +106,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
         audioDevUsage = MEDIA_OUTPUT_DEVICES;
     }
 
+    RouterBase::ClearConflictDevice(curDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
     if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
@@ -160,6 +164,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
         descs.erase(
             remove_if(descs.begin(), descs.end(), isA2dpInputDevice), descs.end());
     }
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, make_shared<AudioDeviceDescriptor>(), "nullptr desc");
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
