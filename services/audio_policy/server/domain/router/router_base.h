@@ -171,15 +171,23 @@ public:
         handlers.clear();
     }
 
-    bool CheckConflict(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
-        StreamUsage streamUsage, SourceType sourceType, bool isOutput)
+    void ClearConflictDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList, RouterType routerType) 
     {
-        for (auto &handler : handlers) {
-            if (handler != nullptr && handler->Detect(device, routerType, streamUsage, sourceType, isOutput)) {
-                return true;
+        for (auto iter = deviceList.begin(); iter != deviceList.end();) {
+            bool hasConflict = false;
+            for (auto &handler : handlers) {
+                CHECK_AND_CONTINUE(handler != nullptr);
+                if (handler->Detect(*iter, routerType)) {
+                    hasConflict = true;
+                    break;
+                }
+            }
+            if (hasConflict) {
+                iter = deviceList.erase(iter);
+            } else {
+                ++iter;
             }
         }
-        return false;
     }
 
 private:

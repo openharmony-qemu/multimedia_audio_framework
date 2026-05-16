@@ -102,13 +102,6 @@ public:
     bool IsSupportedDevice(const std::string &bundleName, DeviceType deviceType, bool hasSystemPermission);
 
     bool IsWirelessDevice(DeviceType deviceType);
-    bool IsBluetoothOrNearlinkDevice(DeviceType deviceType);
-    void ClearOutputWirelessPreferred(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        PreferredType preferredType);
-    void ClearInputWirelessPreferred(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        PreferredType preferredType);
-    void ClearWirelessPreferredDevicesIfNeeded(PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc);
     static bool CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

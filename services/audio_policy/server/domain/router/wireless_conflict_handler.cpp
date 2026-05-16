@@ -127,8 +127,7 @@ void WirelessConflictHandler::FindHighestPriorityDevice()
     findPriority(inputStreamDevices_, false, false);
 }
 
-bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
-    StreamUsage streamUsage, SourceType sourceType, bool isOutput)
+bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType)
 {
     if (device == nullptr || device->macAddress_.empty() || !IsWirelessDevice(device)) {
         return false;

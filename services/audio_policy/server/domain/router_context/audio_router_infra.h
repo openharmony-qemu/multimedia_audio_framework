@@ -47,6 +47,7 @@ public:
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearAllSelectSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device = nullptr);
+    void ClearWirelessSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
     void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
@@ -133,6 +134,7 @@ private:
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     int64_t GetCurrentTimeMs() const;
     std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
+    bool IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);

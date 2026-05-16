@@ -615,47 +615,6 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IsBluetoothOrNearlinkDevice API
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_022
- * @tc.desc  : Test IsBluetoothOrNearlinkDevice.
- */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_022, TestSize.Level1)
-{
-    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
-    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
-    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
-
-    DeviceType type = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    bool ret = audioPolicyUtilsTest_->IsBluetoothOrNearlinkDevice(type);
-    EXPECT_EQ(ret, true);
-
-    type = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    ret = audioPolicyUtilsTest_->IsBluetoothOrNearlinkDevice(type);
-    EXPECT_EQ(ret, true);
-
-    type = DeviceType::DEVICE_TYPE_NEARLINK;
-    ret = audioPolicyUtilsTest_->IsBluetoothOrNearlinkDevice(type);
-    EXPECT_EQ(ret, true);
-
-    type = DeviceType::DEVICE_TYPE_NEARLINK_IN;
-    ret = audioPolicyUtilsTest_->IsBluetoothOrNearlinkDevice(type);
-    EXPECT_EQ(ret, true);
-
-    type = DeviceType::DEVICE_TYPE_SPEAKER;
-    ret = audioPolicyUtilsTest_->IsBluetoothOrNearlinkDevice(type);
-    EXPECT_EQ(ret, false);
-
-    type = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    ret = audioPolicyUtilsTest_->IsBluetoothOrNearlinkDevice(type);
-    EXPECT_EQ(ret, false);
-
-    type = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    ret = audioPolicyUtilsTest_->IsBluetoothOrNearlinkDevice(type);
-    EXPECT_EQ(ret, false);
-}
-
-/**
  * @tc.name  : Test GetSourcePortName API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_021

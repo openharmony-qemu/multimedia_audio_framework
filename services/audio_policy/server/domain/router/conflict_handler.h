@@ -37,8 +37,7 @@ struct StreamDeviceInfo {
 class ConflictHandler {
 public:
     virtual ~ConflictHandler() = default;
-    virtual bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
-        StreamUsage streamUsage, SourceType sourceType, bool isOutput) = 0;
+    virtual bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
