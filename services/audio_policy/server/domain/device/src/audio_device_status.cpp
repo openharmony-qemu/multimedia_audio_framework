@@ -1576,7 +1576,7 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     if ((usage & VOICE) == VOICE &&
         NeedClearPreferredWhenCategoryUpdated(*existed, callFetched,
             *strategy.GetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,	 
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
              std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
     }
