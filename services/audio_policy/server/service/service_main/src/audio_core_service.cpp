@@ -982,7 +982,8 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     }
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ = GetFlagForMmapStream(streamDesc);
+            streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ?
+                GetFlagForMmapStream(streamDesc) : AUDIO_OUTPUT_FLAG_NORMAL;
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ =
@@ -1106,7 +1107,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
     }
     switch (streamDesc->capturerInfo_.capturerFlags) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
+            streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ? AUDIO_INPUT_FLAG_FAST : AUDIO_INPUT_FLAG_NORMAL;
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
@@ -2979,7 +2980,8 @@ bool AudioCoreService::CheckStaticModeAndSelectFlag(std::shared_ptr<AudioStreamD
 {
     if (streamDesc->rendererInfo_.isStatic) {
         if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_MMAP) {
-            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ?
+                AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL;
         } else {
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         }

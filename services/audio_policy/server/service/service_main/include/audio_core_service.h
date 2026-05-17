@@ -621,6 +621,7 @@ private:
     bool RecordIsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag GetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);

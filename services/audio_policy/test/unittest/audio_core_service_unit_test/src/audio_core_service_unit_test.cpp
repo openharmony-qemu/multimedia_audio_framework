@@ -1869,6 +1869,9 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_008, TestSize.Level1
     streamDesc->rendererInfo_.forceToNormal = false;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    streamDesc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.format = SAMPLE_S16LE;
+    streamDesc->streamInfo_.channels = STEREO;
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
