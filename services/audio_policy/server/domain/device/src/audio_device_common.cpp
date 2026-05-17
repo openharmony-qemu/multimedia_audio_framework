@@ -387,7 +387,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     info = { STREAM_USAGE_VOICE_COMMUNICATION, "updateConnectedDescWhenCon_2", ROUTER_TYPE_USER_SELECT };
     if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
         *audioRouterCenter_.FetchOutputDevices(info).front()) && (usage & VOICE) == VOICE) {
-        strategy.ClearSystemSelectDevice(AUDIO_CALL_RENDER, nullptr);
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,	 
+             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, 
+             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
     }
 }
 
