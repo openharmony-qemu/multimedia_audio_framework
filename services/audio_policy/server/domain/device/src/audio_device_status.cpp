@@ -1610,31 +1610,6 @@ bool AudioDeviceStatus::NeedClearPreferredWhenCategoryUpdated(const AudioDeviceD
     return updated.IsSameDeviceDesc(preferred);
 }
 
-void AudioDeviceStatus::UpdateAllUserSelectDevice(
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
-    AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc)
-{
-    if (userSelectDeviceMap[MEDIA_RENDER_ID]->deviceType_ == desc.deviceType_ &&
-        userSelectDeviceMap[MEDIA_RENDER_ID]->macAddress_ == desc.macAddress_) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, selectDesc);
-    }
-    if (userSelectDeviceMap[CALL_RENDER_ID]->deviceType_ == desc.deviceType_ &&
-        userSelectDeviceMap[CALL_RENDER_ID]->macAddress_ == desc.macAddress_) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            selectDesc, SYSTEM_UID, "UpdateAllUserSelectDevice");
-    }
-    if (userSelectDeviceMap[CALL_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
-        userSelectDeviceMap[CALL_CAPTURE_ID]->macAddress_ == desc.macAddress_ &&
-        userSelectDeviceMap[CALL_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, selectDesc);
-    }
-    if (userSelectDeviceMap[RECORD_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
-        userSelectDeviceMap[RECORD_CAPTURE_ID]->macAddress_ == desc.macAddress_ &&
-        userSelectDeviceMap[RECORD_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectDesc);
-    }
-}
-
 void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
