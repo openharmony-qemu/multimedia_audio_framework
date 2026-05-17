@@ -1584,7 +1584,8 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
 void AudioDeviceStatus::ClearPreferredDevices(AudioDeviceDescriptor &desc)
 {
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto deviceDesc = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(desc);
+    auto deviceDesc = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(
+        std::make_shared<AudioDeviceDescriptor>(desc));
     CHECK_AND_RETURN(deviceDesc != nullptr && deviceDesc->deviceType_ != DEVICE_TYPE_NONE);
     std::vector<PreferredType> types = {
         AUDIO_MEDIA_RENDER,
