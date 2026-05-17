@@ -1564,7 +1564,7 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     if ((usage & MEDIA) == MEDIA &&
         NeedClearPreferredWhenCategoryUpdated(*existed, mediaFetched,
             *strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
-        strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, existed);
+        strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, nullptr);
     }
 
     info = {
@@ -1576,7 +1576,7 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     if ((usage & VOICE) == VOICE &&
         NeedClearPreferredWhenCategoryUpdated(*existed, callFetched,
             *strategy.GetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
-        strategy.ClearSystemSelectDevice(AUDIO_CALL_RENDER, existed);
+        strategy.ClearSystemSelectDevice(AUDIO_CALL_RENDER, nullptr);
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
     }
 }
