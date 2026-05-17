@@ -340,8 +340,39 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     std::lock_guard<std::mutex> lock(routerMutex_);
     StartArbiterContext();
-    
+
+    auto earlyResult = PreFetchOutputDevices(info);
+    if (!earlyResult.empty()) {
+        StopArbiterContext();
+        return earlyResult;
+    }
+
+    auto descs = FetchOutputDevicesInner(info);
+    StopArbiterContext();
+    return descs;
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchMediaOutputDevices(
+    FetchDeviceInfo &info, RouterType &routerType)
+{
+    std::lock_guard<std::mutex> lock(routerMutex_);
+    StartArbiterContext();
+
+    auto earlyResult = PreFetchOutputDevices(info);
+    if (!earlyResult.empty()) {
+        StopArbiterContext();
+        return earlyResult;
+    }
+
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    descs.push_back(FetchMediaRenderDevice(info, routerType, info.bypassType, info.streamId));
+    StopArbiterContext();
+    return descs;
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::PreFetchOutputDevices(
+    const FetchDeviceInfo &info)
+{
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(info.clientUID, info.streamUsage, OUTPUT_DEVICE,
         info.streamId);
     if (zoneId != 0) {
@@ -349,20 +380,17 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, info.streamUsage,
                 info.clientUID, ROUTER_TYPE_NONE);
         if (zoneDescs.size() != 0) {
-            StopArbiterContext();
             return zoneDescs;
         }
     }
     if (info.streamUsage == STREAM_USAGE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
         AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");
+        vector<shared_ptr<AudioDeviceDescriptor>> descs;
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-        StopArbiterContext();
         return descs;
     }
-    descs = FetchOutputDevicesInner(info);
-    StopArbiterContext();
-    return descs;
+    return {};
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchDupDevices(

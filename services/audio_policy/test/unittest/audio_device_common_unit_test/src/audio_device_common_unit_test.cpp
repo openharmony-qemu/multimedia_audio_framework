@@ -791,10 +791,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_001, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_USER_SELECT}, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
     preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 }
 
 /**
@@ -814,11 +818,13 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_002, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
     updated = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     updated->networkId_ = REMOTE_NETWORK_ID;
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 }
 
 /**
@@ -838,11 +844,13 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_003, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
     fetched.emplace(fetched.begin(),
         std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE));
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 }
 
 /**
@@ -862,9 +870,11 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_004, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, VOICE));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, VOICE));
 }
 
 /**
