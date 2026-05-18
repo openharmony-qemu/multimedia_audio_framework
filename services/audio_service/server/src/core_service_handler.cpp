@@ -198,5 +198,21 @@ void CoreServiceHandler::NotifySessionStandbyStatus(uint32_t sessionId, bool sta
     CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr");
     iCoreServiceProvider_->NotifySessionStandbyStatus(sessionId, standbyStatus);
 }
+
+int32_t CoreServiceHandler::NotifyStreamStandby(int32_t pid, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->NotifyStreamStandby(pid, streamId, ret);
+    return ret;
+}
+
+int32_t CoreServiceHandler::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->NotifyStreamStandbyResume(pid, streamId, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

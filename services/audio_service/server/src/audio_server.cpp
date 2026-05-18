@@ -703,19 +703,9 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 {
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
-        CHECK_AND_RETURN(info.audioMode == AUDIO_MODE_PLAYBACK);
-        std::string bundleName = AppBundleManager::GetBundleNameFromUid(info.clientUID);
-        CHECK_AND_RETURN_LOG(AudioService::GetInstance()->InRenderWhitelist(bundleName),
-            "%{public}s not in whitelist", bundleName.c_str());
-        if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
-            (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
-            (info.streamUsage == STREAM_USAGE_INTERPHONE) ||
-            (info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE) ||
-            (info.streamUsage == STREAM_USAGE_RINGTONE) ||
-            (info.streamUsage == STREAM_USAGE_NOTIFICATION)) && info.isBackground) {
-            int32_t ret = PolicyHandler::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "focus clear fail");
-        }
+        NotifyStreamStandbyState(info, true);
+    } else if (info.stateChangeType == DATA_TRANS_RESUME) {
+        NotifyStreamStandbyState(info, false);
     }
 }
 // LCOV_EXCL_STOP
@@ -735,6 +725,63 @@ void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     bean->Add("START_TIME", static_cast<uint64_t>(0));
     bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void DataTransferStateChangeCallbackInnerImpl::ReportStandbyEvent(
+    const AudioRendererDataTransferStateChangeInfo &info, int32_t standbyDurationS)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
+        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+
+    bean->Add("IS_PLAYBACK", info.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
+    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
+    bean->Add("UID", info.clientUID);
+    bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
+    bean->Add("START_TIME", static_cast<uint64_t>(0));
+    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
+    bean->Add("STANDBY_DURATION_S", standbyDurationS);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+bool DataTransferStateChangeCallbackInnerImpl::IsNeedNotifyStandbyState(
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    CHECK_AND_RETURN_RET(info.audioMode == AUDIO_MODE_PLAYBACK, false);
+    if (!info.isBackground) {
+        return false;
+    }
+    return info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
+        info.streamUsage == STREAM_USAGE_RINGTONE ||
+        info.streamUsage == STREAM_USAGE_NOTIFICATION;
+}
+
+void DataTransferStateChangeCallbackInnerImpl::NotifyStreamStandbyState(
+    const AudioRendererDataTransferStateChangeInfo &info, bool isStandby)
+{
+    CHECK_AND_RETURN_LOG(IsNeedNotifyStandbyState(info), "stream no need notify standby state");
+    std::lock_guard<std::mutex> lock(standbyMutex_);
+    uint32_t sessionId = static_cast<uint32_t>(info.sessionId);
+    if (isStandby) {
+        int32_t ret = CoreServiceHandler::GetInstance().NotifyStreamStandby(info.clientPid, info.sessionId);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "notify stream standby fail, ret %{public}d", ret);
+        int64_t startTime = ClockTime::GetCurNano();
+        standbyStartTimeMap_[sessionId] = startTime;
+        return;
+    }
+
+    auto iter = standbyStartTimeMap_.find(sessionId);
+    CHECK_AND_RETURN_LOG(iter != standbyStartTimeMap_.end(), "standby start time not found");
+    int64_t startTime = iter->second;
+    int64_t uploadTime = ClockTime::GetCurNano();
+    int32_t standbyDurationS = static_cast<int32_t>((uploadTime - startTime) / AUDIO_NS_PER_SECOND);
+    standbyStartTimeMap_.erase(iter);
+    ReportStandbyEvent(info, standbyDurationS);
+    int32_t ret = CoreServiceHandler::GetInstance().NotifyStreamStandbyResume(info.clientPid, info.sessionId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "notify stream standby resume fail, ret %{public}d", ret);
 }
 
 // LCOV_EXCL_START

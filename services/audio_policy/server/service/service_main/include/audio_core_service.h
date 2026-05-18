@@ -104,6 +104,7 @@ struct RouteUpdateCallbackInfo {
 };
 
 class AudioA2dpOffloadManager;
+class AudioInterruptService;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
 public:
     class EventEntry : public ICoreServiceProvider, public IDeviceStatusObserver {
@@ -232,6 +233,8 @@ public:
             uint32_t &timeStamp) override;
         int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
         void NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
+        int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId) override;
+        int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId) override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
         void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
@@ -264,6 +267,7 @@ public:
     void Init();
     void DeInit();
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
+    void SetInterruptService(std::shared_ptr<AudioInterruptService> interruptService);
     std::shared_ptr<EventEntry> GetEventEntry();
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
     std::shared_ptr<AsyncActionHandler> GetAsyncActionHandler() const;
@@ -336,6 +340,8 @@ public:
     int32_t PauseClient(uint32_t sessionId);
     int32_t StandbyClient(uint32_t sessionId);
     void NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus);
+    int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
+    int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);
@@ -812,6 +818,7 @@ private:
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
+    std::shared_ptr<AudioInterruptService> interruptService_ = nullptr;
     AudioActiveDevice& audioActiveDevice_;
     AudioSceneManager& audioSceneManager_;
     AudioVolumeManager& audioVolumeManager_;

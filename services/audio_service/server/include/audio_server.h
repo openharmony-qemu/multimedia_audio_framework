@@ -18,6 +18,7 @@
 
 
 #include <condition_variable>
+#include <map>
 #include <pthread.h>
 
 #include "accesstoken_kit.h"
@@ -582,8 +583,13 @@ public:
     void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
 private:
     void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);
+    void ReportStandbyEvent(const AudioRendererDataTransferStateChangeInfo &info, int32_t standbyDurationS);
+    bool IsNeedNotifyStandbyState(const AudioRendererDataTransferStateChangeInfo &info);
+    void NotifyStreamStandbyState(const AudioRendererDataTransferStateChangeInfo &info, bool isStandby);
 
     DataTransferMonitorParam param_;
+    std::mutex standbyMutex_;
+    std::map<uint32_t, int64_t> standbyStartTimeMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
