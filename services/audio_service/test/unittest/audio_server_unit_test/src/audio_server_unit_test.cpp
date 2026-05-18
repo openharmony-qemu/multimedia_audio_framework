@@ -1583,6 +1583,34 @@ HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_005, TestSiz
     callback->OnDataTransferStateChange(pid, info);
 }
 
+/**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_006
+ * @tc.desc  : Test foreground stream can resume standby but cannot enter standby.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_006, TestSize.Level1)
+{
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    ASSERT_NE(nullptr, callback);
+
+    int32_t callbackId = 0;
+    uint32_t sessionId = 100;
+    AudioRendererDataTransferStateChangeInfo info = {};
+    info.audioMode = AUDIO_MODE_PLAYBACK;
+    info.streamUsage = STREAM_USAGE_INTERPHONE;
+    info.isBackground = false;
+    info.stateChangeType = DATA_TRANS_RESUME;
+    info.sessionId = static_cast<int32_t>(sessionId);
+
+    EXPECT_FALSE(callback->IsNeedNotifyStandbyState(info, true));
+    EXPECT_TRUE(callback->IsNeedNotifyStandbyState(info, false));
+    callback->standbyStartTimeMap_[sessionId] = 1;
+    callback->OnDataTransferStateChange(callbackId, info);
+    EXPECT_EQ(callback->standbyStartTimeMap_.find(sessionId), callback->standbyStartTimeMap_.end());
+}
+
 /*
  * @tc.name  : Test CreateAudioWorkgroup API
  * @tc.type  : FUNC
