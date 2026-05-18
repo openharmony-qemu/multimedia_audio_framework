@@ -23,6 +23,7 @@
           "SystemCapability.Multimedia.Audio.Interrupt",
           "SystemCapability.Multimedia.Audio.PlaybackCapture",
           "SystemCapability.Multimedia.Audio.Spatialization",
+          "SystemCapability.Multimedia.Audio.DeviceEnhance",
           "SystemCapability.Multimedia.Audio.SuiteEngine = false"
         ],
         "features": [
