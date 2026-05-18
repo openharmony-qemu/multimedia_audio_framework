@@ -781,16 +781,24 @@ void AudioCoreService::EventEntry::NotifySessionStandbyStatus(uint32_t sessionId
 
 int32_t AudioCoreService::EventEntry::NotifyStreamStandby(int32_t pid, uint32_t streamId)
 {
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
-    return coreService_->NotifyStreamStandby(pid, streamId);
+    std::shared_ptr<AudioCoreService> coreService = nullptr;
+    {
+        std::lock_guard<std::shared_mutex> lock(eventMutex_);
+        CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+        coreService = coreService_;
+    }
+    return coreService->NotifyStreamStandby(pid, streamId);
 }
 
 int32_t AudioCoreService::EventEntry::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
 {
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
-    return coreService_->NotifyStreamStandbyResume(pid, streamId);
+    std::shared_ptr<AudioCoreService> coreService = nullptr;
+    {
+        std::lock_guard<std::shared_mutex> lock(eventMutex_);
+        CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+        coreService = coreService_;
+    }
+    return coreService->NotifyStreamStandbyResume(pid, streamId);
 }
 
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)

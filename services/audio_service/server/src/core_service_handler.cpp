@@ -203,7 +203,9 @@ int32_t CoreServiceHandler::NotifyStreamStandby(int32_t pid, uint32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     int32_t ret = ERROR;
-    iCoreServiceProvider_->NotifyStreamStandby(pid, streamId, ret);
+    int32_t ipcRet = iCoreServiceProvider_->NotifyStreamStandby(pid, streamId, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ipcRet,
+        "NotifyStreamStandby ipc failed, ipcRet %{public}d", ipcRet);
     return ret;
 }
 
@@ -211,7 +213,9 @@ int32_t CoreServiceHandler::NotifyStreamStandbyResume(int32_t pid, uint32_t stre
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     int32_t ret = ERROR;
-    iCoreServiceProvider_->NotifyStreamStandbyResume(pid, streamId, ret);
+    int32_t ipcRet = iCoreServiceProvider_->NotifyStreamStandbyResume(pid, streamId, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ipcRet,
+        "NotifyStreamStandbyResume ipc failed, ipcRet %{public}d", ipcRet);
     return ret;
 }
 } // namespace AudioStandard
