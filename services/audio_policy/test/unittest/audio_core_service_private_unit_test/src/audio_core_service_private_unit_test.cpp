@@ -131,6 +131,54 @@ static void MakeUidCheckOffloadSupportDeviceInfoMap(AudioPolicyConfigData &confi
     configData.deviceInfoMap[deviceKey] = deviceInfoSet;
 }
 
+static void MakeVoipFastInputDeviceInfoMap(AudioPolicyConfigData &configData)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    configData.Reorganize();
+
+    constexpr uint32_t VOIP_FAST_INPUT_FLAG = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP;
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->name_ = "voip_fast_input";
+    info->role_ = PIPE_ROLE_INPUT;
+    info->supportFlags_ = VOIP_FAST_INPUT_FLAG;
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    ASSERT_NE(deviceInfo, nullptr);
+    deviceInfo->type_ = DEVICE_TYPE_MIC;
+    deviceInfo->role_ = INPUT_DEVICE;
+    deviceInfo->supportPipeMap_.insert({VOIP_FAST_INPUT_FLAG, info});
+
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+}
+
+static void MakeVoipFastOutputDeviceInfoMap(AudioPolicyConfigData &configData)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    configData.Reorganize();
+
+    constexpr uint32_t VOIP_FAST_OUTPUT_FLAG = AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP;
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->name_ = "voip_fast_output";
+    info->role_ = PIPE_ROLE_OUTPUT;
+    info->supportFlags_ = VOIP_FAST_OUTPUT_FLAG;
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    ASSERT_NE(deviceInfo, nullptr);
+    deviceInfo->type_ = DEVICE_TYPE_SPEAKER;
+    deviceInfo->role_ = OUTPUT_DEVICE;
+    deviceInfo->supportPipeMap_.insert({VOIP_FAST_OUTPUT_FLAG, info});
+
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+}
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_001
@@ -2299,6 +2347,146 @@ HWTEST_F(AudioCoreServicePrivateTest, IsOffloadPlaybackSupported_001, TestSize.L
     bool isSupported = AudioCoreConfigManager::GetInstance().IsOffloadPlaybackSupported(
         streamInfo, desc, STREAM_USAGE_MUSIC);
     EXPECT_EQ(isSupported, false);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetRouteFlag_001
+ * @tc.desc  : Test AudioCoreConfigManager::GetRouteFlag skips voip_fast_input for non-VOIP fast input stream
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetRouteFlag_001, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeVoipFastInputDeviceInfoMap(configData);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    uint32_t routeFlag = AudioCoreConfigManager::GetInstance().GetRouteFlag(streamDesc);
+    EXPECT_EQ(routeFlag, AUDIO_INPUT_FLAG_NORMAL);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetRouteFlag_002
+ * @tc.desc  : Test AudioCoreConfigManager::GetRouteFlag keeps voip_fast_input for VOIP input stream
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetRouteFlag_002, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeVoipFastInputDeviceInfoMap(configData);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    uint32_t routeFlag = AudioCoreConfigManager::GetInstance().GetRouteFlag(streamDesc);
+    EXPECT_EQ(routeFlag, static_cast<uint32_t>(AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP));
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetRouteFlag_003
+ * @tc.desc  : Test AudioCoreConfigManager::GetRouteFlag skips fast voip output for non-VOIP fast output stream
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetRouteFlag_003, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeVoipFastOutputDeviceInfoMap(configData);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    uint32_t routeFlag = AudioCoreConfigManager::GetInstance().GetRouteFlag(streamDesc);
+    EXPECT_EQ(routeFlag, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetRouteFlag_004
+ * @tc.desc  : Test AudioCoreConfigManager::GetRouteFlag keeps fast voip output for VOIP output stream
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetRouteFlag_004, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeVoipFastOutputDeviceInfoMap(configData);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    uint32_t routeFlag = AudioCoreConfigManager::GetInstance().GetRouteFlag(streamDesc);
+    EXPECT_EQ(routeFlag, static_cast<uint32_t>(AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP));
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetRouteFlag_005
+ * @tc.desc  : Test video VOIP output stream keeps fast voip output flag.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetRouteFlag_005, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeVoipFastOutputDeviceInfoMap(configData);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    uint32_t routeFlag = AudioCoreConfigManager::GetInstance().GetRouteFlag(streamDesc);
+    EXPECT_EQ(routeFlag, static_cast<uint32_t>(AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP));
 
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     configData.deviceInfoMap.erase(deviceKey);
