@@ -135,6 +135,8 @@ private:
     int64_t GetCurrentTimeMs() const;
     std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
+    bool IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor> &right);
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);
