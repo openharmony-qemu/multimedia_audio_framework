@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -152,7 +152,7 @@ int32_t AudioSuiteHoaRenderNode::DoProcess(uint32_t needDataLength)
     if (nextNeedDataLength_ != needDataLength) {
         int32_t ret = InitHoaCacheLength(needDataLength);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to initialize buffer.");
-        nextNeedDataLength_ = needDataLength; 
+        nextNeedDataLength_ = needDataLength;
     }
 
     requestPreNodeDuration_ = nodeNeedDataDuration_;

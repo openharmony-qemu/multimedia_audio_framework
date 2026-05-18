@@ -52,7 +52,7 @@ using namespace OHOS::AudioStandard::HPAE;
 std::mutex AudioSuitePipeline::allocateIdLock;
 uint32_t AudioSuitePipeline::allocateId = 0;
 
-const std::unordered_map<AudioNodeType, 
+const std::unordered_map<AudioNodeType,
     std::function<std::shared_ptr<AudioNode>()>> AudioSuitePipeline::effectNodeFactory_ = {
     {NODE_TYPE_EQUALIZER, []() { return std::make_shared<AudioSuiteEqNode>(); }},
     {NODE_TYPE_ENVIRONMENT_EFFECT, []() { return std::make_shared<AudioSuiteEnvNode>(); }},
@@ -1163,7 +1163,7 @@ bool AudioSuitePipeline::CheckHoaRenderPreNode(uint32_t nodeId)
     auto preNodeIter = nodeMap_.find(connIter->second[0]);
     CHECK_AND_RETURN_RET_LOG(preNodeIter != nodeMap_.end() && preNodeIter->second != nullptr,
         false, "HoaRenderNode's preNode not found");
-    
+
     AudioNodeType preNodeType = preNodeIter->second->GetNodeType();
     AudioFormat preNodeFormat = preNodeIter->second->GetAudioNodeFormat();
     CHECK_AND_RETURN_RET_LOG(preNodeType == NODE_TYPE_INPUT &&

@@ -54,7 +54,7 @@ std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInte
         case AlgoType::AUDIO_NODE_TYPE_ENVIRONMENT_EFFECT:
             return std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_HOA_RENDER:
- 	        return std::make_shared<AudioSuiteHoaRenderAlgoInterfaceImpl>(np);
+            return std::make_shared<AudioSuiteHoaRenderAlgoInterfaceImpl>(np);
         default:
             return nullptr;
     }

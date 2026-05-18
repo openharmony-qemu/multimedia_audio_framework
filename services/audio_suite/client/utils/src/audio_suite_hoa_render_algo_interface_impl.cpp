@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,9 +29,12 @@ namespace AudioSuite {
 
 namespace {
 static constexpr int32_t USE_FORMAT_INPUT_FLAG = 0;
-static constexpr int32_t INVALID_HOA_FORMAT = -1;
-static constexpr int16_t MIN_AMB_ORDER = 0;
-static constexpr int16_t MAX_AMB_ORDER = 3;
+static constexpr float ALGO_QUATERNION_ONE = 1.0f;
+static constexpr float ALGO_QUATERNION_ZERO = 0.0f;
+static constexpr uint32_t QUATERNION_INDEX_W = 0;
+static constexpr uint32_t QUATERNION_INDEX_X = 1;
+static constexpr uint32_t QUATERNION_INDEX_Y = 2;
+static constexpr uint32_t QUATERNION_INDEX_Z = 3;
 }  // namespace
 
 AudioSuiteHoaRenderAlgoInterfaceImpl::AudioSuiteHoaRenderAlgoInterfaceImpl(NodeParameter &nc)
@@ -149,9 +152,9 @@ int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Apply(
     int16_t dataAmbOrder = AudioSuiteUtil::GetAmbOrder(channelLayout_);
     int32_t hoaInputFormat = AudioSuiteUtil::GetHoaInputFormat(channelLayout_);
 
-    CHECK_AND_RETURN_RET_LOG(dataAmbOrder >= MIN_AMB_ORDER && dataAmbOrder <= MAX_AMB_ORDER, ERROR,
+    CHECK_AND_RETURN_RET_LOG(dataAmbOrder != AUDIO_HVS_HOA_FORMAT_INVALID, ERROR,
         "Invalid Ambisonics order: %{public}d", dataAmbOrder);
-    CHECK_AND_RETURN_RET_LOG(hoaInputFormat != INVALID_HOA_FORMAT, ERROR, "Invalid HOA input format");
+    CHECK_AND_RETURN_RET_LOG(hoaInputFormat != AUDIO_HVS_HOA_FORMAT_INVALID, ERROR, "Invalid HOA input format");
 
     AudioHvsDynamicData data;
     data.dataIn = dataIn;
@@ -162,10 +165,10 @@ int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Apply(
     data.renderAmbOrder = dataAmbOrder;
     data.useAFormatInput = USE_FORMAT_INPUT_FLAG;
     data.hoaInputFormat = hoaInputFormat;
-    data.dynUserData.quaterninos[0] = 1.0f;
-    data.dynUserData.quaterninos[1] = 0.0f;
-    data.dynUserData.quaterninos[2] = 0.0f;
-    data.dynUserData.quaterninos[3] = 0.0f;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_W] = ALGO_QUATERNION_ONE;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_X] = ALGO_QUATERNION_ZERO;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_Y] = ALGO_QUATERNION_ZERO;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_Z] = ALGO_QUATERNION_ZERO;
 
     int32_t ret = algoApi_.applyAlgo(algoHandle_.data(), scratchBuf_.data(), &data);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_HVS_OK, ret,

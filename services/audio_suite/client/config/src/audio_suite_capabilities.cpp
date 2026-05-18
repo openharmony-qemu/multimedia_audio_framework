@@ -282,7 +282,6 @@ int32_t AudioSuiteCapabilities::LoadHoaRenderCapability(NodeParameter &np)
     np.outSampleRate = SAMPLE_RATE_48000;
     np.outChannels = STEREO;
     np.outFormat = SAMPLE_S32LE;
-    np.frameLen = 480;
     np.supportedOnThisDevice = true;
     AUDIO_INFO_LOG("LoadHoaRenderCapability end.");
     return SUCCESS;
@@ -340,23 +339,23 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
 int32_t AudioSuiteCapabilities::GetNodeParameter(AudioNodeType nodeType, NodeParameter &nodeParameter)
 {
     CHECK_AND_RETURN_RET(nodeType != NODE_TYPE_AUDIO_MIXER, SUCCESS);
-    
+
     auto it = audioSuiteCapabilities_.find(nodeType);
     CHECK_AND_RETURN_RET_LOG(it != audioSuiteCapabilities_.end(), ERROR,
         "no such nodeType: %{public}d configured.", nodeType);
-    
+
     NodeParameter &np = it->second;
     if (!np.isLoaded) {
         auto funcIt = loadCapabilityFuncs_.find(nodeType);
         CHECK_AND_RETURN_RET_LOG(funcIt != loadCapabilityFuncs_.end(), ERROR,
             "no load function for nodeType: %{public}d", nodeType);
-        
+
         CHECK_AND_RETURN_RET_LOG(funcIt->second(np) == SUCCESS, ERROR,
             "LoadCapability failed for nodeType: %{public}d", nodeType);
-        
+
         np.isLoaded = true;
     }
-    
+
     nodeParameter = np;
     return SUCCESS;
 }

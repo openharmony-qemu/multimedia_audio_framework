@@ -29,6 +29,13 @@ static constexpr uint32_t SAMPLE_SIZE_1_BYTE = 1;
 static constexpr uint32_t SAMPLE_SIZE_2_BYTE = 2;
 static constexpr uint32_t SAMPLE_SIZE_3_BYTE = 3;
 static constexpr uint32_t SAMPLE_SIZE_4_BYTE = 4;
+static constexpr int16_t AUDIO_HVS_HOA_FORMAT_ACN_SN3D = 0;
+static constexpr int16_t AUDIO_HVS_HOA_FORMAT_ACN_N3D = 1;
+static constexpr int16_t AUDIO_HVS_HOA_FORMAT_FUMA = 2;
+static constexpr int16_t AUDIO_HVS_HOA_ORDER_1 = 1;
+static constexpr int16_t AUDIO_HVS_HOA_ORDER_2 = 2;
+static constexpr int16_t AUDIO_HVS_HOA_ORDER_3 = 3;
+static constexpr int16_t AUDIO_HVS_HOA_FORMAT_INVALID = -1;
 
 static const std::unordered_map<std::string, std::vector<std::string>> OPTIONS_FIELD_NAMES = {
     {"AudioEqualizerFrequencyBandGains",

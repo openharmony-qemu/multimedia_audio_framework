@@ -94,7 +94,7 @@ static void CreateHoaInputNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode **a
 
     OH_AudioFormat audioFormat;
     audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
-    audioFormat.channelCount = 4;
+    audioFormat.channelCount = AudioChannel::CHANNEL_4;
     audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER1_ACN_N3D;
     audioFormat.sampleFormat = AUDIO_SAMPLE_S16LE;
     ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);

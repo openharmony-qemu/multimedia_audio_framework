@@ -318,17 +318,17 @@ int16_t AudioSuiteUtil::GetAmbOrder(AudioChannelLayout channelLayout)
         case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
         case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
         case CH_LAYOUT_HOA_ORDER1_FUMA:
-            return 1;  // FOA
+            return AUDIO_HVS_HOA_ORDER_1;
         case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
         case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
         case CH_LAYOUT_HOA_ORDER2_FUMA:
-            return 2;  // HOA-2
+            return AUDIO_HVS_HOA_ORDER_2;
         case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
         case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
         case CH_LAYOUT_HOA_ORDER3_FUMA:
-            return 3;  // HOA-3
+            return AUDIO_HVS_HOA_ORDER_3;
         default:
-            return -1;  // not HOA format
+            return AUDIO_HVS_HOA_FORMAT_INVALID;
     }
 }
 
@@ -338,17 +338,17 @@ int32_t AudioSuiteUtil::GetHoaInputFormat(AudioChannelLayout channelLayout)
         case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
         case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
         case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
-            return 0;  // ACN + SN3D
+            return AUDIO_HVS_HOA_FORMAT_ACN_SN3D;
         case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
         case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
         case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
-            return 1;  // ACN + N3D
+            return AUDIO_HVS_HOA_FORMAT_ACN_N3D;
         case CH_LAYOUT_HOA_ORDER1_FUMA:
         case CH_LAYOUT_HOA_ORDER2_FUMA:
         case CH_LAYOUT_HOA_ORDER3_FUMA:
-            return 2;  // FuMa
+            return AUDIO_HVS_HOA_FORMAT_FUMA;
         default:
-            return -1;  // not HOA format
+            return AUDIO_HVS_HOA_FORMAT_INVALID;
     }
 }
 

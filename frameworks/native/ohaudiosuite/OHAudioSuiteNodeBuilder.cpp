@@ -208,10 +208,10 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioForm
 {
     if (nodeType_ == NODE_TYPE_INPUT && IsHoaFormat(audioFormat.channelLayout)) {
         CHECK_AND_RETURN_RET_LOG(CheckHoaInputFormat(audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
-            "Set Hoa Format failed AudioFormat invailed, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
+            "Set Hoa Format failed AudioFormat invalid, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
     } else {
         CHECK_AND_RETURN_RET_LOG(CheckAudioFormat(audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
-            "SetFormat failed AudioFormat invailed, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
+            "SetFormat failed AudioFormat invalid, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
     }
 
     nodeFormat_.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(audioFormat.channelLayout);

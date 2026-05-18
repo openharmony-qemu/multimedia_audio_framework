@@ -128,7 +128,7 @@ private:
 private:
     static std::mutex allocateIdLock;
     static uint32_t allocateId;
-    static const std::unordered_map<AudioNodeType, 
+    static const std::unordered_map<AudioNodeType,
         std::function<std::shared_ptr<AudioNode>()>> effectNodeFactory_;
 
     uint32_t id_;
