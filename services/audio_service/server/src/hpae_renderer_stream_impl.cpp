@@ -810,6 +810,8 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
     }
+    CHECK_AND_RETURN_RET_LOG((deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD || deviceClass == DEVICE_CLASS_OFFLOAD),
+        SUCCESS, "not offload sink, skip");
     AudioStreamType streamType = processConfig_.streamType;
     std::string volumeDeviceClass = deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(volumeDeviceClass, deviceNetId);

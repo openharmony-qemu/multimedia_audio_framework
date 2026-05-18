@@ -131,7 +131,7 @@ void HpaeGainNode::ResetVolume()
 {
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
-    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetGainDeviceClass(), GetDeviceNetId());
+    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
     audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
         streamVolume_, pipeVolume_);
     if (isInnerCapturerOrInjector_) {
