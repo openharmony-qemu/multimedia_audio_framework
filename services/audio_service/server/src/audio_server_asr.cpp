@@ -72,7 +72,8 @@ static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = 
     {AsrNoiseSuppressionMode::ASR_WHISPER_MODE, "ASR_WHISPER_MODE"},
     {AsrNoiseSuppressionMode::TSE_DENOISE_MODE, "TSE_DENOISE_MODE"},
     {AsrNoiseSuppressionMode::NORMAL_REG_MODE, "NORMAL_REG_MODE"},
-    {AsrNoiseSuppressionMode::PHONE_CALL_MODE, "PHONE_CALL_MODE"}
+    {AsrNoiseSuppressionMode::PHONE_CALL_MODE, "PHONE_CALL_MODE"},
+    {AsrNoiseSuppressionMode::TOPMIC_REG_MODE, "TOPMIC_REG_MODE"}
 };
 
 static const std::map<std::string, AsrWhisperDetectionMode> WHISPER_DETECTION_MODE_MAP = {
