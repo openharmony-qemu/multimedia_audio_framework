@@ -2440,7 +2440,6 @@ HWTEST_F(HpaeManagerUnitTest, CaptureCollaboration_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-<<<<<<< HEAD
 // ==================== SendRequestSync Tests ====================
 
 /**
