@@ -290,15 +290,10 @@ static int32_t g_testValue1 = 0;
 static int32_t g_testValue2 = 0;
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
-    float curGain = 0.0f;
-    float targetGain = 1.0f;
     uint64_t frameLen = len / (SAMPLE_F32LE * STEREO);
-    float stepGain = (targetGain - curGain) / frameLen;
     for (int32_t i = 0; i < frameLen; i++) {
-        EXPECT_EQ(*((float *)data + i * STEREO + 1), (g_testValue1 * (curGain + i * stepGain) +
-            g_testValue2 * (curGain + i * stepGain)));
-        EXPECT_EQ(*((float *)data + i * STEREO), (g_testValue1 * (curGain + i * stepGain) +
-            g_testValue2 * (curGain + i * stepGain)));
+        EXPECT_EQ(*((float *)data + i * STEREO + 1), (g_testValue1 + g_testValue2));
+        EXPECT_EQ(*((float *)data + i * STEREO), (g_testValue1 + g_testValue2));
     }
     return 0;
 }

@@ -23,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+#define HDI_INVALID_RENDER_ID 0xFFFFFFFF
 typedef std::chrono::high_resolution_clock::time_point TimePoint;
 enum HpaeMsgCode {
     UPDATE_STATUS,
@@ -143,6 +144,8 @@ struct HpaeDfxNodeInfo {
     SourceType sourceType;
     uint32_t routeFlag = 0;
     bool keepRunning = false;
+    int32_t deviceType = 0;
+    uint32_t renderId = HDI_INVALID_RENDER_ID;
 
     uint32_t GetEffectiveSampleRate() const
     {

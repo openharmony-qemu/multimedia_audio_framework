@@ -157,17 +157,25 @@ private:
     std::weak_ptr<AudioRenderer> audioRenderer_;
 };
 
-static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRenderer> &audioRenderer)
+static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRendererPrivate> &audioRenderer)
 {
-    if (audioRenderer == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "AudioRenderer is nullptr");
     auto debugCallback = std::make_shared<AudioRendererDebugCallbackImpl>(std::weak_ptr<AudioRenderer>(audioRenderer));
-    if (debugCallback == nullptr) {
-        return;
-    }
-    (void)AudioDebugManager::GetInstance().RegisterAudioRenderer(
-        reinterpret_cast<uintptr_t>(audioRenderer.get()), debugCallback);
+    CHECK_AND_RETURN_LOG(debugCallback != nullptr, "Create renderer debug callback failed");
+    uint32_t debugKey = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioRenderer(debugKey, debugCallback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != INVALID_DEBUGKEY,
+        "Register renderer debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
+    audioRenderer->debugKey_ = debugKey;
+    AUDIO_INFO_LOG("Register renderer debug manager success, debugKey:%{public}u", debugKey);
+}
+
+static void UnregisterAudioRendererDebugManager(uint32_t &debugKey)
+{
+    CHECK_AND_RETURN_LOG(debugKey != INVALID_DEBUGKEY, "Unregister renderer debug manager: debugKey is invalid");
+    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(debugKey);
+    AUDIO_INFO_LOG("Unregister renderer debug manager, debugKey:%{public}u", debugKey);
+    debugKey = INVALID_DEBUGKEY;
 }
 
 std::mutex AudioRenderer::createRendererMutex_;
@@ -185,7 +193,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioRendererDebugManager(debugKey_);
 
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
@@ -1814,7 +1822,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioRendererDebugManager(debugKey_);
     SetReleaseFlagNoLock(false);
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback(audioStream_);

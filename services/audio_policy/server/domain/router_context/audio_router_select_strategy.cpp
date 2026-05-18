@@ -519,5 +519,47 @@ set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentInp
     return result;
 }
 
+void AudioRouterSelectStrategy::ClearSystemSelectDevice(PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto simpleDesc = ConvertDeviceToSimple(device);
+
+    static const std::unordered_map<PreferredType, SelectDeviceType> typeMap = {
+        { AUDIO_MEDIA_RENDER, SelectDeviceType::MEDIA_OUTPUT },
+        { AUDIO_CALL_RENDER, SelectDeviceType::CALL_OUTPUT },
+        { AUDIO_CALL_CAPTURE, SelectDeviceType::CALL_INPUT },
+        { AUDIO_RECORD_CAPTURE, SelectDeviceType::MEDIA_INPUT },
+    };
+
+    auto it = typeMap.find(preferredType);
+    if (it != typeMap.end()) {
+        routerInfra.ClearSystemSelectDevice(it->second, simpleDesc);
+    } else {
+        AUDIO_ERR_LOG("Invalid preferred type: %{public}d", preferredType);
+    }
+}
+
+void AudioRouterSelectStrategy::ClearAllSelectSelectDevice(PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto simpleDesc = ConvertDeviceToSimple(device);
+
+    static const std::unordered_map<PreferredType, SelectDeviceType> typeMap = {
+        { AUDIO_MEDIA_RENDER, SelectDeviceType::MEDIA_OUTPUT },
+        { AUDIO_CALL_RENDER, SelectDeviceType::CALL_OUTPUT },
+        { AUDIO_CALL_CAPTURE, SelectDeviceType::CALL_INPUT },
+        { AUDIO_RECORD_CAPTURE, SelectDeviceType::MEDIA_INPUT },
+    };
+
+    auto it = typeMap.find(preferredType);
+    if (it != typeMap.end()) {
+        routerInfra.ClearAllSelectSelectDevice(it->second, simpleDesc);
+    } else {
+        AUDIO_ERR_LOG("Invalid preferred type: %{public}d", preferredType);
+    }
+}
+
 }
 }

@@ -579,11 +579,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceTypeFromPin_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test GetPreferredDeviceInfo.
- * @tc.number: GetPreferredDeviceInfo_001
- * @tc.desc  : Test GetPreferredDeviceInfo interfaces.
+ * @tc.name  : Test GetVoipDeviceInfo.
+ * @tc.number: GetVoipDeviceInfo_001
+ * @tc.desc  : Test GetVoipDeviceInfo interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetPreferredDeviceInfo_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipDeviceInfo_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioRendererInfo rendererInfo;
@@ -596,20 +596,20 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPreferredDeviceInfo_001, TestSize.Lev
     int32_t ret;
 
     type = AUDIO_FLAG_NORMAL;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, ERROR);
 
     type = AUDIO_FLAG_DIRECT;
     config.streamInfo.samplingRate = SAMPLE_RATE_8000;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, SUCCESS);
 
     config.streamInfo.samplingRate = SAMPLE_RATE_192000;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, SUCCESS);
 
     type = AUDIO_FLAG_VOIP_DIRECT;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, SUCCESS);
 }
 

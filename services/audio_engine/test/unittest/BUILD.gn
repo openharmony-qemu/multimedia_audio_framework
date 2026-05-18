@@ -326,7 +326,7 @@ ohos_unittest("hpae_render_effect_node_test") {
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
-    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioeffect:audio_effect_static",
   ]
 
   sanitize = {

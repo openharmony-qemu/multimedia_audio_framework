@@ -17,6 +17,7 @@
 #define HPAE_RENDER_EFFECT_NODE_H
 
 #include "hpae_plugin_node.h"
+#include "audio_info.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
@@ -62,6 +63,8 @@ private:
     std::unique_ptr<HpaePcmBuffer> directOutput_ = nullptr;
     std::unique_ptr<HpaePcmBuffer> collaborativeOutput_ = nullptr;
     std::string sceneType_ = "EFFECT_NONE";
+    DeviceType deviceType_ = DEVICE_TYPE_INVALID;
+    uint32_t renderId_ = 0;
     int64_t silenceDataUs_ = 0;
     bool isByPassEffect_ = false;
     bool isDisplayEffectZeroVolume_ = false;
