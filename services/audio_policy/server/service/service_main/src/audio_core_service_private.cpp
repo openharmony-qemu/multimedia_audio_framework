@@ -772,31 +772,29 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
 }
 
 
-bool AudioCoreService::IsStreamSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+bool AudioCoreService::IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     const auto &streamInfo = streamDesc->streamInfo_;
-    if (streamFlags == STREAM_FLAG_FAST) {
-        // check audio sample rate
-        const AudioSamplingRate samplingRate = streamInfo.samplingRate;
-        auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
-            AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
-        CHECK_AND_RETURN_RET_LOG(rateItem != AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), false,
-            "Sampling rate %{public}d does not meet the requirements", samplingRate);
+    // check audio sample rate
+    const AudioSamplingRate samplingRate = streamInfo.samplingRate;
+    auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
+    CHECK_AND_RETURN_RET_LOG(rateItem != AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), false,
+        "Sampling rate %{public}d does not meet the requirements", samplingRate);
 
-        // check audio channel
-        const AudioChannel channels = streamInfo.channels;
-        auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
-            AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
-        CHECK_AND_RETURN_RET_LOG(channelItem != AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), false,
-            "Audio channel %{public}d does not meet the requirements", channels);
+    // check audio channel
+    const AudioChannel channels = streamInfo.channels;
+    auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
+    CHECK_AND_RETURN_RET_LOG(channelItem != AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), false,
+        "Audio channel %{public}d does not meet the requirements", channels);
 
-        // check audio sample format
-        const AudioSampleFormat format = streamInfo.format;
-        auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
-            AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
-        CHECK_AND_RETURN_RET_LOG(formatItem != AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), false,
-            "Audio sample format %{public}d does not meet the requirements", format)
-    }
+    // check audio sample format
+    const AudioSampleFormat format = streamInfo.format;
+    auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
+    CHECK_AND_RETURN_RET_LOG(formatItem != AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), false,
+        "Audio sample format %{public}u does not meet the requirements", format)
 
     return true;
 }

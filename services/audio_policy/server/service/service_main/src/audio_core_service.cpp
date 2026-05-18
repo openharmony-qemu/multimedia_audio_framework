@@ -980,6 +980,12 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             sinkPortName.c_str(), streamDesc->audioFlag_);
         return;
     }
+    HandlePlaybackStreamByOriginalFlag(streamDesc, isCreateProcess);
+}
+
+void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
+{
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ?
