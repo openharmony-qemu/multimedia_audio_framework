@@ -41,6 +41,8 @@ static constexpr float FADE_HIGH = 1.0f;
 #endif
 static constexpr float SHORT_FADE_PERIOD = 0.005f; // 5ms fade for 10ms < playback duration <= 40ms
 static constexpr float EPSILON = 1e-6f;
+static const std::string HPAE_DIRECT_SINK_NAME = "primary_direct";
+static const std::string HPAE_PRIMARY_SINK_NAME = "primary";
 
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
@@ -129,7 +131,7 @@ void HpaeGainNode::ResetVolume()
 {
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
-    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetGainDeviceClass(), GetDeviceNetId());
     audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
         streamVolume_, pipeVolume_);
     if (isInnerCapturerOrInjector_) {
@@ -410,6 +412,15 @@ void HpaeGainNode::DoCollFading(HpaePcmBuffer *input)
         collFadeInState_ = false;
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
     }
+}
+
+std::string HpaeGainNode::GetGainDeviceClass()
+{
+    std::string deviceClass = GetDeviceClass();
+    if (deviceClass == HPAE_DIRECT_SINK_NAME) {
+        deviceClass = HPAE_PRIMARY_SINK_NAME;
+    }
+    return deviceClass;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
