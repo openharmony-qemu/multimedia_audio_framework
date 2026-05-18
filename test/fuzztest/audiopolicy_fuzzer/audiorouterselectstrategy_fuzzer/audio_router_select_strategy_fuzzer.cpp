@@ -27,7 +27,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr size_t THRESHOLD = 10;
+constexpr size_t THRESHOLD = sizeof(uint64_t) + sizeof(uint16_t);
 
 namespace {
 constexpr size_t MAX_VECTOR_SIZE = 3;
@@ -37,7 +37,8 @@ constexpr int32_t MAX_NORMAL_UID = 10000;
 constexpr uint32_t MIN_NORMAL_STREAM_ID = 1;
 constexpr uint32_t MAX_NORMAL_STREAM_ID = 1024;
 
-const std::array<DeviceType, 8> DEVICE_TYPES = {
+const std::array DEVICE_TYPES = {
+    DEVICE_TYPE_NONE,
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_WIRED_HEADSET,
@@ -48,12 +49,13 @@ const std::array<DeviceType, 8> DEVICE_TYPES = {
     DEVICE_TYPE_MIC,
 };
 
-const std::array<DeviceRole, 2> DEVICE_ROLES = {
+const std::array DEVICE_ROLES = {
+    DEVICE_ROLE_NONE,
     INPUT_DEVICE,
     OUTPUT_DEVICE,
 };
 
-const std::array<AudioDeviceUsage, 6> DEVICE_USAGES = {
+const std::array DEVICE_USAGES = {
     MEDIA_OUTPUT_DEVICES,
     MEDIA_INPUT_DEVICES,
     ALL_MEDIA_DEVICES,
@@ -62,7 +64,7 @@ const std::array<AudioDeviceUsage, 6> DEVICE_USAGES = {
     D_ALL_DEVICES,
 };
 
-const std::array<SourceType, 7> SOURCE_TYPES = {
+const std::array SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
     SOURCE_TYPE_MIC,
     SOURCE_TYPE_VOICE_RECOGNITION,
@@ -72,7 +74,7 @@ const std::array<SourceType, 7> SOURCE_TYPES = {
     SOURCE_TYPE_LIVE,
 };
 
-const std::array<StreamUsage, 8> STREAM_USAGES = {
+const std::array STREAM_USAGES = {
     STREAM_USAGE_INVALID,
     STREAM_USAGE_MEDIA,
     STREAM_USAGE_MUSIC,
@@ -83,6 +85,29 @@ const std::array<StreamUsage, 8> STREAM_USAGES = {
     STREAM_USAGE_VIDEO_COMMUNICATION,
 };
 
+const std::array CAPTURER_STATES = {
+    CAPTURER_NEW,
+    CAPTURER_PREPARED,
+    CAPTURER_RUNNING,
+    CAPTURER_STOPPED,
+    CAPTURER_RELEASED,
+};
+
+const std::array RENDERER_STATES = {
+    RENDERER_NEW,
+    RENDERER_PREPARED,
+    RENDERER_RUNNING,
+    RENDERER_STOPPED,
+    RENDERER_RELEASED,
+};
+
+const std::array PREFERRED_CATEGORIES = {
+    PREFERRED_NONE,
+    PREFERRED_DEFAULT,
+    PREFERRED_LOW_LATENCY,
+    PREFERRED_HIGH_QUALITY,
+};
+
 template<typename T, size_t N>
 T Pick(FuzzedDataProvider &fdp, const std::array<T, N> &values)
 {
@@ -91,7 +116,7 @@ T Pick(FuzzedDataProvider &fdp, const std::array<T, N> &values)
 
 int32_t PickUid(FuzzedDataProvider &fdp)
 {
-    const std::array<int32_t, 4> uids = {
+    const std::array uids = {
         INVALID_UID,
         SYSTEM_UID,
         fdp.ConsumeIntegralInRange<int32_t>(MIN_NORMAL_UID, MAX_NORMAL_UID),
@@ -102,8 +127,8 @@ int32_t PickUid(FuzzedDataProvider &fdp)
 
 uint32_t PickStreamId(FuzzedDataProvider &fdp)
 {
-    const std::array<uint32_t, 4> streamIds = {
-        0,
+    const std::array streamIds = {
+        static_cast<uint32_t>(0),
         INVALID_STREAM_ID,
         fdp.ConsumeIntegralInRange<uint32_t>(MIN_NORMAL_STREAM_ID, MAX_NORMAL_STREAM_ID),
         fdp.ConsumeIntegral<uint32_t>(),
@@ -248,6 +273,96 @@ void FuzzInstance(FuzzedDataProvider &fdp)
     AudioRouterInfra::GetInstance().OnAppDied(uid);
 }
 
+void SeedFollowStrategyState(AudioRouterFollowStrategy &strategy, FuzzedDataProvider &fdp,
+    int32_t uid, uint32_t streamId)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto appDevice = MakeDevice(fdp);
+    auto systemDevice = MakeDevice(fdp);
+    strategy.SetMediaInputDevice(uid, streamId, appDevice);
+    strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, systemDevice);
+    strategy.SetMediaOutputDevice(uid, streamId, MakeDevice(fdp));
+    strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, MakeDevice(fdp));
+    strategy.SetCallInputDevice(uid, streamId, MakeDevice(fdp));
+    strategy.SetCallOutputDevice(uid, streamId, MakeDevice(fdp),
+        fdp.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH));
+    routerInfra.UpdatePreferredInputCategory(uid, Pick(fdp, PREFERRED_CATEGORIES));
+    routerInfra.UpdateInputStreamState(uid, streamId, Pick(fdp, SOURCE_TYPES), Pick(fdp, CAPTURER_STATES));
+    routerInfra.UpdateOutputStreamState(uid, streamId, Pick(fdp, STREAM_USAGES), Pick(fdp, RENDERER_STATES),
+        fdp.ConsumeBool());
+    routerInfra.UpdateStreamDefaultDevice(uid, streamId, SelectDeviceType::MEDIA_OUTPUT,
+        strategy.ConvertDeviceToSimple(appDevice));
+    routerInfra.UpdateStreamDefaultDevice(uid, streamId, SelectDeviceType::CALL_OUTPUT,
+        strategy.ConvertDeviceToSimple(systemDevice));
+}
+
+void FuzzFollowMediaInputBranches(FuzzedDataProvider &fdp)
+{
+    AudioRouterFollowStrategy strategy;
+    int32_t uid = PickUid(fdp);
+    uint32_t streamId = PickStreamId(fdp);
+    SourceType sourceType = Pick(fdp, SOURCE_TYPES);
+    auto category = Pick(fdp, PREFERRED_CATEGORIES);
+    SourceType effectiveSourceType = sourceType;
+
+    SeedFollowStrategyState(strategy, fdp, uid, streamId);
+    strategy.GetMediaInputDeviceWhenHasRunningStream(effectiveSourceType, category);
+    strategy.GetMediaInputDeviceWhenNoRunningStream(uid, category, sourceType);
+    strategy.GetMediaInputDeviceWhenNoRunningStream(INVALID_UID, category, sourceType);
+    strategy.GetMediaInputDeviceByPriority(uid, category, fdp.ConsumeBool());
+    strategy.GetMediaInputDevice(uid, streamId, sourceType);
+    strategy.SetMediaInputDevice(uid, INVALID_STREAM_ID, fdp.ConsumeBool() ? nullptr : MakeDevice(fdp));
+    strategy.GetMediaInputDevice(uid, INVALID_STREAM_ID, sourceType);
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
+}
+
+void FuzzFollowCallOutputBranches(FuzzedDataProvider &fdp)
+{
+    AudioRouterFollowStrategy strategy;
+    int32_t uid = PickUid(fdp);
+    uint32_t streamId = PickStreamId(fdp);
+
+    SeedFollowStrategyState(strategy, fdp, uid, streamId);
+    strategy.GetCallOutputDeviceByUid(uid);
+    strategy.GetCallOutputDevice(uid, streamId);
+    strategy.GetCallOutputDevice(INVALID_UID, streamId);
+    strategy.SetCallOutputDevice(CLEAR_UID, streamId, MakeDevice(fdp),
+        fdp.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH));
+    strategy.SetCallOutputDevice(SYSTEM_UID, streamId, MakeDevice(fdp),
+        fdp.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH));
+    auto emptyDevice = std::make_shared<AudioDeviceDescriptor>();
+    emptyDevice->deviceType_ = DEVICE_TYPE_NONE;
+    strategy.SetCallOutputDevice(uid, streamId, emptyDevice, fdp.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH));
+    strategy.SetCallOutputDevice(uid, streamId, MakeDevice(fdp),
+        fdp.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH));
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
+}
+
+void FuzzFollowCurrentAndDefaultDevices(FuzzedDataProvider &fdp)
+{
+    AudioRouterFollowStrategy strategy;
+    int32_t uid = PickUid(fdp);
+    uint32_t streamId = PickStreamId(fdp);
+    auto devices = MakeDeviceList(fdp);
+
+    SeedFollowStrategyState(strategy, fdp, uid, streamId);
+    strategy.GetMediaOutputDevice(uid, streamId);
+    strategy.GetMediaOutputDevice(INVALID_UID, streamId);
+    strategy.GetCallInputDevice(uid, streamId);
+    strategy.UpdateCurrentInputDevice(uid, devices);
+    strategy.GetCurrentInputDevice(uid);
+    strategy.UpdateCurrentOutputDevice(uid, devices);
+    strategy.GetCurrentOutputDevice(uid);
+    strategy.GetMediaDefaultOutputDevice(uid, streamId);
+    strategy.GetMediaDefaultOutputDevice(uid, INVALID_STREAM_ID);
+    strategy.GetCallDefaultOutputDevice(uid, streamId);
+    strategy.GetCallDefaultOutputDevice(INVALID_UID, streamId);
+    strategy.ClearCallOutputDevice(uid, streamId);
+    strategy.ClearCallOutputDevice(CLEAR_UID, streamId);
+    strategy.RefreshCallOutputDevice(uid, streamId, MakeDevice(fdp));
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
+}
+
 void FuzzTest(FuzzedDataProvider &fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -257,6 +372,9 @@ void FuzzTest(FuzzedDataProvider &fdp)
         FuzzCurrentDevice,
         FuzzExcludeDevice,
         FuzzInstance,
+        FuzzFollowMediaInputBranches,
+        FuzzFollowCallOutputBranches,
+        FuzzFollowCurrentAndDefaultDevices,
     });
     func(fdp);
 }

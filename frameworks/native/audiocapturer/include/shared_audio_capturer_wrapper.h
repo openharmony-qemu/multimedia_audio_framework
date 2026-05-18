@@ -349,6 +349,11 @@ public:
         return sharedAudioCapturer_->GetCapturerDebugInfo(debugInfo);
     }
 
+    uint32_t GetCapturerDebugKey() const override
+    {
+        return sharedAudioCapturer_->GetCapturerDebugKey();
+    }
+
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override
     {

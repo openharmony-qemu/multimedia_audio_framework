@@ -164,7 +164,6 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     int32_t ret = SUCCESS;
     bool mediaControllerFlag = IsSelectedByMediaController();
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    ClearWirelessPreferredDevicesIfNeeded(preferredType, desc);
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
             strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
@@ -968,80 +967,6 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
             return true;
         default:
             return false;
-    }
-}
-
-bool AudioPolicyUtils::IsBluetoothOrNearlinkDevice(DeviceType deviceType)
-{
-    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
-           deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
-           deviceType == DEVICE_TYPE_NEARLINK ||
-           deviceType == DEVICE_TYPE_NEARLINK_IN;
-}
-
-void AudioPolicyUtils::ClearOutputWirelessPreferred(
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, PreferredType preferredType)
-{
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto emptyDesc = std::make_shared<AudioDeviceDescriptor>();
-    
-    auto callInputDev = strategy.GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
-    auto mediaInputDev = strategy.GetMediaInputDevice(INVALID_UID, INVALID_STREAM_ID, SOURCE_TYPE_INVALID);
-    auto mediaOutputDev = strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
-    auto callOutputDev = strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
-    
-    if (callInputDev != nullptr && IsBluetoothOrNearlinkDevice(callInputDev->deviceType_) &&
-        callInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (mediaInputDev != nullptr && IsBluetoothOrNearlinkDevice(mediaInputDev->deviceType_) &&
-        mediaInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (preferredType != AUDIO_MEDIA_RENDER && mediaOutputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(mediaOutputDev->deviceType_) &&
-        mediaOutputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (preferredType != AUDIO_CALL_RENDER && callOutputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(callOutputDev->deviceType_) &&
-        callOutputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc, "");
-    }
-}
-
-void AudioPolicyUtils::ClearInputWirelessPreferred(
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, PreferredType preferredType)
-{
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto emptyDesc = std::make_shared<AudioDeviceDescriptor>();
-    
-    auto callInputDev = strategy.GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
-    auto mediaInputDev = strategy.GetMediaInputDevice(INVALID_UID, INVALID_STREAM_ID, SOURCE_TYPE_INVALID);
-    
-    if (preferredType != AUDIO_CALL_CAPTURE && callInputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(callInputDev->deviceType_) &&
-        callInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (preferredType != AUDIO_RECORD_CAPTURE && mediaInputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(mediaInputDev->deviceType_) &&
-        mediaInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-}
-
-void AudioPolicyUtils::ClearWirelessPreferredDevicesIfNeeded(PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
-{
-    if (desc == nullptr || !IsBluetoothOrNearlinkDevice(desc->deviceType_)) {
-        return;
-    }
-    
-    if (preferredType == AUDIO_MEDIA_RENDER || preferredType == AUDIO_CALL_RENDER) {
-        ClearOutputWirelessPreferred(desc, preferredType);
-    } else if (preferredType == AUDIO_CALL_CAPTURE || preferredType == AUDIO_RECORD_CAPTURE) {
-        ClearInputWirelessPreferred(desc, preferredType);
     }
 }
 

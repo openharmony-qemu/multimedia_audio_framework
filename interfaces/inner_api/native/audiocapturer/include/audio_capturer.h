@@ -891,6 +891,8 @@ public:
         return 0;
     }
 
+    virtual uint32_t GetCapturerDebugKey() const { return 0; }
+
     virtual int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) = 0;
 
     virtual int32_t SetInterruptStrategy(InterruptStrategy strategy) = 0;

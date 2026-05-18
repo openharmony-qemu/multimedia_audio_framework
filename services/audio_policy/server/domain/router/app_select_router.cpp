@@ -59,6 +59,7 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(Source
 {
     vector<shared_ptr<AudioDeviceDescriptor>> allDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+    RouterBase::ClearConflictDevice(allDevices, GetRouterType());
     auto device = AudioRouterSelectStrategy::GetInstance().GetMediaInputDevice(clientUID, sessionID, sourceType);
     CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
         RouterBase::GetPairDevice(device, allDevices, MEDIA_INPUT_DEVICES));
