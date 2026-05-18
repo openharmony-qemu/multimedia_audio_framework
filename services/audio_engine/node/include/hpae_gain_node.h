@@ -61,7 +61,6 @@ private:
     bool IsSilentData(HpaePcmBuffer *pcmBuffer);
     uint32_t GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input);
     uint32_t GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *input);
-    std::string GetGainDeviceClass();
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
