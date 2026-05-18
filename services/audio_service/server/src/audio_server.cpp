@@ -763,22 +763,32 @@ void DataTransferStateChangeCallbackInnerImpl::NotifyStreamStandbyState(
     const AudioRendererDataTransferStateChangeInfo &info, bool isStandby)
 {
     CHECK_AND_RETURN_LOG(IsNeedNotifyStandbyState(info), "stream no need notify standby state");
-    std::lock_guard<std::mutex> lock(standbyMutex_);
     uint32_t sessionId = static_cast<uint32_t>(info.sessionId);
     if (isStandby) {
-        int32_t ret = CoreServiceHandler::GetInstance().NotifyStreamStandby(info.clientPid, info.sessionId);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "notify stream standby fail, ret %{public}d", ret);
         int64_t startTime = ClockTime::GetCurNano();
-        standbyStartTimeMap_[sessionId] = startTime;
+        {
+            std::lock_guard<std::mutex> lock(standbyMutex_);
+            standbyStartTimeMap_[sessionId] = startTime;
+        }
+        int32_t ret = CoreServiceHandler::GetInstance().NotifyStreamStandby(info.clientPid, info.sessionId);
+        if (ret != SUCCESS) {
+            std::lock_guard<std::mutex> lock(standbyMutex_);
+            standbyStartTimeMap_.erase(sessionId);
+            AUDIO_ERR_LOG("notify stream standby fail, ret %{public}d", ret);
+        }
         return;
     }
 
-    auto iter = standbyStartTimeMap_.find(sessionId);
-    CHECK_AND_RETURN_LOG(iter != standbyStartTimeMap_.end(), "standby start time not found");
-    int64_t startTime = iter->second;
     int64_t uploadTime = ClockTime::GetCurNano();
+    int64_t startTime = 0;
+    {
+        std::lock_guard<std::mutex> lock(standbyMutex_);
+        auto iter = standbyStartTimeMap_.find(sessionId);
+        CHECK_AND_RETURN_LOG(iter != standbyStartTimeMap_.end(), "standby start time not found");
+        startTime = iter->second;
+        standbyStartTimeMap_.erase(iter);
+    }
     int32_t standbyDurationS = static_cast<int32_t>((uploadTime - startTime) / AUDIO_NS_PER_SECOND);
-    standbyStartTimeMap_.erase(iter);
     ReportStandbyEvent(info, standbyDurationS);
     int32_t ret = CoreServiceHandler::GetInstance().NotifyStreamStandbyResume(info.clientPid, info.sessionId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "notify stream standby resume fail, ret %{public}d", ret);
