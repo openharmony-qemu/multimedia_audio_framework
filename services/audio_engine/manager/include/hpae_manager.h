@@ -16,6 +16,7 @@
 #define HPAE_MANAGER_H
 #include <functional>
 #include <any>
+#include <future>
 #include "audio_module_info.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_virtual_capturer_manager.h"
@@ -26,6 +27,8 @@
 #include "i_hpae_renderer_manager.h"
 #include "hpae_policy_manager.h"
 #include "high_resolution_timer.h"
+#include "session_effect_manager.h"
+#include "hpae_delayed_task_queue.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -209,6 +212,13 @@ public:
     void HandleBypassSpatializationForStereo(bool bypass) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
 
+    int32_t SetAissEnabled(uint32_t sessionId, bool enabled) override;
+    int32_t SetVocalRatio(float ratio) override;
+    int32_t SetAissEnabledByUid(int32_t uid, bool enabled) override;
+    uint64_t PostDelayedTask(uint64_t delayMs, std::function<void()> task);
+    void CancelDelayedTask(uint64_t taskId);
+    HpaeDelayedTaskQueue &GetDelayedTaskQueue();
+
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     float GetMaxAmplitude() override;
@@ -220,6 +230,12 @@ public:
     void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
         SourceType sourceType) override;
 private:
+    int32_t BindAndCreateAiss(uint32_t sessionId);
+    void TryBindSessionEffectOnStart(uint32_t sessionId);
+    uint32_t FindRunningMusicSession(int32_t uid);
+    int32_t EnableAissByUid(int32_t uid);
+    int32_t DisableAissByUid(int32_t uid);
+    void CleanupOldAissSession(uint32_t newSessionId);
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>
@@ -244,6 +260,28 @@ private:
     void HandleInitSourceResult(SourceType sourceType);
 
     void SendRequest(Request &&request, std::string funcName);
+
+    template<typename Ret>
+    Ret SendRequestSync(std::function<Ret()> request, const std::string &funcName,
+                        Ret defaultValue, uint32_t timeoutMs = 2000)
+    {
+        auto promise = std::make_shared<std::promise<Ret>>();
+        auto future = promise->get_future();
+
+        auto wrapper = [req = std::move(request), p = promise]() {
+            p->set_value(req());
+        };
+
+        SendRequest(std::move(wrapper), funcName);
+
+        auto status = future.wait_for(std::chrono::milliseconds(timeoutMs));
+        if (status != std::future_status::ready) {
+            AUDIO_ERR_LOG("SendRequestSync %{public}s timed out after %{public}u ms",
+                funcName.c_str(), timeoutMs);
+            return defaultValue;
+        }
+        return future.get();
+    }
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
@@ -331,6 +369,12 @@ private:
 
     bool bypassSpatializationForStereo_ = false;
     bool adaptiveSpatialRenderingEnabled_ = false;
+
+    std::unique_ptr<SessionEffectManager> sessionEffectManager_;
+    HpaeDelayedTaskQueue delayedTaskQueue_;
+
+    int32_t boundUid_ = -1;
+    uint32_t boundSessionId_ = 0;
 };
 
 }  // namespace HPAE

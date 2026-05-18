@@ -66,6 +66,25 @@ enum HpaeBufferType {
     HPAE_BUFFER_TYPE_DEFAULT = 0,
     HPAE_BUFFER_TYPE_COBUFFER
 };
+
+// Session Effect error codes
+enum class SessionEffectErrCode : int32_t {
+    SUCCESS = 0,
+    ERR_SESSION_NOT_FOUND = -1,
+    ERR_SESSION_ALREADY_BOUND = -2,
+    ERR_EFFECT_LIBRARY_NOT_FOUND = -3,
+    ERR_EFFECT_CREATE_FAILED = -4,
+    ERR_EFFECT_PROCESS_FAILED = -5,
+    ERR_EFFECT_NOT_BOUND = -6,
+    ERR_INVALID_PARAMETER = -7,
+    ERR_SESSION_NOT_RUNNING = -8,
+    ERR_NOT_SUPPORTED = -9,
+};
+
+// Session Effect parameter types for SetParameter routing
+enum class EffectParameterType : int32_t {
+    VOCAL_RATIO = 1,
+};
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

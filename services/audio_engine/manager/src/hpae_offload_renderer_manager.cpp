@@ -17,6 +17,7 @@
 #endif
 
 #include "hpae_offload_renderer_manager.h"
+#include <cinttypes>
 #include "audio_stream_info.h"
 #include "audio_errors.h"
 #include "hpae_node_common.h"
@@ -24,6 +25,7 @@
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
 #include "audio_utils.h"
+#include "hpae_define.h"
 #include "stream_dfx_manager.h"
 
 namespace OHOS {
@@ -201,6 +203,16 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
 void HpaeOffloadRendererManager::DeleteInputSession()
 {
     DisConnectInputSession();
+
+    // Session Effect: clean up SE node. DisConnectInputSession already disconnected
+    // the SE node from the chain (no bypass reconnect), so DestroyOffloadNodes
+    // (called via RemoveNodeFromMap) will find a clean state.
+    if (sessionEffectNode_ != nullptr) {
+        sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
+        sessionEffectNode_.reset();
+        sessionEffectSessionId_ = 0;
+    }
+
     if (curNode_->GetState() == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
         sinkOutputNode_->StopStream();
     }
@@ -221,6 +233,11 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
             DeleteInputSession();
             SetCurrentNode();
         } else {
+            // Clean up pending SE if present
+            auto pendingIt = pendingSessionEffects_.find(sessionId);
+            if (pendingIt != pendingSessionEffects_.end()) {
+                pendingSessionEffects_.erase(pendingIt);
+            }
             RemoveNodeFromMap(sessionId);
         }
     };
@@ -304,8 +321,25 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     } else {
         converterForOutput_->Connect(loudnessGainNode_);
     }
-    loudnessGainNode_->Connect(converterForLoudness_);
+    // Session Effect: insert SE between loudnessGainNode_ and converterForLoudness_ when active
+    uint32_t curSessionId = curNode_->GetSessionId();
+    if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == curSessionId) {
+        loudnessGainNode_->Connect(sessionEffectNode_);
+        sessionEffectNode_->Connect(converterForLoudness_);
+    } else {
+        loudnessGainNode_->Connect(converterForLoudness_);
+    }
     loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
+
+    // Session Effect: check if curNode_ has pending SE
+    auto pendingIt = pendingSessionEffects_.find(curSessionId);
+    if (pendingIt != pendingSessionEffects_.end()) {
+        sessionEffectSessionId_ = curSessionId;
+        InsertSessionEffectNode(pendingIt->second.effectName,
+            pendingIt->second.instance, pendingIt->second.config);
+        pendingSessionEffects_.erase(pendingIt);
+    }
+
     converterForLoudness_->Connect(curNode_);
     converterForLoudness_->RegisterCallback(this);
     renderNoneEffectNode_->AudioOffloadRendererStart(curNode_->GetNodeInfo(), sinkInfo_);
@@ -326,6 +360,9 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
         node->SetState(HPAE_SESSION_RUNNING);
         if (sessionId == curNode_->GetSessionId()) {
             ConnectInputSession();
+            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+                sessionEffectNode_->StartEffect();
+            }
         }
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
     };
@@ -336,8 +373,18 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
 int32_t HpaeOffloadRendererManager::DisConnectInputSession()
 {
     CHECK_AND_RETURN_RET(converterForLoudness_, SUCCESS);
+
+    // Session Effect: disconnect SE node from chain (no bypass reconnect).
+    // Do NOT DropEffect here — that happens in DeleteInputSession after this returns.
+    if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
+        && converterForLoudness_ != nullptr) {
+        loudnessGainNode_->DisConnect(sessionEffectNode_);
+        sessionEffectNode_->DisConnect(converterForLoudness_);
+    } else if (loudnessGainNode_ != nullptr && converterForLoudness_ != nullptr) {
+        loudnessGainNode_->DisConnect(converterForLoudness_);
+    }
+
     converterForLoudness_->DisConnect(curNode_);
-    loudnessGainNode_->DisConnect(converterForLoudness_);
     if (limiterNode_) {
         limiterNode_->DisConnect(loudnessGainNode_);
         converterForOutput_->DisConnect(limiterNode_);
@@ -362,6 +409,9 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
         node->SetState(HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
         if (sessionId == curNode_->GetSessionId()) {
+            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+                sessionEffectNode_->PauseEffect();
+            }
             DisConnectInputSession();
             if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
@@ -392,6 +442,9 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
         if (sessionId == curNode_->GetSessionId()) {
             // flush sinkoutput cache
             sinkOutputNode_->FlushStream();
+        }
+        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            sessionEffectNode_->FlushEffect();
         }
     };
     SendRequest(request, __func__);
@@ -514,6 +567,9 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
             return;
         }
         AUDIO_INFO_LOG("move session:%{public}d,sink [offload] --> [%{public}s]", sessionId, sinkName.c_str());
+        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            sessionEffectNode_->PrepareMoveStream();
+        }
         if (sessionId == curNode_->GetSessionId()) {
             DeleteInputSession();
             SetCurrentNode();
@@ -806,6 +862,18 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
         CHECK_AND_RETURN_LOG(node, "SetOffloadPolicy not find sessionId %{public}u", sessionId);
         node->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
         node->SetOffloadType(state);
+
+        lastPolicyState_ = state;
+
+        // AISS active: intercept BACKGROUND to keep 200ms buffer + RunningLock.
+        // Real state is saved in lastPolicyState_, restored by RemoveSessionEffectNode when AISS closes.
+        if (sessionEffectNode_ != nullptr && state == OFFLOAD_INACTIVE_BACKGROUND) {
+            AUDIO_INFO_LOG("SetOffloadPolicy: AISS active, intercept BACKGROUND for session %{public}u",
+                sessionId);
+            return;
+        }
+
+        // Normal path
         // OFFLOAD_DEFAULT do not need set buffersize
         if (state != OFFLOAD_DEFAULT && sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);
@@ -930,6 +998,11 @@ void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &
         processLatency += converterForLoudness_->GetLatency();
     }
 
+    // Session Effect latency
+    if (sessionEffectNode_) {
+        processLatency += sessionEffectNode_->GetLatency(sessionId);
+    }
+
     if (loudnessGainNode_) {
         processLatency += loudnessGainNode_->GetLatency();
     }
@@ -955,6 +1028,15 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t 
     CHECK_AND_RETURN_LOG(curNode_ != nullptr,
         "HpaeOffloadRendererManager::OnRewindAndFlush curNode_ is null");
     curNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
+}
+
+void HpaeOffloadRendererManager::OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs)
+{
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnRewindBuffer curNode_ is null");
+    curNode_->RewindHistoryBuffer(rewindTimeUs);
+    AUDIO_INFO_LOG("OnRewindBuffer: session %{public}u rewound %{public}" PRIu64 "us",
+        sessionId, rewindTimeUs);
 }
 
 void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
@@ -1057,6 +1139,170 @@ void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
         sinkOutputNode_->UpdateAppsUid(appsUid_);
     };
     SendRequest(request, __func__);
+}
+
+// === Session Effect ===
+
+int32_t HpaeOffloadRendererManager::InsertSessionEffectNode(const std::string &effectName,
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ == nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
+        "InsertSessionEffectNode: SE node already exists");
+    CHECK_AND_RETURN_RET_LOG(converterForLoudness_ != nullptr && loudnessGainNode_ != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
+        "InsertSessionEffectNode: chain not created yet");
+
+    HpaeNodeInfo nodeInfo = converterForLoudness_->GetNodeInfo();
+    sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
+    int32_t ret = sessionEffectNode_->CreateEffectWithInstance(effectName, instance, config);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret,
+        "InsertSessionEffectNode: CreateEffectWithInstance failed, ret=%{public}d", ret);
+
+    // Insert between converterForLoudness_ and loudnessGainNode_
+    loudnessGainNode_->DisConnect(converterForLoudness_);
+    loudnessGainNode_->Connect(sessionEffectNode_);
+    sessionEffectNode_->Connect(converterForLoudness_);
+
+    // Force foreground buffer: AISS needs 200ms low-latency data flow.
+    // If currently in BACKGROUND (7000ms buffer), this cancels the pending 3s delay
+    // and restores 200ms + RunningLock. 0 = OFFLOAD_ACTIVE_FOREGROUND.
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->SetPolicyState(0);
+    }
+
+    AUDIO_INFO_LOG("InsertSessionEffectNode: SE node inserted for session %{public}u",
+        sessionEffectSessionId_);
+    return 0;
+}
+
+int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode()
+{
+    CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+        "RemoveSessionEffectNode: no SE node to remove");
+
+    // Close SE flow
+    sessionEffectNode_->StartCloseCrossfade();
+    uint64_t latency = sessionEffectNode_->GetLatency(sessionEffectSessionId_);
+
+    // Restore original chain
+    if (loudnessGainNode_ != nullptr && converterForLoudness_ != nullptr) {
+        loudnessGainNode_->DisConnect(sessionEffectNode_);
+        sessionEffectNode_->DisConnect(converterForLoudness_);
+        loudnessGainNode_->Connect(converterForLoudness_);
+        converterForLoudness_->FlushBuffers();  // Clear residual SE output from processedBuffer_
+    }
+
+    sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
+    sessionEffectNode_.reset();
+    uint32_t sid = sessionEffectSessionId_;
+    sessionEffectSessionId_ = 0;
+
+    // RewindHistoryBuffer: return unconsumed data (Phase 2: latency=0, no-op)
+    if (latency > 0 && curNode_ != nullptr) {
+        curNode_->RewindHistoryBuffer(latency);
+    }
+
+    // Restore real policy state (may be BACKGROUND if screen is off).
+    // During AISS active, SetOffloadPolicy intercepted BACKGROUND to keep 200ms buffer.
+    // Now that SE is removed, restore the real state so buffer can transition normally.
+    if (sinkOutputNode_ != nullptr) {
+        if (lastPolicyState_ != OFFLOAD_DEFAULT) {
+            AUDIO_INFO_LOG("RemoveSessionEffectNode: restore policy state=%{public}d", lastPolicyState_);
+            sinkOutputNode_->SetPolicyState(lastPolicyState_);
+        }
+    }
+
+    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u, latency=%{public}llu",
+        sid, (unsigned long long)latency);
+    return 0;
+}
+
+int32_t HpaeOffloadRendererManager::CreateSessionEffect(uint32_t sessionId,
+    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config)
+{
+    // If session is curNode_, create immediately
+    if (curNode_ != nullptr && curNode_->GetSessionId() == sessionId) {
+        CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ == nullptr,
+            static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
+            "CreateSessionEffect: curNode already has SE");
+        sessionEffectSessionId_ = sessionId;
+        return InsertSessionEffectNode(effectName, instance, config);
+    }
+    // Not curNode_ -> store pending
+    CHECK_AND_RETURN_RET_LOG(pendingSessionEffects_.find(sessionId) == pendingSessionEffects_.end(),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
+        "CreateSessionEffect: session %{public}u already has pending SE", sessionId);
+    pendingSessionEffects_[sessionId] = {effectName, instance, config};
+    AUDIO_INFO_LOG("CreateSessionEffect: deferred for session %{public}u (not curNode)", sessionId);
+    return 0;
+}
+
+void HpaeOffloadRendererManager::PostCreateSessionEffect(uint32_t sessionId,
+    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config)
+{
+    auto request = [this, sessionId, effectName, instance, config]() {
+        CreateSessionEffect(sessionId, effectName, instance, config);
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+int32_t HpaeOffloadRendererManager::DestroySessionEffect(uint32_t sessionId)
+{
+    // Remove from pending if present
+    auto it = pendingSessionEffects_.find(sessionId);
+    if (it != pendingSessionEffects_.end()) {
+        pendingSessionEffects_.erase(it);
+        AUDIO_INFO_LOG("DestroySessionEffect: removed pending SE for session %{public}u", sessionId);
+        return 0;
+    }
+    // Remove active SE node
+    if (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr) {
+        return RemoveSessionEffectNode();
+    }
+    AUDIO_WARNING_LOG("DestroySessionEffect: session %{public}u has no SE", sessionId);
+    return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+}
+
+void HpaeOffloadRendererManager::PostDestroySessionEffect(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        DestroySessionEffect(sessionId);
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+bool HpaeOffloadRendererManager::HasSessionEffect(uint32_t sessionId) const
+{
+    return (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr)
+        || pendingSessionEffects_.find(sessionId) != pendingSessionEffects_.end();
+}
+
+bool HpaeOffloadRendererManager::IsValidSession(uint32_t sessionId) const
+{
+    return sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end();
+}
+
+int32_t HpaeOffloadRendererManager::SetSessionEffectParameter(uint32_t sessionId,
+    int32_t type, float value)
+{
+    if (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr) {
+        return sessionEffectNode_->SetParameter(type, value);
+    }
+    AUDIO_WARNING_LOG("SetSessionEffectParameter: session %{public}u has no active SE node", sessionId);
+    return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+}
+
+void HpaeOffloadRendererManager::PostSetSessionEffectParameter(uint32_t sessionId,
+    int32_t type, float value)
+{
+    auto request = [this, sessionId, type, value]() {
+        SetSessionEffectParameter(sessionId, type, value);
+    };
+    SendRequest(std::move(request), __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

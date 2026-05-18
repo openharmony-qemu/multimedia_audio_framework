@@ -43,6 +43,7 @@ static constexpr uint32_t CUR_NODE_ID = 100;
 static constexpr uint32_t OTHER_NODE_ID = 101;
 static constexpr uint32_t OUTPUT_NODE_ID = 200;
 static constexpr uint32_t PROBE_NODE_ID = 300;
+static constexpr int32_t HALF_ROUNDING_DIVISOR = 2;
 
 static AudioEffectConfig MakeTestConfig()
 {
@@ -312,12 +313,12 @@ HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
 
     // 3. Simulate ConnectInputSession's pending SE resolution:
     //    "check if curNode_ has pending SE"
-    uint32_t curSessionId = manager_->curNode_->GetSessionId();
-    auto pendingIt = manager_->pendingSessionEffects_.find(curSessionId);
+    uint32_t newCurSessionId = manager_->curNode_->GetSessionId();
+    auto pendingIt = manager_->pendingSessionEffects_.find(newCurSessionId);
     ASSERT_NE(pendingIt, manager_->pendingSessionEffects_.end());
 
     // Recreate chain for new curNode_ (simplified: reuse existing nodes)
-    manager_->sessionEffectSessionId_ = curSessionId;
+    manager_->sessionEffectSessionId_ = newCurSessionId;
     int32_t ret = manager_->InsertSessionEffectNode(pendingIt->second.effectName,
         pendingIt->second.instance, pendingIt->second.config);
     EXPECT_EQ(ret, 0);

@@ -151,14 +151,14 @@ HWTEST_F(HpaeSessionEffectNodeTest, createEffectWithInstance_nullptr_returnsErro
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_CREATE_FAILED));
 }
 
-// ReleaseEffect releases instance and clears internal reference
-HWTEST_F(HpaeSessionEffectNodeTest, releaseEffect_clearsInstance, TestSize.Level0)
+// DropEffect clears node's reference and resets to IDLE
+HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_clearsInstance, TestSize.Level0)
 {
     auto instance = std::make_shared<EffectInstance>();
     instance->Init("test_effect", config_);
     node_->CreateEffectWithInstance("test_effect", instance, config_);
 
-    int32_t ret = node_->ReleaseEffect();
+    int32_t ret = node_->DropEffect();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(node_->GetEffectInstance(), nullptr);
 }
@@ -181,10 +181,10 @@ HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_resetsWithoutRelease, TestSize.Le
     EXPECT_EQ(instance->GetState(), EffectInstance::EffectState::ACTIVE);
 }
 
-// ReleaseEffect when no instance is set
-HWTEST_F(HpaeSessionEffectNodeTest, releaseEffect_noInstance_noop, TestSize.Level0)
+// DropEffect when no instance is set
+HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_noInstance_noop, TestSize.Level0)
 {
-    int32_t ret = node_->ReleaseEffect();
+    int32_t ret = node_->DropEffect();
     EXPECT_EQ(ret, 0);
 }
 
@@ -1413,8 +1413,8 @@ HWTEST_F(SessionEffectNodeAlgoTest, stats_accumulatesFrames, TestSize.Level0)
     EXPECT_GT(stats.framesProcessed, 0);
 }
 
-// SE-D2: Stats counter resets on ReleaseEffect
-HWTEST_F(SessionEffectNodeAlgoTest, stats_resetsOnRelease, TestSize.Level0)
+// SE-D2: Stats counter resets on DropEffect
+HWTEST_F(SessionEffectNodeAlgoTest, stats_resetsOnDrop, TestSize.Level0)
 {
     auto inst = CreateInstanceWithLib();
     node_->CreateEffectWithInstance("test_effect", inst, config_);
@@ -1432,7 +1432,7 @@ HWTEST_F(SessionEffectNodeAlgoTest, stats_resetsOnRelease, TestSize.Level0)
     node_->SignalProcess(inputs);
     EXPECT_GT(node_->GetStatsForTest().framesProcessed, 0);
 
-    node_->ReleaseEffect();
+    node_->DropEffect();
     EXPECT_EQ(node_->GetStatsForTest().framesProcessed, 0);
     EXPECT_EQ(node_->GetStatsForTest().framesOutput, 0);
 }

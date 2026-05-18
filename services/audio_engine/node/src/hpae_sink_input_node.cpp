@@ -265,6 +265,20 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     OnStreamInfoChange(false);
 }
 
+void HpaeSinkInputNode::EnsureHistoryBufferForAiss(uint32_t preheatFrames)
+{
+    if (offloadEnable_) return;  // Offload already has sufficient buffer
+    if (historyBuffer_ && historyBuffer_->GetFrames() >= preheatFrames) return;
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
+    PcmBufferInfo pcmInfo = PcmBufferInfo{
+        nodeInfo.channels, nodeInfo.frameLen,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate,
+        nodeInfo.channelLayout, preheatFrames};
+    pcmInfo.isMultiFrames = true;
+    historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
+    AUDIO_INFO_LOG("AISS: historyBuffer allocated for %{public}u frames", preheatFrames);
+}
+
 void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     auto writeCallback = writeCallback_.lock();

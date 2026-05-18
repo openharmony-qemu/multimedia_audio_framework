@@ -309,6 +309,25 @@ HWTEST_F(EffectInstanceAlgoTest, flush_unsupported_returnsError, TestSize.Level0
     EXPECT_NE(ret, 0);
 }
 
+// EI-C4b: Flush clears fedBytes and stats
+HWTEST_F(EffectInstanceAlgoTest, flush_clearsBuffersAndStats, TestSize.Level0)
+{
+    auto lib = fake_.GetLibrary();
+    instance_->Init("test_effect", config_, &lib);
+    fake_.SetPreheatFrames(0);
+
+    size_t frameBytes = 480 * config_.inputCfg.channels * sizeof(float);
+    std::vector<float> data(frameBytes / sizeof(float), 1.0f);
+    instance_->SetStatsReportThresholdForTest(999999);
+    instance_->FeedInput(reinterpret_cast<const uint8_t *>(data.data()), frameBytes);
+    EXPECT_GT(instance_->GetInputLevel(), 0u);
+    EXPECT_GT(instance_->GetStatsForTest().framesProcessed, 0);
+
+    instance_->Flush();
+    EXPECT_EQ(instance_->GetInputLevel(), 0u);
+    EXPECT_EQ(instance_->GetStatsForTest().framesProcessed, 0);
+}
+
 // EI-C5: SetParameter sends SET_PARAM
 HWTEST_F(EffectInstanceAlgoTest, setParameter_sendsSetParam, TestSize.Level0)
 {
