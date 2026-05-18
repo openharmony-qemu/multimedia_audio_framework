@@ -121,6 +121,24 @@ static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_ULTRASONIC,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
+
+std::shared_ptr<Media::MediaMonitor::EventBean> CreateStreamOccupancyEventBean(
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
+        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    CHECK_AND_RETURN_RET_LOG(bean != nullptr, nullptr, "bean is nullptr");
+
+    bean->Add("IS_PLAYBACK", info.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
+    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
+    bean->Add("UID", info.clientUID);
+    bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
+    bean->Add("START_TIME", static_cast<uint64_t>(0));
+    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
+    return bean;
+}
+
 const int32_t KVPAIRS_LEN = 2;
 static const int32_t MODERN_INNER_API_VERSION = 12;
 const int32_t API_VERSION_REMAINDER = 1000;
@@ -704,6 +722,19 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
         NotifyStreamStandbyState(info, true);
+        CHECK_AND_RETURN(info.audioMode == AUDIO_MODE_PLAYBACK);
+        std::string bundleName = AppBundleManager::GetBundleNameFromUid(info.clientUID);
+        CHECK_AND_RETURN_LOG(AudioService::GetInstance()->InRenderWhitelist(bundleName),
+            "%{public}s not in whitelist", bundleName.c_str());
+        if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_INTERPHONE) ||
+            (info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE) ||
+            (info.streamUsage == STREAM_USAGE_RINGTONE) ||
+            (info.streamUsage == STREAM_USAGE_NOTIFICATION)) && info.isBackground) {
+            int32_t ret = PolicyHandler::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "focus clear fail");
+        }
     } else if (info.stateChangeType == DATA_TRANS_RESUME) {
         NotifyStreamStandbyState(info, false);
     }
@@ -713,47 +744,32 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     const AudioRendererDataTransferStateChangeInfo &info)
 {
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
-        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = CreateStreamOccupancyEventBean(info);
     CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
-
-    bean->Add("IS_PLAYBACK", info.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
-    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
-    bean->Add("UID", info.clientUID);
-    bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
-    bean->Add("START_TIME", static_cast<uint64_t>(0));
-    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
+    bean->Add("STANDBY_DURATION_S", static_cast<uint64_t>(0));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void DataTransferStateChangeCallbackInnerImpl::ReportStandbyEvent(
     const AudioRendererDataTransferStateChangeInfo &info, int32_t standbyDurationS)
 {
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
-        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = CreateStreamOccupancyEventBean(info);
     CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
 
-    bean->Add("IS_PLAYBACK", info.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
-    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
-    bean->Add("UID", info.clientUID);
-    bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
-    bean->Add("START_TIME", static_cast<uint64_t>(0));
-    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
     bean->Add("STANDBY_DURATION_S", standbyDurationS);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 bool DataTransferStateChangeCallbackInnerImpl::IsNeedNotifyStandbyState(
-    const AudioRendererDataTransferStateChangeInfo &info)
+    const AudioRendererDataTransferStateChangeInfo &info, bool isStandby)
 {
     CHECK_AND_RETURN_RET(info.audioMode == AUDIO_MODE_PLAYBACK, false);
-    if (!info.isBackground) {
+    if (isStandby && !info.isBackground) {
         return false;
     }
     return info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
         info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        info.streamUsage == STREAM_USAGE_INTERPHONE ||
         info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
         info.streamUsage == STREAM_USAGE_RINGTONE ||
         info.streamUsage == STREAM_USAGE_NOTIFICATION;
@@ -762,7 +778,7 @@ bool DataTransferStateChangeCallbackInnerImpl::IsNeedNotifyStandbyState(
 void DataTransferStateChangeCallbackInnerImpl::NotifyStreamStandbyState(
     const AudioRendererDataTransferStateChangeInfo &info, bool isStandby)
 {
-    CHECK_AND_RETURN_LOG(IsNeedNotifyStandbyState(info), "stream no need notify standby state");
+    CHECK_AND_RETURN_LOG(IsNeedNotifyStandbyState(info, isStandby), "stream no need notify standby state");
     uint32_t sessionId = static_cast<uint32_t>(info.sessionId);
     if (isStandby) {
         int64_t startTime = ClockTime::GetCurNano();

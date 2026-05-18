@@ -584,7 +584,7 @@ public:
 private:
     void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);
     void ReportStandbyEvent(const AudioRendererDataTransferStateChangeInfo &info, int32_t standbyDurationS);
-    bool IsNeedNotifyStandbyState(const AudioRendererDataTransferStateChangeInfo &info);
+    bool IsNeedNotifyStandbyState(const AudioRendererDataTransferStateChangeInfo &info, bool isStandby);
     void NotifyStreamStandbyState(const AudioRendererDataTransferStateChangeInfo &info, bool isStandby);
 
     DataTransferMonitorParam param_;
