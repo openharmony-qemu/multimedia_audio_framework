@@ -764,6 +764,7 @@ audio_ohos_library("audio_service") {
   sources = [
     "server/src/audio_effect_server.cpp",
     "server/src/audio_manager_listener.cpp",
+    "server/src/audio_privacy_manager_in_server.cpp",
     "server/src/audio_resource_service.cpp",
     "server/src/audio_server.cpp",
     "server/src/audio_server_callback.cpp",
@@ -799,6 +800,7 @@ audio_ohos_library("audio_service") {
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",

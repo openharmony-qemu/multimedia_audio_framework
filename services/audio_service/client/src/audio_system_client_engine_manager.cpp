@@ -187,5 +187,13 @@ int32_t AudioSystemClientEngineManager::ReportWakeupEvent(const AudioWakeupTrack
     int32_t res = gasp->ReportWakeupEvent(audioWakeupTrackInfo);
     return res;
 }
+
+int32_t AudioSystemClientEngineManager::SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList)
+{
+    const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    int32_t res = gasp->SetAncoRecordingConfigChanged(bundleNameList);
+    return res;
+}
 } // namespace AudioStandard
 } // namespace OHOS

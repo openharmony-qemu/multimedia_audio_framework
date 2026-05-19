@@ -1363,5 +1363,6 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_Destruct
         capturerInServer_ = nullptr;
     }
 }
+111
 } // namespace AudioStandard
 } // namespace OHOS

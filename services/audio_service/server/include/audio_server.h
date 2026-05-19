@@ -319,6 +319,7 @@ public:
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
     int32_t CheckInnerCapVoIP(uint32_t sessionId) override;
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo) override;
+    int32_t SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
