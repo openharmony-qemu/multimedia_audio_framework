@@ -1285,7 +1285,6 @@ static bool ProcessIteration(ProcessState &state)
     int32_t outputSize = 0;
     OH_AudioConverter_Result result =
         OH_AudioConverter_Process(g_ctx.converter, outputData, currentBufferSize, &outputSize);
-
     if (result != AUDIOCONVERTER_SUCCESS) {
         state.hasError = true;
         delete[] static_cast<uint8_t*>(outputData);
