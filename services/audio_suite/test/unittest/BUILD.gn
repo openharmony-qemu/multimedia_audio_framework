@@ -173,6 +173,7 @@ if (audio_framework_feature_audiosuite_support) {
     module_out_path = module_output_path
     sources = [
       "pcm_process/audio_pcm_process_impl_test.cpp",
+      "tool/audio_suite_unittest_tools.cpp",
     ]
 
     sanitize = {
@@ -189,6 +190,7 @@ if (audio_framework_feature_audiosuite_support) {
 
     deps = [
       "../../:audio_pcm_process",
+      "../../:audio_suite_static",
     ]
 
     external_deps = [
