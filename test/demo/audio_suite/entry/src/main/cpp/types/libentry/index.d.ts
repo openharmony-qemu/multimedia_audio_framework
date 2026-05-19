@@ -75,7 +75,7 @@ export const getRecordedAudioData: () => ArrayBuffer | null;
 export const stopAudioRenderer: () => number;
 export const releaseAudioRenderer: () => void;
 export const unregisterPlaybackFinishCallback: () => void;
-export const audioConverterCreate: (inputFormat: {
+export const audioFormatConverter: (inputFormat: {
   encodingType: number;
   samplingRate: number;
   channelLayout: number;
@@ -85,14 +85,5 @@ export const audioConverterCreate: (inputFormat: {
   samplingRate: number;
   channelLayout: number;
   sampleFormat: number;
-}, fd: number) => string | null;
-export interface AudioFileInfo {
-  samplingRate: number;
-  channelLayout: number;
-  numChannels: number;
-  sampleFormat: number;
-  encodingType: number;
-  fileSize: number;
-}
-export const audioConverterGetFileInfo: (fd: number) => AudioFileInfo;
+}, fd: number) => string;
 export const testPrintInfoToFile: () => boolean;
