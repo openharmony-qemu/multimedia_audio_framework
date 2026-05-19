@@ -343,9 +343,9 @@ private:
     const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
     bool IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType);
     bool ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid, StreamUsage streamUsage,
-        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
     bool ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid, SourceType sourceType,
-        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
@@ -369,15 +369,15 @@ private:
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
 
-    // clientPid -> uid -> streamUsage -> device
+    // clientPid -> uid -> streamUsage -> devices
     std::unordered_map<int32_t,
         std::unordered_map<int32_t,
-            std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>>>>
+            std::unordered_map<StreamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
         lastSentOutputDeviceMap_;
-    // clientPid -> uid -> sourceType -> device
+    // clientPid -> uid -> sourceType -> devices
     std::unordered_map<int32_t,
         std::unordered_map<int32_t,
-            std::unordered_map<SourceType, std::shared_ptr<AudioDeviceDescriptor>>>>
+            std::unordered_map<SourceType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
         lastSentInputDeviceMap_;
 
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;

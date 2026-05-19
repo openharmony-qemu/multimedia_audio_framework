@@ -1635,5 +1635,650 @@ HWTEST(AudioPolicyServerHandlerUnitTest, IsSameDeviceDescPtr_Deduplication_001, 
     std::shared_ptr<AudioDeviceDescriptor> nullDevice = nullptr;
     EXPECT_FALSE(deviceDesc1->IsSameDeviceDescPtr(nullDevice));
 }
+
+// Constants for testing ShouldSkipDuplicateCallback methods
+const int32_t TEST_CLIENT_PID = 1001;
+const int32_t TEST_UID = 10001;
+const StreamUsage TEST_STREAM_USAGE = STREAM_USAGE_MUSIC;
+const SourceType TEST_SOURCE_TYPE = SOURCE_TYPE_MIC;
+const std::string TEST_NETWORK_ID = "test_network_id";
+const std::string TEST_MAC_ADDRESS_1 = "00:11:22:33:44:55";
+const std::string TEST_MAC_ADDRESS_2 = "00:11:22:33:44:56";
+
+// Helper function: Create device descriptor for testing
+std::shared_ptr<AudioDeviceDescriptor> CreateTestDeviceDesc(
+    DeviceType type, const std::string& mac, const std::string& networkId)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = type;
+    desc->macAddress_ = mac;
+    desc->networkId_ = networkId;
+    return desc;
+}
+
+// Helper function: Create device list for testing
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> CreateTestDeviceList(
+    std::initializer_list<std::pair<DeviceType, std::string>> devices)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> list;
+    for (auto& d : devices) {
+        list.push_back(CreateTestDeviceDesc(d.first, d.second, TEST_NETWORK_ID));
+    }
+    return list;
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_001
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when no pid history exists (B1).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // No history exists for this pid - should return false
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_002
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when no uid history exists (B2).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_002, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Setup history for pid but not for uid
+    handler->lastSentOutputDeviceMap_[clientPid] = {};
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_003
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when no streamUsage history exists (B3).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_003, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Setup history for pid and uid but not for streamUsage
+    handler->lastSentOutputDeviceMap_[clientPid][uid] = {};
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_004
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when history device list is empty (B4).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_004, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Setup empty history device list
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> historyDevices = {};
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_005
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when device list lengths differ (B5).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_005, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // History has 2 devices, current has 1 device
+    auto historyDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_A2DP, TEST_MAC_ADDRESS_2}
+    });
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_006
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when both devices are nullptr (B6 - continue/skip).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_006, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // Both history and current have nullptr devices at same position
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> historyDevices = {nullptr, nullptr};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> currentDevices = {nullptr, nullptr};
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    // Both nullptr should continue (skip) and eventually return true if all match
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_007
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when only one device is nullptr (B7).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_007, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // History has nullptr, current has valid device
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> historyDevices = {nullptr};
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_008
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when devices are different (B8).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_008, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // History has SPEAKER, current has BLUETOOTH_A2DP (different devices)
+    auto historyDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_BLUETOOTH_A2DP, TEST_MAC_ADDRESS_2}});
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_009
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when all devices are same (B9).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_009, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // Both have same devices - should return true (skip callback)
+    auto historyDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_A2DP, TEST_MAC_ADDRESS_2}
+    });
+    auto currentDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_A2DP, TEST_MAC_ADDRESS_2}
+    });
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_010
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback when current device list is empty.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_010, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // History has devices, current is empty
+    auto historyDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> currentDevices = {};
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_011
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback with partial match (first device same, second different).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_011, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // First device same, second device different
+    auto historyDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_A2DP, TEST_MAC_ADDRESS_2}
+    });
+    auto currentDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_WIRED_HEADPHONES, TEST_MAC_ADDRESS_2}
+    });
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateOutputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateOutputCallback_012
+ * @tc.desc  : Test ShouldSkipDuplicateOutputCallback with single device same.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateOutputCallback_012, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+
+    // Single device same - should return true
+    auto historyDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, currentDevices);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_001
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when no pid history exists (B1').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    // No history exists for this pid - should return false
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_002
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when no uid history exists (B2').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_002, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    // Setup history for pid but not for uid
+    handler->lastSentInputDeviceMap_[clientPid] = {};
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_003
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when no sourceType history exists (B3').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_003, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    // Setup history for pid and uid but not for sourceType
+    handler->lastSentInputDeviceMap_[clientPid][uid] = {};
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_004
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when history device list is empty (B4').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_004, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    // Setup empty history device list
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> historyDevices = {};
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_005
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when device list lengths differ (B5').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_005, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // History has 2 devices, current has 1 device
+    auto historyDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_SCO, TEST_MAC_ADDRESS_2}
+    });
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_006
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when both devices are nullptr (B6' - continue/skip).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_006, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // Both history and current have nullptr devices at same position
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> historyDevices = {nullptr, nullptr};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> currentDevices = {nullptr, nullptr};
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    // Both nullptr should continue (skip) and eventually return true if all match
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_007
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when only one device is nullptr (B7').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_007, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // History has nullptr, current has valid device
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> historyDevices = {nullptr};
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_008
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when devices are different (B8').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_008, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // History has MIC, current has BLUETOOTH_SCO_MIC (different devices)
+    auto historyDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_BLUETOOTH_SCO, TEST_MAC_ADDRESS_2}});
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_009
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when all devices are same (B9').
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_009, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // Both have same devices - should return true (skip callback)
+    auto historyDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_SCO, TEST_MAC_ADDRESS_2}
+    });
+    auto currentDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_SCO, TEST_MAC_ADDRESS_2}
+    });
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_010
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback when current device list is empty.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_010, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // History has devices, current is empty
+    auto historyDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> currentDevices = {};
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_011
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback with partial match (first device same, second different).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_011, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // First device same, second device different
+    auto historyDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_BLUETOOTH_SCO, TEST_MAC_ADDRESS_2}
+    });
+    auto currentDevices = CreateTestDeviceList({
+        {DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1},
+        {DEVICE_TYPE_WIRED_HEADSET, TEST_MAC_ADDRESS_2}
+    });
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test ShouldSkipDuplicateInputCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldSkipDuplicateInputCallback_012
+ * @tc.desc  : Test ShouldSkipDuplicateInputCallback with single device same.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_012, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+
+    // Single device same - should return true
+    auto historyDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+    auto currentDevices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = historyDevices;
+
+    bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
+    EXPECT_TRUE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS
