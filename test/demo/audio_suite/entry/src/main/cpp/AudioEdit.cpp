@@ -1478,7 +1478,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     return CreateFinalResult(env, state.hasError);
 }
 
-// Test the function of outputting PrintInfo to a file.（fd >= 0)
+// Test the function of outputting PrintInfo to a file.（fd >= 0）
 static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
 {
     napi_value result;
@@ -1488,8 +1488,8 @@ static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: g_audioSuiteEngine is nullptr");
         return result;
     }
-    
-     // Generate timestamp and file path
+
+    // Generate timestamp and file path
     auto now = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::to_time_t(now);
     std::tm *tm = std::localtime(&time);
@@ -1524,6 +1524,7 @@ static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile failed: %{public}u", ret);
         return result;
     }
+
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile success");
     napi_get_boolean(env, true, &result);
     return result;
