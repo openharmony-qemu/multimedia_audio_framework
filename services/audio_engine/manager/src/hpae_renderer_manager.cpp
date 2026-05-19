@@ -311,20 +311,24 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
 
 void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
 {
-    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+    auto processCluster = SafeGetMap(sceneClusterMap_, nodeInfo.sceneType);
+    CHECK_AND_RETURN_LOG(processCluster,
         "could not find processorType %{public}d", nodeInfo.sceneType);
-    sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
+    processCluster->AudioRendererRelease(nodeInfo, sinkInfo_);
     sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
     AUDIO_INFO_LOG("disconnected from sceneType %{public}d, current count is %{public}d",
         nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]);
-    if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
+    auto defaultProcessCluster = SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT);
+    if (defaultProcessCluster && processCluster == defaultProcessCluster) {
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
         AUDIO_INFO_LOG("sceneType default count is %{public}d",
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
     }
     DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
     sessionNodeMap_[nodeInfo.sessionId].bypass = true;
-    sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererCreate(nodeInfo, sinkInfo_);
+    auto noneProcessCluster = SafeGetMap(sceneClusterMap_, HPAE_SCENE_EFFECT_NONE);
+    CHECK_AND_RETURN_LOG(noneProcessCluster, "could not find processorType HPAE_SCENE_EFFECT_NONE");
+    noneProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo_);
 }
 
 void HpaeRendererManager::SwitchBypassState(const std::shared_ptr<HpaeSinkInputNode> &node,
@@ -903,13 +907,15 @@ void HpaeRendererManager::DereferenceInputCluster(uint32_t sessionId)
         return;
     }
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
-    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+    auto processCluster = SafeGetMap(sceneClusterMap_, nodeInfo.sceneType);
+    CHECK_AND_RETURN_LOG(processCluster,
         "could not find processorType %{public}d", nodeInfo.sceneType);
-    sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
+    processCluster->AudioRendererRelease(nodeInfo, sinkInfo_);
     sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
     AUDIO_INFO_LOG("sessionId %{public}u is disconnected from sceneType %{public}d, current count is %{public}d",
         sessionId, nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]);
-    if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
+    auto defaultProcessCluster = SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT);
+    if (defaultProcessCluster && processCluster == defaultProcessCluster) {
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
         AUDIO_INFO_LOG("sceneType default count is %{public}d", sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
     }
