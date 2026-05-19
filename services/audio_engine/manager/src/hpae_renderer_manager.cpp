@@ -286,7 +286,7 @@ HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage stream
     }
 }
 
-HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
+HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId) const
 {
     auto it = sinkInputNodeMap_.find(sessionId);
     if (it == sinkInputNodeMap_.end() || it->second == nullptr) {
@@ -303,7 +303,9 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
         noArmEffect = !AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(
             sceneType, nodeInfo.effectInfo.effectMode);
     }
-    if ((!isSplitProcessorType(nodeInfo.sceneType)) && (sessionNodeMap_[sessionId].bypass || noArmEffect)) {
+    auto sessionIt = sessionNodeMap_.find(sessionId);
+    if ((!isSplitProcessorType(nodeInfo.sceneType))
+        && (sessionIt == sessionNodeMap_.end() || sessionIt->second.bypass || noArmEffect)) {
         return HPAE_SCENE_EFFECT_NONE;
     }
     return nodeInfo.sceneType;
@@ -514,7 +516,7 @@ void HpaeRendererManager::DisConnectCoBufferFromDeleteProcessCluster(HpaeProcess
     TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
 }
 
-bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType)
+bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType) const
 {
     if (sceneType == HPAE_SCENE_SPLIT_MEDIA || sceneType == HPAE_SCENE_SPLIT_NAVIGATION ||
         sceneType == HPAE_SCENE_SPLIT_COMMUNICATION) {
@@ -2034,15 +2036,8 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
 
 bool HpaeRendererManager::HasSessionEffect(uint32_t sessionId) const
 {
-    auto it = sessionNodeMap_.find(sessionId);
-    if (it == sessionNodeMap_.end()) {
-        return false;
-    }
-    auto clusterIt = sceneClusterMap_.find(it->second.sceneType);
-    if (clusterIt == sceneClusterMap_.end()) {
-        return false;
-    }
-    return clusterIt->second->HasSessionEffectNode(sessionId);
+    auto cluster = SafeGetMap(sceneClusterMap_, GetProcessorType(sessionId));
+    return cluster && cluster->HasSessionEffectNode(sessionId);
 }
 
 bool HpaeRendererManager::IsValidSession(uint32_t sessionId) const
