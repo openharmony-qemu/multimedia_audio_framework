@@ -1769,7 +1769,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
     EXPECT_EQ(SUCCESS, ret);
     auto buffer = std::make_unique<uint8_t[]>(bufferLen);
     ASSERT_NE(nullptr, buffer);
-    memset(buffer.get(), 0, bufferLen);
+    (void)memset_s(buffer.get(), bufferLen, 0, bufferLen);
 
     for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         for (int j = 0; j < RenderUT::WRITE_BATCH_SIZE; j++) {
