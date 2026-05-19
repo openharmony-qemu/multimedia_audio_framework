@@ -40,7 +40,7 @@ function convertAudioInBackground(
     channelLayout: outputChannelLayout,
     sampleFormat: outputSampleFormat
   };
-  return audioNapi.audioConverterCreate(inputFormat, outputFormat, fd);
+  return audioNapi.audioFormatConverter(inputFormat, outputFormat, fd);
 }
 
 // Sample format enum
@@ -73,6 +73,16 @@ enum AudioSampleRate {
 // Encoding type enum
 enum AudioEncodingType {
   AUDIO_ENCODING_TYPE_RAW = 0
+}
+
+// Audio file info interface
+interface AudioFileInfo {
+  encodingType: number;
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+  numChannels: number;
+  fileSize: number;
 }
 
 // Channel layout enum
@@ -168,7 +178,7 @@ export struct AudioConversion {
   @State processResult: string = '';
   @State selectedFileUri: string = '';
   @State selectedFileName: string = '';
-  @State fileInfo: audioNapi.AudioFileInfo | null = null;
+  @State fileInfo: AudioFileInfo | null = null;
   @State outputFileName: string = '';
   @State inputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
@@ -620,10 +630,19 @@ export struct AudioConversion {
     }
 
     const file = fs.openSync(this.selectedFileUri, fs.OpenMode.READ_ONLY);
-    this.fileFd = file.fd;
 
     try {
-      const fileInfo = audioNapi.audioConverterGetFileInfo(this.fileFd);
+      const buffer = new ArrayBuffer(44);
+      const bytesRead = fs.readSync(file.fd, buffer);
+      fs.closeSync(file.fd);
+
+      if (bytesRead < 44) {
+        Logger.error(TAG, 'Failed to read WAV header');
+        this.createResult = 'Failed to read WAV header';
+        return;
+      }
+
+      const fileInfo = this.parseWavHeader(buffer);
 
       if (fileInfo) {
         this.fileInfo = fileInfo;
@@ -649,8 +668,6 @@ export struct AudioConversion {
     } catch (e) {
       Logger.error(TAG, `parseAudioFileFormat error: ${JSON.stringify(e)}`);
       this.createResult = 'Error parsing audio file format';
-    } finally {
-      fs.closeSync(file.fd);
     }
   }
 
@@ -721,6 +738,95 @@ export struct AudioConversion {
       default:
         return 'Unknown';
     }
+  }
+
+  private readLittleEndian16(buffer: ArrayBuffer, offset: number): number {
+    const view = new DataView(buffer);
+    return view.getUint16(offset, true);
+  }
+
+  private readLittleEndian32(buffer: ArrayBuffer, offset: number): number {
+    const view = new DataView(buffer);
+    return view.getUint32(offset, true);
+  }
+
+  private getSampleFormatFromBits(bitsPerSample: number, audioFormat: number): number {
+    switch (bitsPerSample) {
+      case 8:
+        return AudioSampleFormat.AUDIO_SAMPLE_U8;
+      case 16:
+        return AudioSampleFormat.AUDIO_SAMPLE_S16LE;
+      case 24:
+        return AudioSampleFormat.AUDIO_SAMPLE_S24LE;
+      case 32:
+        if (audioFormat === 3) {
+          return AudioSampleFormat.AUDIO_SAMPLE_F32LE;
+        } else {
+          return AudioSampleFormat.AUDIO_SAMPLE_S32LE;
+        }
+      default:
+        Logger.warn(TAG, `Unsupported bits per sample: ${bitsPerSample}, defaulting to F32LE`);
+        return AudioSampleFormat.AUDIO_SAMPLE_F32LE;
+    }
+  }
+
+  private getChannelLayoutFromChannels(numChannels: number): number {
+    switch (numChannels) {
+      case 1:
+        return AudioChannelLayout.CH_LAYOUT_MONO;
+      case 2:
+        return AudioChannelLayout.CH_LAYOUT_STEREO;
+      case 3:
+        return AudioChannelLayout.CH_LAYOUT_2POINT1;
+      case 4:
+        return AudioChannelLayout.CH_LAYOUT_QUAD;
+      case 5:
+        return AudioChannelLayout.CH_LAYOUT_5POINT0;
+      case 6:
+        return AudioChannelLayout.CH_LAYOUT_5POINT1;
+      case 7:
+        return AudioChannelLayout.CH_LAYOUT_6POINT1;
+      case 8:
+        return AudioChannelLayout.CH_LAYOUT_7POINT1;
+      default:
+        return AudioChannelLayout.CH_LAYOUT_STEREO;
+    }
+  }
+
+  private parseWavHeader(buffer: ArrayBuffer): AudioFileInfo | null {
+    const WAV_HEADER_SIZE = 44;
+    const WAV_AUDIO_FORMAT_OFFSET = 20;
+    const WAV_NUM_CHANNELS_OFFSET = 22;
+    const WAV_SAMPLE_RATE_OFFSET = 24;
+    const WAV_BITS_PER_SAMPLE_OFFSET = 34;
+
+    if (buffer.byteLength < WAV_HEADER_SIZE) {
+      Logger.error(TAG, 'Buffer too small to be a valid WAV file');
+      return null;
+    }
+
+    const view = new Uint8Array(buffer);
+    if (view[0] !== 0x52 || view[1] !== 0x49 || view[2] !== 0x46 || view[3] !== 0x46) {
+      Logger.error(TAG, 'Invalid WAV file header');
+      return null;
+    }
+
+    const audioFormat = this.readLittleEndian16(buffer, WAV_AUDIO_FORMAT_OFFSET);
+    const numChannels = this.readLittleEndian16(buffer, WAV_NUM_CHANNELS_OFFSET);
+    const samplingRate = this.readLittleEndian32(buffer, WAV_SAMPLE_RATE_OFFSET);
+    const bitsPerSample = this.readLittleEndian16(buffer, WAV_BITS_PER_SAMPLE_OFFSET);
+
+    const sampleFormat = this.getSampleFormatFromBits(bitsPerSample, audioFormat);
+    const channelLayout = this.getChannelLayoutFromChannels(numChannels);
+
+    return {
+      encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
+      samplingRate: samplingRate,
+      channelLayout: channelLayout,
+      sampleFormat: sampleFormat,
+      numChannels: numChannels,
+      fileSize: buffer.byteLength
+    };
   }
 
   private async createConverter(): Promise<boolean> {
