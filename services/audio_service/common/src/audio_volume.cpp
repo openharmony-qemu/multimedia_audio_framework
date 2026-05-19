@@ -120,8 +120,11 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
     auto volumeLevel = pipeVolume->GetNoMuteVolumeLevel();
 
     float sysVolume = volumes->volumePipe;
-    if (streamVolume->IsVirtualKeyboard()) {
+    VkbMode vkbMode = streamVolume->GetVirtualKeyboardMode();
+    if (vkbMode == VKB_ONLY_RING) {
         sysVolume = pipeVolume->GetIsMuted() ? 0.0f : 1.0f;
+    } else if (vkbMode == VKB_ALL_RING) {
+        sysVolume = 1.0f;
     }
 
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(
@@ -137,10 +140,10 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
     if (!IsSameVolume(streamVolume->GetMonitorVolume(), volumes->volume)) {
         streamVolume->SetMonitorVolumeAtomic(volumes->volume, volumeLevel);
         HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,pipeId:%{public}d,"
-            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
+            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,vkbMode:%{public}d,isMuted:%{public}s,"
             "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", streamVolume->GetSessionId(),
             volumes->volume, pipeVolume->GetPipeId(), volumes->volumePipe, volumes->volumeStream, volumes->volumeApp,
-            streamVolume->IsVirtualKeyboard(), pipeVolume->GetIsMuted() ? "T" : "F",
+            streamVolume->GetVirtualKeyboardMode(), pipeVolume->GetIsMuted() ? "T" : "F",
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
     return volumes->volume;
@@ -209,8 +212,13 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
         AUDIO_ERR_LOG("no pipe volume, volumeType:%{public}d pipeId:%{public}d", volumeType, pipeId);
     }
     float sysVolume = volumes->volumePipe;
-    if (it != streamVolume_.end() && it->second->IsVirtualKeyboard() && itSV != pipeVolume_.end()) {
-        sysVolume = itSV->second->GetIsMuted() ? 0.0f : 1.0f;
+    if (it != streamVolume_.end() && itSV != pipeVolume_.end()) {
+        VkbMode mode = it->second->GetVirtualKeyboardMode();
+        if (mode == VKB_ONLY_RING) {
+            sysVolume = itSV->second->GetIsMuted() ? 0.0f : 1.0f;
+        } else if (mode == VKB_ALL_RING) {
+            sysVolume = 1.0f;
+        }
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType,
         appUid, sessionId));
@@ -219,10 +227,10 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     if (it != streamVolume_.end() && !IsSameVolume(it->second->GetMonitorVolume(), volumes->volume)) {
         it->second->SetMonitorVolumeAtomic(volumes->volume, volumeLevel);
         HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,pipeId:%{public}d,"
-            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
+            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,vkbMode:%{public}d,isMuted:%{public}s,"
             "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", sessionId, volumes->volume, volumeType,
             pipeId, volumes->volumePipe, volumes->volumeStream, volumes->volumeApp,
-            it->second->IsVirtualKeyboard(),
+            it->second->GetVirtualKeyboardMode(),
             itSV != pipeVolume_.end() ? (itSV->second->GetIsMuted() ? "T" : "F") : "null",
             doNotDisturbStatusVolume, mdmMuteFactor);
     }

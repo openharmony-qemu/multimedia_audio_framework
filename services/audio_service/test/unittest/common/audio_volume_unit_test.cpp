@@ -57,7 +57,7 @@ void AudioVolumeUnitTest::SetUp(void)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
@@ -118,7 +118,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
-    bool isVKB = true;
+    VkbMode isVKB = VKB_ONLY_RING;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
@@ -146,7 +146,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
-    bool isVKB = true;
+    VkbMode isVKB = VKB_ONLY_RING;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
@@ -331,7 +331,7 @@ HWTEST_F(AudioVolumeUnitTest, AddStreamVolume_001, TestSize.Level1)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
-    bool isVKB = true;
+    VkbMode isVKB = VKB_ONLY_RING;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
@@ -514,7 +514,7 @@ HWTEST_F(AudioVolumeUnitTest, Monitor_001, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    bool isVKB = true;
+    VkbMode isVKB = VKB_ONLY_RING;
     audioVolume->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
         sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
     audioVolume->Monitor(sessionId, true);
@@ -677,7 +677,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_005, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = true;
     int32_t mode = 0;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
         sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
 
@@ -1550,7 +1550,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_006, TestSize.Level1)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
-    bool isVKB = true;
+    VkbMode isVKB = VKB_ONLY_RING;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
 
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
@@ -1723,7 +1723,7 @@ HWTEST_F(AudioVolumeUnitTest, GetStreamVolume_002, TestSize.Level1)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
-    bool isVKB = true;
+    VkbMode isVKB = VKB_ONLY_RING;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
 
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
@@ -2213,7 +2213,7 @@ HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_NonMusicStream, TestSi
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
 
     audioVolumeTest->appIndividualVolumeEnabled_ = true;
@@ -2237,7 +2237,7 @@ HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_AppIndividualVolumeDis
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
 
     audioVolumeTest->appIndividualVolumeEnabled_ = false;
@@ -2261,7 +2261,7 @@ HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_WithVolumeRecord, Test
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
     streamVolume.systemAppVolume_ = 0.8f;
 
@@ -2287,7 +2287,7 @@ HWTEST_F(AudioVolumeUnitTest, GetStreamAndPipeVolume_001, TestSize.Level1)
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
     audioVolumeTest->AddStreamVolume(params);
     
@@ -2346,7 +2346,7 @@ HWTEST_F(AudioVolumeUnitTest, GetStreamAndPipeVolume_003, TestSize.Level1)
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
     audioVolumeTest->AddStreamVolume(params);
     
@@ -2380,7 +2380,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_001, TestSize.Level1)
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
     audioVolumeTest->AddStreamVolume(params);
     
@@ -2444,7 +2444,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_003, TestSize.Level1)
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
     audioVolumeTest->AddStreamVolume(params);
     
@@ -2476,7 +2476,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_004, TestSize.Level1)
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = false;
+    VkbMode isVKB = VKB_INVALID;
     StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
     audioVolumeTest->AddStreamVolume(params);
     
@@ -2521,7 +2521,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_005, TestSize.Level1)
     int32_t pid = 1000;
     bool isSystemApp = false;
     int32_t mode = 1;
-    bool isVKB = true;
+    VkbMode isVKB = VKB_ONLY_RING;
     StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
     audioVolumeTest->AddStreamVolume(params);
     

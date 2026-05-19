@@ -156,7 +156,7 @@ private:
 class StreamVolume {
 public:
     StreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage, int32_t uid, int32_t pid,
-        bool isSystemApp, int32_t mode, bool isVKB) : sessionId_(sessionId), streamType_(streamType),
+        bool isSystemApp, int32_t mode, VkbMode isVKB) : sessionId_(sessionId), streamType_(streamType),
         streamUsage_(streamUsage), appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp),
         isVirtualKeyboard_(isVKB) {volumeMode_ = static_cast<AudioVolumeMode>(mode);};
 
@@ -173,7 +173,7 @@ public:
     int32_t GetAppPid() const {return appPid_;};
     bool IsSystemApp() const {return isSystemApp_;};
     AudioVolumeMode GetVolumeMode() const {return volumeMode_;};
-    bool IsVirtualKeyboard() const {return isVirtualKeyboard_;};
+    VkbMode GetVirtualKeyboardMode() const {return isVirtualKeyboard_;};
 
     float GetTotalVolume() const { return totalVolume_.load(std::memory_order_acquire); }
     float GetHistoryVolume() const { return historyVolume_.load(std::memory_order_acquire); }
@@ -225,7 +225,7 @@ private:
     int32_t appPid_ = 0;
     bool isSystemApp_ = false;
     AudioVolumeMode volumeMode_ = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
-    bool isVirtualKeyboard_ = false;
+    VkbMode isVirtualKeyboard_ = VKB_INVALID;
 };
 
 class PipeVolume {

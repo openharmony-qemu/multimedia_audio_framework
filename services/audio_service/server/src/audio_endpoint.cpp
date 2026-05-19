@@ -1458,7 +1458,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
 
     AudioProcessConfig clientConfig = processList_[i]->GetAudioProcessConfig();
-    bool isVirtualKeyboard = clientConfig.rendererInfo.isVirtualKeyboard;
+    VkbMode vkbMode = clientConfig.rendererInfo.isVirtualKeyboard;
     int32_t appUid = clientConfig.appInfo.appUid;
     AudioVolumeMode volumeMode = clientConfig.rendererInfo.volumeMode;
 
@@ -1476,8 +1476,10 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
         && volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || !getVolumeRet ||
         IsNearlinkAbsVolSupportStream(deviceType, volumeType)) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
-    } else if (isVirtualKeyboard) {
+    } else if (vkbMode == VKB_ONLY_RING) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
+    } else if (vkbMode == VKB_ALL_RING) {
+        result.volumeStart = static_cast<int32_t>(baseVolume);
     } else if (volumeType == STREAM_VOICE_CALL) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
     } else {

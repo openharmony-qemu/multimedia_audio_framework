@@ -489,9 +489,10 @@ std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject
         "Failed to create renderer object");
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    VkbMode vkbMode = audioRenderer->GetVirtualKeyboardMode(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_ALL_RING ? AUDIO_FLAG_NORMAL : rendererFlags;
     if (rendererFlags == AUDIO_FLAG_PCM_OFFLOAD) {
         bool isSupportInnerCaptureOffload = AudioPolicyManager::GetInstance().IsSupportInnerCaptureOffload();
         AUDIO_INFO_LOG("isSupportInnerCaptureOffload: %{public}d", isSupportInnerCaptureOffload);
@@ -503,9 +504,9 @@ std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F", rendererFlags, appInfo.appUid,
         rendererOptions.rendererInfo.toneFlag ? "T" : "F");
-    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
+    AUDIO_INFO_LOG("vkbMode: %{public}d", vkbMode);
 
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
+    audioRenderer->rendererInfo_.isVirtualKeyboard = vkbMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
@@ -579,9 +580,10 @@ bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate>
     audioRenderer->rendererInfo_.isStatic = true;
     audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    VkbMode vkbMode = audioRenderer->GetVirtualKeyboardMode(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_ALL_RING ? AUDIO_FLAG_MMAP : rendererFlags;
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
         false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -592,9 +594,9 @@ bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate>
         "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         "F", rendererFlags, appInfo.appUid, rendererOptions.rendererInfo.toneFlag ? "T" : "F");
-    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
+    AUDIO_INFO_LOG("vkbMode: %{public}d", vkbMode);
 
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
+    audioRenderer->rendererInfo_.isVirtualKeyboard = vkbMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
@@ -1491,7 +1493,7 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     HILOG_COMM_INFO("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.streamType, GetVolumeInner(), audioInterrupt_.mode);
-    AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
+    AUDIO_INFO_LOG("vkbMode: %{public}d", rendererInfo_.isVirtualKeyboard);
     bool silentControl = false;
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(
         IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
@@ -3579,15 +3581,18 @@ void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackT
     audioInterrupt_.callbackType = callbackType;
 }
 
-bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
+VkbMode AudioRendererPrivate::GetVirtualKeyboardMode(const int32_t flags)
 {
     bool isBundleNameValid = false;
     int32_t ret = AudioPolicyManager::GetInstance().CheckVKBInfo(GetBundleNameByUid(), isBundleNameValid);
-    bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
-        && isBundleNameValid;
-    AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, isVKB:%{public}s", ret, flags,
-        isVirtualKeyboard ? "T" : "F");
-    return isVirtualKeyboard;
+    if (flags == AUDIO_FLAG_VKB_ALL_RING && isBundleNameValid) {
+        AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, vkbMode:%{public}d", ret, flags, VKB_ALL_RING);
+        return VKB_ALL_RING;
+    }
+    VkbMode mode = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
+        && isBundleNameValid ? VKB_ONLY_RING : VKB_INVALID;
+    AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, vkbMode:%{public}d", ret, flags, mode);
+    return mode;
 }
 
 int32_t AudioRendererPrivate::CheckAudioRenderer(std::string callingFunc)

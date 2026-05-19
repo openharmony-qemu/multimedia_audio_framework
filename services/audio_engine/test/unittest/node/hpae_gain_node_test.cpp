@@ -208,7 +208,7 @@ static void SetupStreamAndPipeVolume(uint32_t sessionId, float streamVol, float 
     params.pid = UT_PID;
     params.isSystemApp = false;
     params.mode = UT_VOLUME_MODE;
-    params.isVKB = false;
+    params.isVKB = VKB_INVALID;
     audioVolume->AddStreamVolume(params);
     audioVolume->SetStreamVolume(sessionId, streamVol);
     PipeVolume pipeVolume(UT_PIPE_ID, STREAM_MUSIC, pipeVol, UT_VOLUME_LEVEL, false);
@@ -226,7 +226,7 @@ static void SetupStreamVolumeOnly(uint32_t sessionId, float streamVol)
     params.pid = UT_PID;
     params.isSystemApp = false;
     params.mode = UT_VOLUME_MODE;
-    params.isVKB = false;
+    params.isVKB = VKB_INVALID;
     audioVolume->AddStreamVolume(params);
     audioVolume->SetStreamVolume(sessionId, streamVol);
 }

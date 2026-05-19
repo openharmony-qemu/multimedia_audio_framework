@@ -62,6 +62,7 @@ constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
 constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
+constexpr int32_t AUDIO_FLAG_VKB_ALL_RING = 1026;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
@@ -399,6 +400,12 @@ enum UnderrunInfoType : uint32_t {
     UNDERRUN_TYPE_MAX = 1 << 2,
 };
 
+enum VkbMode {
+    VKB_INVALID = 0,
+    VKB_ONLY_RING = 1,
+    VKB_ALL_RING = 2
+};
+
 struct AdjustStreamVolumeInfo {
     float volume;
     uint32_t sessionId;
@@ -413,7 +420,7 @@ struct StreamVolumeParams {
     int32_t pid;
     bool isSystemApp;
     int32_t mode;
-    bool isVKB;
+    VkbMode isVKB;
 };
 
 constexpr CallbackChange CALLBACK_ENUMS[] = {
@@ -731,7 +738,7 @@ struct AudioRendererInfo : public Parcelable {
     int32_t effectMode = 1;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
-    bool isVirtualKeyboard = false;
+    VkbMode isVirtualKeyboard = VKB_INVALID;
     // store the finally select routeflag after concurrency
     uint32_t audioFlag = 0x0;
     bool forceToNormal = false;
@@ -774,7 +781,7 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(isLoopback)
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
-            && parcel.WriteBool(isVirtualKeyboard)
+            && parcel.WriteInt32(static_cast<int32_t>(isVirtualKeyboard))
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
@@ -805,7 +812,7 @@ struct AudioRendererInfo : public Parcelable {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
-        isVirtualKeyboard = parcel.ReadBool();
+        isVirtualKeyboard = static_cast<VkbMode>(parcel.ReadInt32());
         audioFlag = parcel.ReadUint32();
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
@@ -1690,7 +1697,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.effectMode = parcel.ReadInt32();
         config->rendererInfo.isLoopback = parcel.ReadBool();
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
-        config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
+        config->rendererInfo.isVirtualKeyboard = static_cast<VkbMode>(parcel.ReadInt32());
         config->rendererInfo.keepRunning = parcel.ReadBool();
         config->rendererInfo.voipNoPrivacyFlag = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();

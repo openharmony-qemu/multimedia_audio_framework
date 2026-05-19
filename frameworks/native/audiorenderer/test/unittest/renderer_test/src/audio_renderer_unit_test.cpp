@@ -457,7 +457,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_EQ(AUDIO_FLAG_NORMAL, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
@@ -489,7 +489,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
@@ -521,7 +521,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
