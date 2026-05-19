@@ -18,6 +18,7 @@
 #endif
 
 #include "hpae_renderer_manager.h"
+#include <cinttypes>
 #include "audio_stream_info.h"
 #include "audio_errors.h"
 #include "hpae_node_common.h"
@@ -29,6 +30,7 @@
 #include "hpae_remote_output_cluster.h"
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
+#include "parameters.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
@@ -37,17 +39,19 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-    constexpr float SUSPEND_TIME_OUT_S = 3.5; // prevent stop not success
-    constexpr int64_t AUDIO_NS_PER_US = 1000;
-    constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
-    constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
-    constexpr int64_t UNDERRUN_BYPASS_DURATION_OFFLOAD_NS = 40 * 1000 * 1000; // 40ms
-    const std::string REMOTE_DEVICE_CLASS = "remote";
-    const std::string BT_SINK_NAME = "a2dp";
-    const std::string USB_SINK_NAME = "usb";
-    constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
-    constexpr size_t RENDERER_REQUEST_COUNT = CURRENT_REQUEST_COUNT;
-    constexpr int32_t COLL_ALING_COUNT = 5; // 5 frames
+constexpr float SUSPEND_TIME_OUT_S = 3.5; // prevent stop not success
+constexpr int64_t AUDIO_NS_PER_US = 1000;
+constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
+constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
+constexpr int64_t UNDERRUN_BYPASS_DURATION_OFFLOAD_NS = 40 * 1000 * 1000; // 40ms
+const std::string REMOTE_DEVICE_CLASS = "remote";
+const std::string BT_SINK_NAME = "a2dp";
+const std::string USB_SINK_NAME = "usb";
+constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
+constexpr size_t RENDERER_REQUEST_COUNT = CURRENT_REQUEST_COUNT;
+constexpr int32_t COLL_ALING_COUNT = 10; // 10 frames = 200 ms
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
@@ -60,6 +64,12 @@ HpaeRendererManager::~HpaeRendererManager()
     if (isInit_.load()) {
         DeInit();
     }
+}
+
+DeviceType HpaeRendererManager::GetCurrentSinkDeviceType()
+{
+    CHECK_AND_RETURN_RET(outputCluster_ != nullptr, DEVICE_TYPE_NONE);
+    return outputCluster_->GetCurrentOutputDevice();
 }
 
 bool HpaeRendererManager::IsMchDevice()
@@ -82,6 +92,10 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
+        nodeInfo.renderId = renderId_;
+    }
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u,channels:%{public}u,rate:%{public}u",
@@ -104,26 +118,27 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
+        nodeInfo.renderId = renderId_;
+    }
     // no need history buffer in not offload sink
     nodeInfo.historyFrameCount = 0;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = sinkInfo_.frameLen;
+    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    AdjustFrameLen(nodeInfo, outNodeInfo);
     node->SetNodeInfo(nodeInfo);
     node->SetIsLowLatency(false);
     uint32_t sessionId = nodeInfo.sessionId;
 
     sinkInputNodeMap_[sessionId] = node;
-    HpaeNodeInfo outNodeInfo;
-    outNodeInfo.frameLen = sinkInfo_.frameLen;
-    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
-    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
-    if (frameLenAdjusted) {
-        node->SetNodeInfo(nodeInfo);
-        TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
-            static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
-    }
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
+        static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_PLAY);
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 #ifdef ENABLE_HIDUMP_DFX
@@ -161,6 +176,8 @@ void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("default processCluster is null, create default processCluster");
         HpaeNodeInfo temp = nodeInfo;
         temp.sceneType = HPAE_SCENE_DEFAULT;
+        temp.renderId = renderId_;
+        temp.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
         auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
         sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
         sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
@@ -223,7 +240,13 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
 {
     Trace trace("HpaeRendererManager::CreateProcessCluster");
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
-    int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    int32_t processClusterDecision;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+            sceneType, static_cast<DeviceType>(nodeInfo.deviceType), nodeInfo.renderId);
+    } else {
+        processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    }
     CreateProcessClusterInner(nodeInfo, processClusterDecision);
 
     HpaeProcessorType sceneTypeConnect = GetProcessorType(nodeInfo.sessionId);
@@ -263,54 +286,89 @@ HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage stream
     }
 }
 
-HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
+HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId) const
 {
-    HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+    auto it = sinkInputNodeMap_.find(sessionId);
+    if (it == sinkInputNodeMap_.end() || it->second == nullptr) {
+        return HPAE_SCENE_EFFECT_NONE;
+    }
+    HpaeNodeInfo nodeInfo = it->second->GetNodeInfo();
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
-    if ((!isSplitProcessorType(nodeInfo.sceneType)) && (sessionNodeMap_[sessionId].bypass ||
-        !AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType, nodeInfo.effectInfo.effectMode))) {
+    bool noArmEffect = false;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        noArmEffect = !AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(
+            sceneType, nodeInfo.effectInfo.effectMode,
+            static_cast<DeviceType>(nodeInfo.deviceType), nodeInfo.renderId);
+    } else {
+        noArmEffect = !AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(
+            sceneType, nodeInfo.effectInfo.effectMode);
+    }
+    auto sessionIt = sessionNodeMap_.find(sessionId);
+    if ((!isSplitProcessorType(nodeInfo.sceneType))
+        && (sessionIt == sessionNodeMap_.end() || sessionIt->second.bypass || noArmEffect)) {
         return HPAE_SCENE_EFFECT_NONE;
     }
     return nodeInfo.sceneType;
+}
+
+void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
+{
+    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+        "could not find processorType %{public}d", nodeInfo.sceneType);
+    sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
+    sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
+    AUDIO_INFO_LOG("disconnected from sceneType %{public}d, current count is %{public}d",
+        nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]);
+    if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
+        AUDIO_INFO_LOG("sceneType default count is %{public}d",
+            sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
+    }
+    DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
+    sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+    sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererCreate(nodeInfo, sinkInfo_);
+}
+
+void HpaeRendererManager::SwitchBypassState(const std::shared_ptr<HpaeSinkInputNode> &node,
+    HpaeNodeInfo &nodeInfo, int32_t processClusterDecision)
+{
+    if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
+        processClusterDecision == USE_NONE_PROCESSCLUSTER) {
+        AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
+        DisconnectNodeFromEffectChain(nodeInfo);
+    } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
+        processClusterDecision != USE_NONE_PROCESSCLUSTER &&
+        GetProcessorType(nodeInfo.sessionId) == HPAE_SCENE_EFFECT_NONE) {
+        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(nodeInfo, sinkInfo_);
+        CreateProcessCluster(nodeInfo);
+        AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
+    } else {
+        AUDIO_INFO_LOG("sessionId: %{public}u refresh to %{public}d", nodeInfo.sessionId, processClusterDecision);
+        TriggerStreamState(nodeInfo.sessionId, node);
+        DeleteProcessCluster(nodeInfo.sessionId);
+        CreateProcessClusterAndConnect(nodeInfo);
+    }
 }
 
 void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node)
 {
     CHECK_AND_RETURN_LOG(node != nullptr, "sinkInputNode is nullptr");
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
+        nodeInfo.renderId = renderId_;
+    }
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
-    int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    int32_t processClusterDecision;
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+            sceneType, static_cast<DeviceType>(nodeInfo.deviceType), nodeInfo.renderId);
+    } else {
+        processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    }
     if ((processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) ||
         (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass)) {
-        if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
-            processClusterDecision == USE_NONE_PROCESSCLUSTER) {
-            AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
-            CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
-                "could not find processorType %{public}d", nodeInfo.sceneType);
-            sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
-            sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
-            AUDIO_INFO_LOG("disconnected from sceneType %{public}d, current count is %{public}d",
-                nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]);
-            if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
-                sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
-                AUDIO_INFO_LOG("sceneType default count is %{public}d",
-                    sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
-            }
-            DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
-            sessionNodeMap_[nodeInfo.sessionId].bypass = true;
-            sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererCreate(nodeInfo, sinkInfo_);
-        } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
-            processClusterDecision != USE_NONE_PROCESSCLUSTER &&
-            GetProcessorType(nodeInfo.sessionId) == HPAE_SCENE_EFFECT_NONE) {
-            sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(nodeInfo, sinkInfo_);
-            CreateProcessCluster(nodeInfo);
-            AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
-        } else {
-            AUDIO_INFO_LOG("sessionId: %{public}u refresh to %{public}d", nodeInfo.sessionId, processClusterDecision);
-            TriggerStreamState(nodeInfo.sessionId, node);
-            DeleteProcessCluster(nodeInfo.sessionId);
-            CreateProcessClusterAndConnect(nodeInfo);
-        }
+        SwitchBypassState(node, nodeInfo, processClusterDecision);
     } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId) &&
         node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);
@@ -458,7 +516,7 @@ void HpaeRendererManager::DisConnectCoBufferFromDeleteProcessCluster(HpaeProcess
     TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
 }
 
-bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType)
+bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType) const
 {
     if (sceneType == HPAE_SCENE_SPLIT_MEDIA || sceneType == HPAE_SCENE_SPLIT_NAVIGATION ||
         sceneType == HPAE_SCENE_SPLIT_COMMUNICATION) {
@@ -666,6 +724,12 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
     AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
         sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str(), GetEncryptStr(sinkName).c_str());
+    if (HasSessionEffect(sessionId)) {
+        auto clusterIt = sceneClusterMap_.find(sceneType);
+        if (clusterIt != sceneClusterMap_.end()) {
+            clusterIt->second->SessionEffectPrepareMoveStream(sessionId);
+        }
+    }
     std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
     TriggerStreamState(sessionId, inputNode);
     DeleteInputSession(sessionId);
@@ -697,6 +761,9 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        if (HasSessionEffect(sessionId)) {
+            sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
+        }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         SetSessionFade(sessionId, OPERATION_STARTED);
         UpdateClusterStreamInfo(sceneType);
@@ -719,6 +786,9 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        if (HasSessionEffect(sessionId)) {
+            sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
+        }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         SetSessionFade(sessionId, OPERATION_STARTED);
         UpdateClusterStreamInfo(sceneType);
@@ -862,8 +932,14 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
             "Pause not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
         if (isStandby) {
+            if (HasSessionEffect(sessionId)) {
+                sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
+            }
             DisConnectInputSession(sessionId);
         } else if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
+            if (HasSessionEffect(sessionId)) {
+                sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
+            }
             DisConnectInputSession(sessionId);
         }
         UpdateClusterStreamInfo(sceneType);
@@ -900,10 +976,17 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             ? sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
             "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
+        auto converter = sceneClusterMap_[sceneType]->GetConverterNodeById(sessionId);
+        if (converter != nullptr) {
+            converter->FlushBuffers();
+        }
         CHECK_AND_RETURN_LOG(isNeedInitEffectBufferFlagMap_.find(sessionId) != isNeedInitEffectBufferFlagMap_.end(),
             "isNeedInitEffectBufferFlagMap no find sessionId %{public}u", sessionId);
         if (isNeedInitEffectBufferFlagMap_[sessionId] == true) {
             sceneClusterMap_[sceneType]->InitEffectBuffer(sessionId);
+        }
+        if (HasSessionEffect(sessionId)) {
+            sceneClusterMap_[sceneType]->SessionEffectFlush(sessionId);
         }
     };
     SendRequest(request, __func__);
@@ -1072,6 +1155,10 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo,
     AUDIO_INFO_LOG("init device:%{public}s manager end", GetEncryptStr(sinkInfo.deviceName).c_str());
     for (const auto &it : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
+        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+            nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
+            nodeInfo.renderId = renderId_;
+        }
         CreateProcessClusterAndConnect(nodeInfo);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, it.first,
             ConvertHpaeToRendererState(it.second->GetState()));
@@ -1106,6 +1193,23 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
         outputCluster_ = std::make_unique<HpaeOutputCluster>(nodeInfo);
     }
     outputCluster_->SetTimeoutStopThd(sinkInfo_.suspendTime);
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        outputCluster_->SetDeviceChangeCallback([this]() {
+            RefreshProcessClusterByDevice();
+        });
+    }
+    int32_t ret = InitOutputCluster();
+    if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE) || isReload == true) {
+        InitDefaultNodeInfo();
+    }
+    if (isNeedCallBack == true) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+    }
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::InitOutputCluster()
+{
     int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
@@ -1121,15 +1225,11 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
     attr.auxSinkEnable = sinkInfo_.auxSinkEnable;
-    if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE) || isReload == true) {
-        InitDefaultNodeInfo();
-    }
     ret = outputCluster_->Init(attr);
     isInit_.store(ret == SUCCESS);
-    if (isNeedCallBack == true) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
-    }
-    return SUCCESS;
+    renderId_ = outputCluster_->GetRenderId();
+    AUDIO_INFO_LOG("init sink:%{public}s, renderid:%{public}u", sinkInfo_.deviceName.c_str(), renderId_);
+    return ret;
 }
 
 void HpaeRendererManager::InitDefaultNodeInfo()
@@ -1145,6 +1245,8 @@ void HpaeRendererManager::InitDefaultNodeInfo()
     defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
     defaultNodeInfo.statusCallback = weak_from_this();
+    defaultNodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
+    defaultNodeInfo.renderId = renderId_;
     sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = std::make_shared<HpaeProcessCluster>(defaultNodeInfo, sinkInfo_);
     sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE] = 1;
 }
@@ -1446,9 +1548,15 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING,
             "no need disconnect renderer input session, %{public}u is running", sessionId);
         AUDIO_INFO_LOG("Fade done, call back at RendererManager");
-        DisConnectInputSession(sessionId);
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
             OPERATION_STOPPED : OPERATION_PAUSED;
+        if (operation == OPERATION_PAUSED && HasSessionEffect(sessionId)) {
+            HpaeProcessorType sceneType = GetProcessorType(sessionId);
+            if (SafeGetMap(sceneClusterMap_, sceneType)) {
+                sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
+            }
+        }
+        DisConnectInputSession(sessionId);
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
         SetSessionState(sessionId, state);
         sinkInputNodeMap_[sessionId]->SetState(state);
@@ -1486,6 +1594,16 @@ void HpaeRendererManager::OnNotifyQueue()
 {
     CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ is nullptr");
     hpaeSignalProcessThread_->Notify();
+}
+
+void HpaeRendererManager::OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs)
+{
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr,
+        "OnRewindBuffer: SinkInputNode not found for session %{public}u", sessionId);
+    sinkInputNode->RewindHistoryBuffer(rewindTimeUs);
+    AUDIO_INFO_LOG("OnRewindBuffer: session %{public}u rewound %{public}" PRIu64 "us",
+        sessionId, rewindTimeUs);
 }
 
 void HpaeRendererManager::UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode)
@@ -1566,6 +1684,7 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
             GetEncryptStr(sinkInfo_.deviceName).c_str(), state);
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
+            sinkInputNodeMap_[sessionId]->SetOffloadType(state);
         } else {
             AUDIO_ERR_LOG("not find sessionId %{public}u", sessionId);
         }
@@ -1696,7 +1815,7 @@ void HpaeRendererManager::EnableCollaboration()
     isReloadManagerFromCollStateChange_ = false;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
-        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE || nodeInfo.effectInfo.effectScene == SCENE_MUSIC) {
             AUDIO_INFO_LOG("move to coll sessionId %{public}u, state: %{public}d", key,
                 static_cast<int32_t>(node->GetState()));
             if (node->GetState() == HPAE_SESSION_RUNNING) {
@@ -1850,6 +1969,122 @@ int32_t HpaeRendererManager::SetAuxiliarySinkEnable(bool isEnabled)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    if (it == sessionNodeMap_.end()) {
+        AUDIO_WARNING_LOG("CreateSessionEffect: session %{public}u not found", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    auto clusterIt = sceneClusterMap_.find(sceneType);
+    if (clusterIt == sceneClusterMap_.end()) {
+        AUDIO_WARNING_LOG("CreateSessionEffect: cluster not found for sceneType %{public}d",
+            sceneType);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+    int32_t ret = clusterIt->second->CreateSessionEffectNode(sessionId, effectName, instance, config);
+    if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        AUDIO_WARNING_LOG("CreateSessionEffect failed for session %{public}u, ret %{public}d",
+            sessionId, ret);
+    } else {
+        AUDIO_INFO_LOG("[SE::RendererManager] CreateSessionEffect sessionId=%{public}u",
+            sessionId);
+    }
+    return ret;
+}
+
+int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    if (it == sessionNodeMap_.end()) {
+        AUDIO_WARNING_LOG("DestroySessionEffect: session %{public}u not found", sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    auto clusterIt = sceneClusterMap_.find(sceneType);
+    if (clusterIt == sceneClusterMap_.end()) {
+        AUDIO_WARNING_LOG("DestroySessionEffect: cluster not found for sceneType %{public}d",
+            sceneType);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+
+    uint64_t latency = 0;
+    int32_t ret = clusterIt->second->DestroySessionEffectNode(sessionId, latency);
+    if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        AUDIO_WARNING_LOG("DestroySessionEffect failed for session %{public}u, ret %{public}d",
+            sessionId, ret);
+        return ret;
+    }
+
+    // RewindHistoryBuffer: return unconsumed data to SinkInputNode
+    // Phase 2: latency=0, RewindBuffer(0) is no-op
+    // Phase 3: latency>0, RewindBuffer returns data to historyBuffer
+    if (latency > 0) {
+        auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        if (sinkInputNode != nullptr) {
+            sinkInputNode->RewindHistoryBuffer(latency);
+        }
+    }
+    AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect sessionId=%{public}u",
+        sessionId);
+    return ret;
+}
+
+bool HpaeRendererManager::HasSessionEffect(uint32_t sessionId) const
+{
+    auto cluster = SafeGetMap(sceneClusterMap_, GetProcessorType(sessionId));
+    return cluster && cluster->HasSessionEffectNode(sessionId);
+}
+
+bool HpaeRendererManager::IsValidSession(uint32_t sessionId) const
+{
+    return sessionNodeMap_.find(sessionId) != sessionNodeMap_.end();
+}
+
+void HpaeRendererManager::PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+{
+    auto request = [this, sessionId, effectName, instance, config]() {
+        int32_t ret = CreateSessionEffect(sessionId, effectName, instance, config);
+        if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+            AUDIO_WARNING_LOG("PostCreateSessionEffect: CreateSessionEffect failed for session %{public}u,"
+                " ret=%{public}d (system abnormal state, no rollback)", sessionId, ret);
+        }
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+void HpaeRendererManager::PostDestroySessionEffect(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        DestroySessionEffect(sessionId);
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+int32_t HpaeRendererManager::SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    CHECK_AND_RETURN_RET_LOG(it != sessionNodeMap_.end(),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
+        "SetSessionEffectParameter: session %{public}u not found", sessionId);
+    auto clusterIt = sceneClusterMap_.find(it->second.sceneType);
+    CHECK_AND_RETURN_RET_LOG(clusterIt != sceneClusterMap_.end(),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
+        "SetSessionEffectParameter: cluster not found");
+    return clusterIt->second->SetSessionEffectParameter(sessionId, type, value);
+}
+
+void HpaeRendererManager::PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)
+{
+    auto request = [this, sessionId, type, value]() {
+        SetSessionEffectParameter(sessionId, type, value);
+    };
+    SendRequest(std::move(request), __func__);
 }
 
 void HpaeRendererManager::SetCollDelayCount()

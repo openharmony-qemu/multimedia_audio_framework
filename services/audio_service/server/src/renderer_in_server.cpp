@@ -192,9 +192,13 @@ int32_t RendererInServer::ConfigServerBuffer()
 
     CHECK_AND_RETURN_RET_LOG(CreateServerBuffer() == SUCCESS, ERR_OPERATION_FAILED, "CreateServerBuffer failed");
 
-    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND /
-        (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
-        processConfig_.streamInfo.customSampleRate);
+    uint32_t sampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
+        processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
+    CHECK_AND_RETURN_RET_LOG(sampleRate != 0, ERR_INVALID_PARAM,
+        "ConfigServerBuffer: sampleRate is zero, cannot compute spanTime");
+    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND / sampleRate;
+    CHECK_AND_RETURN_RET_LOG(spanTime != 0, ERR_INVALID_PARAM,
+        "ConfigServerBuffer: spanTime is zero, cannot compute audioCheckFreq");
     audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
 
     isBufferConfiged_ = true;
@@ -346,7 +350,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             OnCheckActiveMusicTime("Stopped");
             break;
         case OPERATION_UPDATE_SPANSIZE:
-            RefreshServerBufferForSpanSizeUpdate();
+            RefreshServerBufferForSpanSizeUpdate(stateListener);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -1272,7 +1276,19 @@ void RendererInServer::UpdateStreamStatusByRendererState()
     }
 }
 
-int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
+int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
+{
+    if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
+        if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
+            return AUDIO_FLAG_VOIP_FAST;
+        } else {
+            return AUDIO_FLAG_MMAP;
+        }
+    }
+    return AUDIO_FLAG_NORMAL;
+}
+
+int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
     std::lock_guard<std::mutex> lock(writeLock_);
     AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate begin, sessionId:%{public}u oldSpan:%{public}zu",
@@ -1289,8 +1305,16 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
         newEngineSizeInFrame = newSpanSizeInFrame * DEFAULT_SPAN_SIZE;
     }
     
+    uint32_t sampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
+        processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
+    CHECK_AND_RETURN_RET_LOG(newSpanSizeInFrame != 0, ERR_INVALID_PARAM,
+        "RefreshServerBufferForSpanSizeUpdate: newSpanSizeInFrame is zero");
+    CHECK_AND_RETURN_RET_LOG(sampleRate != 0, ERR_INVALID_PARAM,
+        "RefreshServerBufferForSpanSizeUpdate: sampleRate is zero, cannot compute spanTime");
+
     uint32_t newRouteFlag = stream_->GetRouteFlag();
-    
+    int32_t rendererFlags = GetRendererFlagsByRoute(newRouteFlag);
+
     if (audioServerBuffer_ != nullptr && newSpanSizeInFrame > 0) {
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
             "routeFlag:%{public}u isLowLatency:%{public}d",
@@ -1299,25 +1323,27 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate()
             processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST);
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
-    
-    if (newRouteFlag != 0 && newRouteFlag != processConfig_.rendererInfo.rendererFlags) {
+
+    if (rendererFlags != processConfig_.rendererInfo.rendererFlags) {
         AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
-            processConfig_.rendererInfo.rendererFlags, newRouteFlag);
-        processConfig_.rendererInfo.rendererFlags = newRouteFlag;
+            processConfig_.rendererInfo.rendererFlags, rendererFlags);
+        processConfig_.rendererInfo.rendererFlags = rendererFlags;
+        stateListener->OnOperationHandled(UPDATE_SPANSIZE, rendererFlags == AUDIO_FLAG_NORMAL ?
+            FASTSTATUS_NORMAL : FASTSTATUS_FAST);
     }
-    
+
     spanSizeInFrame_ = newSpanSizeInFrame;
     engineTotalSizeInFrame_ = newEngineSizeInFrame;
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    
+
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         bufferTotalSizeInFrame_ = (spanSizeInByte_ + AVS3METADATA_SIZE) * DEFAULT_SPAN_SIZE;
     }
-    
-    uint32_t sampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
-        processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
+
     uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND / sampleRate;
+    CHECK_AND_RETURN_RET_LOG(spanTime != 0, ERR_INVALID_PARAM,
+        "RefreshServerBufferForSpanSizeUpdate: spanTime is zero, cannot compute audioCheckFreq");
     audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
     
     AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate success, sessionId:%{public}u newSpan:%{public}zu "
@@ -1981,7 +2007,7 @@ int32_t RendererInServer::SetRate(int32_t rate)
         CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
         audioRenderRate_ = static_cast<AudioRendererRate>(rate);
         speed_ = ConvertAudioRenderRateToSpeed(audioRenderRate_);
-        pitch_ = speed_;
+        sonicPitch_ = speed_;
         CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
             "ProcessAndSetStaticBuffer fail!");
     }
@@ -3281,7 +3307,7 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
         ERR_OPERATION_FAILED, "staticBuffer not inited");
     
-    int32_t ret = staticBufferProcessor_->ProcessBufferSpeed(speed_);
+    int32_t ret = staticBufferProcessor_->ProcessBufferSpeed(speed_, sonicPitch_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferSpeed fail!");
     
     ret = staticBufferProcessor_->ProcessBufferPitch(pitch_);
@@ -3309,15 +3335,23 @@ int32_t RendererInServer::SelectModeAndWriteData(int8_t *inputData, size_t reque
 
 int32_t RendererInServer::CreateServerBuffer()
 {
+    uint32_t sizeInFrame = bufferTotalSizeInFrame_;
     if (processConfig_.rendererInfo.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(processConfig_.staticBufferInfo.sharedMemory_ != nullptr,
-            ERR_OPERATION_FAILED, "sharedMemory is nullptr");
-        uint32_t totalSizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame_;
-        audioServerBuffer_ = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame, byteSizePerFrame_,
-            AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERROR, "SetStaticClientBuffer failed!");
-        AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
+        CHECK_AND_RETURN_RET_LOG(processConfig_.staticBufferInfo.bufferSize_ > 0,
+            ERR_OPERATION_FAILED, "bufferSize is invalid");
+        sizeInFrame = processConfig_.staticBufferInfo.bufferSize_ / byteSizePerFrame_;
+    }
+    // create OHAudioBuffer in server
+    audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(sizeInFrame, byteSizePerFrame_);
+    CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+        BootAnimationState::CREATE_FROM_LOCAL), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "CreateFromLocal failed!");
+    memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
+        audioServerBuffer_->GetDataSize());
+    int32_t ret = InitBufferStatus();
+    AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
 
+    if (processConfig_.rendererInfo.isStatic) {
         staticBufferProvider_ =
             AudioStaticBufferProvider::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
         CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr,
@@ -3329,18 +3363,6 @@ int32_t RendererInServer::CreateServerBuffer()
         CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr,
             ERR_OPERATION_FAILED, "staticBufferProcessor_ is nullptr!");
         ProcessAndSetStaticBuffer();
-    } else {
-        // create OHAudioBuffer in server
-        audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
-        CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
-            BootAnimationState::CREATE_FROM_LOCAL), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
-
-        // we need to clear data buffer to avoid dirty data.
-        memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
-            audioServerBuffer_->GetDataSize());
-        int32_t ret = InitBufferStatus();
-        AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
     }
     return SUCCESS;
 }
@@ -3417,6 +3439,12 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     }
     if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
         cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
+    }
+    if (processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
+        cacheCount = 0;
+        AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
+            "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
+        return SUCCESS;
     }
     // 20 -> 40, 93 -> 120
     uint64_t numerator = static_cast<uint64_t>(cacheSizeInFrame) + spanSizeInFrame_ - 1;

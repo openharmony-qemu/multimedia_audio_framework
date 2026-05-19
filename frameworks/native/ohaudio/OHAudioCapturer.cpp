@@ -135,18 +135,18 @@ OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "convert Capturer failed", true),
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_INVALID_PARAM, "convert Capturer failed", true),
         "convert Capturer failed");
     int32_t ret = audioCapturer->SetInputDevice((OHOS::AudioStandard::DeviceType)deviceType);
     if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_DEVICE_SWITCH_ILLEGAL_STATE,
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_ILLEGAL_STATE,
             "This audioCapturer can not reset the input device", true);
         AUDIO_ERR_LOG("This audioCapturer can not reset the input device");
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     } else if (ret != AUDIOSTREAM_SUCCESS) {
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_DEVICE_SWITCH_OPERATION_FAILED,
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED,
             "system error when calling this function", true);
         AUDIO_ERR_LOG("system error when calling this function");
         return AUDIOSTREAM_ERROR_SYSTEM;
@@ -159,17 +159,17 @@ OH_AudioStream_Result OH_AudioCapturer_SetMuteHint(OH_AudioCapturer* capturer, b
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_CONFING_INVALID_PARAM, "convert Capturer failed", true),
+            OHOS::AudioStandard::RECORD_CONFIG_INVALID_PARAM, "convert Capturer failed", true),
         "convert Capturer failed");
     int32_t ret = audioCapturer->SetMuteHint(mute);
     if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_CONFING_ILLEGAL_STATE, "SetMuteHint illegal state", true);
+            OHOS::AudioStandard::RECORD_CONFIG_ILLEGAL_STATE, "SetMuteHint illegal state", true);
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     }
     if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_CONFING_INVALID_PARAM, "SetMuteHint invalid param", true);
+            OHOS::AudioStandard::RECORD_CONFIG_INVALID_PARAM, "SetMuteHint invalid param", true);
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
     return ret == OHOS::AudioStandard::SUCCESS ? AUDIOSTREAM_SUCCESS : AUDIOSTREAM_ERROR_SYSTEM;
@@ -373,17 +373,17 @@ OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_CONFING_INVALID_PARAM, "convert capturer failed", true),
+            OHOS::AudioStandard::RECORD_CONFIG_INVALID_PARAM, "convert capturer failed", true),
         "convert capturer failed");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(strategy != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_CONFING_INVALID_PARAM, "strategy is nullptr", true),
+            OHOS::AudioStandard::RECORD_CONFIG_INVALID_PARAM, "strategy is nullptr", true),
         "strategy is nullptr");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         (behavior & ~static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR)) == 0,
         AUDIOSTREAM_ERROR_INVALID_PARAM,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_CONFING_INVALID_PARAM, "param behavior is invalid", true),
+            OHOS::AudioStandard::RECORD_CONFIG_INVALID_PARAM, "param behavior is invalid", true),
         "param behavior is invalid");
 
     OHOS::AudioStandard::AudioSessionStrategy audioStrategy;
@@ -397,7 +397,7 @@ OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
             break;
         default:
             OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                OHOS::AudioStandard::RECORD_CONFING_INVALID_PARAM, "concurrencyMode is invalid", true);
+                OHOS::AudioStandard::RECORD_CONFIG_INVALID_PARAM, "concurrencyMode is invalid", true);
             AUDIO_ERR_LOG("concurrencyMode is invalid");
             return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
@@ -405,7 +405,7 @@ OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS,
         AUDIOSTREAM_ERROR_ILLEGAL_STATE,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            OHOS::AudioStandard::RECORD_CONFING_ILLEGAL_STATE, "Set independent audio session strategy failed", true),
+            OHOS::AudioStandard::RECORD_CONFIG_ILLEGAL_STATE, "Set independent audio session strategy failed", true),
         "Set independent audio session strategy failed");
     return AUDIOSTREAM_SUCCESS;
 }
@@ -622,7 +622,7 @@ int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "capturer client is nullptr", true),
+            OHOS::AudioStandard::ERR_RECORD_DEVICE_SWITCH_NULL_POINTER, "capturer client is nullptr", true),
         "capturer client is nullptr");
     return audioCapturer_->SetInputDevice(deviceType);
 }
@@ -631,7 +631,7 @@ int32_t OHAudioCapturer::SetMuteHint(bool mute)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "capturer client is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "capturer client is nullptr", true),
         "capturer client is nullptr");
     return audioCapturer_->SetMuteHint(mute);
 }
@@ -894,7 +894,7 @@ void OHAudioCapturer::SetReadDataCallback(CapturerCallback capturerCallbacks, vo
         AUDIO_INFO_LOG("The read callback function without result");
     } else {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "The read callback function is not set", true);
+            RECORD_CONFIG_INVALID_PARAM, "The read callback function is not set", true);
         AUDIO_WARNING_LOG("The read callback function is not set");
     }
 }
@@ -910,7 +910,7 @@ void OHAudioCapturer::SetStreamEventCallback(CapturerCallback capturerCallbacks,
         AUDIO_INFO_LOG("The stream event callback function with result");
     } else {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "The stream event callback function only supports seperated set", true);
+            RECORD_CONFIG_NOT_SUPPORTED, "The stream event callback function only supports seperated set", true);
         AUDIO_WARNING_LOG("The stream event callback function only supports seperated set");
     }
 }
@@ -931,7 +931,7 @@ void OHAudioCapturer::SetInterruptCallback(CapturerCallback capturerCallbacks, v
         AUDIO_INFO_LOG("The Interrupt callback function is for PCM type without result");
     } else {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "The Interrupt callback function is not set", true);
+            RECORD_CONFIG_INVALID_PARAM, "The Interrupt callback function is not set", true);
         AUDIO_WARNING_LOG("The Interrupt callback function is not set");
     }
 }
@@ -951,7 +951,7 @@ void OHAudioCapturer::SetErrorCallback(CapturerCallback capturerCallbacks, void 
         audioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
     } else {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED,
+            RECORD_CONFIG_NOT_SUPPORTED,
             "The audio capturer error callback function only supports seperated set", true);
         AUDIO_WARNING_LOG("The audio capturer error callback function only supports seperated set");
     }
@@ -971,7 +971,7 @@ void OHAudioCapturer::SetCapturerWillMuteWhenInterrupted(InterruptStrategy strat
 {
     CHECK_AND_CALL_FUNC_RETURN_LOG(audioCapturer_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "capturer client is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "capturer client is nullptr", true),
         "capturer client is nullptr");
     audioCapturer_->SetInterruptStrategy(strategy);
 }
@@ -1066,7 +1066,7 @@ int32_t OHAudioCapturer::SetIndependentAudioSessionStrategy(
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "capturer client is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "capturer client is nullptr", true),
         "capturer client is nullptr");
     return audioCapturer_->SetIndependentAudioSessionStrategy(strategy, behavior);
 }

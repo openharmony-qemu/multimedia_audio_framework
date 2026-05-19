@@ -24,10 +24,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-static const uint8_t *RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
 typedef void (*TestPtr)();
 
 const vector<DeviceType> g_testDeviceTypes = {
@@ -70,23 +68,10 @@ uint32_t GetArrLength(T &arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-template<class T>
-T GetData()
+template<typename T>
+const T& PickValue(FuzzedDataProvider& fdp, const std::vector<T>& values)
 {
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (g_dataSize < g_pos) {
-        return object;
-    }
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
 }
 
 void AudioEffectServiceGetAvailableEffectsFuzzTest(FuzzedDataProvider& fdp)
@@ -180,10 +165,10 @@ void AudioEffectServiceConstructEffectChainManagerParamFuzzTest(FuzzedDataProvid
 
     Stream stream1;
     Stream stream2;
-    stream1.scene = "test";
-    stream1.priority = testScenePriorities[GetData<uint32_t>() % testScenePriorities.size()];
-    stream2.scene = "test";
-    stream2.priority = testScenePriorities[GetData<uint32_t>() % testScenePriorities.size()];
+    stream1.scene = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    stream1.priority = PickValue(fdp, testScenePriorities);
+    stream2.scene = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    stream2.priority = PickValue(fdp, testScenePriorities);
     EffectChainManagerParam effectChainManagerParam;
     audioEffectService->supportedEffectConfig_.postProcessNew.stream.push_back(stream1);
     audioEffectService->supportedEffectConfig_.postProcessNew.stream.push_back(stream2);
@@ -199,13 +184,15 @@ void AudioEffectServiceConstructEffectChainModeFuzzTest(FuzzedDataProvider& fdp)
 
     Device device1;
     Device device2;
-    device2.chain = "chain";
-    device2.type = "DEVICE_TYPE_DEFAULT";
+    device1.chain = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    device1.type = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    device2.chain = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    device2.type = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     StreamEffectMode mode;
-    mode.mode = "mode";
+    mode.mode = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     mode.devicePort.push_back(device1);
     mode.devicePort.push_back(device2);
-    std::string sceneType = "sceneType";
+    std::string sceneType = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     EffectChainManagerParam effectChainMgrParam;
     audioEffectService->ConstructEffectChainMode(mode, sceneType, effectChainMgrParam);
 }
@@ -224,10 +211,10 @@ void AudioEffectServiceConstructEnhanceChainManagerParamFuzzTest(FuzzedDataProvi
 
     Stream stream1;
     Stream stream2;
-    stream1.scene = "test";
-    stream1.priority = testScenePriorities[GetData<uint32_t>() % testScenePriorities.size()];
-    stream2.scene = "test";
-    stream2.priority = testScenePriorities[GetData<uint32_t>() % testScenePriorities.size()];
+    stream1.scene = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    stream1.priority = PickValue(fdp, testScenePriorities);
+    stream2.scene = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    stream2.priority = PickValue(fdp, testScenePriorities);
     EffectChainManagerParam effectChainManagerParam;
     audioEffectService->supportedEffectConfig_.preProcessNew.stream.push_back(stream1);
     audioEffectService->supportedEffectConfig_.preProcessNew.stream.push_back(stream2);
@@ -242,7 +229,7 @@ void AudioEffectServiceAddSupportedAudioEffectPropertyByDeviceFuzzTest(FuzzedDat
     }
 
     std::set<std::pair<std::string, std::string>> mergedSet;
-    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
     audioEffectService->AddSupportedAudioEffectPropertyByDevice(deviceType, mergedSet);
 }
 
@@ -256,8 +243,8 @@ void AudioEffectServiceAddSupportedPropertyByDeviceInnerFuzzTest(FuzzedDataProvi
     std::set<std::pair<std::string, std::string>> mergedSet;
     std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> device2PropertySet;
     std::set<std::pair<std::string, std::string>> device2Property;
-    device2PropertySet.insert({"DEVICE_TYPE_DEFAULT", device2Property});
-    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    device2PropertySet.insert({fdp.ConsumeRandomLengthString(MAX_STRING_LEN), device2Property});
+    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
     audioEffectService->AddSupportedPropertyByDeviceInner(deviceType, mergedSet, device2PropertySet);
 }
 
@@ -269,7 +256,7 @@ void AudioEffectServiceAddSupportedAudioEnhancePropertyByDeviceFuzzTest(FuzzedDa
     }
 
     std::set<std::pair<std::string, std::string>> mergedSet;
-    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
     audioEffectService->AddSupportedAudioEnhancePropertyByDevice(deviceType, mergedSet);
 }
 
@@ -298,8 +285,8 @@ void AudioEffectServiceUpdateAvailableAEConfigFuzzTest(FuzzedDataProvider& fdp)
     OriginalEffectConfig aeConfig;
     SceneMappingItem sceneMappingItem;
     PreStreamScene preStreamScene;
-    preStreamScene.stream = "SCENE_VOIP_UP";
-    preStreamScene.mode.push_back("ENHANCE_NONE");
+    preStreamScene.stream = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    preStreamScene.mode.push_back(fdp.ConsumeRandomLengthString(MAX_STRING_LEN));
     aeConfig.preProcess.defaultScenes.push_back(preStreamScene);
     aeConfig.preProcess.priorScenes.push_back(preStreamScene);
     aeConfig.preProcess.normalScenes.push_back(preStreamScene);
@@ -318,12 +305,16 @@ void AudioEffectServiceUpdateSupportedEffectPropertyFuzzTest(FuzzedDataProvider&
     Effect effect;
     EffectChain effectChain;
     std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> device2PropertySet;
-    device.chain = "test";
-    effectChain.name = "test";
-    effectChain.apply.push_back("test");
-    effect.effectProperty.push_back("test1");
-    std::set<std::pair<std::string, std::string>> deviceSet = {{"test1", "value1"}, {"test2", "value2"}};
-    device2PropertySet.insert({"test", deviceSet});
+    std::string chainName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    std::string applyName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    std::string propertyName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    std::string propertyValue = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    device.chain = chainName;
+    effectChain.name = chainName;
+    effectChain.apply.push_back(applyName);
+    effect.effectProperty.push_back(propertyName);
+    std::set<std::pair<std::string, std::string>> deviceSet = {{propertyName, propertyValue}};
+    device2PropertySet.insert({chainName, deviceSet});
     audioEffectService->supportedEffectConfig_.effectChains.push_back(effectChain);
     audioEffectService->UpdateSupportedEffectProperty(device, device2PropertySet);
 }
@@ -350,15 +341,6 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
 void Init()
 {
 }
@@ -372,7 +354,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;

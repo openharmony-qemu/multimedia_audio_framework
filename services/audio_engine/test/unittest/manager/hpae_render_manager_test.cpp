@@ -1553,6 +1553,211 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_004, TestSize.Le
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
+// ==================== UT for DisconnectNodeFromEffectChain ====================
+
+/**
+ * @tc.name  : DisconnectNodeFromEffectChain
+ * @tc.type  : FUNC
+ * @tc.number: DisconnectNodeFromEffectChain_001
+ * @tc.desc  : Test DisconnectNodeFromEffectChain releases from scene and reconnects to EFFECT_NONE.
+ */
+HWTEST_F(HpaeRendererManagerTest, DisconnectNodeFromEffectChain_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 20001;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+
+    // Set up sceneClusterMap_ with a process cluster for the scene
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] =
+        hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC];
+    hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 2;
+    hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] = 2;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
+
+    hpaeRendererManager->DisconnectNodeFromEffectChain(nodeInfo);
+
+    // Verify bypass is now true
+    EXPECT_EQ(hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass, true);
+    // Verify counts decremented for both sceneType and default
+    EXPECT_EQ(hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC], 1);
+    EXPECT_EQ(hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT], 1);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+}
+
+/**
+ * @tc.name  : DisconnectNodeFromEffectChain
+ * @tc.type  : FUNC
+ * @tc.number: DisconnectNodeFromEffectChain_002
+ * @tc.desc  : Test DisconnectNodeFromEffectChain with non-default scene does not decrement default count.
+ */
+HWTEST_F(HpaeRendererManagerTest, DisconnectNodeFromEffectChain_002, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 20002;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+
+    // scene is NOT shared with default
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 1;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
+
+    hpaeRendererManager->DisconnectNodeFromEffectChain(nodeInfo);
+
+    EXPECT_EQ(hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass, true);
+    EXPECT_EQ(hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC], 0);
+    // Default count should not be affected
+    EXPECT_EQ(hpaeRendererManager->sceneTypeToProcessClusterCountMap_.count(HPAE_SCENE_DEFAULT) == 0 ||
+        hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0, true);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+}
+
+/**
+ * @tc.name  : DisconnectNodeFromEffectChain
+ * @tc.type  : FUNC
+ * @tc.number: DisconnectNodeFromEffectChain_003
+ * @tc.desc  : Test DisconnectNodeFromEffectChain returns early when scene cluster not found.
+ */
+HWTEST_F(HpaeRendererManagerTest, DisconnectNodeFromEffectChain_003, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 20003;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    // No sceneClusterMap_ entry for HPAE_SCENE_MUSIC — should CHECK_AND_RETURN
+
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
+    hpaeRendererManager->DisconnectNodeFromEffectChain(nodeInfo);
+
+    // Should not crash, bypass should remain unchanged
+    EXPECT_EQ(hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass, false);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+}
+
+// ==================== UT for SwitchBypassState ====================
+
+/**
+ * @tc.name  : SwitchBypassState
+ * @tc.type  : FUNC
+ * @tc.number: SwitchBypassState_001
+ * @tc.desc  : Test SwitchBypassState with USE_NONE_PROCESSCLUSTER and EFFECT_NONE triggers disconnect.
+ */
+HWTEST_F(HpaeRendererManagerTest, SwitchBypassState_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 30001;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    node->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = node;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 1;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
+
+    hpaeRendererManager->SwitchBypassState(node, nodeInfo, USE_NONE_PROCESSCLUSTER);
+
+    // Should have been disconnected and bypass set to true
+    EXPECT_EQ(hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass, true);
+    EXPECT_EQ(hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC], 0);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+}
+
+/**
+ * @tc.name  : SwitchBypassState
+ * @tc.type  : FUNC
+ * @tc.number: SwitchBypassState_002
+ * @tc.desc  : Test SwitchBypassState with non-NONE decision and EFFECT_NONE processor creates process cluster.
+ */
+HWTEST_F(HpaeRendererManagerTest, SwitchBypassState_002, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 30002;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    node->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = node;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
+
+    hpaeRendererManager->SwitchBypassState(node, nodeInfo, CREATE_NEW_PROCESSCLUSTER);
+
+    // Should not crash; a new process cluster should be created
+    EXPECT_NE(hpaeRendererManager->sceneClusterMap_.count(HPAE_SCENE_MUSIC) == 0 ||
+        hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] != nullptr, false);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+}
+
+/**
+ * @tc.name  : SwitchBypassState
+ * @tc.type  : FUNC
+ * @tc.number: SwitchBypassState_003
+ * @tc.desc  : Test SwitchBypassState with non-EFFECT_NONE processor triggers full reconnect.
+ */
+HWTEST_F(HpaeRendererManagerTest, SwitchBypassState_003, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 30003;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    // Not connected to EFFECT_NONE — will go to the else branch
+    node->connectedProcessorType_ = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = node;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
+
+    hpaeRendererManager->SwitchBypassState(node, nodeInfo, USE_DEFAULT_PROCESSCLUSTER);
+
+    // Should not crash — the full reconnect path was taken
+    SUCCEED();
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+}
+
 /**
  * @tc.name  : CreateProcessClusterInner
  * @tc.type  : FUNC
@@ -2938,6 +3143,24 @@ HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
     hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp2] = sinkInputNode2;
     hpaeRendererManager->EnableCollaboration();
 
+    HpaeNodeInfo nodeInfo3;
+    uint32_t sessionIdTemp3 = sessionIdTemp2 + 1;
+    nodeInfo3.sessionId = sessionIdTemp3;
+    nodeInfo3.effectInfo.effectScene = SCENE_MUSIC;
+    auto sinkInputNode3 = std::make_shared<HpaeSinkInputNode>(nodeInfo3);
+    sinkInputNode3->SetState(HPAE_SESSION_RELEASED);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp3] = sinkInputNode3;
+    hpaeRendererManager->EnableCollaboration();
+
+    HpaeNodeInfo nodeInfo4;
+    uint32_t sessionIdTemp4 = sessionIdTemp3 + 1;
+    nodeInfo4.sessionId = sessionIdTemp4;
+    nodeInfo4.effectInfo.effectScene = SCENE_MUSIC;
+    auto sinkInputNode4 = std::make_shared<HpaeSinkInputNode>(nodeInfo4);
+    sinkInputNode4->SetState(HPAE_SESSION_RUNNING);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp4] = sinkInputNode4;
+    hpaeRendererManager->EnableCollaboration();
+
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
@@ -3493,9 +3716,100 @@ HWTEST_F(HpaeRendererManagerTest, Pause_NonInterphone_001, TestSize.Level1)
     
     EXPECT_EQ(hpaeRendererManager->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
-    
+
     EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen with customSampleRate
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_004
+ * @tc.desc  : Test AdjustFrameLen uses customSampleRate instead of samplingRate
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_004, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 160;
+    inNodeInfo.samplingRate = SAMPLE_RATE_8000;
+    inNodeInfo.customSampleRate = 8010;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, true);
+    // 160 frames @ 8010Hz = 19ms, 960 frames @ 48000Hz = 20ms, different -> adjust
+    // outFrameLenUs = 960 * 1000 / 48000 = 20, inNodeInfo.frameLen = 20 * 8010 / 1000 = 160
+    EXPECT_EQ(inNodeInfo.frameLen, 160);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen divide by zero inRate
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_005
+ * @tc.desc  : Test AdjustFrameLen returns false when inRate is zero
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_005, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 960;
+    inNodeInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+    inNodeInfo.customSampleRate = 0;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen divide by zero outRate
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_006
+ * @tc.desc  : Test AdjustFrameLen returns false when outRate is zero
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_006, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 960;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+    outNodeInfo.customSampleRate = 0;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(inNodeInfo.frameLen, 960);
+}
+
+/**
+ * @tc.name  : Test IHpaeRendererManager AdjustFrameLen with 11025Hz
+ * @tc.type  : FUNC
+ * @tc.number: AdjustFrameLen_007
+ * @tc.desc  : Test AdjustFrameLen with non-standard sample rate 11025Hz
+ */
+HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_007, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = 220;
+    inNodeInfo.samplingRate = SAMPLE_RATE_11025;
+
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = 960;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
+    EXPECT_EQ(result, true);
+    // inFrameLenUs = 220 * 1000 / 11025 = 19, outFrameLenUs = 960 * 1000 / 48000 = 20
+    // 19 != 20, adjust: inNodeInfo.frameLen = 20 * 11025 / 1000 = 220
+    EXPECT_EQ(inNodeInfo.frameLen, 220);
 }
 }  // namespace

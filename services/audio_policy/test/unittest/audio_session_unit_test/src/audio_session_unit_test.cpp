@@ -491,5 +491,41 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_023, TestSize.Level1)
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
+/**
+* @tc.name  : Test AudioSession.
+* @tc.number: AudioSessionUnitTest_025.
+* @tc.desc  : Test RemoveStreamInfo.
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_025, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.streamId = 10;
+    EXPECT_EQ(SUCCESS, audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA));
+    audioSession->fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_PAUSE;
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
+    EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
+
+    audioSession->fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_STOP;
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
+    EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
+
+    EXPECT_EQ(SUCCESS, audioSession->SetAudioSessionScene(AudioSessionScene::INVALID));
+    audioSession->fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_PAUSE;
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
+    EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
+
+    audioSession->fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_STOP;
+    audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
+    EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -104,6 +104,19 @@ int32_t AudioSpatializationManager::SetHeadTrackingEnabled(
     return AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(selectedAudioDevice, enable);
 }
 
+bool AudioSpatializationManager::IsPersonalizedSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, false, "selectedAudioDevice is nullptr");
+    return AudioPolicyManager::GetInstance().IsPersonalizedSpatializationEnabled(selectedAudioDevice->macAddress_);
+}
+
+int32_t AudioSpatializationManager::SetPersonalizedSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    return AudioPolicyManager::GetInstance().SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
+}
+
 int32_t AudioSpatializationManager::RegisterSpatializationEnabledEventListener(
     const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
 {
@@ -130,6 +143,13 @@ int32_t AudioSpatializationManager::RegisterAdaptiveSpatialRenderingEnabledEvent
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
     return AudioPolicyManager::GetInstance().RegisterAdaptiveSpatialRenderingEnabledEventListener(callback);
+}
+
+int32_t AudioSpatializationManager::RegisterPersonalizedSpatializationEnabledEventListener(
+    const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+    return AudioPolicyManager::GetInstance().RegisterPersonalizedSpatializationEnabledEventListener(callback);
 }
 
 int32_t AudioSpatializationManager::RegisterSpatialAudioSourceTypeEventListener(
@@ -159,6 +179,11 @@ int32_t AudioSpatializationManager::UnregisterAdaptiveSpatialRenderingEnabledEve
     return AudioPolicyManager::GetInstance().UnregisterAdaptiveSpatialRenderingEnabledEventListener();
 }
 
+int32_t AudioSpatializationManager::UnregisterPersonalizedSpatializationEnabledEventListener()
+{
+    return AudioPolicyManager::GetInstance().UnregisterPersonalizedSpatializationEnabledEventListener();
+}
+
 int32_t AudioSpatializationManager::UnregisterSpatialAudioSourceTypeEventListener()
 {
     return AudioPolicyManager::GetInstance().UnregisterSpatialAudioSourceTypeEventListener();
@@ -186,6 +211,11 @@ bool AudioSpatializationManager::IsHeadTrackingSupportedForDevice(
 {
     CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, false, "selectedAudioDevice is nullptr");
     return AudioPolicyManager::GetInstance().IsHeadTrackingSupportedForDevice(selectedAudioDevice->macAddress_);
+}
+
+bool AudioSpatializationManager::IsPersonalizedSpatializationSupported()
+{
+    return AudioPolicyManager::GetInstance().IsPersonalizedSpatializationSupported();
 }
 
 int32_t AudioSpatializationManager::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
@@ -223,6 +253,11 @@ int32_t AudioSpatializationManager::UnregisterHeadTrackingDataRequestedEventList
 int32_t AudioSpatializationManager::GetCurrentSpatialAudioSourceType()
 {
     return AudioPolicyManager::GetInstance().GetCurrentSpatialAudioSourceType();
+}
+
+int32_t AudioSpatializationManager::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
+{
+    return AudioPolicyManager::GetInstance().DownloadPersonalizedHRTF(fd, length);
 }
 } // namespace AudioStandard
 } // namespace OHOS

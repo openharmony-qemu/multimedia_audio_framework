@@ -16,13 +16,14 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
+#include "audio_log.h"
 #include "audio_policy_manager_listener_stub_impl.h"
-#include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
+const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
 
 typedef void (*TestFuncs)();
 
@@ -100,6 +101,14 @@ void OnInterruptFuzzTest(FuzzedDataProvider& fdp)
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
     InterruptEventInternal interruptEvent;
+    int32_t eventTypeValue = fdp.ConsumeIntegral<int32_t>();
+    interruptEvent.eventType = static_cast<InterruptType>(eventTypeValue);
+    int32_t forceTypeValue = fdp.ConsumeIntegral<int32_t>();
+    interruptEvent.forceType = static_cast<InterruptForceType>(forceTypeValue);
+    int32_t hintTypeValue = fdp.ConsumeIntegral<int32_t>();
+    interruptEvent.hintType = static_cast<InterruptHint>(hintTypeValue);
+    interruptEvent.eventTimestamp = fdp.ConsumeIntegral<int64_t>();
+    interruptEvent.callbackToApp = fdp.ConsumeBool();
     policyListenerStub->OnInterrupt(interruptEvent);
     policyListenerStub->callback_ = std::make_shared<AudioInterruptCallbackFuzzTest>();
     if (policyListenerStub->callback_.lock() == nullptr) {
@@ -113,7 +122,7 @@ void OnAvailableDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
     DeviceChangeAction deviceChangeAction;
-    uint32_t usage = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t usage = fdp.ConsumeIntegral<uint32_t>();
     policyListenerStub->audioAvailableDeviceChangeCallback_ =
         std::make_shared<AudioManagerAvailableDeviceChangeCallbackFuzzTest>();
     if (policyListenerStub->audioAvailableDeviceChangeCallback_.lock() == nullptr) {
@@ -126,9 +135,9 @@ void OnQueryClientTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    uint32_t uid = g_fuzzUtils.GetData<uint32_t>();
-    bool ret = g_fuzzUtils.GetData<bool>();
-    std::string bundleName = "bundleName";
+    uint32_t uid = fdp.ConsumeIntegral<uint32_t>();
+    bool ret = fdp.ConsumeBool();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     policyListenerStub->audioQueryClientTypeCallback_ = std::make_shared<AudioQueryClientTypeCallbackFuzzTest>();
     if (policyListenerStub->audioQueryClientTypeCallback_.lock() == nullptr) {
         return;
@@ -140,10 +149,10 @@ void OnCheckClientInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::string bundleName = "bundleName";
-    int32_t uid = g_fuzzUtils.GetData<int32_t>();
-    int32_t pid = g_fuzzUtils.GetData<int32_t>();
-    bool ret = g_fuzzUtils.GetData<bool>();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
+    int32_t pid = fdp.ConsumeIntegral<int32_t>();
+    bool ret = fdp.ConsumeBool();
     policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
     policyListenerStub->OnCheckClientInfo(bundleName, uid, pid, ret);
 }
@@ -152,8 +161,8 @@ void OnCheckMediaControllerBundleFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::string bundleName = "bundleName";
-    bool ret = g_fuzzUtils.GetData<bool>();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    bool ret = fdp.ConsumeBool();
     policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
     policyListenerStub->OnCheckMediaControllerBundle(bundleName, ret);
 }
@@ -162,9 +171,9 @@ void OnQueryAllowedPlaybackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    int32_t uid = g_fuzzUtils.GetData<int32_t>();
-    int32_t pid = g_fuzzUtils.GetData<int32_t>();
-    bool ret = g_fuzzUtils.GetData<bool>();
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
+    int32_t pid = fdp.ConsumeIntegral<int32_t>();
+    bool ret = fdp.ConsumeBool();
     policyListenerStub->audioQueryAllowedPlaybackCallback_ =
         std::make_shared<AudioQueryAllowedPlaybackCallbackFuzzTest>();
     if (policyListenerStub->audioQueryAllowedPlaybackCallback_.lock() == nullptr) {
@@ -177,7 +186,7 @@ void OnBackgroundMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    int32_t uid = g_fuzzUtils.GetData<int32_t>();
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
     policyListenerStub->audioBackgroundMuteCallback_ = std::make_shared<AudioBackgroundMuteCallbackFuzzTest>();
     if (policyListenerStub->audioBackgroundMuteCallback_.lock() == nullptr) {
         return;
@@ -202,9 +211,9 @@ void OnQueryBundleNameIsInListFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::string bundleName = "bundleName";
-    std::string listType = "listType";
-    bool ret = g_fuzzUtils.GetData<bool>();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    std::string listType = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    bool ret = fdp.ConsumeBool();
     policyListenerStub->audioQueryBundleNameListCallback_ =
         std::make_shared<AudioQueryBundleNameListCallbackFuzzTest>();
     if (policyListenerStub->audioQueryBundleNameListCallback_.lock() == nullptr) {
@@ -217,8 +226,8 @@ void OnRouteUpdateFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::string networkId = "networkId";
-    uint32_t routeFlag = g_fuzzUtils.GetData<uint32_t>();
+    std::string networkId = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    uint32_t routeFlag = fdp.ConsumeIntegral<uint32_t>();
     policyListenerStub->audioRouteCallback_ = std::make_shared<AudioRouteCallbackFuzzTest>();
     if (policyListenerStub->audioRouteCallback_.lock() == nullptr) {
         return;
@@ -313,8 +322,8 @@ void OnQueryIsForceGetZoneDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::string bundleName = "bundleName";
-    bool ret = g_fuzzUtils.GetData<bool>();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    bool ret = fdp.ConsumeBool();
 
     policyListenerStub->audioClientInfoMgrCallback_.reset();
     policyListenerStub->OnQueryIsForceGetZoneDevice(bundleName, ret);
@@ -327,8 +336,8 @@ void OnCheckVKBInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::string bundleName = "bundleName";
-    bool isValid = g_fuzzUtils.GetData<bool>();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    bool isValid = fdp.ConsumeBool();
 
     policyListenerStub->audioVKBInfoMgrCallback_.reset();
     policyListenerStub->OnCheckVKBInfo(bundleName, isValid);
@@ -344,8 +353,8 @@ void OnQueryIsForceGetDevByVolumeTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::string bundleName = "bundleName";
-    bool ret = g_fuzzUtils.GetData<bool>();
+    std::string bundleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    bool ret = fdp.ConsumeBool();
 
     policyListenerStub->audioClientInfoMgrCallback_.reset();
     policyListenerStub->OnQueryIsForceGetDevByVolumeType(bundleName, ret);
@@ -410,6 +419,9 @@ void Init()
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;

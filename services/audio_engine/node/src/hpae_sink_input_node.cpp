@@ -33,8 +33,6 @@ namespace AudioStandard {
 namespace HPAE {
 const std::string DEVICE_CLASS_OFFLOAD = "offload";
 const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
-static constexpr uint32_t FRAME_LEN_100MS = 100;
 
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
@@ -60,7 +58,6 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     } else {
         historyBuffer_ = nullptr;
     }
-    UpdateDataFlag(nodeInfo);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkInputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -113,14 +110,6 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
     } else {
         ret = GetDataFromSharedBuffer();
-        if ((GetNodeInfo().customSampleRate == 0 && GetSampleRate() == SAMPLE_RATE_11025) ||
-            GetNodeInfo().customSampleRate == SAMPLE_RATE_11025) {
-             // for 11025, skip pull data next time
-            pullDataFlag_ = false;
-        } else if (GetNodeInfo().customSampleRate != 0 &&
-            GetNodeInfo().customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
-            pullDataCount_ = FRAME_LEN_100MS / FRAME_LEN_20MS - 1;
-        }
         // if historyBuffer has enough data, write to outputStream
         if (!streamInfo_.needData && historyBuffer_) {
             historyBuffer_->GetFrameData(inputAudioBuffer_);
@@ -148,21 +137,6 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 void HpaeSinkInputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
-    if (((GetNodeInfo().customSampleRate == 0 && GetSampleRate() == SAMPLE_RATE_11025) ||
-        GetNodeInfo().customSampleRate == SAMPLE_RATE_11025)
-        && !pullDataFlag_) {
-        // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
-        pullDataFlag_ = true;
-        emptyAudioBuffer_.SetBufferValid(inputAudioBuffer_.IsValid());
-        outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
-        return;
-    } else if (GetNodeInfo().customSampleRate != 0 && pullDataCount_ > 0) {
-        // for customSampleRate that is not multiples of 50, eg. 8010, 100ms data, so pull each five DoProcess()
-        --pullDataCount_;
-        emptyAudioBuffer_.SetBufferValid(inputAudioBuffer_.IsValid());
-        outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
-        return;
-    }
 
     int32_t ret = SUCCESS;
 
@@ -234,7 +208,6 @@ void HpaeSinkInputNode::Flush()
         pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
     }
-    UpdateDataFlag(GetNodeInfo());
 }
 
 bool HpaeSinkInputNode::Drain()
@@ -292,6 +265,20 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     OnStreamInfoChange(false);
 }
 
+void HpaeSinkInputNode::EnsureHistoryBufferForAiss(uint32_t preheatFrames)
+{
+    if (offloadEnable_) return;  // Offload already has sufficient buffer
+    if (historyBuffer_ && historyBuffer_->GetFrames() >= preheatFrames) return;
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
+    PcmBufferInfo pcmInfo = PcmBufferInfo{
+        nodeInfo.channels, nodeInfo.frameLen,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate,
+        nodeInfo.channelLayout, preheatFrames};
+    pcmInfo.isMultiFrames = true;
+    historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
+    AUDIO_INFO_LOG("AISS: historyBuffer allocated for %{public}u frames", preheatFrames);
+}
+
 void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     auto writeCallback = writeCallback_.lock();
@@ -315,6 +302,16 @@ void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
 bool HpaeSinkInputNode::GetOffloadEnabled()
 {
     return offloadEnable_;
+}
+
+void HpaeSinkInputNode::SetOffloadType(int32_t offloadType)
+{
+    offloadType_ = offloadType;
+}
+
+int32_t HpaeSinkInputNode::GetOffloadType()
+{
+    return offloadType_;
 }
 
 void HpaeSinkInputNode::SetDirect(bool isDirect)
@@ -381,11 +378,12 @@ uint64_t HpaeSinkInputNode::GetLatency()
 int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET(writeCallback,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(writeCallback, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "writeCallback is null, fatal err", false), ERROR));
+            "writeCallback is null, fatal err", false),
+        "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload enable or direct, never force data
     bool forceData = (offloadEnable_ | isDirect_) ? false : true;
@@ -420,11 +418,12 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 bool HpaeSinkInputNode::QueryUnderrun()
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET(writeCallback,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(writeCallback, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "writeCallback is null, fatal err", false), false));
+            "writeCallback is null, fatal err", false),
+        "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     return writeCallback->OnQueryUnderrun();
 }
 
@@ -433,17 +432,6 @@ bool HpaeSinkInputNode::IsDrain()
     return isDrain_;
 }
 
-void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
-{
-    if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
-        nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
-        AUDIO_INFO_LOG("SessionId:%{public}u, update pullDataFlag for 11025Hz", GetSessionId());
-        pullDataFlag_ = true;
-    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
-        AUDIO_INFO_LOG("SessionId:%{public}u, update pullDataCount for 100ms frameLen", GetSessionId());
-        pullDataCount_ = 0;
-    }
-}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

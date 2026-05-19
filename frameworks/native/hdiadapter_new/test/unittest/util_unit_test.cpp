@@ -391,33 +391,6 @@ HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
 
 /**
  * @tc.name   : Test IdHandler API
- * @tc.number : IdHandlerUnitTest_008
- * @tc.desc   : Test primary_extra device class
- */
-HWTEST_F(UtilUnitTest, IdHandlerUnitTest_008, TestSize.Level1)
-{
-    IdHandler &idHandler = IdHandler::GetInstance();
-    uint32_t typecId = idHandler.GetRenderIdByDeviceClass("primary_extra", "Typec_Speaker");
-    EXPECT_NE(typecId, HDI_INVALID_ID);
-    
-    uint32_t btId = idHandler.GetRenderIdByDeviceClass("primary_extra", "BT_Speaker");
-    EXPECT_NE(btId, HDI_INVALID_ID);
-    
-    uint32_t base = idHandler.ParseBase(typecId);
-    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
-    
-    uint32_t type = idHandler.ParseType(typecId);
-    EXPECT_EQ(type, HDI_ID_TYPE_PRIMARY);
-    
-    std::string info = idHandler.ParseInfo(typecId);
-    EXPECT_EQ(info, "Typec_Speaker");
-    
-    info = idHandler.ParseInfo(btId);
-    EXPECT_EQ(info, "BT_Speaker");
-}
-
-/**
- * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_010
  * @tc.desc   : Test primary_mmap_voip capture id selection for VOIP low latency path
  */
@@ -463,9 +436,72 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_011, TestSize.Level1)
 /**
  * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_012
- * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with remote_multichannel
+ * @tc.desc   : Test IdHandler action
  */
 HWTEST_F(UtilUnitTest, IdHandlerUnitTest_012, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    std::string pipeName = "test";
+
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_LIVE, pipeName);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_LIVE);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE));
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_013
+ * @tc.desc   : Test camcorder sole pipe capture id selection
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_013, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    std::string pipeName = "primary_input_camcorder";
+
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_CAMCORDER, AUDIO_INPUT_FLAG_CAMCORDER, pipeName);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_CAMCORDER,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_CAMCORDER);
+    EXPECT_EQ(id, idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_CAMCORDER));
+
+    EXPECT_EQ(idHandler.ParseBase(id), HDI_ID_BASE_CAPTURE);
+    EXPECT_EQ(idHandler.ParseType(id), HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idHandler.ParseInfo(id), HDI_ID_INFO_CAMCORDER);
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_014
+ * @tc.desc   : Test primary_extra device class
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_014, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t typecId = idHandler.GetRenderIdByDeviceClass("primary_extra", "Typec_Speaker");
+    EXPECT_NE(typecId, HDI_INVALID_ID);
+
+    uint32_t btId = idHandler.GetRenderIdByDeviceClass("primary_extra", "BT_Speaker");
+    EXPECT_NE(btId, HDI_INVALID_ID);
+
+    uint32_t base = idHandler.ParseBase(typecId);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+
+    uint32_t type = idHandler.ParseType(typecId);
+    EXPECT_EQ(type, HDI_ID_TYPE_PRIMARY);
+
+    std::string info = idHandler.ParseInfo(typecId);
+    EXPECT_EQ(info, "Typec_Speaker");
+
+    info = idHandler.ParseInfo(btId);
+    EXPECT_EQ(info, "BT_Speaker");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_015
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with remote_multichannel
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_015, TestSize.Level1)
 {
     IdHandler &idHandler = IdHandler::GetInstance();
     uint32_t id = idHandler.GetRenderIdByDeviceClass("remote_multichannel");

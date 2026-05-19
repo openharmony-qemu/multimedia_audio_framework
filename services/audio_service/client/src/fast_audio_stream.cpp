@@ -165,6 +165,13 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     return SUCCESS;
 }
 
+void FastAudioStream::UpdateStreamState(State state)
+{
+   // When updating the stream state, the focus state is updated synchronously.
+    state_ = state;
+    streamFocusState_ = static_cast<StreamFocusState>(state);
+}
+
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &filterConfig)
@@ -191,10 +198,8 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
             PLAY_CREATE_INVALID_PARAM, "Stream is not supported", true),
         HILOG_COMM_ERROR("[SetAudioStreamInfo]Stream is not supported."));
     processconfig_ = config;
-    // OS_AudioPlayCb/RecordCb should lock weak_ptr of FastAudioStream before calling OnWriteData to
-    // avoid using FastAudioStream after free in callback.
     auto weakStream = weak_from_this();
-    processClient_ = AudioProcessInClient::Create(config, weakStream);
+    processClient_ = AudioProcessInClient::Create(config, weakStream, staticSharedMemory_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             PLAY_CREATE_NULL_POINTER, "creat process client fails", true),
@@ -202,7 +207,7 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     uint32_t frameCount = 0;
     processClient_->GetFrameCount(frameCount);
     userSettedPreferredFrameSize_ = frameCount;
-    state_ = PREPARED;
+    UpdateStreamState(PREPARED);
     proxyObj_ = proxyObj;
 
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
@@ -327,6 +332,18 @@ State FastAudioStream::GetState()
         return switchingInfo_.state_;
     }
     return state_;
+}
+
+StreamFocusState FastAudioStream::GetFocusState()
+{
+    std::lock_guard lock(focusStatusMutex_);
+    return streamFocusState_;
+}
+ 
+void FastAudioStream::SetFocusState(StreamFocusState state)
+{
+    std::lock_guard lock(focusStatusMutex_);
+    streamFocusState_ = state;
 }
 
 bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
@@ -468,11 +485,11 @@ int32_t FastAudioStream::SetMuteHint(bool mute)
     AUDIO_INFO_LOG("FastAudioStream: SetMuteHint %{public}s", mute ? "true" : "false");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(eMode_ == AUDIO_MODE_RECORD, ERR_NOT_SUPPORTED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "SetMuteHint not supported in playback mode", true),
+            RECORD_CONFIG_NOT_SUPPORTED, "SetMuteHint not supported in playback mode", true),
         "FastAudioStream: SetMuteHint not supported in playback mode");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "null process", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "null process", true),
         "FastAudioStream: failed: null process");
     return processClient_->SetMuteHint(mute);
 }
@@ -598,7 +615,7 @@ int32_t FastAudioStream::SetCaptureMode(AudioCaptureMode captureMode)
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureMode == CAPTURE_MODE_CALLBACK && eMode_ == AUDIO_MODE_RECORD,
         ERR_INVALID_OPERATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "not supported", true),
+            RECORD_CONFIG_NOT_SUPPORTED, "not supported", true),
         "%{public}s: not supported.", logTag_.c_str());
     return SUCCESS;
 }
@@ -614,7 +631,7 @@ int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapt
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(callback && processClient_ && eMode_ == AUDIO_MODE_RECORD,
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "callback or client is nullptr or mode is not record", true),
+            RECORD_CONFIG_INVALID_PARAM, "callback or client is nullptr or mode is not record", true),
         "%{public}s: callback or client is nullptr or mode is not record.",
         logTag_.c_str());
     micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(callback);
@@ -801,18 +818,25 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
         THREAD_PRIORITY_QOS_7);
 }
 
+void FastAudioStream::SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+    const std::string &erroDesc, bool isClient, State state)
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(uid, errorCode, erroDesc, isClient);
+    streamFocusState_ = static_cast<StreamFocusState>(state);
+}
+
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED), false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_START_ILLEGAL_STATE, "Illegal state:" + std::to_string(state_), true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            PLAY_START_ILLEGAL_STATE, "Illegal state:" + std::to_string(state_), true, state_),
         HILOG_COMM_ERROR("[StartAudioStream]%{public}s: Illegal state:%{public}u", logTag_.c_str(), state_));
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_START_NULL_POINTER, "Start failed, process is null", true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            PLAY_START_NULL_POINTER, "Start failed, process is null", true, state_),
         "%{public}s: Start failed, process is null.", logTag_.c_str());
     if (spkProcClientCb_ != nullptr) {
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state before starting", logTag_.c_str());
@@ -829,7 +853,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             PLAY_START_OPERATION_FAILED, "Start process client failed, ret:" + std::to_string(ret), true),
         "%{public}s: Client test stop fail, ret %{public}d.", logTag_.c_str(), ret);
-    state_ = RUNNING;
+    UpdateStreamState(RUNNING);
 
     AUDIO_DEBUG_LOG("%{public}s: SUCCESS, sessionId: %{public}d", logTag_.c_str(), sessionId_);
 
@@ -848,13 +872,13 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(state_ == RUNNING, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_PAUSE_ILLEGAL_STATE, "state is not RUNNING. Illegal state:" + std::to_string(state_), true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()), PLAY_PAUSE_ILLEGAL_STATE,
+            "state is not RUNNING. Illegal state:" + std::to_string(state_), true, state_),
         HILOG_COMM_ERROR("[PauseAudioStream]%{public}s: state is not RUNNING. Illegal state:%{public}u",
             logTag_.c_str(), state_));
     State oldState = state_;
 
-    state_ = PAUSED;
+    UpdateStreamState(PAUSED);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             PLAY_PAUSE_NULL_POINTER, "Pause failed, process is null", true),
@@ -864,7 +888,7 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             PLAY_PAUSE_OPERATION_FAILED, "StreamPause fail,ret:" + std::to_string(ret), true);
         AUDIO_ERR_LOG("%{public}s: StreamPause fail,ret:%{public}d", logTag_.c_str(), ret);
-        state_ = oldState;
+        UpdateStreamState(oldState);
         return false;
     }
 
@@ -881,12 +905,12 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 bool FastAudioStream::StopAudioStream()
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT((state_ == RUNNING) || (state_ == PAUSED), false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_STOP_ILLEGAL_STATE, "State is not RUNNING. Illegal state:" + std::to_string(state_), true),
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()), PLAY_STOP_ILLEGAL_STATE,
+            "State is not RUNNING. Illegal state:" + std::to_string(state_), true, state_),
         HILOG_COMM_ERROR("[StopAudioStream]%{public}s: State is not RUNNING. Illegal state:%{public}u",
             logTag_.c_str(), state_));
     State oldState = state_;
-    state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
+    UpdateStreamState(STOPPED); // Set it before stopping as Read/Write and Stop can be called from different threads
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -897,7 +921,7 @@ bool FastAudioStream::StopAudioStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             PLAY_STOP_OPERATION_FAILED, "Stop fail,ret:" + std::to_string(ret), true);
         AUDIO_ERR_LOG("%{public}s: Stop fail,ret:%{public}d", logTag_.c_str(), ret);
-        state_ = oldState;
+        UpdateStreamState(oldState);
         return false;
     }
 
@@ -940,7 +964,7 @@ bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream
             PLAY_RELEASE_NULL_POINTER, "Release failed, process is null", true),
         "%{public}s: Release failed, process is null.", logTag_.c_str());
     processClient_->Release(isSwitchStream);
-    state_ = RELEASED;
+    UpdateStreamState(RELEASED);
     AUDIO_INFO_LOG("%{public}s::ReleaseAudiostream SUCCESS, sessionId:%{public}d", logTag_.c_str(), sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("%{public}s: Calling Update tracker for release", logTag_.c_str());
@@ -1143,8 +1167,9 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     if (rendererInfo_.isStatic) {
         CHECK_AND_RETURN_LOG(processClient_ != nullptr, "processClient is nullptr");
         processClient_->GetStaticPlayPosition(info.staticBufferInfo);
-        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.bufferSize_ = staticBufferInfo_.bufferSize_;
         info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
+        info.staticSharedMemory = staticSharedMemory_;
         info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     }
 
@@ -1262,7 +1287,7 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
         "%{public}s: state_ is %{public}d, no need for restore", logTag_.c_str(), state_);
     bool result = false;
     State oldState = state_;
-    state_ = NEW;
+    UpdateStreamState(NEW);
     SetStreamTrackerState(false);
     if (processClient_ != nullptr) {
         processClient_->Stop();
@@ -1296,7 +1321,7 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
     return result;
 error:
     AUDIO_ERR_LOG("%{public}s::RestoreAudioStream failed", logTag_.c_str());
-    state_ = oldState;
+    UpdateStreamState(oldState);
     return false;
 }
 
@@ -1484,10 +1509,12 @@ int32_t FastAudioStream::GetKeepRunning(bool &keepRunning) const
     return SUCCESS;
 }
 
-void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+    std::shared_ptr<AudioSharedMemory> sharedMemory)
 {
     CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support");
     staticBufferInfo_ = staticBufferInfo;
+    staticSharedMemory_ = sharedMemory;
 }
 
 int32_t FastAudioStream::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)

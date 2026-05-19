@@ -1158,6 +1158,42 @@ HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test IdHandler GetRenderIdByDeviceClassSub API
+ * @tc.number : IdHandler_UsbArmFast_001
+ * @tc.desc   : Test GetRenderIdByDeviceClassSub with usb_arm_fast deviceClass
+ */
+HWTEST_F(AudioRenderSinkUnitTest, IdHandler_UsbArmFast_001, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClassSub("usb_arm_fast", "", AUDIO_OUTPUT_FLAG_FAST);
+    EXPECT_NE(id, HDI_INVALID_ID);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, static_cast<uint32_t>(HDI_ID_TYPE_FAST));
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_USB);
+}
+
+/**
+ * @tc.name   : Test IdHandler GetRenderIdByDeviceClassSub API
+ * @tc.number : IdHandler_UsbArmUltraFast_001
+ * @tc.desc   : Test GetRenderIdByDeviceClassSub with usb_arm_ultra_fast deviceClass
+ */
+HWTEST_F(AudioRenderSinkUnitTest, IdHandler_UsbArmUltraFast_001, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClassSub("usb_arm_ultra_fast", "", AUDIO_OUTPUT_FLAG_VOIP_FAST);
+    EXPECT_NE(id, HDI_INVALID_ID);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, static_cast<uint32_t>(HDI_ID_TYPE_FAST));
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_USB);
+}
+
+/**
  * @tc.name   : Test GetCurrentOutputDevice API
  * @tc.number : GetCurrentOutputDevice_005
  * @tc.desc   : Test GetCurrentOutputDevice for direct sink

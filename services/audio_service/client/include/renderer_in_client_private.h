@@ -18,6 +18,7 @@
 #include <optional>
 #include <thread>
 #include <mutex>
+#include <functional>
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
@@ -74,6 +75,8 @@ public:
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
+    StreamFocusState GetFocusState() override;
+    void SetFocusState(StreamFocusState state) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
@@ -216,6 +219,7 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     FastStatus GetFastStatus() override;
+    void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback) override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
@@ -238,7 +242,8 @@ public:
     int32_t SetRenderTarget(RenderTarget renderTarget) override;
     RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
@@ -255,6 +260,14 @@ public:
     {
         return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
     }
+
+    bool IsUltraFastStream() const
+    {
+        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+    }
+
+    void SetupFastStreamThreadPriority();
+
     void CheckAndProcessPendingSpanSize();
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -279,6 +292,7 @@ private:
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
+    int32_t CopyStaticBufferData();
 
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
@@ -361,6 +375,13 @@ private:
     void UpdateStopState();
 
     void NotifyStreamSilentChange();
+
+    void UpdateStreamState(State state);
+
+    void NotifyFastStatusChange(FastStatus status);
+
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+        const std::string &erroDesc, bool isClient, State state);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -395,6 +416,9 @@ private:
     // callbacks
     std::mutex streamCbMutex_;
     std::weak_ptr<AudioStreamCallback> streamCallback_;
+    std::mutex fastStatusChangeCallbackMutex_;
+    std::function<void(FastStatus)> fastStatusChangeCallback_;
+    std::atomic<FastStatus> fastStatus_ = FASTSTATUS_NORMAL;
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
@@ -430,6 +454,8 @@ private:
     size_t cbBufferSize_ = 0;
     AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
+    std::atomic<StreamFocusState> streamFocusState_ = FOCUS_INVALID;
+    std::mutex focusStatusMutex_;
     std::atomic<State> state_ = INVALID;
     // using this lock when change status_
     std::mutex statusMutex_;
@@ -465,6 +491,7 @@ private:
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
     std::function<void()> sendStaticRecreateFunc_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
     std::mutex staticBufferMutex_;
 
     // buffer handle

@@ -38,6 +38,7 @@ public:
 private:
     StreamDfxManager() = default;
     ~StreamDfxManager() = default;
+    bool IsInterphoneStream(const AudioProcessConfig &processConfig);
     void ReportStreamOccupancyTimeout(uint32_t sessionId, int64_t startTime, int64_t currentTime);
     int32_t BuildAudioErrorCode(uint32_t errorCode, uint32_t interfaceCode);
     std::mutex streamMutex_;

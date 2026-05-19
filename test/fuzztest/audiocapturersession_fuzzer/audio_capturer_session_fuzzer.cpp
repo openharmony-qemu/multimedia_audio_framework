@@ -15,20 +15,27 @@
 
 #include "audio_log.h"
 #include "audio_capturer_session.h"
-#include "../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include <map>
+#include <vector>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-static int32_t NUM_5 = 5;
+const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
 
 typedef void (*TestFuncs)();
+
+template<typename T>
+T ConsumeEnum(FuzzedDataProvider& fdp)
+{
+    return static_cast<T>(fdp.ConsumeIntegral<int32_t>());
+}
 
 void LoadInnerCapturerSinkFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    std::string moduleName = "moduleName";
+    std::string moduleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     AudioStreamInfo streamInfo;
     session.LoadInnerCapturerSink(moduleName, streamInfo);
 }
@@ -36,7 +43,7 @@ void LoadInnerCapturerSinkFuzzTest(FuzzedDataProvider& fdp)
 void UnloadInnerCapturerSinkFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    std::string moduleName = "moduleName";
+    std::string moduleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     session.UnloadInnerCapturerSink(moduleName);
 }
 
@@ -44,7 +51,7 @@ void HandleRemoteCastDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioStreamInfo streamInfo;
-    bool isConnected = g_fuzzUtils.GetData<bool>();
+    bool isConnected = fdp.ConsumeBool();
     session.HandleRemoteCastDevice(isConnected, streamInfo);
 }
 
@@ -52,7 +59,7 @@ void FindRunningNormalSessionFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioStreamDescriptor runningSessionInfo;
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     session.FindRunningNormalSession(sessionId, runningSessionInfo);
 }
 
@@ -118,7 +125,7 @@ void GetEnhancePropByNameFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioEffectPropertyArray propertyArray;
-    std::string propName = "propName";
+    std::string propName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     session.GetEnhancePropByName(propertyArray, propName);
 }
 
@@ -149,12 +156,12 @@ void HandleIndependentInputpipeFuzzTest(FuzzedDataProvider& fdp)
     if (pipe == nullptr) {
         return;
     }
-    pipe->pipeRole_ = g_fuzzUtils.GetData<AudioPipeRole>();
+    pipe->pipeRole_ = ConsumeEnum<AudioPipeRole>(fdp);
     pipe->routeFlag_ = AUDIO_INPUT_FLAG_AI;
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = {pipe};
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     AudioStreamDescriptor runningSessionInfo;
-    bool hasSession = g_fuzzUtils.GetData<bool>();
+    bool hasSession = fdp.ConsumeBool();
     session.HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     session.HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
 }
@@ -169,17 +176,17 @@ void IsStreamValidFuzzTest(FuzzedDataProvider& fdp)
 void FindRemainingNormalSessionFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
-    bool findRunningSessionRet = g_fuzzUtils.GetData<bool>();
-    uint32_t runningSessionId = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t targetSessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    bool findRunningSessionRet = fdp.ConsumeBool();
+    uint32_t runningSessionId = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t targetSessionId = fdp.ConsumeIntegral<uint32_t>();
     session.FindRemainingNormalSession(sessionId, findRunningSessionRet, runningSessionId, targetSessionId);
 }
 
 void SetHearingAidReloadFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    bool hearingAidReloadFlag = g_fuzzUtils.GetData<bool>();
+    bool hearingAidReloadFlag = fdp.ConsumeBool();
     session.SetHearingAidReloadFlag(hearingAidReloadFlag);
 }
 
@@ -195,8 +202,8 @@ void ReloadCaptureSoftLinkFuzzTest(FuzzedDataProvider& fdp)
 void ReloadCapturerSessionForInputPipeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
-    SessionOperation operation = g_fuzzUtils.GetData<SessionOperation>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    SessionOperation operation = ConsumeEnum<SessionOperation>(fdp);
     session.ReloadCapturerSessionForInputPipe(sessionId, operation);
 }
 
@@ -204,13 +211,13 @@ void GetTargetSessionIdForInputPipeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->moduleInfo_.sourceType = g_fuzzUtils.GetData<SourceType>();
+    pipeInfo->moduleInfo_.sourceType = ConsumeEnum<SourceType>(fdp);
     std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
     pipeInfo->streamDescriptors_.push_back(stream);
 
-    uint32_t originSessionId = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t targetSessionId = g_fuzzUtils.GetData<uint32_t>();
-    SessionOperation operation = g_fuzzUtils.GetData<SessionOperation>();
+    uint32_t originSessionId = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t targetSessionId = fdp.ConsumeIntegral<uint32_t>();
+    SessionOperation operation = ConsumeEnum<SessionOperation>(fdp);
     session.GetTargetSessionIdForInputPipe(pipeInfo, originSessionId, targetSessionId, operation);
 }
 
@@ -219,11 +226,11 @@ void GetMaxPriorityForInputPipeFuzzTest(FuzzedDataProvider& fdp)
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
-    stream->streamStatus_ = g_fuzzUtils.GetData<AudioStreamStatus>();
+    stream->streamStatus_ = ConsumeEnum<AudioStreamStatus>(fdp);
     stream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
     pipeInfo->streamDescriptors_.push_back(stream);
 
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     AudioStreamDescriptor maxRunningDesc;
     AudioStreamDescriptor maxRemainingDesc;
 
@@ -238,7 +245,7 @@ void GetMaxPriorityForInputPipeFuzzTest(FuzzedDataProvider& fdp)
 void IsVirtualAudioRecognitionSessionFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     SessionInfo sessionInfo;
     session.sessionWithNormalSourceType_.insert({sessionId, sessionInfo});
     session.IsVirtualAudioRecognitionSession(sessionId);
@@ -247,7 +254,7 @@ void IsVirtualAudioRecognitionSessionFuzzTest(FuzzedDataProvider& fdp)
 void IsPipeInSourceStrategyMapFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    uint64_t sessionId = g_fuzzUtils.GetData<uint64_t>();
+    uint64_t sessionId = fdp.ConsumeIntegral<uint64_t>();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = sessionId;
@@ -258,7 +265,7 @@ void IsPipeInSourceStrategyMapFuzzTest(FuzzedDataProvider& fdp)
 void IsRemainingSourceIndependentFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     SessionInfo sessionInfo;
     sessionInfo.sourceType = SOURCE_TYPE_MIC;
     session.sessionWithNormalSourceType_.insert({sessionId, sessionInfo});
@@ -273,14 +280,14 @@ void IsRemainingSourceIndependentFuzzTest(FuzzedDataProvider& fdp)
 void IsSourceTypeValidForEcFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    SourceType sourceType = ConsumeEnum<SourceType>(fdp);
     session.IsSourceTypeValidForEc(sourceType);
 }
 
 void IsSessionIdValidForEcFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     session.IsSessionIdValidForEc(sessionId);
 }
 void Test(FuzzedDataProvider& fdp)
@@ -324,6 +331,9 @@ void Init()
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;

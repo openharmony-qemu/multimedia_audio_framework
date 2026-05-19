@@ -30,6 +30,8 @@
 #include "audio_engine_log.h"
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
+#include "session_effect_manager.h"
+#include "hpae_define.h"
 #include "stream_dfx_manager.h"
 
 namespace OHOS {
@@ -39,6 +41,15 @@ namespace {
 constexpr uint32_t DEFAULT_PAUSE_STREAM_TIME_IN_MS = 60; // 60ms
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
+
+AudioEffectConfig MakeAissAudioConfig()
+{
+    AudioEffectConfig config;
+    config.inputCfg = {SAMPLE_RATE_48000, 2, DATA_FORMAT_F32,
+        static_cast<uint64_t>(AudioChannelLayout::CH_LAYOUT_STEREO), AudioEncodingType::ENCODING_PCM};
+    config.outputCfg = config.inputCfg;
+    return config;
+}
 }  // namespace
 static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
@@ -69,6 +80,11 @@ void HpaeManagerThread::Run()
             bool isProcessing = m_hpaeManager->IsMsgProcessing();
             bool signal = recvSignal_.load();
             uint64_t sleepTime = m_hpaeManager->ProcessPendingTransitionsAndGetNextDelay();
+            m_hpaeManager->GetDelayedTaskQueue().ProcessExpiredTasks();
+            uint64_t taskDelay = m_hpaeManager->GetDelayedTaskQueue().GetNextDelayMs();
+            if (taskDelay > 0 && (sleepTime == 0 || taskDelay < sleepTime)) {
+                sleepTime = taskDelay;
+            }
             Trace trace("runFunc:" + std::to_string(signal) + " isPorcessing:" + std::to_string(isProcessing) +
                 " sleepTime:" + std::to_string(sleepTime));
             if (sleepTime > 0) {
@@ -128,16 +144,19 @@ HpaeManager::~HpaeManager()
 int32_t HpaeManager::Init()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET(!IsInit(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-            BusinessScenario::CREATE, ERR_ILLEGAL_STATE), "already inited", false), SUCCESS));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!IsInit(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
+                BusinessScenario::CREATE, ERR_ILLEGAL_STATE),
+            "already inited", false),
+        "already inited");
     if (!hpaeManagerThread_) {
         sinkSourceIndex_ = 0;
         hpaeManagerThread_ = std::make_unique<HpaeManagerThread>();
         hpaeManagerThread_->ActivateThread(this);
     }
     isInit_.store(true);
+    sessionEffectManager_ = std::make_unique<SessionEffectManager>(*this);
     return SUCCESS;
 }
 
@@ -253,14 +272,23 @@ int32_t HpaeManager::GetAllSinks()
 int32_t HpaeManager::DeInit()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET(IsInit(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::RELEASE, ERR_ILLEGAL_STATE), "isn't inited", false), SUCCESS));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(IsInit(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
+            "isn't inited", false),
+        "isn't inited");
+    // Stop worker thread first to avoid racing with ProcessExpiredTasks.
+    // Order matters: thread stop → SessionEffectManager::Deinit() → CancelAll delayed tasks.
     if (hpaeManagerThread_ != nullptr) {
         hpaeManagerThread_->DeactivateThread();
         hpaeManagerThread_ = nullptr;
     }
+    if (sessionEffectManager_) {
+        sessionEffectManager_->Deinit();
+        sessionEffectManager_.reset();
+    }
+    delayedTaskQueue_.CancelAll();
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
     isInit_.store(false);
     AUDIO_INFO_LOG("success");
@@ -758,11 +786,12 @@ int32_t HpaeManager::GetSourceInfoByIdx(const int32_t &sourceIdx,
 
 int32_t HpaeManager::SetDefaultSink(std::string name)
 {
-    CHECK_AND_RETURN_RET(!name.empty(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_INVALID_PARAM),
-        "invalid sink name", false), ERROR_INVALID_PARAM));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_INVALID_PARAM),
+            "invalid sink name", false),
+        "invalid sink name");
     auto request = [this, name]() {
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", GetEncryptStr(name).c_str());
         if (name == defaultSink_) {
@@ -796,11 +825,12 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
 
 int32_t HpaeManager::SetDefaultSource(std::string name)
 {
-    CHECK_AND_RETURN_RET(!name.empty(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::CREATE, ERR_INVALID_PARAM),
-        "invalid source name", false), ERROR_INVALID_PARAM));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
+                BusinessScenario::CREATE, ERR_INVALID_PARAM),
+            "invalid source name", false),
+        "invalid source name");
     auto request = [this, name]() {
         if (name == defaultSource_) {
             AUDIO_INFO_LOG("source is same as default source");
@@ -1109,6 +1139,7 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
             sinkInput->SetState(movingIds_[sessionId]);
         }
         sinkInput->SetOffloadEnabled(rendererIdStreamInfoMap_[sessionId].offloadEnable);
+        sinkInput->SetOffloadType(rendererIdStreamInfoMap_[sessionId].offloadType);
         sinkInput->SetSpeed(rendererIdStreamInfoMap_[sessionId].speed);
         movingIds_.erase(sessionId);
     }
@@ -1133,6 +1164,16 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
         return;
     }
     rendererManager->AddNodeToSink(sinkInputNode);
+    // MoveIn: recreate SE on new device if session has active SE binding
+    auto boundSessionId = sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    if (boundSessionId == sessionId) {
+        AudioEffectConfig config = MakeAissAudioConfig();
+        std::shared_ptr<EffectInstance> instance;
+        sessionEffectManager_->BindSessionEffect(sessionId, "ai_audio_enhance", config, instance);
+        if (instance != nullptr) {
+            rendererManager->PostCreateSessionEffect(sessionId, "ai_audio_enhance", instance, config);
+        }
+    }
     rendererIdSinkNameMap_[sessionId] = sinkName;
     rendererIdStreamInfoMap_[sessionId].streamInfo.deviceName = sinkName;
     idPreferSinkNameMap_[sessionId] = sinkName;
@@ -1332,12 +1373,13 @@ void HpaeManager::HandleUpdateSpanSize(uint32_t sessionId, uint32_t spanSizeInFr
 
 bool HpaeManager::IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState)
 {
-    CHECK_AND_RETURN_RET(!(operation == OPERATION_STOPPED && currentState != HPAE_SESSION_STOPPING) &&
-        !(operation == OPERATION_PAUSED && currentState != HPAE_SESSION_PAUSING),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-            BusinessScenario::STOP, ERR_ILLEGAL_STATE),
-        "stopped or paused, currentState:" + std::to_string(currentState), false), false));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!(operation == OPERATION_STOPPED && currentState != HPAE_SESSION_STOPPING) &&
+        !(operation == OPERATION_PAUSED && currentState != HPAE_SESSION_PAUSING), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::STOP, ERR_ILLEGAL_STATE),
+            "stopped or paused, currentState:" + std::to_string(currentState), false),
+        "stopped or paused, currentState:%{public}d", currentState);
     return true;
 }
 
@@ -1639,6 +1681,12 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
             DequeuePendingTransition(sessionId);
+            if (sessionEffectManager_) {
+                sessionEffectManager_->OnSessionDestroyed(sessionId);
+            }
+            if (boundSessionId_ == sessionId) {
+                boundSessionId_ = 0;
+            }
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             DestroyCapture(sessionId);
             capturerIdSourceNameMap_.erase(sessionId);
@@ -1659,19 +1707,21 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
 bool HpaeManager::ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId)
 {
     if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-        CHECK_AND_RETURN_RET(rendererIdStreamInfoMap_.find(sessionId) != rendererIdStreamInfoMap_.end() &&
-            rendererIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererIdStreamInfoMap_.find(sessionId) != rendererIdStreamInfoMap_.end() &&
+            rendererIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED, false,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "renderer session: " + std::to_string(sessionId) + " already released", false), false));
+            "renderer session: " + std::to_string(sessionId) + " already released", false),
+            "renderer session: %{public}u already released", sessionId);
     } else if (streamType == HPAE_STREAM_CLASS_TYPE_RECORD) {
-        CHECK_AND_RETURN_RET(capturerIdStreamInfoMap_.find(sessionId) != capturerIdStreamInfoMap_.end() &&
-            capturerIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED,
-            (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(capturerIdStreamInfoMap_.find(sessionId) != capturerIdStreamInfoMap_.end() &&
+            capturerIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED, false,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "capturer session: " + std::to_string(sessionId) + " already released", false), false));
+            "capturer session: " + std::to_string(sessionId) + " already released", false),
+            "capturer session: %{public}u already released", sessionId);
     } else {
         AUDIO_WARNING_LOG("streamType[%{public}d] is invalid", streamType);
         return false;
@@ -1698,6 +1748,7 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
+            TryBindSessionEffectOnStart(sessionId);
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
@@ -1985,6 +2036,14 @@ int32_t HpaeManager::GetStreamRouteFlag(HpaeStreamClassType streamClassType, uin
         std::string sinkName = rendererIdSinkNameMap_[sessionId];
         if (rendererManagerMap_.find(sinkName) != rendererManagerMap_.end()) {
             routeFlag = rendererManagerMap_[sinkName]->GetSinkInfo().routeFlag;
+            return SUCCESS;
+        }
+    }
+    if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
+        capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
+        std::string sinkName = capturerIdSourceNameMap_[sessionId];
+        if (capturerManagerMap_.find(sinkName) != capturerManagerMap_.end()) {
+            routeFlag = capturerManagerMap_[sinkName]->GetSourceInfo().routeFlag;
             return SUCCESS;
         }
     }
@@ -2294,9 +2353,12 @@ void HpaeManager::InitAudioEffectChainManager(const std::vector<EffectChain> &ef
     const EffectChainManagerParam &effectChainManagerParam,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
 {
-    auto request = [effectChains, effectChainManagerParam, effectLibraryList]() {
+    auto request = [effectChains, effectChainManagerParam, effectLibraryList, this]() {
         HpaePolicyManager::GetInstance().InitAudioEffectChainManager(effectChains,
             effectChainManagerParam, effectLibraryList);
+        if (sessionEffectManager_) {
+            sessionEffectManager_->InitEffectLibraries(effectLibraryList);
+        }
     };
     SendRequest(request, __func__);
 }
@@ -2422,16 +2484,18 @@ void HpaeManager::UpdateParamExtra(const std::string &mainkey, const std::string
 bool HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeStreamInfo &streamInfo)
 {
     auto rendererManager = SafeGetMap(rendererManagerMap_, sinkName);
-    CHECK_AND_RETURN_RET(rendererManager,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "can not find sink in rendererManagerMap_", false), false));
-    CHECK_AND_RETURN_RET(rendererManager->IsInit(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-            BusinessScenario::CREATE, ERR_NULL_POINTER),
-        "sink is not init", false), false));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererManager, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "can not find sink in rendererManagerMap_", false),
+        "can not find sink[%{public}s] in rendererManagerMap_", GetEncryptStr(sinkName).c_str());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererManager->IsInit(), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::CREATE, ERR_NULL_POINTER),
+            "sink is not init", false),
+        "sink[%{public}s] is not init", GetEncryptStr(sinkName).c_str());
     rendererManager->CreateStream(streamInfo);
     if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         rendererIdSinkNameMap_[streamInfo.sessionId] = sinkName;
@@ -2592,11 +2656,12 @@ void HpaeManager::LoadEffectLive()
 
 bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
-    CHECK_AND_RETURN_RET(!params.empty(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
-            BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-        "params is empty", false), false));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!params.empty(), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::CONTROL,
+                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
+            "params is empty", false),
+        "params is empty");
     const auto &[paramKey, paramValue] = params[0];
     if (paramKey != "live_effect_enable" || (paramValue != "NRON" && paramValue != "NROFF")) {
         AUDIO_ERR_LOG("Parameter Error");
@@ -2780,11 +2845,12 @@ int32_t HpaeManager::PeekAudioData(
 {
     std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
     auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
-    CHECK_AND_RETURN_RET(sinkVirtualOutputNode != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-            BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "sinkPort not exit", false), ERROR_INVALID_PARAM));
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "sinkPort not exit", false),
+        "sinkPort[%{public}u] not exit", sinkPortIndex);
     return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
 }
 
@@ -2878,6 +2944,18 @@ int32_t HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
     return SUCCESS;
 }
 
+int32_t HpaeManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    auto request = [this, fd, length]() {
+        int32_t result = HpaePolicyManager::GetInstance().UpdatePersonalizedHRTFBin(fd, length);
+        auto serviceCallback = serviceCallback_.lock();
+        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
+        serviceCallback->OnUpdatePersonalizedHRTFBinCb(result);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 void HpaeManager::LoadCollaborationConfig()
 {
     auto request = []() {
@@ -2914,6 +2992,164 @@ int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
+{
+    if (boundUid_ == -1 || sessionEffectManager_ == nullptr) {
+        return;
+    }
+    auto it = rendererIdStreamInfoMap_.find(sessionId);
+    if (it == rendererIdStreamInfoMap_.end()) {
+        return;
+    }
+    if (it->second.streamInfo.uid != boundUid_ || it->second.streamInfo.streamType != STREAM_MUSIC) {
+        return;
+    }
+    if (boundSessionId_ != 0 && boundSessionId_ != sessionId) {
+        auto oldRendererManager = GetRendererManagerById(boundSessionId_);
+        if (oldRendererManager != nullptr) {
+            oldRendererManager->PostDestroySessionEffect(boundSessionId_);
+        }
+        sessionEffectManager_->UnbindSessionEffect(boundSessionId_);
+    }
+    int32_t aissRet = BindAndCreateAiss(sessionId);
+    if (aissRet == SUCCESS) {
+        boundSessionId_ = sessionId;
+    }
+}
+
+int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
+{
+    // AISS requires stereo input — reject non-stereo streams
+    auto it = rendererIdStreamInfoMap_.find(sessionId);
+    if (it != rendererIdStreamInfoMap_.end() && it->second.streamInfo.channels != STEREO) {
+        AUDIO_INFO_LOG("BindAndCreateAiss: rejected, channels=%{public}u != STEREO, sessionId=%{public}u",
+            it->second.streamInfo.channels, sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED);
+    }
+
+    AudioEffectConfig audioConfig = MakeAissAudioConfig();
+    std::shared_ptr<EffectInstance> instance;
+    int32_t ret = sessionEffectManager_->BindSessionEffect(
+        sessionId, "ai_audio_enhance", audioConfig, instance);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "BindAndCreateAiss: BindSessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
+
+    auto rendererManager = GetRendererManagerById(sessionId);
+    if (rendererManager != nullptr) {
+        rendererManager->PostCreateSessionEffect(sessionId, "ai_audio_enhance", instance, audioConfig);
+    }
+    return SUCCESS;
+}
+
+void HpaeManager::CleanupOldAissSession(uint32_t newSessionId)
+{
+    uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    if (oldSessionId == 0 || oldSessionId == newSessionId) {
+        return;
+    }
+    auto oldRendererManager = GetRendererManagerById(oldSessionId);
+    if (oldRendererManager == nullptr) {
+        return;
+    }
+    oldRendererManager->PostDestroySessionEffect(oldSessionId);
+    AUDIO_INFO_LOG("SetAissEnabled: posted DestroySessionEffect for old session %{public}u", oldSessionId);
+}
+
+uint32_t HpaeManager::FindRunningMusicSession(int32_t uid)
+{
+    uint32_t targetSessionId = 0;
+    for (const auto &[sid, info] : rendererIdStreamInfoMap_) {
+        if (info.streamInfo.uid == uid && info.streamInfo.streamType == STREAM_MUSIC
+            && info.state == HPAE_SESSION_RUNNING && sid > targetSessionId) {
+            targetSessionId = sid;
+        }
+    }
+    return targetSessionId;
+}
+
+int32_t HpaeManager::EnableAissByUid(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(boundUid_ == -1, ERR_OPERATION_FAILED,
+        "EnableAissByUid: uid %{public}d already bound", uid);
+
+    boundUid_ = uid;
+    boundSessionId_ = 0;
+
+    uint32_t targetSessionId = FindRunningMusicSession(uid);
+    if (targetSessionId == 0) {
+        AUDIO_INFO_LOG("EnableAissByUid: no running music stream for uid %{public}d, pending", uid);
+        return SUCCESS;
+    }
+
+    int32_t ret = BindAndCreateAiss(targetSessionId);
+    if (ret == SUCCESS) {
+        boundSessionId_ = targetSessionId;
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "EnableAissByUid: BindAndCreateAiss failed for session %{public}u", targetSessionId);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::DisableAissByUid(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(boundUid_ == uid, ERR_OPERATION_FAILED,
+        "DisableAissByUid: uid %{public}d not bound (current: %{public}d)", uid, boundUid_);
+
+    if (boundSessionId_ != 0) {
+        auto rendererManager = GetRendererManagerById(boundSessionId_);
+        if (rendererManager != nullptr) {
+            rendererManager->PostDestroySessionEffect(boundSessionId_);
+        }
+        sessionEffectManager_->UnbindSessionEffect(boundSessionId_);
+    }
+    boundUid_ = -1;
+    boundSessionId_ = 0;
+    return SUCCESS;
+}
+
+int32_t HpaeManager::SetAissEnabled(uint32_t sessionId, bool enabled)
+{
+    CHECK_AND_RETURN_RET_LOG(sessionEffectManager_ != nullptr, ERR_OPERATION_FAILED,
+        "SetAissEnabled: sessionEffectManager_ is null");
+
+    auto request = [this, sessionId, enabled]() -> int32_t {
+        auto rendererManager = GetRendererManagerById(sessionId);
+        CHECK_AND_RETURN_RET_LOG(rendererManager != nullptr,
+            static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
+            "SetAissEnabled: cannot find rendererManager for session %{public}u", sessionId);
+
+        if (!enabled && sessionEffectManager_->GetBoundSessionId("ai_audio_enhance") != sessionId) {
+            AUDIO_ERR_LOG("SetAissEnabled: session %{public}u not bound to AISS", sessionId);
+            return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+        }
+
+        if (enabled) {
+            CleanupOldAissSession(sessionId);
+
+            int32_t ret = BindAndCreateAiss(sessionId);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+                "SetAissEnabled: BindAndCreateAiss failed for session %{public}u", sessionId);
+            return SUCCESS;
+        } else {
+            rendererManager->PostDestroySessionEffect(sessionId);
+            sessionEffectManager_->UnbindSessionEffect(sessionId);
+            return SUCCESS;
+        }
+    };
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
+}
+
+int32_t HpaeManager::SetAissEnabledByUid(int32_t uid, bool enabled)
+{
+    CHECK_AND_RETURN_RET_LOG(sessionEffectManager_ != nullptr, ERR_OPERATION_FAILED,
+        "SetAissEnabledByUid: sessionEffectManager_ is null");
+
+    auto request = [this, uid, enabled]() -> int32_t {
+        return enabled ? EnableAissByUid(uid) : DisableAissByUid(uid);
+    };
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }
 
 void HpaeManager::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId)
@@ -2980,6 +3216,49 @@ int32_t HpaeManager::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isM
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+
+int32_t HpaeManager::SetVocalRatio(float ratio)
+{
+    CHECK_AND_RETURN_RET_LOG(ratio >= 0.0f && ratio <= 1.0f,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER),
+        "SetVocalRatio: invalid ratio %{public}f", ratio);
+
+    auto request = [this, ratio]() -> int32_t {
+        CHECK_AND_RETURN_RET_LOG(sessionEffectManager_ != nullptr,
+            static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+            "SetVocalRatio: sessionEffectManager is null");
+
+        uint32_t sessionId = sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+        CHECK_AND_RETURN_RET_LOG(sessionId != 0,
+            static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+            "SetVocalRatio: no session bound to AISS");
+
+        auto rendererManager = GetRendererManagerById(sessionId);
+        CHECK_AND_RETURN_RET_LOG(rendererManager != nullptr, ERR_OPERATION_FAILED,
+            "SetVocalRatio: cannot find rendererManager for session %{public}u", sessionId);
+
+        rendererManager->PostSetSessionEffectParameter(sessionId,
+            static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), ratio);
+        return SUCCESS;
+    };
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
+}
+
+uint64_t HpaeManager::PostDelayedTask(uint64_t delayMs, std::function<void()> task)
+{
+    return delayedTaskQueue_.PostDelayedTask(delayMs, std::move(task));
+}
+
+void HpaeManager::CancelDelayedTask(uint64_t taskId)
+{
+    delayedTaskQueue_.CancelTask(taskId);
+}
+
+HpaeDelayedTaskQueue &HpaeManager::GetDelayedTaskQueue()
+{
+    return delayedTaskQueue_;
 }
 
 void HpaeManager::EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,

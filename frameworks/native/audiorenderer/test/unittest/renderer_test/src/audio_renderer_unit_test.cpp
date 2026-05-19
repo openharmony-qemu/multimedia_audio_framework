@@ -4814,5 +4814,31 @@ HWTEST(AudioRendererUnitTest, WaitSwitchStreamIfNeeded_001, TestSize.Level1)
     res = testRendererInner->WaitSwitchStreamIfNeeded(false);
     EXPECT_EQ(true, res);
 }
+
+/**
+ * @tc.name  : Test NoNeedNotifyEvent.
+ * @tc.number: NoNeedNotifyEvente.
+ * @tc.desc  : Test NoNeedNotifyEvent.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_NoNeedNotifyEvent_001, TestSize.Level0)
+{
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, 1);
+    AudioInterrupt audioInterrupt;
+    audioStream->SetFocusState(FOCUS_RUNNING);
+    auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+ 
+    audioStream->SetFocusState(FOCUS_RUNNING);
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 20.0f};
+    EXPECT_EQ(true, audioInterruptCallback->NoNeedNotifyEvent(interruptEvent));
+    interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    EXPECT_EQ(true, audioInterruptCallback->NoNeedNotifyEvent(interruptEvent));
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    EXPECT_EQ(true, audioInterruptCallback->NoNeedNotifyEvent(interruptEvent));
+    interruptEvent.hintType = INTERRUPT_HINT_DUCK;
+    EXPECT_NE(true, audioInterruptCallback->NoNeedNotifyEvent(interruptEvent));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

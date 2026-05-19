@@ -77,7 +77,6 @@ HpaeFastSinkOutputNode::~HpaeFastSinkOutputNode()
 
 void HpaeFastSinkOutputNode::DoProcess()
 {
-    BindCore();
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(dstAudioBuffer_ != nullptr, "dstAudioBuffer_ is nullptr");
     CHECK_AND_RETURN(!CheckIfSuspend());
@@ -807,6 +806,7 @@ int32_t HpaeFastSinkOutputNode::WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, ui
         GetDfxStreamInfo().channels);
     int32_t vol = channelVolumes.channel == 0 ? 0 : std::accumulate(channelVolumes.volStart,
         channelVolumes.volStart + channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
+    vol = isExistLoopback_ ? 1 : vol;
     ZeroVolumeCheck(vol);
     UpdateSilentState(writeBuf.buffer, writeBuf.dataLength);
     UpdateAmplitudeIfNeeded(writeBuf);
@@ -856,26 +856,6 @@ void HpaeFastSinkOutputNode::SyncCurrentOutputDevice()
             GetSessionId(), currentOutputDevice_, outputDevice);
     }
     currentOutputDevice_ = outputDevice;
-}
-
-void HpaeFastSinkOutputNode::BindCore()
-{
-    if (coreBinded_) {
-        return;
-    }
-    cpu_set_t targetCpus;
-    CPU_ZERO(&targetCpus);
-    int32_t cpuNum = sysconf(_SC_NPROCESSORS_CONF);
-    for (int32_t i = CPU_INDEX; i < cpuNum; i++) {
-        CPU_SET(i, &targetCpus);
-    }
-    int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
-    if (ret != 0) {
-        HILOG_COMM_ERROR("[BindCore]set target cpu failed, ret: %{public}d", ret);
-        return;
-    }
-    AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
-    coreBinded_ = true;
 }
 
 void HpaeFastSinkOutputNode::InitLatencyMeasurement()
@@ -998,7 +978,6 @@ void HpaeFastSinkOutputNode::UpdateAmplitudeIfNeeded(BufferDesc &writeBuf)
 void HpaeFastSinkOutputNode::ZeroVolumeCheck(int32_t vol)
 {
     CHECK_AND_RETURN(needCheckZeroVolume_);
-    CHECK_AND_RETURN(!isExistLoopback_);
     if (currentOutputDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         return;
     }

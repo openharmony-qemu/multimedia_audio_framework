@@ -17,6 +17,7 @@
 
 #include <map>
 #include <memory>
+#include <functional>
 #include "timestamp.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
@@ -24,6 +25,7 @@
 #include "audio_device_info.h"
 #include "audio_errors.h"
 #include "audio_debug_info.h"
+#include "audio_shared_memory.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -117,6 +119,7 @@ public:
         RenderTarget target = NORMAL_PLAYBACK;
 
         StaticBufferInfo staticBufferInfo{};
+        std::shared_ptr<AudioSharedMemory> staticSharedMemory = nullptr;
         std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
         bool backMute = false;
     };
@@ -126,6 +129,7 @@ public:
     static int32_t GetByteSizePerFrame(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithEc(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithMicInEc(const AudioStreamParams &params, size_t &result);
+    static int32_t GetByteSizePerFrameWithMicIn(const AudioStreamParams &params, size_t &result);
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
@@ -174,6 +178,8 @@ public:
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;
     virtual State GetState() = 0;
+    virtual StreamFocusState GetFocusState() = 0;
+    virtual void SetFocusState(StreamFocusState state) = 0;
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
@@ -325,6 +331,8 @@ public:
 
     virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
 
+    virtual void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &) {};
+
     virtual DeviceType GetDefaultOutputDevice() = 0;
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
@@ -373,7 +381,8 @@ public:
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 
-    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;
+    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) = 0;
 
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 

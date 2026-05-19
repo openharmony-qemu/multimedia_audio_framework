@@ -53,6 +53,8 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override;
     void UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode) override;
     uint64_t GetLatency(HpaeProcessorType sceneType) override;
+    uint32_t GetRenderId() const override;
+    DeviceType GetCurrentOutputDevice() const override;
 private:
     std::shared_ptr<HpaeRemoteSinkOutputNode> hpaeSinkOutputNode_ = nullptr;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeAudioFormatConverterNode>> sceneConverterMap_;

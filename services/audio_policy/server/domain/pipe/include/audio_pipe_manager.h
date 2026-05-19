@@ -102,8 +102,6 @@ public:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningOutputStreamDescs();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
@@ -148,7 +146,7 @@ public:
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
-    bool HasRunningStream();
+    bool HasRunningStream(uint32_t sessionId = 0);
     bool IsA2dpUsed();
     bool HasFastOutputPipe();
     bool HasUltraFastStreamRequest();
@@ -174,6 +172,7 @@ public:
     bool CheckRemoteNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);
     bool IsPipeNeedStop(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::string GetModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    bool IsValidRenderSessionId(const uint32_t sessionId);
 
     std::vector<PipeDeviceVolumeInfo> GetAllPipeDeviceVolumeInfo();
     std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);

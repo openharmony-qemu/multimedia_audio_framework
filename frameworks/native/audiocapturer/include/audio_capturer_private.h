@@ -26,6 +26,10 @@
 #include "audio_task_loop.h"
 #include "audio_errors.h"
 
+#ifndef INVALID_DEBUGKEY
+#define INVALID_DEBUGKEY 0
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioCapturerStateChangeCallbackImpl;
@@ -105,6 +109,8 @@ public:
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
     FastStatus GetFastStatus() override;
     int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const override;
+    uint32_t GetCapturerDebugKey() const override { return debugKey_; }
+    uint32_t debugKey_ = INVALID_DEBUGKEY;
 
     uint32_t GetOverflowCount() const override;
     int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;
@@ -190,6 +196,8 @@ private:
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
+    void NotifyFastStatusChange(FastStatus status);
+    void SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     int32_t GetCurrentInputDevicesInner(AudioDeviceDescriptor &deviceInfo) const;
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
@@ -216,6 +224,8 @@ private:
         const size_t processFrameSize, size_t &processBufSize, size_t &micInBufSize, size_t &ecBufSize);
     bool CheckForGenerateNewStream();
     int32_t CheckForStartImpl(CapturerState state);
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+ 	    const std::string &erroDesc, bool isClient, CapturerState state) const;
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
@@ -274,8 +284,9 @@ public:
     void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
-    int32_t InterruptHintResumeHandle(State currentState);
-    int32_t InterruptHintPauseHandle(State currentState);
+    bool NoNeedNotifyEvent(const InterruptEvent &interruptEvent);
+    int32_t InterruptHintResumeHandle(StreamFocusState focusState);
+    int32_t InterruptHintPauseHandle(StreamFocusState focusState);
     void WaitForSwitchTimeout(bool result);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;

@@ -548,7 +548,7 @@ int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                    BusinessScenario::CONFING,
+                    BusinessScenario::CONFIG,
                     ERR_INVALID_PARAM),
                 "The node does not exist.", true);
             AUDIO_ERR_LOG("ConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.", srcNodeId,
@@ -651,7 +651,7 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
         }
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
-            AUDIO_ERR_LOG("engine CreateNode failed, pipeline is nullptr.");
+            AUDIO_ERR_LOG("engine RenderFrame failed, pipeline is nullptr.");
             managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
         }

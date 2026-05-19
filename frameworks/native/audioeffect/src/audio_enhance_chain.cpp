@@ -732,6 +732,14 @@ int32_t AudioEnhanceChain::ProcessStopStream(void)
         CHECK_AND_RETURN_RET_LOG(stopStreamRet == SUCCESS, ERROR,
             "[%{public}s] effect EFFECT_CMD_STOP_STREAM fail", sceneType_.c_str());
     }
+    {
+        std::lock_guard<std::mutex> lock(chainMutex_);
+        AUDIO_INFO_LOG("clear algo cache");
+        memset_s(enhanceBuf_.micBuffer.data(), enhanceBuf_.micBuffer.size(), 0, enhanceBuf_.micBuffer.size());
+        memset_s(enhanceBuf_.ecBuffer.data(), enhanceBuf_.ecBuffer.size(), 0, enhanceBuf_.ecBuffer.size());
+        memset_s(enhanceBuf_.micRefBuffer.data(), enhanceBuf_.micRefBuffer.size(), 0, enhanceBuf_.micRefBuffer.size());
+        memset_s(outputCache_.data(), outputCache_.size(), 0, outputCache_.size());
+    }
 
     return SUCCESS;
 }

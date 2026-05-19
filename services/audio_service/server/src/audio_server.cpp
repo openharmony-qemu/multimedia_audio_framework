@@ -150,7 +150,7 @@ static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
     AAM_CONN_SVC_UID
 };
 const int32_t RSS_THRESHOLD = 2;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enbale";
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
@@ -303,6 +303,7 @@ static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag
         {HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION},
         {HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT}
@@ -364,6 +365,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     std::shared_ptr<IAudioCaptureSource> unprocessSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
     if (unprocessSource != nullptr && unprocessSource->IsInited()) {
         unprocessSource->UpdateActiveDevice(type);
+    }
+    std::shared_ptr<IAudioCaptureSource> liveSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_LIVE);
+    if (liveSource != nullptr && liveSource->IsInited()) {
+        liveSource->UpdateActiveDevice(type);
     }
     std::shared_ptr<IAudioCaptureSource> ultrasonicSource =
         GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
@@ -704,6 +709,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
             "%{public}s not in whitelist", bundleName.c_str());
         if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
             (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_INTERPHONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION)) && info.isBackground) {
@@ -2870,7 +2876,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
             info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
             info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI ||
-            info == HDI_ID_INFO_INTERPHONE;
+            info == HDI_ID_INFO_INTERPHONE || info == HDI_ID_INFO_LIVE;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {

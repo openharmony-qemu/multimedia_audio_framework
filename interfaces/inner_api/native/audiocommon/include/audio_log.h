@@ -66,6 +66,14 @@
         }                                              \
     } while (0)
 
+#define CHECK_AND_CALL_FUNC_RETURN(cond, func)         \
+    do {                                               \
+        if (!(cond)) {                                 \
+            func;                                      \
+            return;                                    \
+        }                                              \
+    } while (0)
+
 #define CHECK_AND_CALL_FUNC_RETURN_RET(cond, ret, func) \
     do {                                               \
         if (!(cond)) {                                 \
@@ -113,6 +121,24 @@
     do {                                               \
         if (!(cond)) {                                 \
             AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
+            func;                                      \
+            return ret;                                \
+        }                                              \
+    } while (0)
+
+#define CHECK_AND_CALL_FUNC_RETURN_HILOG(cond, func, fmt, ...) \
+    do {                                               \
+        if (!(cond)) {                                 \
+            HILOG_COMM_ERROR(fmt, ##__VA_ARGS__);      \
+            func;                                      \
+            return;                                    \
+        }                                              \
+    } while (0)
+
+#define CHECK_AND_CALL_FUNC_RETURN_RET_HILOG(cond, ret, func, fmt, ...) \
+    do {                                               \
+        if (!(cond)) {                                 \
+            HILOG_COMM_ERROR(fmt, ##__VA_ARGS__);      \
             func;                                      \
             return ret;                                \
         }                                              \

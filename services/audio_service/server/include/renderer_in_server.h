@@ -181,7 +181,8 @@ public:
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
-    int32_t RefreshServerBufferForSpanSizeUpdate();
+    int32_t RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
+    int32_t GetRendererFlagsByRoute(uint32_t routeFlag);
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
 
@@ -390,6 +391,7 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
+    float sonicPitch_ = 1.0f;
     float pitch_ = 1.0f;
     float speed_ = 1.0f;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;

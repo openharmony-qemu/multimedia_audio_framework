@@ -23,6 +23,7 @@
 #include "audio_scene_manager.h"
 #include "audio_info.h"
 #include "audio_bundle_manager.h"
+#include "audio_common_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,7 +41,8 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     std::vector<SourceType> checkSourceTypes = {
         SOURCE_TYPE_MIC, SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_LIVE
     };
-    bool isSystemSelectActive = routerInfra.HasHighestPriorityRunningSourceType(checkSourceTypes);
+    bool isSystemSelectActive = routerInfra.HasHighestPriorityRunningSourceType(checkSourceTypes)
+        || VolumeUtils::IsPCVolumeEnable();
     return GetMediaInputDeviceByPriority(highestUid, category, isSystemSelectActive);
 }
 
@@ -55,7 +57,8 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
 
     category = routerInfra.GetPreferredInputCategory(uid);
     bool isSystemSelectActive = (sourceType == SOURCE_TYPE_MIC) ||
-        (sourceType == SOURCE_TYPE_CAMCORDER) || (sourceType == SOURCE_TYPE_LIVE);
+        (sourceType == SOURCE_TYPE_CAMCORDER) || (sourceType == SOURCE_TYPE_LIVE) ||
+        VolumeUtils::IsPCVolumeEnable();
     return GetMediaInputDeviceByPriority(uid, category, isSystemSelectActive);
 }
 
@@ -100,11 +103,26 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     BluetoothAndNearlinkPreferredRecordCategory category =
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 
-    auto appSourceTypes = routerInfra.GetAppRunningSourceTypes(uid);
-    if (!appSourceTypes.empty()) {
-        simpleDesc = GetMediaInputDeviceWhenHasRunningStream(effectiveSourceType, category);
-    } else {
-        simpleDesc = GetMediaInputDeviceWhenNoRunningStream(uid, category, sourceType);
+    // First check stream-level selection
+    if (uid != SYSTEM_UID && ValidStreamId(streamId)) {
+        auto streamSelectDevice = routerInfra.GetStreamSelectDevice(uid, streamId);
+        if (streamSelectDevice != nullptr) {
+            simpleDesc = streamSelectDevice;
+            effectiveSourceType = routerInfra.GetStreamSourceType(uid, streamId);
+            if (effectiveSourceType == SourceType::SOURCE_TYPE_INVALID) {
+                effectiveSourceType = sourceType;
+            }
+        }
+    }
+
+    // If no stream-level selection, proceed with existing logic
+    if (simpleDesc == nullptr) {
+        auto appSourceTypes = routerInfra.GetAppRunningSourceTypes(uid);
+        if (!appSourceTypes.empty()) {
+            simpleDesc = GetMediaInputDeviceWhenHasRunningStream(effectiveSourceType, category);
+        } else {
+            simpleDesc = GetMediaInputDeviceWhenNoRunningStream(uid, category, sourceType);
+        }
     }
 
     if (simpleDesc != nullptr) {

@@ -110,6 +110,9 @@ int32_t HpaeFastRendererManager::ConnectInputCluster(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(sinkInputNode != nullptr, ERROR, "node not found");
     auto gainNode = SafeGetMap(gainNodeMap_, sessionId);
     auto converter = SafeGetMap(converterNodeMap_, sessionId);
+    CHECK_AND_RETURN_RET_LOG(gainNode != nullptr, ERR_NULL_POINTER, "gainNode not found");
+    CHECK_AND_RETURN_RET_LOG(converter != nullptr, ERR_NULL_POINTER, "converter not found");
+    gainNode->ResetVolume();
     mixerNode_->Connect(gainNode);
     gainNode->Connect(converter);
     converter->Connect(sinkInputNode);
@@ -219,15 +222,13 @@ void HpaeFastRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSink
     }
     const auto outNodeInfo = sinkOutputNode_->GetNodeInfo();
     bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
-    AUDIO_INFO_LOG("[FinishMove] session:%{public}u sinkSpanUpdated:%{public}d inputFrameLenAdjusted:%{public}d "
+    AUDIO_INFO_LOG("[FinishMode] session:%{public}u sinkSpanUpdated:%{public}d inputFrameLenAdjusted:%{public}d "
         "newFrameLen:%{public}u", sessionId, spanSizeUpdated, frameLenAdjusted, nodeInfo.frameLen);
     node->SetNodeInfo(nodeInfo);
     node->SetIsLowLatency(true);
     sinkInputNodeMap_[sessionId] = node;
-    if (frameLenAdjusted) {
-        TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
-            HPAE_STREAM_CLASS_TYPE_PLAY);
-    }
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
+        HPAE_STREAM_CLASS_TYPE_PLAY);
 
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
@@ -399,6 +400,7 @@ int32_t HpaeFastRendererManager::InitSinkInner(bool isReload)
 int32_t HpaeFastRendererManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    hpaeSignalProcessThread_->SetFastThread(true);
     auto request = [this, isReload] {
         Trace trace("HpaeFastRendererManager::Init[" + std::to_string(isReload) + "]");
         InitSinkInner(isReload);
@@ -566,6 +568,10 @@ int32_t HpaeFastRendererManager::Flush(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(node, "Flush not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
         node->Flush();
+        auto converter = SafeGetMap(converterNodeMap_, sessionId);
+        if (converter != nullptr) {
+            converter->FlushBuffers();
+        }
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -955,6 +961,7 @@ int32_t HpaeFastRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInf
 {
     if (!IsInit()) {
         hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+        hpaeSignalProcessThread_->SetFastThread(true);
     }
     auto request = [this, sinkInfo, isReload]() {
         Trace trace("HpaeFastRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");

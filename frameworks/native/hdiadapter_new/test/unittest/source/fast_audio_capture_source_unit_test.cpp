@@ -225,7 +225,7 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, FastVoipSourceUnitTest_003, TestSize.Le
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = fastVoipSource_->Reset();
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-    DeInitFastSource();
+    DeInitFastVoipSource();
 }
 
 /**

@@ -16,7 +16,6 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
@@ -37,13 +36,10 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
 const uint32_t RESIZENUM = 2;
 const uint32_t IDNUM = 2;
-const uint32_t NUM_2 = 2;
 const uint32_t NUM_100 = 100;
 const uint32_t NUM_1000 = 1000;
 const uint32_t NUM_2000 = 2000;
@@ -72,20 +68,10 @@ vector<AudioFlag> AudioFlagVec = {
     AUDIO_FLAG_MAX,
 };
 
-template<class T>
-T GetData()
+template<typename T>
+const T& PickValue(FuzzedDataProvider& fdp, const std::vector<T>& values)
 {
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
 }
 
 template<class T>
@@ -102,8 +88,8 @@ void RemoveAudioPipeInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     std::shared_ptr<AudioPipeInfo> targetPipe = std::make_shared<AudioPipeInfo>();
-    targetPipe->adapterName_ = "test_adapter";
-    targetPipe->routeFlag_ = 1;
+    targetPipe->adapterName_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    targetPipe->routeFlag_ = fdp.ConsumeIntegral<uint32_t>();
 
     audioPipeManager->AddAudioPipeInfo(targetPipe);
     audioPipeManager->RemoveAudioPipeInfo(targetPipe);
@@ -114,8 +100,8 @@ void RemoveAudioPipeInfoByIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     std::shared_ptr<AudioPipeInfo> targetPipe = std::make_shared<AudioPipeInfo>();
-    targetPipe->id_ = GetData<uint32_t>();
-    targetPipe->adapterName_ = "test_adapter";
+    targetPipe->id_ = fdp.ConsumeIntegral<uint32_t>();
+    targetPipe->adapterName_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
 
     audioPipeManager->GetPipeList();
     audioPipeManager->AddAudioPipeInfo(targetPipe);
@@ -130,15 +116,17 @@ void UpdateAudioPipeInfoFuzzTest(FuzzedDataProvider& fdp)
     audioPipeManager->GetPipeList();
 
     std::shared_ptr<AudioPipeInfo> existingPipe = std::make_shared<AudioPipeInfo>();
-    existingPipe->adapterName_ = "existing_adapter";
-    existingPipe->routeFlag_ = 1;
+    std::string adapterName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    uint32_t routeFlag = fdp.ConsumeIntegral<uint32_t>();
+    existingPipe->adapterName_ = adapterName;
+    existingPipe->routeFlag_ = routeFlag;
     existingPipe->id_ = IDNUM;
     audioPipeManager->AddAudioPipeInfo(existingPipe);
 
     std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "existing_adapter";
-    newPipe->routeFlag_ = 1;
-    newPipe->id_ = GetData<uint32_t>();
+    newPipe->adapterName_ = adapterName;
+    newPipe->routeFlag_ = routeFlag;
+    newPipe->id_ = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->UpdateAudioPipeInfo(newPipe);
     audioPipeManager->GetPipeList();
 }
@@ -147,14 +135,16 @@ void IsSamePipeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     std::shared_ptr<AudioPipeInfo> info = std::make_shared<AudioPipeInfo>();
-    info->adapterName_ = "test_adapter";
-    info->routeFlag_ = 1;
-    info->id_ = GetData<uint32_t>();
+    std::string adapterName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    uint32_t routeFlag = fdp.ConsumeIntegral<uint32_t>();
+    info->adapterName_ = adapterName;
+    info->routeFlag_ = routeFlag;
+    info->id_ = fdp.ConsumeIntegral<uint32_t>();
 
     std::shared_ptr<AudioPipeInfo> cmpInfo = std::make_shared<AudioPipeInfo>();
-    cmpInfo->adapterName_ = "test_adapter";
-    cmpInfo->routeFlag_ = 1;
-    cmpInfo->id_ = GetData<uint32_t>();
+    cmpInfo->adapterName_ = adapterName;
+    cmpInfo->routeFlag_ = routeFlag;
+    cmpInfo->id_ = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->IsSamePipe(info, cmpInfo);
 }
 
@@ -177,8 +167,7 @@ void IsSpecialPipeFuzzTest(FuzzedDataProvider& fdp)
     if (AudioFlagVec.size() == 0) {
         return;
     }
-    uint32_t routeFlagCount = GetData<uint32_t>() % AudioFlagVec.size();
-    uint32_t routeFlag = AudioFlagVec[routeFlagCount];
+    uint32_t routeFlag = PickValue(fdp, AudioFlagVec);
     audioPipeManager->IsSpecialPipe(routeFlag);
 }
 
@@ -189,9 +178,8 @@ void IsNormalRecordPipeFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
     shared_ptr<AudioPipeInfo> pipe = std::make_shared<AudioPipeInfo>();
-    pipe->adapterName_ = GetData<uint32_t>() % NUM_2 == 0 ? PRIMARY_CLASS : USB_CLASS;
-    uint32_t routeFlagCount = GetData<uint32_t>() % AudioFlagVec.size();
-    pipe->routeFlag_ == AudioFlagVec[routeFlagCount];
+    pipe->adapterName_ = fdp.ConsumeBool() ? PRIMARY_CLASS : USB_CLASS;
+    pipe->routeFlag_ = PickValue(fdp, AudioFlagVec);
     audioPipeManager->IsNormalRecordPipe(pipe);
 }
 
@@ -205,11 +193,11 @@ void GetStreamDescByIdFuzzTest(FuzzedDataProvider& fdp)
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    desc->sessionId_ = GetData<uint32_t>();
+    desc->sessionId_ = fdp.ConsumeIntegral<uint32_t>();
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    uint32_t targetSessionId = GetData<uint32_t>();
+    uint32_t targetSessionId = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->GetStreamDescById(targetSessionId);
 }
 
@@ -219,7 +207,7 @@ void DumpFuzzTest(FuzzedDataProvider& fdp)
     if (audioPipeManager == nullptr) {
         return;
     }
-    std::string dumpString = "";
+    std::string dumpString = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     audioPipeManager->Dump(dumpString);
 }
 
@@ -229,7 +217,7 @@ void IsModemCommunicationIdExistFuzzTest(FuzzedDataProvider& fdp)
     if (audioPipeManager == nullptr) {
         return;
     }
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->IsModemCommunicationIdExist(sessionId);
 }
 
@@ -239,7 +227,7 @@ void GetModemCommunicationStreamDescByIdFuzzTest(FuzzedDataProvider& fdp)
     if (audioPipeManager == nullptr) {
         return;
     }
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->modemCommunicationIdMap_.clear();
     audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
@@ -254,12 +242,14 @@ void GetPipeinfoByNameAndFlagFuzzTest(FuzzedDataProvider& fdp)
     audioPipeManager->curPipeList_.clear();
 
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
-    pipe1->adapterName_ = "existing_adapter";
-    pipe1->routeFlag_ = 1;
+    std::string adapterName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    uint32_t routeFlag = fdp.ConsumeIntegral<uint32_t>();
+    pipe1->adapterName_ = adapterName;
+    pipe1->routeFlag_ = routeFlag;
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    std::string targetAdapterName = "existing_adapter";
-    uint32_t targetRouteFlag = 1;
+    std::string targetAdapterName = adapterName;
+    uint32_t targetRouteFlag = routeFlag;
     audioPipeManager->GetPipeinfoByNameAndFlag(targetAdapterName, targetRouteFlag);
 }
 
@@ -268,14 +258,14 @@ void GetModuleNameBySessionIdFuzzTest(FuzzedDataProvider& fdp)
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->moduleInfo_.name = "TestAdapter";
+    pipeInfo->moduleInfo_.name = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    desc->sessionId_ = GetData<uint32_t>();
+    desc->sessionId_ = fdp.ConsumeIntegral<uint32_t>();
     desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
     desc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
-    uint32_t targetSessionId = GetData<uint32_t>();
+    uint32_t targetSessionId = fdp.ConsumeIntegral<uint32_t>();
 
     audioPipeManager->GetModuleNameBySessionId(targetSessionId);
 }
@@ -287,13 +277,13 @@ void GetProcessDeviceInfoBySessionIdFuzzTest(FuzzedDataProvider& fdp)
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    desc->sessionId_ = GetData<uint32_t>();
+    desc->sessionId_ = fdp.ConsumeIntegral<uint32_t>();
     desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
     desc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    uint32_t targetSessionId = GetData<uint32_t>();
+    uint32_t targetSessionId = fdp.ConsumeIntegral<uint32_t>();
     AudioStreamInfo info;
     audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
 }
@@ -337,11 +327,11 @@ void GetStreamDescByIdInnerFuzzTest(FuzzedDataProvider& fdp)
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    desc->sessionId_ = GetData<uint32_t>();
+    desc->sessionId_ = fdp.ConsumeIntegral<uint32_t>();
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    uint32_t targetSessionId = GetData<uint32_t>();
+    uint32_t targetSessionId = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->GetStreamDescByIdInner(targetSessionId);
 }
 
@@ -351,13 +341,15 @@ void GetStreamCountFuzzTest(FuzzedDataProvider& fdp)
     audioPipeManager->curPipeList_.clear();
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "existing_adapter";
-    pipeInfo->routeFlag_ = 1;
+    std::string adapterName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    uint32_t routeFlag = fdp.ConsumeIntegral<uint32_t>();
+    pipeInfo->adapterName_ = adapterName;
+    pipeInfo->routeFlag_ = routeFlag;
     pipeInfo->streamDescriptors_.resize(RESIZENUM);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    std::string targetAdapterName = "existing_adapter";
-    uint32_t targetRouteFlag = 1;
+    std::string targetAdapterName = adapterName;
+    uint32_t targetRouteFlag = routeFlag;
     audioPipeManager->GetStreamCount(targetAdapterName, targetRouteFlag);
 }
 
@@ -367,11 +359,11 @@ void GetPaIndexByIoHandleFuzzTest(FuzzedDataProvider& fdp)
     audioPipeManager->curPipeList_.clear();
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->id_ = GetData<uint32_t>();
-    pipeInfo->paIndex_ = GetData<uint32_t>();
+    pipeInfo->id_ = fdp.ConsumeIntegral<uint32_t>();
+    pipeInfo->paIndex_ = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    AudioIOHandle targetId = GetData<uint32_t>();
+    AudioIOHandle targetId = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->GetPaIndexByIoHandle(targetId);
 }
 
@@ -424,7 +416,7 @@ void PcmOffloadSessionCountFuzzTest(FuzzedDataProvider& fdp)
 void AddModemCommunicationIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t sessionId = 99999;
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioPipeManager->modemCommunicationIdMap_.clear();
     audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
@@ -435,7 +427,7 @@ void AddModemCommunicationIdFuzzTest(FuzzedDataProvider& fdp)
 void RemoveModemCommunicationIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t sessionId = 12345;
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
 
     audioPipeManager->modemCommunicationIdMap_[sessionId] = streamDesc;
@@ -453,7 +445,7 @@ void GetNormalSourceInfoFuzzTest(FuzzedDataProvider& fdp)
     bluetoothPipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     audioPipeManager->AddAudioPipeInfo(bluetoothPipe);
 
-    bool isEcFeatureEnable = true;
+    bool isEcFeatureEnable = fdp.ConsumeBool();
     audioPipeManager->GetNormalSourceInfo(isEcFeatureEnable);
 }
 
@@ -463,12 +455,14 @@ void GetPipeByModuleAndFlagFuzzTest(FuzzedDataProvider& fdp)
     audioPipeManager->curPipeList_.clear();
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->moduleInfo_.name = "EXISTING_MODULE";
-    pipeInfo->routeFlag_ = 1;
+    std::string moduleName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    uint32_t routeFlag = fdp.ConsumeIntegral<uint32_t>();
+    pipeInfo->moduleInfo_.name = moduleName;
+    pipeInfo->routeFlag_ = routeFlag;
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    std::string targetModuleName = "NON_EXISTING_MODULE";
-    uint32_t targetRouteFlag = 1;
+    std::string targetModuleName = fdp.ConsumeBool() ? moduleName : fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    uint32_t targetRouteFlag = routeFlag;
     audioPipeManager->GetPipeByModuleAndFlag(targetModuleName, targetRouteFlag);
 }
 
@@ -479,7 +473,7 @@ void StartClientFuzzTest(FuzzedDataProvider& fdp)
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     desc->sessionId_ = sessionId;
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
@@ -534,9 +528,9 @@ void GetAdapterNameBySessionIdFuzzTest(FuzzedDataProvider& fdp)
     audioPipeManager->curPipeList_.clear();
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "test_adapter";
+    pipeInfo->adapterName_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     desc->sessionId_ = sessionId;
     desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
     desc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
@@ -549,9 +543,9 @@ void GetAdapterNameBySessionIdFuzzTest(FuzzedDataProvider& fdp)
     audioPipeManager->GetAdapterNameBySessionId(invalidSessionId);
 
     std::shared_ptr<AudioPipeInfo> pipeInfo2 = std::make_shared<AudioPipeInfo>();
-    pipeInfo2->adapterName_ = "test_adapter2";
+    pipeInfo2->adapterName_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     std::shared_ptr<AudioStreamDescriptor> desc2 = std::make_shared<AudioStreamDescriptor>();
-    desc2->sessionId_ = GetData<uint32_t>();
+    desc2->sessionId_ = fdp.ConsumeIntegral<uint32_t>();
     desc2->newDeviceDescs_.clear();
     pipeInfo2->streamDescriptors_.push_back(desc2);
     audioPipeManager->AddAudioPipeInfo(pipeInfo2);
@@ -566,7 +560,7 @@ void GetClientUidBySessionIdFuzzTest(FuzzedDataProvider& fdp)
 
     std::shared_ptr<AudioPipeInfo> pipeInfo1 = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> desc1 = std::make_shared<AudioStreamDescriptor>();
-    uint32_t sessionId1 = GetData<uint32_t>();
+    uint32_t sessionId1 = fdp.ConsumeIntegral<uint32_t>();
     desc1->sessionId_ = sessionId1;
     desc1->callerUid_ = MEDIA_SERVICE_UID;
     desc1->appInfo_.appUid = NUM_1000;
@@ -577,7 +571,7 @@ void GetClientUidBySessionIdFuzzTest(FuzzedDataProvider& fdp)
 
     std::shared_ptr<AudioPipeInfo> pipeInfo2 = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> desc2 = std::make_shared<AudioStreamDescriptor>();
-    uint32_t sessionId2 = GetData<uint32_t>();
+    uint32_t sessionId2 = fdp.ConsumeIntegral<uint32_t>();
     desc2->sessionId_ = sessionId2;
     desc2->callerUid_ = NUM_2000;
     pipeInfo2->streamDescriptors_.push_back(desc2);
@@ -596,7 +590,7 @@ void GetModemCommunicationStreamDescFuzzTest(FuzzedDataProvider& fdp)
 
     audioPipeManager->GetModemCommunicationStreamDesc();
 
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
 
@@ -611,7 +605,7 @@ void UpdateModemStreamStatusFuzzTest(FuzzedDataProvider& fdp)
     AudioStreamStatus status = STREAM_STATUS_STARTED;
     audioPipeManager->UpdateModemStreamStatus(status);
 
-    uint32_t sessionId1 = GetData<uint32_t>();
+    uint32_t sessionId1 = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->modemCommunicationIdMap_[sessionId1] = nullptr;
     audioPipeManager->UpdateModemStreamStatus(status);
 
@@ -632,7 +626,7 @@ void UpdateModemStreamDeviceFuzzTest(FuzzedDataProvider& fdp)
 
     audioPipeManager->UpdateModemStreamDevice(deviceDescs);
 
-    uint32_t sessionId1 = GetData<uint32_t>();
+    uint32_t sessionId1 = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->modemCommunicationIdMap_[sessionId1] = nullptr;
     audioPipeManager->UpdateModemStreamDevice(deviceDescs);
     uint32_t sessionId2 = sessionId1 + 1;
@@ -704,7 +698,7 @@ void GetRingAndVoipDescMapFuzzTest(FuzzedDataProvider& fdp)
 
     audioPipeManager->GetRingAndVoipDescMap();
 
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->ringAndVoipDescMap_[sessionId] = nullptr;
     audioPipeManager->GetRingAndVoipDescMap();
 
@@ -722,7 +716,7 @@ void IsModemStreamDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
 
     audioPipeManager->IsModemStreamDeviceChanged(deviceDesc);
 
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     audioPipeManager->modemCommunicationIdMap_[sessionId] = nullptr;
     audioPipeManager->IsModemStreamDeviceChanged(deviceDesc);
 
@@ -821,7 +815,7 @@ void GetPaIndexByNameFuzzTest(FuzzedDataProvider& fdp)
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
 
-    std::string portName = "test_port";
+    std::string portName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
 
     audioPipeManager->GetPaIndexByName(portName);
 
@@ -833,7 +827,7 @@ void GetPaIndexByNameFuzzTest(FuzzedDataProvider& fdp)
 
     audioPipeManager->GetPaIndexByName(portName);
 
-    audioPipeManager->GetPaIndexByName("non_existent_port");
+    audioPipeManager->GetPaIndexByName(fdp.ConsumeRandomLengthString(MAX_STRING_LEN));
 }
 
 void IsOnPrimaryAdapterFuzzTest(FuzzedDataProvider& fdp)
@@ -841,7 +835,7 @@ void IsOnPrimaryAdapterFuzzTest(FuzzedDataProvider& fdp)
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
 
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     audioPipeManager->IsOnPrimaryAdapter(sessionId);
 
@@ -954,15 +948,6 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
 void Init()
 {
 }
@@ -976,7 +961,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;

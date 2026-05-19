@@ -1135,6 +1135,13 @@ public:
     }
 
     /**
+     * @brief Get the debug key of this renderer.
+     *
+     * @return Returns the debug key assigned by AudioDebugManager.
+     */
+    virtual uint32_t GetRendererDebugKey() const { return 0; }
+
+    /**
     * @brief Get offload status.
     *
     * @return Returns <b>true</b> if offload is enabled.

@@ -41,16 +41,12 @@ static std::string g_deviceNetId = "LocalDevice";
 
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
-    float curGain = 0.0f;
-    float targetGain = 1.0f;
     uint64_t frameLen = len / (SAMPLE_F32LE * STEREO);
-    float stepGain = (targetGain - curGain) / frameLen;
-    
     const float *tempData = reinterpret_cast<const float *>(data);
     for (int32_t i = 0; i < frameLen; i++) {
         const float left = tempData[NUM_TWO * i];
         const float right = tempData[NUM_TWO * i + 1];
-        const float expectedValue = TEST_VALUE_1 * (curGain + i * stepGain) + TEST_VALUE_2 * (curGain + i * stepGain);
+        const float expectedValue = TEST_VALUE_1 + TEST_VALUE_2;
         EXPECT_EQ(left, expectedValue);
         EXPECT_EQ(right, expectedValue);
     }
@@ -274,6 +270,107 @@ HWTEST_F(HpaeOutputClusterTest, FaultCode_NotifyStreamChangeToSink_NullSinkOutpu
         StreamChangeType::STREAM_CHANGE_TYPE_STATE_CHANGE, SESSION_ID_1,
         STREAM_USAGE_MEDIA, RENDERER_RUNNING, TEST_NOTIFY_SESSION_ID);
     SUCCEED();
+}
+// ==================== New UT for GetRenderId and GetCurrentOutputDevice ====================
+
+/**
+ * @tc.name  : GetRenderId_Default_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderId returns HDI_INVALID_ID when sink output node has default renderId.
+ */
+HWTEST_F(HpaeOutputClusterTest, GetRenderId_Default_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    // hpaeSinkOutputNode_ default renderId_ is HDI_INVALID_ID
+    EXPECT_EQ(hpaeOutputCluster->GetRenderId(), HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : GetCurrentOutputDevice_NullSink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetCurrentOutputDevice returns DEVICE_TYPE_NONE when sink is null.
+ */
+HWTEST_F(HpaeOutputClusterTest, GetCurrentOutputDevice_NullSink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    // hpaeSinkOutputNode_->audioRendererSink_ is nullptr by default
+    EXPECT_EQ(hpaeOutputCluster->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : GetRenderId_SetValue_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderId returns correct value after setting via sink output node.
+ */
+HWTEST_F(HpaeOutputClusterTest, GetRenderId_SetValue_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    // Access private member via -fno-access-control
+    hpaeOutputCluster->hpaeSinkOutputNode_->renderId_ = 200;
+    EXPECT_EQ(hpaeOutputCluster->GetRenderId(), 200u);
+}
+
+/**
+ * @tc.name  : SetDeviceChangeCallback_Invoke_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetDeviceChangeCallback sets callback that can be invoked.
+ */
+HWTEST_F(HpaeOutputClusterTest, SetDeviceChangeCallback_Invoke_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+
+    bool callbackInvoked = false;
+    hpaeOutputCluster->SetDeviceChangeCallback([&callbackInvoked]() {
+        callbackInvoked = true;
+    });
+
+    // Access private member via -fno-access-control to invoke the callback
+    ASSERT_NE(hpaeOutputCluster->deviceChangeCallback_, nullptr);
+    hpaeOutputCluster->deviceChangeCallback_();
+    EXPECT_EQ(callbackInvoked, true);
+}
+
+/**
+ * @tc.name  : SetDeviceChangeCallback_Null_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetDeviceChangeCallback with no callback set (default state).
+ */
+HWTEST_F(HpaeOutputClusterTest, SetDeviceChangeCallback_Null_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+
+    // deviceChangeCallback_ should be empty by default
+    EXPECT_EQ(static_cast<bool>(hpaeOutputCluster->deviceChangeCallback_), false);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

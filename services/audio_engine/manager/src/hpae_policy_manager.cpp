@@ -178,11 +178,12 @@ std::string HpaePolicyManager::GetAudioParameter(const std::string &adapterName,
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(deviceManager != nullptr, "false",
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
         BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
         BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
-        "local device manager is nullptr", false), "false"));
+            "local device manager is nullptr", false),
+        "local device manager is nullptr");
     return deviceManager->GetAudioParameter(adapterName, key, condition);
 }
 
@@ -219,22 +220,36 @@ void HpaePolicyManager::DeleteStreamVolumeToEffect(const std::string stringSessi
 bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioEffectChainManager != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
         BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
         BusinessScenario::QUERY, ERR_NULL_POINTER),
-        "null audioEffectChainManager", false), false));
+            "null audioEffectChainManager", false),
+        "null audioEffectChainManager");
     return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+int32_t HpaePolicyManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+        BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
+            "null audioEffectChainManager", false),
+        "null audioEffectChainManager");
+    return audioEffectChainManager->UpdatePersonalizedHRTFBin(fd, length);
 }
 
 int32_t HpaePolicyManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioCollaborationManager != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCollaborationManager != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
         BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
         BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
-        "null audioCollaborationManager", false), ERR_ILLEGAL_STATE));
+            "null audioCollaborationManager", false),
+        "null audioCollaborationManager");
     return audioCollaborationManager->UpdateCollaborativeProductId(productId);
 }
 

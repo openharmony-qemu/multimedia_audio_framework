@@ -79,6 +79,9 @@ public:
     void OnCommandResult(int command, bool success, int errorCode) override;
     void OnStatusChange(int status, int reason) override;
 
+    void SetDebugKey(uint32_t key) { debugKey_ = key; }
+    uint32_t GetDebugKey() const override { return debugKey_; }
+
 private:
     AudioLoopbackMode mode_;
     LoopbackType type_;
@@ -90,6 +93,7 @@ private:
 
     std::shared_ptr<AudioLoopbackCallback> userCallback_;
     std::mutex callbackMutex_;
+    uint32_t debugKey_ = 0;
 
     int32_t CreateLoopbackIpc();
     int32_t EnableNormal(bool enable);

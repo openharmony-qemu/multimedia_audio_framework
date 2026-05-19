@@ -60,6 +60,14 @@ void AudioPolicyManager::UpdateContextForAudioZone(int32_t zoneId, const AudioZo
     gsp->UpdateContextForAudioZone(zoneId, context);
 }
 
+int32_t AudioPolicyManager::GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->GetAudioZoneForApp(userIds, retUserIds);
+}
+
 const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -184,6 +192,20 @@ int32_t AudioPolicyManager::AddStreamsToAudioZone(int32_t zoneId, std::vector<Au
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->AddStreamsToAudioZone(zoneId, streams);
+}
+
+int32_t AudioPolicyManager::AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->AddStreamIdToAudioZone(zoneId, streamId);
+}
+
+int32_t AudioPolicyManager::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
 void AudioPolicyManager::SetZoneDeviceVisible(bool visible)

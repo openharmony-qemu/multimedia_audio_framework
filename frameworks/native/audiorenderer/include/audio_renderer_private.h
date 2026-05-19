@@ -31,6 +31,10 @@
 #include "audio_errors.h"
 #include "audio_task_loop.h"
 
+#ifndef INVALID_DEBUGKEY
+#define INVALID_DEBUGKEY 0
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 class RendererPolicyServiceDiedCallback;
@@ -148,6 +152,8 @@ public:
     int32_t SetPitch(float pitch) override;
     void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override;
     int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
+    uint32_t GetRendererDebugKey() const override { return debugKey_; }
+    uint32_t debugKey_ = INVALID_DEBUGKEY;
     bool IsFastRenderer() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;
@@ -204,6 +210,7 @@ public:
     mutable bool isStillZeroStreamVolume_ = false;
     mutable std::shared_ptr<AudioDeviceDescriptor> selectedDevice_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -271,6 +278,8 @@ private:
     int32_t SetSonicPitch(float pitch);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
+    void NotifyFastStatusChange(FastStatus status);
+    void SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
     int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
         std::string callingFunc);
@@ -279,6 +288,7 @@ private:
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    float GetMaxSpeed();
     void UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
@@ -288,6 +298,8 @@ private:
     std::string &GetBundleNameByAppUid(int32_t uid);
     int32_t ActivateAudioInterruptInStart(const bool isMute);
     void HandleAudioInterruptInfo();
+    void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+        const std::string &erroDesc, bool isClient, RendererState state);
     bool ValidateStartState();
     bool ValidateNotSwitching();
     bool ValidateAudioStream();
@@ -364,9 +376,12 @@ public:
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     InterruptCallbackEvent HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    bool NoNeedNotifyEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
+    void HandleForcePause(StreamFocusState currentFocusState);
+    void HandleForceStop(StreamFocusState currentFocusState);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioRendererCallback> callback_;
     std::shared_ptr<AudioRendererCallback> cb_;

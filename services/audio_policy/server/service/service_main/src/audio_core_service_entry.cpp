@@ -330,6 +330,9 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
     AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
     NotifyServiceReady();
+#ifdef AUDIO_WIRED_DETECT
+    AudioPnpServer::GetAudioPnpServer().init();
+#endif
 }
 
 void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -398,17 +401,21 @@ int32_t AudioCoreService::EventEntry::SetInputDevice(const DeviceType deviceType
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
+    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId, const uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    if (coreService_ == nullptr) {
+        AUDIO_INFO_LOG("coreService_ is nullptr");
+        return std::vector<std::shared_ptr<AudioDeviceDescriptor>>();
+    }
+    return coreService_->GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid, streamId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId)
+    AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId, const uint32_t streamId)
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
+    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId, uid, streamId);
 }
 
 int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
@@ -646,6 +653,7 @@ int32_t AudioCoreService::EventEntry::ExcludeOutputDevices(AudioDeviceUsage audi
 {
     Trace trace("AudioCoreService::EventEntry::ExcludeOutputDevices");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "coreService_ is nullptr");
     return coreService_->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
@@ -653,6 +661,7 @@ int32_t AudioCoreService::EventEntry::UnexcludeOutputDevices(AudioDeviceUsage au
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "coreService_ is nullptr");
     return coreService_->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
@@ -789,8 +798,9 @@ void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagBySessionId(uint32_t s
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
         sessionId, enabled);
-    coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled);
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    if (coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled)) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    }
 }
 
 void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled,
@@ -800,8 +810,9 @@ void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPi
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
         callerPid, enabled);
-    coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled);
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    if (coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled)) {
+        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    }
 }
 
 void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)

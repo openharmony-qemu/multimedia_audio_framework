@@ -92,17 +92,25 @@ private:
     std::weak_ptr<AudioCapturer> audioCapturer_;
 };
 
-static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapturer> &audioCapturer)
+static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapturerPrivate> &audioCapturer)
 {
-    if (audioCapturer == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "AudioCapturer is nullptr");
     auto debugCallback = std::make_shared<AudioCapturerDebugCallbackImpl>(std::weak_ptr<AudioCapturer>(audioCapturer));
-    if (debugCallback == nullptr) {
-        return;
-    }
-    (void)AudioDebugManager::GetInstance().RegisterAudioCapturer(
-        reinterpret_cast<uintptr_t>(audioCapturer.get()), debugCallback);
+    CHECK_AND_RETURN_LOG(debugCallback != nullptr, "Create capturer debug callback failed");
+    uint32_t debugKey = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioCapturer(debugKey, debugCallback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != INVALID_DEBUGKEY,
+        "Register capturer debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
+    audioCapturer->debugKey_ = debugKey;
+    AUDIO_INFO_LOG("Register capturer debug manager success, debugKey:%{public}u", debugKey);
+}
+
+static void UnregisterAudioCapturerDebugManager(uint32_t &debugKey)
+{
+    CHECK_AND_RETURN_LOG(debugKey != INVALID_DEBUGKEY, "Unregister capturer debug manager: debugKey is invalid");
+    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(debugKey);
+    AUDIO_INFO_LOG("Unregister capturer debug manager, debugKey:%{public}u", debugKey);
+    debugKey = INVALID_DEBUGKEY;
 }
 
 AudioCapturer::~AudioCapturer() = default;
@@ -203,6 +211,11 @@ static inline bool IsMicInEcRequested(const AudioCapturerOptions &capturerOption
         capturerOptions.ecStreamInfo.channels > CHANNEL_UNKNOW;
 }
 
+static inline bool IsMicInRequested(const AudioCapturerOptions &capturerOptions)
+{
+    return capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW;
+}
+
 static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
@@ -224,6 +237,14 @@ static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions 
             (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
             capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
             AUDIO_ERR_LOG("Create failed: ec samplingRate and format should follow process stream");
+            return false;
+        }
+    }
+
+    if (sourceType == SOURCE_TYPE_CAMCORDER && IsMicInRequested(capturerOptions)) {
+        if ((capturerOptions.micInStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
+            capturerOptions.micInStreamInfo.format != capturerOptions.streamInfo.format)) {
+            AUDIO_ERR_LOG("Create failed: camcorder mic-in samplingRate and format should follow process stream");
             return false;
         }
     }
@@ -660,7 +681,7 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
     // UpdatePlaybackCaptureConfig will only work for InnerCap streams.
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_OPERATION, "This is not a PLAYBACK_CAPTURE stream", true);
+            RECORD_CONFIG_INVALID_OPERATION, "This is not a PLAYBACK_CAPTURE stream", true);
         AUDIO_WARNING_LOG("This is not a PLAYBACK_CAPTURE stream.");
         return ERR_INVALID_OPERATION;
     }
@@ -668,19 +689,19 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (config.filterOptions.usages.size() == 0 && config.filterOptions.pids.size() == 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "Both usages and pids are empty", true);
+            RECORD_CONFIG_INVALID_PARAM, "Both usages and pids are empty", true);
         AUDIO_WARNING_LOG("Both usages and pids are empty!");
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "Failed with null audioStream_", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "Failed with null audioStream_", true),
         "Failed with null audioStream_");
 
     return audioStream_->UpdatePlaybackCaptureConfig(config);
 #else
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "Inner capture is not supported", true);
+            RECORD_CONFIG_NOT_SUPPORTED, "Inner capture is not supported", true);
     AUDIO_WARNING_LOG("Inner capture is not supported.");
     return ERR_NOT_SUPPORTED;
 #endif
@@ -983,7 +1004,7 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
         capturerInfo_.sourceType, GetStatus() == CAPTURER_RUNNING);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "select input device failed", true),
+            ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "select input device failed", true),
         "select input device failed");
     return SUCCESS;
 }
@@ -994,7 +1015,7 @@ int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<Audio
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED, "create capturer filter failed", true),
+            ERR_RECORD_DEVICE_SWITCH_MEMORY_ALLOC_FAILED, "create capturer filter failed", true),
         "create capturer filter failed");
     audioCapturerFilter->uid = static_cast<int32_t>(getuid());
     audioCapturerFilter->capturerInfo = capturerInfo_;
@@ -1091,6 +1112,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
     capturerProxyObj_->SaveCapturerObj(weak_from_this());
 
     audioStream_->SetCapturerInfo(capturerInfo_);
+    SetInnerStreamFastStatusChangeCallback(audioStream_);
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
@@ -1277,8 +1299,12 @@ int32_t AudioCapturerPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
 void AudioCapturerPrivate::SetFastStatusChangeCallback(
     const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback)
 {
-    std::lock_guard lock(fastStatusChangeCallbackMutex_);
-    fastStatusChangeCallback_ = callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        fastStatusChangeCallback_ = callback;
+    }
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    SetInnerStreamFastStatusChangeCallback(currentStream);
 }
 
 void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
@@ -1554,6 +1580,13 @@ int32_t AudioCapturerPrivate::CheckForStartImpl(CapturerState state)
     return SUCCESS;
 }
 
+void AudioCapturerPrivate::SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
+    const std::string &erroDesc, bool isClient, CapturerState state) const
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(uid, errorCode, erroDesc, isClient);
+    audioStream_->SetFocusState(static_cast<StreamFocusState>(state));
+}
+
 int32_t AudioCapturerPrivate::StartImpl()
 {
     AsyncCheckAudioCapturer("Start");
@@ -1570,18 +1603,19 @@ int32_t AudioCapturerPrivate::StartImpl()
     std::unique_lock<std::mutex> audioInterruptLock(audioInterruptMutex_);
     AudioInterrupt audioInterrupt = audioInterrupt_;
     audioInterruptLock.unlock();
+    audioStream_->SetFocusState(FOCUS_STARTING);
     ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"),
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_START_OPERATION_FAILED, "[Start]ActivateAudioInterrupt Failed", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()), RECORD_START_OPERATION_FAILED,
+            "[Start]ActivateAudioInterrupt Failed", true, state));
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_CALL_FUNC_RETURN_RET(!isVoiceCallCapturer_, SUCCESS,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_START_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            RECORD_START_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true, state));
     ret = CheckForStartImpl(state);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_START_ILLEGAL_STATE, "CheckForStartImpl fail", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            RECORD_START_ILLEGAL_STATE, "CheckForStartImpl fail", true, state));
     bool result = audioStream_->StartAudioStream();
     if (!result) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -1657,7 +1691,8 @@ bool AudioCapturerPrivate::Pause() const
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_PAUSE_ILLEGAL_STATE, "Operation failed, in switching", true),
         "Operation failed, in switching");
-
+    CapturerState state = GetStatusInner();
+    audioStream_->SetFocusState(FOCUS_APP_PAUSING);
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
@@ -1668,8 +1703,8 @@ bool AudioCapturerPrivate::Pause() const
 
     // When the cellular call stream is pausing, only need to deactivate audio interrupt.
     CHECK_AND_CALL_FUNC_RETURN_RET(!isVoiceCallCapturer_, true,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_PAUSE_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()), RECORD_PAUSE_ILLEGAL_STATE,
+            "isVoiceCallCapturer_ skip", true, state));
     if (capturerInfo_.loopBackEffectEnabled) {
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
@@ -1690,6 +1725,8 @@ int32_t AudioCapturerPrivate::StopImpl() const
         "Operation failed, in switching");
 
     WriteOverflowEvent();
+    CapturerState state = GetStatusInner();
+    audioStream_->SetFocusState(FOCUS_APP_STOPPING);
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -1698,8 +1735,8 @@ int32_t AudioCapturerPrivate::StopImpl() const
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET(isVoiceCallCapturer_ != true, SUCCESS,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_STOP_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true));
+        SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
+            RECORD_STOP_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true, state));
     if (capturerInfo_.loopBackEffectEnabled) {
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
@@ -1745,7 +1782,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
-    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioCapturerDebugManager(debugKey_);
     if (capturerInfo_.loopBackEffectEnabled) {
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
@@ -1779,12 +1816,12 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC, ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "Please set the buffer duration between 5ms ~ 20ms", true),
+            RECORD_CONFIG_INVALID_PARAM, "Please set the buffer duration between 5ms ~ 20ms", true),
         "Error: Please set the buffer duration between 5ms ~ 20ms");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
 }
@@ -1846,11 +1883,36 @@ void AudioCapturerInterruptCallbackImpl::FinishSwitch()
     AUDIO_INFO_LOG("SwitchStream finish, notify interrupt callback");
 }
 
+bool AudioCapturerInterruptCallbackImpl::NoNeedNotifyEvent(const InterruptEvent &interruptEvent)
+{
+    StreamFocusState currentFocusState = audioStream_->GetFocusState();
+    bool noNeedSendNotify = (currentFocusState == FOCUS_STARTING || currentFocusState == FOCUS_RUNNING
+        || currentFocusState == FOCUS_STOPPED || currentFocusState == FOCUS_APP_STOPPING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is pause, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    noNeedSendNotify = (currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_STARTING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_STOP && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is stop, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    noNeedSendNotify = (currentFocusState == FOCUS_STARTING  || currentFocusState == FOCUS_RUNNING
+        || currentFocusState ==FOCUS_STOPPED || currentFocusState == FOCUS_APP_STOPPING);
+    if (interruptEvent.hintType == INTERRUPT_HINT_RESUME && noNeedSendNotify) {
+        AUDIO_INFO_LOG("hintType is resume, currentFocusState is %{public}d, no need send event.", currentFocusState);
+        return true;
+    }
+    return false;
+}
+
 void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     AUDIO_INFO_LOG("NotifyEvent: Hint: %{public}d, eventType: %{public}d",
         interruptEvent.hintType, interruptEvent.eventType);
-
+    if (NoNeedNotifyEvent(interruptEvent) == true) {
+        return;
+    }
     if (cb_ != nullptr) {
         cb_->OnInterrupt(interruptEvent);
         AUDIO_DEBUG_LOG("OnInterrupt : NotifyEvent to app complete");
@@ -1859,25 +1921,26 @@ void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
     }
 }
 
-int32_t AudioCapturerInterruptCallbackImpl::InterruptHintResumeHandle(State currentState)
+int32_t AudioCapturerInterruptCallbackImpl::InterruptHintResumeHandle(StreamFocusState focusState)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((currentState == PAUSED || currentState == PREPARED) &&
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((focusState == FOCUS_PAUSED || focusState == FOCUS_PREPARED) &&
         isForcePaused_ == true, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CALLBACK_ILLEGAL_STATE, "OnInterrupt state check failed", true),
-        "OnInterrupt state %{public}d or not forced pause %{public}d before", currentState, isForcePaused_);
+        "OnInterrupt streamFocusState %{public}d or not forced pause %{public}d before", focusState, isForcePaused_);
     AUDIO_INFO_LOG("set force pause false");
     isForcePaused_ = false;
     return SUCCESS;
 }
 
-int32_t AudioCapturerInterruptCallbackImpl::InterruptHintPauseHandle(State currentState)
+int32_t AudioCapturerInterruptCallbackImpl::InterruptHintPauseHandle(StreamFocusState focusState)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentState == RUNNING || currentState == PREPARED, ERR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(focusState == FOCUS_RUNNING || focusState == FOCUS_PREPARED
+        || focusState == FOCUS_STARTING, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CALLBACK_ILLEGAL_STATE, "OnInterrupt state no need to pause", true),
-        "OnInterrupt state %{public}d, no need to pause",
-        currentState); // Just Pause, do not deactivate here
+        "OnInterrupt streamFocusState %{public}d, no need to pause", focusState); // Just Pause, do not deactivate here
+    audioStream_->SetFocusState(FOCUS_SYSTEM_PAUSING);
     (void)audioStream_->PauseAudioStream();
     AUDIO_INFO_LOG("set force pause true");
     isForcePaused_ = true;
@@ -1916,12 +1979,12 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
         CHECK_AND_CALL_FUNC_RETURN_LOG(audioStream_ != nullptr,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_CALLBACK_ILLEGAL_STATE, "Stream is not alive", true), "Stream is not alive");
-        State currentState = audioStream_->GetState();
+        StreamFocusState currentFocusState = audioStream_->GetFocusState();
 
         int32_t interruptRet = 0;
         switch (interruptEvent.hintType) {
             case INTERRUPT_HINT_RESUME:
-                interruptRet = InterruptHintResumeHandle(currentState);
+                interruptRet = InterruptHintResumeHandle(currentFocusState);
                 CHECK_AND_CALL_FUNC_RETURN(interruptRet == SUCCESS,
                     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                         RECORD_CALLBACK_ILLEGAL_STATE, "InterruptHintResumeHandle failed", true));
@@ -1930,12 +1993,13 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
                 NotifyEvent(event);
                 return;
             case INTERRUPT_HINT_PAUSE:
-                interruptRet = InterruptHintPauseHandle(currentState);
+                interruptRet = InterruptHintPauseHandle(currentFocusState);
                 CHECK_AND_CALL_FUNC_RETURN(interruptRet == SUCCESS,
                     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                         RECORD_CALLBACK_ILLEGAL_STATE, "InterruptHintPauseHandle failed", true));
                 break;
             case INTERRUPT_HINT_STOP:
+                audioStream_->SetFocusState(FOCUS_SYSTEM_STOPPING);
                 (void)audioStream_->StopAudioStream();
                 break;
             default:
@@ -2023,7 +2087,7 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
 {
     if (targetSources.size() <= 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "TargetSources size is 0", true);
+            RECORD_CONFIG_INVALID_PARAM, "TargetSources size is 0", true);
         AUDIO_ERR_LOG("TargetSources size is 0, set audio source concurrency failed.");
         return ERR_INVALID_PARAM;
     }
@@ -2038,7 +2102,7 @@ int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
     CapturerState state = GetStatusInner();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "incorrect state", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "incorrect state", true),
         "incorrect state:%{public}d", state);
     audioInterrupt_.strategy = strategy;
     AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
@@ -2049,13 +2113,13 @@ int32_t AudioCapturerPrivate::SetMuteHint(bool mute)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(GetStatus() == CAPTURER_RUNNING, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "SetMuteHint only support running state", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "SetMuteHint only support running state", true),
         "SetMuteHint only support running state");
 
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
 
     return currentStream->SetMuteHint(mute);
@@ -2068,7 +2132,7 @@ int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     int32_t ret = currentStream->SetCaptureMode(captureMode);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
@@ -2108,24 +2172,36 @@ int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
     return ret;
 }
 
-int32_t AudioCapturerPrivate::CheckDegradeFallback(AudioStreamParams audioStreamParams, bool degradeFallback,
-    size_t validDataLength, const size_t processFrameSize, size_t &processBufSize,
+int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
     size_t &micInBufSize, size_t &ecBufSize)
 {
+    processBufSize = 0;
+    micInBufSize = 0;
+    ecBufSize = 0;
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "bufDesc buffer is null");
+
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+
+    AudioStreamParams audioStreamParams;
+    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
+    int32_t sampleByteSize = GetFormatByteSize(audioStreamParams.format);
+    CHECK_AND_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM, "invalid sample format");
+    const size_t processFrameSize =
+        static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
+    CHECK_AND_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM, "invalid process frame size");
+    bool degradeFallback = IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams);
+
+    size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
+        bufDesc.dataLength : bufDesc.bufLength;
     if (!degradeFallback) {
         MicInEcBufferLayout layout {};
-        int32_t ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_SEND_DATA_OPERATION_FAILED, "ParseMicInEcBufferLayout failed", true),
-            "ParseMicInEcBufferLayout failed");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_SEND_DATA_INVALID_PARAM, "buffer length is invalid", true),
+        ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+        CHECK_AND_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
             "buffer length is invalid");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_SEND_DATA_INVALID_PARAM, "buffer length is not frame aligned", true),
+        CHECK_AND_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
             "buffer length is not frame aligned");
         size_t frameCount = validDataLength / layout.byteSizePerFrame;
         processBufSize = frameCount * layout.processChannels * layout.byteSizePerSample;
@@ -2134,65 +2210,9 @@ int32_t AudioCapturerPrivate::CheckDegradeFallback(AudioStreamParams audioStream
         return SUCCESS;
     }
 
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength >= processFrameSize, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "buffer length is invalid", true),
-        "buffer length is invalid");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processFrameSize != 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "processFrameSize is 0", true),
-        "processFrameSize is 0");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(validDataLength % processFrameSize == 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "buffer length is not process frame aligned", true),
+    CHECK_AND_RETURN_RET_LOG(validDataLength >= processFrameSize, ERROR_INVALID_PARAM, "buffer length is invalid");
+    CHECK_AND_RETURN_RET_LOG(validDataLength % processFrameSize == 0, ERROR_INVALID_PARAM,
         "buffer length is not process frame aligned");
-    return SUCCESS;
-}
-
-int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
-    size_t &micInBufSize, size_t &ecBufSize)
-{
-    processBufSize = 0;
-    micInBufSize = 0;
-    ecBufSize = 0;
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "bufDesc buffer is null", true),
-        "bufDesc buffer is null");
-
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_ILLEGAL_STATE, "audioStream_ is nullptr", true),
-        "audioStream_ is nullptr");
-
-    AudioStreamParams audioStreamParams;
-    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_OPERATION_FAILED, "GetAudioStreamInfo failed", true),
-        "GetAudioStreamInfo failed");
-    int32_t sampleByteSize = GetFormatByteSize(audioStreamParams.format);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "invalid sample format", true),
-        "invalid sample format");
-    const size_t processFrameSize =
-        static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "invalid process frame size", true),
-        "invalid process frame size");
-    bool degradeFallback = IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams);
-
-    size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
-        bufDesc.dataLength : bufDesc.bufLength;
-    ret = CheckDegradeFallback(audioStreamParams, degradeFallback, validDataLength, processFrameSize,
-        processBufSize, micInBufSize, ecBufSize);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_SEND_DATA_INVALID_PARAM, "CheckDegradeFallback fail", true),
-        "CheckDegradeFallback fail");
     size_t frameCount = validDataLength / processFrameSize;
     processBufSize = frameCount * processFrameSize;
     micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) *
@@ -2588,6 +2608,7 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetClientDeviceId(appInfo_.deviceId);
     audioStream->SetCapturerInfo(info.capturerInfo);
+    SetInnerStreamFastStatusChangeCallback(audioStream);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, ERROR,
         HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"),
@@ -2855,10 +2876,30 @@ void AudioCapturerPrivate::FastStatusChangeCallback(FastStatus status)
 {
     FastStatus newStatus = GetFastStatusInner();
     if (newStatus != status) {
-        if (fastStatusChangeCallback_ != nullptr) {
-            fastStatusChangeCallback_->OnFastStatusChange(newStatus);
-        }
+        NotifyFastStatusChange(newStatus);
     }
+}
+
+void AudioCapturerPrivate::NotifyFastStatusChange(FastStatus status)
+{
+    std::shared_ptr<AudioCapturerFastStatusChangeCallback> callback;
+    {
+        std::lock_guard lock(fastStatusChangeCallbackMutex_);
+        callback = fastStatusChangeCallback_;
+    }
+    CHECK_AND_RETURN_LOG(callback != nullptr, "fastStatusChangeCallback_ is nullptr");
+    callback->OnFastStatusChange(status);
+}
+
+void AudioCapturerPrivate::SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    CHECK_AND_RETURN_LOG(audioStream != nullptr, "audioStream is nullptr");
+    std::weak_ptr<AudioCapturerPrivate> weakCapturer = weak_from_this();
+    audioStream->SetFastStatusChangeCallback([weakCapturer] (FastStatus status) {
+        auto capturer = weakCapturer.lock();
+        CHECK_AND_RETURN_LOG(capturer != nullptr, "capturer is nullptr");
+        capturer->NotifyFastStatusChange(status);
+    });
 }
 
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()
@@ -3310,7 +3351,7 @@ int32_t AudioCapturerPrivate::SetInMainThreadState(bool isInMainThread)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+            RECORD_CONFIG_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
     if (!isFirstTimeSetMainThreadState_) {
         return ERROR_ILLEGAL_STATE;

@@ -790,11 +790,12 @@ int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessi
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DeleteRendererInputSessionInner");
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET(sinkInputNode != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkInputNode != nullptr, SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::RELEASE, ERR_NULL_POINTER),
-        "sessionId can not find in sinkInputNodeMap_", false), SUCCESS));
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "sessionId can not find in sinkInputNodeMap_", false),
+        "sessionId %{public}u can not find in sinkInputNodeMap_.", sessionId);
     DeleteRendererInputNodeSession(sinkInputNode);
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
@@ -806,16 +807,18 @@ int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessi
 int32_t HpaeInnerCapturerManager::DeleteCapturerInputSessionInner(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DeleteCapturerInputSessionInner");
-    CHECK_AND_RETURN_RET(SafeGetMap(sourceOutputNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::RELEASE, ERR_NULL_POINTER),
-        "sessionId can not find in sourceOutputNodeMap_", false), SUCCESS));
-    CHECK_AND_RETURN_RET(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "sessionId can not find in sourceOutputNodeMap_", false),
+        "sessionId %{public}u can not find in sourceOutputNodeMap_.", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::RELEASE, ERR_NULL_POINTER),
-        "sessionId can not find in capturerAudioFormatConverterNodeMap_", false), SUCCESS));
+                BusinessScenario::RELEASE, ERR_NULL_POINTER),
+            "sessionId can not find in capturerAudioFormatConverterNodeMap_", false),
+        "sessionId can not find in capturerAudioFormatConverterNodeMap_, sessionId %{public}u", sessionId);
     // no need process cluster
     sourceOutputNodeMap_[sessionId]->DisConnect(capturerAudioFormatConverterNodeMap_[sessionId]);
     capturerAudioFormatConverterNodeMap_[sessionId]->DisConnect(hpaeInnerCapSinkNode_);
@@ -827,29 +830,33 @@ int32_t HpaeInnerCapturerManager::DeleteCapturerInputSessionInner(uint32_t sessi
 
 int32_t HpaeInnerCapturerManager::ConnectRendererInputSessionInner(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::START, ERR_NULL_POINTER),
-        "sessionId can not find in sinkInputNodeMap_", false), ERR_INVALID_PARAM));
-    CHECK_AND_RETURN_RET(sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_RUNNING,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "sessionId can not find in sinkInputNodeMap_", false),
+        "sessionId %{public}u can not find in sinkInputNodeMap_.", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_RUNNING, SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::START, ERR_ILLEGAL_STATE),
-        "sink input node is not running", false), SUCCESS));
+                BusinessScenario::START, ERR_ILLEGAL_STATE),
+            "sink input node is not running", false),
+        "sink input node is not running, sessionId %{public}u", sessionId);
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
-    CHECK_AND_RETURN_RET(SafeGetMap(rendererSceneClusterMap_, sceneType),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(rendererSceneClusterMap_, sceneType), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::START, ERR_NULL_POINTER),
-            "miss corresponding process cluster for scene type", false), SUCCESS));
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "miss corresponding process cluster for scene type", false),
+        "miss corresponding process cluster for scene type %{public}d", sceneType);
     // todo check if connect process cluster
     hpaeInnerCapSinkNode_->Connect(rendererSceneClusterMap_[sceneType]);
-    CHECK_AND_RETURN_RET(rendererSceneClusterMap_[sceneType]->CheckNodes(sessionId) == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rendererSceneClusterMap_[sceneType]->CheckNodes(sessionId) == SUCCESS, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::START, ERR_OPERATION_FAILED),
-            "Nodes not found in innerCapture sceneCluster, cant connect nodes", false), ERROR));
+                BusinessScenario::START, ERR_OPERATION_FAILED),
+            "Nodes not found in innerCapture sceneCluster, cant connect nodes", false),
+        "SessionId %{public}u, Nodes not found in innerCapture sceneCluster, cant connect nodes", sessionId);
     rendererSceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     rendererSceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNodeMap_[sessionId]->GetLoudnessGain());
     return SUCCESS;
@@ -857,16 +864,18 @@ int32_t HpaeInnerCapturerManager::ConnectRendererInputSessionInner(uint32_t sess
 
 int32_t HpaeInnerCapturerManager::ConnectCapturerOutputSessionInner(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(SafeGetMap(sourceOutputNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::START, ERR_NULL_POINTER),
-            "sessionId can not find in sourceOutputClusterMap", false), ERR_INVALID_PARAM));
-    CHECK_AND_RETURN_RET(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "sessionId can not find in sourceOutputClusterMap", false),
+        "sessionId %{public}u can not find in sourceOutputCLusterMap.", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId), ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::START, ERR_NULL_POINTER),
-            "sessionId can not find in capturerAudioFormatConverterNodeMap", false), ERR_INVALID_PARAM));
+                BusinessScenario::START, ERR_NULL_POINTER),
+            "sessionId can not find in capturerAudioFormatConverterNodeMap", false),
+        "sessionId can not find in capturerAudioFormatConverterNodeMap, sessionId %{public}u", sessionId);
     // todo connect gain node
     capturerAudioFormatConverterNodeMap_[sessionId]->Connect(hpaeInnerCapSinkNode_);
     sourceOutputNodeMap_[sessionId]->Connect(capturerAudioFormatConverterNodeMap_[sessionId]);
@@ -895,11 +904,12 @@ void HpaeInnerCapturerManager::OnDisConnectProcessCluster(HpaeProcessorType scen
 
 int32_t HpaeInnerCapturerManager::DisConnectRendererInputSessionInner(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "sessionId can not find in sinkInputNodeMap_", false), SUCCESS));
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "sessionId can not find in sinkInputNodeMap_", false),
+        "sessionId %{public}u can not find in sinkInputNodeMap_.", sessionId);
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
         rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
@@ -909,16 +919,18 @@ int32_t HpaeInnerCapturerManager::DisConnectRendererInputSessionInner(uint32_t s
 
 int32_t HpaeInnerCapturerManager::DisConnectCapturerInputSessionInner(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(SafeGetMap(sourceOutputNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "sessionId can not find in sourceOutputNodeMap_", false), SUCCESS));
-    CHECK_AND_RETURN_RET(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "sessionId can not find in sourceOutputNodeMap_", false),
+        "sessionId %{public}u can not find in capturerAudioFormatConverterNodeMap_.", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-            BusinessScenario::STOP, ERR_NULL_POINTER),
-        "sessionId can not find in capturerAudioFormatConverterNodeMap_", false), SUCCESS));
+                BusinessScenario::STOP, ERR_NULL_POINTER),
+            "sessionId can not find in capturerAudioFormatConverterNodeMap_", false),
+        "sessionId can not find in capturerAudioFormatConverterNodeMap_, sessionId %{public}u", sessionId);
     sourceOutputNodeMap_[sessionId]->DisConnect(capturerAudioFormatConverterNodeMap_[sessionId]);
     capturerAudioFormatConverterNodeMap_[sessionId]->DisConnect(hpaeInnerCapSinkNode_);
     if (hpaeInnerCapSinkNode_->GetOutputPortNum() == 0) {
@@ -1022,6 +1034,7 @@ int32_t HpaeInnerCapturerManager::SetOffloadPolicy(uint32_t sessionId, int32_t s
             sinkInfo_.deviceName.c_str(), state);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
         sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
+        sinkInputNodeMap_[sessionId]->SetOffloadType(state);
     };
     SendRequestInner(request, __func__);
     return SUCCESS;
@@ -1041,17 +1054,19 @@ void HpaeInnerCapturerManager::SetSpeed(uint32_t sessionId, float speed)
 
 bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation operation)
 {
-    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
-        "can not get input node of session", false), false));
+                BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
+            "can not get input node of session", false),
+        "can not get input node of session %{public}u", sessionId);
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
-    CHECK_AND_RETURN_RET(SafeGetMap(rendererSceneClusterMap_, sceneType),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(rendererSceneClusterMap_, sceneType), false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
-            BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
-        "not found sceneType in rendererSceneClusterMap", false), false));
+                BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
+            "not found sceneType in rendererSceneClusterMap", false),
+        "not fonnd sceneType: %{public}d in rendererSceneClusterMap", sceneType);
 
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     sessionGainNode = rendererSceneClusterMap_[sceneType]->GetGainNodeById(sessionId);

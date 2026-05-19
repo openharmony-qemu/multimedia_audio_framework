@@ -55,9 +55,6 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID, streamId);
         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
-            if (router->CheckConflict(desc, router->GetRouterType(), streamUsage, SOURCE_TYPE_INVALID, true)) {
-                continue;
-            }
             routerType = usedType;
             return desc;
         }
@@ -126,9 +123,6 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
-            if (router->CheckConflict(desc, router->GetRouterType(), streamUsage, SOURCE_TYPE_INVALID, true)) {
-                continue;
-            }
             routerType = router->GetRouterType();
             return desc;
         }
@@ -146,9 +140,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
         if (descs.front() != nullptr && descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
             AUDIO_INFO_LOG("RingRender streamUsage %{public}d clientUID %{public}d"
                 " fetch descs front:%{public}d", streamUsage, clientUID, descs.front()->deviceType_);
-            if (router->CheckConflict(descs.front(), router->GetRouterType(), streamUsage, SOURCE_TYPE_INVALID, true)) {
-                continue;
-            }
             routerType = router->GetRouterType();
             if (descs.size() > 1 && VolumeUtils::IsPCVolumeEnable()) {
                 vector<shared_ptr<AudioDeviceDescriptor>> newDescs;
@@ -279,7 +270,7 @@ bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamU
     return isRingScene && isAlarmUsage;
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(FetchDeviceInfo info)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(FetchDeviceInfo &info)
 {
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
@@ -338,7 +329,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StartArbiterContext();
     
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(info.clientUID, info.streamUsage);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(info.clientUID, info.streamUsage, OUTPUT_DEVICE,
+        info.streamId);
     if (zoneId != 0) {
         vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, info.streamUsage,
@@ -471,7 +463,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     
     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
     RouterType innerRouterType = ROUTER_TYPE_NONE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID, INPUT_DEVICE);
     if (zoneId != 0) {
         AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
         StopArbiterContext();
@@ -515,9 +507,6 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallCaptureDevice(Sour
     for (auto &router : callCaptureRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallCaptureDevice(sourceType, clientUID, sessionID);
         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
-            if (router->CheckConflict(desc, router->GetRouterType(), STREAM_USAGE_UNKNOWN, sourceType, false)) {
-                continue;
-            }
             routerType = router->GetRouterType();
             return desc;
         }
@@ -534,9 +523,6 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchRecordCaptureDevice(So
             continue;
         }
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-            if (router->CheckConflict(desc, router->GetRouterType(), STREAM_USAGE_UNKNOWN, sourceType, false)) {
-                continue;
-            }
             routerType = router->GetRouterType();
             return desc;
         }
@@ -550,9 +536,6 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchVoiceMessageCaptureDev
     for (auto &router : voiceMessageRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
         if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
-            if (router->CheckConflict(desc, router->GetRouterType(), STREAM_USAGE_UNKNOWN, sourceType, false)) {
-                continue;
-            }
             routerType = router->GetRouterType();
             return desc;
         }
@@ -673,16 +656,17 @@ void AudioRouterCenter::StartArbiterContext()
     
     auto pipeManager = AudioPipeManager::GetPipeManager();
     CHECK_AND_RETURN(pipeManager != nullptr);
-    auto runningOutputStreams = pipeManager->GetRunningOutputStreamDescs();
-    auto runningInputStreams = pipeManager->GetRunningInputStreamDescs();
+    auto allOutputStreams = pipeManager->GetAllOutputStreamDescs();
+    auto allInputStreams = pipeManager->GetAllInputStreamDescs();
     
     std::vector<StreamDeviceInfo> outputDevices;
-    for (auto &desc : runningOutputStreams) {
+    for (auto &desc : allOutputStreams) {
         CHECK_AND_CONTINUE(desc != nullptr);
         StreamDeviceInfo info;
-        info.uid = desc->callerUid_;
+        info.uid = desc->GetRealUid();
         info.sessionId = desc->sessionId_;
         info.streamUsage = desc->rendererInfo_.streamUsage;
+        info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED);
         
         FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
         auto devices = FetchOutputDevicesInner(fetchInfo);
@@ -694,12 +678,13 @@ void AudioRouterCenter::StartArbiterContext()
     }
     
     std::vector<StreamDeviceInfo> inputDevices;
-    for (auto &desc : runningInputStreams) {
+    for (auto &desc : allInputStreams) {
         CHECK_AND_CONTINUE(desc != nullptr);
         StreamDeviceInfo info;
-        info.uid = desc->callerUid_;
+        info.uid = desc->GetRealUid();
         info.sessionId = desc->sessionId_;
         info.sourceType = desc->capturerInfo_.sourceType;
+        info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED);
         
         RouterType routerType = ROUTER_TYPE_NONE;
         info.device = FetchCapturerInputDevice(info.sourceType, info.uid, routerType, info.sessionId);

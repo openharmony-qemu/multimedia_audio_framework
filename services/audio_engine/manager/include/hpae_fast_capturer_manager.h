@@ -26,6 +26,7 @@
 #include "hpae_no_lock_queue.h"
 #include "hpae_signal_process_thread.h"
 #include "hpae_source_output_node.h"
+#include "hpae_mixer_node.h"
 #include "i_hpae_capturer_manager.h"
 
 namespace OHOS {
@@ -110,7 +111,10 @@ private:
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSourceOutputNode>> sourceOutputNodeMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> converterNodeMap_;
+    std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
+        std::shared_ptr<HpaeAudioFormatConverterNode>> injectorFmtConverterNodeMap_;
     std::shared_ptr<HpaeFastSourceInputNode> sourceInputNode_ = nullptr;
+    std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
 
     std::atomic<bool> isInit_ = false;
     std::atomic<bool> isMute_ = false;

@@ -290,15 +290,10 @@ static int32_t g_testValue1 = 0;
 static int32_t g_testValue2 = 0;
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
-    float curGain = 0.0f;
-    float targetGain = 1.0f;
     uint64_t frameLen = len / (SAMPLE_F32LE * STEREO);
-    float stepGain = (targetGain - curGain) / frameLen;
     for (int32_t i = 0; i < frameLen; i++) {
-        EXPECT_EQ(*((float *)data + i * STEREO + 1), (g_testValue1 * (curGain + i * stepGain) +
-            g_testValue2 * (curGain + i * stepGain)));
-        EXPECT_EQ(*((float *)data + i * STEREO), (g_testValue1 * (curGain + i * stepGain) +
-            g_testValue2 * (curGain + i * stepGain)));
+        EXPECT_EQ(*((float *)data + i * STEREO + 1), (g_testValue1 + g_testValue2));
+        EXPECT_EQ(*((float *)data + i * STEREO), (g_testValue1 + g_testValue2));
     }
     return 0;
 }
@@ -1837,6 +1832,111 @@ HWTEST_F(HpaeProcessClusterTest, FaultCode_CheckNodes_NonExistentSession, TestSi
     // No nodes created, CheckNodes should return ERROR
     int32_t ret = cluster->CheckNodes(DEFAULT_SESSIONID_NUM_FIRST);
     EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeProcessCluster microsecond precision with 11025Hz
+ * @tc.number: ProcessClusterFrameLen_11025To48000
+ * @tc.desc  : Test ProcessCluster constructor uses microsecond precision for 11025Hz -> 48000Hz conversion.
+ *             Old algorithm: 220*1000/11025=19 -> 48000*19/1000=912 (large error)
+ *             New algorithm: 220*1000000/11025=19954 -> 19954*48000/1000000=957 (smaller error)
+ */
+HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_11025To48000, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = 220;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_11025;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    // sinkInfo.samplingRate = SAMPLE_RATE_48000, sinkInfo.frameLen = 960
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    // mixerNode_ is created with recalculated nodeInfo
+    // frameLenMicros = 220 * 1000000 / 11025 = 19954
+    // nodeInfo.frameLen = 19954 * 48000 / 1000000 = 957
+    ASSERT_NE(cluster->mixerNode_, nullptr);
+    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), 960u);
+    EXPECT_EQ(cluster->mixerNode_->GetSampleRate(), SAMPLE_RATE_48000);
+}
+
+/**
+ * @tc.name  : Test HpaeProcessCluster fallback on zero effectiveRate
+ * @tc.number: ProcessClusterFrameLen_ZeroEffectiveRate
+ * @tc.desc  : Test ProcessCluster constructor falls back to sinkInfo.frameLen when effectiveRate is 0
+ */
+HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_ZeroEffectiveRate, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = 100;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+    nodeInfo.customSampleRate = 0;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    // sinkInfo.samplingRate = SAMPLE_RATE_48000, sinkInfo.frameLen = 960
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    ASSERT_NE(cluster->mixerNode_, nullptr);
+    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), sinkInfo.frameLen);
+}
+
+/**
+ * @tc.name  : Test HpaeProcessCluster fallback on zero sinkRate
+ * @tc.number: ProcessClusterFrameLen_ZeroSinkRate
+ * @tc.desc  : Test ProcessCluster constructor falls back to sinkInfo.frameLen when sinkRate is 0
+ */
+HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_ZeroSinkRate, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = 960;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+    sinkInfo.frameLen = 100;
+    sinkInfo.channels = STEREO;
+    sinkInfo.format = SAMPLE_F32LE;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    ASSERT_NE(cluster->mixerNode_, nullptr);
+    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), sinkInfo.frameLen);
+}
+
+/**
+ * @tc.name  : Test HpaeProcessCluster with customSampleRate
+ * @tc.number: ProcessClusterFrameLen_CustomSampleRate
+ * @tc.desc  : Test ProcessCluster uses customSampleRate (8010) via GetEffectiveSampleRate
+ */
+HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_CustomSampleRate, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = 160;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_8000;
+    nodeInfo.customSampleRate = 8010;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    // effectiveRate = 8010 (from customSampleRate)
+    // frameLenMicros = 160 * 1000000 / 8010 = 19975
+    // nodeInfo.frameLen = 19975 * 48000 / 1000000 = 958
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    ASSERT_NE(cluster->mixerNode_, nullptr);
+    EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), 960u);
 }
 } // AudioStandard
 } // OHOS

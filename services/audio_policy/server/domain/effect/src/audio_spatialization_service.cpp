@@ -36,6 +36,9 @@ using namespace std;
 static const int32_t SPATIALIZATION_SERVICE_OK = 0;
 static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
 static const std::string SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL = "SPATIALIZATION_AND_HEADTRACKING";
+static const std::string PERSONALIZED_SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL =
+    "PERSONALIZED_SPATIALIZATION_AND_HEADTRACKING";
+static const std::string PERSONALIZED_SPATIALIZATION_SUPPORTED_LABEL = "PERSONALIZED_SPATIALIZATION";
 static const std::string SPATIALIZATION_SUPPORTED_LABEL = "SPATIALIZATION";
 static const std::string HEAD_TRACKING_SUPPORTED_LABEL = "HEADTRACKING";
 static const std::string SPATIALIZATION_STATE_SETTINGKEY = "spatialization_state";
@@ -47,7 +50,8 @@ mutex g_adSpatializationProxyMutex;
 enum SpatializationStateOffset {
     SPATIALIZATION_OFFSET,
     HEADTRACKING_OFFSET,
-    ADAPTIVESPATIALRENDERING_OFFSET
+    ADAPTIVESPATIALRENDERING_OFFSET,
+    PERSONALIZEDSPATIALIZATION_OFFSET
 };
 
 static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
@@ -65,7 +69,8 @@ static uint32_t PackSpatializationState(AudioSpatializationState state)
 static bool IsAudioSpatialDeviceStateEqual(const AudioSpatialDeviceState &a, const AudioSpatialDeviceState &b)
 {
     return ((a.isSpatializationSupported == b.isSpatializationSupported) &&
-        (a.isHeadTrackingSupported == b.isHeadTrackingSupported) && (a.spatialDeviceType == b.spatialDeviceType));
+        (a.isHeadTrackingSupported == b.isHeadTrackingSupported) &&
+        (a.spatialDeviceType == b.spatialDeviceType));
 }
 
 static bool IsSpatializationSupportedUsage(StreamUsage usage)
@@ -84,9 +89,16 @@ void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChai
         if (effectChain.name != BLUETOOTH_EFFECT_CHAIN_NAME) {
             continue;
         }
-        if (effectChain.label == SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL) {
+        if (effectChain.label == PERSONALIZED_SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL) {
             isSpatializationSupported_ = true;
             isHeadTrackingSupported_ = true;
+            isPersonalizedSpatializationSupported_= true;
+        } else if (effectChain.label == SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL) {
+            isSpatializationSupported_ = true;
+            isHeadTrackingSupported_ = true;
+        } else if (effectChain.label == PERSONALIZED_SPATIALIZATION_SUPPORTED_LABEL) {
+            isSpatializationSupported_ = true;
+            isPersonalizedSpatializationSupported_ = true;
         } else if (effectChain.label == SPATIALIZATION_SUPPORTED_LABEL) {
             isSpatializationSupported_ = true;
         } else if (effectChain.label == HEAD_TRACKING_SUPPORTED_LABEL) {
@@ -330,6 +342,36 @@ void AudioSpatializationService::SetSpatialAudioSourceType(SpatialAudioSourceTyp
     }
 }
 
+bool AudioSpatializationService::IsPersonalizedSpatializationEnabled(const std::string address)
+{
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::string encryptedAddress = GetSha256EncryptAddress(address);
+    CHECK_AND_RETURN_RET(addressToSpatialEnabledMap_.count(encryptedAddress), false);
+    return addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled;
+}
+
+int32_t AudioSpatializationService::SetPersonalizedSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::string address = selectedAudioDevice->macAddress_;
+    std::string encryptedAddress = GetSha256EncryptAddress(address);
+    AUDIO_INFO_LOG("Device PersonalizedSpatializationEnabled is set to be: %{public}d", enable);
+    preSettingSpatialAddress_ = encryptedAddress;
+    if (addressToSpatialEnabledMap_.find(encryptedAddress) != addressToSpatialEnabledMap_.end() &&
+        addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled == enable) {
+        return SPATIALIZATION_SERVICE_OK;
+    }
+    addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled = enable;
+    HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice, enable);
+    std::string deviceSpatialInfo = EncapsulateDeviceInfo(address);
+    UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
+    int32_t ret = UpdateSpatializationStateReal(false);
+    CHECK_AND_RETURN_RET(ret == 0, ERROR);
+    WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
+    return SPATIALIZATION_SERVICE_OK;
+}
+
 void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &enabled)
 {
     AUDIO_INFO_LOG("Spatialization enabled callback is triggered: state is %{public}d", enabled);
@@ -391,13 +433,25 @@ void AudioSpatializationService::HandleAdaptiveSpatialRenderingEnabledChange(
     }
 }
 
+void AudioSpatializationService::HandlePersonalizedSpatializationEnabledChange(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
+{
+    AUDIO_INFO_LOG("device Personalized Spatialization enabled callback is triggered: state is %{public}d", enabled);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPersonalizedSpatializationEnabledChangeForAnyDeviceEvent(selectedAudioDevice,
+            enabled);
+    }
+}
+
 AudioSpatializationState AudioSpatializationService::GetSpatializationState(const StreamUsage streamUsage)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    AudioSpatializationState spatializationState = {false, false};
+    AudioSpatializationState spatializationState = {false, false, false, false};
     if (IsSpatializationSupportedUsage(streamUsage)) {
         spatializationState.spatializationEnabled = spatializationEnabledReal_;
         spatializationState.headTrackingEnabled = headTrackingEnabledReal_;
+        spatializationState.adaptiveSpatialRenderingEnabled = adaptiveSpatialRenderingEnabledReal_;
+        spatializationState.personalizedSpatializationEnabled = personalizedSpatializationEnabledReal_;
     }
     return spatializationState;
 }
@@ -442,6 +496,11 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDeviceInner(const std
         return false;
     }
     return addressToSpatialDeviceStateMap_[encryptedAddress].isHeadTrackingSupported;
+}
+
+bool AudioSpatializationService::IsPersonalizedSpatializationSupported()
+{
+    return isPersonalizedSpatializationSupported_;
 }
 
 int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
@@ -598,6 +657,7 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
     bool adaptiveSpatialRenderingEnabled = false;
+    bool personalizedSpatializationEnabled = false;
     std::string currEncryptedAddress = GetSha256EncryptAddress(currentDeviceAddress_);
     if (preSettingSpatialAddress_ == "NO_PREVIOUS_SET_DEVICE") {
         spatializationEnabled = spatializationStateFlag_.spatializationEnabled &&
@@ -614,10 +674,15 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
         adaptiveSpatialRenderingEnabled =
             addressToSpatialEnabledMap_[currEncryptedAddress].adaptiveSpatialRenderingEnabled &&
             IsSpatializationSupportedForDeviceInner(currentDeviceAddress_);
+        personalizedSpatializationEnabled =
+            addressToSpatialEnabledMap_[currEncryptedAddress].personalizedSpatializationEnabled &&
+            IsPersonalizedSpatializationSupported() &&
+            IsSpatializationSupportedForDeviceInner(currentDeviceAddress_) && spatializationEnabled;
     }
 
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled) &&
-        (adaptiveSpatialRenderingEnabledReal_ == adaptiveSpatialRenderingEnabled)) {
+        (adaptiveSpatialRenderingEnabledReal_ == adaptiveSpatialRenderingEnabled) &&
+        (personalizedSpatializationEnabledReal_ == personalizedSpatializationEnabled)) {
         AUDIO_INFO_LOG("no need to update real spatialization state");
         UpdateHeadTrackingDeviceState(outputDeviceChange, preDeviceAddress);
         return SUCCESS;
@@ -625,6 +690,7 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
     spatializationEnabledReal_ = spatializationEnabled;
     headTrackingEnabledReal_ = headTrackingEnabled;
     adaptiveSpatialRenderingEnabledReal_ = adaptiveSpatialRenderingEnabled;
+    personalizedSpatializationEnabledReal_ = personalizedSpatializationEnabled;
     if (UpdateSpatializationState() != 0) {
         return ERROR;
     }
@@ -636,12 +702,17 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
 int32_t AudioSpatializationService::UpdateSpatializationState()
 {
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_,
-        adaptiveSpatialRenderingEnabledReal_};
+        adaptiveSpatialRenderingEnabledReal_, personalizedSpatializationEnabledReal_};
     audioPolicyManager_.UpdateSpatializationState(spatializationState);
-    AUDIO_INFO_LOG("Update spatialization: %{public}d, %{public}d, %{public}d",
+    AUDIO_INFO_LOG("Update spatialization: %{public}d, %{public}d, %{public}d, %{public}d",
         spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
-        spatializationState.adaptiveSpatialRenderingEnabled);
+        spatializationState.adaptiveSpatialRenderingEnabled, spatializationState.personalizedSpatializationEnabled);
     return SPATIALIZATION_SERVICE_OK;
+}
+
+int32_t AudioSpatializationService::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
+{
+    return audioPolicyManager_.UpdatePersonalizedHRTFBin(fd, length);
 }
 
 int32_t AudioSpatializationService::UpdateSpatializationSceneType()
@@ -685,6 +756,9 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const std::string devic
     std::getline(ss, token, '|');
     CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid adaptiveSpatialRenderingEnabled");
     addressToSpatialEnabledMap_[address].adaptiveSpatialRenderingEnabled = convertValue;
+    std::getline(ss, token, '|');
+    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid personalizedSpatializationEnabled");
+    addressToSpatialEnabledMap_[address].personalizedSpatializationEnabled = convertValue;
 }
 
 void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
@@ -1000,6 +1074,7 @@ std::string AudioSpatializationService::EncapsulateDeviceInfo(const std::string 
     value << "|" << addressToSpatialDeviceStateMap_[encryptedAddress].isHeadTrackingSupported;
     value << "|" << addressToSpatialDeviceStateMap_[encryptedAddress].spatialDeviceType;
     value << "|" << addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled;
+    value << "|" << addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled;
     value << "|" << GetCurrTimestamp();
     return value.str();
 }
@@ -1036,8 +1111,11 @@ void AudioSpatializationService::UpdateSpatialStateToNewDevice(const AudioSpatia
 {
     std::string encryptedAddress = GetSha256EncryptAddress(audioSpatialDeviceState.address);
     CHECK_AND_RETURN(!addressToSpatialEnabledMap_.count(encryptedAddress));
-    addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled = false;
-    addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled = false;
+    addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled = false;
+    addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled =
+        audioSpatialDeviceState.isSpatializationSupported && isSpatializationSupported_;
+    addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled =
+        audioSpatialDeviceState.isSpatializationSupported && isSpatializationSupported_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

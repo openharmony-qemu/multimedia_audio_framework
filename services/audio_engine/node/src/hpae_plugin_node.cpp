@@ -26,10 +26,11 @@ namespace HPAE {
 HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
     : HpaeNode(nodeInfo),  pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
     outputStream_(this), enableProcess_(true), silenceData_(pcmBufferInfo_)
-      
+
 {
-    AUDIO_INFO_LOG("NodeId:%{public}u,rate:%{public}u,channle:%{public}u", nodeInfo.nodeId,
-        nodeInfo.samplingRate, nodeInfo.channels);
+    AUDIO_INFO_LOG("NodeId:%{public}u,rate:%{public}u,channle:%{public}u,sessionId:%{public}u",
+        GetNodeInfo().nodeId, GetNodeInfo().samplingRate, GetNodeInfo().channels,
+        GetNodeInfo().sessionId);
     silenceData_.Reset();
     silenceData_.SetBufferValid(false);
     silenceData_.SetBufferSilence(true);

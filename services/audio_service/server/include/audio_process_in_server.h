@@ -324,6 +324,7 @@ private:
     std::shared_ptr<AudioProcessInServerHandler> handler_ = nullptr;
     int64_t runningStamp_ = 0;
 
+    float sonicPitch_ = 1.0f;
     float pitch_ = 1.0f;
     float speed_ = 1.0f;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;

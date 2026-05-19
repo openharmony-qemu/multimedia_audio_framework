@@ -317,6 +317,12 @@ void AudioInterruptDfx::WriteInterruptOrSessionCallbackErrorEvent(int32_t usage,
 {
     std::string appName = AppBundleManager::GetBundleNameFromUid(uid);
     AUDIO_ERR_LOG("APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d", appName.c_str(), usage, type);
+    AudioFocusErrorEvent interruptError;
+    interruptError.appName = appName;
+    interruptError.rendererInfo += "streamType: " + std::to_string(usage) +
+        " type: " + std::to_string(type);
+    interruptError.errorInfo = "MisuseOfInterfaces";
+    WriteAudioInterruptErrorEvent(interruptError);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -117,20 +117,20 @@ struct AudioLoopbackDebugInfo {
     int32_t volume = 0;
 
     // Stream states
-    RendererState uplinkStreamState = RENDERER_INVALID;
-    CapturerState downlinkStreamState = CAPTURER_INVALID;
+    CapturerState uplinkStreamState = CAPTURER_INVALID;
+    RendererState downlinkStreamState = RENDERER_INVALID;
 };
 
 struct AudioStreamDebugInfo : public Parcelable {
     uint32_t streamId = 0;
     AudioStreamType streamType = STREAM_DEFAULT;
-    SourceType sourceType = SOURCE_TYPE_INVALID;
+    AudioFocuState focusState = ACTIVE;
 
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteUint32(streamId) &&
             parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
-            parcel.WriteInt32(static_cast<int32_t>(sourceType));
+            parcel.WriteInt32(static_cast<int32_t>(focusState));
     }
 
     static AudioStreamDebugInfo *Unmarshalling(Parcel &parcel)
@@ -141,7 +141,7 @@ struct AudioStreamDebugInfo : public Parcelable {
         }
         info->streamId = parcel.ReadUint32();
         info->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
-        info->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        info->focusState = static_cast<AudioFocuState>(parcel.ReadInt32());
         return info;
     }
 };
@@ -151,8 +151,7 @@ struct AudioSessionDebugInfo : public Parcelable {
     AudioSessionScene audioSessionScene {AudioSessionScene::INVALID};
     DeviceType defaultDeviceType = DEVICE_TYPE_INVALID;
     AudioSessionState state = AudioSessionState::SESSION_INVALID;
-    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    AudioFocuState focusState = ACTIVE;
+    AudioFocuState fakeFocusState = ACTIVE;
     int32_t pid { -1 };
     int32_t uid { -1 };
     std::vector<AudioStreamDebugInfo> streamInfos;
@@ -163,8 +162,7 @@ struct AudioSessionDebugInfo : public Parcelable {
             parcel.WriteInt32(static_cast<int32_t>(audioSessionScene)) &&
             parcel.WriteInt32(static_cast<int32_t>(defaultDeviceType)) &&
             parcel.WriteInt32(static_cast<int32_t>(state)) &&
-            parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
-            parcel.WriteInt32(static_cast<int32_t>(focusState)) &&
+            parcel.WriteInt32(static_cast<int32_t>(fakeFocusState)) &&
             parcel.WriteInt32(pid) &&
             parcel.WriteInt32(uid) &&
             parcel.WriteUint32(static_cast<uint32_t>(streamInfos.size())) &&
@@ -188,8 +186,7 @@ struct AudioSessionDebugInfo : public Parcelable {
         info->audioSessionScene = static_cast<AudioSessionScene>(parcel.ReadInt32());
         info->defaultDeviceType = static_cast<DeviceType>(parcel.ReadInt32());
         info->state = static_cast<AudioSessionState>(parcel.ReadInt32());
-        info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        info->focusState = static_cast<AudioFocuState>(parcel.ReadInt32());
+        info->fakeFocusState = static_cast<AudioFocuState>(parcel.ReadInt32());
         info->pid = parcel.ReadInt32();
         info->uid = parcel.ReadInt32();
         uint32_t streamsSize = parcel.ReadUint32();

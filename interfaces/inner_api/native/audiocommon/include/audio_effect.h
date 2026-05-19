@@ -61,6 +61,12 @@ enum HdiSetParamCommandCode {
     HDI_SYSTEMLOAD_STATE = 18,
     HDI_FRONTEND_APP_TYPE = 19,
     HDI_STEREO_ENHANCEMENT = 20,
+    HDI_PERSONALIZED_SPATIALIZATION_ENABLED = 21,
+    HDI_PERSONALIZED_HRTF_BIN_INFO = 22,
+};
+
+enum AudioSeparationVolumeType {
+    VOLUME_TYPE_VOCAL = 0,
 };
 
 enum AudioTwsMode : int32_t {
@@ -591,6 +597,7 @@ enum AudioEffectChainSetParamIndex {
     SYSTEMLOAD_STATE_INDEX = 17,
     FRONTEND_APP_TYPE = 18,
     STEREO_ENHANCEMENT_INDEX = 19,
+    PERSONALIZED_SPATIALIZATION_ENABLED = 20,
     MAX_PARAM_INDEX,
     MAX_PARAM_CAPACITY = 99,
 };
@@ -605,7 +612,8 @@ enum AudioEffectCommandCode {
     EFFECT_CMD_GET_CONFIG = 6,
     EFFECT_CMD_SET_IMU = 7,
     EFFECT_CMD_SET_PROPERTY = 8,
-    EFFECT_CMD_STOP_STREAM = 9
+    EFFECT_CMD_STOP_STREAM = 9,
+    EFFECT_CMD_FLUSH = 10,
 };
 
 enum AudioEffectParamSetCode {
@@ -668,6 +676,8 @@ struct AudioEffectInterface {
     int32_t (*process) (AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer);
     int32_t (*command) (AudioEffectHandle self, uint32_t cmdCode,
         AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo);
+    int32_t (*feedInput) (AudioEffectHandle self, AudioBuffer *inBuffer);
+    int32_t (*getOutput) (AudioEffectHandle self, AudioBuffer *outBuffer);
 };
 
 struct AlgoSupportConfig {
