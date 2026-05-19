@@ -109,8 +109,10 @@ int32_t RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, c
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_NULL_POINTER,
-        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_NULL_POINTER,
+        CacheAudioParameter(adapterName, key, condition, value),
+        "adapter %{public}s is nullptr, cache params", GetEncryptStr(adapterName).c_str());
+
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     int32_t ret = wrapper->adapter_->SetExtraParams(hdiKey, condition, value);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "set param fail, error code: %{public}d", ret);
@@ -523,7 +525,7 @@ int32_t RemoteDeviceManager::LoadAdapterInner(const std::string &adapterName)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
     ret = adapter->InitAllPorts();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");
-    std::lock_guard<std::mutex> lock(adapterMtx_);
+    std::unique_lock<std::mutex> lock(adapterMtx_);
     adapters_[adapterName] = std::make_shared<RemoteAdapterWrapper>(adapterName);
     adapters_[adapterName]->adapterDesc_ = descs[index];
     adapters_[adapterName]->adapter_ = adapter;
@@ -534,6 +536,8 @@ int32_t RemoteDeviceManager::LoadAdapterInner(const std::string &adapterName)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "regist extra param observer fail, ret: %{public}d", ret);
 #endif
     DestroyAllChannels(adapterName);
+    lock.unlock();
+    ResendCachedAudioParameter(adapterName);
     return SUCCESS;
 }
 
@@ -796,6 +800,26 @@ int32_t RemoteDeviceManager::HandleAdapterParamChangeEvent(const std::string &ad
         "callback not existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
     adapterParamCallback->OnAdapterParamChange(adapterName, key, std::string(condition), std::string(value));
     return SUCCESS;
+}
+
+void RemoteDeviceManager::CacheAudioParameter(const std::string &adapterName, const AudioParamKey key,
+    const std::string &condition, const std::string &value)
+{
+    std::lock_guard<std::mutex> lock(audioParamCacheMtx_);
+    CHECK_AND_RETURN_LOG(audioParamCache_.size() < MAX_AUDIO_PARAM_CACHE_NUM,
+        "cache is full, cannot cache param for adapter %{public}s", GetEncryptStr(adapterName).c_str());
+    audioParamCache_[adapterName] = { key, condition, value };
+}
+
+void RemoteDeviceManager::ResendCachedAudioParameter(const std::string &adapterName)
+{
+    std::lock_guard<std::mutex> lock(audioParamCacheMtx_);
+    auto it = audioParamCache_.find(adapterName);
+    CHECK_AND_RETURN(it != audioParamCache_.end());
+    AUDIO_INFO_LOG("resend cached param for adapter %{public}s", GetEncryptStr(adapterName).c_str());
+    int32_t ret = SetAudioParameter(adapterName, it->second.key_, it->second.condition_, it->second.value_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "resend cached param fail, error code: %{public}d", ret);
+    audioParamCache_.erase(it);
 }
 
 } // namespace AudioStandard
