@@ -129,7 +129,7 @@ private:
     bool IsRemoteDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
-    bool isSplitProcessorType(HpaeProcessorType sceneType);
+    bool isSplitProcessorType(HpaeProcessorType sceneType) const;
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
     void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
@@ -155,7 +155,7 @@ private:
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
-    HpaeProcessorType GetProcessorType(uint32_t sessionId);
+    HpaeProcessorType GetProcessorType(uint32_t sessionId) const;
     HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
