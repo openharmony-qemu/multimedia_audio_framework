@@ -70,35 +70,35 @@ enum class AsrNoiseSuppressionMode {
      * @systemapi
      * @since 19
      */
-    ASR_WHISPER_MODE = 6,
+    ASR_WHISPER = 6,
     /**
      * Target speech extraction.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 24
      */
-    TSE_DENOISE_MODE = 7,
+    TSE_DENOISE = 7,
     /**
      * Microphone blocking detection.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 24
      */
-    NORMAL_REG_MODE = 8,
+    NORMAL_REG = 8,
     /**
      * Phone Call Mode.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 26
      */
-    PHONE_CALL_MODE = 9,
+    PHONE_CALL = 9,
     /**
      * Switching the microphone.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 26
      */
-    TOPMIC_REG_MODE = 10,
+    TOPMIC_REG = 10,
 };
 
 /**
