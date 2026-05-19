@@ -1480,6 +1480,58 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     return CreateFinalResult(env, state.hasError);
 }
 
+// Test the function of outputting PrintInfo to a file.（fd >= 0） 
+static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
+{
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+
+    if (!g_audioSuiteEngine) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: g_audioSuiteEngine is nullptr");
+        return result;
+    }
+    
+     // Generate timestamp and file path
+    auto now = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(now);
+    std::tm *tm = std::localtime(&time);
+    std::ostringstream timestampStream;
+    timestampStream << std::setfill('0') << std::setw(TIMESTAMP_YEAR_WIDTH) << (tm->tm_year + TM_YEAR_BASE)
+                    << std::setw(TIMESTAMP_DATE_WIDTH) << (tm->tm_mon + TM_MONTH_OFFSET)
+                    << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_mday << "_" << std::setw(TIMESTAMP_DATE_WIDTH)
+                    << tm->tm_hour << std::setw(TIMESTAMP_DATE_WIDTH) << tm->tm_min << std::setw(TIMESTAMP_DATE_WIDTH)
+                    << tm->tm_sec;
+
+    std::string dirPath = "/storage/Users/currentUser/Download/src.main.audiodemo/printfile/";
+    std::string filePath = dirPath + "/audio_snapshot_" + timestampStream.str() + ".txt";
+    mkdir(dirPath.c_str(), DIRECTORY_PERMISSIONS);
+
+
+    // Open file
+    int fd = open(filePath.c_str(), O_WRONLY | O_CREAT, FILE_PERMISSIONS);
+    if (fd < 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile: open failed, errno=%{public}d",
+                     errno);
+        OH_AudioSuite_Result ret = OH_AudioSuite_PrintInfo(g_audioSuiteEngine, nullptr, INVALID_FD);
+        if (ret == AUDIOSUITE_SUCCESS) {
+            napi_get_boolean(env, true, &result);
+        }
+        return result;
+    }
+
+    // Output to file
+    OH_AudioSuite_Result ret = OH_AudioSuite_PrintInfo(g_audioSuiteEngine, nullptr, fd);
+    close(fd);
+
+    if (ret != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile failed: %{public}u", ret);
+        return result;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "TestPrintInfoToFile success");
+    napi_get_boolean(env, true, &result);
+    return result;
+}
+
 const std::vector<napi_property_descriptor> recordDescriptors = {
     {"audioCapturerInit", nullptr, AudioCapturerInit,
         nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -1598,6 +1650,18 @@ const std::vector<napi_property_descriptor> otherDescriptors = {
     {"stopPipeline", nullptr, stopPipeline, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"setCurrentTime", nullptr, setCurrentTime, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"testPrintInfoToFile", nullptr, TestPrintInfoToFile, nullptr, nullptr, nullptr, napi_default, nullptr}, 
+    // Real-time playback methods 
+    {"initAudioRenderer", nullptr, InitAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
+    {"startAudioRenderer", nullptr, StartAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
+    {"stopAudioRenderer", nullptr, StopAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
+    {"releaseAudioRenderer", nullptr, ReleaseAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
+    {"setRecordFlag", nullptr, SetRecordFlag, nullptr, nullptr, nullptr, napi_default, nullptr}, 
+    {"getRecordedAudioData", nullptr, GetRecordedAudioData, nullptr, nullptr, nullptr, napi_default, nullptr}, 
+    {"registerPlaybackFinishCallback", nullptr, RegisterPlaybackFinishCallback, nullptr, nullptr, nullptr, napi_default, 
+     nullptr}, 
+    {"unregisterPlaybackFinishCallback", nullptr, UnregisterPlaybackFinishCallback, nullptr, nullptr, nullptr, 
+     napi_default, nullptr},
 };
 
 static napi_value Init(napi_env env, napi_value exports)
