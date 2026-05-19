@@ -188,7 +188,7 @@ void AudioCoreService::HandleA2dpSuspend()
     a2dpNeedSuspend_ = true;
 }
 
-void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
+bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
     HandleMuteBeforeDeviceSwitch(streamDescs, reason);
@@ -220,9 +220,9 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
-        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, false);
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor, reason);
     }
+    return isUpdateActiveDevice;
 }
 
 void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo)

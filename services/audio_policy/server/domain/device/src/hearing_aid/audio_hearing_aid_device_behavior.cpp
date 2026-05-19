@@ -89,11 +89,10 @@ int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(std::shared_ptr<Audi
                 moduleInfo.name.c_str(), moduleInfo.role.c_str());
             continue;
         }
-        DeviceRole configRole = OUTPUT_DEVICE;
         DeviceRole deviceRole = deviceDesc->deviceType_ == DEVICE_TYPE_HEARING_AID ? OUTPUT_DEVICE : INPUT_DEVICE;
-        AUDIO_INFO_LOG("Load hearingAid module [%{public}s], role[%{public}d], config role[%{public}d]",
-            moduleInfo.name.c_str(), deviceRole, configRole);
-        if (configRole != deviceRole) {continue;}
+        AUDIO_INFO_LOG("Load hearingAid module [%{public}s], role[%{public}d]",
+            moduleInfo.name.c_str(), deviceRole);
+        if (deviceRole != OUTPUT_DEVICE) {continue;}
         if (AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name) == false) {
             AUDIO_INFO_LOG("hearingAid device connects for the first time");
             // HearingAid device connects for the first time
@@ -120,8 +119,9 @@ int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(std::shared_ptr<Audi
             CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_OPERATION_FAILED, "pipeManager is null");
             pipeManager->AddAudioPipeInfo(pipeInfo);
             AUDIO_INFO_LOG("Add PipeInfo %{public}u in load hearingAid.", pipeInfo->id_);
-            PipeDeviceVolumeInfo info(pipeInfo->id_, deviceDesc, {STREAM_VOICE_CALL});
-            AudioAdapterManager::GetInstance().UpdateAudioPipeVolume({info});
+            PipeDeviceVolumeGroup group(deviceDesc);
+            group.volumeTypeIoHandles_[STREAM_VOICE_CALL].insert(pipeInfo->id_);
+            AudioAdapterManager::GetInstance().UpdateAudioPipeVolume({group});
         }
     }
 

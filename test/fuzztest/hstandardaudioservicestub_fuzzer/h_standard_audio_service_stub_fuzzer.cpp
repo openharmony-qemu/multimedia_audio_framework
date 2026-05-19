@@ -253,9 +253,9 @@ void OffloadSetVolume(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     float volume = provider.ConsumeFloatingPoint<float>();
-    std::string deviceClass = provider.ConsumeRandomLengthString();
+    uint32_t renderId = provider.ConsumeIntegral<uint32_t>();
     std::string networkId = provider.ConsumeRandomLengthString();
-    audioServer->OffloadSetVolume(volume, deviceClass, networkId);
+    audioServer->OffloadSetVolume(volume, renderId, networkId);
 }
 
 void NotifyStreamVolumeChanged(FuzzedDataProvider &provider)

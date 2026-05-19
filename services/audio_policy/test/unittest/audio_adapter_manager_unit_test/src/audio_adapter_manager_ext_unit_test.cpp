@@ -48,8 +48,6 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadSessionId_001, TestSize.Level
     uint32_t ioHandle = 100;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
-        != audioAdapterManager->offloadSessionID_.end(), true);
     EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_.find(ioHandle)
         != audioAdapterManager->ioHandleSessionMap_.end(), true);
 }
@@ -69,7 +67,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadSessionId_002, TestSize.Level
     uint32_t ioHandle = 200;
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_[sessionId], OFFLOAD_IN_REMOTE);
+    EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_[ioHandle], sessionId);
 }
 
 /**
@@ -88,8 +86,6 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, ResetOffloadSessionId_001, TestSize.Lev
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->ResetOffloadSessionId(sessionId);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
-        == audioAdapterManager->offloadSessionID_.end(), true);
     EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_.find(ioHandle)
         == audioAdapterManager->ioHandleSessionMap_.end(), true);
 }
@@ -106,9 +102,10 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, ResetOffloadSessionId_002, TestSize.Lev
     EXPECT_NE(audioAdapterManager, nullptr);
 
     uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t ioHandle = 100;
     audioAdapterManager->ResetOffloadSessionId(sessionId);
-    EXPECT_EQ(audioAdapterManager->offloadSessionID_.find(sessionId)
-        == audioAdapterManager->offloadSessionID_.end(), true);
+    EXPECT_EQ(audioAdapterManager->ioHandleSessionMap_.find(ioHandle)
+        == audioAdapterManager->ioHandleSessionMap_.end(), true);
 }
 
 /**

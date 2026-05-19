@@ -979,8 +979,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateAudioPipeVolume_001, TestSize.Level1
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-
-    std::vector<PipeDeviceVolumeInfo> emptyList;
+    
+    std::vector<PipeDeviceVolumeGroup> emptyList;
     audioAdapterManager->UpdateAudioPipeVolume(emptyList);
 }
 
@@ -993,16 +993,15 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateAudioPipeVolume_002, TestSize.Level1
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-
-    std::vector<PipeDeviceVolumeInfo> infoList;
-    PipeDeviceVolumeInfo info;
-    info.ioHandle_ = 100;
-    info.deviceDesc_ = std::make_shared<AudioDeviceDescriptor>();
-    info.deviceDesc_->deviceType_ = DEVICE_TYPE_SPEAKER;
-    info.volumeTypes_.insert(STREAM_MUSIC);
-    infoList.push_back(info);
-
-    audioAdapterManager->UpdateAudioPipeVolume(infoList);
+    
+    std::vector<PipeDeviceVolumeGroup> groupList;
+    PipeDeviceVolumeGroup group;
+    group.deviceDesc_ = std::make_shared<AudioDeviceDescriptor>();
+    group.deviceDesc_->deviceType_ = DEVICE_TYPE_SPEAKER;
+    group.volumeTypeIoHandles_[STREAM_MUSIC].insert(100);
+    groupList.push_back(group);
+    
+    audioAdapterManager->UpdateAudioPipeVolume(groupList);
 }
 
 /**
