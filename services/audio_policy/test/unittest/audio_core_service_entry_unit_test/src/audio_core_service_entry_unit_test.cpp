@@ -71,11 +71,11 @@ public:
     MOCK_METHOD(void, FreeProp, (char *propName), (override));
 };
 
-static void SetPipeProp(std::unordered_map<std::string, std::string> &props, bool requireAdd)
+static void SetPipeProp(std::unordered_map<std::string, std::string> &props, bool principal)
 {
-    props["name"] = requireAdd ? "primary_output" : "primary_input";
-    props["role"] = requireAdd ? "output" : "input";
-    props["requireAddBeforeCreate"] = requireAdd ? "true" : "false";
+    props["name"] = principal ? "primary_output" : "primary_input";
+    props["role"] = principal ? "output" : "input";
+    props["principal"] = principal ? "true" : "false";
     props["supportDevices"] = "";
 }
 
@@ -610,7 +610,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_RequiredPipe_011, TestSize.Le
     auto pipes = configManager.GetRequiredPipes();
 
     ASSERT_EQ(adapterInfo->pipeInfos.size(), 1);
-    EXPECT_TRUE(adapterInfo->pipeInfos.front()->requireAddBeforeCreate_);
+    EXPECT_TRUE(adapterInfo->pipeInfos.front()->principal_);
     ASSERT_EQ(pipes.size(), 1);
     EXPECT_EQ(pipes.front().adapterName, "primary");
     EXPECT_EQ(pipes.front().routeFlag, AUDIO_FLAG_NONE);
@@ -637,7 +637,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_RequiredPipe_012, TestSize.Le
     auto pipes = configManager.GetRequiredPipes();
 
     ASSERT_EQ(adapterInfo->pipeInfos.size(), 1);
-    EXPECT_FALSE(adapterInfo->pipeInfos.front()->requireAddBeforeCreate_);
+    EXPECT_FALSE(adapterInfo->pipeInfos.front()->principal_);
     EXPECT_TRUE(pipes.empty());
 }
 

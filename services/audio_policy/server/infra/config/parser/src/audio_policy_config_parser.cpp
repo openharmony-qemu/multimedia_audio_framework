@@ -197,16 +197,16 @@ void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode,
             std::string pipeRole;
             curNode->GetProp("role", pipeRole);
             pipeInfoPtr->role_ = AudioDefinitionPolicyUtils::pipeRoleStrToEnum[pipeRole];
-            std::string requireAdd;
-            curNode->GetProp("requireAddBeforeCreate", requireAdd);
-            pipeInfoPtr->requireAddBeforeCreate_ = (requireAdd == "true");
+            std::string principal;
+            curNode->GetProp("principal", principal);
+            pipeInfoPtr->principal_ = (principal == "true");
             std::string supportDevicesStr;
             curNode->GetProp("supportDevices", supportDevicesStr);
             if (supportDevicesStr != "") {
                 SplitStringToList(supportDevicesStr, pipeInfoPtr->supportDevices_, ", ");
             }
             ParsePipeInfos(curNode->GetCopyNode(), pipeInfoPtr);
-            if (pipeInfoPtr->requireAddBeforeCreate_) {
+            if (pipeInfoPtr->principal_) {
                 configManager_.AddRequiredPipe({ adapterInfo->adapterName, pipeInfoPtr->supportFlags_ });
             }
             pipeInfos.push_back(pipeInfoPtr);
