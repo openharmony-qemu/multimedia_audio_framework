@@ -1701,16 +1701,9 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
     if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
     }
-    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        std::shared_ptr<AudioDeviceDescriptor> sco = std::make_shared<AudioDeviceDescriptor>(desc);
-        std::shared_ptr<AudioDeviceDescriptor> a2dpIn = std::make_shared<AudioDeviceDescriptor>(desc);
-        CHECK_AND_RETURN_LOG(sco != nullptr && a2dpIn != nullptr, "device is nullptr");
-        a2dpIn->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-        desc.deviceType_ =
-            (!audioDeviceManager_.IsDeviceConnected(sco) && audioDeviceManager_.IsDeviceConnected(a2dpIn)) ?
-            DEVICE_TYPE_BLUETOOTH_A2DP_IN : DEVICE_TYPE_BLUETOOTH_SCO;
-    }
-    
+    desc.deviceType_ =
+        (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?
+        DEVICE_TYPE_BLUETOOTH_A2DP_IN : desc.deviceType_;
 }
 
 // LCOV_EXCL_START
