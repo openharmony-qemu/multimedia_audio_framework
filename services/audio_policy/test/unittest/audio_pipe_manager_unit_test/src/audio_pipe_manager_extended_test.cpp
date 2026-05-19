@@ -45,9 +45,13 @@ HWTEST_F(AudioPipeManagerExtendedUnitTest, AudioPipeManager_001, TestSize.Level4
     auto pipeInfo1 = std::make_shared<AudioPipeInfo>();
     pipeInfo1->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     pipeInfo1->id_ = 1;
+    pipeInfo1->name_ = "pipe1";
+
     auto pipeInfo2 = std::make_shared<AudioPipeInfo>();
     pipeInfo2->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
     pipeInfo2->id_ = 2;
+    pipeInfo2->name_ = "pipe2";
+
     sPipeManager_->AddAudioPipeInfo(pipeInfo1);
     sPipeManager_->RemoveAudioPipeInfo(pipeInfo2);
     EXPECT_FALSE(sPipeManager_->GetPipeList().empty());

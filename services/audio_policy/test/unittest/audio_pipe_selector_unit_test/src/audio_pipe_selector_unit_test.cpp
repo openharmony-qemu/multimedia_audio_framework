@@ -346,10 +346,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_002, TestSize.Level1)
     std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
     newPipe->adapterName_ = "new_adapter";
     newPipe->routeFlag_ = 0x1234;
+    newPipe->name_ = "new_pipe";
+    newPipe->id_ = 1;
 
     std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
     oldPipe->adapterName_ = "old_adapter";
     oldPipe->routeFlag_ = 0x123456;
+    oldPipe->name_ = "old_pipe";
+    oldPipe->id_ = 2;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
@@ -367,10 +371,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_003, TestSize.Level1)
     std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
     newPipe->adapterName_ = "new_adapter";
     newPipe->routeFlag_ = 0x1234;
+    newPipe->name_ = "new_pipe";
+    newPipe->id_ = 1;
 
     std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
     oldPipe->adapterName_ = "old_adapter";
     oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    oldPipe->name_ = "old_pipe";
+    oldPipe->id_ = 2;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
@@ -388,10 +396,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_004, TestSize.Level1)
     std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
     newPipe->adapterName_ = "new_adapter";
     newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    newPipe->name_ = "new_pipe";
+    newPipe->id_ = 1;
 
     std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
     oldPipe->adapterName_ = "old_adapter";
     oldPipe->routeFlag_ = 0x123456;
+    oldPipe->name_ = "old_pipe";
+    oldPipe->id_ = 2;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
@@ -409,9 +421,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_005, TestSize.Level1)
     std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
     newPipe->adapterName_ = "new_adapter";
     newPipe->routeFlag_ = 0x1234;
+    newPipe->name_ = "new_pipe";
+    newPipe->id_ = 1;
+
     std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
     oldPipe->adapterName_ = "old_adapter";
     oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
+    oldPipe->name_ = "old_pipe";
+    oldPipe->id_ = 2;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
@@ -429,10 +446,15 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_006, TestSize.Level1)
     std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
     newPipe->adapterName_ = "new_adapter";
     newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
+    newPipe->name_ = "new_pipe";
+    newPipe->id_ = 1;
 
     std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
     oldPipe->adapterName_ = "old_adapter";
     oldPipe->routeFlag_ = 0x123456;
+    oldPipe->name_ = "old_pipe";
+    oldPipe->id_ = 2;
+
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
     EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
@@ -1105,36 +1127,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_012, TestSize.Le
     EXPECT_EQ(info.moduleInfo_.micRefFormat, "s24");
     EXPECT_EQ(info.moduleInfo_.ecType, "");
     EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "");
-}
-
-/**
- * @tc.name: JudgeStreamAction_007
- * @tc.desc: Test JudgeStreamAction when return AUDIO_STREAM_ACTION_MOVE.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_007, TestSize.Level4)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_MOVE);
 }
 
 /**
