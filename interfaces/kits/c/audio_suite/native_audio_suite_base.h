@@ -167,6 +167,25 @@ typedef enum {
      * @since 23
      */
     EFFECT_NODE_TYPE_TEMPO_PITCH = 211,
+    /**
+     * HOA input space render node type.
+     * The audio format input by the HOA space render node is as follows:
+     * Sample rate: {@link SAMPLE_RATE_16000}, {@link SAMPLE_RATE_48000}.
+     * Sample format: {@link OH_Audio_SampleFormat}.
+     * layout: 1st to 3rd order HOA, as one of the follows:
+     * {@link CH_LAYOUT_AMB_ORDER1_ACN_N3D}, {@link CH_LAYOUT_AMB_ORDER1_ACN_SN3D}, {@link CH_LAYOUT_AMB_ORDER1_FUMA},
+     * {@link CH_LAYOUT_AMB_ORDER2_ACN_N3D}, {@link CH_LAYOUT_AMB_ORDER2_ACN_SN3D}, {@link CH_LAYOUT_AMB_ORDER2_FUMA},
+     * {@link CH_LAYOUT_AMB_ORDER3_ACN_N3D}, {@link CH_LAYOUT_AMB_ORDER3_ACN_SN3D}, {@link CH_LAYOUT_AMB_ORDER3_FUMA}.
+     * The audio format output by the HOA space render node is as follows:
+     * Sample rate: {@link SAMPLE_RATE_48000}.
+     * Sample format: {@link AUDIO_SAMPLE_S32LE}.
+     * Channels: 2.
+     * This node must be connected to an input node with the audio format set to HOA.
+     * If it is not connected, an error will be reported in the {@link OH_AudioSuiteEngine_StartPipeline} interface.
+     *
+     * @since 26.0.0
+     */
+    EFFECT_NODE_TYPE_HOA_SPACE_RENDER = 212,
 } OH_AudioNode_Type;
 /**
  * @brief Define pipeline work mode

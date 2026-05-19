@@ -32,6 +32,20 @@ AudioSuiteCapabilities::AudioSuiteCapabilities()
     CHECK_AND_RETURN_LOG(audioSuiteCapabilitiesParser_.LoadConfiguration(audioSuiteCapabilities_),
         "audioSuiteCapabilitiesParser LoadConfiguration failed, path: %{public}s.",
         AUDIO_SUITE_CAPABILITIES_CONFIG_FILE);
+    
+    loadCapabilityFuncs_ = {
+        {NODE_TYPE_AUDIO_SEPARATION, [this](NodeParameter &np) { return LoadAissCapability(np); }},
+        {NODE_TYPE_VOICE_BEAUTIFIER, [this](NodeParameter &np) { return LoadVbCapability(np); }},
+        {NODE_TYPE_EQUALIZER, [this](NodeParameter &np) { return LoadEqCapability(np); }},
+        {NODE_TYPE_SOUND_FIELD, [this](NodeParameter &np) { return LoadSfCapability(np); }},
+        {NODE_TYPE_ENVIRONMENT_EFFECT, [this](NodeParameter &np) { return LoadEnvCapability(np); }},
+        {NODE_TYPE_NOISE_REDUCTION, [this](NodeParameter &np) { return LoadAinrCapability(np); }},
+        {NODE_TYPE_GENERAL_VOICE_CHANGE, [this](NodeParameter &np) { return LoadGeneralCapability(np); }},
+        {NODE_TYPE_PURE_VOICE_CHANGE, [this](NodeParameter &np) { return LoadPureCapability(np); }},
+        {NODE_TYPE_TEMPO_PITCH, [this](NodeParameter &np) { return LoadTempoPitchCapability(np); }},
+        {NODE_TYPE_SPACE_RENDER, [this](NodeParameter &np) { return LoadSrCapability(np); }},
+        {NODE_TYPE_HOA_RENDER, [this](NodeParameter &np) { return LoadHoaRenderCapability(np); }}
+    };
 }
 
 template <typename T>
@@ -256,6 +270,23 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeParameter &np)
     return SUCCESS;
 }
 
+int32_t AudioSuiteCapabilities::LoadHoaRenderCapability(NodeParameter &np)
+{
+    AUDIO_INFO_LOG("LoadHoaRenderCapability start.");
+    std::string soPath = np.soPath + np.soName;
+    CHECK_AND_RETURN_RET_LOG(std::filesystem::exists(soPath), ERROR,
+        "HOA render so does not exist: %{private}s", soPath.c_str());
+    np.inSampleRate = SAMPLE_RATE_48000;
+    np.inChannels = CHANNEL_4;
+    np.inFormat = SAMPLE_S32LE;
+    np.outSampleRate = SAMPLE_RATE_48000;
+    np.outChannels = STEREO;
+    np.outFormat = SAMPLE_S32LE;
+    np.supportedOnThisDevice = true;
+    AUDIO_INFO_LOG("LoadHoaRenderCapability end.");
+    return SUCCESS;
+}
+
 int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported)
 {
     if (nodeType == NODE_TYPE_INPUT || nodeType == NODE_TYPE_OUTPUT || nodeType == NODE_TYPE_AUDIO_MIXER) {
@@ -308,49 +339,23 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
 int32_t AudioSuiteCapabilities::GetNodeParameter(AudioNodeType nodeType, NodeParameter &nodeParameter)
 {
     CHECK_AND_RETURN_RET(nodeType != NODE_TYPE_AUDIO_MIXER, SUCCESS);
+
     auto it = audioSuiteCapabilities_.find(nodeType);
-    CHECK_AND_RETURN_RET_LOG(
-        it != audioSuiteCapabilities_.end(), ERROR, "no such nodeType: %{public}d configured.", nodeType);
+    CHECK_AND_RETURN_RET_LOG(it != audioSuiteCapabilities_.end(), ERROR,
+        "no such nodeType: %{public}d configured.", nodeType);
+
     NodeParameter &np = it->second;
-    if (!(np.isLoaded)) {
-        switch (nodeType) {
-            case NODE_TYPE_AUDIO_SEPARATION:
-                CHECK_AND_RETURN_RET_LOG(LoadAissCapability(np) == SUCCESS, ERROR, "LoadAissCapability failed.");
-                break;
-            case NODE_TYPE_VOICE_BEAUTIFIER:
-                CHECK_AND_RETURN_RET_LOG(LoadVbCapability(np) == SUCCESS, ERROR, "LoadVbCapability failed.");
-                break;
-            case NODE_TYPE_EQUALIZER:
-                CHECK_AND_RETURN_RET_LOG(LoadEqCapability(np) == SUCCESS, ERROR, "LoadEqCapability failed.");
-                break;
-            case NODE_TYPE_SOUND_FIELD:
-                CHECK_AND_RETURN_RET_LOG(LoadSfCapability(np) == SUCCESS, ERROR, "LoadSfCapability failed.");
-                break;
-            case NODE_TYPE_ENVIRONMENT_EFFECT:
-                CHECK_AND_RETURN_RET_LOG(LoadEnvCapability(np) == SUCCESS, ERROR, "LoadEnvCapability failed.");
-                break;
-            case NODE_TYPE_NOISE_REDUCTION:
-                CHECK_AND_RETURN_RET_LOG(LoadAinrCapability(np) == SUCCESS, ERROR, "LoadAinrCapability failed.");
-                break;
-            case NODE_TYPE_GENERAL_VOICE_CHANGE:
-                CHECK_AND_RETURN_RET_LOG(LoadGeneralCapability(np) == SUCCESS, ERROR, "LoadGeneralCapability failed.");
-                break;
-            case NODE_TYPE_PURE_VOICE_CHANGE:
-                CHECK_AND_RETURN_RET_LOG(LoadPureCapability(np) == SUCCESS, ERROR, "LoadPureCapability failed.");
-                break;
-            case NODE_TYPE_TEMPO_PITCH:
-                CHECK_AND_RETURN_RET_LOG(LoadTempoPitchCapability(np) == SUCCESS, ERROR,
-                    "LoadTempoPitchCapability failed.");
-                break;
-            case NODE_TYPE_SPACE_RENDER:
-                CHECK_AND_RETURN_RET_LOG(LoadSrCapability(np) == SUCCESS, ERROR, "LoadSrCapability failed.");
-                break;
-            default:
-                AUDIO_ERR_LOG("no such nodeType: %{public}d configured.", nodeType);
-                return ERROR;
-        }
+    if (!np.isLoaded) {
+        auto funcIt = loadCapabilityFuncs_.find(nodeType);
+        CHECK_AND_RETURN_RET_LOG(funcIt != loadCapabilityFuncs_.end(), ERROR,
+            "no load function for nodeType: %{public}d", nodeType);
+
+        CHECK_AND_RETURN_RET_LOG(funcIt->second(np) == SUCCESS, ERROR,
+            "LoadCapability failed for nodeType: %{public}d", nodeType);
+
         np.isLoaded = true;
     }
+
     nodeParameter = np;
     return SUCCESS;
 }
