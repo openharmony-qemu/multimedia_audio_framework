@@ -255,6 +255,7 @@ public:
     bool hasStreamRunning_ = false;
     std::string dmDeviceInfo_ = "";
     HdPlaybackMode hdPlaybackMode_ = HD_NOT_SUPPORTED;
+    bool isSupportRemoteMultichannel_ = true;
 
     uint32_t glassesWearCount_ = 0;
     static constexpr int64_t TEN_YEARS_MS = 10LL*365*24*3600*1000;

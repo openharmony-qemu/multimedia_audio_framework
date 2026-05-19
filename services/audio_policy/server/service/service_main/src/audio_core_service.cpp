@@ -272,12 +272,15 @@ static bool CalculateArmBufferDurationMs(const AudioModuleInfo &moduleInfo, uint
 
 }
 
-static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage, int32_t streamUid)
+static bool NeedRemoteMultichannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    CHECK_AND_RETURN_RET_LOG(remoteOffloadStreamPropSize != 0 && streamUsage == STREAM_USAGE_MUSIC &&
-        streamUid != AUDIO_EXT_UID, false, "Use normal for remote device or remotecast");
-    AUDIO_INFO_LOG("remote offload active, music use offload");
-    return true;
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "streamDesc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(streamDesc->IsMultiChannelStream(), false, "only multichannel stream use remote MCH pipe");
+
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "deviceDesc is nullptr");
+
+    return deviceDesc->isSupportRemoteMultichannel_;
 }
 
 static bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType deviceType)
@@ -943,6 +946,30 @@ bool AudioCoreService::IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> strea
     return true;
 }
 
+AudioFlag AudioCoreService::SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    int32_t usage = streamDesc->rendererInfo_.streamUsage;
+    if (usage == STREAM_USAGE_MUSIC) {
+        auto remoteOffloadStreamPropSize = pipeManager_->GetStreamPropInfoSize("remote", "offload_distributed_output");
+        CHECK_AND_RETURN_RET_LOG(remoteOffloadStreamPropSize != 0 && GetRealUid(streamDesc) != AUDIO_EXT_UID,
+            AUDIO_OUTPUT_FLAG_NORMAL, "music use normal for remote device or remotecast");
+        AUDIO_INFO_LOG("remote offload active, music use offload");
+        return AUDIO_OUTPUT_FLAG_LOWPOWER;
+    } else if (usage == STREAM_USAGE_MOVIE) {
+        auto remoteMultichannelStreamPropSize = pipeManager_->GetStreamPropInfoSize("remote",
+            "multichannel_distributed_output");
+        CHECK_AND_RETURN_RET_LOG(remoteMultichannelStreamPropSize != 0 && GetRealUid(streamDesc) != AUDIO_EXT_UID &&
+            NeedRemoteMultichannel(streamDesc), AUDIO_OUTPUT_FLAG_NORMAL,
+            "movie use normal for remote device or remotecast");
+        AUDIO_INFO_LOG("remote multichannel active, movie use multichannel");
+        // depend on vehicle service modification, AUDIO_OUTPUT_FLAG_MULTICHANNEL is disabled temporarily.
+        return AUDIO_OUTPUT_FLAG_NORMAL;
+    }
+
+    AUDIO_INFO_LOG("Use normal for remote device or remotecast");
+    return AUDIO_OUTPUT_FLAG_NORMAL;
+}
+
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     bool isCreateProcess)
 {
@@ -961,10 +988,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
-        auto remoteOffloadStreamPropSize = pipeManager_->GetStreamPropInfoSize("remote", "offload_distributed_output");
-        streamDesc->audioFlag_ = IsRemoteOffloadActive(remoteOffloadStreamPropSize,
-            streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc)) ?
-            AUDIO_OUTPUT_FLAG_LOWPOWER : AUDIO_OUTPUT_FLAG_NORMAL;
+        streamDesc->audioFlag_ = SelectRemoteAudioFlag(streamDesc);
         return;
     }
 

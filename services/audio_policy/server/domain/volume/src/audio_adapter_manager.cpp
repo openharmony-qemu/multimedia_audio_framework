@@ -2082,7 +2082,8 @@ std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioMo
     if (!audioModuleInfo.busAddress.empty()) {
         return audioModuleInfo.busAddress;
     }
-    if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload") {
+    if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload" ||
+        audioModuleInfo.className == "remote_multichannel") {
         return audioModuleInfo.networkId;
     }
     if (audioModuleInfo.className == "primary_extra") {

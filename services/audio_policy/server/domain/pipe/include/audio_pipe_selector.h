@@ -115,7 +115,8 @@ private:
     bool FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,
         const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo);
-    void MatchRemoteOffloadPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    bool IsSpecialRemotePipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void MatchSpecialRemotePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);

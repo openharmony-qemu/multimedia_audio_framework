@@ -540,7 +540,8 @@ void HdiAdapterManager::SetRemoteHdiInvalidState(HdiDeviceManagerType type, cons
         std::string info = IdHandler::GetInstance().ParseInfo(id);
         if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE ||
             IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_FAST ||
-            IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_OFFLOAD) {
+            IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_OFFLOAD ||
+            IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_MULTICHANNEL) {
             return info == networkId;
         }
         return false;

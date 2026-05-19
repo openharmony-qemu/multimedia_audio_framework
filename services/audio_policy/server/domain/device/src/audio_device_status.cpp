@@ -1007,6 +1007,7 @@ void AudioDeviceStatus::HandleDistributedDeviceDisConnected(DStatusInfo &statusI
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
+    AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output");
     std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
     AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
     audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
@@ -1738,6 +1739,8 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.SetDeviceCapability(capability.streamInfoList_, 0);
         AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
             capability.streamInfoList_, supportDevices);
+        AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "multichannel_distributed_output",
+            capability.streamInfoList_, supportDevices);
         device.BuildCapabilitiesFromDeviceStreamInfo();
         AUDIO_INFO_LOG("Update audioStreamInfo success");
     }
@@ -1758,6 +1761,9 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
     }
     if (capability.protocol_ == 0) {
         device.model_ = "hiplay";
+        device.isSupportRemoteMultichannel_ = false;
+    } else if (capability.protocol_ == 1) {
+        device.isSupportRemoteMultichannel_ = false;
     }
 
     device.hdPlaybackMode_ = static_cast<HdPlaybackMode>(capability.hdPlaybackMode_);

@@ -250,5 +250,27 @@ HWTEST_F(AdapterUnitTest, IsMultiStreamInfo_002, TestSize.Level1)
     EXPECT_FALSE(fac.IsMultiStreamInfo("invalid"));
 }
 
+HWTEST_F(AdapterUnitTest, CreateRenderSinkExt_001, TestSize.Level1)
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    auto sink = fac.CreateRenderSinkExt(HDI_ID_TYPE_REMOTE, "test");
+    EXPECT_TRUE(sink != nullptr);
+    sink = fac.CreateRenderSinkExt(HDI_ID_TYPE_REMOTE_FAST, "test");
+    EXPECT_TRUE(sink != nullptr);
+    sink = fac.CreateRenderSinkExt(HDI_ID_TYPE_REMOTE_OFFLOAD, "test");
+    EXPECT_TRUE(sink != nullptr);
+    sink = fac.CreateRenderSinkExt(HDI_ID_TYPE_INTERPHONE, "test");
+    EXPECT_TRUE(sink != nullptr);
+    sink = fac.CreateRenderSinkExt(HDI_ID_TYPE_REMOTE_MULTICHANNEL, "test");
+    EXPECT_TRUE(sink != nullptr);
+}
+
+HWTEST_F(AdapterUnitTest, CreateRenderSinkExt_InvalidType_001, TestSize.Level1)
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    auto sink = fac.CreateRenderSinkExt(UINT32_MAX, "test");
+    EXPECT_TRUE(sink == nullptr);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

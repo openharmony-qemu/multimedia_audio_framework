@@ -28,6 +28,7 @@ namespace AudioStandard {
 class HdiAdapterFactory {
 public:
     static HdiAdapterFactory &GetInstance(void);
+    std::shared_ptr<IAudioRenderSink> CreateRenderSinkExt(uint32_t type, const std::string &info);
     std::shared_ptr<IAudioRenderSink> CreateRenderSink(uint32_t renderId);
     std::shared_ptr<IAudioCaptureSource> CreateCaptureSource(uint32_t captureId);
     std::shared_ptr<IDeviceManager> CreateDeviceManager(uint32_t type);
@@ -48,6 +49,7 @@ private:
     std::shared_ptr<IAudioRenderSink> CreateRemoteRenderSink(const std::string &info);
     std::shared_ptr<IAudioRenderSink> CreateRemoteFastRenderSink(const std::string &info);
     std::shared_ptr<IAudioRenderSink> CreateRemoteOffloadRenderSink(const std::string &info);
+    std::shared_ptr<IAudioRenderSink> CreateRemoteMultichannelRenderSink(const std::string &info);
 #endif
     std::shared_ptr<IAudioCaptureSource> CreatePrimaryCaptureSource(const uint32_t captureId, const std::string &info);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
