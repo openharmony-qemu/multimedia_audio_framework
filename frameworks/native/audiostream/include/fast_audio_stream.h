@@ -245,7 +245,8 @@ public:
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
     bool IsRestoreNeeded() override;
     int32_t SetRebuildFlag() override;
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
@@ -320,6 +321,7 @@ private:
 
     // for static audio renderer
     StaticBufferInfo staticBufferInfo_;
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
     std::shared_ptr<AudioFirstFrameCallback> procFirstFrameClientCb_ = nullptr;
 

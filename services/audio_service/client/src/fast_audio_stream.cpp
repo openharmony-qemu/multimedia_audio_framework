@@ -198,10 +198,8 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
             PLAY_CREATE_INVALID_PARAM, "Stream is not supported", true),
         HILOG_COMM_ERROR("[SetAudioStreamInfo]Stream is not supported."));
     processconfig_ = config;
-    // OS_AudioPlayCb/RecordCb should lock weak_ptr of FastAudioStream before calling OnWriteData to
-    // avoid using FastAudioStream after free in callback.
     auto weakStream = weak_from_this();
-    processClient_ = AudioProcessInClient::Create(config, weakStream);
+    processClient_ = AudioProcessInClient::Create(config, weakStream, staticSharedMemory_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             PLAY_CREATE_NULL_POINTER, "creat process client fails", true),
@@ -1169,8 +1167,9 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     if (rendererInfo_.isStatic) {
         CHECK_AND_RETURN_LOG(processClient_ != nullptr, "processClient is nullptr");
         processClient_->GetStaticPlayPosition(info.staticBufferInfo);
-        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.bufferSize_ = staticBufferInfo_.bufferSize_;
         info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
+        info.staticSharedMemory = staticSharedMemory_;
         info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     }
 
@@ -1510,10 +1509,12 @@ int32_t FastAudioStream::GetKeepRunning(bool &keepRunning) const
     return SUCCESS;
 }
 
-void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+    std::shared_ptr<AudioSharedMemory> sharedMemory)
 {
     CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support");
     staticBufferInfo_ = staticBufferInfo;
+    staticSharedMemory_ = sharedMemory;
 }
 
 int32_t FastAudioStream::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
