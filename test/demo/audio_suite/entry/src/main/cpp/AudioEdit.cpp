@@ -64,7 +64,7 @@ const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int INPUTNODES_SIZE2 = 2;
-const int32_t BITDEPTH_MODE_INT = 0; 
+const int32_t BITDEPTH_MODE_INT = 0;
 const int32_t BITDEPTH_MODE_FLOAT = 0;
 
 // Conversion context structure to encapsulate all state variables
@@ -1449,10 +1449,8 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     if (!ReadInputFile(fd, fileSize)) {
         return nullptr;
     }
-
     OH_AudioConverter_Result createResult =
         OH_AudioConverter_Create(&inputFormat, &outputFormat, &g_ctx.converter);
-
     if (createResult != AUDIOCONVERTER_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
                      "OH_AudioConverter_Create failed: %{public}d",
@@ -1480,7 +1478,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     return CreateFinalResult(env, state.hasError);
 }
 
-// Test the function of outputting PrintInfo to a file.（fd >= 0） 
+// Test the function of outputting PrintInfo to a file.（fd >= 0)
 static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
 {
     napi_value result;
@@ -1505,7 +1503,6 @@ static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
     std::string dirPath = "/storage/Users/currentUser/Download/src.main.audiodemo/printfile/";
     std::string filePath = dirPath + "/audio_snapshot_" + timestampStream.str() + ".txt";
     mkdir(dirPath.c_str(), DIRECTORY_PERMISSIONS);
-
 
     // Open file
     int fd = open(filePath.c_str(), O_WRONLY | O_CREAT, FILE_PERMISSIONS);
@@ -1650,17 +1647,17 @@ const std::vector<napi_property_descriptor> otherDescriptors = {
     {"stopPipeline", nullptr, stopPipeline, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"setCurrentTime", nullptr, setCurrentTime, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"testPrintInfoToFile", nullptr, TestPrintInfoToFile, nullptr, nullptr, nullptr, napi_default, nullptr}, 
-    // Real-time playback methods 
-    {"initAudioRenderer", nullptr, InitAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
-    {"startAudioRenderer", nullptr, StartAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
-    {"stopAudioRenderer", nullptr, StopAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
-    {"releaseAudioRenderer", nullptr, ReleaseAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr}, 
-    {"setRecordFlag", nullptr, SetRecordFlag, nullptr, nullptr, nullptr, napi_default, nullptr}, 
-    {"getRecordedAudioData", nullptr, GetRecordedAudioData, nullptr, nullptr, nullptr, napi_default, nullptr}, 
-    {"registerPlaybackFinishCallback", nullptr, RegisterPlaybackFinishCallback, nullptr, nullptr, nullptr, napi_default, 
-     nullptr}, 
-    {"unregisterPlaybackFinishCallback", nullptr, UnregisterPlaybackFinishCallback, nullptr, nullptr, nullptr, 
+    {"testPrintInfoToFile", nullptr, TestPrintInfoToFile, nullptr, nullptr, nullptr, napi_default, nullptr},
+    // Real-time playback methods
+    {"initAudioRenderer", nullptr, InitAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"startAudioRenderer", nullptr, StartAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"stopAudioRenderer", nullptr, StopAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"releaseAudioRenderer", nullptr, ReleaseAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setRecordFlag", nullptr, SetRecordFlag, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getRecordedAudioData", nullptr, GetRecordedAudioData, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerPlaybackFinishCallback", nullptr, RegisterPlaybackFinishCallback, nullptr, nullptr, nullptr, napi_default,
+     nullptr},
+    {"unregisterPlaybackFinishCallback", nullptr, UnregisterPlaybackFinishCallback, nullptr, nullptr, nullptr,
      napi_default, nullptr},
 };
 
