@@ -296,11 +296,13 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSamePipe_004, TestSize.Level1)
     info->adapterName_ = "test_adapter";
     info->routeFlag_ = 1;
     info->id_ = 123;
+    info->name_ = "test_pipe";
 
     std::shared_ptr<AudioPipeInfo> cmpInfo = std::make_shared<AudioPipeInfo>();
     cmpInfo->adapterName_ = "different_adapter";
     cmpInfo->routeFlag_ = 2;
     cmpInfo->id_ = 456;
+    cmpInfo->name_ = "different_pipe";
 
     bool result = audioPipeManager->IsSamePipe(info, cmpInfo);
     EXPECT_FALSE(result);
