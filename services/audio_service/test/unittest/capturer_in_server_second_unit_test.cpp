@@ -1363,6 +1363,29 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_Destruct
         capturerInServer_ = nullptr;
     }
 }
-111
+
+HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorAncoUid_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.appInfo.appUid = 1041;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+ 
+    auto ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_EQ(ret, false);
+}
+ 
+HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorAncoUid_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.appInfo.appUid = 0;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+ 
+    auto ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
