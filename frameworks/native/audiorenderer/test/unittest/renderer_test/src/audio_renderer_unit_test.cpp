@@ -1766,14 +1766,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
 
     size_t bufferLen = 0;
     int32_t ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     auto buffer = std::make_unique<uint8_t[]>(bufferLen);
     ASSERT_NE(nullptr, buffer);
     (void)memset_s(buffer.get(), bufferLen, 0, bufferLen);
 
+    int32_t writeFailCount = 0;
     for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         for (int j = 0; j < RenderUT::WRITE_BATCH_SIZE; j++) {
-            audioRenderer->Write(buffer.get(), bufferLen);
+            int32_t written = audioRenderer->Write(buffer.get(), bufferLen);
+            if (written < 0) {
+                writeFailCount++;
+            }
         }
 
         bool isDrained = audioRenderer->Drain();
@@ -1782,6 +1786,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
             break;
         }
     }
+    EXPECT_EQ(0, writeFailCount);
 
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
