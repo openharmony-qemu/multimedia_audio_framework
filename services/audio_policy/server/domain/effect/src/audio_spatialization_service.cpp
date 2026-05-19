@@ -729,6 +729,18 @@ int32_t AudioSpatializationService::UpdateSpatializationSceneType()
     return SPATIALIZATION_SERVICE_OK;
 }
 
+bool AudioSpatializationService::SafeConvertToBool(const std::string token, const std::string paramName)
+{
+    int32_t convertValue = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(token, convertValue), 0,
+        "convert failed for %{public}s, forcing to 0", paramName.c_str());
+    if (convertValue == 0 || convertValue == 1) {
+        return convertValue;
+    }
+    AUDIO_WARNING_LOG("invalid bool value for %{public}s, forcing to 0", paramName.c_str());
+    return 0;
+}
+
 void AudioSpatializationService::UpdateDeviceSpatialInfo(const std::string deviceSpatialInfo)
 {
     std::stringstream ss(deviceSpatialInfo);
@@ -739,26 +751,26 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const std::string devic
     CHECK_AND_RETURN_LOG(!addressToDeviceSpatialInfoMap_.count(address), "device already exists");
     addressToDeviceSpatialInfoMap_[address] = deviceSpatialInfo;
     std::getline(ss, token, '|');
-    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid spatializationEnabled");
-    addressToSpatialEnabledMap_[address].spatializationEnabled = convertValue;
+    addressToSpatialEnabledMap_[address].spatializationEnabled =
+        SafeConvertToBool(token, "spatializationEnabled");
     std::getline(ss, token, '|');
-    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid headTrackingEnabled");
-    addressToSpatialEnabledMap_[address].headTrackingEnabled = convertValue;
+    addressToSpatialEnabledMap_[address].headTrackingEnabled =
+        SafeConvertToBool(token, "headTrackingEnabled");
     std::getline(ss, token, '|');
-    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid isSpatializationSupported");
-    addressToSpatialDeviceStateMap_[address].isSpatializationSupported = convertValue;
+    addressToSpatialDeviceStateMap_[address].isSpatializationSupported =
+        SafeConvertToBool(token, "isSpatializationSupported");
     std::getline(ss, token, '|');
-    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid isHeadTrackingSupported");
-    addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported = convertValue;
+    addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported =
+        SafeConvertToBool(token, "isHeadTrackingSupported");
     std::getline(ss, token, '|');
     CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid spatialDeviceType");
     addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(convertValue);
     std::getline(ss, token, '|');
-    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid adaptiveSpatialRenderingEnabled");
-    addressToSpatialEnabledMap_[address].adaptiveSpatialRenderingEnabled = convertValue;
+    addressToSpatialEnabledMap_[address].adaptiveSpatialRenderingEnabled =
+        SafeConvertToBool(token, "adaptiveSpatialRenderingEnabled");
     std::getline(ss, token, '|');
-    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid personalizedSpatializationEnabled");
-    addressToSpatialEnabledMap_[address].personalizedSpatializationEnabled = convertValue;
+    addressToSpatialEnabledMap_[address].personalizedSpatializationEnabled =
+        SafeConvertToBool(token, "personalizedSpatializationEnabled");;
 }
 
 void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
