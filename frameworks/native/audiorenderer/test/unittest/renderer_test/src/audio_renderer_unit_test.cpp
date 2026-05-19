@@ -1771,9 +1771,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
     ASSERT_NE(nullptr, buffer);
     memset(buffer.get(), 0, bufferLen);
 
-    const int32_t writeBatchSize = 20;
     for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
-        for (int j = 0; j < writeBatchSize; j++) {
+        for (int j = 0; j < RenderUT::WRITE_BATCH_SIZE; j++) {
             audioRenderer->Write(buffer.get(), bufferLen);
         }
 
