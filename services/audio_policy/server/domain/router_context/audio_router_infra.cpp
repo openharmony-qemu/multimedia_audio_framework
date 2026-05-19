@@ -1091,7 +1091,7 @@ bool AudioRouterInfra::IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleD
 }
 
 bool AudioRouterInfra::IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
-        const std::shared_ptr<AudioDeviceSimpleDescriptor> &right)
+    const std::shared_ptr<AudioDeviceSimpleDescriptor> &right)
 {
     CHECK_AND_RETURN_RET(IsWirelessDevice(left) && IsWirelessDevice(right), false);
     return left->macAddress_ == right->macAddress_;
