@@ -470,9 +470,7 @@ std::string AudioDebugManagerPrivate::ParserAudioRendererDebugInfo(
        << "  },\n"
        << "  interruptInfo: {\n"
        << "    hintType: " << debugInfo.hintType << ",\n"
-       << "    historyHintType: " << debugInfo.historyHintType << ",\n"
-       << "    muteWhenInterrupted: " << (debugInfo.muteWhenInterrupted ? "true" : "false") << ",\n"
-       << "    pauseWhenInterrupted: " << (debugInfo.pauseWhenInterrupted ? "true" : "false") << "\n"
+       << "    historyHintType: " << debugInfo.historyHintType << "\n"
        << "  }\n"
        << "}";
     return ss.str();
@@ -579,9 +577,9 @@ std::string AudioDebugManagerPrivate::ParserAudioCapturerDebugInfo(
        << ", nsec: " << timestamp.time.tv_nsec << "),\n"
        << "    bufferSize: " << debugInfo.bufferSize << ",\n"
        << "    overflowCount: " << debugInfo.overflowCount << ",\n"
-<< "    muteWhenInterrupted: " << (debugInfo.muteWhenInterrupted ? "true" : "false") << ",\n"
-        << "    pauseWhenInterrupted: " << (debugInfo.pauseWhenInterrupted ? "true" : "false") << ",\n"
-        << "    inputDeviceType: " << static_cast<int32_t>(deviceType) << "\n"
+       << "    muteWhenInterrupted: " << (debugInfo.muteWhenInterrupted ? "true" : "false") << ",\n"
+       << "    pauseWhenInterrupted: " << (debugInfo.pauseWhenInterrupted ? "true" : "false") << ",\n"
+       << "    inputDeviceType: " << static_cast<int32_t>(deviceType) << "\n"
        << "  },\n"
        << "  pipeInfo: {\n"
        << "    pipeRole: " << static_cast<int32_t>(debugInfo.pipeRole) << ",\n"

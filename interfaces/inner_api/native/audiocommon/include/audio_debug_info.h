@@ -77,8 +77,6 @@ struct AudioRendererDebugInfo {
 
     int32_t hintType = -1;
     std::string historyHintType = "";
-    bool muteWhenInterrupted = false;
-    bool pauseWhenInterrupted = false;
 };
 
 struct AudioCapturerDebugInfo {
