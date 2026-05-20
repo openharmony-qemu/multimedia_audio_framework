@@ -1751,7 +1751,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_006, TestSize.Level1)
 /**
  * @tc.name  : Test Drain API stability.
  * @tc.number: Audio_Renderer_Drain_Stability_001
- * @tc.desc  : Test Drain interface stability.
+ * @tc.desc  : Test Drain interface stability with 1000 Write-Drain cycles.
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level1)
 {
@@ -1764,16 +1764,29 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(RenderUT::StartRenderThread, audioRenderer.get(), RenderUT::PLAYBACK_DURATION);
+    size_t bufferLen = 0;
+    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
+    ASSERT_EQ(SUCCESS, ret);
+    auto buffer = std::make_unique<uint8_t[]>(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+    (void)memset_s(buffer.get(), bufferLen, 0, bufferLen);
 
+    int32_t writeFailCount = 0;
     for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
+        for (int j = 0; j < RenderUT::WRITE_BATCH_SIZE; j++) {
+            int32_t written = audioRenderer->Write(buffer.get(), bufferLen);
+            if (written < 0) {
+                writeFailCount++;
+            }
+        }
+
         bool isDrained = audioRenderer->Drain();
-        if (isDrained != true) {
-            return ;
+        EXPECT_EQ(true, isDrained);
+        if (!isDrained) {
+            break;
         }
     }
-
-    renderThread.join();
+    EXPECT_EQ(0, writeFailCount);
 
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
