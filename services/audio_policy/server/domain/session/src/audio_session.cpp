@@ -539,6 +539,10 @@ int32_t AudioSession::SetAudioSessionBehavior(const uint32_t behavior)
         behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Session pid: %{public}d activated MUTE_WHEN_INTERRUPT success", callerPid_);
     }
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
+        behaviorFlags_.pauseWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Session pid: %{public}d activated PAUSE_WHEN_INTERRUPTED success", callerPid_);
+    }
     return SUCCESS;
 }
 

@@ -43,8 +43,6 @@ private:
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
-    void UpdatePauseAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
-        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
         const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
         AudioFocusEntry &focusEntry);

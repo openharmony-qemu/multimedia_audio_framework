@@ -206,7 +206,7 @@ enum class AudioSessionBehaviorFlags {
      * When the audio stream is interrupted by the system, perform pause instead.
      * @syscap SystemCapability.Multimedia.Audio.Core
      * @stagemodelonly
-     * @since 27 dynamic&static
+     * @since 26 dynamic&static
      */
     PAUSE_WHEN_INTERRUPTED = 0x00000004,
 

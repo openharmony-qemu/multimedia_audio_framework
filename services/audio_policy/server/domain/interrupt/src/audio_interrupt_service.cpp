@@ -3024,9 +3024,10 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         }
     }
 
-    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE &&
+    if (interruptEvent.hintType == INTERRUPT_HINT_STOP &&
         audioInterrupt.behaviorFlags_.pauseWhenInterruptFlag) {
-        AUDIO_INFO_LOG("Handle pause interrupt for streamId:%{public}u with PAUSE_WHEN_INTERRUPTED flag",
+        interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+        AUDIO_INFO_LOG("Change STOP to PAUSE for streamId:%{public}u with PAUSE_WHEN_INTERRUPTED flag",
             audioInterrupt.streamId);
     }
 
