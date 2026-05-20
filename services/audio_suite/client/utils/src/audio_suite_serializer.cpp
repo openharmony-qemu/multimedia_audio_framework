@@ -230,7 +230,7 @@ bool Serializer<AudioPureVoiceChangeOption>::Deserialize(const std::string& str,
     }
     
     float pitch = 0.0f;
-    if (tokens.size() >= PURE_VOICE_CHANGE_PITCH_PARAM_INDEX) {
+    if (tokens.size() > PURE_VOICE_CHANGE_PITCH_PARAM_INDEX) {
         if (!StringConverterFloat(tokens[PURE_VOICE_CHANGE_PITCH_PARAM_INDEX], pitch)) {
             AUDIO_ERR_LOG("Failed to convert pitch parameter");
             return false;

@@ -64,8 +64,16 @@ void HpaeOutputCluster::RegisterCurrentDeviceCallback()
         } else {
             timeoutThdFramesForDevice_ = timeoutThdFrames_;
         }
+        if (deviceChangeCallback_) {
+            deviceChangeCallback_();
+        }
     };
     hpaeSinkOutputNode_->RegisterCurrentDeviceCallback(callback);
+}
+
+void HpaeOutputCluster::SetDeviceChangeCallback(std::function<void()> callback)
+{
+    deviceChangeCallback_ = callback;
 }
 
 void HpaeOutputCluster::DoProcess()
@@ -266,11 +274,12 @@ int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)
 
 int32_t HpaeOutputCluster::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    CHECK_AND_RETURN_RET(hpaeSinkOutputNode_ != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(hpaeSinkOutputNode_ != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sinkOutputNode is null", false), ERROR));
+            "sinkOutputNode is null", false),
+        "sinkOutputNode is null");
     return hpaeSinkOutputNode_->SetAuxiliarySinkEnable(isEnabled);
 }
 
@@ -278,6 +287,16 @@ void HpaeOutputCluster::SetCollaborationState(bool collaborationState)
 {
     CHECK_AND_RETURN_LOG(hpaeSinkOutputNode_ != nullptr, "sinkOutputNode is null");
     hpaeSinkOutputNode_->SetCollaborationState(collaborationState);
+}
+
+uint32_t HpaeOutputCluster::GetRenderId() const
+{
+    return hpaeSinkOutputNode_->GetRenderId();
+}
+
+DeviceType HpaeOutputCluster::GetCurrentOutputDevice() const
+{
+    return hpaeSinkOutputNode_->GetCurrentActiveDevice();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

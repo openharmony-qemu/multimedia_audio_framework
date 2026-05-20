@@ -31,6 +31,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioSeparationEffectEnabledChangeCallback;
 class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
 public:
     int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
@@ -172,6 +173,10 @@ public:
         const std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback> &cb);
     int32_t RemovePersonalizedSpatializationEnabledChangeCallback();
     size_t GetPersonalizedSpatializationEnabledChangeCallbackSize() const;
+    int32_t AddAudioSeparationEffectEnabledChangeCallback(
+        const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &cb);
+    int32_t RemoveAudioSeparationEffectEnabledChangeCallback();
+    size_t GetAudioSeparationEffectEnabledChangeCallbackSize() const;
     int32_t SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &cb);
     int32_t UnsetAudioRouteSelectorCallback();
     bool HasAudioRouteSelectorCallback() const;
@@ -234,6 +239,7 @@ public:
         bool enabled,
         bool headTrackingEnabled) override;
     int32_t OnSpatialAudioSourceTypeChange(int32_t mode) override;
+    int32_t OnAudioSeparationEffectEnabledChange(bool enabled) override;
     int32_t OnAudioRouteSelectRefined(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
         int32_t &selectResult) override;
 private:
@@ -280,6 +286,8 @@ private:
     std::vector<std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback>> spatialAudioSourceTypeChangeCallbackList_;
     std::vector<std::shared_ptr<AudioPersonalizedSpatializationEnabledChangeCallback>>
         personalizedSpatializationEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSeparationEffectEnabledChangeCallback>>
+        audioSeparationEffectEnabledChangeCallbackList_;
 
     std::unordered_map<int32_t,
         std::unordered_map<StreamUsage,
@@ -330,6 +338,7 @@ private:
     mutable std::mutex adaptiveSpatialRenderingEnabledChangeMutex_;
     mutable std::mutex spatialAudioSourceTypeChangeMutex_;
     mutable std::mutex personalizedSpatializationEnabledChangeMutex_;
+    mutable std::mutex audioSeparationEffectEnabledChangeMutex_;
     std::shared_ptr<AudioRouteSelector> audioRouteSelectorCallback_;
     mutable std::mutex audioRouteSelectorMutex_;
 };

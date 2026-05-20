@@ -47,11 +47,11 @@ AudioSuiteMixerNode::~AudioSuiteMixerNode()
 
 void AudioSuiteMixerNode::SetAudioNodeFormat(AudioFormat audioFormat)
 {
-    CHECK_AND_RETURN_LOG(audioFormat.rate != SAMPLE_RATE_11025, "Not support 11025, Keep the rate at default");
-
+    AudioSamplingRate rate = (audioFormat.rate == SAMPLE_RATE_11025 || audioFormat.rate == SAMPLE_RATE_22050) ?
+        DEFAULT_SAMPLE_RATE : audioFormat.rate;
     AudioFormat currentFormat = GetAudioNodeFormat();
-    currentFormat.rate = audioFormat.rate;
-    currentFormat.outRate = audioFormat.rate;
+    currentFormat.rate = rate;
+    currentFormat.outRate = rate;
     AudioNode::SetAudioNodeFormat(currentFormat);
     AUDIO_INFO_LOG("numChannels:%{public}u, sampleFormat:%{public}u, sampleRate:%{public}d",
         currentFormat.audioChannelInfo.numChannels, currentFormat.format, currentFormat.rate);

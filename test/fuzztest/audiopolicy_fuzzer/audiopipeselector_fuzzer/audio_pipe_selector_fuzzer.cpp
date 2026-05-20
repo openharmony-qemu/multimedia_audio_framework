@@ -332,7 +332,7 @@ void FindExistingPipeFuzzTest(FuzzedDataProvider& fdp)
     audioPipeSelector->FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
 }
 
-void MatchRemoteOffloadPipeFuzzTest(FuzzedDataProvider& fdp)
+void MatchSpecialRemotePipeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     streamPropInfo->format_ =
@@ -357,7 +357,7 @@ void MatchRemoteOffloadPipeFuzzTest(FuzzedDataProvider& fdp)
     streamPropInfo->pipeInfo_ = pipeInfoPtr;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
+    audioPipeSelector->MatchSpecialRemotePipe(streamPropInfo, pipeInfo, streamDesc);
 }
 
 void IsPipeFormatMatchFuzzTest(FuzzedDataProvider& fdp)
@@ -440,7 +440,7 @@ void Test(FuzzedDataProvider& fdp)
     AddStreamToPipeAndUpdateActionFuzzTest,
     SetOriginalFlagForcedNormalIfNeedFuzzTest,
     FindExistingPipeFuzzTest,
-    MatchRemoteOffloadPipeFuzzTest,
+    MatchSpecialRemotePipeFuzzTest,
     IsPipeFormatMatchFuzzTest,
     UpdatePipeInfoFromStreamPropFuzzTest,
     IsPipeMatchFuzzTest,

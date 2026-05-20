@@ -375,6 +375,41 @@ ohos_unittest("audio_stream_monitor_unit_test") {
   ]
 }
 
+ohos_unittest("stream_dfx_manager_unit_test") {
+  module_out_path = module_output_path
+
+  install_enable = false
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/include/dfx",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  sources = [ "stream_dfx_manager_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+  ]
+}
+
 ohos_unittest("audio_service_unit_test") {
   module_out_path = module_output_path
 

@@ -470,7 +470,7 @@ HWTEST_F(AudioSuiteSerializerTest, AudioGeneralVoiceChangeType_Deserialize_001, 
 
 HWTEST_F(AudioSuiteSerializerTest, AudioGeneralVoiceChangeType_Deserialize_002, TestSize.Level0)
 {
-    std::string input = "0";
+    std::string input = "2";
     AudioGeneralVoiceChangeType type;
     bool result = Serializer<AudioGeneralVoiceChangeType>::Deserialize(input, type);
     EXPECT_TRUE(result);
@@ -637,7 +637,8 @@ HWTEST_F(AudioSuiteSerializerTest, StringConverter_011, TestSize.Level0)
     std::string input = "  123";
     int32_t value = 0;
     bool result = StringConverter(input, value);
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(value, 123);
 }
 
 HWTEST_F(AudioSuiteSerializerTest, StringConverter_012, TestSize.Level0)
@@ -805,7 +806,7 @@ HWTEST_F(AudioSuiteSerializerTest, TempoPitchParams_Deserialize_008, TestSize.Le
 
 HWTEST_F(AudioSuiteSerializerTest, AudioPureVoiceChangeOption_Deserialize_009, TestSize.Level0)
 {
-    std::string input = "0,1";
+    std::string input = "2,1";
     AudioPureVoiceChangeOption option;
     bool result = Serializer<AudioPureVoiceChangeOption>::Deserialize(input, option);
     EXPECT_TRUE(result);

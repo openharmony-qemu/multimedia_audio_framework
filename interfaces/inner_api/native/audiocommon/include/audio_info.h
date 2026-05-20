@@ -67,6 +67,7 @@ constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
 constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
+constexpr float MAX_STREAM_SPEED_LEVEL_FOR_AVPLAYER = 8.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
 constexpr float MIN_STREAM_PITCH_LEVEL = 0.25f;
@@ -382,6 +383,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
     CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_ROUTE_SELECTOR,
+    CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -453,6 +455,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
     CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_ROUTE_SELECTOR,
+    CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -1457,14 +1460,15 @@ struct StaticBufferInfo : public Parcelable {
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
-    std::shared_ptr<AudioSharedMemory> sharedMemory_ = nullptr;
+    size_t bufferSize_ = 0;
 
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteInt64(totalLoopTimes_);
         parcel.WriteInt64(currentLoopTimes_);
         parcel.WriteUint64(curStaticDataPos_);
-        return (sharedMemory_ == nullptr ? false : sharedMemory_->Marshalling(parcel));
+        parcel.WriteUint64(bufferSize_);
+        return true;
     }
 
     static StaticBufferInfo *Unmarshalling(Parcel &parcel)
@@ -1476,7 +1480,7 @@ struct StaticBufferInfo : public Parcelable {
         info->totalLoopTimes_ = parcel.ReadInt64();
         info->currentLoopTimes_ = parcel.ReadInt64();
         info->curStaticDataPos_ = parcel.ReadUint64();
-        info->sharedMemory_ = std::shared_ptr<AudioSharedMemory>(AudioSharedMemory::Unmarshalling(parcel));
+        info->bufferSize_ = parcel.ReadUint64();
         return info;
     }
 };

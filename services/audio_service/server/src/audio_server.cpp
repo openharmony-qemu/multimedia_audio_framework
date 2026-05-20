@@ -150,7 +150,7 @@ static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
     AAM_CONN_SVC_UID
 };
 const int32_t RSS_THRESHOLD = 2;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enbale";
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
@@ -709,6 +709,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
             "%{public}s not in whitelist", bundleName.c_str());
         if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
             (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_INTERPHONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION)) && info.isBackground) {
@@ -1541,13 +1542,11 @@ int32_t AudioServer::SetVoiceVolume(float volume)
     return ERROR;
 }
 
-int32_t AudioServer::OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId)
+int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    std::string info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId);
     if (sink == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;

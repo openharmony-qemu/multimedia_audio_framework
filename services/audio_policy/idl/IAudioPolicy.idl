@@ -170,7 +170,6 @@ interface IAudioPolicy {
     void IsSpatializationSupportedForDevice([in] String address, [out] boolean ret);
     void IsHeadTrackingSupported([out] boolean ret);
     void IsHeadTrackingSupportedForDevice([in] String address, [out] boolean ret);
-    void IsPersonalizedSpatializationSupported([out] boolean ret);
     void UpdateSpatialDeviceState([in] AudioSpatialDeviceState audioSpatialDeviceState);
     void RegisterSpatializationStateEventListener([in] unsigned int sessionID, [in] int streamUsage, [in] IRemoteObject object);
     void ConfigDistributedRoutingRole([in] sharedptr<AudioDeviceDescriptor> descriptor, [in] int type);
@@ -334,9 +333,6 @@ interface IAudioPolicy {
     void NotifyStreamSilentChange([in] unsigned int streamId);
     void IsAdaptiveSpatialRenderingEnabled([in] String address, [out] boolean ret);
     void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
-    void IsPersonalizedSpatializationEnabled([in] String address, [out] boolean ret);
-    void SetPersonalizedSpatializationEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
-    void DownloadPersonalizedHRTF([in] FileDescriptor fd, [in] long length);
     void GetCurrentSpatialAudioSourceType([out] int ret);
     void SetAudioSessionBehavior([in] unsigned int behavior);
     void SetDeclaredDeviceTypes([in] Set<int> deviceTypes);
@@ -354,4 +350,11 @@ interface IAudioPolicy {
     void GetAudioZoneForApp([in] List<int> userIds, [out] List<int> retUserIds);
     void AddStreamIdToAudioZone([in] int zoneId, [in] unsigned int streamId);
     void RemoveStreamIdFromAudioZone([in] int zoneId, [in] unsigned int streamId);
+    void IsPersonalizedSpatializationSupported([out] boolean ret);
+    void IsPersonalizedSpatializationEnabled([in] String address, [out] boolean ret);
+    void SetPersonalizedSpatializationEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
+    void DownloadPersonalizedHRTF([in] FileDescriptor fd, [in] long length);
+    void IsAudioSeparationEffectSupported([out] boolean ret);
+    void SetAudioSeparationEffectEnabled([in] boolean enabled, [in] int uid, [in] long streamId);
+    void SetAudioSeparationEffectVolume([in] int type, [in] double volume);
 }

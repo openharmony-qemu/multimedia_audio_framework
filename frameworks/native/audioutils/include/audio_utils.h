@@ -647,7 +647,8 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC = 18,
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED = 19,
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS = 20, // include bt_sco, a2dp_offload and nearlink
-    HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21,
+    HDI_RENDER_OFFSET_REMOTE_MULTICHANNEL = 22
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
@@ -680,6 +681,8 @@ float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
 uint64_t HexStrToNum(const std::string &str);
 
 void BindBigAndMidCore();
+
+bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

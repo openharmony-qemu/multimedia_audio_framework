@@ -51,47 +51,54 @@ enum class AsrNoiseSuppressionMode {
      */
     FAR_FIELD = 3,
     /**
-     * FULL_DUPLEX_STANDARD.
+     * Full duplex standard noise suppression.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 12
      */
     FULL_DUPLEX_STANDARD = 4,
     /**
-     * FULL_DUPLEX_NEAR_FIELD.
+     * Full duplex near field noise suppression.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 12
      */
     FULL_DUPLEX_NEAR_FIELD = 5,
     /**
-     * ASR_WHISPER_MODE.
+     * Whisper multi-turn interaction.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 19
      */
-    ASR_WHISPER_MODE = 6,
+    ASR_WHISPER = 6,
     /**
-     * TSE_DENOISE_MODE
+     * Target speech extraction.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 24
      */
-    TSE_DENOISE_MODE = 7,
+    TSE_DENOISE = 7,
     /**
-     * NORMAL_REG_MODE
+     * Microphone blocking detection.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 24
      */
-    NORMAL_REG_MODE = 8,
+    NORMAL_REG = 8,
     /**
-     * PHONE_CALL_MODE
+     * Phone Call Mode.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 26
      */
-    PHONE_CALL_MODE = 9
+    PHONE_CALL = 9,
+    /**
+     * Switching the microphone.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 26
+     */
+    TOPMIC_REG = 10,
 };
 
 /**

@@ -907,10 +907,18 @@ void RendererInClientInner::InitCallbackLoop()
     callbackLoop_ = std::thread([weakRef] {
         bool keepRunning = true;
         std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
-        strongRef->SetCallbackLoopTid(gettid());
+
         if (strongRef != nullptr) {
+            strongRef->SetCallbackLoopTid(gettid());
+            
+            if (strongRef->IsFastStream()) {
+                strongRef->SetupFastStreamThreadPriority();
+            }
+            
             strongRef->cbThreadCv_.notify_one();
-            AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
+            AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d, IsFastStream:%{public}d, "
+                "IsUltraFastStream:%{public}d", strongRef->sessionId_, strongRef->IsFastStream(),
+                strongRef->IsUltraFastStream());
         } else {
             HILOG_COMM_WARN("[InitCallbackLoop]Strong ref is nullptr, could cause error");
         }
@@ -929,6 +937,25 @@ void RendererInClientInner::InitCallbackLoop()
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioWriteCB");
+}
+
+void RendererInClientInner::SetupFastStreamThreadPriority()
+{
+    ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
+
+    if (IsUltraFastStream()) {
+        BindBigAndMidCore();
+        threadPriority = THREAD_PRIORITY_4;
+    }
+
+    if (ipcStream_ != nullptr) {
+        ipcStream_->RegisterThreadPriority(gettid(),
+            AppBundleManager::GetSelfBundleName(appUid_),
+            METHOD_WRITE_OR_READ, threadPriority);
+    }
+
+    AUDIO_INFO_LOG("SetupFastStreamThreadPriority: IsUltraFastStream=%{public}d, priority=%{public}d",
+        IsUltraFastStream(), threadPriority);
 }
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
@@ -1828,8 +1855,9 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
         CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
         clientBuffer_->GetStaticPlayPosition(
             info.staticBufferInfo.currentLoopTimes_, info.staticBufferInfo.curStaticDataPos_);
-        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.bufferSize_ = staticBufferInfo_.bufferSize_;
         info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
+        info.staticSharedMemory = staticSharedMemory_;
         info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     }
 }

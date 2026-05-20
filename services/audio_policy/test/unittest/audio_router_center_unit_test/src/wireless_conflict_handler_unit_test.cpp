@@ -108,7 +108,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_004, TestSize.Level1)
 {
     WirelessConflictHandler handler;
     
-    EXPECT_FALSE(handler.Detect(nullptr, ROUTER_TYPE_NONE, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(nullptr, ROUTER_TYPE_NONE));
 }
 
 /**
@@ -122,7 +122,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_005, TestSize.Level1)
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device->macAddress_ = "";
     
-    EXPECT_FALSE(handler.Detect(device, ROUTER_TYPE_NONE, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(device, ROUTER_TYPE_NONE));
 }
 
 /**
@@ -187,8 +187,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_007, TestSize.Level1)
     // Same mac address, no conflict
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -216,8 +215,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_009, TestSize.Level1)
     // existing is music (priority PRIORITY_NORMAL_OUTPUT), no conflict
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:66";
-    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
-        STREAM_USAGE_VOICE_COMMUNICATION, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -313,8 +311,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -342,8 +339,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:55";
     
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -371,12 +367,10 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_018, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
     
     outputDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 } // namespace AudioStandard

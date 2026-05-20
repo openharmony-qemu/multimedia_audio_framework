@@ -102,8 +102,6 @@ public:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningOutputStreamDescs();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetRunningInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
@@ -148,7 +146,7 @@ public:
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
-    bool HasRunningStream();
+    bool HasRunningStream(uint32_t sessionId = 0);
     bool IsA2dpUsed();
     bool HasFastOutputPipe();
     bool HasUltraFastStreamRequest();
@@ -176,9 +174,9 @@ public:
     std::string GetModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo);
     bool IsValidRenderSessionId(const uint32_t sessionId);
 
-    std::vector<PipeDeviceVolumeInfo> GetAllPipeDeviceVolumeInfo();
-    std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);
-    std::vector<PipeDeviceVolumeInfo> GetPipeDeviceVolumeInfoForDevice(
+    std::vector<PipeDeviceVolumeGroup> GetAllPipeDeviceVolumeInfo();
+    std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);
+    std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForDevice(
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
     
     bool HasPausedFastPipeInDelayedSwitch();
@@ -190,10 +188,11 @@ private:
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
     AudioStreamInfo DecideStreamInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo,
         const std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
-    std::vector<PipeDeviceVolumeInfo> ProcessPipeForVolumeInfo(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void ProcessPipeForVolumeInfo(std::vector<PipeDeviceVolumeGroup>& result,
+        std::shared_ptr<AudioPipeInfo> pipeInfo);
     AudioVolumeType GetVolumeTypeFromStreamDesc(
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void AddOrUpdateVolumeInfo(std::vector<PipeDeviceVolumeInfo>& result,
+    void AddOrUpdatePipeDeviceVolumeGroup(std::vector<PipeDeviceVolumeGroup>& result,
         AudioIOHandle pipeId, std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};

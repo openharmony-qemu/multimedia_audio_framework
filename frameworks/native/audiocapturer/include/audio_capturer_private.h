@@ -26,6 +26,10 @@
 #include "audio_task_loop.h"
 #include "audio_errors.h"
 
+#ifndef INVALID_DEBUGKEY
+#define INVALID_DEBUGKEY 0
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioCapturerStateChangeCallbackImpl;
@@ -105,6 +109,8 @@ public:
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
     FastStatus GetFastStatus() override;
     int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const override;
+    uint32_t GetCapturerDebugKey() const override { return debugKey_; }
+    uint32_t debugKey_ = INVALID_DEBUGKEY;
 
     uint32_t GetOverflowCount() const override;
     int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;

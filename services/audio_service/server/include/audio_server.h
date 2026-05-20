@@ -120,7 +120,7 @@ public:
     int32_t SetActiveOutputDevice(int32_t deviceType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
-    int32_t OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId) override;
+    int32_t OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId) override;
     int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
     int32_t SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag) override;
     static void *paDaemonThread(void *arg);

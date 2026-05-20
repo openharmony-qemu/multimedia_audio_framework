@@ -236,6 +236,9 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
             streamProp->bufferSize_ = AudioDefinitionPolicyUtils::PcmFormatToBytes(streamProp->format_) *
                 streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC;
             streamPropInfos.push_back(streamProp);
+            AUDIO_INFO_LOG("convert result: channelLayout[%{public}" PRIu64 "], channels[%{public}d], "
+                "samplingRate[%{public}d], format[%{public}d]", streamProp->channelLayout_, streamProp->channels_,
+                streamProp->sampleRate_, streamProp->format_);
         }
     }
 }
@@ -256,11 +259,14 @@ void AudioCoreConfigManager::UpdateStreamPropInfo(const std::string &adapterName
             streamProp->supportDevices_.push_back(deviceName);
         }
     }
+
+    AUDIO_INFO_LOG("start to update streamProps for: %{public}s", pipeName.c_str());
     audioPolicyConfig_.UpdateDynamicStreamProps(adapterName, pipeName, streamProps);
 }
 
 void AudioCoreConfigManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
 {
+    AUDIO_INFO_LOG("start to clear streamProps for: %{public}s", pipeName.c_str());
     audioPolicyConfig_.ClearDynamicStreamProps(adapterName, pipeName);
 }
 
@@ -967,7 +973,9 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamProp
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
     CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
 
-    AUDIO_INFO_LOG("use dynamic streamProp");
+    AUDIO_INFO_LOG("use dynamic streamProp, matchStreamInfo: channelLayout[%{public}" PRIu64 "], channels[%{public}d], "
+        "samplingRate[%{public}d], format[%{public}d]", matchStreamInfo.channelLayout, matchStreamInfo.channels,
+        matchStreamInfo.samplingRate, matchStreamInfo.format);
 
     SortStreamPropInfosBySampleRate(info->dynamicStreamPropInfos_);
 

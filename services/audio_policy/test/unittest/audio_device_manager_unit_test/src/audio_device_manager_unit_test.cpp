@@ -432,6 +432,18 @@ HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceConnectTimestamp_001, TestSize.
 
 /**
  * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: AudioDeviceManagerUnitTest_021.
+ * @tc.desc  : Test GetCommRenderDefaultDevice with STREAM_USAGE_INTERPHONE.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_021, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    shared_ptr<AudioDeviceDescriptor> desc = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_INTERPHONE);
+    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
  * @tc.number: UpdateDeviceCategory_001.
  * @tc.desc  : Test UpdateDeviceCategory.
  */

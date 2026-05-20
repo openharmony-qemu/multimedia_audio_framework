@@ -339,9 +339,6 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
-    int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
-    int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
-
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
@@ -801,6 +798,11 @@ public:
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs) override;
     int32_t TriggerAudioZoneVolumeSync() override;
+
+    int32_t IsAudioSeparationEffectSupported(bool &ret) override;
+    int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId) override;
+    int32_t SetAudioSeparationEffectVolume(int32_t type, double volume) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();

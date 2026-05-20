@@ -62,7 +62,7 @@ ohos_shared_library("ohaudio") {
     "./OHAudioDeviceDescriptor.cpp",
     "./OHAudioDeviceEnhanceManager.cpp",
     "./OHAudioManager.cpp",
-    "./OHAudioDebugManager.cpp",
+    "./OHAudioDebuggingManager.cpp",
     "./OHAudioRenderer.cpp",
     "./OHAudioRoutingManager.cpp",
     "./OHAudioSessionManager.cpp",

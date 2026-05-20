@@ -18,6 +18,7 @@
 
 #include <list>
 #include <unordered_map>
+#include <unordered_set>
 #include <cinttypes>
 
 #include "audio_adapter_manager_handler.h"
@@ -376,7 +377,7 @@ public:
     void SendAudioZoneVolumeForZone(int32_t zoneId);
     void InitAudioZoneVolume(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc);
 
-    void UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeInfo> pipeDeviceVolumeInfo);
+    void UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeGroup> pipeDeviceVolumeGroups);
     void RemoveAudioPipeVolume(uint32_t IoHandle);
     void UpdateVolumeForAllPipes();
     void UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType);
@@ -531,8 +532,9 @@ private:
     bool IsStreamTypeInUse(AudioStreamType streamType, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsDirectRoute(uint32_t routeFlag) const;
     void UpdatePipeVolumeWhenVgsStatusChanged();
-    void UpdateTypeVolumeForPipe(uint32_t pipeId, AudioVolumeType volumeType,
-        std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId = 0);
+    void UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
+        std::shared_ptr<AudioDeviceDescriptor> device, const std::unordered_set<AudioIOHandle>& pipeIds,
+        int32_t zoneId = 0);
     void AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioVolumeType volumeType, bool &isMuted, int32_t &volumeLevel, float &volumeDb);
     void AjustVolumeForSpecialType(AudioStreamType streamType, float &volumeDb);
@@ -614,8 +616,8 @@ private:
     bool isNeedConvertSafeTime_ = false;
     bool isDataShareReady_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
-    std::unordered_map<uint32_t, OffloadAdapter> offloadSessionID_;
     std::unordered_map<uint32_t, uint32_t> ioHandleSessionMap_;
+    std::unordered_map<uint32_t, float> ioHandleVolumeMap_;
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
     std::mutex setVoiceStatusMutex_;
@@ -632,6 +634,7 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
     std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
     std::mutex deviceConnectMutex_;
+    std::mutex offloadSessionMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

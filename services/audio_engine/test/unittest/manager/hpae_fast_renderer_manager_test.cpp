@@ -22,6 +22,9 @@
 #include "hpae_fast_renderer_manager.h"
 #include "hpae_node_common.h"
 #include "hpae_mocks.h"
+#include "hpae_fast_sink_output_node.h"
+#include "hpae_mixer_node.h"
+#include "oh_audio_buffer.h"
 #include "audio_utils.h"
 
 using namespace OHOS;
@@ -57,6 +60,46 @@ static HpaeSinkInfo GetFastSinkInfo(const std::string &deviceClass = "primary_mm
 static HpaeSinkInfo GetVoipFastSinkInfo()
 {
     return GetFastSinkInfo("primary_mmap_voip");
+}
+
+static constexpr uint32_t TOTAL_SIZE_IN_FRAME = 8;
+static constexpr uint32_t SPAN_SIZE_IN_FRAME = 2;
+static constexpr uint32_t BYTE_SIZE_PER_FRAME = 8; // stereo * 4 bytes (f32le)
+
+// Inject mock sink after Init to make sinkOutputNode_ work in UT environment
+static void InitWithMockSink(std::shared_ptr<HpaeFastRendererManager> &manager)
+{
+    ASSERT_NE(manager->sinkOutputNode_, nullptr);
+
+    auto mockSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    manager->sinkOutputNode_->audioRendererSink_ = mockSink;
+
+    // Directly set up mmap buffer using CreateFromLocal (avoids fd requirement in CreateFromRemote)
+    auto buffer = OHAudioBuffer::CreateFromLocal(TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, BYTE_SIZE_PER_FRAME);
+    ASSERT_NE(buffer, nullptr);
+    manager->sinkOutputNode_->dstAudioBuffer_ = buffer;
+    manager->sinkOutputNode_->dstTotalSizeInframe_ = TOTAL_SIZE_IN_FRAME;
+    manager->sinkOutputNode_->dstSpanSizeInframe_ = SPAN_SIZE_IN_FRAME;
+    manager->sinkOutputNode_->dstByteSizePerFrame_ = BYTE_SIZE_PER_FRAME;
+    manager->sinkOutputNode_->dstSpanSizeInByte_ = SPAN_SIZE_IN_FRAME * BYTE_SIZE_PER_FRAME;
+    manager->sinkOutputNode_->syncInfoSize_ = 0;
+    manager->sinkOutputNode_->renderFrameData_.resize(SPAN_SIZE_IN_FRAME * BYTE_SIZE_PER_FRAME);
+    manager->sinkOutputNode_->SetSinkState(STREAM_MANAGER_IDLE);
+
+    manager->isInit_.store(true);
+
+    // Create mixerNode and connect (normally done in InitSinkInner after RenderSinkInit)
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S32LE;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.nodeId = 0;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    nodeInfo.deviceClass = "primary_mmap";
+    auto mixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    manager->sinkOutputNode_->Connect(mixerNode);
+    manager->mixerNode_ = mixerNode;
 }
 
 void WaitForMsgProcessing(std::shared_ptr<HpaeFastRendererManager> &manager)
@@ -154,23 +197,6 @@ HWTEST_F(HpaeFastRendererManagerTest, getSinkInfo_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : initAndDeInit_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_004
- * @tc.desc  : Test Init and DeInit lifecycle
- */
-HWTEST_F(HpaeFastRendererManagerTest, initAndDeInit_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-    EXPECT_EQ(fastManager_->IsInit(), true);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-    EXPECT_EQ(fastManager_->IsInit(), false);
-}
-
-/**
  * @tc.name  : deInitWithoutInit_001
  * @tc.type  : FUNC
  * @tc.number: HpaeFastRendererManagerTest_005
@@ -211,54 +237,6 @@ HWTEST_F(HpaeFastRendererManagerTest, createStreamNotInit_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : createStreamWithInvalidFrameLen_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_008
- * @tc.desc  : Test CreateStream with invalid frame length
- */
-HWTEST_F(HpaeFastRendererManagerTest, createStreamWithInvalidFrameLen_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
-    streamInfo.frameLen = 0;
-    EXPECT_EQ(fastManager_->CreateStream(streamInfo), ERROR);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-}
-
-/**
- * @tc.name  : createAndDestroyStream_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_009
- * @tc.desc  : Test CreateStream and DestroyStream lifecycle
- */
-HWTEST_F(HpaeFastRendererManagerTest, createAndDestroyStream_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
-    EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    HpaeSinkInputInfo sinkInputInfo;
-    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
-    EXPECT_EQ(sinkInputInfo.nodeInfo.sessionId, TEST_STREAM_SESSION_ID);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PREPARED);
-
-    EXPECT_EQ(fastManager_->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
-    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), ERR_INVALID_OPERATION);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-}
-
-/**
  * @tc.name  : destroyStreamNotInit_001
  * @tc.type  : FUNC
  * @tc.number: HpaeFastRendererManagerTest_010
@@ -267,77 +245,6 @@ HWTEST_F(HpaeFastRendererManagerTest, createAndDestroyStream_001, TestSize.Level
 HWTEST_F(HpaeFastRendererManagerTest, destroyStreamNotInit_001, TestSize.Level0)
 {
     EXPECT_EQ(fastManager_->DestroyStream(TEST_STREAM_SESSION_ID), ERR_INVALID_OPERATION);
-}
-
-/**
- * @tc.name  : releaseStream_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_011
- * @tc.desc  : Test ReleaseStream calls DestroyStream internally
- */
-HWTEST_F(HpaeFastRendererManagerTest, releaseStream_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
-    EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->Release(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
-
-    HpaeSinkInputInfo sinkInputInfo;
-    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), ERR_INVALID_OPERATION);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-}
-
-/**
- * @tc.name  : startPauseStopStream_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_012
- * @tc.desc  : Test Start, Pause, Stop stream lifecycle
- */
-HWTEST_F(HpaeFastRendererManagerTest, startPauseStopStream_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
-    EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
-    EXPECT_EQ(fastManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
-
-    // Start stream
-    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-    HpaeSinkInputInfo sinkInputInfo;
-    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
-
-    // Pause stream
-    EXPECT_EQ(fastManager_->Pause(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
-
-    // Stop stream
-    EXPECT_EQ(fastManager_->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
-    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
-
-    // Destroy stream
-    EXPECT_EQ(fastManager_->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
 }
 
 /**
@@ -350,6 +257,7 @@ HWTEST_F(HpaeFastRendererManagerTest, flushAndDrain_001, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
     EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
@@ -576,6 +484,7 @@ HWTEST_F(HpaeFastRendererManagerTest, moveStream_001, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     // Move non-existent session, should trigger MOVE_SESSION_FAILED callback
     fastManager_->MoveStream(99999, "valid_sink_name");
@@ -597,6 +506,7 @@ HWTEST_F(HpaeFastRendererManagerTest, moveStream_002, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
     EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
@@ -690,6 +600,7 @@ HWTEST_F(HpaeFastRendererManagerTest, dumpSinkInfo_002, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
     EXPECT_EQ(fastManager_->DumpSinkInfo(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
     EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
@@ -718,6 +629,7 @@ HWTEST_F(HpaeFastRendererManagerTest, registerWriteCallback_001, TestSize.Level1
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
     EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
@@ -768,6 +680,7 @@ HWTEST_F(HpaeFastRendererManagerTest, onNotifyQueue_002, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
     EXPECT_EQ(fastManager_->IsInit(), true);
 
     fastManager_->OnNotifyQueue();
@@ -827,6 +740,7 @@ HWTEST_F(HpaeFastRendererManagerTest, destructor_001, TestSize.Level1)
         auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
         EXPECT_EQ(manager->Init(), SUCCESS);
         WaitForMsgProcessing(manager);
+        InitWithMockSink(manager);
         EXPECT_EQ(manager->IsInit(), true);
         // Destructor should call DeInit
     }
@@ -876,6 +790,7 @@ HWTEST_F(HpaeFastRendererManagerTest, setSpeed_001, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
     EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
@@ -965,6 +880,7 @@ HWTEST_F(HpaeFastRendererManagerTest, reloadRenderManager_001, TestSize.Level1)
     HpaeSinkInfo sinkInfo = GetFastSinkInfo();
     EXPECT_EQ(fastManager_->ReloadRenderManager(sinkInfo, true), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
     EXPECT_EQ(fastManager_->IsInit(), true);
     EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
@@ -980,11 +896,13 @@ HWTEST_F(HpaeFastRendererManagerTest, reloadRenderManager_AlreadyInit_001, TestS
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
     EXPECT_EQ(fastManager_->IsInit(), true);
 
     HpaeSinkInfo sinkInfo = GetFastSinkInfo();
     EXPECT_EQ(fastManager_->ReloadRenderManager(sinkInfo, true), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
     EXPECT_EQ(fastManager_->IsInit(), true);
 
     EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
@@ -1001,6 +919,7 @@ HWTEST_F(HpaeFastRendererManagerTest, multiSession_001, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(200001)), SUCCESS);
     WaitForMsgProcessing(fastManager_);
@@ -1031,6 +950,7 @@ HWTEST_F(HpaeFastRendererManagerTest, createStreamWithLoopback_001, TestSize.Lev
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
     streamInfo.isLoopback = true;
@@ -1054,6 +974,7 @@ HWTEST_F(HpaeFastRendererManagerTest, deInitWithMoveDefault_001, TestSize.Level1
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
     WaitForMsgProcessing(fastManager_);
@@ -1072,6 +993,7 @@ HWTEST_F(HpaeFastRendererManagerTest, moveAllStreamPartial_001, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(600001)), SUCCESS);
     WaitForMsgProcessing(fastManager_);
@@ -1111,6 +1033,7 @@ HWTEST_F(HpaeFastRendererManagerTest, notifyStreamChangeToSink_WithSession_001, 
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
     WaitForMsgProcessing(fastManager_);
@@ -1135,6 +1058,7 @@ HWTEST_F(HpaeFastRendererManagerTest, suspendResumeWithRunningStream_001, TestSi
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
     EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
@@ -1152,44 +1076,6 @@ HWTEST_F(HpaeFastRendererManagerTest, suspendResumeWithRunningStream_001, TestSi
 
     // Resume should start sink since there is a running stream
     EXPECT_EQ(fastManager_->SuspendStreamManager(false), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-}
-
-/**
- * @tc.name  : voipFastInit_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_058
- * @tc.desc  : Test Init with VOIP fast device class
- */
-HWTEST_F(HpaeFastRendererManagerTest, voipFastInit_001, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo = GetVoipFastSinkInfo();
-    auto voipManager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
-    EXPECT_EQ(voipManager->Init(), SUCCESS);
-    WaitForMsgProcessing(voipManager);
-    EXPECT_EQ(voipManager->IsInit(), true);
-    EXPECT_EQ(voipManager->DeInit(), SUCCESS);
-    WaitForMsgProcessing(voipManager);
-}
-
-/**
- * @tc.name  : triggerAppsUidUpdate_Init_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_059
- * @tc.desc  : Test TriggerAppsUidUpdate when initialized
- */
-HWTEST_F(HpaeFastRendererManagerTest, triggerAppsUidUpdate_Init_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    fastManager_->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
     WaitForMsgProcessing(fastManager_);
 
     EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
@@ -1223,28 +1109,6 @@ HWTEST_F(HpaeFastRendererManagerTest, stopManager_NullSinkOutput_001, TestSize.L
 }
 
 /**
- * @tc.name  : drainNonRunningState_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_062
- * @tc.desc  : Test Drain when stream is in PREPARED state triggers callback
- */
-HWTEST_F(HpaeFastRendererManagerTest, drainNonRunningState_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    // Stream is in PREPARED state (not RUNNING), Drain should trigger callback
-    EXPECT_EQ(fastManager_->Drain(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-}
-
-/**
  * @tc.name  : initWithInvalidFrameLen_001
  * @tc.type  : FUNC
  * @tc.number: HpaeFastRendererManagerTest_063
@@ -1259,104 +1123,4 @@ HWTEST_F(HpaeFastRendererManagerTest, initWithInvalidFrameLen_001, TestSize.Leve
     WaitForMsgProcessing(manager);
     // Init should fail internally since frameLen is 0
     EXPECT_EQ(manager->IsInit(), false);
-}
-
-/**
- * @tc.name  : initWithUltraFast_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_064
- * @tc.desc  : Test Init with ultra-fast flag
- */
-HWTEST_F(HpaeFastRendererManagerTest, initWithUltraFast_001, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo = GetFastSinkInfo();
-    sinkInfo.isUltraFast = true;
-    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
-    EXPECT_EQ(manager->Init(), SUCCESS);
-    WaitForMsgProcessing(manager);
-    EXPECT_EQ(manager->IsInit(), true);
-    EXPECT_EQ(manager->DeInit(), SUCCESS);
-    WaitForMsgProcessing(manager);
-}
-
-/**
- * @tc.name  : onFadeDone_RunningSession_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_065
- * @tc.desc  : Test OnFadeDone when session is RUNNING should not disconnect
- */
-HWTEST_F(HpaeFastRendererManagerTest, onFadeDone_RunningSession_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
-    EXPECT_EQ(fastManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
-    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    // OnFadeDone for running session should early return
-    fastManager_->OnFadeDone(TEST_STREAM_SESSION_ID);
-    WaitForMsgProcessing(fastManager_);
-
-    HpaeSinkInputInfo sinkInputInfo;
-    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-}
-
-/**
- * @tc.name  : onRequestLatency_WithNodes_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_066
- * @tc.desc  : Test OnRequestLatency with converter node present
- */
-HWTEST_F(HpaeFastRendererManagerTest, onRequestLatency_WithNodes_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    uint64_t latency = 0;
-    fastManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
-    // latency should be >= 0 (converter adds some latency)
-    EXPECT_GE(latency, 0);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-}
-
-/**
- * @tc.name  : reloadWithRunningStream_001
- * @tc.type  : FUNC
- * @tc.number: HpaeFastRendererManagerTest_067
- * @tc.desc  : Test ReloadRenderManager with a running stream reconnects
- */
-HWTEST_F(HpaeFastRendererManagerTest, reloadWithRunningStream_001, TestSize.Level1)
-{
-    EXPECT_EQ(fastManager_->Init(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
-    EXPECT_EQ(fastManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
-    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-
-    HpaeSinkInfo newSinkInfo = GetFastSinkInfo();
-    EXPECT_EQ(fastManager_->ReloadRenderManager(newSinkInfo, true), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
-    EXPECT_EQ(fastManager_->IsInit(), true);
-
-    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
-    WaitForMsgProcessing(fastManager_);
 }

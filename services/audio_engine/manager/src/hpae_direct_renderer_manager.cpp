@@ -297,7 +297,6 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
     }
     if (sinkInfo_.deviceClass == VOIP_DIRECT_DEVICE_CLASS) {
         volumeSyncNode_ = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
-        volumeSyncNode_->ResetVolume();
         AUDIO_INFO_LOG("SessionId %{public}u, using HpaeVolumeSyncNode for VOIP device", sessionId);
     } else {
         gainNode_ = std::make_shared<HpaeGainNode>(nodeInfo);
@@ -366,6 +365,7 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
         if (volumeSyncNode_ != nullptr) {
             limiterNode_->Connect(volumeSyncNode_);
             volumeSyncNode_->Connect(converterForGain_);
+            volumeSyncNode_->ResetVolume();
         } else {
             limiterNode_->Connect(gainNode_);
             gainNode_->Connect(loudnessGainNode_);
@@ -376,6 +376,7 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
         if (volumeSyncNode_ != nullptr) {
             converterForOutput_->Connect(volumeSyncNode_);
             volumeSyncNode_->Connect(converterForGain_);
+            volumeSyncNode_->ResetVolume();
         } else {
             converterForOutput_->Connect(gainNode_);
             gainNode_->Connect(loudnessGainNode_);

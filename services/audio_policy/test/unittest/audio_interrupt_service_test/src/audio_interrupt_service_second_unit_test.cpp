@@ -1780,7 +1780,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_065, TestSize.
     audioInterrupt.streamId = streamId;
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
-    audioInterruptService->RemoveClient(zoneId, streamId);
+    audioInterruptService->RemoveClient(streamId);
     EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
 }
 
@@ -1801,16 +1801,16 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_066, TestSize.
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
     audioInterruptService->zonesMap_[zoneId] = nullptr;
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
-    audioInterruptService->RemoveClient(zoneId, streamId);
+    audioInterruptService->RemoveClient(streamId);
     EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
 
     audioInterruptService->zonesMap_[zoneId] = audioInterruptZone;
-    audioInterruptService->RemoveClient(zoneId, streamId);
+    audioInterruptService->RemoveClient(streamId);
     EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
 
     audioInterruptZone->interruptCbsMap[streamId] = std::make_shared<AudioInterruptCallbackTest>();
     audioInterruptService->zonesMap_[zoneId] = audioInterruptZone;
-    audioInterruptService->RemoveClient(zoneId, streamId);
+    audioInterruptService->RemoveClient(streamId);
     EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
 }
 

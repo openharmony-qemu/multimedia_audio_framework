@@ -238,9 +238,31 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.staticBufferInfo = staticBufferInfo_;
 
+    config.ultraFastFlag = curStreamParams_.ultraFastFlag;
+
     clientConfig_ = config;
 
     return config;
+}
+
+int32_t RendererInClientInner::CopyStaticBufferData()
+{
+    clientBuffer_->SetStaticMode(true);
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_->GetDataBase() != nullptr, ERR_OPERATION_FAILED,
+        "clientBuffer_->GetDataBase() is nullptr");
+
+    CHECK_AND_RETURN_RET_LOG(staticSharedMemory_ != nullptr &&
+        staticSharedMemory_->GetSize() == clientBuffer_->GetDataSize(),
+        ERR_OPERATION_FAILED, "staticSharedMemory_ %{public}d is inValid!", staticSharedMemory_ != nullptr);
+    
+    int32_t copyRet = memcpy_s(clientBuffer_->GetDataBase(), clientBuffer_->GetDataSize(),
+        staticSharedMemory_->GetBase(), staticSharedMemory_->GetSize());
+    CHECK_AND_RETURN_RET_LOG(copyRet == SUCCESS, ERR_OPERATION_FAILED,
+        "memcpy static buffer data failed, ret: %{public}d", copyRet);
+    
+    AUDIO_INFO_LOG("Static mode: copied data from client to server buffer, size:%{public}zu",
+        clientBuffer_->GetDataSize());
+    return SUCCESS;
 }
 
 int32_t RendererInClientInner::InitSharedBuffer()
@@ -266,20 +288,20 @@ int32_t RendererInClientInner::InitSharedBuffer()
         "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
     if (rendererInfo_.isStatic) {
-        clientBuffer_->SetStaticMode(true);
+        CHECK_AND_RETURN_RET_LOG(CopyStaticBufferData() == SUCCESS, ERR_OPERATION_FAILED,
+            "CopyStaticBufferData failed");
     }
-
     return SUCCESS;
 }
 
 bool RendererInClientInner::IsLowLatencyRenderer() const
 {
-    return rendererInfo_.rendererFlags == AUDIO_FLAG_MMAP || rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_FAST;
+    return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST);
 }
 
 uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
 {
-    if (!IsLowLatencyRenderer() && spanSizeInFrame_ == 0) {
+    if (!IsLowLatencyRenderer()) {
         return OLD_BUF_DURATION_IN_USEC;
     }
     uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :
@@ -1421,10 +1443,12 @@ void RendererInClientInner::CheckOperations()
     }
 }
 
-void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+    std::shared_ptr<AudioSharedMemory> sharedMemory)
 {
     CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support!");
     staticBufferInfo_ = staticBufferInfo;
+    staticSharedMemory_ = sharedMemory;
 }
 
 void RendererInClientInner::CheckFrozenStateInStaticMode()

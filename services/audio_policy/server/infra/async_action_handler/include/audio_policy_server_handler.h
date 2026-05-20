@@ -96,6 +96,7 @@ public:
         BYPASS_SPATIAL_FOR_STEREO_CHANGE_FOR_CURRENT_DEVICE,
         EFFECT_MODE_CHANGE_FOR_ANY_DEVICE,
         PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
+        AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -135,6 +136,7 @@ public:
         int32_t callerPid_ = -1;
         bool collaborationEnabled;
         SpatialAudioSourceType mode = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+        bool audioSeparationEffectEnabled = false;
         int32_t zoneId = -1;
     };
 
@@ -251,6 +253,7 @@ public:
     bool SendBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
         bool spatialization, bool headtracking);
     bool SendSpatialAudioSourceTypeChangeEvent(SpatialAudioSourceType mode);
+    bool SendAudioSeparationEffectEnabledChangeEvent(const bool &enabled);
     void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
     bool SendPersonalizedSpatializationEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
@@ -306,6 +309,7 @@ private:
     void HandleSpatializationEnabledChangeForBT(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatialAudioSourceTypeChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSeparationEffectEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
@@ -339,9 +343,9 @@ private:
     const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
     bool IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType);
     bool ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid, StreamUsage streamUsage,
-        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
     bool ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid, SourceType sourceType,
-        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
@@ -365,15 +369,15 @@ private:
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
 
-    // clientPid -> uid -> streamUsage -> device
+    // clientPid -> uid -> streamUsage -> devices
     std::unordered_map<int32_t,
         std::unordered_map<int32_t,
-            std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>>>>
+            std::unordered_map<StreamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
         lastSentOutputDeviceMap_;
-    // clientPid -> uid -> sourceType -> device
+    // clientPid -> uid -> sourceType -> devices
     std::unordered_map<int32_t,
         std::unordered_map<int32_t,
-            std::unordered_map<SourceType, std::shared_ptr<AudioDeviceDescriptor>>>>
+            std::unordered_map<SourceType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
         lastSentInputDeviceMap_;
 
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;

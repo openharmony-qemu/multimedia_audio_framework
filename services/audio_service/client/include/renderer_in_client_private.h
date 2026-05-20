@@ -242,7 +242,8 @@ public:
     int32_t SetRenderTarget(RenderTarget renderTarget) override;
     RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
@@ -259,6 +260,14 @@ public:
     {
         return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
     }
+
+    bool IsUltraFastStream() const
+    {
+        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+    }
+
+    void SetupFastStreamThreadPriority();
+
     void CheckAndProcessPendingSpanSize();
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -283,6 +292,7 @@ private:
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
+    int32_t CopyStaticBufferData();
 
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
@@ -481,6 +491,7 @@ private:
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
     std::function<void()> sendStaticRecreateFunc_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
     std::mutex staticBufferMutex_;
 
     // buffer handle

@@ -672,6 +672,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_070, TestSize.Level1)
     auto deviceDesc = make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_EARPIECE;
     deviceDesc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(deviceDesc);
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {deviceDesc});
     bool ret = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
     EXPECT_EQ(false, ret);

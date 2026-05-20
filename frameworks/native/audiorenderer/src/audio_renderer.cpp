@@ -157,17 +157,25 @@ private:
     std::weak_ptr<AudioRenderer> audioRenderer_;
 };
 
-static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRenderer> &audioRenderer)
+static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRendererPrivate> &audioRenderer)
 {
-    if (audioRenderer == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "AudioRenderer is nullptr");
     auto debugCallback = std::make_shared<AudioRendererDebugCallbackImpl>(std::weak_ptr<AudioRenderer>(audioRenderer));
-    if (debugCallback == nullptr) {
-        return;
-    }
-    (void)AudioDebugManager::GetInstance().RegisterAudioRenderer(
-        reinterpret_cast<uintptr_t>(audioRenderer.get()), debugCallback);
+    CHECK_AND_RETURN_LOG(debugCallback != nullptr, "Create renderer debug callback failed");
+    uint32_t debugKey = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioRenderer(debugKey, debugCallback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != INVALID_DEBUGKEY,
+        "Register renderer debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
+    audioRenderer->debugKey_ = debugKey;
+    AUDIO_INFO_LOG("Register renderer debug manager success, debugKey:%{public}u", debugKey);
+}
+
+static void UnregisterAudioRendererDebugManager(uint32_t &debugKey)
+{
+    CHECK_AND_RETURN_LOG(debugKey != INVALID_DEBUGKEY, "Unregister renderer debug manager: debugKey is invalid");
+    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(debugKey);
+    AUDIO_INFO_LOG("Unregister renderer debug manager, debugKey:%{public}u", debugKey);
+    debugKey = INVALID_DEBUGKEY;
 }
 
 std::mutex AudioRenderer::createRendererMutex_;
@@ -185,7 +193,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioRendererDebugManager(debugKey_);
 
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
@@ -569,7 +577,8 @@ bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate>
     const AppInfo &appInfo)
 {
     audioRenderer->rendererInfo_.isStatic = true;
-    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
+    audioRenderer->staticSharedMemory_ = sharedMemory;
+    audioRenderer->staticBufferInfo_.bufferSize_ = sharedMemory ? sharedMemory->GetSize() : 0;
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
     bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
@@ -774,7 +783,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     audioStream_->SetStreamTrackerState(false);
 
     if (rendererInfo_.isStatic) {
-        audioStream_->SetStaticBufferInfo(staticBufferInfo_);
+        audioStream_->SetStaticBufferInfo(staticBufferInfo_, staticSharedMemory_);
     }
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
@@ -1101,6 +1110,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
     if (!result) {
         streamInfo.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        streamInfo.customSampleRate = audioStreamParams.customSampleRate;
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
         streamInfo.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
@@ -1813,7 +1823,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioRendererDebugManager(debugKey_);
     SetReleaseFlagNoLock(false);
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback(audioStream_);
@@ -3204,8 +3214,8 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
 
 int32_t AudioRendererPrivate::SetSpeed(float speed)
 {
-    AUDIO_INFO_LOG("set speed %{public}f", speed);
-    CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
+    const double eps = 1e-6;
+    CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL - eps) && (speed <= GetMaxSpeed() + eps),
         ERR_INVALID_PARAM, "invaild speed index");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -3223,6 +3233,14 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
 
     SetSonicPitch(AudioSpeed::GetPitchForSpeed(speed));
     return SUCCESS;
+}
+
+float AudioRendererPrivate::GetMaxSpeed()
+{
+    if (PermissionUtil::VerifySystemPermission()) {
+        return MAX_STREAM_SPEED_LEVEL_FOR_AVPLAYER;
+    }
+    return MAX_STREAM_SPEED_LEVEL;
 }
 
 int32_t AudioRendererPrivate::SetSonicPitch(float pitch)
@@ -3519,7 +3537,7 @@ void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 
     CHECK_AND_CALL_FUNC_RETURN_REPORT(audioStream_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_CONFING_NULL_POINTER, "audio stream is null", false),
+            PLAY_CONFIG_NULL_POINTER, "audio stream is null", false),
         HILOG_COMM_ERROR("[SetAudioHapticsSyncId]audio stream is null"));
 
     if (audioHapticsSyncId > 0) {
@@ -3538,7 +3556,7 @@ void AudioRendererPrivate::ResetFirstFrameState()
 
     CHECK_AND_CALL_FUNC_RETURN_REPORT(audioStream_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            PLAY_CONFING_NULL_POINTER, "audio stream is null", false),
+            PLAY_CONFIG_NULL_POINTER, "audio stream is null", false),
         HILOG_COMM_ERROR("[ResetFirstFrameState]audio stream is null"));
 
     audioStream_->ResetFirstFrameState();
@@ -3699,7 +3717,7 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
     if (info.rendererInfo.isStatic) {
-        audioStream->SetStaticBufferInfo(info.staticBufferInfo);
+        audioStream->SetStaticBufferInfo(info.staticBufferInfo, info.staticSharedMemory);
         audioStream->SetRenderRate(info.renderRate);
     }
     if (info.backMute) {

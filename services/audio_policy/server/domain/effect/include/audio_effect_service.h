@@ -54,6 +54,10 @@ public:
     bool GetEffectiveAppMuteHint(uint32_t streamId) const;
     void EvaluateVoipBypassByAppMuteHint(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerInfos);
     void UpdateVoipBypassByAppMuteHint(bool enable);
+    
+    bool IsAudioSeparationEffectSupported();
+    int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId);
+    int32_t SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume);
 
 private:
     OriginalEffectConfig oriEffectConfig_;

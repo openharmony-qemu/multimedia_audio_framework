@@ -80,6 +80,7 @@ public:
     void OnStatusChange(int status, int reason) override;
 
     void SetDebugKey(uint32_t key) { debugKey_ = key; }
+    uint32_t GetDebugKey() const override { return debugKey_; }
 
 private:
     AudioLoopbackMode mode_;

@@ -1879,6 +1879,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
             name = "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT";
             break;
+        case SOURCE_TYPE_INTERPHONE:
+            name = "INTERPHONE";
+            break;
         default:
             name = "UNKNOWN";
     }
@@ -2184,7 +2187,7 @@ bool VolumeUtils::IsVolumeFixEnable()
 
 AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)
 {
-    std::unordered_map<AudioStreamType, AudioVolumeType> map = GetVolumeMap();
+    std::unordered_map<AudioStreamType, AudioVolumeType>& map = GetVolumeMap();
     auto it = map.find(streamType);
     if (it != map.end()) {
         return it->second;
@@ -2627,6 +2630,11 @@ void BindBigAndMidCore()
     CHECK_AND_CALL_FUNC_RETURN(result == 0,
         HILOG_COMM_ERROR("[BindBigAndMidCore] Set target cpu failed, ret: %{public}d", result));
     AUDIO_INFO_LOG("Bind pid: %{public}d, tid: %{public}d to big and mid cores success", getpid(), gettid());
+}
+
+bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag)
+{
+    return ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

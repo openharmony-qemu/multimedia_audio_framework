@@ -427,13 +427,13 @@ int32_t AudioSession::UpdateStreamFocusState(uint32_t streamId, AudioFocuState f
 {
     auto it = interruptMap_.find(streamId);
     if (it == interruptMap_.end()) {
-        AUDIO_ERR_LOG("streamId %u not found in interruptMap", streamId);
+        AUDIO_ERR_LOG("streamId %{public}u not found in interruptMap", streamId);
         return ERR_INVALID_PARAM;
     }
     if (focuState == AudioFocuState::STANDBY) {
         if (it->second.second != AudioFocuState::ACTIVE &&
             it->second.second != AudioFocuState::DUCK) {
-            AUDIO_INFO_LOG("streamId %u state %d, cannot set to STANDBY",
+            AUDIO_INFO_LOG("streamId %{public}u state %{public}d, cannot set to STANDBY",
                 streamId, it->second.second);
             return SUCCESS;
         }
@@ -559,20 +559,20 @@ AudioSessionActiveBehaviors AudioSession::GetSessionBehaviors()
     return behaviorFlags_;
 }
 
-void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo, const bool isAudioSessionInterrupt)
 {
     sessionDebugInfo.strategy = strategy_;
-    sessionDebugInfo.audioSessionScene = audioSessionScene_;
     sessionDebugInfo.defaultDeviceType = defaultDeviceType_;
     sessionDebugInfo.state = state_;
-    sessionDebugInfo.streamUsage = GetSessionStreamUsage();
-    sessionDebugInfo.streamInfos.clear();
-    for (const auto &iter : interruptMap_) {
-        AudioStreamDebugInfo streamDebugInfo;
-        streamDebugInfo.streamId = iter.second.first.streamId;
-        streamDebugInfo.streamType = iter.second.first.audioFocusType.streamType;
-        streamDebugInfo.sourceType = iter.second.first.audioFocusType.sourceType;
-        sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+    if (isAudioSessionInterrupt) {
+        sessionDebugInfo.audioSessionScene = audioSessionScene_;
+        sessionDebugInfo.streamInfos.clear();
+        for (const auto &iter : interruptMap_) {
+            AudioStreamDebugInfo streamDebugInfo;
+            streamDebugInfo.streamId = iter.second.first.streamId;
+            streamDebugInfo.streamType = iter.second.first.audioFocusType.streamType;
+            sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+        }
     }
 }
 } // namespace AudioStandard

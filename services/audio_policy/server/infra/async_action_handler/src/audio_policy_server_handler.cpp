@@ -768,6 +768,18 @@ bool AudioPolicyServerHandler::SendPersonalizedSpatializationEnabledChangeForAny
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendAudioSeparationEffectEnabledChangeEvent(const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->audioSeparationEffectEnabled = enabled;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -1447,9 +1459,9 @@ void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t cli
 
         int32_t uid = rendererFilter.uid;
         StreamUsage streamUsage = rendererFilter.rendererInfo.streamUsage;
-        CHECK_AND_CONTINUE(!ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, deviceDescs[0]));
+        CHECK_AND_CONTINUE(!ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, deviceDescs));
 
-        lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = deviceDescs[0];
+        lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = deviceDescs;
         clientHolder->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, uid, deviceDescs);
 
         clientSs << uid << ":" << static_cast<int32_t>(streamUsage)
@@ -1470,7 +1482,7 @@ bool AudioPolicyServerHandler::IsCallbackRegistered(int32_t clientPid, CallbackC
 }
 
 bool AudioPolicyServerHandler::ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid,
-    StreamUsage streamUsage, const std::shared_ptr<AudioDeviceDescriptor> &currentDevice)
+    StreamUsage streamUsage, const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices)
 {
     auto pidIt = lastSentOutputDeviceMap_.find(clientPid);
     if (pidIt == lastSentOutputDeviceMap_.end()) {
@@ -1481,15 +1493,32 @@ bool AudioPolicyServerHandler::ShouldSkipDuplicateOutputCallback(int32_t clientP
         return false;
     }
     auto streamUsageIt = uidIt->second.find(streamUsage);
-    if (streamUsageIt == uidIt->second.end() || streamUsageIt->second == nullptr) {
+    if (streamUsageIt == uidIt->second.end() || streamUsageIt->second.empty()) {
         return false;
     }
-    if (currentDevice->IsSameDeviceDescPtr(streamUsageIt->second)) {
-        AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, streamUsage:%{public}d",
-            clientPid, uid, static_cast<int32_t>(streamUsage));
-        return true;
+
+    // Compare device list length
+    const auto &lastDevices = streamUsageIt->second;
+    if (currentDevices.size() != lastDevices.size()) {
+        return false;  // Length different, don't skip
     }
-    return false;
+
+    // Compare each device
+    for (size_t i = 0; i < currentDevices.size(); i++) {
+        if (currentDevices[i] == nullptr && lastDevices[i] == nullptr) {
+            continue;  // Both nullptr, consider same
+        }
+        if (currentDevices[i] == nullptr || lastDevices[i] == nullptr) {
+            return false;  // One nullptr one not, don't skip
+        }
+        if (!currentDevices[i]->IsSameDeviceDescPtr(lastDevices[i])) {
+            return false;  // Device different, don't skip
+        }
+    }
+
+    AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, streamUsage:%{public}d",
+        clientPid, uid, static_cast<int32_t>(streamUsage));
+    return true;  // All devices same, skip callback
 }
 
 void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
@@ -1523,9 +1552,9 @@ void AudioPolicyServerHandler::ProcessPreferredInputDeviceForClient(int32_t clie
 
         int32_t uid = capturerFilter.uid;
         SourceType sourceType = capturerFilter.capturerInfo.sourceType;
-        CHECK_AND_CONTINUE(!ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, deviceDescs[0]));
+        CHECK_AND_CONTINUE(!ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, deviceDescs));
 
-        lastSentInputDeviceMap_[clientPid][uid][sourceType] = deviceDescs[0];
+        lastSentInputDeviceMap_[clientPid][uid][sourceType] = deviceDescs;
         clientHolder->OnPreferredInputDeviceUpdated(capturerFilter.capturerInfo, uid, deviceDescs);
 
         clientSs << uid << ":" << static_cast<int32_t>(sourceType)
@@ -1539,7 +1568,7 @@ void AudioPolicyServerHandler::ProcessPreferredInputDeviceForClient(int32_t clie
 }
 
 bool AudioPolicyServerHandler::ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid,
-    SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor> &currentDevice)
+    SourceType sourceType, const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices)
 {
     auto pidIt = lastSentInputDeviceMap_.find(clientPid);
     if (pidIt == lastSentInputDeviceMap_.end()) {
@@ -1550,15 +1579,32 @@ bool AudioPolicyServerHandler::ShouldSkipDuplicateInputCallback(int32_t clientPi
         return false;
     }
     auto sourceTypeIt = uidIt->second.find(sourceType);
-    if (sourceTypeIt == uidIt->second.end() || sourceTypeIt->second == nullptr) {
+    if (sourceTypeIt == uidIt->second.end() || sourceTypeIt->second.empty()) {
         return false;
     }
-    if (currentDevice->IsSameDeviceDescPtr(sourceTypeIt->second)) {
-        AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, sourceType:%{public}d",
-            clientPid, uid, static_cast<int32_t>(sourceType));
-        return true;
+
+    // Compare device list length
+    const auto &lastDevices = sourceTypeIt->second;
+    if (currentDevices.size() != lastDevices.size()) {
+        return false;  // Length different, don't skip
     }
-    return false;
+
+    // Compare each device
+    for (size_t i = 0; i < currentDevices.size(); i++) {
+        if (currentDevices[i] == nullptr && lastDevices[i] == nullptr) {
+            continue;  // Both nullptr, consider same
+        }
+        if (currentDevices[i] == nullptr || lastDevices[i] == nullptr) {
+            return false;  // One nullptr one not, don't skip
+        }
+        if (!currentDevices[i]->IsSameDeviceDescPtr(lastDevices[i])) {
+            return false;  // Device different, don't skip
+        }
+    }
+
+    AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, sourceType:%{public}d",
+        clientPid, uid, static_cast<int32_t>(sourceType));
+    return true;  // All devices same, skip callback
 }
 
 void AudioPolicyServerHandler::HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -2082,6 +2128,24 @@ void AudioPolicyServerHandler::HandlePersonalizedSpatializationEnabledChangeForA
     }
 }
 
+void AudioPolicyServerHandler::HandleAudioSeparationEffectEnabledChangeEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> separationEnabledChangeCb = it->second;
+        CHECK_AND_CONTINUE_LOG(separationEnabledChangeCb != nullptr,
+            "separationEnabledChangeCb : nullptr for client : %{public}d", it->first);
+        CHECK_AND_CONTINUE(clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE]);
+        separationEnabledChangeCb->OnAudioSeparationEffectEnabledChange(
+            eventContextObj->audioSeparationEffectEnabled);
+    }
+}
+
 // Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
@@ -2202,6 +2266,9 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
             break;
         case EventAudioServerCmd::PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
             HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(event);
+            break;
+        case EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE:
+            HandleAudioSeparationEffectEnabledChangeEvent(event);
             break;
         default:
             break;

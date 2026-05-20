@@ -150,4 +150,36 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeCompar, TestSize.Level0)
     std::remove(g_outFilename.c_str());
 }
 
+HWTEST_F(AudioSuiteMixerTest, MixerNodeSetAudioNodeFormat, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>();
+    node->Init();
+
+    AudioFormat format = AudioFormat {
+        {CH_LAYOUT_STEREO, STEREO}, SAMPLE_F32LE, SAMPLE_RATE_44100,
+        {CH_LAYOUT_STEREO, STEREO}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+
+    node->SetAudioNodeFormat(format);
+    auto setFormat = node->GetAudioNodeFormat();
+    EXPECT_EQ(setFormat.rate, SAMPLE_RATE_44100);
+    EXPECT_EQ(setFormat.outRate, SAMPLE_RATE_44100);
+    EXPECT_EQ(setFormat.format, SAMPLE_F32LE);
+
+    format.rate = SAMPLE_RATE_11025;
+    format.outRate = SAMPLE_RATE_11025;
+    node->SetAudioNodeFormat(format);
+    setFormat = node->GetAudioNodeFormat();
+    EXPECT_EQ(setFormat.rate, SAMPLE_RATE_48000);
+    EXPECT_EQ(setFormat.outRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(setFormat.format, SAMPLE_F32LE);
+
+    format.rate = SAMPLE_RATE_22050;
+    format.outRate = SAMPLE_RATE_22050;
+    node->SetAudioNodeFormat(format);
+    setFormat = node->GetAudioNodeFormat();
+    EXPECT_EQ(setFormat.rate, SAMPLE_RATE_48000);
+    EXPECT_EQ(setFormat.outRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(setFormat.format, SAMPLE_F32LE);
+}
+
 }  // namespace

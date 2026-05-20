@@ -31,6 +31,10 @@
 #include "audio_errors.h"
 #include "audio_task_loop.h"
 
+#ifndef INVALID_DEBUGKEY
+#define INVALID_DEBUGKEY 0
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 class RendererPolicyServiceDiedCallback;
@@ -148,6 +152,8 @@ public:
     int32_t SetPitch(float pitch) override;
     void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override;
     int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
+    uint32_t GetRendererDebugKey() const override { return debugKey_; }
+    uint32_t debugKey_ = INVALID_DEBUGKEY;
     bool IsFastRenderer() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;
@@ -204,6 +210,7 @@ public:
     mutable bool isStillZeroStreamVolume_ = false;
     mutable std::shared_ptr<AudioDeviceDescriptor> selectedDevice_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -281,6 +288,7 @@ private:
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    float GetMaxSpeed();
     void UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);

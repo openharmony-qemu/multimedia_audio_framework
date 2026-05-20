@@ -188,7 +188,7 @@ void AudioCoreService::HandleA2dpSuspend()
     a2dpNeedSuspend_ = true;
 }
 
-void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
+bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
     HandleMuteBeforeDeviceSwitch(streamDescs, reason);
@@ -220,9 +220,9 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
-        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, false);
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor, reason);
     }
+    return isUpdateActiveDevice;
 }
 
 void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo)
@@ -1364,11 +1364,13 @@ void AudioCoreService::OnVehiclePriorityChanged(bool enable)
     FetchInputDeviceAndRoute("OnVehiclePriorityChanged", reason);
 }
 
-void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
+void AudioCoreService::UpdateSpecialRemoteModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
 {
-    CHECK_AND_RETURN(pipeInfo && pipeInfo->moduleInfo_.className == "remote_offload");
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    std::string className = pipeInfo->moduleInfo_.className;
+    CHECK_AND_RETURN(className == "remote_offload" || className == "remote_multichannel");
     moduleName = pipeInfo->moduleInfo_.name;
-    AUDIO_INFO_LOG("remote offload");
+    AUDIO_INFO_LOG("remote special sink: %{public}s", className.c_str());
 }
 
 int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
@@ -1387,7 +1389,7 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
 
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
-    UpdateRemoteOffloadModuleName(pipeInfo, moduleName);
+    UpdateSpecialRemoteModuleName(pipeInfo, moduleName);
 
     AudioIOHandle moduleId;
     if (audioIOHandleMap_.GetModuleIdByKey(moduleName, moduleId)) {
@@ -2878,6 +2880,8 @@ void AudioCoreService::HandleDualStartClient(std::vector<std::pair<DeviceType, D
 void AudioCoreService::ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN(streamDesc != nullptr && streamDesc->IsDeviceRemote());
+    auto hdPlayMode = streamDesc->GetHdPlaybackMode();
+    CHECK_AND_RETURN_LOG(hdPlayMode != HdPlaybackMode::DEVICE_LEVEL, "device level hdPlay, skip reset");
     AUDIO_INFO_LOG("originalFlag: %{public}d, oldOriginalFlag: %{public}d", streamDesc->rendererInfo_.originalFlag,
         streamDesc->oldOriginalFlag_);
     streamDesc->ResetOriginalFlag();

@@ -19,6 +19,7 @@
 #include "hpae_fast_source_input_node.h"
 
 #include <cinttypes>
+#include <chrono>
 
 #include "audio_engine_log.h"
 #include "audio_errors.h"
@@ -34,6 +35,7 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr int32_t VOLUME_SHIFT_NUMBER = 16;
+constexpr uint32_t WAIT_GET_POS_TIMEOUT_MS = 200;
 }
 
 HpaeFastSourceInputNode::HpaeFastSourceInputNode(HpaeNodeInfo &nodeInfo)
@@ -57,6 +59,7 @@ HpaeFastSourceInputNode::HpaeFastSourceInputNode(HpaeNodeInfo &nodeInfo)
 
 HpaeFastSourceInputNode::~HpaeFastSourceInputNode()
 {
+    StopUpdateThread();
     DeinitLatencyMeasurement();
     (void)CapturerSourceDeInit();
 #ifdef ENABLE_HIDUMP_DFX
@@ -76,24 +79,19 @@ void HpaeFastSourceInputNode::DoProcess()
 
     if (needReSyncPosition_) {
         Trace reSyncTrace("HpaeFastSourceInputNode::ReSyncPosition");
-        ResetReadPosition();
+        CHECK_AND_RETURN_LOG(ResetReadPosition(), "ResetReadPosition failed");
         reSyncTrace.End();
         needReSyncPosition_ = false;
     }
 
-    uint64_t handlePos = 0;
-    int64_t handleTime = 0;
-    CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(handlePos, handleTime), "GetDeviceHandleInfo failed");
-    CHECK_AND_RETURN_LOG(srcAudioBuffer_->SetCurWriteFrame(handlePos, false) == SUCCESS, "SetCurWriteFrame failed");
+    uint64_t handlePos = srcAudioBuffer_->GetCurWriteFrame();
 
     Trace readTrace("HpaeFastSourceInputNode::ReadSrcBuffer=<" + std::to_string(curReadPos_));
     while (!TryReadOneSpan(handlePos)) {
         int64_t wakeUpTime = ClockTime::GetCurNano();
         CHECK_AND_RETURN_LOG(PrepareNextLoop(wakeUpTime), "PrepareNextLoop failed");
         ClockTime::AbsoluteSleep(wakeUpTime);
-        CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(handlePos, handleTime), "GetDeviceHandleInfo failed after sleep");
-        CHECK_AND_RETURN_LOG(srcAudioBuffer_->SetCurWriteFrame(handlePos, false) == SUCCESS,
-            "SetCurWriteFrame failed after sleep");
+        handlePos = srcAudioBuffer_->GetCurWriteFrame();
     }
     readTrace.End();
     inputAudioBuffer_.SetBufferValid(true);
@@ -185,6 +183,7 @@ int32_t HpaeFastSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 
 int32_t HpaeFastSourceInputNode::CapturerSourceDeInit()
 {
+    StopUpdateThread();
     if (audioCapturerSource_ == nullptr || captureId_ == HDI_INVALID_ID) {
         return SUCCESS;
     }
@@ -224,6 +223,7 @@ int32_t HpaeFastSourceInputNode::CapturerSourcePause(void)
         ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Pause() == SUCCESS, ERROR, "Source pause fail");
+    StopUpdateThread();
     SetSourceState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
@@ -242,6 +242,8 @@ int32_t HpaeFastSourceInputNode::CapturerSourceResume(void)
         ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Resume() == SUCCESS, ERROR, "Source resume fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
+    stopUpdateThread_.store(false);
+    AsyncGetPosTime();
     needReSyncPosition_ = true;
     return SUCCESS;
 }
@@ -253,6 +255,8 @@ int32_t HpaeFastSourceInputNode::CapturerSourceStart(void)
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
+    stopUpdateThread_.store(false);
+    AsyncGetPosTime();
     needReSyncPosition_ = true;
     return SUCCESS;
 }
@@ -260,6 +264,7 @@ int32_t HpaeFastSourceInputNode::CapturerSourceStart(void)
 int32_t HpaeFastSourceInputNode::CapturerSourceStop(void)
 {
     SetSourceState(STREAM_MANAGER_SUSPENDED);
+    StopUpdateThread();
     if (audioCapturerSource_ == nullptr || captureId_ == HDI_INVALID_ID) {
         return SUCCESS;
     }
@@ -372,22 +377,46 @@ void HpaeFastSourceInputNode::InitAudiobuffer(bool resetReadWritePos)
     }
 }
 
-void HpaeFastSourceInputNode::ResetReadPosition()
+void HpaeFastSourceInputNode::AsyncGetPosTime()
 {
-    CHECK_AND_RETURN(srcAudioBuffer_ != nullptr);
+    CHECK_AND_RETURN(!updatePosTimeThread_.joinable());
+    updatePosTimeThread_ = std::thread([this]() {
+        while (!stopUpdateThread_.load()) {
+            uint64_t frames = 0;
+            int64_t nanoTime = 0;
+            (void)GetDeviceHandleInfo(frames, nanoTime);
+            std::unique_lock<std::mutex> lock(updateThreadLock_);
+            updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS),
+                [this]() { return stopUpdateThread_.load(); });
+        }
+    });
+}
+
+void HpaeFastSourceInputNode::StopUpdateThread()
+{
+    stopUpdateThread_.store(true);
+    updateThreadCV_.notify_all();
+    CHECK_AND_RETURN(updatePosTimeThread_.joinable());
+    updatePosTimeThread_.join();
+}
+
+bool HpaeFastSourceInputNode::ResetReadPosition()
+{
+    CHECK_AND_RETURN_RET(srcAudioBuffer_ != nullptr, false);
     uint64_t handlePos = 0;
     int64_t handleTime = 0;
-    CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(handlePos, handleTime), "GetDeviceHandleInfo failed");
+    CHECK_AND_RETURN_RET_LOG(GetDeviceHandleInfo(handlePos, handleTime), false, "GetDeviceHandleInfo failed");
     curReadPos_ = handlePos;
     srcAudioBuffer_->SetHandleInfo(handlePos, handleTime);
     writeTimeModel_.ResetFrameStamp(handlePos, handleTime);
     InitAudiobuffer(false);
-    CHECK_AND_RETURN_LOG(srcAudioBuffer_->ResetCurReadWritePos(handlePos, handlePos, false) == SUCCESS,
-        "ResetCurReadWritePos failed");
+    CHECK_AND_RETURN_RET_LOG(srcAudioBuffer_->ResetCurReadWritePos(handlePos, handlePos, false) == SUCCESS,
+        false, "ResetCurReadWritePos failed");
     SpanInfo *nextReadSapn = srcAudioBuffer_->GetSpanInfo(handlePos);
-    CHECK_AND_RETURN_LOG(nextReadSapn != nullptr, "GetSpanInfo failed.");
+    CHECK_AND_RETURN_RET_LOG(nextReadSapn != nullptr, false, "GetSpanInfo failed.");
     nextReadSapn->offsetInFrame = handlePos;
     nextReadSapn->spanStatus = SpanStatus::SPAN_WRITE_DONE;
+    return true;
 }
 
 bool HpaeFastSourceInputNode::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime)
@@ -409,6 +438,8 @@ bool HpaeFastSourceInputNode::GetDeviceHandleInfo(uint64_t &frames, int64_t &nan
     if (srcAudioBuffer_ != nullptr) {
         srcAudioBuffer_->SetHandleInfo(frames, nanoTime);
     }
+    posInFrame_.store(frames);
+    timeInNano_.store(nanoTime);
     return true;
 }
 

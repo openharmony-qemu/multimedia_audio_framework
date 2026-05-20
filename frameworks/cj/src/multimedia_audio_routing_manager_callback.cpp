@@ -89,6 +89,9 @@ void CjAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
+    if (func_ == nullptr) {
+        return;
+    }
     CArrDeviceDescriptor arr {};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptor(arr, desc, &errorCode);
