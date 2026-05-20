@@ -3328,13 +3328,12 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         audioInterrupt_.behaviorFlags_.voipNoPrivacyFlag = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
     }
-    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
-        audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
-        AUDIO_INFO_LOG("Capturer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
-    }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
         audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated PAUSE_WHEN_INTERRUPTED success", sessionID_);
+    } else if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
+        audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Capturer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
     }
     if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::AIBASE_MUTE_VOIP)) &&
         PermissionUtil::VerifySystemPermission()) {

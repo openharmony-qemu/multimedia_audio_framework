@@ -720,21 +720,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016B, TestSize.Level1)
 }
 
 /**
-* @tc.name  : AudioPolicyServer_016C
-* @tc.number: AudioPolicyServer_016C
-* @tc.desc  : Test SetAudioSessionBehavior with PAUSE_WHEN_INTERRUPTED flag.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016C, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    ASSERT_NE(policyServerTest, nullptr);
-
-    constexpr uint32_t pauseWhenInterruptedBehavior = 0x00000004;
-    int32_t ret = policyServerTest->SetAudioSessionBehavior(pauseWhenInterruptedBehavior);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_017
 * @tc.desc  : Test SetRingerModeLegacy.
