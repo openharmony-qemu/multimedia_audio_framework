@@ -45,6 +45,7 @@
           "audio_framework_feature_device_manager",
           "audio_framework_feature_mutesink_enable",
           "audio_framework_feature_audiosuite_support",
+          "audio_framework_feature_audiosuite_format_convert_support",
           "audio_framework_feature_multi_alarm_level",
           "audio_framework_feature_multi_bus",
           "audio_framework_feature_input_independent_routing_rule",
