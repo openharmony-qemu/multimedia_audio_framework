@@ -2298,7 +2298,6 @@ HWTEST_F(HpaeManagerUnitTest, EnableCaptureCollaboration_001, TestSize.Level1)
     EXPECT_NE(hpaeManager_, nullptr);
     // call without init, should not crash
     hpaeManager_->EnableCaptureCollaboration(0, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
 
     hpaeManager_->Init();
     sleep(1);
@@ -2306,7 +2305,6 @@ HWTEST_F(HpaeManagerUnitTest, EnableCaptureCollaboration_001, TestSize.Level1)
 
     // call with non-existent sourcePortIndex, should log and return
     hpaeManager_->EnableCaptureCollaboration(999, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
 }
 
 /**
