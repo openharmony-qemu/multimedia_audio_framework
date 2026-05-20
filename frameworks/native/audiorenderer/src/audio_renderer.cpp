@@ -1926,7 +1926,6 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
         ERROR_INVALID_PARAM, "loudnessGain set invalid");
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
@@ -1943,7 +1942,6 @@ float AudioRendererPrivate::GetLoudnessGain() const
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         0.0f, "low latency mode not supported");
 
