@@ -3024,13 +3024,6 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         }
     }
 
-    if (interruptEvent.hintType == INTERRUPT_HINT_STOP &&
-        audioInterrupt.behaviorFlags_.pauseWhenInterruptFlag) {
-        interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
-        AUDIO_INFO_LOG("Change STOP to PAUSE for streamId:%{public}u with PAUSE_WHEN_INTERRUPTED flag",
-            audioInterrupt.streamId);
-    }
-
     if (handler_ == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyServerHandler is nullptr");
         return;
