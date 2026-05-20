@@ -8282,27 +8282,6 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_004, TestSize
 }
 
 /**
- * @tc.name  : IsVoipPrivacyBypassedByBehavior_001
- * @tc.number: IsVoipPrivacyBypassedByBehavior_001
- * @tc.desc  : Test descriptor-based voipNoPrivacyFlag check.
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsVoipPrivacyBypassedByBehavior_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    auto streamDesc = CreateCapturerStreamDescriptorForVoipPrivacy(710101,
-        SOURCE_TYPE_VOICE_COMMUNICATION);
-    ASSERT_NE(streamDesc, nullptr);
-
-    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(nullptr));
-    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
-
-    streamDesc->voipNoPrivacyFlag_.store(true);
-    EXPECT_TRUE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
-}
-
-/**
  * @tc.name  : UpdateVoipNoPrivacyFlagBySessionId_001
  * @tc.number: UpdateVoipNoPrivacyFlagBySessionId_001
  * @tc.desc  : Test UpdateVoipNoPrivacyFlagBySessionId updates descriptor flag.
@@ -8355,34 +8334,34 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateVoipNoPrivacyFlagByPid_001, TestSize.Le
 }
 
 /**
- * @tc.name  : EvaluateActivePrivacyVoipPresence_001
- * @tc.number: EvaluateActivePrivacyVoipPresence_001
+ * @tc.name  : EvaluateActiveVoipPrivacyPresence_001
+ * @tc.number: EvaluateActiveVoipPrivacyPresence_001
  * @tc.desc  : Test active VOIP detection with muted and no-privacy exceptions.
  */
-HWTEST_F(AudioCoreServiceUnitTest, EvaluateActivePrivacyVoipPresence_001, TestSize.Level1)
+HWTEST_F(AudioCoreServiceUnitTest, EvaluateActiveVoipPrivacyPresence_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    bool hasActivePrivacyVoipCapturer = false;
+    bool hasActiveVoipPrivacyCapturer = false;
     auto activeVoip = CreateCapturerStreamDescriptorForVoipPrivacy(710105,
         SOURCE_TYPE_VOICE_COMMUNICATION);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_TRUE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_TRUE(hasActiveVoipPrivacyCapturer);
 
-    hasActivePrivacyVoipCapturer = true;
+    hasActiveVoipPrivacyCapturer = true;
     activeVoip->voipPriorityLowered_.store(true);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
 
-    hasActivePrivacyVoipCapturer = false;
+    hasActiveVoipPrivacyCapturer = false;
     activeVoip->voipPriorityLowered_.store(false);
     activeVoip->voipNoPrivacyFlag_.store(true);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
 }
 
 /**

@@ -797,16 +797,15 @@ private:
     int32_t ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
     std::string GetEnhancePropByName(const AudioEffectPropertyArray &oldPropertyArray, const std::string &propName);
     bool IsVoipPrivacyMuteCandidateSource(SourceType sourceType) const;
-    bool IsVoipPrivacyBypassedByBehavior(const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const;
     bool IsVoipPrivacyMuteBypassedForUltrasonic(SourceType sourceType) const;
     bool ShouldMuteCapturerByVoipPrivacy(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        bool hasActivePrivacyVoipCapturer) const;
-    void EvaluateActivePrivacyVoipPresence(
+        bool hasActiveVoipPrivacyCapturer) const;
+    void EvaluateActiveVoipPrivacyPresence(
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-        bool &hasActivePrivacyVoipCapturer) const;
+        bool &hasActiveVoipPrivacyCapturer) const;
     void CollectSessionsToMuteByVoipPrivacy(
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-        bool hasActivePrivacyVoipCapturer,
+        bool hasActiveVoipPrivacyCapturer,
         std::unordered_set<uint32_t> &targetMuteSessions) const;
     void SyncVoipPrivacyMuteState(
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
