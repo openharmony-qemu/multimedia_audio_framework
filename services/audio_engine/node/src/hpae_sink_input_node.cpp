@@ -64,6 +64,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    isNonStandardSampleRate_ = IsNonStandardSampleRate(nodeInfo.GetEffectiveSampleRate());
 }
 
 HpaeSinkInputNode::~HpaeSinkInputNode()
@@ -324,6 +325,11 @@ bool HpaeSinkInputNode::GetDirect() const noexcept
     return isDirect_;
 }
 
+bool HpaeSinkInputNode::GetIsNonStandardSampleRate() const
+{
+    return isNonStandardSampleRate_;
+}
+
 void HpaeSinkInputNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
 {
     // If frameLen changed, reset pcm bufer
@@ -346,6 +352,7 @@ void HpaeSinkInputNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
         }
     }
     HpaeNode::SetNodeInfo(nodeInfo);
+    isNonStandardSampleRate_ = IsNonStandardSampleRate(nodeInfo.GetEffectiveSampleRate());
 }
 
 int32_t HpaeSinkInputNode::SetLoudnessGain(float loudnessGain)
@@ -385,8 +392,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
             "writeCallback is null, fatal err", false),
         "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
-    // offload enable or direct, never force data
-    bool forceData = (offloadEnable_ | isDirect_) ? false : true;
+    // offload enable, direct, or non-standard sample rate: never force data
+    bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_) ? false : true;
     uint64_t latency = 0;
     OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();

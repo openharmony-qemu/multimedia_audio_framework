@@ -72,6 +72,7 @@ public:
     void TriggerClientWake();
     void SetDirect(bool isDirect);
     bool GetDirect() const noexcept;
+    bool GetIsNonStandardSampleRate() const;
     void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
 
     bool isConnected_ = false;
@@ -102,6 +103,7 @@ private:
     uint32_t standbyCounter_ = 0;
     bool isLowLatency_ = false;
     bool isDirect_ = false;
+    bool isNonStandardSampleRate_ = false;
 };
 
 }  // namespace HPAE
