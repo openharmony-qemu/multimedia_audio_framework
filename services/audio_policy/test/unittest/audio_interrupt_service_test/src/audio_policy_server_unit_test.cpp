@@ -728,32 +728,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016C, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     ASSERT_NE(policyServerTest, nullptr);
-    policyServerTest->coreService_ = AudioCoreService::GetCoreService();
-    policyServerTest->eventEntry_ =
-        std::make_shared<AudioCoreService::EventEntry>(policyServerTest->coreService_);
-
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    ASSERT_NE(pipeManager, nullptr);
-    pipeManager->curPipeList_.clear();
-
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = 816003;
-    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
-    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
-    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    streamDesc->callerPid_ = IPCSkeleton::GetCallingPid();
-    pipeInfo->streamDescriptors_.push_back(streamDesc);
-    pipeManager->AddAudioPipeInfo(pipeInfo);
 
     constexpr uint32_t pauseWhenInterruptedBehavior = 0x00000004;
     int32_t ret = policyServerTest->SetAudioSessionBehavior(pauseWhenInterruptedBehavior);
     EXPECT_EQ(ret, SUCCESS);
-
-    pipeManager->curPipeList_.clear();
 }
 
 /**
