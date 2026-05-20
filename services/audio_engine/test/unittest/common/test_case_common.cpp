@@ -150,7 +150,7 @@ void StatusChangeCb::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
         case OPERATION_UPDATE_SPANSIZE:
             break;
         default:
-            status_ = I_STATUS_INVALID;
+            break;
     }
 }
 

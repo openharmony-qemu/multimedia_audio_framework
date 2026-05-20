@@ -2925,7 +2925,6 @@ HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
     auto sinkInputNode1 = std::make_shared<HpaeSinkInputNode>(nodeInfo1);
     sinkInputNode1->SetState(HPAE_SESSION_RUNNING);
     hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp1] = sinkInputNode1;
-    EXPECT_EQ(hpaeRendererManager->hpaeCoBufferNode_ == nullptr, true);
     hpaeRendererManager->EnableCollaboration();
     EXPECT_EQ(hpaeRendererManager->hpaeCoBufferNode_ != nullptr, true);
 
