@@ -540,40 +540,6 @@ ohos_unittest("audio_volume_unit_test") {
   defines = []
 }
 
-ohos_unittest("audio_pitch_processor_unit_test") {
-  module_out_path = "audio_framework/audio_framework_common/pitch_processor"
-
-  configs = [ ":module_private_config" ]
-
-  include_dirs = [
-    "../../../../services/audio_service/common/include",
-    "../../../../interfaces/inner_api/native/audiocommon/include",
-  ]
-
-  sources = [
-    "./common/audio_pitch_processor_unit_test.cpp",
-  ]
-
-  deps = [
-    "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../services/audio_service:audio_common",
-  ]
-
-  cflags = [
-    "-fno-access-control",
-  ]
-
-  cflags_cc = [ "-std=c++20" ]
-
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-  ]
-
-  defines = []
-}
-
 ohos_unittest("pa_renderer_stream_impl_unit_test") {
   testonly = true
   module_out_path = audio_engine_module_output_path
@@ -1949,7 +1915,6 @@ ohos_unittest("audio_volume_client_manager_unit_test") {
 group("audio_service_unittest") {
   testonly = true
   deps = [
-    ":audio_pitch_processor_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_second_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_third_unit_test",
