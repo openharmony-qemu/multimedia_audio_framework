@@ -17,6 +17,9 @@
 #endif
 
 #include "audio_pipe_manager.h"
+
+#include <utility>
+
 #include "audio_injector_policy.h"
 #include "audio_definition_adapter_info.h"
 #include "audio_definition_policy_utils.h"
@@ -36,6 +39,7 @@ const uint32_t VOIP_SESSIONID = 2;
 const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 const uint32_t DEFAULT_PIPE_ID = 0;
+static const char *REQUIRED_PIPE_KEY_SEPARATOR = "#";
 constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
@@ -51,7 +55,9 @@ bool AudioPipeManager::Init()
     if (audioConfigManager_.GetAdapterInfoFlag()) {
         return true;
     }
-    return audioConfigManager_.Init();
+    bool ret = audioConfigManager_.Init();
+    InitRequiredPipes();
+    return ret;
 }
 
 
@@ -179,6 +185,13 @@ AudioPipeManager::~AudioPipeManager()
 
 void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
+    if (AddAudioPipeInfoInner(info)) {
+        NotifyRequiredPipesReady();
+    }
+}
+
+bool AudioPipeManager::AddAudioPipeInfoInner(std::shared_ptr<AudioPipeInfo> info)
+{
     Trace trace("AudioPipeManager::AddAudioPipeInfo");
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     auto streamInfo = info->audioStreamInfo_;
@@ -188,6 +201,91 @@ void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
     // Action is only used in pipe execution, while pipeManager can only store default action
     info->pipeAction_ = PIPE_ACTION_DEFAULT;
     curPipeList_.push_back(info);
+    return UpdateRequiredPipesReadyStateLocked(info);
+}
+
+void AudioPipeManager::SetRequiredPipesReadyCallback(RequiredPipesReadyCallback callback)
+{
+    std::lock_guard<std::mutex> lock(requiredPipesReadyCallbackMutex_);
+    requiredPipesReadyCallback_ = std::move(callback);
+}
+
+void AudioPipeManager::InitRequiredPipes()
+{
+    auto pipes = audioConfigManager_.GetRequiredPipes();
+    bool shouldNotifyRequiredPipesReady = false;
+    {
+        std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+        requiredPipesInited_ = false;
+        requiredPipesReady_ = false;
+        requiredPipeKeys_.clear();
+        addedRequiredPipeKeys_.clear();
+        for (const auto &pipe : pipes) {
+            requiredPipeKeys_.insert(GetRequiredPipeKey(pipe.adapterName, pipe.routeFlag));
+        }
+        requiredPipesInited_ = true;
+        UpdateRequiredPipeAddedStateLocked(curPipeList_);
+        requiredPipesReady_ = IsRequiredPipesReadyLocked();
+        shouldNotifyRequiredPipesReady = requiredPipesReady_;
+    }
+
+    CHECK_AND_RETURN(shouldNotifyRequiredPipesReady);
+    NotifyRequiredPipesReady();
+}
+
+std::string AudioPipeManager::GetRequiredPipeKey(const std::string &adapterName, uint32_t routeFlag)
+{
+    return adapterName + REQUIRED_PIPE_KEY_SEPARATOR + std::to_string(routeFlag);
+}
+
+bool AudioPipeManager::IsRequiredPipesReadyLocked()
+{
+    return requiredPipeKeys_.empty() || addedRequiredPipeKeys_.size() == requiredPipeKeys_.size();
+}
+
+bool AudioPipeManager::UpdateRequiredPipesReadyStateLocked(const std::shared_ptr<AudioPipeInfo> &pipeInfo)
+{
+    CHECK_AND_RETURN_RET(requiredPipesInited_ && !requiredPipesReady_, false);
+    CHECK_AND_RETURN_RET(UpdateRequiredPipeAddedStateLocked(pipeInfo), false);
+    requiredPipesReady_ = IsRequiredPipesReadyLocked();
+    return requiredPipesReady_;
+}
+
+bool AudioPipeManager::UpdateRequiredPipesReadyStateLocked(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
+    CHECK_AND_RETURN_RET(requiredPipesInited_ && !requiredPipesReady_, false);
+    CHECK_AND_RETURN_RET(UpdateRequiredPipeAddedStateLocked(pipeInfos), false);
+    requiredPipesReady_ = IsRequiredPipesReadyLocked();
+    return requiredPipesReady_;
+}
+
+bool AudioPipeManager::UpdateRequiredPipeAddedStateLocked(const std::shared_ptr<AudioPipeInfo> &pipeInfo)
+{
+    CHECK_AND_RETURN_RET(pipeInfo != nullptr, false);
+    std::string pipeKey = GetRequiredPipeKey(pipeInfo->adapterName_, pipeInfo->routeFlag_);
+    CHECK_AND_RETURN_RET(requiredPipeKeys_.find(pipeKey) != requiredPipeKeys_.end(), false);
+    addedRequiredPipeKeys_.insert(pipeKey);
+    return true;
+}
+
+bool AudioPipeManager::UpdateRequiredPipeAddedStateLocked(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
+    bool hasRequiredPipeAdded = false;
+    for (const auto &pipeInfo : pipeInfos) {
+        hasRequiredPipeAdded = UpdateRequiredPipeAddedStateLocked(pipeInfo) || hasRequiredPipeAdded;
+    }
+    return hasRequiredPipeAdded;
+}
+
+void AudioPipeManager::NotifyRequiredPipesReady()
+{
+    RequiredPipesReadyCallback callback;
+    {
+        std::lock_guard<std::mutex> lock(requiredPipesReadyCallbackMutex_);
+        callback = requiredPipesReadyCallback_;
+    }
+    CHECK_AND_RETURN(callback != nullptr);
+    callback();
 }
 
 void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
@@ -659,6 +757,12 @@ uint32_t AudioPipeManager::QueryPipeIdBySessionId(uint32_t sessionId)
 
 void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
+    CHECK_AND_RETURN(UpdateRendererPipeInfosInner(pipeInfos));
+    NotifyRequiredPipesReady();
+}
+
+bool AudioPipeManager::UpdateRendererPipeInfosInner(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> tempList;
     for (auto &pipeInfo : curPipeList_) {
@@ -676,9 +780,16 @@ void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<Audio
     }
     curPipeList_.clear();
     curPipeList_ = tempList;
+    return UpdateRequiredPipesReadyStateLocked(pipeInfos);
 }
 
 void AudioPipeManager::UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
+    CHECK_AND_RETURN(UpdateCapturerPipeInfosInner(pipeInfos));
+    NotifyRequiredPipesReady();
+}
+
+bool AudioPipeManager::UpdateCapturerPipeInfosInner(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
     Trace trace("AudioPipeManager::UpdateCapturerPipeInfos");
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -697,6 +808,7 @@ void AudioPipeManager::UpdateCapturerPipeInfos(std::vector<std::shared_ptr<Audio
     }
     curPipeList_.clear();
     curPipeList_ = tempList;
+    return UpdateRequiredPipesReadyStateLocked(pipeInfos);
 }
 
 uint32_t AudioPipeManager::PcmOffloadSessionCount()

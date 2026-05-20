@@ -6209,6 +6209,7 @@ ohos_unittest("audio_pipe_manager_unit_test") {
   sources = [
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_extended_test.cpp",
+    "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_required_pipe_test.cpp",
   ]
 
   deps = [

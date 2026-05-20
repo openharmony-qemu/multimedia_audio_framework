@@ -17,6 +17,9 @@
 #endif
 
 #include "audio_core_config_manager.h"
+
+#include <algorithm>
+
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
@@ -1291,6 +1294,18 @@ bool AudioCoreConfigManager::IsDeviceSimulated(std::shared_ptr<AudioDeviceDescri
         desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
     CHECK_AND_RETURN_RET(deviceInfo != nullptr, false);
     return deviceInfo->isSimulated_;
+}
+
+void AudioCoreConfigManager::AddRequiredPipe(const RequiredPipeInfo &pipeInfo)
+{
+    requiredPipes_.push_back(pipeInfo);
+    AUDIO_INFO_LOG("Add required pipe, adapter: %{public}s, routeFlag: %{public}u",
+        pipeInfo.adapterName.c_str(), pipeInfo.routeFlag);
+}
+
+std::vector<RequiredPipeInfo> AudioCoreConfigManager::GetRequiredPipes()
+{
+    return requiredPipes_;
 }
 }
 }

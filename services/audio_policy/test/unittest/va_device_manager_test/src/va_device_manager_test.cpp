@@ -26,6 +26,13 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+static std::shared_ptr<AudioCoreService::EventEntry> CreateEventEntry(
+    const std::shared_ptr<AudioCoreService> &coreService)
+{
+    return std::make_shared<AudioCoreService::EventEntry>(
+        coreService, coreService->readyConditionNotifier_);
+}
+
 void VADeviceManagerTest::SetUpTestCase(void) {}
 void VADeviceManagerTest::TearDownTestCase(void) {}
 void VADeviceManagerTest::SetUp(void) {}
@@ -53,7 +60,7 @@ HWTEST_F(VADeviceManagerTest, VADeviceManagerTest_001, TestSize.Level1)
     ASSERT_NE(controller, nullptr);
 
     auto coreService = std::make_shared<AudioCoreService>();
-    AudioCoreService::GetCoreService()->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    AudioCoreService::GetCoreService()->eventEntry_ = CreateEventEntry(coreService);
 
     vADeviceManager->OnDevicesConnected(vaDevice, controller);
     EXPECT_NE(vaDevice, nullptr);
@@ -73,7 +80,7 @@ HWTEST_F(VADeviceManagerTest, VADeviceManagerTest_002, TestSize.Level1)
     vADeviceManager->connectedVADeviceMap_.clear();
 
     auto coreService = std::make_shared<AudioCoreService>();
-    AudioCoreService::GetCoreService()->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    AudioCoreService::GetCoreService()->eventEntry_ = CreateEventEntry(coreService);
 
     vADeviceManager->OnDevicesDisconnected(vaDevice);
     EXPECT_NE(vaDevice, nullptr);
@@ -105,7 +112,7 @@ HWTEST_F(VADeviceManagerTest, VADeviceManagerTest_003, TestSize.Level1)
     vADeviceManager->connectedVADeviceMap_.insert(std::make_pair("device2", nullptr));
 
     auto coreService = std::make_shared<AudioCoreService>();
-    AudioCoreService::GetCoreService()->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    AudioCoreService::GetCoreService()->eventEntry_ = CreateEventEntry(coreService);
 
     vADeviceManager->OnDevicesDisconnected(vaDevice);
     EXPECT_NE(vaDevice, nullptr);

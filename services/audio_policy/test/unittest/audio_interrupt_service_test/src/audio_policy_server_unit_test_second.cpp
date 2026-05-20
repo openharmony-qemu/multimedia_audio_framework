@@ -26,6 +26,14 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+static std::shared_ptr<AudioCoreService::EventEntry> CreateEventEntry(
+    const std::shared_ptr<AudioCoreService> &coreService)
+{
+    return std::make_shared<AudioCoreService::EventEntry>(
+        coreService, coreService->readyConditionNotifier_);
+}
+
 /**
  * @tc.name  : Test AudioPolicyServer.
  * @tc.number: AudioPolicyServer_169
@@ -300,7 +308,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_212, TestSize.Level1)
 
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
-    audioPolicyServer->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    audioPolicyServer->eventEntry_ = CreateEventEntry(audioCoreService);
     EXPECT_NE(audioPolicyServer->eventEntry_, nullptr);
 
     AudioCapturerInfo captureInfo;

@@ -575,7 +575,13 @@ void Test(FuzzedDataProvider& fdp)
 void Init()
 {
     audioCoreService = std::make_shared<AudioCoreService>();
-    eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    eventEntry = std::make_shared<AudioCoreService::EventEntry>(
+        audioCoreService, audioCoreService->readyConditionNotifier_);
+    audioCoreService->pipeManager_->SetRequiredPipesReadyCallback([]() {
+        audioCoreService->NotifyRequiredPipesReady();
+    });
+    audioCoreService->pipeManager_->InitRequiredPipes();
+    eventEntry->NotifyServiceReady();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
