@@ -743,7 +743,7 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const std::string devic
     //audioSpatialization storage information:
     //format: encryptedAddress(str)|spatializationEnabled(bool)|headTrackingEnabled(bool)|
     //        isSpatializationSupported(bool)|isHeadTrackingSupported(bool)|spatialDeviceType(AudioSpatialDeviceType)|
-    //        adaptiveSpatialRenderingEnabled(bool)|personalizedSpatializationEnabled(bool)||timeStamp(str)
+    //        adaptiveSpatialRenderingEnabled(bool)|personalizedSpatializationEnabled(bool)|timeStamp(str)
     //example: xxxxxxx|1|0|1|1|4|1|0|1755764
     //If you want to modify, add, or delete fields in the future, you need to consider the compatibility.
     //For example OTA.
