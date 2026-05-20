@@ -89,6 +89,7 @@
     *ReportPlaybackCaptureUserChoice*;
     *CheckInnerCapVoIP*;
     *ReportWakeupEvent*;
+    *SetAncoRecordingConfigChanged*;
   local:
     *;
 };

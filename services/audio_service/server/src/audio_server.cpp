@@ -3740,6 +3740,14 @@ int32_t AudioServer::ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTr
     (void)close(fd);
     return SUCCESS;
 }
+
+int32_t AudioServer::SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudioBroker(), ERR_OPERATION_FAILED, "Not audio broker calling");
+    AudioService::GetInstance()->SetAncoRecordingConfigChanged(bundleNameList);
+    return SUCCESS;
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

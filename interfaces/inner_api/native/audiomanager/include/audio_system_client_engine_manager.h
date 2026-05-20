@@ -180,6 +180,14 @@ public:
      * @since 26
      */
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo);
+
+    /**
+     * @brief set anco record config change.
+     *
+     * @param bundleNameList bundleNameList.
+     * @since 26
+     */
+    int32_t SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList);
 private:
     AudioSystemClientEngineManager() = default;
     ~AudioSystemClientEngineManager() = default;

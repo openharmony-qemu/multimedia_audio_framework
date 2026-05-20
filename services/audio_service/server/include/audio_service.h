@@ -150,6 +150,7 @@ public:
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
     void CheckInnerCapVoIP(uint32_t sessionId);
+    void SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
