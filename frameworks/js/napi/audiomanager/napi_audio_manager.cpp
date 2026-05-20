@@ -72,7 +72,7 @@ NapiAudioManager* NapiAudioManager::GetParamWithSync(const napi_env &env, napi_c
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "GetParamWithSync fail to napi_get_cb_info");
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioManager);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioManager));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiAudioManager != nullptr && napiAudioManager->audioMngr_ !=
         nullptr, napiAudioManager, "GetParamWithSync fail to napi_unwrap");

@@ -864,7 +864,7 @@ NapiAudioEnum* NapiAudioEnum::SetValue(napi_env env, napi_callback_info info, na
         return nullptr;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioEnum));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, napiAudioEnum, "napi_unwrap failed");
 
     napi_valuetype valueType = napi_undefined;
@@ -886,7 +886,7 @@ NapiAudioEnum* NapiAudioEnum::GetValue(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioEnum));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, napiAudioEnum, "napi_unwrap failed");
     if (!((napiAudioEnum != nullptr) && (napiAudioEnum->audioParameters_ != nullptr))) {
         AUDIO_ERR_LOG("GetValue fail to napi_unwrap");

@@ -82,7 +82,9 @@ static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
         auto sinkFormat_end = deviceInfo.find_first_of(" ", sinkFormat_begin);
         string format = deviceInfo.substr(sinkFormat_begin + std::strlen("format="),
             sinkFormat_end - sinkFormat_begin - std::strlen("format="));
-        if (!format.empty()) moduleInfo.format = format;
+        if (!format.empty()) {
+            moduleInfo.format = format;
+        }
 
         auto sinkChannel_begin = deviceInfo.find("channels=");
         auto sinkChannel_end = deviceInfo.find_first_of(" ", sinkChannel_begin);
