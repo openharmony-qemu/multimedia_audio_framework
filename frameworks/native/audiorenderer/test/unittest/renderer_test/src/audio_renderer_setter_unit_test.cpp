@@ -2583,6 +2583,42 @@ HWTEST(AudioRendererUnitTest, SetIndependentAudioSessionStrategy_001, TestSize.L
 }
 
 /**
+ * @tc.name  : Test SetIndependentAudioSessionStrategy PAUSE_WHEN_INTERRUPTED
+ * @tc.number: SetIndependentAudioSessionStrategy_002
+ * @tc.desc  : Test SetIndependentAudioSessionStrategy with PAUSE_WHEN_INTERRUPTED flag
+ */
+HWTEST(AudioRendererUnitTest, SetIndependentAudioSessionStrategy_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    AudioSessionStrategy strategy = {};
+    uint32_t behavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED);
+    audioRendererPrivate->SetIndependentAudioSessionStrategy(strategy, behavior);
+    bool res = audioRendererPrivate->audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag;
+    EXPECT_TRUE(res);
+}
+
+/**
+ * @tc.name  : Test SetIndependentAudioSessionStrategy without PAUSE_WHEN_INTERRUPTED
+ * @tc.number: SetIndependentAudioSessionStrategy_003
+ * @tc.desc  : Test SetIndependentAudioSessionStrategy without PAUSE_WHEN_INTERRUPTED flag
+ */
+HWTEST(AudioRendererUnitTest, SetIndependentAudioSessionStrategy_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    AudioSessionStrategy strategy = {};
+    uint32_t behavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED);
+    audioRendererPrivate->SetIndependentAudioSessionStrategy(strategy, behavior);
+    bool res = audioRendererPrivate->audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag;
+    EXPECT_FALSE(res);
+}
+
+/**
  * @tc.name  : Test SetMainUseArk
  * @tc.number: SetMainUseArk_001
  * @tc.desc  : Test SetMainUseArk interface when isFirstSetMainUseArk_ is true

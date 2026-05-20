@@ -833,5 +833,48 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_030, TestSize.
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
+/**
+* @tc.name  : Test SetAudioSessionBehavior with PAUSE_WHEN_INTERRUPTED
+* @tc.number: AudioSessionServiceUnitTest_031
+* @tc.desc  : Test SetAudioSessionBehavior with PAUSE_WHEN_INTERRUPTED flag
+*/
+HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_031, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+
+    constexpr uint32_t pauseWhenInterruptedBehavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED);
+    int32_t ret = audioSessionService_.SetAudioSessionBehavior(callerPid, pauseWhenInterruptedBehavior, 1);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto behaviors = audioSessionService_.GetSessionBehaviors(callerPid);
+    EXPECT_TRUE(behaviors.pauseWhenInterruptFlag);
+    EXPECT_FALSE(behaviors.muteWhenInterruptFlag);
+}
+
+/**
+* @tc.name  : Test SetAudioSessionBehavior with multiple flags
+* @tc.number: AudioSessionServiceUnitTest_032
+* @tc.desc  : Test SetAudioSessionBehavior with PAUSE_WHEN_INTERRUPTED and MUTE_WHEN_INTERRUPTED flags
+*/
+HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_032, TestSize.Level1)
+{
+    int32_t callerPid = 2;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+
+    constexpr uint32_t combinedBehavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED) |
+        static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED);
+    int32_t ret = audioSessionService_.SetAudioSessionBehavior(callerPid, combinedBehavior, 2);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto behaviors = audioSessionService_.GetSessionBehaviors(callerPid);
+    EXPECT_TRUE(behaviors.pauseWhenInterruptFlag);
+    EXPECT_TRUE(behaviors.muteWhenInterruptFlag);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
