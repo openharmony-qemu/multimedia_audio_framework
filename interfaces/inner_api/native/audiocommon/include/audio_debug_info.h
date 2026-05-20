@@ -77,6 +77,8 @@ struct AudioRendererDebugInfo {
 
     int32_t hintType = -1;
     std::string historyHintType = "";
+    bool muteWhenInterrupted = false;
+    bool pauseWhenInterrupted = false;
 };
 
 struct AudioCapturerDebugInfo {
@@ -92,6 +94,7 @@ struct AudioCapturerDebugInfo {
     uint64_t bufferSize = 0;
     uint32_t overflowCount = 0;
     bool muteWhenInterrupted = false;
+    bool pauseWhenInterrupted = false;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     AudioPipeRole pipeRole = PIPE_ROLE_INPUT;
     AudioStreamInfo pipeStreamInfo = AudioStreamInfo(SAMPLE_RATE_8000, AudioEncodingType::ENCODING_PCM,
@@ -255,6 +258,7 @@ struct AudioDebugInfo : public Parcelable {
     uint64_t captureBufferSize = 0;
     uint32_t captureOverflowCount = 0;
     bool muteWhenInterrupted = false;
+    bool pauseWhenInterrupted = false;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
 
     // debug info about loopback
@@ -356,6 +360,7 @@ struct AudioDebugInfo : public Parcelable {
             parcel.WriteUint64(captureBufferSize) &&
             parcel.WriteUint32(captureOverflowCount) &&
             parcel.WriteBool(muteWhenInterrupted) &&
+            parcel.WriteBool(pauseWhenInterrupted) &&
             inputDeviceInfo.Marshalling(parcel);
     }
 
@@ -477,6 +482,7 @@ struct AudioDebugInfo : public Parcelable {
         captureBufferSize = parcel.ReadUint64();
         captureOverflowCount = parcel.ReadUint32();
         muteWhenInterrupted = parcel.ReadBool();
+        pauseWhenInterrupted = parcel.ReadBool();
         inputDeviceInfo.UnmarshallingSelf(parcel);
         return true;
     }

@@ -3726,6 +3726,10 @@ int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
         audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Renderer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
     }
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
+        audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Renderer id: %{public}d activated PAUSE_WHEN_INTERRUPTED success", sessionID_);
+    }
     audioInterrupt_.independentStrategy = strategy;
     AUDIO_INFO_LOG("Renderer id: %{public}d set independentStrategy: %{public}d",
         sessionID_, static_cast<int32_t>(strategy.concurrencyMode));
