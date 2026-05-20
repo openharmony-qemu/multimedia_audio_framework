@@ -63,7 +63,7 @@ AudioStaticBufferProcessor::~AudioStaticBufferProcessor()
     }
 }
 
-int32_t AudioStaticBufferProcessor::ProcessBufferSpeed(float speed)
+int32_t AudioStaticBufferProcessor::ProcessBufferSpeed(float speed, float sonicPitch)
 {
     if (isEqual(speed, SPEED_NORMAL)) {
         return SUCCESS;
@@ -76,7 +76,7 @@ int32_t AudioStaticBufferProcessor::ProcessBufferSpeed(float speed)
     auto newTempBuffer = std::make_unique<uint8_t[]>(estimatedSize);
     
     audioSpeed_->SetSpeed(speed);
-    audioSpeed_->SetPitch(PITCH_DEFAULT);
+    audioSpeed_->SetPitch(sonicPitch);
     
     int32_t outBufferSize = 0;
     if (audioSpeed_->ChangeSpeedFunc(inputBuffer, inputSize,

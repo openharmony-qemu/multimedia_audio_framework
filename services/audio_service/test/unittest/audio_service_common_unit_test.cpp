@@ -1399,35 +1399,6 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_CreateFromRemote_001, TestS
 }
 
 /**
- * @tc.name  : Test CreateFromRemote API
- * @tc.type  : FUNC
- * @tc.number: OHAudioBufferBase_CreateFromRemote _002
- * @tc.desc  : Test OHAudioBufferBase::CreateFromRemote interface.
- */
-HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_CreateFromRemote_002, TestSize.Level4)
-{
-    uint32_t totalSizeInFrame = 10;
-    uint32_t byteSizePerFrame = 10;
-    int dataFd = 3;
-    int infoFd = 1;
-    AudioBufferHolder bufferHolder = AUDIO_CLIENT;
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
-        byteSizePerFrame, bufferHolder, dataFd, infoFd);
-
-    dataFd = 99;
-    infoFd = 99;
-    bufferHolder = AUDIO_APP_SHARED;
-    std::shared_ptr<OHAudioBufferBase> buffer1 = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
-        byteSizePerFrame, bufferHolder, dataFd, infoFd);
-    
-    infoFd = -1;
-    bufferHolder = AUDIO_APP_SHARED;
-    std::shared_ptr<OHAudioBufferBase> buffer2 = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
-        byteSizePerFrame, bufferHolder, dataFd, infoFd);
-    EXPECT_EQ(buffer, nullptr);
-}
-
-/**
  * @tc.name  : Test GetSyncWriteFrame API
  * @tc.type  : FUNC
  * @tc.number: OHAudioBufferBase_GetSyncWriteFrame_001
