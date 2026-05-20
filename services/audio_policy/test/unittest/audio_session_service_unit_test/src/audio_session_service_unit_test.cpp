@@ -845,7 +845,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_031, TestSize.
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
     audioSessionService_.sessionMap_[callerPid] = audioSession;
 
-    constexpr uint32_t pauseWhenInterruptedBehavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED);
+    constexpr uint32_t pauseWhenInterruptedBehavior =
+        static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED);
     int32_t ret = audioSessionService_.SetAudioSessionBehavior(callerPid, pauseWhenInterruptedBehavior, 1);
     EXPECT_EQ(ret, SUCCESS);
 
