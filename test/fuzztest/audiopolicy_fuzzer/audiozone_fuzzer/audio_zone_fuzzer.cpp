@@ -428,7 +428,8 @@ void AudioZoneEnableSystemVolumeProxyFuzzTest(FuzzedDataProvider& fdp)
 void AudioZoneSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = ConsumeString(fdp, "testAudioZone");
-    AudioVolumeType volumeProxyClientPid = static_cast<AudioVolumeType>(PickValue(fdp, g_testAudioStreamTypes));
+    AudioVolumeType volumeProxyClientPid =
+        static_cast<AudioVolumeType>(PickValue(fdp, g_testAudioStreamTypes));
     int32_t volumeLevel = fdp.ConsumeIntegral<int32_t>();
     int32_t volumeFlag = fdp.ConsumeIntegral<int32_t>();
     AudioZoneContext context;
@@ -442,7 +443,8 @@ void AudioZoneSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 void AudioZoneGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = ConsumeString(fdp, "testAudioZone");
-    AudioVolumeType volumeProxyClientPid = static_cast<AudioVolumeType>(PickValue(fdp, g_testAudioStreamTypes));
+    AudioVolumeType volumeProxyClientPid =
+        static_cast<AudioVolumeType>(PickValue(fdp, g_testAudioStreamTypes));
     AudioZoneContext context;
     std::shared_ptr<AudioZoneClientManager> zoneClientManager;
     std::shared_ptr<AudioZone> zone =
