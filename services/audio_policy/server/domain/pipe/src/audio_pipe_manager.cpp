@@ -1660,6 +1660,19 @@ std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForP
     return pipeDeviceVolumeGroups;
 }
 
+std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForPipe(
+    std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, {}, "pipeInfo is null");
+    CHECK_AND_RETURN_RET_LOG(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT, {}, "pipe is not output role");
+
+    std::vector<PipeDeviceVolumeGroup> pipeDeviceVolumeGroups;
+
+    ProcessPipeForVolumeInfo(pipeDeviceVolumeGroups, pipeInfo);
+    
+    return pipeDeviceVolumeGroups;
+}
+
 std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForDevice(
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
 {
