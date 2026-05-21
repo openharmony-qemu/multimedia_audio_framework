@@ -43,6 +43,7 @@
 #include "audio_interrupt_custom.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
+#include "audio_collaborative_service.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -802,6 +803,17 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 {
     Trace trace("IsStreamSupportMultiChannel");
 
+    // MultiChannel:collaboration playback, nearlink
+    if (AudioCollaborativeSerivce::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->newDeviceDescs_[0]) && streamDesc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_NEARLINK &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->rendererInfo_.streamUsage) &&
+        !CheckRingAndVoipStreamRunning()) {
+            streamDesc->isNearLinkCollaborationEnable = true;
+            JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable true");
+            return;
+    }
+    streamDesc->isNearLinkCollaborationEnable = false;
+
     if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
         pipeManager_->PreferMultiChannelPipe(streamDesc)) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "AudioVivid encoding and MultiChannelPipe supported");
@@ -855,6 +867,8 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     }
     auto ret = AudioSpatializationService::GetAudioSpatializationService().IsSpatializationEnabled(
         streamDesc->newDeviceDescs_[0]->macAddress_)  &&
+        AudioCollaborativeSerivce::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->newDeviceDescs_[0]) &&
         !(AudioSpatializationService::GetAudioSpatializationService().IsAdaptiveSpatialRenderingEnabled(
             streamDesc->newDeviceDescs_[0]->macAddress_) &&
         streamDesc->streamInfo_.channels <= STEREO &&
@@ -973,6 +987,9 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ = GetFlagForMmapStream(streamDesc);
+            if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_NORMAL) {
+                break;
+            }
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ =

@@ -666,6 +666,12 @@ void ProAudioServiceAdapterImpl::OnUpdatePersonalizedHRTFBinCb(int32_t result)
     personalizedHRTFBinUpdateResult_ = result;
     callbackCV_.notify_all();
 }
+
+bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().IsCollaborationSupportedForStreamUsage(streamUsage);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

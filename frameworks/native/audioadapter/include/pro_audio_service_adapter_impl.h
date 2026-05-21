@@ -90,6 +90,7 @@ public:
     virtual void OnGetCollaborativeUpdateCb(int32_t result) override;
     virtual void OnUpdatePersonalizedHRTFBinCb(int32_t result) override;
     virtual void OnUpdateSpatializationStateCb(int32_t result) override;
+    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) NOT_SUPPORT_RET
 
 private:
     std::mutex lock_;

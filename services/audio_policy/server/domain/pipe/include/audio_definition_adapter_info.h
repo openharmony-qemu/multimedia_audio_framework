@@ -127,6 +127,7 @@ public:
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
     AudioChannel channels_ = CHANNEL_UNKNOW;
     uint32_t bufferSize_ = 0;
+    bool isCollaborationEnable = false;
 
     std::weak_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<std::string> supportDevices_ {};

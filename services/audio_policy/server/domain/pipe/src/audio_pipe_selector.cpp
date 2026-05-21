@@ -548,6 +548,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
         if (newPipeIter != newPipeInfoList.end()) {
             MatchSpecialRemotePipe(streamPropInfo, *newPipeIter, streamDesc);
+            MatchCollaborativePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchUltraFastPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -1216,6 +1217,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.adapterName_ = adapterInfoPtr->adapterName;
     info.pipeRole_ = pipeInfoPtr->role_;
     info.name_ = pipeInfoPtr->name_;
+    info.isCollaborationEnable = streamPropInfo->isCollaborationEnable;
     info.InitAudioStreamInfo();
 }
 
@@ -1351,6 +1353,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 #endif
 
         MatchSpecialRemotePipe(streamPropInfo, pipeInfo, streamDesc);
+        MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
 
         if (((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST) || (pipeInfo->GetRoute() & AUDIO_INPUT_FLAG_FAST)) &&
             pipeInfo->streamDescriptors_.size() == MAX_FAST_STREAM_COUNT) {
@@ -1496,6 +1499,19 @@ bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(
     CHECK_AND_RETURN_RET_LOG(existingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL ||
         incomingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL, false, "device level, not update action");
     return true;
+}
+
+void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (streamPropInfo->isCollaborationEnable == pipeInfo->isCollaborationEnable) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("MatchCollaborativePipe isCollaborationEnable old:%{public}d, new:%{public}d",
+        pipeInfo->isCollaborationEnable, streamPropInfo->isCollaborationEnable);
+    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, *pipeInfo);
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
 } // namespace AudioStandard
 } // namespace OHOS

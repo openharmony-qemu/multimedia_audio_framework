@@ -232,6 +232,7 @@ public:
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
         int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+        int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
@@ -674,6 +675,8 @@ private:
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
     void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
     int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+    void DelayReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
+    int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -719,6 +722,7 @@ private:
     void CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateSpecialRemoteModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
@@ -818,6 +822,7 @@ private:
     void OnVehiclePriorityChanged(bool enable);
     void NotifyServiceReady();
     void NotifyRequiredPipesReady();
+    bool CheckCollaborativeStreamRunning();
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -898,6 +903,14 @@ private:
     std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
     std::unordered_set<uint32_t> offloadAllowedUids_;
+
+    // MultiChannel delay release
+    // isMultiChannelOpened_ check whether multichannel is need open
+    std::atomic<bool> isMultiChannelOpened_ = false;
+    // isMultiChannelInRelease_ check whether delayRelease thread is running
+    std::atomic<bool> isMultiChannelInRelease_ = false;
+    std::condition_variable multiChannelCloseCondition_;
+    std::mutex multiChannelCloseMutex_;
 
     // route update callback
     std::unordered_map<uint32_t, RouteUpdateCallbackInfo> routeUpdateCallback_;

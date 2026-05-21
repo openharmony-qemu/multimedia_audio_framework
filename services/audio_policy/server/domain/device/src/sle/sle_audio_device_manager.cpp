@@ -175,6 +175,12 @@ int32_t SleAudioDeviceManager::GetRenderPosition(const std::string &device, uint
     return callback_->GetRenderPosition(device, delayValue);
 }
 
+int32_t SleAudioDeviceManager::GetDeviceProductId(const std::string &remoteAddr, std::string &productId)
+{
+    CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return callback_->GetDeviceProductId(remoteAddr, productId);
+}
+
 bool IsSupportedByGameFastPath(bool isGameApp, StreamUsage usage)
 {
     return isGameApp && (std::find(GAME_FAST_SUPPORTED_USAGES.begin(), GAME_FAST_SUPPORTED_USAGES.end(), usage) !=

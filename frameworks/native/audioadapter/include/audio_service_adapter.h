@@ -292,6 +292,13 @@ public:
      */
     virtual void LoadCollaborationConfig() = 0;
 
+    /**
+     * @brief IsCollaboration Supported For StreamUsage
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) NOT_SUPPORT_RET
+
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

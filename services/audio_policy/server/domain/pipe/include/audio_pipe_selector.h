@@ -153,6 +153,8 @@ private:
         const std::shared_ptr<AudioStreamDescriptor> &targetStream);
     bool IsUpdateActionForDeviceLevelHdPlay(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
+    void MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+        std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::mutex callbackMutex_;

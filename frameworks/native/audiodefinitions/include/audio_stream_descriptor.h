@@ -64,6 +64,7 @@ public:
     AudioStreamInfo micInStreamInfo_ = {};
     AudioStreamInfo ecStreamInfo_ = {};
     volatile bool isStandby_{false};
+    volatile bool isNearLinkCollaborationEnable{false};
     // Flag to indicate VoIP stream should be excluded from priority comparison during mute callback
     std::atomic<bool> voipPriorityLowered_{false};
     // Flag to indicate this stream is configured as VOIP no-privacy by focus/session behavior
