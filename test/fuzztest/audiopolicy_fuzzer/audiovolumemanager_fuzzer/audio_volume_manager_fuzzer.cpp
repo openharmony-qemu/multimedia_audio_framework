@@ -176,8 +176,10 @@ void AudioVolumeManagerInitSharedVolumeFuzzTest(FuzzedDataProvider& fdp)
 
     if (fdp.ConsumeBool()) {
         audioVolumeManager.DeInit();
-        std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
-        std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+        std::shared_ptr<AudioPolicyServerHandler> handler =
+            std::make_shared<AudioPolicyServerHandler>();
+        std::shared_ptr<AudioInterruptService> interruptService =
+            std::make_shared<AudioInterruptService>();
         audioVolumeManager.Init(handler, interruptService);
     }
     audioVolumeManager.InitSharedVolume(buffer);
@@ -395,9 +397,9 @@ void AudioVolumeManagerInitKVStoreFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest(FuzzedDataProvider& fdp)
 {
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     AudioVolumeType volumeType = PickValue(fdp, g_testAudioStreamTypes);
     int32_t duration = fdp.ConsumeIntegral<int32_t>();
-    int32_t duration = g_fuzzUtils.GetData<int32_t>();
     audioVolumeManager.forceControlVolumeTypeMonitor_ = make_shared<ForceControlVolumeTypeMonitor>();
     audioVolumeManager.ForceVolumeKeyControlType(volumeType, duration);
 }
