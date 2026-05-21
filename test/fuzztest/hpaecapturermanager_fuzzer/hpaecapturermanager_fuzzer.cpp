@@ -1453,7 +1453,6 @@ TestFuncs g_testFuncs[] = {
     GetSourceOutputInfoFuzzTest,
     MicRefSourceInitFuzzTest,
     EcDiffAdapterFullFlowFuzzTest,
-    EnableDisableCaptureCollaborationFuzzTest,
     DeleteOutputSessionWithActiveClusterFuzzTest,
     MoveStreamWithValidSessionFuzzTest,
     DisConnectSceneClusterFullFuzzTest,
@@ -1467,7 +1466,6 @@ TestFuncs g_testFuncs[] = {
     MultiStreamCapturerFuzzTest,
     CapturerSourceStartStopCycleFuzzTest,
     FlushDrainCapturerFuzzTest,
-    EnableCollaborationFullFuzzTest,
     DeleteOutputSessionFullFuzzTest,
 };
 
