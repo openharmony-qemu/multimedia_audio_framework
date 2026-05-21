@@ -167,7 +167,6 @@ public:
     virtual int32_t SetAissEnabled(uint32_t sessionId, bool enabled) = 0;
     virtual int32_t SetVocalRatio(float ratio) = 0;
     virtual int32_t SetAissEnabledByUid(int32_t uid, bool enabled) = 0;
-
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

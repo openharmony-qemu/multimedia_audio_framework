@@ -2291,7 +2291,6 @@ HWTEST_F(HpaeManagerUnitTest, HandleAppsEnhanceMuteState_003, TestSize.Level1)
     }
 }
 
-
 // ==================== SendRequestSync Tests ====================
 
 /**

@@ -63,7 +63,6 @@ static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneType
     {SOURCE_TYPE_VOICE_RECOGNITION, HPAE_SCENE_RECOGNITION}
 };
 
-
 static std::unordered_set<HpaeProcessorType> g_processorTypeNeedEcSet = {
     HPAE_SCENE_VOIP_UP,
     HPAE_SCENE_PRE_ENHANCE,
