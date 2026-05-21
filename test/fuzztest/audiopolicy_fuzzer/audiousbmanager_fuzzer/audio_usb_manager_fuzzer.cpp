@@ -21,11 +21,26 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-static const uint8_t *RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
-const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
-typedef void (*TestPtr)();
+const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
+typedef void (*TestPtr)(FuzzedDataProvider&);
+
+template<typename T>
+T PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
+{
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
+}
+
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
+{
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    return value.empty() ? fallback : value;
+}
+
+const vector<string> g_testMatchingSkills = {
+    "usual.event.hardware.usb.action.USB_DEVICE_ATTACHED",
+    "usual.event.hardware.usb.action.USB_DEVICE_DETACHED",
+};
 
 class FuzzTestDeviceStatusObserver : public IDeviceStatusObserver {
 public:
@@ -52,41 +67,12 @@ public:
     virtual ~FuzzTestDeviceStatusObserver() = default;
 };
 
-template<class T>
-uint32_t GetArrLength(T &arr)
-{
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
-}
-
-template<class T>
-T GetData()
-{
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (g_dataSize < g_pos) {
-        return object;
-    }
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
-}
-
 void AudioUsbManagerInitFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
     auto observer = std::make_shared<FuzzTestDeviceStatusObserver>();
-    audioUsbManager.initialized_ = GetData<bool>();
+    audioUsbManager.initialized_ = fdp.ConsumeBool();
     audioUsbManager.Init(observer);
 }
 
@@ -96,7 +82,7 @@ void AudioUsbManagerDeinitFuzzTest(FuzzedDataProvider& fdp)
 
     EventFwk::CommonEventSubscribeInfo subscribeInfo;
     audioUsbManager.eventSubscriber_ = std::make_shared<AudioUsbManager::EventSubscriber>(subscribeInfo);
-    audioUsbManager.initialized_ = true;
+    audioUsbManager.initialized_ = fdp.ConsumeBool();
     audioUsbManager.Deinit();
 }
 
@@ -104,6 +90,7 @@ void AudioUsbManagerSubscribeEventFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
+    audioUsbManager.initialized_ = fdp.ConsumeBool();
     audioUsbManager.eventSubscriber_ = nullptr;
     audioUsbManager.SubscribeEvent();
 }
@@ -112,20 +99,16 @@ void AudioUsbManagerGetUsbSoundCardMapFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
-    audioUsbManager.initialized_ = true;
+    audioUsbManager.initialized_ = fdp.ConsumeBool();
     audioUsbManager.GetUsbSoundCardMap();
 }
 
 void AudioUsbManagerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)
 {
-    static const vector<string> matchingSkills = {
-        "usual.event.hardware.usb.action.USB_DEVICE_ATTACHED",
-        "usual.event.hardware.usb.action.USB_DEVICE_DETACHED",
-    };
 
     EventFwk::CommonEventSubscribeInfo subscribeInfo;
     auto subscriber = std::make_shared<AudioUsbManager::EventSubscriber>(subscribeInfo);
-    if (subscriber == nullptr || matchingSkills.empty()) {
+    if (subscriber == nullptr) {
         return;
     }
 
@@ -133,7 +116,7 @@ void AudioUsbManagerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)
     OHOS::EventFwk::Want want;
     string s = "{\"busNum\":1,\"devAddress\":1,\"configs\":[{\"interfaces\":[{\"clazz\":1,\"subClass\":1}]}]}";
     data.SetData(s);
-    want.SetAction(matchingSkills[GetData<uint32_t>() % matchingSkills.size()]);
+    want.SetAction(PickValue(fdp, g_testMatchingSkills));
     data.SetWant(want);
     subscriber->OnReceiveEvent(data);
 }
@@ -146,10 +129,14 @@ void AudioUsbManagerHandleAudioDeviceEventFuzzTest(FuzzedDataProvider& fdp)
     audioUsbManager.Init(observer);
 
     UsbAudioDevice device;
-    SoundCard soundCard;
-    soundCard.isPlayer_ = GetData<bool>();
-    soundCard.isCapturer_ = GetData<bool>();
-    audioUsbManager.HandleAudioDeviceEvent(make_pair(device, GetData<bool>()));
+    device.usbAddr_.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    device.usbAddr_.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
+    device.name_ = ConsumeString(fdp, "usb_fuzz_device");
+    device.cardNum_ = fdp.ConsumeIntegral<uint32_t>();
+    device.isCapturer_ = fdp.ConsumeBool();
+    device.isPlayer_ = fdp.ConsumeBool();
+    bool isConnected = fdp.ConsumeBool();
+    audioUsbManager.HandleAudioDeviceEvent(make_pair(device, isConnected));
     audioUsbManager.Deinit();
 }
 
@@ -163,32 +150,56 @@ void AudioUsbManagerNotifyDeviceFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(observer != nullptr);
 
     UsbAudioDevice device;
-    SoundCard soundCard;
-    soundCard.isPlayer_ = GetData<bool>();
-    soundCard.isCapturer_ = GetData<bool>();
-    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
+    device.usbAddr_.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    device.usbAddr_.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
+    device.name_ = ConsumeString(fdp, "usb_fuzz_device");
+    device.cardNum_ = fdp.ConsumeIntegral<uint32_t>();
+    device.isCapturer_ = fdp.ConsumeBool();
+    device.isPlayer_ = fdp.ConsumeBool();
+    bool isConnected = fdp.ConsumeBool();
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, isConnected));
     audioUsbManager->Deinit();
 }
 
 void UsbAddr1FuzzTest(FuzzedDataProvider& fdp)
 {
     UsbAddr usbAddr1;
+    usbAddr1.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAddr1.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
     UsbAddr usbAddr2;
-    CHECK_AND_RETURN(usbAddr1 == usbAddr2);
+    usbAddr2.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAddr2.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
+    bool isEqual = (usbAddr1 == usbAddr2);
 }
 
 void UsbAddr2FuzzTest(FuzzedDataProvider& fdp)
 {
     UsbAddr usbAddr1;
+    usbAddr1.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAddr1.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
     UsbAddr usbAddr2;
-    CHECK_AND_RETURN(usbAddr1 < usbAddr2);
+    usbAddr2.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAddr2.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
+    bool isLess = (usbAddr1 < usbAddr2);
 }
 
 void UsbAudioDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     UsbAudioDevice usbAudioDevice1;
+    usbAudioDevice1.usbAddr_.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAudioDevice1.usbAddr_.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAudioDevice1.name_ = ConsumeString(fdp, "usb_fuzz_device1");
+    usbAudioDevice1.cardNum_ = fdp.ConsumeIntegral<uint32_t>();
+    usbAudioDevice1.isCapturer_ = fdp.ConsumeBool();
+    usbAudioDevice1.isPlayer_ = fdp.ConsumeBool();
     UsbAudioDevice usbAudioDevice2;
-    CHECK_AND_RETURN(usbAudioDevice1 == usbAudioDevice2);
+    usbAudioDevice2.usbAddr_.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAudioDevice2.usbAddr_.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAudioDevice2.name_ = ConsumeString(fdp, "usb_fuzz_device2");
+    usbAudioDevice2.cardNum_ = fdp.ConsumeIntegral<uint32_t>();
+    usbAudioDevice2.isCapturer_ = fdp.ConsumeBool();
+    usbAudioDevice2.isPlayer_ = fdp.ConsumeBool();
+    bool isEqual = (usbAudioDevice1 == usbAudioDevice2);
 }
 
 void AudioUsbManagerSoundCard(FuzzedDataProvider& fdp)
@@ -197,16 +208,20 @@ void AudioUsbManagerSoundCard(FuzzedDataProvider& fdp)
     auto observer = make_shared<FuzzTestDeviceStatusObserver>();
     man.SetObserver(observer);
     UsbAddr usbAddr;
-    std::string name;
+    usbAddr.busNum_ = fdp.ConsumeIntegral<uint8_t>();
+    usbAddr.devAddr_ = fdp.ConsumeIntegral<uint8_t>();
+    std::string name = ConsumeString(fdp, "test_usb_name");
     man.UpdateDeviceName(usbAddr, name);
-    man.pendingMap_[usbAddr] = "1";
+    man.pendingMap_[usbAddr] = ConsumeString(fdp, "1");
     man.UpdateDeviceName(usbAddr, name);
-    man.AddDeviceBySoundCard(0);
-    man.NotifySoundCardChange("2", true);
+    man.AddDeviceBySoundCard(fdp.ConsumeIntegral<uint32_t>());
+    std::string soundCardId = ConsumeString(fdp, "2");
+    bool isConnected = fdp.ConsumeBool();
+    man.NotifySoundCardChange(soundCardId, isConnected);
     man.audioDevices_.push_back({
-        .cardNum_ = 2,
+        .cardNum_ = fdp.ConsumeIntegral<uint32_t>(),
     });
-    man.NotifySoundCardChange("2", false);
+    man.NotifySoundCardChange(soundCardId, !isConnected);
 }
 
 void Test(FuzzedDataProvider& fdp)
@@ -226,34 +241,20 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
-void Init()
-{
-}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::Init();
     return 0;
 }

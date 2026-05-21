@@ -46,16 +46,24 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
-static int32_t NUM_2 = 2;
-static int32_t NUM_3 = 3;
+const size_t MAX_STRING_LEN = 64;
+const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
+typedef void (*TestPtr)(FuzzedDataProvider&);
 
-typedef void (*TestFuncs)();
+template<typename T>
+T PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
+{
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
+}
 
-vector<AudioSpatializationSceneType> AudioSpatializationSceneTypeVec = {
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
+{
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    return value.empty() ? fallback : value;
+}
+
+const vector<AudioSpatializationSceneType> g_testSpatializationSceneTypes = {
     SPATIALIZATION_SCENE_TYPE_DEFAULT,
     SPATIALIZATION_SCENE_TYPE_MUSIC,
     SPATIALIZATION_SCENE_TYPE_MOVIE,
@@ -63,7 +71,7 @@ vector<AudioSpatializationSceneType> AudioSpatializationSceneTypeVec = {
     SPATIALIZATION_SCENE_TYPE_MAX,
 };
 
-vector<StreamUsage> StreamUsageVec = {
+const vector<StreamUsage> g_testStreamUsages = {
     STREAM_USAGE_INVALID,
     STREAM_USAGE_UNKNOWN,
     STREAM_USAGE_MEDIA,
@@ -92,7 +100,7 @@ vector<StreamUsage> StreamUsageVec = {
     STREAM_USAGE_MAX,
 };
 
-vector<AudioSpatialDeviceType> AudioSpatialDeviceTypeVec = {
+const vector<AudioSpatialDeviceType> g_testSpatialDeviceTypes = {
     EARPHONE_TYPE_NONE,
     EARPHONE_TYPE_INEAR,
     EARPHONE_TYPE_HALF_INEAR,
@@ -101,86 +109,110 @@ vector<AudioSpatialDeviceType> AudioSpatialDeviceTypeVec = {
     EARPHONE_TYPE_OTHERS,
 };
 
-template<class T>
-T GetData()
-{
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
-}
+const vector<RendererState> g_testRendererStates = {
+    RENDERER_NEW,
+    RENDERER_PREPARED,
+    RENDERER_RUNNING,
+    RENDERER_STOPPED,
+    RENDERER_RELEASED,
+    RENDERER_PAUSED,
+};
 
-template<class T>
-uint32_t GetArrLength(T& arr)
+const vector<AudioSpatializationService::WriteToDbOperation> g_testWriteToDbOperations = {
+    AudioSpatializationService::WriteToDbOperation::WRITE_SPATIALIZATION_STATE,
+    AudioSpatializationService::WriteToDbOperation::WRITE_SPATIALIZATION_SCENE,
+    AudioSpatializationService::WriteToDbOperation::WRITE_ALLDEVICESPATIAL_INFO,
+};
+
+const vector<DeviceType> g_testOutputDeviceTypes = {
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_NEARLINK,
+};
+
+const vector<DeviceCategory> g_testDeviceCategories = {
+    CATEGORY_DEFAULT,
+    BT_HEADPHONE,
+    BT_SOUNDBOX,
+    BT_CAR,
+    BT_GLASSES,
+    BT_WATCH,
+    BT_HEARAID,
+    BT_UNWEAR_HEADPHONE,
+};
+
+const vector<std::string> g_testSpatializationLabels = {
+    "SPATIALIZATION_AND_HEADTRACKING",
+    "SPATIALIZATION",
+    "HEADTRACKING",
+    "PERSONALIZED_SPATIALIZATION_AND_HEADTRACKING",
+    "PERSONALIZED_SPATIALIZATION",
+};
+
+std::shared_ptr<AudioDeviceDescriptor> MakeDeviceDescriptor(FuzzedDataProvider& fdp, DeviceRole role)
 {
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
+    const auto& deviceTypes = (role == INPUT_DEVICE) ? g_testOutputDeviceTypes : g_testOutputDeviceTypes;
+    if (deviceTypes.size() == 0 || g_testDeviceCategories.size() == 0) {
+        return std::make_shared<AudioDeviceDescriptor>();
     }
-    return sizeof(arr) / sizeof(arr[0]);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(PickValue(fdp, deviceTypes), role);
+    desc->networkId_ = ConsumeString(fdp, LOCAL_NETWORK_ID);
+    desc->macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    desc->deviceName_ = ConsumeString(fdp, "audio_fuzz_device");
+    desc->deviceCategory_ = PickValue(fdp, g_testDeviceCategories);
+    desc->deviceId_ = fdp.ConsumeIntegral<int32_t>();
+    return desc;
 }
 
 void UpdateCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
-     // Update with a new device
-    std::string newMacAddress = "00:11:22:33:44:55";
+    std::string newMacAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
     service.UpdateCurrentDevice(newMacAddress);
-    // Update with the same device (no change expected)
     service.UpdateCurrentDevice(newMacAddress);
-    // Update with an empty address (should not change the current device)
-    std::string originalAddress = service.GetCurrentDeviceAddress();
     service.UpdateCurrentDevice("");
-    // Update with a new device that has spatial capabilities
-    std::string spatialDeviceAddress = "AA:BB:CC:DD:EE:FF";
-    int32_t audioSpatialDeviceTypeCount = static_cast<int32_t>(AudioSpatialDeviceType::EARPHONE_TYPE_OTHERS) + 1;
-    AudioSpatialDeviceType audioSpatialDeviceType =
-        static_cast<AudioSpatialDeviceType>(GetData<int32_t>() % audioSpatialDeviceTypeCount);
+    std::string spatialDeviceAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    AudioSpatialDeviceType audioSpatialDeviceType = PickValue(fdp, g_testSpatialDeviceTypes);
     service.addressToSpatialDeviceStateMap_[service.GetSha256EncryptAddress(spatialDeviceAddress)] = {
-        spatialDeviceAddress,            // address
-        GetData<uint32_t>() % NUM_2,     // isSpatializationSupported
-        GetData<uint32_t>() % NUM_2,     // isHeadTrackingSupported
-        audioSpatialDeviceType           // spatialDeviceType
+        spatialDeviceAddress,
+        fdp.ConsumeBool(),
+        fdp.ConsumeBool(),
+        audioSpatialDeviceType
     };
     service.UpdateCurrentDevice(spatialDeviceAddress);
-    // Update with a device that doesn't have spatial capabilities
-    std::string nonSpatialDeviceAddress = "11:22:33:44:55:66";
+    std::string nonSpatialDeviceAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
     service.UpdateCurrentDevice(nonSpatialDeviceAddress);
 }
 
 void RemoveOldestDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
+    std::string device1 = ConsumeString(fdp, "device1");
+    std::string device2 = ConsumeString(fdp, "device2");
+    std::string device3 = ConsumeString(fdp, "device3");
     service.addressToDeviceSpatialInfoMap_ = {
-        {"device1", "info1|1000"},
-        {"device2", "info2|2000"},
-        {"device3", "info3|1500"}
+        {device1, ConsumeString(fdp, "info1") + "|1000"},
+        {device2, ConsumeString(fdp, "info2") + "|2000"},
+        {device3, ConsumeString(fdp, "info3") + "|1500"}
     };
     service.addressToSpatialEnabledMap_ = {
-        {"device1", AudioSpatializationState{GetData<uint32_t>() % NUM_2, GetData<uint32_t>() % NUM_2}},
-        {"device2", AudioSpatializationState{GetData<uint32_t>() % NUM_2, GetData<uint32_t>() % NUM_2}},
-        {"device3", AudioSpatializationState{GetData<uint32_t>() % NUM_2, GetData<uint32_t>() % NUM_2}}
+        {device1, AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}},
+        {device2, AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}},
+        {device3, AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}}
     };
-    int32_t audioSpatialDeviceTypeCount = static_cast<int32_t>(AudioSpatialDeviceType::EARPHONE_TYPE_OTHERS) + 1;
-    int32_t audioSpatialDeviceTypeCount1 = static_cast<int32_t>(AudioSpatialDeviceType::EARPHONE_TYPE_OTHERS) + 1;
-    AudioSpatialDeviceType audioSpatialDeviceType =
-        static_cast<AudioSpatialDeviceType>(GetData<int32_t>() % audioSpatialDeviceTypeCount);
-    AudioSpatialDeviceType audioSpatialDeviceType1 =
-        static_cast<AudioSpatialDeviceType>(GetData<int32_t>() % audioSpatialDeviceTypeCount1);
+    AudioSpatialDeviceType audioSpatialDeviceType = PickValue(fdp, g_testSpatialDeviceTypes);
+    AudioSpatialDeviceType audioSpatialDeviceType1 = PickValue(fdp, g_testSpatialDeviceTypes);
     service.addressToSpatialDeviceStateMap_ = {
-        {"device1", AudioSpatialDeviceState{"device1", GetData<uint32_t>() % NUM_2,
-                                            GetData<uint32_t>() % NUM_2, audioSpatialDeviceType}},
-        {"device2", AudioSpatialDeviceState{"device2", GetData<uint32_t>() % NUM_2,
-                                            GetData<uint32_t>() % NUM_2, audioSpatialDeviceType1}},
-        {"device3", AudioSpatialDeviceState{"device3", GetData<uint32_t>() % NUM_2,
-                                            GetData<uint32_t>() % NUM_2, audioSpatialDeviceType}}
+        {device1, AudioSpatialDeviceState{device1, fdp.ConsumeBool(),
+                                            fdp.ConsumeBool(), audioSpatialDeviceType}},
+        {device2, AudioSpatialDeviceState{device2, fdp.ConsumeBool(),
+                                            fdp.ConsumeBool(), audioSpatialDeviceType1}},
+        {device3, AudioSpatialDeviceState{device3, fdp.ConsumeBool(),
+                                            fdp.ConsumeBool(), audioSpatialDeviceType}}
     };
     service.RemoveOldestDevice();
 }
@@ -189,46 +221,40 @@ void UpdateDeviceSpatialMapInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
     for (uint32_t i = 1; i <= AudioSpatializationService::MAX_DEVICE_NUM; ++i) {
-        std::string device = "device" + std::to_string(i);
-        std::string info = "info" + std::to_string(i);
+        std::string device = ConsumeString(fdp, "device") + std::to_string(i);
+        std::string info = ConsumeString(fdp, "info") + std::to_string(i);
         service.UpdateDeviceSpatialMapInfo(device, info);
         service.GetSha256EncryptAddress(device);
     }
-    // Test updating existing devices
-    auto exitNum = GetData<uint32_t>() % AudioSpatializationService::MAX_DEVICE_NUM;
-    service.UpdateDeviceSpatialMapInfo("device" + to_string(exitNum), "info" + to_string(exitNum));
-    // Test adding more than the maximum number of devices
-    service.UpdateDeviceSpatialMapInfo("device" + to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM),
-                                       "info" + to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM));
+    uint32_t exitNum = fdp.ConsumeIntegralInRange<uint32_t>(0, AudioSpatializationService::MAX_DEVICE_NUM);
+    service.UpdateDeviceSpatialMapInfo(ConsumeString(fdp, "device") + std::to_string(exitNum),
+                                       ConsumeString(fdp, "info") + std::to_string(exitNum));
+    service.UpdateDeviceSpatialMapInfo(ConsumeString(fdp, "device") + std::to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM),
+                                       ConsumeString(fdp, "info") + std::to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM));
 }
 
 void WriteSpatializationStateToDbFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
-    uint32_t testSceneCount = GetData<uint32_t>() % AudioSpatializationSceneTypeVec.size();
-    AudioSpatializationSceneType testScene = AudioSpatializationSceneTypeVec[testSceneCount];
+    AudioSpatializationSceneType testScene = PickValue(fdp, g_testSpatializationSceneTypes);
     service.spatializationSceneType_ = testScene;
-    int32_t operationCount =
-        static_cast<int32_t>(AudioSpatializationService::WriteToDbOperation::WRITE_ALLDEVICESPATIAL_INFO) + 1;
-    AudioSpatializationService::WriteToDbOperation operation =
-        static_cast<AudioSpatializationService::WriteToDbOperation>(GetData<uint8_t>() % operationCount);
+    AudioSpatializationService::WriteToDbOperation operation = PickValue(fdp, g_testWriteToDbOperations);
     service.WriteSpatializationStateToDb(operation);
 }
 
 void GetSpatializationStateFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
-    service.spatializationEnabledReal_ = GetData<uint32_t>() % NUM_2;
-    service.headTrackingEnabledReal_ = GetData<uint32_t>() % NUM_2;
-    uint32_t streamUsageCount = GetData<uint32_t>() % StreamUsageVec.size();
-    StreamUsage supportedUsage = StreamUsageVec[streamUsageCount];
+    service.spatializationEnabledReal_ = fdp.ConsumeBool();
+    service.headTrackingEnabledReal_ = fdp.ConsumeBool();
+    StreamUsage supportedUsage = PickValue(fdp, g_testStreamUsages);
     service.GetSpatializationState(supportedUsage);
 }
 
 void SetHeadTrackingEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
-    bool enable = GetData<uint32_t>() % NUM_2;
+    bool enable = fdp.ConsumeBool();
     service.SetHeadTrackingEnabled(enable);
 }
 
@@ -236,10 +262,10 @@ void AudioSpatializationServiceInitFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     vector<EffectChain> effectChains = {
-        {"EFFECTCHAIN_BT_MUSIC", {"apply1_1", "apply1_2"}, "SPATIALIZATION_AND_HEADTRACKING"},
-        {"Effect1", {"apply1_1", "apply1_2"}, "SPATIALIZATION_AND_HEADTRACKING"},
-        {"Effect2", {"apply2_1"}, "SPATIALIZATION"},
-        {"Effect3", {}, "HEADTRACKING"}
+        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {ConsumeString(fdp, "Effect1"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {ConsumeString(fdp, "Effect2"), {ConsumeString(fdp, "apply2_1")}, PickValue(fdp, g_testSpatializationLabels)},
+        {ConsumeString(fdp, "Effect3"), {}, PickValue(fdp, g_testSpatializationLabels)}
     };
     ptrAudioSpatializationService->Init(effectChains);
 }
@@ -248,18 +274,16 @@ void IsSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     vector<string> preSettingSpatialAddressList = { "NO_PREVIOUS_SET_DEVICE", "1234", "test_address"};
-    uint32_t preSettingSpatialAddressCount = GetData<uint32_t>() % preSettingSpatialAddressList.size();
-    ptrAudioSpatializationService->preSettingSpatialAddress_ =
-        preSettingSpatialAddressList[preSettingSpatialAddressCount];
+    ptrAudioSpatializationService->preSettingSpatialAddress_ = PickValue(fdp, preSettingSpatialAddressList);
     ptrAudioSpatializationService->IsSpatializationEnabled();
 }
 
 void SetSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    const bool enable = GetData<uint32_t>() % NUM_2;
-    ptrAudioSpatializationService->preSettingSpatialAddress_ = "NO_PREVIOUS_SET_DEVICE";
-    ptrAudioSpatializationService->spatializationStateFlag_.spatializationEnabled = GetData<uint32_t>() % NUM_2;
+    const bool enable = fdp.ConsumeBool();
+    ptrAudioSpatializationService->preSettingSpatialAddress_ = ConsumeString(fdp, "NO_PREVIOUS_SET_DEVICE");
+    ptrAudioSpatializationService->spatializationStateFlag_.spatializationEnabled = fdp.ConsumeBool();
     ptrAudioSpatializationService->SetSpatializationEnabled(enable);
 }
 
@@ -267,9 +291,7 @@ void IsHeadTrackingEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     vector<string> preSettingSpatialAddressList = { "NO_PREVIOUS_SET_DEVICE", "1234"};
-    uint32_t preSettingSpatialAddressCount = GetData<uint32_t>() % preSettingSpatialAddressList.size();
-    ptrAudioSpatializationService->preSettingSpatialAddress_ =
-        preSettingSpatialAddressList[preSettingSpatialAddressCount];
+    ptrAudioSpatializationService->preSettingSpatialAddress_ = PickValue(fdp, preSettingSpatialAddressList);
     ptrAudioSpatializationService->IsHeadTrackingEnabled();
 }
 
@@ -277,7 +299,7 @@ void HandleHeadTrackingDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     std::unordered_map<std::string, bool> changeInfo;
-    changeInfo.insert({"abc", GetData<uint32_t>() % NUM_2});
+    changeInfo.insert({ConsumeString(fdp, "abc"), fdp.ConsumeBool()});
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleHeadTrackingDeviceChange(changeInfo);
 }
@@ -289,7 +311,7 @@ void AudioSpatializationServiceIsSpatializationEnabledFuzzTest(FuzzedDataProvide
         return;
     }
 
-    std::string address = "test_address";
+    std::string address = ConsumeString(fdp, "test_address");
     ptrAudioSpatializationService->IsSpatializationEnabled(address);
 }
 
@@ -300,7 +322,7 @@ void AudioSpatializationServiceIsSpatializationEnabledForCurrentDeviceFuzzTest(F
         return;
     }
 
-    ptrAudioSpatializationService->currentDeviceAddress_ = "test_address";
+    ptrAudioSpatializationService->currentDeviceAddress_ = ConsumeString(fdp, "test_address");
     ptrAudioSpatializationService->IsSpatializationEnabledForCurrentDevice();
 }
 
@@ -311,8 +333,8 @@ void AudioSpatializationServiceSetSpatializationEnabledFuzzTest(FuzzedDataProvid
         return;
     }
 
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    const bool enable = GetData<bool>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
+    const bool enable = fdp.ConsumeBool();
 
     ptrAudioSpatializationService->SetSpatializationEnabled(selectedAudioDevice, enable);
 }
@@ -325,7 +347,7 @@ void AudioSpatializationServiceIsHeadTrackingEnabledFuzzTest(FuzzedDataProvider&
     }
 
     AudioSpatializationState spatializationState;
-    std::string address = "test_address";
+    std::string address = ConsumeString(fdp, "test_address");
     ptrAudioSpatializationService->addressToSpatialEnabledMap_.insert({address, spatializationState});
     ptrAudioSpatializationService->IsHeadTrackingEnabled(address);
 }
@@ -337,8 +359,8 @@ void AudioSpatializationServiceSetHeadTrackingEnabledFuzzTest(FuzzedDataProvider
         return;
     }
 
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    const bool enable = GetData<bool>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
+    const bool enable = fdp.ConsumeBool();
     ptrAudioSpatializationService->SetHeadTrackingEnabled(selectedAudioDevice, enable);
 }
 
@@ -349,8 +371,8 @@ void AudioSpatializationServiceHandleSpatializationEnabledChangeFuzzTest(FuzzedD
         return;
     }
 
-    const bool enable = GetData<bool>();
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    const bool enable = fdp.ConsumeBool();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleSpatializationEnabledChange(selectedAudioDevice, enable);
 }
@@ -362,7 +384,7 @@ void AudioSpatializationServiceHandleSpatializationEnabledChangeForCurrentDevice
         return;
     }
 
-    const bool enable = GetData<bool>();
+    const bool enable = fdp.ConsumeBool();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleSpatializationEnabledChangeForCurrentDevice(enable);
 }
@@ -374,8 +396,8 @@ void AudioSpatializationServiceHandleHeadTrackingEnabledChangeFuzzTest(FuzzedDat
         return;
     }
 
-    const bool enable = GetData<bool>();
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    const bool enable = fdp.ConsumeBool();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, enable);
 }
@@ -387,30 +409,22 @@ void AudioSpatializationServiceIsHeadTrackingSupportedForDeviceFuzzTest(FuzzedDa
         return;
     }
 
-    const std::string address = "1234";
+    const std::string address = ConsumeString(fdp, "1234");
     ptrAudioSpatializationService->IsHeadTrackingSupportedForDevice(address);
 }
 
 void AudioSpatializationServiceUpdateSpatialDeviceStateFuzzTest(FuzzedDataProvider& fdp)
 {
-    static const vector<AudioSpatialDeviceType> audioSpatialDeviceTypeVec = {
-        EARPHONE_TYPE_NONE,
-        EARPHONE_TYPE_INEAR,
-        EARPHONE_TYPE_HALF_INEAR,
-        EARPHONE_TYPE_HEADPHONE,
-        EARPHONE_TYPE_GLASSES,
-        EARPHONE_TYPE_OTHERS,
-    };
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr || audioSpatialDeviceTypeVec.empty()) {
+    if (ptrAudioSpatializationService == nullptr) {
         return;
     }
 
     const AudioSpatialDeviceState audioSpatialDeviceState = {
-        "1234",
-        GetData<bool>(),
-        GetData<bool>(),
-        audioSpatialDeviceTypeVec[GetData<uint32_t>() % audioSpatialDeviceTypeVec.size()],
+        ConsumeString(fdp, "1234"),
+        fdp.ConsumeBool(),
+        fdp.ConsumeBool(),
+        PickValue(fdp, g_testSpatialDeviceTypes),
     };
     ptrAudioSpatializationService->UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
@@ -421,7 +435,7 @@ void AudioSpatializationServiceGetSpatializationSceneTypeFuzzTest(FuzzedDataProv
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-
+    ptrAudioSpatializationService->spatializationSceneType_ = PickValue(fdp, g_testSpatializationSceneTypes);
     ptrAudioSpatializationService->GetSpatializationSceneType();
 }
 
@@ -432,26 +446,18 @@ void AudioSpatializationServiceUnregisterSpatializationStateEventListenerFuzzTes
         return;
     }
 
-    uint32_t sessionID = GetData<uint32_t>();
+    uint32_t sessionID = fdp.ConsumeIntegral<uint32_t>();
     ptrAudioSpatializationService->UnregisterSpatializationStateEventListener(sessionID);
 }
 
 void AudioSpatializationServiceSetSpatializationSceneTypeFuzzTest(FuzzedDataProvider& fdp)
 {
-    static const vector<AudioSpatializationSceneType> testAudioSpatializationSceneType = {
-        SPATIALIZATION_SCENE_TYPE_DEFAULT,
-        SPATIALIZATION_SCENE_TYPE_MUSIC,
-        SPATIALIZATION_SCENE_TYPE_MOVIE,
-        SPATIALIZATION_SCENE_TYPE_AUDIOBOOK,
-        SPATIALIZATION_SCENE_TYPE_MAX,
-    };
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr || testAudioSpatializationSceneType.empty()) {
+    if (ptrAudioSpatializationService == nullptr) {
         return;
     }
 
-    AudioSpatializationSceneType spatializationSceneType =
-        testAudioSpatializationSceneType[GetData<uint32_t>() % testAudioSpatializationSceneType.size()];
+    AudioSpatializationSceneType spatializationSceneType = PickValue(fdp, g_testSpatializationSceneTypes);
     ptrAudioSpatializationService->SetSpatializationSceneType(spatializationSceneType);
 }
 
@@ -461,6 +467,10 @@ void AudioSpatializationServiceDeinitFuzzTest(FuzzedDataProvider& fdp)
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
+    vector<EffectChain> effectChains = {
+        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+    };
+    ptrAudioSpatializationService->Init(effectChains);
     ptrAudioSpatializationService->Deinit();
 }
 
@@ -470,6 +480,10 @@ void AudioSpatializationServiceGetAudioServerProxyFuzzTest(FuzzedDataProvider& f
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
+    vector<EffectChain> effectChains = {
+        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+    };
+    ptrAudioSpatializationService->Init(effectChains);
     ptrAudioSpatializationService->GetAudioServerProxy();
 }
 
@@ -479,6 +493,7 @@ void AudioSpatializationServiceIsSpatializationSupportedFuzzTest(FuzzedDataProvi
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
+    ptrAudioSpatializationService->spatializationEnabledReal_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->IsSpatializationSupported();
 }
 
@@ -488,6 +503,7 @@ void AudioSpatializationServiceIsHeadTrackingSupportedFuzzTest(FuzzedDataProvide
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
+    ptrAudioSpatializationService->headTrackingEnabledReal_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->IsHeadTrackingSupported();
 }
 
@@ -497,7 +513,7 @@ void AudioSpatializationServiceIsSpatializationSupportedForDeviceFuzzTest(Fuzzed
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    std::string address = "test_address";
+    std::string address = ConsumeString(fdp, "test_address");
     ptrAudioSpatializationService->IsSpatializationSupportedForDevice(address);
 }
 
@@ -507,9 +523,9 @@ void AudioSpatializationServiceIsHeadTrackingDataRequestedFuzzTest(FuzzedDataPro
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    std::string macAddress = "00:11:22:33:44:55";
+    std::string macAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
     ptrAudioSpatializationService->currentDeviceAddress_ = macAddress;
-    ptrAudioSpatializationService->isHeadTrackingDataRequested_ = GetData<uint32_t>() % NUM_2;
+    ptrAudioSpatializationService->isHeadTrackingDataRequested_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->IsHeadTrackingDataRequested(macAddress);
 }
 
@@ -522,9 +538,9 @@ void AudioSpatializationServiceUpdateRendererInfoFuzzTest(FuzzedDataProvider& fd
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
     if (changeInfo != nullptr) {
-        changeInfo->rendererState = static_cast<RendererState>(GetData<int32_t>() % NUM_3);
-        changeInfo->outputDeviceInfo.macAddress_ = "00:11:22:33:44:55";
-        changeInfo->rendererInfo.streamUsage = StreamUsageVec[GetData<uint32_t>() % StreamUsageVec.size()];
+        changeInfo->rendererState = PickValue(fdp, g_testRendererStates);
+        changeInfo->outputDeviceInfo.macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+        changeInfo->rendererInfo.streamUsage = PickValue(fdp, g_testStreamUsages);
         rendererChangeInfo.push_back(changeInfo);
     }
     ptrAudioSpatializationService->UpdateRendererInfo(rendererChangeInfo);
@@ -536,6 +552,7 @@ void AudioSpatializationServiceInitSpatializationStateFuzzTest(FuzzedDataProvide
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
+    ptrAudioSpatializationService->spatializationEnabledReal_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->InitSpatializationState();
 }
 
@@ -545,7 +562,7 @@ void AudioSpatializationServiceGetCurrentDeviceAddressFuzzTest(FuzzedDataProvide
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    ptrAudioSpatializationService->currentDeviceAddress_ = "00:11:22:33:44:55";
+    ptrAudioSpatializationService->currentDeviceAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
     ptrAudioSpatializationService->GetCurrentDeviceAddress();
 }
 
@@ -555,7 +572,7 @@ void AudioSpatializationServiceUpdateSpatializationSupportedFuzzTest(FuzzedDataP
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    std::string encryptedAddress = "encrypted_test_address";
+    std::string encryptedAddress = ConsumeString(fdp, "encrypted_test_address");
     ptrAudioSpatializationService->UpdateSpatializationSupported(encryptedAddress);
 }
 
@@ -565,8 +582,8 @@ void AudioSpatializationServiceRegisterSpatializationStateEventListenerFuzzTest(
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    uint32_t sessionID = GetData<uint32_t>();
-    StreamUsage streamUsage = StreamUsageVec[GetData<uint32_t>() % StreamUsageVec.size()];
+    uint32_t sessionID = fdp.ConsumeIntegral<uint32_t>();
+    StreamUsage streamUsage = PickValue(fdp, g_testStreamUsages);
     sptr<IRemoteObject> object = nullptr;
     ptrAudioSpatializationService->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
@@ -577,7 +594,7 @@ void AudioSpatializationServiceHandleDeviceConfigChangedFuzzTest(FuzzedDataProvi
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleDeviceConfigChanged(selectedAudioDevice);
 }
@@ -588,7 +605,7 @@ void AudioSpatializationServiceHandleSpatializationEnabledChangeBoolFuzzTest(Fuz
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    const bool enable = GetData<bool>();
+    const bool enable = fdp.ConsumeBool();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleSpatializationEnabledChange(enable);
 }
@@ -599,7 +616,7 @@ void AudioSpatializationServiceHandleHeadTrackingEnabledChangeBoolFuzzTest(Fuzze
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    const bool enable = GetData<bool>();
+    const bool enable = fdp.ConsumeBool();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleHeadTrackingEnabledChange(enable);
 }
@@ -610,22 +627,24 @@ void AudioSpatializationServiceGetSpatializationStateDefaultFuzzTest(FuzzedDataP
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
+    ptrAudioSpatializationService->spatializationEnabledReal_ = fdp.ConsumeBool();
+    ptrAudioSpatializationService->headTrackingEnabledReal_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->GetSpatializationState();
 }
 
 void AudioSpatializationServiceUpdateSpatialDeviceStateMultipleFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr || AudioSpatialDeviceTypeVec.empty()) {
+    if (ptrAudioSpatializationService == nullptr) {
         return;
     }
 
-    for (size_t i = 0; i < AudioSpatialDeviceTypeVec.size(); ++i) {
+    for (size_t i = 0; i < g_testSpatialDeviceTypes.size(); ++i) {
         const AudioSpatialDeviceState audioSpatialDeviceState = {
-            "device_" + std::to_string(i),
-            GetData<bool>(),
-            GetData<bool>(),
-            AudioSpatialDeviceTypeVec[i],
+            ConsumeString(fdp, "device_" + std::to_string(i)),
+            fdp.ConsumeBool(),
+            fdp.ConsumeBool(),
+            g_testSpatialDeviceTypes[i],
         };
         ptrAudioSpatializationService->UpdateSpatialDeviceState(audioSpatialDeviceState);
     }
@@ -638,9 +657,8 @@ void AudioSpatializationServiceSetSpatializationEnabledWithStateFuzzTest(FuzzedD
         return;
     }
 
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    selectedAudioDevice->macAddress_ = "00:11:22:33:44:55";
-    const bool enable = GetData<bool>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
+    const bool enable = fdp.ConsumeBool();
     ptrAudioSpatializationService->spatializationStateFlag_.spatializationEnabled = !enable;
     ptrAudioSpatializationService->SetSpatializationEnabled(selectedAudioDevice, enable);
 }
@@ -652,9 +670,8 @@ void AudioSpatializationServiceSetHeadTrackingEnabledWithStateFuzzTest(FuzzedDat
         return;
     }
 
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    selectedAudioDevice->macAddress_ = "00:11:22:33:44:55";
-    const bool enable = GetData<bool>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
+    const bool enable = fdp.ConsumeBool();
     ptrAudioSpatializationService->spatializationStateFlag_.headTrackingEnabled = !enable;
     ptrAudioSpatializationService->SetHeadTrackingEnabled(selectedAudioDevice, enable);
 }
@@ -666,12 +683,12 @@ void AudioSpatializationServiceUpdateRendererInfoMultipleFuzzTest(FuzzedDataProv
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
-    for (size_t i = 0; i < NUM_3; ++i) {
+    for (size_t i = 0; i < 3; ++i) {
         auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
         if (changeInfo != nullptr) {
-            changeInfo->rendererState = static_cast<RendererState>(GetData<int32_t>() % NUM_3);
-            changeInfo->outputDeviceInfo.macAddress_ = "00:11:22:33:44:" + std::to_string(i);
-            changeInfo->rendererInfo.streamUsage = StreamUsageVec[GetData<uint32_t>() % StreamUsageVec.size()];
+            changeInfo->rendererState = PickValue(fdp, g_testRendererStates);
+            changeInfo->outputDeviceInfo.macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+            changeInfo->rendererInfo.streamUsage = PickValue(fdp, g_testStreamUsages);
             rendererChangeInfo.push_back(changeInfo);
         }
     }
@@ -684,9 +701,9 @@ void AudioSpatializationServiceIsHeadTrackingDataRequestedDifferentDeviceFuzzTes
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    std::string macAddress = "00:11:22:33:44:55";
-    ptrAudioSpatializationService->currentDeviceAddress_ = "11:22:33:44:55:666";
-    ptrAudioSpatializationService->isHeadTrackingDataRequested_ = GetData<uint32_t>() % NUM_2;
+    std::string macAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    ptrAudioSpatializationService->currentDeviceAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    ptrAudioSpatializationService->isHeadTrackingDataRequested_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->IsHeadTrackingDataRequested(macAddress);
 }
 
@@ -697,7 +714,7 @@ void AudioSpatializationServiceSetSpatializationSceneTypeAllTypesFuzzTest(Fuzzed
         return;
     }
 
-    for (const auto& sceneType : AudioSpatializationSceneTypeVec) {
+    for (const auto& sceneType : g_testSpatializationSceneTypes) {
         ptrAudioSpatializationService->SetSpatializationSceneType(sceneType);
     }
 }
@@ -708,6 +725,10 @@ void AudioSpatializationServiceIsPersonalizedSpatializationSupportedFuzzTest(Fuz
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
+    vector<EffectChain> effectChains = {
+        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+    };
+    ptrAudioSpatializationService->Init(effectChains);
     ptrAudioSpatializationService->IsPersonalizedSpatializationSupported();
 }
 
@@ -718,7 +739,7 @@ void AudioSpatializationServiceIsPersonalizedSpatializationEnabledFuzzTest(Fuzze
         return;
     }
 
-    std::string address = "test_address";
+    std::string address = ConsumeString(fdp, "test_address");
     ptrAudioSpatializationService->IsPersonalizedSpatializationEnabled(address);
 }
 
@@ -729,8 +750,8 @@ void AudioSpatializationServiceSetPersonalizedSpatializationEnabledFuzzTest(Fuzz
         return;
     }
 
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    const bool enable = GetData<bool>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
+    const bool enable = fdp.ConsumeBool();
 
     ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
 }
@@ -742,8 +763,8 @@ void AudioSpatializationServiceHandlePersonalizedSpatializationEnabledChangeFuzz
         return;
     }
 
-    const bool enable = GetData<bool>();
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    const bool enable = fdp.ConsumeBool();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice, enable);
 }
@@ -755,9 +776,8 @@ void AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzz
         return;
     }
 
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    selectedAudioDevice->macAddress_ = "00:11:22:33:44:55";
-    const bool enable = GetData<bool>();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
+    const bool enable = fdp.ConsumeBool();
     ptrAudioSpatializationService->spatializationStateFlag_.personalizedSpatializationEnabled = !enable;
     ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
 }
@@ -822,18 +842,6 @@ void Test(FuzzedDataProvider& fdp)
     func(fdp);
 }
 
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
-void Init()
-{
-}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -843,13 +851,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::Init();
     return 0;
 }

@@ -39,84 +39,88 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
+const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
+typedef void (*TestPtr)(FuzzedDataProvider&);
 
-typedef void (*TestFuncs)();
+template<typename T>
+T PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
+{
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
+}
 
-vector<DeviceType> DeviceTypeVec = {
-    DEVICE_TYPE_NONE,
-    DEVICE_TYPE_INVALID,
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
+{
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    return value.empty() ? fallback : value;
+}
+
+const vector<DeviceType> g_testOutputDeviceTypes = {
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_WIRED_HEADPHONES,
-    DEVICE_TYPE_BLUETOOTH_SCO,
     DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
-    DEVICE_TYPE_MIC,
-    DEVICE_TYPE_WAKEUP,
     DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_DP,
-    DEVICE_TYPE_REMOTE_CAST,
-    DEVICE_TYPE_USB_DEVICE,
-    DEVICE_TYPE_ACCESSORY,
-    DEVICE_TYPE_REMOTE_DAUDIO,
-    DEVICE_TYPE_HDMI,
-    DEVICE_TYPE_LINE_DIGITAL,
     DEVICE_TYPE_NEARLINK,
-    DEVICE_TYPE_NEARLINK_IN,
-    DEVICE_TYPE_FILE_SINK,
-    DEVICE_TYPE_FILE_SOURCE,
-    DEVICE_TYPE_EXTERN_CABLE,
-    DEVICE_TYPE_DEFAULT,
-    DEVICE_TYPE_USB_ARM_HEADSET,
-    DEVICE_TYPE_MAX,
 };
 
-template<class T>
-T GetData()
-{
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
-}
+const vector<DeviceType> g_testInputDeviceTypes = {
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_NEARLINK_IN,
+};
 
-template<class T>
-uint32_t GetArrLength(T& arr)
+const vector<DeviceRole> g_testDeviceRoles = {
+    INPUT_DEVICE,
+    OUTPUT_DEVICE,
+};
+
+const vector<DeviceCategory> g_testDeviceCategories = {
+    CATEGORY_DEFAULT,
+    BT_HEADPHONE,
+    BT_SOUNDBOX,
+    BT_CAR,
+    BT_GLASSES,
+    BT_WATCH,
+    BT_HEARAID,
+    BT_UNWEAR_HEADPHONE,
+};
+
+std::shared_ptr<AudioDeviceDescriptor> MakeDeviceDescriptor(FuzzedDataProvider& fdp, DeviceRole role)
 {
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
+    const auto& deviceTypes = (role == INPUT_DEVICE) ? g_testInputDeviceTypes : g_testOutputDeviceTypes;
+    if (deviceTypes.size() == 0 || g_testDeviceCategories.size() == 0) {
+        return std::make_shared<AudioDeviceDescriptor>();
     }
-    return sizeof(arr) / sizeof(arr[0]);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(PickValue(fdp, deviceTypes), role);
+    desc->networkId_ = ConsumeString(fdp, LOCAL_NETWORK_ID);
+    desc->macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    desc->deviceName_ = ConsumeString(fdp, "audio_fuzz_device");
+    desc->deviceCategory_ = PickValue(fdp, g_testDeviceCategories);
+    desc->deviceId_ = fdp.ConsumeIntegral<int32_t>();
+    return desc;
 }
 
 void SetPreferredRingRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> desc = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     AudioStateManager::GetAudioStateManager().SetPreferredRingRenderDevice(desc);
 }
 
 void SetPreferredToneRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> desc = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     AudioStateManager::GetAudioStateManager().SetPreferredToneRenderDevice(desc);
 }
 
 void SetAndGetPreferredRingRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> desc = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     if (desc == nullptr) {
         return;
     }
@@ -126,14 +130,14 @@ void SetAndGetPreferredRingRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 
 void SetAndGetPreferredToneRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> desc = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
     AudioStateManager::GetAudioStateManager().SetPreferredToneRenderDevice(desc);
     AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice();
 }
 
 void SetAndGetPreferredRecognitionCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> desc = MakeDeviceDescriptor(fdp, INPUT_DEVICE);
     AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
     AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
 }
@@ -142,12 +146,15 @@ void SetAudioVKBInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<IStandardAudioPolicyManagerListener> callback = sptr<IStandardAudioPolicyManagerListener>();
     AudioStateManager::GetAudioStateManager().SetAudioVKBInfoMgrCallback(callback);
+    std::string bundleName = ConsumeString(fdp, "testName");
+    bool isValid = fdp.ConsumeBool();
+    AudioStateManager::GetAudioStateManager().CheckVKBInfo(bundleName, isValid);
 }
 
 void CheckVKBInfoFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::string bundleName = "testName";
-    bool isValid = GetData<bool>();
+    std::string bundleName = ConsumeString(fdp, "testName");
+    bool isValid = fdp.ConsumeBool();
     AudioStateManager::GetAudioStateManager().CheckVKBInfo(bundleName, isValid);
 }
 
@@ -164,18 +171,6 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
-void Init()
-{
-}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -185,13 +180,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::Init();
     return 0;
 }

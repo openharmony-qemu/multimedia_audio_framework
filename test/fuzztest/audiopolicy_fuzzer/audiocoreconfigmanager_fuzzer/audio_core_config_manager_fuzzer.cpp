@@ -15,24 +15,85 @@
 
 #include "audio_core_config_manager.h"
 #include "iaudio_policy_client.h"
-#include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-typedef void (*TestFuncs)();
+const size_t MAX_STRING_LEN = 64;
+const char* LOCAL_NETWORK_ID = "LocalDevice";
+const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
+const int32_t MAX_TEST_UID = 10000;
+const uint32_t DEVICE_SUPPORT_MMAP = 1;
+typedef void (*TestFuncs)(FuzzedDataProvider&);
+
+const vector<DeviceType> g_testOutputDeviceTypes = {
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_NEARLINK,
+};
+
+const vector<DeviceType> g_testInputDeviceTypes = {
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_NEARLINK_IN,
+};
+
+const vector<DeviceCategory> g_testDeviceCategories = {
+    CATEGORY_DEFAULT,
+    BT_HEADPHONE,
+    BT_SOUNDBOX,
+    BT_CAR,
+    BT_GLASSES,
+};
+
+template<typename T>
+T ConsumeEnum(FuzzedDataProvider& fdp)
+{
+    return static_cast<T>(fdp.ConsumeIntegral<int32_t>());
+}
+
+template<typename T>
+T PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
+{
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
+}
+
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
+{
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    return value.empty() ? fallback : value;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> MakeDeviceDescriptor(FuzzedDataProvider& fdp, DeviceRole role)
+{
+    const auto& deviceTypes = (role == INPUT_DEVICE) ? g_testInputDeviceTypes : g_testOutputDeviceTypes;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(PickValue(fdp, deviceTypes), role);
+    desc->networkId_ = ConsumeString(fdp, LOCAL_NETWORK_ID);
+    desc->macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    desc->deviceName_ = ConsumeString(fdp, "audio_fuzz_device");
+    desc->deviceCategory_ = PickValue(fdp, g_testDeviceCategories);
+    desc->deviceId_ = fdp.ConsumeIntegralInRange<int32_t>(0, MAX_TEST_UID);
+    desc->SetDeviceSupportMmap(fdp.ConsumeBool() ? DEVICE_SUPPORT_MMAP : 0);
+    return desc;
+}
 
 void UpdateAndClearStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::string adapterName = "adapterName";
-    std::string pipeName = "pipeName";
+    std::string adapterName = ConsumeString(fdp, "adapterName");
+    std::string pipeName = ConsumeString(fdp, "pipeName");
     std::list<DeviceStreamInfo> deviceStreamInfo;
     DeviceStreamInfo streamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
     deviceStreamInfo.push_back(streamInfo);
     std::list<std::string> supportDevices;
-    supportDevices.push_back("supportDevices");
+    supportDevices.push_back(ConsumeString(fdp, "supportDevices"));
     AudioCoreConfigManager::GetInstance().UpdateStreamPropInfo(adapterName, pipeName,
         deviceStreamInfo, supportDevices);
     AudioCoreConfigManager::GetInstance().ClearStreamPropInfo(adapterName, pipeName);
@@ -42,16 +103,16 @@ void UpdateDynamicCapturerConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioModuleInfo moduleInfo;
     AudioCoreConfigManager::GetInstance().GetAdapterInfoFlag();
-    AudioCoreConfigManager::GetInstance().UpdateDynamicCapturerConfig(g_fuzzUtils.GetData<ClassType>(), moduleInfo);
+    AudioCoreConfigManager::GetInstance().UpdateDynamicCapturerConfig(ConsumeEnum<ClassType>(fdp), moduleInfo);
 }
 
 void GetMaxCapturersInstancesFuzzTest(FuzzedDataProvider& fdp)
 {
     PolicyGlobalConfigs globalConfigs;
     PolicyConfigInfo policyConfigInfo;
-    if (g_fuzzUtils.GetData<bool>()) {
-        policyConfigInfo.name_ = "maxCapturers";
-        policyConfigInfo.value_ = "-0";
+    if (fdp.ConsumeBool()) {
+        policyConfigInfo.name_ = ConsumeString(fdp, "maxCapturers");
+        policyConfigInfo.value_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     }
     globalConfigs.commonConfigs_.push_back(policyConfigInfo);
     AudioCoreConfigManager::GetInstance().OnGlobalConfigsParsed(globalConfigs);
@@ -62,9 +123,9 @@ void GetMaxFastRenderersInstancesFuzzTest(FuzzedDataProvider& fdp)
 {
     PolicyGlobalConfigs globalConfigs;
     PolicyConfigInfo policyConfigInfo;
-    if (g_fuzzUtils.GetData<bool>()) {
-        policyConfigInfo.name_ = "maxFastRenderers";
-        policyConfigInfo.value_ = "-0";
+    if (fdp.ConsumeBool()) {
+        policyConfigInfo.name_ = ConsumeString(fdp, "maxFastRenderers");
+        policyConfigInfo.value_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     }
     globalConfigs.commonConfigs_.push_back(policyConfigInfo);
     AudioCoreConfigManager::GetInstance().OnGlobalConfigsParsed(globalConfigs);
@@ -73,43 +134,46 @@ void GetMaxFastRenderersInstancesFuzzTest(FuzzedDataProvider& fdp)
 
 void GetVoipRendererFlagFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioCoreConfigManager::GetInstance().SetNormalVoipFlag(g_fuzzUtils.GetData<bool>());
+    AudioCoreConfigManager::GetInstance().SetNormalVoipFlag(fdp.ConsumeBool());
     AudioCoreConfigManager::GetInstance().GetNormalVoipFlag();
-    AudioCoreConfigManager::GetInstance().OnVoipConfigParsed(g_fuzzUtils.GetData<bool>());
+    AudioCoreConfigManager::GetInstance().OnVoipConfigParsed(fdp.ConsumeBool());
     AudioCoreConfigManager::GetInstance().GetVoipConfig();
-    AudioCoreConfigManager::GetInstance().GetVoipRendererFlag("Speaker", "LocalDevice",
-        g_fuzzUtils.GetData<AudioSamplingRate>());
+    AudioCoreConfigManager::GetInstance().GetVoipRendererFlag(ConsumeString(fdp, "Speaker"),
+        ConsumeString(fdp, "LocalDevice"),
+        ConsumeEnum<AudioSamplingRate>(fdp));
 }
 
 void SetAndGetAudioLatencyFromXmlFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioCoreConfigManager::GetInstance().OnAudioLatencyParsed(g_fuzzUtils.GetData<uint64_t>());
+    AudioCoreConfigManager::GetInstance().OnAudioLatencyParsed(fdp.ConsumeIntegral<uint64_t>());
     AudioCoreConfigManager::GetInstance().GetAudioLatencyFromXml();
 }
 
 void GetAdapterInfoByTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<PolicyAdapterInfo> info = nullptr;
-    AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(g_fuzzUtils.GetData<AudioAdapterType>(), info);
+    AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(ConsumeEnum<AudioAdapterType>(fdp), info);
 }
 
 void GetStreamPropInfoSizeFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioCoreConfigManager::GetInstance().GetStreamPropInfoSize("primary", "");
+    std::string adapterName = ConsumeString(fdp, "primary");
+    std::string pipeName = ConsumeString(fdp, "");
+    AudioCoreConfigManager::GetInstance().GetStreamPropInfoSize(adapterName, pipeName);
 }
 
 void GetTargetSourceTypeAndMatchingFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     bool useMatchingPropInfo = false;
-    AudioCoreConfigManager::GetInstance().GetTargetSourceTypeAndMatchingFlag(g_fuzzUtils.GetData<SourceType>(),
+    AudioCoreConfigManager::GetInstance().GetTargetSourceTypeAndMatchingFlag(ConsumeEnum<SourceType>(fdp),
         useMatchingPropInfo);
 }
 
 void ParseFormatFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string format = "";
-    if (g_fuzzUtils.GetData<bool>()) {
-        format = "s16le";
+    if (fdp.ConsumeBool()) {
+        format = ConsumeString(fdp, "s16le");
     }
     AudioCoreConfigManager::GetInstance().ParseFormat(format);
 }
@@ -118,8 +182,7 @@ void CheckDynamicCapturerConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = MakeDeviceDescriptor(fdp, INPUT_DEVICE);
     desc->newDeviceDescs_.push_back(deviceDesc);
     std::shared_ptr<PipeStreamPropInfo> info = std::make_shared<PipeStreamPropInfo>();
     AudioCoreConfigManager::GetInstance().CheckDynamicCapturerConfig(desc, info);
@@ -130,18 +193,18 @@ void GetStreamPropInfoForRecordFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
     desc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
-    desc->streamInfo_.format = g_fuzzUtils.GetData<AudioSampleFormat>();
-    desc->streamInfo_.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
-    desc->capturerInfo_.sourceType = g_fuzzUtils.GetData<SourceType>();
+    desc->streamInfo_.format = ConsumeEnum<AudioSampleFormat>(fdp);
+    desc->streamInfo_.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
+    desc->capturerInfo_.sourceType = ConsumeEnum<SourceType>(fdp);
     std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
     CHECK_AND_RETURN(adapterPipeInfo != nullptr);
     std::shared_ptr<PipeStreamPropInfo> info = nullptr;
     adapterPipeInfo->dynamicStreamPropInfos_.push_back(info);
     adapterPipeInfo->streamPropInfos_.push_back(info);
     AudioStreamInfo tempStreamInfo = {};
-    tempStreamInfo.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
-    tempStreamInfo.channels = g_fuzzUtils.GetData<AudioChannel>();
-    AudioCoreConfigManager::GetInstance().OnUpdateRouteSupport(g_fuzzUtils.GetData<bool>());
+    tempStreamInfo.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
+    tempStreamInfo.channels = ConsumeEnum<AudioChannel>(fdp);
+    AudioCoreConfigManager::GetInstance().OnUpdateRouteSupport(fdp.ConsumeBool());
     AudioCoreConfigManager::GetInstance().GetStreamPropInfoForRecord(desc, adapterPipeInfo, info, tempStreamInfo);
 }
 
@@ -149,7 +212,7 @@ void GetNormalRecordAdapterInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
-    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> device = MakeDeviceDescriptor(fdp, INPUT_DEVICE);
     desc->AddNewDevice(device);
     std::shared_ptr<AdapterPipeInfo> info = AudioCoreConfigManager::GetInstance().GetNormalRecordAdapterInfo(desc);
 }
@@ -159,7 +222,7 @@ void UpdateBasicStreamInfoFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioStreamDescriptor> desc = nullptr;
     std::shared_ptr<AdapterPipeInfo> pipeInfo = nullptr;
     AudioStreamInfo streamInfo;
-    streamInfo.format = g_fuzzUtils.GetData<AudioSampleFormat>();
+    streamInfo.format = ConsumeEnum<AudioSampleFormat>(fdp);
     AudioCoreConfigManager::GetInstance().UpdateBasicStreamInfo(desc, pipeInfo, streamInfo);
     desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
@@ -171,10 +234,10 @@ void UpdateBasicStreamInfoFuzzTest(FuzzedDataProvider& fdp)
         AUDIO_INPUT_FLAG_FAST,
         AUDIO_OUTPUT_FLAG_FAST,
     };
-    desc->SetRoute(routeFlag[g_fuzzUtils.GetData<uint32_t>() % routeFlag.size()]);
-    if (g_fuzzUtils.GetData<bool>()) {
+    desc->SetRoute(PickValue(fdp, routeFlag));
+    if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-        pipeInfo->streamPropInfos_.push_back(g_fuzzUtils.GetData<bool>() ? streamPropInfo : nullptr);
+        pipeInfo->streamPropInfos_.push_back(fdp.ConsumeBool() ? streamPropInfo : nullptr);
     }
     AudioCoreConfigManager::GetInstance().UpdateBasicStreamInfo(desc, pipeInfo, streamInfo);
 }
@@ -185,13 +248,13 @@ void GetDynamicStreamPropInfoFromPipeFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(info != nullptr);
     std::shared_ptr<PipeStreamPropInfo> pipeStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
     CHECK_AND_RETURN(pipeStreamPropInfo != nullptr);
-    pipeStreamPropInfo->sampleRate_ = g_fuzzUtils.GetData<uint32_t>();
+    pipeStreamPropInfo->sampleRate_ = fdp.ConsumeIntegral<uint32_t>();
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps = {pipeStreamPropInfo};
     info->UpdateDynamicStreamProps(streamProps);
-    AudioSampleFormat format = g_fuzzUtils.GetData<AudioSampleFormat>();
-    uint32_t sampleRate = g_fuzzUtils.GetData<uint32_t>();
-    AudioChannel channels = g_fuzzUtils.GetData<AudioChannel>();
-    AudioCoreConfigManager::GetInstance().SupportImplicitConversion(g_fuzzUtils.GetData<AudioFlag>());
+    AudioSampleFormat format = ConsumeEnum<AudioSampleFormat>(fdp);
+    uint32_t sampleRate = fdp.ConsumeIntegral<uint32_t>();
+    AudioChannel channels = ConsumeEnum<AudioChannel>(fdp);
+    AudioCoreConfigManager::GetInstance().SupportImplicitConversion(ConsumeEnum<AudioFlag>(fdp));
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), AudioEncodingType::ENCODING_PCM, format,
         channels);
     std::shared_ptr<PipeStreamPropInfo> ret =
@@ -201,15 +264,15 @@ void GetDynamicStreamPropInfoFromPipeFuzzTest(FuzzedDataProvider& fdp)
 void IsStreamPropMatchFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioStreamInfo streamInfo;
-    streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
-    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_11025;
-    streamInfo.channels = AudioChannel::STEREO;
+    streamInfo.format = ConsumeEnum<AudioSampleFormat>(fdp);
+    streamInfo.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
+    streamInfo.channels = ConsumeEnum<AudioChannel>(fdp);
     std::list<std::shared_ptr<PipeStreamPropInfo>> infos;
-    if (g_fuzzUtils.GetData<bool>()) {
+    if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-        streamPropInfo->format_ = AudioSampleFormat::SAMPLE_F32LE;
-        streamPropInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_11025;
-        streamPropInfo->channels_ = AudioChannel::STEREO;
+        streamPropInfo->format_ = streamInfo.format;
+        streamPropInfo->sampleRate_ = streamInfo.samplingRate;
+        streamPropInfo->channels_ = streamInfo.channels;
         infos.push_back(streamPropInfo);
     }
     AudioCoreConfigManager::GetInstance().IsStreamPropMatch(streamInfo, infos);
@@ -217,7 +280,7 @@ void IsStreamPropMatchFuzzTest(FuzzedDataProvider& fdp)
 
 void GetFormatOnUpdateAnahsSupportFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::string anahsShowType = g_fuzzUtils.GetData<std::string>();
+    std::string anahsShowType = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     AudioCoreConfigManager::GetInstance().GetFastFormat();
     AudioCoreConfigManager::GetInstance().OnUpdateAnahsSupport(anahsShowType);
 }
@@ -226,9 +289,9 @@ void IsSupportInnerCaptureOffloadFuzzTest(FuzzedDataProvider& fdp)
 {
     PolicyGlobalConfigs globalConfigs;
     PolicyConfigInfo policyConfigInfo;
-    if (g_fuzzUtils.GetData<bool>()) {
-        policyConfigInfo.name_ = "offloadInnerCaptureSupport";
-        policyConfigInfo.value_ = "-0";
+    if (fdp.ConsumeBool()) {
+        policyConfigInfo.name_ = ConsumeString(fdp, "offloadInnerCaptureSupport");
+        policyConfigInfo.value_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     }
     globalConfigs.commonConfigs_.push_back(policyConfigInfo);
     AudioCoreConfigManager::GetInstance().OnGlobalConfigsParsed(globalConfigs);
@@ -241,7 +304,7 @@ void PreferMultiChannelPipeFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(desc != nullptr);
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     desc->newDeviceDescs_.push_back(deviceDesc);
-    desc->audioFlag_ = static_cast<AudioFlag>(g_fuzzUtils.GetData<uint32_t>() % AUDIO_FLAG_MAX);
+    desc->audioFlag_ = ConsumeEnum<AudioFlag>(fdp);
     AudioCoreConfigManager::GetInstance().PreferMultiChannelPipe(desc);
 }
 
@@ -249,8 +312,8 @@ void UpdateStreamSampleInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
-    desc->routeFlag_ = g_fuzzUtils.GetData<uint32_t>();
-    desc->streamInfo_.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
+    desc->routeFlag_ = fdp.ConsumeIntegral<uint32_t>();
+    desc->streamInfo_.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
     AudioStreamInfo streamInfo = desc->streamInfo_;
     AudioCoreConfigManager::GetInstance().UpdateStreamSampleInfo(desc, streamInfo);
 }
@@ -260,18 +323,18 @@ void MatchStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<PipeStreamPropInfo> info = nullptr;
     std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
     CHECK_AND_RETURN(adapterPipeInfo != nullptr);
-    if (g_fuzzUtils.GetData<bool>()) {
+    if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         adapterPipeInfo->streamPropInfos_.push_back(streamPropInfo);
     }
-    if (g_fuzzUtils.GetData<bool>()) {
+    if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> dynamicStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
         std::list<std::shared_ptr<PipeStreamPropInfo>> dynamicProps = {dynamicStreamPropInfo};
         adapterPipeInfo->UpdateDynamicStreamProps(dynamicProps);
     }
-    AudioStreamInfo streamInfo(g_fuzzUtils.GetData<AudioSamplingRate>(), g_fuzzUtils.GetData<AudioEncodingType>(),
-        g_fuzzUtils.GetData<AudioSampleFormat>(), g_fuzzUtils.GetData<AudioChannel>(),
-        g_fuzzUtils.GetData<AudioChannelLayout>());
+    AudioStreamInfo streamInfo(ConsumeEnum<AudioSamplingRate>(fdp), ConsumeEnum<AudioEncodingType>(fdp),
+        ConsumeEnum<AudioSampleFormat>(fdp), ConsumeEnum<AudioChannel>(fdp),
+        ConsumeEnum<AudioChannelLayout>(fdp));
     AudioCoreConfigManager::GetInstance().MatchStreamPropInfo(info, adapterPipeInfo, streamInfo);
 }
 
@@ -279,18 +342,18 @@ void GetStreamPropInfoForMultiChannelFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
-    desc->streamInfo_.encoding = g_fuzzUtils.GetData<AudioEncodingType>();
+    desc->streamInfo_.encoding = ConsumeEnum<AudioEncodingType>(fdp);
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     desc->newDeviceDescs_.push_back(deviceDesc);
     desc->audioFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
     CHECK_AND_RETURN(info != nullptr);
-    if (g_fuzzUtils.GetData<bool>()) {
+    if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-        streamPropInfo->channelLayout_ = g_fuzzUtils.GetData<AudioChannelLayout>();
+        streamPropInfo->channelLayout_ = ConsumeEnum<AudioChannelLayout>(fdp);
         info->streamPropInfos_.push_back(streamPropInfo);
     }
-    AudioChannelLayout channelLayout = g_fuzzUtils.GetData<AudioChannelLayout>();
+    AudioChannelLayout channelLayout = ConsumeEnum<AudioChannelLayout>(fdp);
     AudioCoreConfigManager::GetInstance().GetStreamPropInfoForMultiChannel(desc, info, channelLayout);
 }
 
@@ -300,13 +363,13 @@ void GetDynamicStreamPropInfoFromPipeForViVidFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(info != nullptr);
     std::shared_ptr<PipeStreamPropInfo> pipeStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
     CHECK_AND_RETURN(pipeStreamPropInfo != nullptr);
-    pipeStreamPropInfo->channelLayout_ = g_fuzzUtils.GetData<AudioChannelLayout>();
+    pipeStreamPropInfo->channelLayout_ = ConsumeEnum<AudioChannelLayout>(fdp);
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps = {pipeStreamPropInfo};
     info->UpdateDynamicStreamProps(streamProps);
-    AudioSampleFormat format = g_fuzzUtils.GetData<AudioSampleFormat>();
-    uint32_t sampleRate = g_fuzzUtils.GetData<uint32_t>();
-    AudioChannel channels = g_fuzzUtils.GetData<AudioChannel>();
-    AudioChannelLayout channelLayout = g_fuzzUtils.GetData<AudioChannelLayout>();
+    AudioSampleFormat format = ConsumeEnum<AudioSampleFormat>(fdp);
+    uint32_t sampleRate = fdp.ConsumeIntegral<uint32_t>();
+    AudioChannel channels = ConsumeEnum<AudioChannel>(fdp);
+    AudioChannelLayout channelLayout = ConsumeEnum<AudioChannelLayout>(fdp);
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), AudioEncodingType::ENCODING_AUDIOVIVID,
         format, channels, channelLayout);
     AudioCoreConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo);
@@ -325,12 +388,12 @@ void NeedUidCheckForOffloadPipeFuzzTest(FuzzedDataProvider& fdp)
     configData.Reorganize();
     std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
     CHECK_AND_RETURN(pipeInfo != nullptr);
-    pipeInfo->needUidCheck_ = g_fuzzUtils.GetData<bool>();
+    pipeInfo->needUidCheck_ = fdp.ConsumeBool();
 
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
     CHECK_AND_RETURN(deviceInfo != nullptr);
     AudioFlag routeFlag = static_cast<AudioFlag>(AUDIO_OUTPUT_FLAG_LOWPOWER |
-        (g_fuzzUtils.GetData<bool>() ? AUDIO_OUTPUT_FLAG_DIRECT : AUDIO_FLAG_NONE));
+        (fdp.ConsumeBool() ? AUDIO_OUTPUT_FLAG_DIRECT : AUDIO_FLAG_NONE));
     deviceInfo->supportPipeMap_.insert({routeFlag, pipeInfo});
 
     std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};

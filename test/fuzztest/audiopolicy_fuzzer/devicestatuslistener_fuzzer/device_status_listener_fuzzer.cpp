@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <cerrno>
 #include "device_status_listener.h"
 #include "audio_policy_service.h"
 #include <fuzzer/FuzzedDataProvider.h>
@@ -22,38 +21,28 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
 const std::string AUDIO_HDI_SERVICE_NAME = "audio_manager_service";
 
-typedef void (*TestPtr)();
+typedef void (*TestPtr)(FuzzedDataProvider&);
 
-template<class T>
-uint32_t GetArrLength(T& arr)
+template<typename T>
+T PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
 {
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
 }
 
-template<class T>
-T GetData()
+template<typename T>
+T ConsumeEnum(FuzzedDataProvider& fdp)
 {
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
+    return static_cast<T>(fdp.ConsumeIntegral<int32_t>());
+}
+
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
+{
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    return value.empty() ? fallback : value;
 }
 
 void DeviceStatusListenerOnMicrophoneBlockedFuzzTest(FuzzedDataProvider& fdp)
@@ -72,17 +61,10 @@ void DeviceStatusListenerOnMicrophoneBlockedFuzzTest(FuzzedDataProvider& fdp)
     if (deviceStatusListenerPtr == nullptr) {
         return;
     }
-    const std::string info = testInfo[GetData<uint32_t>() % testInfo.size()];
+    const std::string info = PickValue(fdp, testInfo);
     deviceStatusListenerPtr->OnMicrophoneBlocked(info);
 }
 
-void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
-    if (deviceStatusListenerPtr == nullptr) {
-        return;
-    }
-}
 
 void DeviceStatusListenerOnPnpDeviceStatusChangedFuzzTest(FuzzedDataProvider& fdp)
 {
@@ -95,7 +77,7 @@ void DeviceStatusListenerOnPnpDeviceStatusChangedFuzzTest(FuzzedDataProvider& fd
         return;
     }
 
-    const std::string info = testInfo[GetData<uint32_t>() % testInfo.size()];
+    const std::string info = PickValue(fdp, testInfo);
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
 
@@ -105,12 +87,15 @@ void DeviceStatusListenerUnRegisterDeviceStatusListenerFuzzTest(FuzzedDataProvid
     if (deviceStatusListenerPtr == nullptr) {
         return;
     }
-    HDIServiceManager hdiServiceManager;
-    ServiceStatusListener listener;
-    deviceStatusListenerPtr->hdiServiceManager_ = HDIServiceManagerGet();
-    deviceStatusListenerPtr->listener_ = HdiServiceStatusListenerNewInstance();
-    deviceStatusListenerPtr->audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
-
+    if (fdp.ConsumeBool()) {
+        deviceStatusListenerPtr->hdiServiceManager_ = HDIServiceManagerGet();
+    }
+    if (fdp.ConsumeBool()) {
+        deviceStatusListenerPtr->listener_ = HdiServiceStatusListenerNewInstance();
+    }
+    if (fdp.ConsumeBool()) {
+        deviceStatusListenerPtr->audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
+    }
     deviceStatusListenerPtr->UnRegisterDeviceStatusListener();
 }
 
@@ -123,7 +108,7 @@ void DeviceStatusListenerUpdateAnahsPlatformTypeFuzzTest(FuzzedDataProvider& fdp
     static const std::vector<std::string> testTypes = {
         "typeA", "typeB", "", "1234567890"
     };
-    const std::string type = testTypes[GetData<uint32_t>() % testTypes.size()];
+    const std::string type = PickValue(fdp, testTypes);
     deviceStatusListenerPtr->UpdateAnahsPlatformType(type);
 }
 
@@ -139,10 +124,16 @@ void DeviceStatusListenerRegisterAndCallbackFuzzTest(FuzzedDataProvider& fdp)
         AUDIO_WARNING_LOG("RegisterDeviceStatusListener failed, continue with manual callback");
     }
 
+    static const vector<string> testInfo = {
+        "EVENT_TYPE=1;DEVICE_TYPE=4;",
+        "EVENT_TYPE=1;DEVICE_TYPE=2;",
+        "EVENT_TYPE=1;DEVICE_TYPE=8;",
+        "abc",
+    };
     ServiceStatus serviceStatus;
-    serviceStatus.serviceName = "audio_manager_service";
+    serviceStatus.serviceName = ConsumeString(fdp, AUDIO_HDI_SERVICE_NAME);
     serviceStatus.status = SERVIE_STATUS_CHANGE;
-    serviceStatus.info = "EVENT_TYPE=1;DEVICE_TYPE=4;";
+    serviceStatus.info = PickValue(fdp, testInfo);
 
     deviceStatusListenerPtr->listener_->callback(deviceStatusListenerPtr->listener_, &serviceStatus);
 
@@ -164,7 +155,7 @@ void DeviceStatusListenerPnpDeviceTypeBranchFuzzTest(FuzzedDataProvider& fdp)
         "EVENT_TYPE=1;DEVICE_TYPE=999;EVENT_NAME=Unknown_Device;DEVICE_ADDRESS=unknown;",
     };
 
-    const std::string info = testInfo[GetData<uint32_t>() % testInfo.size()];
+    const std::string info = PickValue(fdp, testInfo);
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
 
@@ -196,7 +187,7 @@ void DeviceStatusListenerOnPnpDeviceStatusChangedWithAnahsFuzzTest(FuzzedDataPro
         "ANAHS_NAME=other;EVENT_TYPE=1;DEVICE_TYPE=32;EVENT_NAME=HDMI_Device;DEVICE_ADDRESS=card0;",
     };
 
-    const std::string info = testInfo[GetData<uint32_t>() % testInfo.size()];
+    const std::string info = PickValue(fdp, testInfo);
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
 
@@ -210,10 +201,15 @@ void DeviceStatusListenerDaudioServiceBranchFuzzTest(FuzzedDataProvider& fdp)
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("RegisterDeviceStatusListener failed, continue with manual callback");
     }
+    static const vector<string> testInfo = {
+        "EVENT_TYPE=1;NID=abcd;PIN=123;VID=456;IID=789;",
+        "EVENT_TYPE=2;NID=xyz;PIN=0;VID=0;IID=0;",
+        "abc",
+    };
     ServiceStatus serviceStatus;
-    serviceStatus.serviceName = "daudio_primary_service";
+    serviceStatus.serviceName = ConsumeString(fdp, "daudio_primary_service");
     serviceStatus.status = SERVIE_STATUS_CHANGE;
-    serviceStatus.info = "EVENT_TYPE=1;NID=abcd;PIN=123;VID=456;IID=789;";
+    serviceStatus.info = PickValue(fdp, testInfo);
     deviceStatusListenerPtr->listener_->callback(deviceStatusListenerPtr->listener_, &serviceStatus);
 }
 
@@ -233,7 +229,7 @@ void AudioPnpStatusCallbackOnPnpDeviceStatusChangedFuzzTest(FuzzedDataProvider& 
         "ANAHS_NAME=insert;EVENT_TYPE=1;DEVICE_TYPE=32;EVENT_NAME=HDMI_Device;DEVICE_ADDRESS=card0;",
         "EVENT_TYPE=1;DEVICE_TYPE=999;EVENT_NAME=Unknown_Device;DEVICE_ADDRESS=unknown;",
     };
-    const std::string info = testInfo[GetData<uint32_t>() % testInfo.size()];
+    const std::string info = PickValue(fdp, testInfo);
     pnpCallback->OnPnpDeviceStatusChanged(info);
 }
 
@@ -254,11 +250,11 @@ void AudioPnpStatusCallbackOnMicrophoneBlockedFuzzTest(FuzzedDataProvider& fdp)
         "EVENT_TYPE=1;DEVICE_TYPE=999;",
         "abc",
     };
-    const std::string info = testInfo[GetData<uint32_t>() % testInfo.size()];
+    const std::string info = PickValue(fdp, testInfo);
     pnpCallback->OnMicrophoneBlocked(info);
 }
 
-void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest1(FuzzedDataProvider& fdp)
+void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
     if (!deviceStatusListenerPtr) {
@@ -272,8 +268,15 @@ void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest1(FuzzedDataProvider
     sptr<IStandardAudioAnahsManagerListener> mockListener = new MockAnahsManagerListener();
     sptr<IRemoteObject> obj = mockListener->AsObject();
 
-    deviceStatusListenerPtr->SetAudioDeviceAnahsCallback(nullptr);
-    deviceStatusListenerPtr->SetAudioDeviceAnahsCallback(obj);
+    if (fdp.ConsumeBool()) {
+        deviceStatusListenerPtr->audioDeviceAnahsCb_ = mockListener;
+    }
+    if (fdp.ConsumeBool()) {
+        deviceStatusListenerPtr->SetAudioDeviceAnahsCallback(nullptr);
+    }
+    if (fdp.ConsumeBool()) {
+        deviceStatusListenerPtr->SetAudioDeviceAnahsCallback(obj);
+    }
 }
 
 void DeviceStatusListenerUnsetAudioDeviceAnahsCallbackFuzzTest(FuzzedDataProvider& fdp)
@@ -288,15 +291,22 @@ void DeviceStatusListenerUnsetAudioDeviceAnahsCallbackFuzzTest(FuzzedDataProvide
         sptr<IRemoteObject> AsObject() override { return nullptr; }
     };
     sptr<IStandardAudioAnahsManagerListener> mockListener = new MockAnahsManagerListener();
-    deviceStatusListenerPtr->audioDeviceAnahsCb_ = mockListener;
 
+    if (fdp.ConsumeBool()) {
+        deviceStatusListenerPtr->audioDeviceAnahsCb_ = mockListener;
+    }
     deviceStatusListenerPtr->UnsetAudioDeviceAnahsCallback();
 }
 
 void AudioPnpStatusCallbackDestructorFuzzTest(FuzzedDataProvider& fdp)
 {
     auto* callback = new AudioPnpStatusCallback();
-    callback->SetDeviceStatusListener(nullptr);
+    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
+    if (fdp.ConsumeBool() && deviceStatusListenerPtr != nullptr) {
+        callback->SetDeviceStatusListener(deviceStatusListenerPtr.get());
+    } else {
+        callback->SetDeviceStatusListener(nullptr);
+    }
     delete callback;
 }
 
@@ -304,7 +314,6 @@ void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
     DeviceStatusListenerOnMicrophoneBlockedFuzzTest,
-    DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest,
     DeviceStatusListenerOnPnpDeviceStatusChangedFuzzTest,
     DeviceStatusListenerUnRegisterDeviceStatusListenerFuzzTest,
     DeviceStatusListenerUpdateAnahsPlatformTypeFuzzTest,
@@ -314,20 +323,11 @@ void Test(FuzzedDataProvider& fdp)
     DeviceStatusListenerDaudioServiceBranchFuzzTest,
     AudioPnpStatusCallbackOnPnpDeviceStatusChangedFuzzTest,
     AudioPnpStatusCallbackOnMicrophoneBlockedFuzzTest,
-    DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest1,
+    DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest,
     DeviceStatusListenerUnsetAudioDeviceAnahsCallbackFuzzTest,
     AudioPnpStatusCallbackDestructorFuzzTest,
     });
     func(fdp);
-}
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
 }
 void Init()
 {
@@ -341,7 +341,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
