@@ -183,6 +183,7 @@ public:
 
     std::vector<PipeDeviceVolumeGroup> GetAllPipeDeviceVolumeInfo();
     std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);
+    std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForDevice(
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
     

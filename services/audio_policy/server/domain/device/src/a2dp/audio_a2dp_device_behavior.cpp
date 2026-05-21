@@ -240,6 +240,8 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(),
         streamDescs.begin(), streamDescs.end());
     pipeManager->AddAudioPipeInfo(pipeInfo);
+    auto pipeDeviceVolumeGroup = AudioPipeManager::GetPipeManager()->GetPipeDeviceVolumeInfoForPipe(pipeInfo);
+    AudioAdapterManager::GetInstance().UpdateAudioPipeVolume(pipeDeviceVolumeGroup);
 
     AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
     return SUCCESS;
