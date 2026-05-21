@@ -876,6 +876,7 @@ bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStr
     CHECK_AND_RETURN_RET_LOG(!targetStream->IsLoopbackStream(), false,
         "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
     CHECK_AND_RETURN_RET(IsUpdateActionForDeviceLevelHdPlay(existingStream, incomingStream), false);
+    CHECK_AND_RETURN_RET(targetStream->GetRoute() != (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_DIRECT), false);
     return true;
 }
 
