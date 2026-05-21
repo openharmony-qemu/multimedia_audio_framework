@@ -39,6 +39,10 @@ static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
 static constexpr float SMALL_SIGNAL_NUM = 1e-6;
+static constexpr int32_t EFFECT_TEMP_BUFFER_MAX_CACHE_SIZE = 800;
+static constexpr int32_t EFFECT_TEMP_BUFFER_MS_PER_SECOND = 1000;
+static constexpr int32_t EFFECT_TEMP_BUFFER_DEFAULT_WAIT_COUNT = 10;
+static constexpr int32_t EFFECT_TEMP_BUFFER_DEFAULT_CO_LATENCY = 260;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -46,11 +50,13 @@ namespace {
 constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
-HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
+HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInf, CollaborationState isCollaborationEnabled) :
+    HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
     effectOutput_(pcmBufferInfo_)
 {
+    isCollaborationEnabled_ = isCollaborationEnabled;
     if (nodeInfo.sceneType == HPAE_SCENE_DEFAULT) {
         sceneType_ = "SCENE_DEFAULT";
     } else {
@@ -61,17 +67,21 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         }
         if (sceneType_ == "SCENE_COLLABORATIVE") {
             PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
-            directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // bt speaker
-            collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // default speaker
+            if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+                tempEffectBuffer_ = std::make_shared<HpaeTempEffectBuffer>(pcmBufferInfo);
+            } else {
+                directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // bt speaker
+                collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // default speaker
+            }
         }
     }
     if (IS_DEVICE_ENHANCED_SUPPORTED) {
         deviceType_ = static_cast<DeviceType>(nodeInfo.deviceType);
         renderId_ = nodeInfo.renderId;
     }
-    AUDIO_INFO_LOG("created, scene type: %{public}s", sceneType_.c_str());
+    AUDIO_INFO_LOG("created, scene type: %{public}s, CollaborationEnabled: %{public}d", sceneType_.c_str(), isCollaborationEnabled_);
 #ifdef ENABLE_HOOK_PCM
-    if (sceneType_ == "SCENE_COLLABORATIVE") {
+    if (sceneType_ == "SCENE_COLLABORATIVE" && isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN) {
         directPcmDumper_ = std::make_unique<HpaePcmDumper>(
             "HpaeRenderEffectNodeDirect_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
         collaborativePcmDumper_ = std::make_unique<HpaePcmDumper>(
@@ -105,6 +115,17 @@ void HpaeRenderEffectNode::DoProcess()
     }
 
     std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
+
+    if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+        if (enableProcess_ && !preOutputs.empty() && tempEffectBuffer_) {
+            SignalProcess(preOutputs);
+            CHECK_AND_RETURN_LOG(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4),
+                "collaborative channel count is invalid, count: %{public}d", CHANNEL_4);
+            tempEffectBuffer_->ChangeEffectDataForLatency(&effectOutput_);
+            outputStream_.WriteDataToOutput(&effectOutput_);
+        }
+        return;
+    }
     if (enableProcess_ && !preOutputs.empty() && directOutput_ && collaborativeOutput_) {
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();
@@ -136,7 +157,6 @@ void HpaeRenderEffectNode::DoProcess()
 
 HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    AUDIO_DEBUG_LOG("render effect node signal process in");
     if (inputs.empty()) {
         AUDIO_WARNING_LOG("inputs size is empty");
         return nullptr;
@@ -572,6 +592,195 @@ uint64_t HpaeRenderEffectNode::GetLatency(uint32_t sessionId)
             "null audioEffectChainManager", false),
         "null audioEffectChainManager");
     return audioEffectChainManager->GetLatency(std::to_string(sessionId)) * AUDIO_US_PER_MS;
+}
+
+void HpaeRenderEffectNode::SetDelayCountToeffectNode(int32_t delayCount)
+{
+    if (tempEffectBuffer_ != nullptr) {
+        tempEffectBuffer_->SetDelayCountToeffectNode(delayCount);
+    }
+}
+
+HpaeTempEffectBuffer::HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo)
+{
+    const size_t size = static_cast<size_t>(SAMPLE_RATE_48000) *
+                        static_cast<size_t>(STEREO) *
+                        sizeof(float) *
+                        static_cast<size_t>(EFFECT_TEMP_BUFFER_MAX_CACHE_SIZE) /
+                        static_cast<size_t>(EFFECT_TEMP_BUFFER_MS_PER_SECOND);
+    AUDIO_INFO_LOG("Create ring cached, size:% {public}zu", size);
+    ringCache_ = AudioRingCache::Create(size);
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
+    waitCountThreshold_ = EFFECT_TEMP_BUFFER_DEFAULT_WAIT_COUNT;
+    tempOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+}
+
+void HpaeTempEffectBuffer::ChangeEffectDataForLatency(HpaePcmBuffer* buffer)
+{
+    if (!DelayAlignmentForEffectNode(buffer)) {
+        AUDIO_INFO_LOG("delay alignment for collabortive data is not ready");
+        return;
+    }
+    WriteDataEnqueueRingCache(buffer);
+    ReadDataDequeueRingCache(buffer);
+}
+
+void HpaeTempEffectBuffer::WriteDataEnqueueRingCache(HpaePcmBuffer* buffer)
+{
+    float *collOutPut = buffer->GetPcmDataBuffer();
+    CHECK_AND_RETURN_LOG(tempOutput != nullptr, "tempOutput_ is null");
+    float *tempOutput = tempOutput_->GetPcmDataBuffer();
+    for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
+        tempOutput[COLLABORATIVE_CHANNELS * i] =
+            collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX];
+        tempOutput[COLLABORATIVE_CHANNELS * i + 1] =
+            collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX];
+    }
+
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr && buffer != nullptr, "Ring cache or buffer is nullptr");
+    const size_t writeLen = static_cast<size_t>(SAMPLE_RATE_48000) *
+                        static_cast<size_t>(STEREO) *
+                        sizeof(float) *
+                        static_cast<size_t>(FRAME_LEN_20MS) /
+                        static_cast<size_t>(EFFECT_TEMP_BUFFER_MS_PER_SECOND);
+    // check writable size
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "get writable size failed");
+    CHECK_AND_RETURN_LOG(result.size >= writeLen,
+        "Insufficient cache space: %{public}zu < %{public}zu", result.size, writeLen);
+    
+    // enqueue buffer
+    BufferWrap bufferWrap = {reinterpret_cast<uint8_t*>(tempOutput), writeLen};
+    result = ringCache_->Enqueue(bufferWrap);
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
+}
+
+void HpaeTempEffectBuffer::ReadDataDequeueRingCache(HpaePcmBuffer* buffer)
+{
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
+    const size_t requestDataLen = static_cast<size_t>(SAMPLE_RATE_48000) *
+                                  static_cast<size_t>(STEREO) *
+                                  sizeof(float) *
+                                  static_cast<size_t>(FRAME_LEN_20MS) /
+                                  static_cast<size_t>(EFFECT_TEMP_BUFFER_MS_PER_SECOND);
+    // check readable size
+    OptResult result = ringCache_->GetReadableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "get readable size failed");
+
+    if (result.size < requestDataLen) {
+        AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
+            result.size, requestDataLen);
+        SetSilenceData(buffer);
+    } else {
+        CHECK_AND_RETURN_LOG(tempOutput != nullptr, "tempOutput_ is null");
+        float *tempOutput = tempOutput_->GetPcmDataBuffer();
+        // read buffer
+        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(tempOutput), requestDataLen};
+        result = ringCache_->Dequeue(bufferWrap);
+        if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_INFO_LOG("Dequeue data failed");
+            SetSilenceData(buffer);
+        } else {
+            SetTempBufferData(buffer, tempOutput);
+        }
+    }
+}
+
+void HpaeTempEffectBuffer::SetSilenceData(HpaePcmBuffer* buffer)
+{
+    float *collOutPut = buffer->GetPcmDataBuffer();
+    for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] = SMALL_SIGNAL_NUM;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] = SMALL_SIGNAL_NUM;
+    }
+}
+
+void HpaeTempEffectBuffer::SetSilenceData(HpaePcmBuffer* buffer, float *tempOutput)
+{
+    float *collOutPut = buffer->GetPcmDataBuffer();
+    for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] = tempOutput[COLLABORATIVE_CHANNELS * i];
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] = tempOutput[COLLABORATIVE_CHANNELS * i + 1];
+    }
+}
+
+void HpaeTempEffectBuffer::DelayAlignmentForEffectNode(HpaePcmBuffer* buffer)
+{
+    if (enqueueCount_ < waitCountThreshold_) {
+        enqueueCount_++;
+        SetSilenceData(buffer);
+        return false;
+    }
+
+    if (enqueueCount_ == waitCountThreshold_) {
+        enqueueCount_++;
+        //file silence frame for latency adjustment
+        ringCache_->ResetBuffer();
+
+        int32_t latency = EFFECT_TEMP_BUFFER_DEFAULT_CO_LATENCY;
+        ChangeLatencyByCollManagerForEffectNode(latency);
+        AUDIO_INFO_LOG("Filling silence frames for latency adjustment, use latency: %{public}d", latency);
+        FillSilenceFramesForEffectNode(latency);
+        // smoothen collaborative data
+        float gain = 0;
+        float deltaGain = 1.0f / DEFAULT_EFFECT_FRAMELEN;
+        for (uint32_t i = 0; i< DEFAULT_EFFECT_FRAMELEN; ++i) {
+            buffer->GetPcmDataBuffer()[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] *=
+                gain;
+            buffer->GetPcmDataBuffer()[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] *=
+                gain;
+            gain += deltaGain;
+        }
+    }
+
+    return true;
+}
+
+void HpaeTempEffectBuffer::FillSilenceFramesForEffectNode(int32_t latencyMs)
+{
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
+    if (latencyMs < 0) {
+        latencyMs = EFFECT_TEMP_BUFFER_DEFAULT_CO_LATENCY;
+    }
+    const size_t frameSize = ((static_cast<size_t>(SAMPLE_RATE_48000) * static_cast<size_t>(STEREO) *
+        sizeof(float)) / static_cast<size_t>(EFFECT_TEMP_BUFFER_MS_PER_SECOND)) * latencyMs;
+    
+    // check writeable size;
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "get writable size failed");
+    CHECK_AND_RETURN_LOG(result.size >= writeLen,
+        "Insufficient cache space: %{public}zu < %{public}zu", result.size, writeLen)
+    
+    std::vector<uint8_t> silenceData(frameSize, 0);
+    // create silence frame
+    BufferWrap bufferWrap = {silenceData.data(), frameSize};
+    result = ringCache_->Enqueue(bufferWrap);
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
+    AUDIO_INFO_LOG("filled %{public}u ms of silence frames", latencyMs);
+}
+
+void HpaeTempEffectBuffer::ChangeLatencyByCollManagerForEffectNode(int32_t &latency)
+{
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
+    latency = audioCollaborationManager->GetCollaborationLatency();
+}
+
+void HpaeTempEffectBuffer::SetDelayCountToeffectNode(int32_t delayCount)
+{
+    AUDIO_INFO_LOG("setDelayCount: %{public}d", delayCount);
+    // reset status flag
+    enqueueCount_ = 0;
+    waitCountThreshold_ = delayCount;
+}
+
+HpaeTempEffectBuffer::HpaeTempEffectBuffer()
+{
+    AUDIO_INFO_LOG("HpaeTempEffectBuffer create");
+}
+HpaeTempEffectBuffer::~HpaeTempEffectBuffer()
+{
+    AUDIO_INFO_LOG("HpaeTempEffectBuffer release");
 }
 } // namespace HPAE
 } // namespace AudioStandard
