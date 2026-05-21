@@ -104,6 +104,7 @@ void AudioSocketThreadAudioAnahsDetectDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     struct AudioPnpUevent validUeventInsert;
+    validUeventInsert.subSystem = UEVENT_PLATFORM;
     std::string anahsNameStr = PickValue(fdp, g_testUeventAnahsNames);
     validUeventInsert.anahsName = anahsNameStr.c_str();
 
@@ -219,7 +220,7 @@ void AudioSocketThreadDetectDPStateFuzzTest(FuzzedDataProvider& fdp)
 void AudioSocketThreadReadAndScanDpStateFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
-    std::string testPath = ConsumeString(fdp, "/tmp/test_path");
+    std::string testPath = "/tmp/test_path";
     std::ofstream file(testPath);
     if (!file.is_open()) {
         return;
@@ -243,6 +244,9 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -256,7 +260,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
+    OHOS::AudioStandard::Init();
     return 0;
 }
