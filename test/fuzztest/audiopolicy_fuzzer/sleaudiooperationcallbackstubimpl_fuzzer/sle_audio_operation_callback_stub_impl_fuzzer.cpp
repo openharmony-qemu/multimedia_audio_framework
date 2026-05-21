@@ -20,11 +20,9 @@
 #include "audio_device_info.h"
 #include "sle_audio_operation_callback_stub_impl.h"
 #include <fuzzer/FuzzedDataProvider.h>
-
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-
 const size_t THRESHOLD = 10;
 const size_t MAX_STRING_LEN = 64;
 const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
@@ -391,6 +389,9 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -406,5 +407,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 }
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
+    OHOS::AudioStandard::Init();
     return 0;
 }
