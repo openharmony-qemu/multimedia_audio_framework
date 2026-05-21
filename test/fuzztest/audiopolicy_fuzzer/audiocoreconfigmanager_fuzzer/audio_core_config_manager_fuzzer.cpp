@@ -20,6 +20,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+const size_t THRESHOLD = 10;
 const size_t MAX_STRING_LEN = 64;
 const char* LOCAL_NETWORK_ID = "LocalDevice";
 const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
@@ -103,7 +104,8 @@ void UpdateDynamicCapturerConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioModuleInfo moduleInfo;
     AudioCoreConfigManager::GetInstance().GetAdapterInfoFlag();
-    AudioCoreConfigManager::GetInstance().UpdateDynamicCapturerConfig(ConsumeEnum<ClassType>(fdp), moduleInfo);
+    AudioCoreConfigManager::GetInstance().UpdateDynamicCapturerConfig(
+        ConsumeEnum<ClassType>(fdp), moduleInfo);
 }
 
 void GetMaxCapturersInstancesFuzzTest(FuzzedDataProvider& fdp)
@@ -139,8 +141,7 @@ void GetVoipRendererFlagFuzzTest(FuzzedDataProvider& fdp)
     AudioCoreConfigManager::GetInstance().OnVoipConfigParsed(fdp.ConsumeBool());
     AudioCoreConfigManager::GetInstance().GetVoipConfig();
     AudioCoreConfigManager::GetInstance().GetVoipRendererFlag(ConsumeString(fdp, "Speaker"),
-        ConsumeString(fdp, "LocalDevice"),
-        ConsumeEnum<AudioSamplingRate>(fdp));
+        ConsumeString(fdp, "LocalDevice"), ConsumeEnum<AudioSamplingRate>(fdp));
 }
 
 void SetAndGetAudioLatencyFromXmlFuzzTest(FuzzedDataProvider& fdp)
@@ -164,7 +165,7 @@ void GetStreamPropInfoSizeFuzzTest(FuzzedDataProvider& fdp)
 
 void GetTargetSourceTypeAndMatchingFlagFuzzTest(FuzzedDataProvider& fdp)
 {
-    bool useMatchingPropInfo = false;
+    bool useMatchingPropInfo = fdp.ConsumeBool();
     AudioCoreConfigManager::GetInstance().GetTargetSourceTypeAndMatchingFlag(ConsumeEnum<SourceType>(fdp),
         useMatchingPropInfo);
 }
@@ -442,6 +443,9 @@ void Init()
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
