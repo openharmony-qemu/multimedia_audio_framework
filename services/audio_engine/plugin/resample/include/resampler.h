@@ -29,6 +29,11 @@ public:
     virtual uint32_t GetOutRate() const = 0;
     virtual uint32_t GetChannels() const = 0;
     virtual int32_t UpdateChannels(uint32_t channels) = 0;
+    /*
+     * Resample has filter delay, return the number of samples corresponding to the output sample rate filled
+     * due to the delay.
+     */
+    virtual uint32_t GetDelayFrames() const = 0;
 };
 
 } // HPAE

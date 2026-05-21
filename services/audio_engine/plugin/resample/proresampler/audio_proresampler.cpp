@@ -92,6 +92,7 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float 
         ErrCodeToString(ret).c_str());
 
     uint32_t fillSize = expectedOutFrameLen > outFrameLen ? expectedOutFrameLen - outFrameLen : 0;
+    lastDelayFrames_ = fillSize;
     ret = memset_s(outBuffer, fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
 
@@ -198,6 +199,7 @@ void ProResampler::Reset()
     CHECK_AND_RETURN_LOG(state_ != nullptr, "resampler is null");
     SingleStagePolyphaseResamplerResetMem(state_);
     SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    lastDelayFrames_ = 0;
 }
 
 uint32_t ProResampler::GetInRate() const
@@ -218,6 +220,11 @@ uint32_t ProResampler::GetChannels() const
 uint32_t ProResampler::GetQuality() const
 {
     return quality_;
+}
+
+uint32_t ProResampler::GetDelayFrames() const
+{
+    return lastDelayFrames_;
 }
 
 ProResampler::~ProResampler()

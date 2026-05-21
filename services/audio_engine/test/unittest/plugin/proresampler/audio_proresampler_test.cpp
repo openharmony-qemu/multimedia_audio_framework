@@ -39,6 +39,7 @@ const static std::map<uint32_t, uint32_t> TEST_SAMPLE_RATE_COMBINATION = { // {i
 
 constexpr uint32_t INVALID_QUALITY = -1;
 constexpr uint32_t QUALITY_ONE = 1;
+constexpr uint32_t QUALITY_BEST = 10;
 constexpr uint32_t FRAME_LEN_20MS = (20 * SOURCE_PERIOD_SIZE);
 constexpr uint32_t FRAME_LEN_40MS = (40 * SOURCE_PERIOD_SIZE);
 constexpr uint32_t FRAME_LEN_60MS = (60 * SOURCE_PERIOD_SIZE);
@@ -555,6 +556,158 @@ HWTEST_F(AudioProResamplerTest, ProcessTest_NullInBuffer, TestSize.Level0)
 
     int32_t ret = resampler.Process(nullptr, 960, out.data(), outFrameLen);
     EXPECT_EQ(ret, RESAMPLER_ERR_INVALID_ARG);
+}
+
+/*
+ * @tc.name  : Test GetDelayFrames API.
+ * @tc.type  : FUNC
+ * @tc.number: GetDelayFramesTest_001.
+ * @tc.desc  : Test GetDelayFrames returns 0 before Process is called (initial state).
+ */
+HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_001, TestSize.Level1)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.GetDelayFrames(), 0);
+}
+
+/*
+ * @tc.name  : Test GetDelayFrames API.
+ * @tc.type  : FUNC
+ * @tc.number: GetDelayFramesTest_002.
+ * @tc.desc  : Test first Process call delay equals filterLength/2 * interpolateFactor.
+ *           quality=1: filterLength=16, inputIndex=8, 2x upsample -> delay=16.
+ */
+HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_002, TestSize.Level1)
+{
+    ProResampler resampler(SAMPLE_RATE_24000, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_24000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+
+    int32_t ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler.GetDelayFrames(), 16);
+}
+
+/*
+ * @tc.name  : Test GetDelayFrames API.
+ * @tc.type  : FUNC
+ * @tc.number: GetDelayFramesTest_003.
+ * @tc.desc  : Test subsequent Process calls return 0 delay after filter is warmed up.
+ */
+HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_003, TestSize.Level1)
+{
+    ProResampler resampler(SAMPLE_RATE_24000, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_24000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+
+    int32_t ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler.GetDelayFrames(), 16);
+
+    ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler.GetDelayFrames(), 0);
+}
+
+/*
+ * @tc.name  : Test GetDelayFrames API.
+ * @tc.type  : FUNC
+ * @tc.number: GetDelayFramesTest_004.
+ * @tc.desc  : Test Reset causes next Process to have delay again (filter re-warmup).
+ */
+HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_004, TestSize.Level1)
+{
+    ProResampler resampler(SAMPLE_RATE_24000, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_24000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+
+    resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(resampler.GetDelayFrames(), 16);
+
+    resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(resampler.GetDelayFrames(), 0);
+
+    resampler.Reset();
+    EXPECT_EQ(resampler.GetDelayFrames(), 0);
+
+    resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(resampler.GetDelayFrames(), 16);
+}
+
+/*
+ * @tc.name  : Test GetDelayFrames API.
+ * @tc.type  : FUNC
+ * @tc.number: GetDelayFramesTest_005.
+ * @tc.desc  : Test higher quality produces larger delay. Q1 delay=16, Q10 delay=256.
+ */
+HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_005, TestSize.Level1)
+{
+    ProResampler resamplerLow(SAMPLE_RATE_24000, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    ProResampler resamplerHigh(SAMPLE_RATE_24000, SAMPLE_RATE_48000, STEREO, QUALITY_BEST);
+
+    uint32_t inFrameLen = SAMPLE_RATE_24000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> outLow(outFrameLen * STEREO);
+    std::vector<float> outHigh(outFrameLen * STEREO);
+
+    resamplerLow.Process(in.data(), inFrameLen, outLow.data(), outFrameLen);
+    resamplerHigh.Process(in.data(), inFrameLen, outHigh.data(), outFrameLen);
+
+    EXPECT_EQ(resamplerLow.GetDelayFrames(), 16);
+    EXPECT_EQ(resamplerHigh.GetDelayFrames(), 256);
+}
+
+/*
+ * @tc.name  : Test GetDelayFrames API.
+ * @tc.type  : FUNC
+ * @tc.number: GetDelayFramesTest_006.
+ * @tc.desc  : Test 2x downsample delay. quality=1: filterLength=32, inputIndex=16, delay=8.
+ */
+HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_006, TestSize.Level1)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_24000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_24000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+
+    int32_t ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler.GetDelayFrames(), 8);
+
+    ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler.GetDelayFrames(), 0);
+}
+
+/*
+ * @tc.name  : Test GetDelayFrames API.
+ * @tc.type  : FUNC
+ * @tc.number: GetDelayFramesTest_007.
+ * @tc.desc  : Test 3x upsample delay. quality=1: filterLength=16, inputIndex=8, delay=24.
+ */
+HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_007, TestSize.Level1)
+{
+    ProResampler resampler(SAMPLE_RATE_16000, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_16000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+
+    int32_t ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler.GetDelayFrames(), 24);
+
+    ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler.GetDelayFrames(), 0);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
