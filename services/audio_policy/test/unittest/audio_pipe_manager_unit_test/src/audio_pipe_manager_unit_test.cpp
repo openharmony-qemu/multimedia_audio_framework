@@ -1418,6 +1418,50 @@ HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_004, TestSiz
 }
 
 /**
+ * @tc.name: GetLastestRunningCallStreamUsage_005
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns running interphone stream usage.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_005, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_INTERPHONE, STREAM_STATUS_STARTED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_INTERPHONE);
+}
+
+/**
+ * @tc.name: GetLastestRunningCallStreamUsage_006
+ * @tc.desc: Test GetLastestRunningCallStreamUsage returns unknown when interphone stream is stopped.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetLastestRunningCallStreamUsage_006, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(nullptr, pipeInfo);
+    pipeInfo->streamDescriptors_.push_back(
+        MakeCallStreamDesc(STREAM_USAGE_INTERPHONE, STREAM_STATUS_STOPPED));
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    StreamUsage result = audioPipeManager->GetLastestRunningCallStreamUsage();
+    EXPECT_EQ(result, STREAM_USAGE_UNKNOWN);
+}
+
+/**
  * @tc.name: GetNormalSourceInfo_001
  * @tc.desc: Test GetNormalSourceInfo when isEcFeatureEnable is true.
  * @tc.type: FUNC
