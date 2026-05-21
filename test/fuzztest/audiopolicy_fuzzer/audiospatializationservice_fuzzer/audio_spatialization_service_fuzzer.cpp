@@ -191,27 +191,24 @@ void UpdateCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 void RemoveOldestDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
-    std::string device1 = ConsumeString(fdp, "device1");
-    std::string device2 = ConsumeString(fdp, "device2");
-    std::string device3 = ConsumeString(fdp, "device3");
     service.addressToDeviceSpatialInfoMap_ = {
-        {device1, ConsumeString(fdp, "info1") + "|1000"},
-        {device2, ConsumeString(fdp, "info2") + "|2000"},
-        {device3, ConsumeString(fdp, "info3") + "|1500"}
+        {"device1", "info1|1000"},
+        {"device2", "info2|2000"},
+        {"device3", "info3|1500"}
     };
     service.addressToSpatialEnabledMap_ = {
-        {device1, AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}},
-        {device2, AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}},
-        {device3, AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}}
+        {"device1", AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}},
+        {"device2", AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}},
+        {"device3", AudioSpatializationState{fdp.ConsumeBool(), fdp.ConsumeBool()}}
     };
     AudioSpatialDeviceType audioSpatialDeviceType = PickValue(fdp, g_testSpatialDeviceTypes);
     AudioSpatialDeviceType audioSpatialDeviceType1 = PickValue(fdp, g_testSpatialDeviceTypes);
     service.addressToSpatialDeviceStateMap_ = {
-        {device1, AudioSpatialDeviceState{device1, fdp.ConsumeBool(),
+        {"device1", AudioSpatialDeviceState{"device1", fdp.ConsumeBool(),
                                             fdp.ConsumeBool(), audioSpatialDeviceType}},
-        {device2, AudioSpatialDeviceState{device2, fdp.ConsumeBool(),
+        {"device2", AudioSpatialDeviceState{"device2", fdp.ConsumeBool(),
                                             fdp.ConsumeBool(), audioSpatialDeviceType1}},
-        {device3, AudioSpatialDeviceState{device3, fdp.ConsumeBool(),
+        {"device3", AudioSpatialDeviceState{"device3", fdp.ConsumeBool(),
                                             fdp.ConsumeBool(), audioSpatialDeviceType}}
     };
     service.RemoveOldestDevice();
@@ -221,16 +218,15 @@ void UpdateDeviceSpatialMapInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
     for (uint32_t i = 1; i <= AudioSpatializationService::MAX_DEVICE_NUM; ++i) {
-        std::string device = ConsumeString(fdp, "device") + std::to_string(i);
-        std::string info = ConsumeString(fdp, "info") + std::to_string(i);
+        std::string device = "device" + std::to_string(i);
+        std::string info = "info" + std::to_string(i);
         service.UpdateDeviceSpatialMapInfo(device, info);
         service.GetSha256EncryptAddress(device);
     }
     uint32_t exitNum = fdp.ConsumeIntegralInRange<uint32_t>(0, AudioSpatializationService::MAX_DEVICE_NUM);
-    service.UpdateDeviceSpatialMapInfo(ConsumeString(fdp, "device") + std::to_string(exitNum),
-                                       ConsumeString(fdp, "info") + std::to_string(exitNum));
-    service.UpdateDeviceSpatialMapInfo(ConsumeString(fdp, "device") + std::to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM),
-                                       ConsumeString(fdp, "info") + std::to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM));
+    service.UpdateDeviceSpatialMapInfo("device" + to_string(exitNum), "info" + to_string(exitNum));
+    service.UpdateDeviceSpatialMapInfo("device" + to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM),
+                                       "info" + to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM));
 }
 
 void WriteSpatializationStateToDbFuzzTest(FuzzedDataProvider& fdp)
@@ -262,10 +258,10 @@ void AudioSpatializationServiceInitFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     vector<EffectChain> effectChains = {
-        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
-        {ConsumeString(fdp, "Effect1"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
-        {ConsumeString(fdp, "Effect2"), {ConsumeString(fdp, "apply2_1")}, PickValue(fdp, g_testSpatializationLabels)},
-        {ConsumeString(fdp, "Effect3"), {}, PickValue(fdp, g_testSpatializationLabels)}
+        {"EFFECTCHAIN_BT_MUSIC", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect1", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect2", {ConsumeString(fdp, "apply2_1")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect3", {}, PickValue(fdp, g_testSpatializationLabels)}
     };
     ptrAudioSpatializationService->Init(effectChains);
 }
@@ -468,7 +464,10 @@ void AudioSpatializationServiceDeinitFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
     vector<EffectChain> effectChains = {
-        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"EFFECTCHAIN_BT_MUSIC", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect1", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect2", {ConsumeString(fdp, "apply2_1")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect3", {}, PickValue(fdp, g_testSpatializationLabels)}
     };
     ptrAudioSpatializationService->Init(effectChains);
     ptrAudioSpatializationService->Deinit();
@@ -481,7 +480,10 @@ void AudioSpatializationServiceGetAudioServerProxyFuzzTest(FuzzedDataProvider& f
         return;
     }
     vector<EffectChain> effectChains = {
-        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"EFFECTCHAIN_BT_MUSIC", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect1", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect2", {ConsumeString(fdp, "apply2_1")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect3", {}, PickValue(fdp, g_testSpatializationLabels)}
     };
     ptrAudioSpatializationService->Init(effectChains);
     ptrAudioSpatializationService->GetAudioServerProxy();
@@ -714,9 +716,8 @@ void AudioSpatializationServiceSetSpatializationSceneTypeAllTypesFuzzTest(Fuzzed
         return;
     }
 
-    for (const auto& sceneType : g_testSpatializationSceneTypes) {
-        ptrAudioSpatializationService->SetSpatializationSceneType(sceneType);
-    }
+    AudioSpatializationSceneType sceneType = PickValue(fdp, g_testSpatializationSceneTypes);
+    ptrAudioSpatializationService->SetSpatializationSceneType(sceneType);
 }
 
 void AudioSpatializationServiceIsPersonalizedSpatializationSupportedFuzzTest(FuzzedDataProvider& fdp)
@@ -726,7 +727,10 @@ void AudioSpatializationServiceIsPersonalizedSpatializationSupportedFuzzTest(Fuz
         return;
     }
     vector<EffectChain> effectChains = {
-        {ConsumeString(fdp, "EFFECTCHAIN_BT_MUSIC"), {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"EFFECTCHAIN_BT_MUSIC", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect1", {ConsumeString(fdp, "apply1_1"), ConsumeString(fdp, "apply1_2")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect2", {ConsumeString(fdp, "apply2_1")}, PickValue(fdp, g_testSpatializationLabels)},
+        {"Effect3", {}, PickValue(fdp, g_testSpatializationLabels)}
     };
     ptrAudioSpatializationService->Init(effectChains);
     ptrAudioSpatializationService->IsPersonalizedSpatializationSupported();
@@ -782,8 +786,9 @@ void AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzz
     ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
 }
 
-using FuzzTestFunc = void (*)(FuzzedDataProvider& fdp);
-static constexpr FuzzTestFunc ALL_FUZZ_TESTS[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     UpdateCurrentDeviceFuzzTest,
     RemoveOldestDeviceFuzzTest,
     UpdateDeviceSpatialMapInfoFuzzTest,
@@ -834,14 +839,13 @@ static constexpr FuzzTestFunc ALL_FUZZ_TESTS[] = {
     AudioSpatializationServiceSetPersonalizedSpatializationEnabledFuzzTest,
     AudioSpatializationServiceHandlePersonalizedSpatializationEnabledChangeFuzzTest,
     AudioSpatializationServiceSetPersonalizedSpatializationEnabledWithStateFuzzTest,
-};
-
-void Test(FuzzedDataProvider& fdp)
-{
-    auto func = fdp.PickValueInArray(ALL_FUZZ_TESTS);
+    });
     func(fdp);
 }
 
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -855,7 +859,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
+    OHOS::AudioStandard::Init();
     return 0;
 }
+
