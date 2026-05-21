@@ -55,10 +55,10 @@ std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
 }
 
 const vector<ChannelBlendMode> g_testBlendModes = {
-    CHANNEL_BLEND_NORMAL,
-    CHANNEL_BLEND_DUALMONO_L_R,
-    CHANNEL_BLEND_DUALMONO_R_L,
-    CHANNEL_BLEND_DUALMONO_LR,
+    ChannelBlendMode::MODE_DEFAULT,
+    ChannelBlendMode::MODE_BLEND_LR,
+    ChannelBlendMode::MODE_ALL_LEFT,
+    ChannelBlendMode::MODE_ALL_RIGHT,
 };
 
 const vector<SourceType> g_testSourceTypes = {
