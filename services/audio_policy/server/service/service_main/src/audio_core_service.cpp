@@ -698,11 +698,10 @@ int32_t AudioCoreService::CheckCapturerStreamConflicts(const std::shared_ptr<Aud
             return ERR_ILLEGAL_STATE;
         }
     }
-    // Check VoIP/Cellular capturer conflict with interphone streams
-    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
-        streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_CALL) {
+    // Check VoIP capturer conflict with interphone streams
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         if (pipeManager_->IsInterphoneStreamActive() || pipeManager_->IsInterphoneCapturerActive()) {
-            AUDIO_ERR_LOG("Cannot create VoIP/Cellular capturer: Interphone stream is active");
+            AUDIO_ERR_LOG("Cannot create VoIP capturer: Interphone stream is active");
             return ERR_ILLEGAL_STATE;
         }
     }
