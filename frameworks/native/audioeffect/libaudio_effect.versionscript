@@ -106,6 +106,8 @@
     *IsSpatializationEnabledForChains*;
     *IsDownSamplingForSpatialization*;
     *UpdatePersonalizedHRTFBin*;
+    *IsCollaborationSupportedForStreamUsage*;
+    *UpdateCollaborativeState*;
   local:
     *;
 };

@@ -33,6 +33,8 @@
 #include "audio_info.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_xml_parser.h"
+#include "audio_device_info.h"
+#include "audio_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,18 +47,24 @@ public:
     int32_t UpdateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
     int32_t GetCollaborationLatency();
+    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
+    void UpdateCollaborativeState(CollaborationState state);
 
 private:
     void updateLatencyInner();
     void LoadCollaborationConfigInner(const std::shared_ptr<AudioXmlNode> node);
     void LoadCollaborationLatencyInner(const std::shared_ptr<AudioXmlNode> secondNode, const std::string productId);
+    void LoadCollAbsSupportedStreamUsageInner(const std::shared_ptr<AudioXmlNode> node);
+    bool IsStreamUsageSupported(DeviceType deviceType, StreamUsage streamUsage);
     std::mutex collaborationMutex_;
     int32_t latencyMs_ = 0;
     std::string productId_ = "default";
     AudioTwsMode twsMode_ = TWS_MODE_DEFAULT;
+    CollaborationState state_ = COLLABORATION_CLOSE;
     std::unordered_map<std::string, std::map<AudioTwsMode, int32_t>> collaborativeLatencyConfig_;
     std::unordered_map<std::string, std::string> collaborativeEarphoneNameConfig_;
     std::unordered_map<std::string, int32_t> collaborativeEarphoneProductConfig_;
+    std::unordered_mapmap<DeviceType, std::set<StreamUsage>> collAbsSupportedStreamUsageConfig_;
 };
 
 }  // namespace AudioStandard

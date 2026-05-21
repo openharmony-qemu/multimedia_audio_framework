@@ -35,6 +35,62 @@ static std::map<std::string, AudioTwsMode> twsModeMap = {
     {"hitws", TWS_MODE_HITWS},
 };
 
+static std::map<std::string, DeviceType> deviceTypeMap = {
+    {"DEVICE_TYPE_EARPIECE", DEVICE_TYPE_EARPIECE},
+    {"DEVICE_TYPE_SPEAKER", DEVICE_TYPE_SPEAKER},
+    {"DEVICE_TYPE_WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
+    {"DEVICE_TYPE_WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
+    {"DEVICE_TYPE_BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
+    {"DEVICE_TYPE_BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
+    {"DEVICE_TYPE_BLUETOOTH_A2DP_IN", DEVICE_TYPE_BLUETOOTH_A2DP_IN},
+    {"DEVICE_TYPE_MIC", DEVICE_TYPE_MIC},
+    {"DEVICE_TYPE_WAKEUP", DEVICE_TYPE_WAKEUP},
+    {"DEVICE_TYPE_USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
+    {"DEVICE_TYPE_DP", DEVICE_TYPE_DP},
+    {"DEVICE_TYPE_REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
+    {"DEVICE_TYPE_HDMI", DEVICE_TYPE_HDMI},
+    {"DEVICE_TYPE_LINE_DIGITAL", DEVICE_TYPE_LINE_DIGITAL},
+    {"DEVICE_TYPE_FILE_SINK", DEVICE_TYPE_FILE_SINK},
+    {"DEVICE_TYPE_FILE_SOURCE", DEVICE_TYPE_FILE_SOURCE},
+    {"DEVICE_TYPE_EXTERN_CABLE", DEVICE_TYPE_EXTERN_CABLE},
+    {"DEVICE_TYPE_DEFAULT", DEVICE_TYPE_DEFAULT},
+    {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
+    {"DEVICE_TYPE_WIRED_MICIN", DEVICE_TYPE_WIRED_MICIN},
+    {"DEVICE_TYPE_ACCESSORY", DEVICE_TYPE_ACCESSORY},
+    {"DEVICE_TYPE_NEARLINK", DEVICE_TYPE_NEARLINK},
+    {"DEVICE_TYPE_NEARLINK_IN", DEVICE_TYPE_NEARLINK_IN},
+    {"DEVICE_TYPE_HEARING_AID", DEVICE_TYPE_HEARING_AID},
+    {"DEVICE_TYPE_REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
+    {"DEVICE_TYPE_BT_SPP", DEVICE_TYPE_BT_SPP},
+};
+
+static std::map<std::string, StreamUsage> streamUsageMap = {
+    {"STREAM_USAGE_UNKNOWN", STREAM_USAGE_UNKNOWN},
+    {"STREAM_USAGE_MEDIA", STREAM_USAGE_MEDIA},
+    {"STREAM_USAGE_MUSIC", STREAM_USAGE_MUSIC},
+    {"STREAM_USAGE_VOICE_COMMUNICATION", STREAM_USAGE_VOICE_COMMUNICATION},
+    {"STREAM_USAGE_VOICE_ASSISTANT", STREAM_USAGE_VOICE_ASSISTANT},
+    {"STREAM_USAGE_VOICE_CALL_ASSISTANT", STREAM_USAGE_VOICE_CALL_ASSISTANT},
+    {"STREAM_USAGE_ALARM", STREAM_USAGE_ALARM},
+    {"STREAM_USAGE_VOICE_MESSAGE", STREAM_USAGE_VOICE_MESSAGE},
+    {"STREAM_USAGE_NOTIFICATION_RINGTONE", STREAM_USAGE_NOTIFICATION_RINGTONE},
+    {"STREAM_USAGE_RINGTONE", STREAM_USAGE_RINGTONE},
+    {"STREAM_USAGE_NOTIFICATION", STREAM_USAGE_NOTIFICATION},
+    {"STREAM_USAGE_ACCESSIBILITY", STREAM_USAGE_ACCESSIBILITY},
+    {"STREAM_USAGE_SYSTEM", STREAM_USAGE_SYSTEM},
+    {"STREAM_USAGE_MOVIE", STREAM_USAGE_MOVIE},
+    {"STREAM_USAGE_GAME", STREAM_USAGE_GAME},
+    {"STREAM_USAGE_AUDIOBOOK", STREAM_USAGE_AUDIOBOOK},
+    {"STREAM_USAGE_NAVIGATION", STREAM_USAGE_NAVIGATION},
+    {"STREAM_USAGE_DTMF", STREAM_USAGE_DTMF},
+    {"STREAM_USAGE_ENFORCED_TONE", STREAM_USAGE_ENFORCED_TONE},
+    {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC},
+    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION},
+    {"STREAM_USAGE_RANGING", STREAM_USAGE_RANGING},
+    {"STREAM_USAGE_VOICE_MODEM_COMMUNICATION", STREAM_USAGE_VOICE_MODEM_COMMUNICATION},
+    {"STREAM_USAGE_VOICE_RINGTONE", STREAM_USAGE_VOICE_RINGTONE},
+};
+
 enum XML_ERROR {
     XML_PARSE_ERROR = 1 << 5,
     XML_PARSE_NOWARNING = 1 << 6,
@@ -120,10 +176,20 @@ void AudioCollaborationManager::LoadCollaborationConfigInner(const std::shared_p
 
     node->MoveToChildren();
     while (node->IsNodeValid()) {
+        if (!node->IsElementNode()) {
+            node->MoveToNext();
+            continue;
+        }
+        if (node->CompareName("collabSupportedStreamUsage")) {
+            std::shared_ptr<AudioXmlNode> collAbsNode = node->GetCopyNode();
+            LoadCollAbsSupportedStreamUsageInner(collAbsNode);
+            node->MoveToNext();
+            continue;
+        }
         std::string productId;
         std::string earphoneType;
         std::string earphoneName;
-        if (!node->IsElementNode() || !node->CompareName("product") ||
+        if (!node->CompareName("product") ||
             node->GetProp("id", productId) != SUCCESS || node->GetProp("type", earphoneType) != SUCCESS ||
             node->GetProp("name", earphoneName) != SUCCESS) {
             AUDIO_ERR_LOG("product node without id or product or name");
@@ -215,6 +281,81 @@ int32_t AudioCollaborationManager::GetCollaborationLatency()
 {
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     return latencyMs_;
+}
+
+void AudioCollaborationManager::LoadCollAbsSupportedStreamUsageInner(const std::shared_ptr<AudioXmlNode> node)
+{
+    if (node == nullptr) {
+        return;
+    }
+
+    std::string deviceTypeStr;
+    if (node->GetProp("deviceType", deviceTypeStr) != SUCCESS) {
+        AUDIO_ERR_LOG("collAbsSupportedStreamUsage node without deviceType");
+        return;
+    }
+
+    auto devIt = deviceTypeMap.find(deviceTypeStr);
+    if (devIt == deviceTypeMap.end()) {
+        AUDIO_ERR_LOG("Invalid deviceType:%{public}s", deviceTypeStr.c_str());
+        return;
+    }
+    DeviceType deviceType = devIt->second;
+
+    node->MoveToChildren();
+    while (node->IsNodeValid()) {
+        if (!node->IsElementNode() || !node->CompareName("streamUsage")) {
+            node->MoveToNext();
+            continue;
+        }
+
+        std::string streamUsageStr;
+        if (node->GetProp("name", streamUsageStr) != SUCCESS) {
+            AUDIO_ERR_LOG("streamUsage node without name");
+            node->MoveToNext();
+            continue;
+        }
+
+        auto usageIt = streamUsageMap.find(streamUsageStr);
+        if (usageIt == streamUsageMap.end()) {
+            AUDIO_ERR_LOG("Invalid streamUsage:%{public}s", streamUsageStr.c_str());
+            node->MoveToNext();
+            continue;
+        }
+
+        collAbsSupportedStreamUsageConfig_[deviceType].insert(usageIt->second);
+        AUDIO_INFO_LOG("collAbsSupportedStreamUsage: deviceType=%{public}d, streamUsage=%{public}d(%{public}s)",
+            deviceType, usageIt->second, streamUsageStr.c_str());
+        node->MoveToNext();
+    }
+}
+
+bool AudioCollaborationManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+{
+    switch(state_) {
+        case COLLABORATION_BLUETOOTH_OPEN:
+        return IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, streamUsage);
+        case COLLABORATION_NEARLINK_OPEN:
+        return IsStreamUsageSupported(DEVICE_TYPE_NEARLINK, streamUsage);
+        default:
+        return false;
+    }
+}
+
+bool AudioCollaborationManager::IsStreamUsageSupported(DeviceType deviceType, StreamUsage streamUsage)
+{
+    std::lock_guard<std::mutex> lock(collaborationMutex_);
+    auto devIt = collAbsSupportedStreamUsageConfig_.find(deviceType);
+    if (devIt == collAbsSupportedStreamUsageConfig_.end()) {
+        return false;
+    }
+    return devIt->second.find(streamUsage) != devIt->second.end();
+}
+
+void AudioCollaborationManager::UpdateCollaborativeState(CollaborationState state)
+{
+    std::lock_guard<std::mutex> lock(collaborationMutex_);
+    state_ = state;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
