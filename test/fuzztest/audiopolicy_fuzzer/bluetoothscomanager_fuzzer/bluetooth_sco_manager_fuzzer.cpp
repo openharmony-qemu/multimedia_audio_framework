@@ -52,10 +52,10 @@ std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
 }
 
 const vector<AudioScoState> g_testScoStates = {
-    SCO_STATE_DISCONNECTED,
-    SCO_STATE_CONNECTING,
-    SCO_STATE_CONNECTED,
-    SCO_STATE_DISCONNECTING,
+    AudioScoState::DISCONNECTED,
+    AudioScoState::CONNECTED,
+    AudioScoState::CONNECTING,
+    AudioScoState::DISCONNECTING,
 };
 
 const vector<HfpScoConnectState> g_testHfpScoConnectStates = {
