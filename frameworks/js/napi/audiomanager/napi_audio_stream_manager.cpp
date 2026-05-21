@@ -177,7 +177,7 @@ NapiAudioStreamMgr* NapiAudioStreamMgr::GetParamWithSync(const napi_env &env, na
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "GetParamWithSync fail to napi_get_cb_info");
 
-    status = napi_unwrap(env, jsThis, (void **)&napiStreamMgr);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiStreamMgr));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr && napiStreamMgr->audioStreamMngr_  !=
         nullptr, napiStreamMgr, "GetParamWithSync fail to napi_unwrap");

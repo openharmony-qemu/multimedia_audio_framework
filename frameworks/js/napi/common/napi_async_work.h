@@ -96,7 +96,7 @@ struct AutoRef {
             workData = nullptr;
             return;
         }
-        work->data = (void *)workData;
+        work->data = static_cast<void *>(workData);
 
         int ret = uv_queue_work_with_qos_internal(loop,
             work,
