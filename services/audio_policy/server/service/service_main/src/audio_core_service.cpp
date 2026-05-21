@@ -2722,7 +2722,7 @@ void AudioCoreService::EvaluateActiveVoipPrivacyPresence(
         if (streamDesc == nullptr || !streamDesc->IsRunning()) {
             continue;
         }
-        if (streamDesc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        if (streamDesc->GetSourceType() != SOURCE_TYPE_VOICE_COMMUNICATION) {
             continue;
         }
         uint32_t sessionId = streamDesc->GetSessionId();
