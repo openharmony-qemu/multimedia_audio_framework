@@ -34,6 +34,8 @@ constexpr uint32_t FRAME_LEN_40MS = 40;
 constexpr uint32_t FRAME_LEN_100MS = 100;
 constexpr uint32_t UNPROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
 constexpr uint32_t PROCESSED_BUFFER_COMPACTION_DIVISOR = 2;
+static const std::string DEVICE_CLASS_OFFLOAD = "offload";
+static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 }
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
@@ -114,7 +116,8 @@ void HpaeAudioFormatConverterNode::DoProcess()
         return;
     }
     // Non-offload: drain processedBuffer_ with buffer state propagation
-    bool isOffload = GetDeviceClass() == "offload" || GetDeviceClass() == "remote_offload";
+    const std::string &deviceClass = GetDeviceClass();
+    bool isOffload = deviceClass == DEVICE_CLASS_OFFLOAD || deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD;
     if (!isOffload && processedFrames_ >= outputFrameLen20ms_ && enableProcess_) {
         converterOutput_.Reset();
         if (ExtractOutputFromProcessedBuffer()) {
@@ -128,8 +131,8 @@ void HpaeAudioFormatConverterNode::DoProcess()
             return;
         }
     }
-    AUDIO_DEBUG_LOG("NodeId %{public}d: output silence, " 
-        "hasValidInput=%{public}d, enableProcess=%{public}d, processedFrames=%{public}u", 
+    AUDIO_DEBUG_LOG("NodeId %{public}d: output silence, "
+        "hasValidInput=%{public}d, enableProcess=%{public}d, processedFrames=%{public}u",
         GetNodeId(), hasValidInput, enableProcess_, processedFrames_);
     outputStream_.WriteDataToOutput(&silenceData_);
 }
