@@ -128,6 +128,9 @@ void HpaeAudioFormatConverterNode::DoProcess()
             return;
         }
     }
+    AUDIO_DEBUG_LOG("NodeId %{public}d: output silence, " 
+        "hasValidInput=%{public}d, enableProcess=%{public}d, processedFrames=%{public}u", 
+        GetNodeId(), hasValidInput, enableProcess_, processedFrames_);
     outputStream_.WriteDataToOutput(&silenceData_);
 }
 
