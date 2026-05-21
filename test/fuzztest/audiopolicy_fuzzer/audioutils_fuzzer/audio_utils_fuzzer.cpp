@@ -264,6 +264,7 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
+
 void Init()
 {
 }
@@ -280,7 +281,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
     OHOS::AudioStandard::Init();
     return 0;
