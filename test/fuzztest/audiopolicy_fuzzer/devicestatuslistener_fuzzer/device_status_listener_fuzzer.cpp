@@ -131,9 +131,9 @@ void DeviceStatusListenerRegisterAndCallbackFuzzTest(FuzzedDataProvider& fdp)
         "abc",
     };
     ServiceStatus serviceStatus;
-    serviceStatus.serviceName = ConsumeString(fdp, AUDIO_HDI_SERVICE_NAME);
+    serviceStatus.serviceName = ConsumeString(fdp, AUDIO_HDI_SERVICE_NAME).c_str();
     serviceStatus.status = SERVIE_STATUS_CHANGE;
-    serviceStatus.info = PickValue(fdp, testInfo);
+    serviceStatus.info = PickValue(fdp, testInfo).c_str();
 
     deviceStatusListenerPtr->listener_->callback(deviceStatusListenerPtr->listener_, &serviceStatus);
 
@@ -207,9 +207,9 @@ void DeviceStatusListenerDaudioServiceBranchFuzzTest(FuzzedDataProvider& fdp)
         "abc",
     };
     ServiceStatus serviceStatus;
-    serviceStatus.serviceName = ConsumeString(fdp, "daudio_primary_service");
+    serviceStatus.serviceName = ConsumeString(fdp, "daudio_primary_service").c_str();
     serviceStatus.status = SERVIE_STATUS_CHANGE;
-    serviceStatus.info = PickValue(fdp, testInfo);
+    serviceStatus.info = PickValue(fdp, testInfo).c_str();
     deviceStatusListenerPtr->listener_->callback(deviceStatusListenerPtr->listener_, &serviceStatus);
 }
 
