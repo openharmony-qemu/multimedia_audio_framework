@@ -18,6 +18,7 @@
 #include <cstdint>
 #include "audio_info.h"
 #include "audio_device_info.h"
+#include "audio_log.h"
 #include "sle_audio_operation_callback_stub_impl.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
