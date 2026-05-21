@@ -1039,20 +1039,6 @@ int32_t HpaeManagerImpl::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool
         "manager is nullptr");
     return manager_->SetAppsEnhanceMuteState(sessionId, isMute);
 }
-
-void HpaeManagerImpl::EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-    SourceType sourceType)
-{
-    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->EnableCaptureCollaboration(sourcePortIndex, collabSourcePortIndex, sourceType);
-}
-
-void HpaeManagerImpl::DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-    SourceType sourceType)
-{
-    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->DisableCaptureCollaboration(sourcePortIndex, collabSourcePortIndex, sourceType);
-}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

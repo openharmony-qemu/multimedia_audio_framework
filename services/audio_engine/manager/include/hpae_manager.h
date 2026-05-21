@@ -224,11 +224,6 @@ public:
     float GetMaxAmplitude() override;
     void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) override;
 
-    // interface for collaborative record
-    void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType) override;
-    void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType) override;
 private:
     int32_t BindAndCreateAiss(uint32_t sessionId);
     void TryBindSessionEffectOnStart(uint32_t sessionId);

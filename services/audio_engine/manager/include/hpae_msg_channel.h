@@ -109,9 +109,6 @@ enum HpaeProcessorType {
     // scene for collaboration
     HPAE_SCENE_COLLABORATIVE = 25,
     HPAE_SCENE_RECOGNITION = 26,
-
-    // scene for collaborative record
-    HPAE_SCENE_COLLABORATIVE_RECORD = 27,
 };
 
 // mark sourceInputNode(cluster)

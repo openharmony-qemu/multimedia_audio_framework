@@ -63,12 +63,6 @@ static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneType
     {SOURCE_TYPE_VOICE_RECOGNITION, HPAE_SCENE_RECOGNITION}
 };
 
-// 支持协同拾音的 sourceType，激活后映射到 HPAE_SCENE_COLLABORATIVE_RECORD
-static std::set<SourceType> g_collabRecordSupportedSourceTypes = {
-    SOURCE_TYPE_LIVE,
-};
-
-
 static std::unordered_set<HpaeProcessorType> g_processorTypeNeedEcSet = {
     HPAE_SCENE_VOIP_UP,
     HPAE_SCENE_PRE_ENHANCE,
@@ -86,7 +80,6 @@ static std::unordered_map<HpaeProcessorType, AudioEnhanceScene> g_processorTypeT
     {HPAE_SCENE_PRE_ENHANCE, SCENE_PRE_ENHANCE},
     {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE},
     {HPAE_SCENE_RECOGNITION, SCENE_RECOGNITION},
-    {HPAE_SCENE_COLLABORATIVE_RECORD, SCENE_COLLABORATIVE_RECORD},
 };
 
 static std::unordered_map<HpaeSessionState, std::string> g_sessionStateToStrMap = {
@@ -234,11 +227,6 @@ HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType)
     } else {
         return g_sourceTypeToSceneTypeMap[sourceType];
     }
-}
-
-bool IsCollabRecordSupported(SourceType sourceType)
-{
-    return g_collabRecordSupportedSourceTypes.count(sourceType) > 0;
 }
 
 bool CheckSceneTypeNeedEc(HpaeProcessorType processorType)

@@ -73,16 +73,6 @@ void IHpaeCapturerManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId
     }
 #endif
 }
-
-void IHpaeCapturerManager::EnableCaptureCollaboration(SourceType sourceType)
-{
-    AUDIO_ERR_LOG("Unsupported operation");
-}
-
-void IHpaeCapturerManager::DisableCaptureCollaboration(SourceType sourceType)
-{
-    AUDIO_ERR_LOG("Unsupported operation");
-}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
