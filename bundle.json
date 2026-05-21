@@ -49,6 +49,7 @@
           "audio_framework_feature_audiosuite_format_convert_support",
           "audio_framework_feature_multi_alarm_level",
           "audio_framework_feature_multi_bus",
+          "audio_framework_feature_source_period_size",
           "audio_framework_feature_input_independent_routing_rule",
           "audio_framework_feature_multi_zone"
         ],

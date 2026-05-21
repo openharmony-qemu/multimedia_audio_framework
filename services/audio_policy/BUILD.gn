@@ -364,6 +364,16 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   if (audio_framework_feature_input_independent_routing_rule) {
     defines += [ "INPUT_FEATURE_INDEPENDENT_MODE" ]
   }
