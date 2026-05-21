@@ -487,8 +487,7 @@ enum AudioEnhanceScene {
     SCENE_ASR = 4,
     SCENE_VOICE_MESSAGE = 5,
     SCENE_RECOGNITION = 6,
-    SCENE_COLLABORATIVE_RECORD = 7,
-    SCENE_NONE = 8,
+    SCENE_NONE = 7,
 };
 
 /**

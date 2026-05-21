@@ -59,10 +59,6 @@ public:
     void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
     void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) override;
-    void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType) override;
-    void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType) override;
 
     // Static Member functions
     static void PaGetSinksCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
