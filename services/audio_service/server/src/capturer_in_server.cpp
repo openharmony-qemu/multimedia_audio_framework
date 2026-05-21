@@ -329,6 +329,14 @@ int32_t CapturerInServer::SetInMainThreadState(bool isInMainThread)
     return SUCCESS;
 }
 
+int32_t CapturerInServer::OnMetaData(const std::vector<uint8_t> &metaData)
+{
+    CHECK_AND_RETURN_RET_LOG(!metaData.empty(), ERR_INVALID_PARAM, "metaData is empty");
+    std::shared_ptr<IStreamListener> listener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
+    return listener->OnMetaData(metaData);
+}
+
 bool CapturerInServer::IsAppStateBackground(int32_t appPid)
 {
     AppExecFwk::AppMgrClient appManager;

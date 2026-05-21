@@ -17,9 +17,11 @@
 #define I_AUDIO_SOURCE_CALLBACK_H
 
 #include <string>
+#include <vector>
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_engine_callback_types.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,6 +31,7 @@ public:
     virtual void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) {}
     virtual void OnCaptureState(bool isActive) {}
+    virtual void OnHdiCaptureCallback(CaptureCallbackType type, const std::vector<uint8_t> &data) {}
     virtual void OnWakeupClose(void) {}
     virtual void OnInputPipeChange(AudioPipeChangeType changeType,
         std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo) {};

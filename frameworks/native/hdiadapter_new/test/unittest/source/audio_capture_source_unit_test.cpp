@@ -62,6 +62,34 @@ protected:
     static IAudioSourceAttr attr_;
 };
 
+class AudioCaptureSourceMetadataCallbackTest : public IAudioSourceCallback {
+public:
+    void OnHdiCaptureCallback(CaptureCallbackType type, const std::vector<uint8_t> &data) override
+    {
+        callbackCount_++;
+        lastType_ = type;
+        lastData_ = data;
+    }
+
+    int32_t callbackCount_ = 0;
+    CaptureCallbackType lastType_ = CB_CAMCORDER_METADATA;
+    std::vector<uint8_t> lastData_;
+};
+
+static int32_t AudioCaptureRegCallbackSuccess(struct IAudioCapture *self, struct IAudioCaptureCallback *callback)
+{
+    (void)self;
+    (void)callback;
+    return SUCCESS;
+}
+
+static int32_t AudioCaptureRegCallbackFail(struct IAudioCapture *self, struct IAudioCaptureCallback *callback)
+{
+    (void)self;
+    (void)callback;
+    return ERR_OPERATION_FAILED;
+}
+
 uint32_t AudioCaptureSourceUnitTest::primaryId_ = 0;
 uint32_t AudioCaptureSourceUnitTest::usbId_ = 0;
 std::shared_ptr<IAudioCaptureSource> AudioCaptureSourceUnitTest::primarySource_ = nullptr;
@@ -764,6 +792,150 @@ HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrame_001, TestSize.Level1)
     };
     EXPECT_EQ(buffer, expect);
     source_->DeInit();
+}
+
+/**
+ * @tc.name   : Test CamcorderMetadataCallbackEntry API
+ * @tc.number : CamcorderMetadataCallbackEntry_001
+ * @tc.desc   : Test camcorder metadata callback entry validation and success branches
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, CamcorderMetadataCallbackEntry_001, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10005, "primary");
+    ASSERT_NE(source, nullptr);
+    CamcorderMetadataHdiCallback hdiCallback = {};
+    hdiCallback.source_ = source.get();
+    hdiCallback.serviceCallback_ = [source] (CaptureCallbackType type, const std::vector<uint8_t> &data) {
+        source->HandleCamcorderMetadataCallback(type, data);
+    };
+
+    uint8_t metadata[] = { 1, 2, 3, 4 };
+    uint32_t metadataLen = sizeof(metadata);
+    int32_t ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &hdiCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, metadataLen);
+    EXPECT_EQ(ret, SUCCESS);
+
+    source->started_.store(true);
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        nullptr, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, metadataLen);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &hdiCallback.callback_, static_cast<AudioCaptureCallbackType>(-1), metadata, metadataLen);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &hdiCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, nullptr, metadataLen);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    uint32_t invalidLen = 0;
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &hdiCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, invalidLen);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    auto sourceCallback = std::make_shared<AudioCaptureSourceMetadataCallbackTest>();
+    source->callback_.RegistCallback(HDI_CB_CAPTURE_CAMCORDER_METADATA, sourceCallback);
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &hdiCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, metadataLen);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::vector<uint8_t> lastMetadata;
+    EXPECT_TRUE(source->GetLastCamcorderMetadata(lastMetadata));
+    EXPECT_EQ(lastMetadata, std::vector<uint8_t>(metadata, metadata + metadataLen));
+    EXPECT_EQ(sourceCallback->callbackCount_, 1);
+    EXPECT_EQ(sourceCallback->lastType_, CB_CAMCORDER_METADATA);
+    EXPECT_EQ(sourceCallback->lastData_, lastMetadata);
+
+    source->ResetCamcorderMetadataCallbackState();
+    EXPECT_FALSE(source->GetLastCamcorderMetadata(lastMetadata));
+}
+
+/**
+ * @tc.name   : Test RegisterCamcorderMetadataCallback API
+ * @tc.number : RegisterCamcorderMetadataCallback_001
+ * @tc.desc   : Test camcorder metadata callback registration validation branches
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, RegisterCamcorderMetadataCallback_001, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10006, "primary");
+    ASSERT_NE(source, nullptr);
+
+    source->attr_.sourceType = SOURCE_TYPE_MIC;
+    int32_t ret = source->RegisterCamcorderMetadataCallback();
+    EXPECT_EQ(ret, SUCCESS);
+
+    source->attr_.sourceType = SOURCE_TYPE_CAMCORDER;
+    source->audioCapture_ = nullptr;
+    ret = source->RegisterCamcorderMetadataCallback();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+
+    struct IAudioCapture capture = {};
+    source->audioCapture_ = &capture;
+    source->camcorderMetadataHdiCb_.serviceCallback_ = [] (CaptureCallbackType type,
+        const std::vector<uint8_t> &data) {
+        (void)type;
+        (void)data;
+    };
+    ret = source->RegisterCamcorderMetadataCallback();
+    EXPECT_EQ(ret, SUCCESS);
+
+    source->camcorderMetadataHdiCb_.serviceCallback_ = nullptr;
+    capture.RegCallback = AudioCaptureRegCallbackFail;
+    ret = source->RegisterCamcorderMetadataCallback();
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    source->camcorderMetadataHdiCb_.serviceCallback_ = nullptr;
+    capture.RegCallback = AudioCaptureRegCallbackSuccess;
+    ret = source->RegisterCamcorderMetadataCallback();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(source->camcorderMetadataHdiCb_.serviceCallback_, nullptr);
+    EXPECT_EQ(source->camcorderMetadataHdiCb_.source_, source.get());
+}
+
+/**
+ * @tc.name   : Test CamcorderMetadataCallbackEntry API
+ * @tc.number : CamcorderMetadataCallbackEntry_002
+ * @tc.desc   : Test camcorder metadata callback entry remaining validation branches
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, CamcorderMetadataCallbackEntry_002, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10007, "primary");
+    ASSERT_NE(source, nullptr);
+    source->started_.store(true);
+
+    uint8_t metadata[] = { 1, 2, 3, 4 };
+    uint32_t metadataLen = sizeof(metadata);
+
+    CamcorderMetadataHdiCallback nullSourceCallback = {};
+    int32_t ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &nullSourceCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, metadataLen);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    CamcorderMetadataHdiCallback noServiceCallback = {};
+    noServiceCallback.source_ = source.get();
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &noServiceCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, metadataLen);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    CamcorderMetadataHdiCallback hdiCallback = {};
+    hdiCallback.source_ = source.get();
+    hdiCallback.serviceCallback_ = [] (CaptureCallbackType type, const std::vector<uint8_t> &data) {
+        (void)type;
+        (void)data;
+    };
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &hdiCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, 0);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    uint32_t tooLargeLen = 1024 * 1024 + 1;
+    ret = AudioCaptureSource::CamcorderMetadataCallbackEntry(
+        &hdiCallback.callback_, AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA, metadata, tooLargeLen);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    source->HandleCamcorderMetadataCallback(CB_CAMCORDER_METADATA, {});
+    source->DumpCamcorderMetadata(nullptr, metadataLen);
+    source->DumpCamcorderMetadata(metadata, 0);
+    source->DumpCamcorderMetadata(metadata, 1024 * 1024 + 1);
 }
 
 /**

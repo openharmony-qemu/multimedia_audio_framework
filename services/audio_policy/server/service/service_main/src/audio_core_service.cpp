@@ -45,7 +45,7 @@
 #include "ipc_skeleton.h"
 
 namespace {
-    #include "v6_0/iaudio_manager.h"
+    #include "v6_1/iaudio_manager.h"
 }
 
 namespace OHOS {

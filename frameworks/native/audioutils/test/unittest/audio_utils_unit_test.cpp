@@ -3147,6 +3147,124 @@ HWTEST(AudioUtilsUnitTest, OpenDumpFile_002, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test OpenDumpFile  API
+* @tc.type  : FUNC
+* @tc.number: OpenDumpFile_003
+* @tc.desc  : Test OpenDumpFile API with explicit dump file type
+*/
+HWTEST(AudioUtilsUnitTest, OpenDumpFile_003, TestSize.Level1)
+{
+    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
+    std::string fileName = "dump_metadata_unit_test.bin";
+    const char *value = "x";
+    SetParameter(para.c_str(), value);
+
+    FILE *tempFile = nullptr;
+    DumpFileUtil::OpenDumpFile(para, fileName, &tempFile, OTHER_NATIVE_SERVICE);
+    EXPECT_EQ(tempFile, nullptr);
+    EXPECT_EQ(DumpFileUtil::g_lastPara[para], value);
+}
+
+/**
+* @tc.name  : Test OpenDumpFile  API
+* @tc.type  : FUNC
+* @tc.number: OpenDumpFile_004
+* @tc.desc  : Test OpenDumpFile API with opened file and explicit dump file type
+*/
+HWTEST(AudioUtilsUnitTest, OpenDumpFile_004, TestSize.Level1)
+{
+    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
+    std::string fileName = "dump_metadata_unit_test.bin";
+    const char *value = "w";
+    SetParameter(para.c_str(), value);
+    DumpFileUtil::g_lastPara[para] = "w";
+
+    FILE *tempFile = std::tmpfile();
+    ASSERT_NE(tempFile, nullptr);
+    DumpFileUtil::OpenDumpFile(para, fileName, &tempFile, OTHER_NATIVE_SERVICE);
+    DumpFileUtil::CloseDumpFile(&tempFile);
+}
+
+/**
+* @tc.name  : Test ChangeDumpFileState  API
+* @tc.type  : FUNC
+* @tc.number: ChangeDumpFileState_004
+* @tc.desc  : Test explicit dump file type validation branches
+*/
+HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_004, TestSize.Level1)
+{
+    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
+    std::string fileName = "dump_metadata_unit_test.bin";
+
+    DumpFileUtil::g_lastPara[para] = "w";
+    FILE *tempFile = nullptr;
+    DumpFileUtil::ChangeDumpFileState(para, &tempFile, fileName, OTHER_NATIVE_SERVICE);
+    EXPECT_EQ(tempFile, nullptr);
+
+    tempFile = std::tmpfile();
+    ASSERT_NE(tempFile, nullptr);
+    DumpFileUtil::g_lastPara[para] = "invalid";
+    DumpFileUtil::ChangeDumpFileState(para, &tempFile, fileName, OTHER_NATIVE_SERVICE);
+    EXPECT_NE(tempFile, nullptr);
+    DumpFileUtil::CloseDumpFile(&tempFile);
+}
+
+/**
+* @tc.name  : Test ChangeDumpFileState  API
+* @tc.type  : FUNC
+* @tc.number: ChangeDumpFileState_005
+* @tc.desc  : Test explicit dump file type unchanged and reopen branches
+*/
+HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_005, TestSize.Level1)
+{
+    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
+    std::string fileName = "dump_metadata_unit_test.bin";
+
+    const char *writeValue = "w";
+    SetParameter(para.c_str(), writeValue);
+    DumpFileUtil::g_lastPara[para] = "w";
+    FILE *tempFile = std::tmpfile();
+    ASSERT_NE(tempFile, nullptr);
+    FILE *originFile = tempFile;
+    DumpFileUtil::ChangeDumpFileState(para, &tempFile, fileName, OTHER_NATIVE_SERVICE);
+    EXPECT_EQ(tempFile, originFile);
+    DumpFileUtil::CloseDumpFile(&tempFile);
+
+    const char *invalidValue = "x";
+    SetParameter(para.c_str(), invalidValue);
+    DumpFileUtil::g_lastPara[para] = "a";
+    tempFile = std::tmpfile();
+    ASSERT_NE(tempFile, nullptr);
+    DumpFileUtil::ChangeDumpFileState(para, &tempFile, fileName, OTHER_NATIVE_SERVICE);
+    EXPECT_EQ(tempFile, nullptr);
+    EXPECT_EQ(DumpFileUtil::g_lastPara[para], invalidValue);
+}
+
+/**
+* @tc.name  : Test GetMetadataServerDumpFileName API
+* @tc.type  : FUNC
+* @tc.number: GetMetadataServerDumpFileName_001
+* @tc.desc  : Test metadata server dump file name format
+*/
+HWTEST(AudioUtilsUnitTest, GetMetadataServerDumpFileName_001, TestSize.Level1)
+{
+    std::string fileName = DumpFileUtil::GetMetadataServerDumpFileName("primary", SOURCE_TYPE_CAMCORDER, 12345);
+    EXPECT_EQ(fileName, "primary_metadata_" + std::to_string(SOURCE_TYPE_CAMCORDER) + "_12345.bin");
+}
+
+/**
+* @tc.name  : Test GetMetadataClientDumpFileName API
+* @tc.type  : FUNC
+* @tc.number: GetMetadataClientDumpFileName_001
+* @tc.desc  : Test metadata client dump file name format
+*/
+HWTEST(AudioUtilsUnitTest, GetMetadataClientDumpFileName_001, TestSize.Level1)
+{
+    std::string fileName = DumpFileUtil::GetMetadataClientDumpFileName(1001);
+    EXPECT_EQ(fileName, "1001_cap_client_metadata.bin");
+}
+
+/**
 * @tc.name  : Test OpenDumpFileInner  API
 * @tc.type  : FUNC
 * @tc.number: OpenDumpFileInner_001

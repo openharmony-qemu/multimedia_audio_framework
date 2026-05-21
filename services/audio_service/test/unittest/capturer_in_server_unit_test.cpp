@@ -46,7 +46,26 @@ void CapturerInServerUnitTest::SetUp() {}
 void CapturerInServerUnitTest::TearDown() {}
 
 class ConcreteIStreamListener : public IStreamListener {
+public:
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
+};
+
+class MetadataStreamListenerTest : public IStreamListener {
+public:
+    int32_t OnOperationHandled(Operation operation, int64_t result) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t OnMetaData(const std::vector<uint8_t> &metaData) override
+    {
+        callbackCount_++;
+        lastMetaData_ = metaData;
+        return SUCCESS;
+    }
+
+    int32_t callbackCount_ = 0;
+    std::vector<uint8_t> lastMetaData_;
 };
 
 const int32_t CAPTURER_FLAG = 10;
@@ -125,6 +144,36 @@ class ICapturerStreamStartFailTest : public ICapturerStreamTest1 {
 public:
     int32_t Start() override { return ERR_OPERATION_FAILED; }
 };
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_OnMetaData_001.
+ * @tc.desc  : Test OnMetaData validation and listener dispatch.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_OnMetaData_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto listener = std::make_shared<MetadataStreamListenerTest>();
+    auto capturerInServer = std::make_shared<CapturerInServer>(processConfig, listener);
+    ASSERT_NE(capturerInServer, nullptr);
+
+    std::vector<uint8_t> emptyMetadata;
+    int32_t ret = capturerInServer->OnMetaData(emptyMetadata);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    std::vector<uint8_t> metadata = { 1, 2, 3, 4 };
+    ret = capturerInServer->OnMetaData(metadata);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(listener->callbackCount_, 1);
+    EXPECT_EQ(listener->lastMetaData_, metadata);
+
+    std::weak_ptr<IStreamListener> expiredListener;
+    auto capturerWithExpiredListener = std::make_shared<CapturerInServer>(processConfig, expiredListener);
+    ASSERT_NE(capturerWithExpiredListener, nullptr);
+    ret = capturerWithExpiredListener->OnMetaData(metadata);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
 
 /**
  * @tc.name  : Test CapturerInServer.

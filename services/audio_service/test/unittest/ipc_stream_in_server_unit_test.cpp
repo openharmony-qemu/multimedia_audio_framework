@@ -26,6 +26,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "iipc_stream.h"
+#include "ipc_stream_listener_stub.h"
 #include "message_parcel.h"
 #include "parcel.h"
 #include "audio_stream_enum.h"
@@ -63,6 +64,33 @@ void IpcStreamInServerUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+class IpcStreamListenerMetadataTest : public IpcStreamListenerStub {
+public:
+    int32_t OnOperationHandled(int32_t operation, int64_t result) override
+    {
+        (void)operation;
+        (void)result;
+        return SUCCESS;
+    }
+
+    int32_t OnMetaData(const std::vector<uint8_t> &metaData) override
+    {
+        callbackCount_++;
+        lastData_ = metaData;
+        return SUCCESS;
+    }
+
+    int32_t OnOperationHandledLazy(int32_t operation, int64_t result) override
+    {
+        (void)operation;
+        (void)result;
+        return SUCCESS;
+    }
+
+    int32_t callbackCount_ = 0;
+    std::vector<uint8_t> lastData_;
+};
+
 /**
  * @tc.name  : Test IpcStreamInServer API
  * @tc.type  : FUNC
@@ -76,6 +104,31 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_001, TestSize.Level1)
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     auto ret = ipcStreamInServerRet.GetCapturer();
     EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test StreamListenerHolder API
+ * @tc.type  : FUNC
+ * @tc.number: StreamListenerHolderOnMetaData_001
+ * @tc.desc  : Test metadata listener dispatch and not-set branches.
+ */
+HWTEST(IpcStreamInServerUnitTest, StreamListenerHolderOnMetaData_001, TestSize.Level1)
+{
+    StreamListenerHolder streamListenerHolder;
+    std::vector<uint8_t> metadata = { 1, 2, 3, 4 };
+
+    int32_t ret = streamListenerHolder.OnMetaData(metadata);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    auto listener = sptr<IpcStreamListenerMetadataTest>::MakeSptr();
+    ASSERT_NE(listener, nullptr);
+    ret = streamListenerHolder.RegisterStreamListener(listener);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = streamListenerHolder.OnMetaData(metadata);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(listener->callbackCount_, 1);
+    EXPECT_EQ(listener->lastData_, metadata);
 }
 
 /**

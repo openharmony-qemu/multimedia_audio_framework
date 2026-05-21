@@ -1428,6 +1428,44 @@ void DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::s
     OpenDumpFile(para, filePath, dumpFile);
 }
 
+void DumpFileUtil::ChangeDumpFileState(const std::string &para, FILE **dumpFile, const std::string &filePath,
+    AudioDumpFileType fileType)
+{
+    CHECK_AND_RETURN_LOG(*dumpFile != nullptr, "Invalid file para");
+    CHECK_AND_RETURN_LOG(g_lastPara[para] == "w" || g_lastPara[para] == "a", "Invalid input para");
+    std::string dumpPara;
+    bool res = GetSysPara(para.c_str(), dumpPara);
+    if (!res || dumpPara.empty()) {
+        AUDIO_WARNING_LOG("get %{public}s fail", para.c_str());
+    }
+    if (g_lastPara[para] == "w" && dumpPara == "w") {
+        return;
+    }
+    CloseDumpFile(dumpFile);
+    OpenDumpFile(para, filePath, dumpFile, fileType);
+}
+
+void DumpFileUtil::OpenDumpFile(const std::string &para, const std::string &fileName, FILE **file,
+    AudioDumpFileType fileType)
+{
+    if (*file != nullptr) {
+        DumpFileUtil::ChangeDumpFileState(para, file, fileName, fileType);
+        return;
+    }
+    *file = DumpFileUtil::OpenDumpFileInner(para, fileName, fileType);
+}
+
+std::string DumpFileUtil::GetMetadataServerDumpFileName(const std::string &halName, int32_t sourceType,
+    int64_t timestamp)
+{
+    return halName + "_metadata_" + std::to_string(sourceType) + "_" + std::to_string(timestamp) + ".bin";
+}
+
+std::string DumpFileUtil::GetMetadataClientDumpFileName(uint32_t sessionId)
+{
+    return std::to_string(sessionId) + "_cap_client_metadata.bin";
+}
+
 void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **file)
 {
     if (*file != nullptr) {

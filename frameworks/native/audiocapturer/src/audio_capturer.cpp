@@ -2159,6 +2159,14 @@ int32_t AudioCapturerPrivate::SetCapturerReadCallback(const std::shared_ptr<Audi
     return currentStream->SetCapturerReadCallback(callback);
 }
 
+int32_t AudioCapturerPrivate::SetCapturerMetaDataCallback(
+    const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->SetCapturerMetaDataCallback(callback);
+}
+
 int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
     AsyncCheckAudioCapturer("GetBufferDesc");

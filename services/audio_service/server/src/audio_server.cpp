@@ -497,6 +497,64 @@ private:
     std::function<void(bool, size_t, size_t)> callback_;
 };
 
+class CamcorderMetadataOb final : public IAudioSourceCallback {
+public:
+    explicit CamcorderMetadataOb(uint32_t captureId)
+        : captureId_(captureId)
+    {
+    }
+
+    ~CamcorderMetadataOb() final
+    {
+    }
+
+    void OnHdiCaptureCallback(CaptureCallbackType type, const std::vector<uint8_t> &data) final
+    {
+        CHECK_AND_RETURN_LOG(type == CB_CAMCORDER_METADATA, "unsupported callback type: %{public}d", type);
+        CHECK_AND_RETURN_LOG(!data.empty(), "metadata is null.");
+        AUDIO_INFO_LOG("captureId: %{public}u, metadata size: %{public}zu", captureId_, data.size());
+
+        auto captureSource = HdiAdapterManager::GetInstance().GetCaptureSource(captureId_, false);
+        CHECK_AND_RETURN_LOG(captureSource != nullptr, "capture source is null for captureId: %{public}u", captureId_);
+
+        auto pipeInfo = captureSource->GetInputPipeInfo();
+        CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipe info is null for captureId: %{public}u", captureId_);
+        auto streams = pipeInfo->GetStreams();
+        for (const auto &stream : streams) {
+            uint32_t streamId = stream.first;
+            auto capturerInServer = AudioService::GetInstance()->GetCapturerBySessionID(streamId);
+            if (capturerInServer == nullptr) {
+                AUDIO_WARNING_LOG("failed to find capturer for streamId: %{public}u", streamId);
+                continue;
+            }
+
+            int32_t ret = capturerInServer->OnMetaData(data);
+            if (ret != SUCCESS) {
+                AUDIO_WARNING_LOG("failed for streamId: %{public}u, ret: %{public}d", streamId, ret);
+            }
+        }
+    }
+
+private:
+    uint32_t captureId_;
+};
+
+static void RegisterCamcorderMetadataCallback()
+{
+    std::function<bool(uint32_t)> limitFunc = [](uint32_t id) -> bool {
+        IdHandler &idHandler = IdHandler::GetInstance();
+        uint32_t type = idHandler.ParseType(id);
+        std::string info = idHandler.ParseInfo(id);
+        return type == HDI_ID_TYPE_PRIMARY && info == HDI_ID_INFO_CAMCORDER;
+    };
+    std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> callbackGenerator =
+        [](uint32_t captureId) -> std::shared_ptr<IAudioSourceCallback> {
+        return std::make_shared<CamcorderMetadataOb>(captureId);
+    };
+    HdiAdapterManager::GetInstance().RegistSourceCallbackGenerator(HDI_CB_CAPTURE_CAMCORDER_METADATA,
+        callbackGenerator, limitFunc);
+}
+
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
 #ifdef SUPPORT_OLD_ENGINE
@@ -2899,6 +2957,8 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         );
     };
     HdiAdapterManager::GetInstance().RegistSourceCallbackGenerator(HDI_CB_CAPTURE_STATE, callbackGenerator, limitFunc);
+
+    RegisterCamcorderMetadataCallback();
 }
 
 void AudioServer::RegisterAudioRendererSinkCallback()

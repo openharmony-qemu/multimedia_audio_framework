@@ -217,6 +217,23 @@ void SourceCallbackWrapper::OnCaptureState(bool isActive)
     }
 }
 
+void SourceCallbackWrapper::OnHdiCaptureCallback(CaptureCallbackType type, const std::vector<uint8_t> &data)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        if (cb.second == nullptr) {
+            continue;
+        }
+        cb.second->OnHdiCaptureCallback(type, data);
+    }
+    for (auto &cb : rawCbs_) {
+        if (cb.second == nullptr) {
+            continue;
+        }
+        cb.second->OnHdiCaptureCallback(type, data);
+    }
+}
+
 void SourceCallbackWrapper::OnWakeupClose(void)
 {
     std::scoped_lock lock(cbMtx_, rawCbMtx_);

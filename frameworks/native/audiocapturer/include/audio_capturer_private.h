@@ -68,6 +68,7 @@ public:
     int32_t SetCaptureMode(AudioCaptureMode renderMode) override;
     AudioCaptureMode GetCaptureMode()const override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
     int32_t GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
         size_t &micInBufSize, size_t &ecBufSize) override;

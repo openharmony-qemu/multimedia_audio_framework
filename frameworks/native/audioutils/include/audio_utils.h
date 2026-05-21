@@ -288,9 +288,16 @@ public:
     static void CloseDumpFile(FILE **dumpFile);
     static std::map<std::string, std::string> g_lastPara;
     static void OpenDumpFile(std::string para, std::string fileName, FILE **file);
+    static void OpenDumpFile(const std::string &para, const std::string &fileName, FILE **file,
+        AudioDumpFileType fileType);
+    static std::string GetMetadataServerDumpFileName(const std::string &halName, int32_t sourceType,
+        int64_t timestamp);
+    static std::string GetMetadataClientDumpFileName(uint32_t sessionId);
 private:
     static FILE *OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType);
     static void ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName);
+    static void ChangeDumpFileState(const std::string &para, FILE **dumpFile, const std::string &fileName,
+        AudioDumpFileType fileType);
 };
 
 template <typename...Args>
