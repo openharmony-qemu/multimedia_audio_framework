@@ -179,33 +179,40 @@ public:
     IStandardSleAudioOperationCallbackFuzzTest() {}
     virtual ~IStandardSleAudioOperationCallbackFuzzTest() {}
 
-    void GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override {}
-    void GetSleVirtualAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override {}
-    bool IsInBandRingOpen(const std::string &device) override
-    {
-        return false;
-    }
-    uint32_t GetSupportStreamType(const std::string &device) override
+    int32_t GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override
     {
         return 0;
     }
-    int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType) override
+    int32_t GetSleVirtualAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override
     {
         return 0;
     }
-    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs) override
+    int32_t IsInBandRingOpen(const std::string &device, bool &ret) override
     {
         return 0;
     }
-    int32_t StopPlaying(const std::string &device, uint32_t streamType) override
+    int32_t GetSupportStreamType(const std::string &device, uint32_t &retType) override
     {
         return 0;
     }
-    int32_t ConnectAllowedProfiles(const std::string &remoteAddr) override
+    int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType, int32_t &ret) override
     {
         return 0;
     }
-    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override
+    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs, int32_t &ret) override
+    {
+        return 0;
+    }
+    int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t &ret) override
+    {
+        return 0;
+    }
+    int32_t ConnectAllowedProfiles(const std::string &remoteAddr, int32_t &ret) override
+    {
+        return 0;
+    }
+    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType,
+        int32_t &ret) override
     {
         return 0;
     }
@@ -213,7 +220,6 @@ public:
     {
         return 0;
     }
-
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override
     {
         delayValue = 0;
@@ -252,7 +258,7 @@ void SleAudioDeviceManagerIsInBandRingOpenFuzzTest(FuzzedDataProvider& fdp)
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string device = ConsumeString(fdp, "");
+    std::string device = ConsumeString(fdp, "speaker");
     manager.IsInBandRingOpen(device);
 }
 
@@ -263,7 +269,7 @@ void SleAudioDeviceManagerGetSupportStreamTypeFuzzTest(FuzzedDataProvider& fdp)
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string device = ConsumeString(fdp, "");
+    std::string device = ConsumeString(fdp, "speaker");
     manager.GetSupportStreamType(device);
 }
 
@@ -328,7 +334,7 @@ void SleAudioDeviceManagerConnectAllowedProfilesFuzzTest(FuzzedDataProvider& fdp
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string remoteAddr = ConsumeString(fdp, "");
+    std::string remoteAddr = ConsumeString(fdp, "macaddress");
     manager.ConnectAllowedProfiles(remoteAddr);
 }
 
@@ -339,7 +345,7 @@ void SleAudioDeviceManagerSetDeviceAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string device = ConsumeString(fdp, "");
+    std::string device = ConsumeString(fdp, "speaker");
     if (g_testAudioStreamTypes.size() == 0) {
         return;
     }
@@ -360,10 +366,10 @@ void SleAudioDeviceManagerSendUserSelectionFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
     StreamUsage streamUsage = PickValue(fdp, g_testAudioStreamUsages);
-    manager.SendUserSelection(deviceDesc, streamUsage, USER_SELECT_SLE);
+    manager.SendUserSelection(deviceDesc, streamUsage);
     AudioDeviceDescriptor deviceDescBySource;
     SourceType sourceType = PickValue(fdp, g_testSourceTypes);
-    manager.SendUserSelection(deviceDescBySource, sourceType, USER_SELECT_SLE);
+    manager.SendUserSelection(deviceDescBySource, sourceType);
 }
 
 void SleAudioDeviceManagerGetStreamUsagesBySleStreamTypeFuzzTest(FuzzedDataProvider& fdp)
@@ -561,9 +567,6 @@ void SleAudioDeviceManagerIsMoveToNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     auto streamDesc = make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
-    if (g_testDeviceTypes.size() == 0) {
-        return;
-    }
     streamDesc->newDeviceDescs_[0]->deviceType_ = PickValue(fdp, g_testDeviceTypes);
     manager.IsMoveToNearlinkDevice(streamDesc);
 }
@@ -574,9 +577,6 @@ void SleAudioDeviceManagerIsNearlinkMoveToOtherDeviceFuzzTest(FuzzedDataProvider
     auto streamDesc = make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
     streamDesc->oldDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
-    if (g_testDeviceTypes.size() == 0) {
-        return;
-    }
     streamDesc->newDeviceDescs_[0]->deviceType_ = PickValue(fdp, g_testDeviceTypes);
     streamDesc->oldDeviceDescs_[0]->deviceType_ = PickValue(fdp, g_testDeviceTypes);
     manager.IsNearlinkMoveToOtherDevice(streamDesc);
@@ -611,6 +611,10 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
+
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -624,7 +628,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
+    OHOS::AudioStandard::Init();
     return 0;
 }
