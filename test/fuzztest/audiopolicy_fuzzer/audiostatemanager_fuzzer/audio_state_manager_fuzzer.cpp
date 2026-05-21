@@ -61,8 +61,10 @@ const vector<DeviceType> g_testOutputDeviceTypes = {
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
     DEVICE_TYPE_BLUETOOTH_A2DP,
     DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
     DEVICE_TYPE_NEARLINK,
 };
 
@@ -171,6 +173,10 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
+
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -184,7 +190,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
+    OHOS::AudioStandard::Init();
     return 0;
 }
+
