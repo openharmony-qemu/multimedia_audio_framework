@@ -22,7 +22,6 @@ using namespace std;
 
 const size_t THRESHOLD = 10;
 const size_t MAX_STRING_LEN = 64;
-const char* LOCAL_NETWORK_ID = "LocalDevice";
 const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
 const int32_t MAX_TEST_UID = 10000;
 const uint32_t DEVICE_SUPPORT_MMAP = 1;
@@ -153,7 +152,8 @@ void SetAndGetAudioLatencyFromXmlFuzzTest(FuzzedDataProvider& fdp)
 void GetAdapterInfoByTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<PolicyAdapterInfo> info = nullptr;
-    AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(ConsumeEnum<AudioAdapterType>(fdp), info);
+    AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
+        ConsumeEnum<AudioAdapterType>(fdp), info);
 }
 
 void GetStreamPropInfoSizeFuzzTest(FuzzedDataProvider& fdp)
@@ -166,8 +166,8 @@ void GetStreamPropInfoSizeFuzzTest(FuzzedDataProvider& fdp)
 void GetTargetSourceTypeAndMatchingFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     bool useMatchingPropInfo = fdp.ConsumeBool();
-    AudioCoreConfigManager::GetInstance().GetTargetSourceTypeAndMatchingFlag(ConsumeEnum<SourceType>(fdp),
-        useMatchingPropInfo);
+    AudioCoreConfigManager::GetInstance().GetTargetSourceTypeAndMatchingFlag(
+        ConsumeEnum<SourceType>(fdp), useMatchingPropInfo);
 }
 
 void ParseFormatFuzzTest(FuzzedDataProvider& fdp)
