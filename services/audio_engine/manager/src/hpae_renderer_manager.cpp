@@ -259,6 +259,10 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
     sceneClusterMap_[sceneTypeConnect]->CreateNodes(sinkInputNodeMap_[nodeInfo.sessionId]);
     AUDIO_INFO_LOG("SessionId %{public}d, Create nodes in sceneCluster processorType %{public}d",
         nodeInfo.sessionId, sceneTypeConnect);
+    if (nodeInfo.sceneType == HPAE_SCENE_COLLABORATIVE) {
+        AUDIO_INFO_LOG("SetCollaborationStateTomixNode: %{public}d", isCollaborationEnabled_);
+        sceneClusterMap_[sceneTypeConnect]->SetCollaborationStateToMixNode(isCollaborationEnabled_);
+    }
     int32_t ret = sceneClusterMap_[sceneTypeConnect]->AudioRendererCreate(nodeInfo, sinkInfo_);
 
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "update audio effect when creating failed, ret = %{public}d", ret);
@@ -454,6 +458,7 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
     HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
     RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
+    TransNodeInfoForCollaboration(sinkInputNodeMap_[sessionId]->GetNodeInfo(), COLLABORATION_CLOSE);
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;
@@ -654,11 +659,15 @@ void HpaeRendererManager::ConnectCoBufferFromConnectOutputCluster(HpaeProcessorT
         static_cast<int32_t>(sceneType));
     CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetPreOutNum() == 0, "no Connect, GetPreOutNum: %{public}d",
         static_cast<int32_t>(sceneClusterMap_[sceneType]->GetPreOutNum()));
-    // outputCluster_->GetHdiLatency()->SetLatency()
-    // In the future, coBuffer use the hdi latency
-    hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
-    hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
-    TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+    if (isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN) {
+        // outputCluster_->GetHdiLatency()->SetLatency()
+        // In the future, coBuffer use the hdi latency
+        hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
+        hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
+        TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+    } else if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+        sceneClusterMap_[sceneType]->SetDelayCountToEffectNode(COLL_ALING_COUNT);
+    }
 }
 
 void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
@@ -848,11 +857,17 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
 
 void HpaeRendererManager::DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType)
 {
-    CHECK_AND_RETURN_LOG(sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr,
+    CHECK_AND_RETURN_LOG(sceneType == HPAE_SCENE_COLLABORATIVE,
         "no need DisConnect CoBufferNode, sceneType: %{public}d", static_cast<int32_t>(sceneType));
-    hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
-    hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
-    TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+    if (hpaeCoBufferNode_ != nullptr) {
+        hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+        hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
+        TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+    } else {
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
+        "sceneCluster is nullptr, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+        sceneClusterMap_[sceneType]->SetDelayCountToEffectNode(COLL_ALING_COUNT);
+    }
 }
 
 void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
@@ -1153,6 +1168,9 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo,
     for (const auto &it : sinkInputNodeMap_) {
         TriggerStreamState(it.first, it.second);
         DeleteProcessCluster(it.first, false);
+        if (it.second != nullptr) {
+            TransNodeInfoForCollaboration(it.second->GetNodeInfo(), isCollaborationEnabled_);
+        }
     }
     AUDIO_INFO_LOG("delete device:%{public}s all input processor end", GetEncryptStr(sinkInfo.deviceName).c_str());
     sinkInfo_ = sinkInfo;
@@ -1700,22 +1718,23 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::UpdateCollaborativeState(bool isCollaborationEnabled)
+int32_t HpaeRendererManager::UpdateCollaborativeState(CollaborationState isCollaborationEnabled)
 {
-    auto request = [this, isCollaborationEnabled]() {
-        if (isCollaborationEnabled_ == isCollaborationEnabled) {
-            AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
-                isCollaborationEnabled_);
-            return;
-        }
-        AUDIO_INFO_LOG("collaborativeState change from %{public}d to %{public}d",
-            isCollaborationEnabled_, isCollaborationEnabled);
-        isCollaborationEnabled_ = isCollaborationEnabled;
-        if (isCollaborationEnabled_) {
-            // for collaboration enabled
+    if (isCollaborationEnabled_ == isCollaborationEnabled) {
+        AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
+            isCollaborationEnabled_);
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("collaborativeState change from %{public}d to %{public}d",
+        isCollaborationEnabled_, isCollaborationEnabled);
+    isCollaborationEnabled_ = isCollaborationEnabled;
+    sinkInfo_.isCollaborationEnabled = isCollaborationEnabled;
+    CHECK_AND_RETURN_RET_LOG(sinkInfo_.deviceName != "MCH_Speaker" &&
+        isCollaborationEnabled_ != COLLABORATION_NEARLINK_OPEN, SUCCESS, "MCH OR NEARLINK, no need continue");
+    auto request = [this]() {
+        if (isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN) {
             EnableCollaboration();
-        } else {
-            // for collaboration disabled
+        } else if (isCollaborationEnabled_ == COLLABORATION_CLOSE) {
             DisableCollaboration();
         }
     };
@@ -1759,7 +1778,7 @@ int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBuf
             outputCluster_->Connect(coBufferNode);
             coBufferNode->SetOutputClusterConnected(true);
             coBufferNodeIsConnected_ = true;
-            outputCluster_->SetCollaborationState(true);
+            outputCluster_->SetCollaborationState(COLLABORATION_BLUETOOTH_OPEN);
             coBufferNode->SetDefaultRendererManagerCallBack(weak_from_this());
             AUDIO_INFO_LOG("finish connectCoBufferNode");
         }
@@ -1781,7 +1800,7 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
             coBufferNode->SetOutputClusterConnected(false);
             defaultCoBufferNode_ = coBufferNode;
             coBufferNodeIsConnected_ = false;
-            outputCluster_->SetCollaborationState(false);
+            outputCluster_->SetCollaborationState(COLLABORATION_CLOSE);
             AUDIO_INFO_LOG("will disconnectCoBufferNode");
         }
     };
@@ -1796,7 +1815,7 @@ void HpaeRendererManager::OnDisConnectCoBufferWaitFadeOutDone()
         CHECK_AND_RETURN_LOG(defaultCoBufferNode_->IsOutputClusterConnected() == false,
             "defaultCoBufferNode_ is connect, dont allow disconnect");
         outputCluster_->DisConnect(defaultCoBufferNode_);
-        outputCluster_->SetCollaborationState(false);
+        outputCluster_->SetCollaborationState(COLLABORATION_CLOSE);
         defaultCoBufferNode_ = nullptr;
         coBufferNodeIsConnected_ = false;
         AUDIO_INFO_LOG("finish disconnectCoBufferNode");
@@ -2098,8 +2117,14 @@ void HpaeRendererManager::PostSetSessionEffectParameter(uint32_t sessionId, int3
 
 void HpaeRendererManager::SetCollDelayCount()
 {
-    CHECK_AND_RETURN_LOG(hpaeCoBufferNode_ != nullptr, "hpaeCoBufferNode is nullptr");
-    hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
+    if (isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN) {
+        CHECK_AND_RETURN_LOG(hpaeCoBufferNode_ != nullptr, "hpaeCoBufferNode is nullptr");
+        hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
+    } else if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE),
+            "sceneCluster is nullptr, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+        sceneClusterMap_[sceneType]->SetDelayCountToEffectNode(COLL_ALING_COUNT);
+    }
 }
 
 void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)

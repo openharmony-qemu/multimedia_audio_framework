@@ -778,6 +778,15 @@ enum ProcessClusterOperation {
     USE_NONE_PROCESSCLUSTER,
     CREATE_EXTRA_PROCESSCLUSTER
 };
+
+/**
+ * Collaboration state.
+ */
+enum CollaborationState {
+    COLLABORATION_CLOSE = 0,
+    COLLABORATION_BLUETOOTH_OPEN = 1,
+    COLLABORATION_NEARLINK_OPEN = 2,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

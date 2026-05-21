@@ -215,8 +215,8 @@ HWTEST_F(HpaeOutputClusterTest, FaultCode_SetCollaborationState_NullSinkOutputNo
     auto outputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     ASSERT_NE(outputCluster, nullptr);
     // hpaeSinkOutputNode_ is created in constructor
-    outputCluster->SetCollaborationState(true);
-    outputCluster->SetCollaborationState(false);
+    outputCluster->SetCollaborationState(COLLABORATION_BLUETOOTH_OPEN);
+    outputCluster->SetCollaborationState(COLLABORATION_CLOSE);
     SUCCEED();
 }
 

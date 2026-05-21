@@ -543,7 +543,7 @@ void ProAudioServiceAdapterImpl::HandleSourceAudioStreamRemoved(uint32_t session
     g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionId);
 }
 
-int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
+int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeState(CollaborationState isCollaborationEnabled)
 {
     AUDIO_INFO_LOG("State %{public}d", isCollaborationEnabled);
     lock_guard<mutex> lock(lock_);
@@ -620,6 +620,12 @@ int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::stri
         return ERROR;
     }
     return collaborativeUpdateResult_;
+}
+
+bool ProAudioServiceAdapterImpl::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+{
+    lock_guard<mutex> lock(lock_);
+    return IHpaeManager::GetHpaeManager().IsCollaborationSupportedForStreamUsage(streamUsage);
 }
 
 int32_t ProAudioServiceAdapterImpl::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)

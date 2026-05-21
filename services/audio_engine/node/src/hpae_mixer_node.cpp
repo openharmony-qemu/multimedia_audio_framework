@@ -244,7 +244,11 @@ void HpaeMixerNode::DrainProcess()
         waitFrames_ = 0;
     } else {
         waitFrames_++;
-        if (waitFrames_ == WAIT_FRAMES_NUM) {
+        uint32_t waitFramesTemp = WAIT_FRAMES_NUM;
+        if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+            waitFramesTemp = WAIT_FRAMES_NUM * 3;
+        }
+        if (waitFrames_ >= waitFramesTemp) {
             waitFrames_ = 0;
             auto statusCallback = GetNodeStatusCallback().lock();
             if (statusCallback) {
@@ -259,6 +263,12 @@ uint64_t HpaeMixerNode::GetLatency(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET(limiter_ != nullptr, 0);
     return limiter_->GetLatency() * AUDIO_US_PER_MS;
+}
+
+void HpaeMixerNode::SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled)
+{
+    AUDIO_INFO_LOG("SetCollaborationStateToMixNode: %{public}d", isCollaborationEnabled);
+    isCollaborationEnabled_ = isCollaborationEnabled;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -767,7 +767,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_049, TestSize.Level0)
     nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
     
-    TransNodeInfoForCollaboration(nodeInfo, true);
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
     EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
     EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -785,8 +785,8 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_050, TestSize.Level0)
     nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     
-    TransNodeInfoForCollaboration(nodeInfo, true);
-    TransNodeInfoForCollaboration(nodeInfo, false);
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
     EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
 }
@@ -982,7 +982,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_064, TestSize.Level0)
     nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     
-    TransNodeInfoForCollaboration(nodeInfo, true);
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
     EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
 }

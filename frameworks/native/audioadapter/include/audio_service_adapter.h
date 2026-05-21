@@ -229,7 +229,7 @@ public:
      *
      * @return int32_t the result, only supports proaudio for now.
      */
-    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) NOT_SUPPORT_RET
+    virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) NOT_SUPPORT_RET
 
     /**
      * @brief Set spatialization spatializationState
@@ -270,6 +270,13 @@ public:
      * @return {@link true} if support, {@link false} otherwise
      */
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
+
+    /**
+     * @brief isCollaboration supported for streamUsage
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) NOT_SUPPORT_RET
 
     /**
      * @brief update Update PersonalizedHRTFBin

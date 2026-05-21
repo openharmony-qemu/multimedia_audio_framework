@@ -2571,7 +2571,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, NotifyStreamChangeToSink_NullSink_002, TestSize
 /**
  * @tc.name  : SetCollaborationState_True_001
  * @tc.type  : FUNC
- * @tc.desc  : Test SetCollaborationState sets collaborationState to true.
+ * @tc.desc  : Test SetCollaborationState sets isCollaborationEnabled to true.
  */
 HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_True_001, TestSize.Level1)
 {
@@ -2579,14 +2579,14 @@ HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_True_001, TestSize.Level1
     PrepareNodeInfo(nodeInfo);
     auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
 
-    hpaeSinkOutputNode->SetCollaborationState(true);
-    EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), true);
+    hpaeSinkOutputNode->SetCollaborationState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), COLLABORATION_BLUETOOTH_OPEN);
 }
 
 /**
  * @tc.name  : SetCollaborationState_False_002
  * @tc.type  : FUNC
- * @tc.desc  : Test SetCollaborationState sets collaborationState to false.
+ * @tc.desc  : Test SetCollaborationState sets isCollaborationEnabled to false.
  */
 HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_False_002, TestSize.Level1)
 {
@@ -2595,12 +2595,12 @@ HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_False_002, TestSize.Level
     auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
 
     // Set initial state to true
-    hpaeSinkOutputNode->SetCollaborationState(true);
-    EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), true);
+    hpaeSinkOutputNode->SetCollaborationState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), COLLABORATION_BLUETOOTH_OPEN);
 
     // Set state to false
-    hpaeSinkOutputNode->SetCollaborationState(false);
-    EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), false);
+    hpaeSinkOutputNode->SetCollaborationState(COLLABORATION_CLOSE);
+    EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), COLLABORATION_CLOSE);
 }
 
 /**

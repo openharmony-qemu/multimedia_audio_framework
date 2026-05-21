@@ -1827,11 +1827,12 @@ int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &pr
     return ret;
 }
 
-int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnabled)
+int32_t AudioAdapterManager::UpdateCollaborativeState(CollaborationState isCollaborationEnabled)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     AUDIO_INFO_LOG("AudioCollaborativeService UpdateCollaborativeState entered!");
-    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(isCollaborationEnabled);
+    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(
+        isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN || isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN);
     return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
@@ -3978,6 +3979,12 @@ int32_t AudioAdapterManager::UpdateCollaborativeProductId(const std::string &pro
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
     return audioServiceAdapter_->UpdateCollaborativeProductId(productId);
+}
+
+bool AudioAdapterManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
+    return audioServiceAdapter_->IsCollaborationSupportedForStreamUsage(streamUsage);
 }
 
 void AudioAdapterManager::LoadCollaborationConfig()

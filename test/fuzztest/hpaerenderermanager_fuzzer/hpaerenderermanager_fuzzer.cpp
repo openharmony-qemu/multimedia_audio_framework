@@ -475,7 +475,7 @@ void UpdateCollaborativeStateFuzzTest()
     hpaeRendererManager->Init();
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->IsInit();
-    hpaeRendererManager->UpdateCollaborativeState(true);
+    hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
 
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
@@ -498,7 +498,7 @@ void UpdateCollaborativeStateFuzzTest()
     hpaeRendererManager->DestroyStream(sessionId);
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
-    hpaeRendererManager->UpdateCollaborativeState(false);
+    hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE);
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->DeInit();
 }
@@ -656,9 +656,9 @@ void EnableCollaborationWithMovieSceneFuzzTest()
     WaitForMsgProcessing(rendererManager);
     rendererManager->Start(streamInfo.sessionId);
     WaitForMsgProcessing(rendererManager);
-    rendererManager->UpdateCollaborativeState(true);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     WaitForMsgProcessing(rendererManager);
-    rendererManager->UpdateCollaborativeState(false);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE);
     WaitForMsgProcessing(rendererManager);
     rendererManager->DeInit();
 }

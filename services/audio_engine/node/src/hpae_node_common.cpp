@@ -205,9 +205,10 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
     }
 }
 
-void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled)
+void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
 {
-    if (isCollaborationEnabled) {
+    if (isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN ||
+        isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN) {
         if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE || nodeInfo.effectInfo.effectScene == SCENE_MUSIC) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;

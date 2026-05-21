@@ -593,6 +593,24 @@ std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetLoudnessGainNode(ui
 {
     return SafeGetMap(idLoudnessGainNodeMap_, sessionId);
 }
+
+void HpaeProcessCluster::SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled)
+{
+    if (mixerNode_ != nullptr) {
+        mixerNode_->SetCollaborationStateToMixNode(isCollaborationEnabled);
+    }
+
+    return;
+}
+
+void HpaeProcessCluster::SetDelayCountToEffectNode(int32_t delayCount)
+{
+    if (renderEffectNode_ != nullptr) {
+        renderEffectNode_->SetDelayCountToEffectNode(delayCount);
+    }
+
+    return;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

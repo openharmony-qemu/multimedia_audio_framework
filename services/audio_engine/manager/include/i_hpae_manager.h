@@ -141,7 +141,7 @@ public:
     virtual bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) = 0;
     virtual bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) = 0;
-    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
+    virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) = 0;
     virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
     virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
@@ -156,6 +156,7 @@ public:
     virtual int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
+    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) = 0;
     virtual int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) = 0;
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };

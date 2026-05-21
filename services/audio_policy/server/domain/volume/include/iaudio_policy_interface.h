@@ -283,7 +283,7 @@ public:
     virtual int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType) = 0;
 
-    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
+    virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) = 0;
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
@@ -346,6 +346,7 @@ public:
     virtual void RemoveAudioPipeVolume(uint32_t IoHandle) = 0;
     virtual void UpdateVolumeForAllPipes() = 0;
     virtual void UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType) = 0;
+    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

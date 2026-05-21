@@ -887,7 +887,7 @@ bool HpaeManagerImpl::GetEffectLiveParameter(const std::vector<std::string> &sub
     return manager_->GetEffectLiveParameter(subKeys, result);
 }
 
-int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
+int32_t HpaeManagerImpl::UpdateCollaborativeState(CollaborationState isCollaborationEnabled)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -896,6 +896,16 @@ int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
             "manager is nullptr", false),
         "manager is nullptr");
     return manager_->UpdateCollaborativeState(isCollaborationEnabled);
+}
+
+bool HpaeManagerImpl::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET(manager_,
+        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
+        "manager is nullptr", false), false));
+    return manager_->IsCollaborationSupportedForStreamUsage(streamUsage);
 }
 
 void HpaeManagerImpl::AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume)

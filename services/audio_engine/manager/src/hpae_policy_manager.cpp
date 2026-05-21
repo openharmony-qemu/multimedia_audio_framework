@@ -253,6 +253,13 @@ int32_t HpaePolicyManager::UpdateCollaborativeProductId(const std::string &produ
     return audioCollaborationManager->UpdateCollaborativeProductId(productId);
 }
 
+bool HpaePolicyManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+{
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    CHECK_AND_RETURN_RET(audioCollaborationManager != nullptr, false);
+    return audioCollaborationManager->IsCollaborationSupportedForStreamUsage(streamUsage);
+}
+
 void HpaePolicyManager::LoadCollaborationConfig()
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();

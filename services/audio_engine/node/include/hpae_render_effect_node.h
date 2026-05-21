@@ -21,6 +21,8 @@
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
+#include "audio_collaboration_manager.h"
+#include "audio_ring_cache.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -30,9 +32,32 @@ enum ModifyAudioEffectChainInfoReason {
     REMOVE_AUDIO_EFFECT_CHAIN_INFO = 1,
 };
 
-class HpaeRenderEffectNode : public HpaePluginNode {
+class HpaeTempEffectBuffer {
 public:
-    HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo);
+    HpaeTempEffectBuffer();
+    HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo);
+    ~HpaeTempEffectBuffer();
+    void ChangeEffectDataForLatency(HpaePcmBuffer* buffer);
+    bool DelayAlignmentForEffectNode(HpaePcmBuffer* buffer);
+    void SetDelayCountToEffectNode(int32_t delayCount);
+    void ChangeLatencyByCollManagerForEffectNode(int32_t &latency);
+    void FillSilenceFramesForEffectNode(int32_t latencyMs);
+    void ReadDataDequeueRingCache(HpaePcmBuffer* buffer);
+    void WriteDataEnqueueRingCache(HpaePcmBuffer* buffer);
+private:
+    void SetSilenceData(HpaePcmBuffer* buffer);
+    void SetTempBufferData(HpaePcmBuffer* buffer, float *tempOutPut);
+    bool enqueueRunning_ = false;
+    std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
+    int32_t enqueueCount_ = 1;
+    uint64_t latency_  = 0; // in ms
+    int32_t waitCountThreshold_ = 0;
+    std::unique_ptr<HpaePcmBuffer> tempOutPut_ = nullptr;
+};
+
+class HpaeRenderEffectNode : public HpaePluginNode, public HpaeTempEffectBuffer {
+public:
+    HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled = COLLABORATION_CLOSE);
     virtual ~HpaeRenderEffectNode();
     void DoProcess() override;
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo);
@@ -47,6 +72,7 @@ public:
     int32_t AudioOffloadRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioOffloadRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioOffloadRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    void SetDelayCountToEffectNode(int32_t delayCount); 
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:
@@ -72,6 +98,8 @@ private:
     std::unique_ptr<HpaePcmDumper> directPcmDumper_;
     std::unique_ptr<HpaePcmDumper> collaborativePcmDumper_;
 #endif
+    CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
+    std::shared_ptr<HpaeTempEffectBuffer> tempEffectBuffer_ = nullptr;
 };
 
 } // namespace HPAE

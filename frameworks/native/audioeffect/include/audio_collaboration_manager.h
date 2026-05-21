@@ -45,6 +45,7 @@ public:
     ~AudioCollaborationManager();
     static AudioCollaborationManager *GetInstance();
     int32_t UpdateCollaborativeProductId(const std::string &productId);
+    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
     void LoadCollaborationConfig();
     int32_t GetCollaborationLatency();
     bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);

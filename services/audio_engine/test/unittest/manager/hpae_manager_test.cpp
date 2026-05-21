@@ -1675,10 +1675,10 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     EXPECT_EQ(hpaeManager_->IsInit(), true);
-    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    ret = hpaeManager_->UpdateCollaborativeState(false);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
     EXPECT_EQ(ret, SUCCESS);
 }
 

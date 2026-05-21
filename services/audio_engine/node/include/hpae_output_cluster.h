@@ -56,7 +56,7 @@ public:
     void NotifyStreamChangeToSink(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
-    void SetCollaborationState(bool collaborationState) override;
+    void SetCollaborationState(CollaborationState isCollaborationEnabled) override;
     uint32_t GetRenderId() const override;
     DeviceType GetCurrentOutputDevice() const override;
     void SetDeviceChangeCallback(std::function<void()> callback) override;

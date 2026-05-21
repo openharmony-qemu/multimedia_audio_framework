@@ -1282,7 +1282,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(true), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN), SUCCESS);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = 1;
     streamInfo.effectInfo.effectScene = SCENE_MUSIC;
@@ -1313,7 +1313,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(false), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
 
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
@@ -1348,13 +1348,13 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(true), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN), SUCCESS);
     EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(false), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
