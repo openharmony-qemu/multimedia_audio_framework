@@ -20,7 +20,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
+const size_t THRESHOLD = 10;
 const std::string AUDIO_RESTORE_VOLUME_EVENT = "AUDIO_RESTORE_VOLUME_EVENT";
 const std::string AUDIO_INCREASE_VOLUME_EVENT = "AUDIO_INCREASE_VOLUME_EVENT";
 const std::string DEFAULT_MAC_ADDRESS = "11:22:33:44:55:66";
@@ -159,10 +159,21 @@ const T& PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
     return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
 }
 
+void AudioVolumeManagerGetSharedVolumeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeType streamType = PickValue(fdp, g_testAudioStreamTypes);
+    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
+    Volume vol;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.GetSharedVolume(streamType, deviceType, vol);
+}
+
 void AudioVolumeManagerInitSharedVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioSharedMemory> buffer;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
     if (fdp.ConsumeBool()) {
         audioVolumeManager.DeInit();
         std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
@@ -180,13 +191,12 @@ void AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeManager.SetVoiceRingtoneMute(isMute);
 }
 
-constexpr int32_t TEST_DEVICE_ID = 1001;
 static AudioDeviceDescriptor& CurrentActiveDevice()
 {
     auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
     auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
     if (desc->deviceId_ == 0) {
-        desc->deviceId_ = TEST_DEVICE_ID;
+        desc->deviceId_ = 1001;
         AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
         AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     }
@@ -385,10 +395,9 @@ void AudioVolumeManagerInitKVStoreFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-
     AudioVolumeType volumeType = PickValue(fdp, g_testAudioStreamTypes);
     int32_t duration = fdp.ConsumeIntegral<int32_t>();
+    int32_t duration = g_fuzzUtils.GetData<int32_t>();
     audioVolumeManager.forceControlVolumeTypeMonitor_ = make_shared<ForceControlVolumeTypeMonitor>();
     audioVolumeManager.ForceVolumeKeyControlType(volumeType, duration);
 }
@@ -669,13 +678,16 @@ void Init()
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
     OHOS::AudioStandard::Init();
     return 0;
