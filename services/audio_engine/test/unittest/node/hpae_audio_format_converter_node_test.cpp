@@ -2165,4 +2165,125 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_StandardRate20ms, TestSize
     EXPECT_EQ(converterNode->outputFrameLen20ms_, DEFAULT_FRAMELEN_SECOND);
     EXPECT_EQ(converterNode->outputFrameLen20ms_, 960u);
 }
+
+// =========================================================================
+// DoProcess Offload vs Non-Offload Drain Tests
+// =========================================================================
+
+/**
+ * @tc.name  : DoProcess_OffloadSkipDrain
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_OffloadSkipDrain
+ * @tc.desc  : Offload mode skips drain and directly outputs silence when no valid input
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_OffloadSkipDrain, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    // Set device class to offload
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    info.deviceClass = "offload";
+    converterNode->SetNodeInfo(info);
+    // Populate processedBuffer_ with enough data
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+
+    converterNode->DoProcess();
+    // Offload should skip drain, processedFrames_ unchanged
+    EXPECT_EQ(converterNode->processedFrames_, frameLen);
+}
+
+/**
+ * @tc.name  : DoProcess_RemoteOffloadSkipDrain
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_RemoteOffloadSkipDrain
+ * @tc.desc  : Remote offload mode also skips drain and directly outputs silence
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_RemoteOffloadSkipDrain, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    info.deviceClass = "remote_offload";
+    converterNode->SetNodeInfo(info);
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+
+    converterNode->DoProcess();
+    EXPECT_EQ(converterNode->processedFrames_, frameLen);
+}
+
+/**
+ * @tc.name  : DoProcess_NonOffloadDrainWithBufferState
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_NonOffloadDrainWithBufferState
+ * @tc.desc  : Non-offload mode drains processedBuffer_ and propagates buffer state from input
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadDrainWithBufferState, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    // Ensure non-offload (default is empty string)
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    info.deviceClass = "";
+    converterNode->SetNodeInfo(info);
+    // Populate processedBuffer_ with enough data
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+
+    converterNode->DoProcess();
+    // Non-offload should drain, processedFrames_ becomes 0
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+}
+
+/**
+ * @tc.name  : DoProcess_NonOffloadInsufficientData
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_NonOffloadInsufficientData
+ * @tc.desc  : Non-offload outputs silence when processedBuffer_ has insufficient data
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadInsufficientData, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    info.deviceClass = "";
+    converterNode->SetNodeInfo(info);
+    // Less than outputFrameLen20ms_
+    converterNode->processedFrames_ = 1;
+    converterNode->processedReadPos_ = 0;
+
+    converterNode->DoProcess();
+    // Not enough data to drain, should fall through to silence
+    EXPECT_EQ(converterNode->processedFrames_, 1u);
+}
+
+/**
+ * @tc.name  : DoProcess_NonOffloadDrainEmptyPreOutputs
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_NonOffloadDrainEmptyPreOutputs
+ * @tc.desc  : Non-offload drain does not crash when preOutputs is empty
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadDrainEmptyPreOutputs, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    info.deviceClass = "";
+    converterNode->SetNodeInfo(info);
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+    // No upstream connected, so preOutputs will be empty
+
+    converterNode->DoProcess();
+    // Should drain without crash even with empty preOutputs
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+}
 }

@@ -182,6 +182,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
         "apply audio effect chain fail, ret: %{public}d", ret);
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
+    effectOutput_.SetBufferValid(true);
     return &effectOutput_;
 }
 

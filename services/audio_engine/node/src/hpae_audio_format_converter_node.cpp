@@ -113,19 +113,21 @@ void HpaeAudioFormatConverterNode::DoProcess()
         outputStream_.WriteDataToOutput(tempOut);
         return;
     }
-    // No valid input or process disabled -- still try to drain processedBuffer_
-    if (processedFrames_ >= outputFrameLen20ms_ && enableProcess_) {
+    // Non-offload: drain processedBuffer_ with buffer state propagation
+    bool isOffload = GetDeviceClass() == "offload" || GetDeviceClass() == "remote_offload";
+    if (!isOffload && processedFrames_ >= outputFrameLen20ms_ && enableProcess_) {
         converterOutput_.Reset();
         if (ExtractOutputFromProcessedBuffer()) {
+            if (!preOutputs.empty() && preOutputs[0] != nullptr) {
+                converterOutput_.SetBufferState(preOutputs[0]->GetBufferState());
+                converterOutput_.SetBufferValid(true);
+            }
             AUDIO_DEBUG_LOG("NodeId %{public}d: drain processedBuffer_, "
                 "remaining %{public}u frames", GetNodeId(), processedFrames_);
             outputStream_.WriteDataToOutput(&converterOutput_);
             return;
         }
     }
-    AUDIO_DEBUG_LOG("NodeId %{public}d: output silence, "
-        "hasValidInput=%{public}d, enableProcess=%{public}d, processedFrames=%{public}u",
-        GetNodeId(), hasValidInput, enableProcess_, processedFrames_);
     outputStream_.WriteDataToOutput(&silenceData_);
 }
 
