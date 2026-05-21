@@ -293,5 +293,173 @@ HWTEST(AudioBundleManagerTest, EmptyBundleName_001, TestSize.Level1)
     AudioBundleManager::GetInstance().EraseBundleNameFromMap(uid);
 }
 
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_WithSeparator
+ * @tc.number: ExtractBundleNameAndIndex_001
+ * @tc.desc  : Test ExtractBundleNameAndIndex parses bundleName and appIndex from string with '#'.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_WithSeparator, TestSize.Level1)
+{
+    std::string bundleNameWithIndex = "com.test.app#1";
+    std::string bundleName;
+    int32_t appIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+
+    EXPECT_EQ(bundleName, "com.test.app");
+    EXPECT_EQ(appIndex, 1);
+}
+
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_WithoutSeparator
+ * @tc.number: ExtractBundleNameAndIndex_002
+ * @tc.desc  : Test ExtractBundleNameAndIndex returns original name and appIndex 0 when no '#'.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_WithoutSeparator, TestSize.Level1)
+{
+    std::string bundleNameWithIndex = "com.test.app";
+    std::string bundleName;
+    int32_t appIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+
+    EXPECT_EQ(bundleName, "com.test.app");
+    EXPECT_EQ(appIndex, 0);
+}
+
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_EmptyString
+ * @tc.number: ExtractBundleNameAndIndex_101
+ * @tc.desc  : Test ExtractBundleNameAndIndex handles empty string correctly.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_EmptyString, TestSize.Level2)
+{
+    std::string bundleNameWithIndex = "";
+    std::string bundleName;
+    int32_t appIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+
+    EXPECT_EQ(bundleName, "");
+    EXPECT_EQ(appIndex, 0);
+}
+
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_SeparatorAtEnd
+ * @tc.number: ExtractBundleNameAndIndex_102
+ * @tc.desc  : Test ExtractBundleNameAndIndex when '#' is at the end of string.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_SeparatorAtEnd, TestSize.Level2)
+{
+    std::string bundleNameWithIndex = "com.test.app#";
+    std::string bundleName;
+    int32_t appIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+
+    EXPECT_EQ(bundleName, "com.test.app");
+    EXPECT_EQ(appIndex, 0);
+}
+
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_SeparatorAtBeginning
+ * @tc.number: ExtractBundleNameAndIndex_103
+ * @tc.desc  : Test ExtractBundleNameAndIndex when '#' is at the beginning of string.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_SeparatorAtBeginning, TestSize.Level2)
+{
+    std::string bundleNameWithIndex = "#1";
+    std::string bundleName;
+    int32_t appIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+
+    EXPECT_EQ(bundleName, "");
+    EXPECT_EQ(appIndex, 1);
+}
+
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_MultipleSeparators
+ * @tc.number: ExtractBundleNameAndIndex_201
+ * @tc.desc  : Test ExtractBundleNameAndIndex uses last '#' as separator.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_MultipleSeparators, TestSize.Level2)
+{
+    std::string bundleNameWithIndex = "com.test#app#1";
+    std::string bundleName;
+    int32_t appIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+
+    EXPECT_EQ(bundleName, "com.test#app");
+    EXPECT_EQ(appIndex, 1);
+}
+
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_ZeroAppIndex
+ * @tc.number: ExtractBundleNameAndIndex_202
+ * @tc.desc  : Test ExtractBundleNameAndIndex parses appIndex 0 from string.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_ZeroAppIndex, TestSize.Level2)
+{
+    std::string bundleNameWithIndex = "com.test.app#0";
+    std::string bundleName;
+    int32_t appIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+
+    EXPECT_EQ(bundleName, "com.test.app");
+    EXPECT_EQ(appIndex, 0);
+}
+
+/**
+ * @tc.name  : ComposeBundleNameWithIndex_NonZeroAppIndex
+ * @tc.number: ComposeBundleNameWithIndex_001
+ * @tc.desc  : Test ComposeBundleNameWithIndex composes bundleName with appIndex.
+ */
+HWTEST(AudioBundleManagerTest, ComposeBundleNameWithIndex_NonZeroAppIndex, TestSize.Level1)
+{
+    std::string bundleName = "com.test.app";
+    int32_t appIndex = 1;
+
+    std::string result = AudioBundleManager::ComposeBundleNameWithIndex(bundleName, appIndex);
+
+    EXPECT_EQ(result, "com.test.app#1");
+}
+
+/**
+ * @tc.name  : ComposeBundleNameWithIndex_ZeroAppIndex
+ * @tc.number: ComposeBundleNameWithIndex_002
+ * @tc.desc  : Test ComposeBundleNameWithIndex returns bundleName only when appIndex is 0.
+ */
+HWTEST(AudioBundleManagerTest, ComposeBundleNameWithIndex_ZeroAppIndex, TestSize.Level1)
+{
+    std::string bundleName = "com.test.app";
+    int32_t appIndex = 0;
+
+    std::string result = AudioBundleManager::ComposeBundleNameWithIndex(bundleName, appIndex);
+
+    EXPECT_EQ(result, "com.test.app");
+}
+
+/**
+ * @tc.name  : ComposeExtractRoundtrip_Success
+ * @tc.number: ComposeExtractRoundtrip_001
+ * @tc.desc  : Test ComposeBundleNameWithIndex and ExtractBundleNameAndIndex roundtrip consistency.
+ */
+HWTEST(AudioBundleManagerTest, ComposeExtractRoundtrip_Success, TestSize.Level1)
+{
+    std::string originalName = "com.test.roundtrip";
+    int32_t originalIndex = 2;
+
+    std::string composed = AudioBundleManager::ComposeBundleNameWithIndex(originalName, originalIndex);
+    std::string extractedName;
+    int32_t extractedIndex = -1;
+
+    AudioBundleManager::ExtractBundleNameAndIndex(composed, extractedName, extractedIndex);
+
+    EXPECT_EQ(extractedName, originalName);
+    EXPECT_EQ(extractedIndex, originalIndex);
+}
 } // namespace AudioStandard
 } // namespace OHOS
