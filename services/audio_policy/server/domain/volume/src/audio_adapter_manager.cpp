@@ -4111,11 +4111,14 @@ int32_t AudioAdapterManager::RestoreSystemAppVolumeLevel()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "load system app volume level fail");
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     int32_t userId = settingProvider.GetCurrentUserId();
-    for (const auto &[bundleName, level] : systemAppVolumeLevelMap) {
+    for (const auto &[bundleNameWithIndex, level] : systemAppVolumeLevelMap) {
+        std::string bundleName;
+        int32_t appIndex = 0;
+        AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
         bool isInstall = true;
-        AudioBundleManager::IsBundleInstalled(bundleName, userId, 0, isInstall);
+        AudioBundleManager::IsBundleInstalled(bundleName, userId, appIndex, isInstall);
         if (!isInstall) continue;
-        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId);
+        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId, appIndex);
         CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "GetUidByBundleName failed");
         SetSystemAppVolumeLevel(uid, level);
     }
@@ -4130,11 +4133,14 @@ int32_t AudioAdapterManager::RestoreSystemAppVolumeMuteStatus()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "load system app volume mute status fail");
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     int32_t userId = settingProvider.GetCurrentUserId();
-    for (const auto &[bundleName, muteStatus] : systemAppVolumeMuteStatusMap) {
+    for (const auto &[bundleNameWithIndex, muteStatus] : systemAppVolumeMuteStatusMap) {
+        std::string bundleName;
+        int32_t appIndex = 0;
+        AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
         bool isInstall = true;
-        AudioBundleManager::IsBundleInstalled(bundleName, userId, 0, isInstall);
+        AudioBundleManager::IsBundleInstalled(bundleName, userId, appIndex, isInstall);
         if (!isInstall) continue;
-        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId);
+        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId, appIndex);
         CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "GetUidByBundleName failed");
         SetSystemAppVolumeMuted(uid, muteStatus);
     }
