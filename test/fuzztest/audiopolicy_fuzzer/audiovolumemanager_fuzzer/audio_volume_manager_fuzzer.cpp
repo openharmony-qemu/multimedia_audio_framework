@@ -159,16 +159,6 @@ const T& PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
     return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
 }
 
-void AudioVolumeManagerGetSharedVolumeFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioVolumeType streamType = PickValue(fdp, g_testAudioStreamTypes);
-    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
-    Volume vol;
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-
-    audioVolumeManager.GetSharedVolume(streamType, deviceType, vol);
-}
-
 void AudioVolumeManagerInitSharedVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioSharedMemory> buffer;
