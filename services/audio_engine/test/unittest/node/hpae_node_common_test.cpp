@@ -1287,6 +1287,110 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_075, TestSize.Level0)
     EXPECT_EQ(dumpInfo[0].uid, 1000);
 }
 
+/**
+ * @tc.name: TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_001
+ * @tc.type: FUNC
+ * @tc.desc: Test TransNodeInfoForCollaboration with COLLABORATION_NEARLINK_OPEN for movie scene
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.sceneType = HPAE_SCENE_MOVIE;
+
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_002
+ * @tc.type: FUNC
+ * @tc.desc: Test TransNodeInfoForCollaboration with COLLABORATION_NEARLINK_OPEN for music scene
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
+    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_003
+ * @tc.type: FUNC
+ * @tc.desc: Test TransNodeInfoForCollaboration NEARLINK_OPEN then CLOSE recovers original scene
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_003, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.sceneType = HPAE_SCENE_MOVIE;
+
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
+    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_004
+ * @tc.type: FUNC
+ * @tc.desc: Test TransNodeInfoForCollaboration NEARLINK_OPEN with non-movie/music scene (no change)
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_004, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_GAME;
+    nodeInfo.sceneType = HPAE_SCENE_GAME;
+
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_GAME);
+    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_GAME);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_005
+ * @tc.type: FUNC
+ * @tc.desc: Test TransNodeInfoForCollaboration switch from BLUETOOTH_OPEN to NEARLINK_OPEN
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_005, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.sceneType = HPAE_SCENE_MOVIE;
+
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+    // Switch to NEARLINK - should remain collaborative
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_006
+ * @tc.type: FUNC
+ * @tc.desc: Test TransNodeInfoForCollaboration NEARLINK_OPEN with SCENE_DEFAULT (no change)
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_006, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.effectInfo.effectScene = SCENE_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
+
+    TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    // SCENE_DEFAULT is not SCENE_MOVIE or SCENE_MUSIC, should not change
+    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_DEFAULT);
+    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_DEFAULT);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

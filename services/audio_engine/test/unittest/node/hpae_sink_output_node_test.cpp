@@ -2843,6 +2843,74 @@ HWTEST_F(HpaeSinkOutputNodeTest, GetCurrentActiveDevice_NullSink_001, TestSize.L
     // audioRendererSink_ is nullptr by default
     EXPECT_EQ(hpaeSinkOutputNode->GetCurrentActiveDevice(), DEVICE_TYPE_NONE);
 }
+
+/**
+ * @tc.name  : HandlePaPower_CollaborationNearLink_ShouldSkip
+ * @tc.type  : FUNC
+ * @tc.number: HandlePaPower_CollaborationNearLink_ShouldSkip
+ * @tc.desc  : Test HandlePaPower skips when collaborationState_ is NEARLINK_OPEN.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_CollaborationNearLink_ShouldSkip, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    hpaeSinkOutputNode->collaborationState_ = COLLABORATION_NEARLINK_OPEN;
+    hpaeSinkOutputNode->streamRunningNum_ = 1;
+
+    PcmBufferInfo bufferInfo;
+    PreparePcmBufferInfo(bufferInfo);
+    std::shared_ptr<HpaePcmBuffer> pcmBuffer = std::make_shared<HpaePcmBuffer>(bufferInfo);
+    pcmBuffer->pcmBufferInfo_.state = PCM_BUFFER_STATE_SILENCE;
+
+    // Should skip HandlePaPower when collaboration is active (NEARLINK_OPEN)
+    EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0);
+    hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
+}
+
+/**
+ * @tc.name  : HandlePaPower_CollaborationBt_ShouldSkip
+ * @tc.type  : FUNC
+ * @tc.number: HandlePaPower_CollaborationBt_ShouldSkip
+ * @tc.desc  : Test HandlePaPower skips when collaborationState_ is BLUETOOTH_OPEN.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_CollaborationBt_ShouldSkip, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    hpaeSinkOutputNode->collaborationState_ = COLLABORATION_BLUETOOTH_OPEN;
+    hpaeSinkOutputNode->streamRunningNum_ = 1;
+
+    PcmBufferInfo bufferInfo;
+    PreparePcmBufferInfo(bufferInfo);
+    std::shared_ptr<HpaePcmBuffer> pcmBuffer = std::make_shared<HpaePcmBuffer>(bufferInfo);
+    pcmBuffer->pcmBufferInfo_.state = PCM_BUFFER_STATE_SILENCE;
+
+    EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0);
+    hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
+}
+
+/**
+ * @tc.name  : SetCollaborationState_NearLink_001
+ * @tc.type  : FUNC
+ * @tc.number: SetCollaborationState_NearLink_001
+ * @tc.desc  : Test SetCollaborationState sets NEARLINK_OPEN state.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_NearLink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    hpaeSinkOutputNode->SetCollaborationState(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), COLLABORATION_NEARLINK_OPEN);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

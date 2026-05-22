@@ -4634,5 +4634,59 @@ HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_004, TestSize.Lev
     ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
 }
 
+/**
+ * @tc.name  : CheckCollaborativeStreamRunning_NullPipeManager_001
+ * @tc.desc  : Test CheckCollaborativeStreamRunning returns false when pipeManager_ is null.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckCollaborativeStreamRunning_NullPipeManager_001, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    testCoreService_->pipeManager_ = nullptr;
+    bool result = testCoreService_->CheckCollaborativeStreamRunning();
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : CheckCollaborativeStreamRunning_NoStreams_002
+ * @tc.desc  : Test CheckCollaborativeStreamRunning returns false when no NearLink streams are running.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckCollaborativeStreamRunning_NoStreams_002, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    bool result = testCoreService_->CheckCollaborativeStreamRunning();
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : UpdateMultiChannelState_NullPipe_001
+ * @tc.desc  : Test UpdateMultiChannelState with null pipeInfo should not crash.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdateMultiChannelState_NullPipe_001, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    testCoreService_->UpdateMultiChannelState(nullptr);
+    SUCCEED();
+}
+
+/**
+ * @tc.name  : UpdateMultiChannelState_NonMatchingName_002
+ * @tc.desc  : Test UpdateMultiChannelState with pipe not named MCH_PRIMARY_SPEAKER should not set flag.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdateMultiChannelState_NonMatchingName_002, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.name = "primary_speaker";
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    testCoreService_->isMultiChannelOpened_.store(false);
+    testCoreService_->UpdateMultiChannelState(pipeInfo);
+    EXPECT_EQ(testCoreService_->isMultiChannelOpened_.load(), false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

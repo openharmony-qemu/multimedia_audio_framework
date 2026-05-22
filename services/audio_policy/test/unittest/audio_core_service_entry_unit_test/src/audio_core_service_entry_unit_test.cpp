@@ -1669,5 +1669,35 @@ HWTEST(AudioCoreServiceEntryTest, UpdateVoipNoPrivacyFlagByPid_001, TestSize.Lev
 
     pipeManager->curPipeList_.clear();
 }
+
+/**
+ * @tc.name  : ReleaseMultiChannelPipe_NullCoreService_001
+ * @tc.number: ReleaseMultiChannelPipe_NullCoreService_001
+ * @tc.desc  : Test ReleaseMultiChannelPipe with null coreService returns ERR_INVALID_PARAM.
+ */
+HWTEST(AudioCoreServiceEntryTest, ReleaseMultiChannelPipe_NullCoreService_001, TestSize.Level1)
+{
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(nullptr, nullptr);
+    ASSERT_NE(eventEntry, nullptr);
+    int32_t ret = eventEntry->ReleaseMultiChannelPipe(0, 0);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : ReleaseMultiChannelPipe_MultiChannelReopened_002
+ * @tc.number: ReleaseMultiChannelPipe_MultiChannelReopened_002
+ * @tc.desc  : Test ReleaseMultiChannelPipe returns ERROR when isMultiChannelOpened_ is true (reopened).
+ */
+HWTEST(AudioCoreServiceEntryTest, ReleaseMultiChannelPipe_MultiChannelReopened_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isMultiChannelOpened_.store(true);
+    auto eventEntry = CreateEventEntry(audioCoreService);
+    ASSERT_NE(eventEntry, nullptr);
+    int32_t ret = eventEntry->ReleaseMultiChannelPipe(0, 0);
+    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(audioCoreService->isMultiChannelInRelease_.load(), false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

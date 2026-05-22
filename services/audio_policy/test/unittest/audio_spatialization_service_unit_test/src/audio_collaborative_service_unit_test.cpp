@@ -260,5 +260,63 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_010, TestS
     bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupportedForDevice(AudioDevice);
     EXPECT_EQ(isSupported, false);
 }
+
+/**
+* @tc.name  : Test GetCollaborativeGlobalSwitchState returns COLLABORATION_CLOSE by default
+* @tc.number: AudioCollaborativeService_011
+* @tc.desc  : Test GetCollaborativeGlobalSwitchState default state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_011, TestSize.Level0)
+{
+    CollaborationState state = audioCollaborativeService_.GetCollaborativeGlobalSwitchState();
+    EXPECT_EQ(state, COLLABORATION_CLOSE);
+}
+
+/**
+* @tc.name  : Test GetCollaborativeGlobalSwitchState after state change
+* @tc.number: AudioCollaborativeService_012
+* @tc.desc  : Test GetCollaborativeGlobalSwitchState returns updated state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_012, TestSize.Level0)
+{
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
+    CollaborationState state = audioCollaborativeService_.GetCollaborativeGlobalSwitchState();
+    EXPECT_EQ(state, COLLABORATION_BLUETOOTH_OPEN);
+}
+
+/**
+* @tc.name  : Test GetCollaborativeGlobalSwitchState with NearLink state
+* @tc.number: AudioCollaborativeService_013
+* @tc.desc  : Test GetCollaborativeGlobalSwitchState returns NEARLINK_OPEN.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_013, TestSize.Level0)
+{
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_NEARLINK_OPEN;
+    CollaborationState state = audioCollaborativeService_.GetCollaborativeGlobalSwitchState();
+    EXPECT_EQ(state, COLLABORATION_NEARLINK_OPEN);
+}
+
+/**
+* @tc.name  : Test UpdateCollaborativeStateToHdi with NearLink
+* @tc.number: AudioCollaborativeService_014
+* @tc.desc  : Test UpdateCollaborativeStateToHdi does not crash with NearLink state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_014, TestSize.Level0)
+{
+    // Should not crash
+    audioCollaborativeService_.UpdateCollaborativeStateToHdi(COLLABORATION_NEARLINK_OPEN);
+    SUCCEED();
+}
+
+/**
+* @tc.name  : Test UpdateCollaborativeStateToHdi with Close
+* @tc.number: AudioCollaborativeService_015
+* @tc.desc  : Test UpdateCollaborativeStateToHdi does not crash with CLOSE state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_015, TestSize.Level0)
+{
+    audioCollaborativeService_.UpdateCollaborativeStateToHdi(COLLABORATION_CLOSE);
+    SUCCEED();
+}
 } // AudioStandard
 } // OHOS

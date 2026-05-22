@@ -3006,5 +3006,117 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_005, TestSize.Level1)
     audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
     EXPECT_EQ(action, CONCEDE_INCOMING);
 }
+
+/**
+ * @tc.name  : MatchCollaborativePipe_SameCollabState_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test MatchCollaborativePipe when isCollaborationEnable matches (no action needed).
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchCollaborativePipe_SameCollabState_001, TestSize.Level0)
+{
+    auto pipeInfo = MakeTestPipe(AUDIO_PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->isCollaborationEnable = false;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->isCollaborationEnable = false;
+
+    // Same state - should return without action (PIPE_ACTION_NONE is default)
+    auto audioPipeSelector = std::make_shared<AudioPipeSelector>(nullptr);
+    audioPipeSelector->MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
+    EXPECT_NE(pipeInfo->pipeAction_, PIPE_ACTION_RELOAD);
+}
+
+/**
+ * @tc.name  : MatchCollaborativePipe_DifferentCollabState_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test MatchCollaborativePipe when isCollaborationEnable differs (should reload).
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchCollaborativePipe_DifferentCollabState_002, TestSize.Level0)
+{
+    auto pipeInfo = MakeTestPipe(AUDIO_PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->isCollaborationEnable = false;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID_BASE;
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->isCollaborationEnable = true;
+
+    auto audioPipeSelector = std::make_shared<AudioPipeSelector>(nullptr);
+    audioPipeSelector->MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->pipeAction_, PIPE_ACTION_RELOAD);
+}
+
+/**
+ * @tc.name  : MatchCollaborativePipe_EnableToDisable_003
+ * @tc.type  : FUNC
+ * @tc.desc  : Test MatchCollaborativePipe when switching from enabled to disabled.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchCollaborativePipe_EnableToDisable_003, TestSize.Level0)
+{
+    auto pipeInfo = MakeTestPipe(AUDIO_PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->isCollaborationEnable = true;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID_BASE;
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->isCollaborationEnable = false;
+
+    auto audioPipeSelector = std::make_shared<AudioPipeSelector>(nullptr);
+    audioPipeSelector->MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->pipeAction_, PIPE_ACTION_RELOAD);
+}
+
+/**
+ * @tc.name  : GetStreamPropInfoForMultiChannel_NearLink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetStreamPropInfoForMultiChannel with isNearLinkCollaborationEnable=true converts to 4 channel.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLink_001, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->isNearLinkCollaborationEnable = true;
+
+    auto adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->bufferSize_ = 960;
+    streamPropInfo->channels_ = 2;
+    streamPropInfo->channelLayout_ = CH_LAYOUT_STEREO;
+    adapterPipeInfo->streamPropInfos_.push_back(streamPropInfo);
+
+    auto result = manager.GetStreamPropInfoForMultiChannel(desc, adapterPipeInfo, CH_LAYOUT_STEREO);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->channels_, CHANNEL_4);
+    EXPECT_EQ(result->channelLayout_, CH_LAYOUT_QUAD);
+    EXPECT_EQ(result->isCollaborationEnable, true);
+    // bufferSize should be (960 * 4) / 2 = 1920
+    EXPECT_EQ(result->bufferSize_, 1920u);
+}
+
+/**
+ * @tc.name  : GetStreamPropInfoForMultiChannel_NearLinkDisabled_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetStreamPropInfoForMultiChannel with isNearLinkCollaborationEnable=false preserves original channels.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLinkDisabled_002, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->isNearLinkCollaborationEnable = false;
+
+    auto adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->bufferSize_ = 960;
+    streamPropInfo->channels_ = 2;
+    streamPropInfo->channelLayout_ = CH_LAYOUT_STEREO;
+    adapterPipeInfo->streamPropInfos_.push_back(streamPropInfo);
+
+    auto result = manager.GetStreamPropInfoForMultiChannel(desc, adapterPipeInfo, CH_LAYOUT_STEREO);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->isCollaborationEnable, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

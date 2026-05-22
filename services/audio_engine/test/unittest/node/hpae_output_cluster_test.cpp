@@ -372,6 +372,50 @@ HWTEST_F(HpaeOutputClusterTest, SetDeviceChangeCallback_Null_001, TestSize.Level
     // deviceChangeCallback_ should be empty by default
     EXPECT_EQ(static_cast<bool>(hpaeOutputCluster->deviceChangeCallback_), false);
 }
+
+/**
+ * @tc.name  : SetCollaborationState_NearLink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetCollaborationState with COLLABORATION_NEARLINK_OPEN delegates to sink output node.
+ */
+HWTEST_F(HpaeOutputClusterTest, SetCollaborationState_NearLink_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NODE_ID;
+    nodeInfo.frameLen = FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto outputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    ASSERT_NE(outputCluster, nullptr);
+    // Test NearLink collaboration state
+    outputCluster->SetCollaborationState(COLLABORATION_NEARLINK_OPEN);
+    SUCCEED();
+}
+
+/**
+ * @tc.name  : SetCollaborationState_AllStates_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetCollaborationState with all CollaborationState enum values.
+ */
+HWTEST_F(HpaeOutputClusterTest, SetCollaborationState_AllStates_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NODE_ID;
+    nodeInfo.frameLen = FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto outputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    ASSERT_NE(outputCluster, nullptr);
+    outputCluster->SetCollaborationState(COLLABORATION_CLOSE);
+    outputCluster->SetCollaborationState(COLLABORATION_BLUETOOTH_OPEN);
+    outputCluster->SetCollaborationState(COLLABORATION_NEARLINK_OPEN);
+    outputCluster->SetCollaborationState(COLLABORATION_CLOSE);
+    SUCCEED();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
