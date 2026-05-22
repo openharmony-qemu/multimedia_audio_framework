@@ -63,7 +63,7 @@ public:
     int64_t GetOverflowCountSync();
     void SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted);
     void SetMuteHintSync(bool mute);
-    PlayCaptureStartState RequestPlaybackCaptureStartSync();
+    void RequestPlaybackCaptureStart(callback_view<void(PlaybackCaptureStartState)> callback);
     taihe::array<AudioDeviceDescriptor> GetCurrentInputDevices();
     AudioCapturerChangeInfo GetCurrentAudioCapturerChangeInfo();
     void SetInputDeviceToAccessory();

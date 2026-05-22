@@ -301,7 +301,7 @@ private:
     static const std::map<std::string, int32_t> communicationDeviceTypeMap;
     static const std::map<std::string, int32_t> interruptRequestTypeMap;
     static const std::map<std::string, int32_t> interruptRequestResultTypeMap;
-    static const std::map<std::string, int32_t> playCaptureStartStateMap;
+    static const std::map<std::string, int32_t> playbackCaptureStartStateMap;
     static const std::map<std::string, int32_t> playbackCaptureModeMap;
     static const std::map<std::string, int32_t> deviceFlagMap;
     static const std::map<std::string, int32_t> connectTypeMap;

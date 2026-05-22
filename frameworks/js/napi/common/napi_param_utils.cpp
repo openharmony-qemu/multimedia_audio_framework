@@ -24,6 +24,45 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_DEFAULT = 0x0;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_MEDIA = 0x1;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF = 0x8000;
+
+bool IsValidPlaybackCaptureMode(uint32_t mode)
+{
+    return mode == PLAYBACK_CAPTURE_MODE_DEFAULT || mode == PLAYBACK_CAPTURE_MODE_MEDIA ||
+        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF ||
+        mode == (PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF | PLAYBACK_CAPTURE_MODE_MEDIA);
+}
+
+void InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config, uint32_t mode)
+{
+    config = AudioPlaybackCaptureConfig();
+    auto &filterOptions = config.filterOptions;
+    filterOptions.usageFilterMode = FilterMode::INCLUDE;
+    filterOptions.pidFilterMode = FilterMode::INCLUDE;
+
+    filterOptions.usages.push_back(STREAM_USAGE_UNKNOWN);
+    filterOptions.usages.push_back(STREAM_USAGE_MEDIA);
+    filterOptions.usages.push_back(STREAM_USAGE_MUSIC);
+    filterOptions.usages.push_back(STREAM_USAGE_MOVIE);
+    filterOptions.usages.push_back(STREAM_USAGE_GAME);
+    filterOptions.usages.push_back(STREAM_USAGE_AUDIOBOOK);
+    if ((mode & PLAYBACK_CAPTURE_MODE_MEDIA) == 0) {
+        filterOptions.usages.push_back(STREAM_USAGE_NAVIGATION);
+        filterOptions.usages.push_back(STREAM_USAGE_ALARM);
+        filterOptions.usages.push_back(STREAM_USAGE_NOTIFICATION);
+        filterOptions.usages.push_back(STREAM_USAGE_VOICE_ASSISTANT);
+    }
+
+    if ((mode & PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF) != 0) {
+        filterOptions.pids.push_back(getpid());
+        filterOptions.pidFilterMode = FilterMode::EXCLUDE;
+    }
+    config.isModernInnerCapturer = true;
+}
+} // namespace
 
 const std::vector<DeviceRole> DEVICE_ROLE_SET = {
     DEVICE_ROLE_NONE,
@@ -61,41 +100,6 @@ const std::vector<DeviceType> DEVICE_TYPE_SET = {
     DEVICE_TYPE_WIRED_MICIN,
     DEVICE_TYPE_DEFAULT
 };
-
-constexpr uint32_t PLAYBACK_CAPTURE_MODE_DEFAULT = 0x0;
-constexpr uint32_t PLAYBACK_CAPTURE_MODE_MEDIA = 0x1;
-constexpr uint32_t PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF = 0x8000;
-
-static bool IsValidPlaybackCaptureMode(uint32_t mode)
-{
-    return mode == PLAYBACK_CAPTURE_MODE_DEFAULT || mode == PLAYBACK_CAPTURE_MODE_MEDIA ||
-        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF ||
-        mode == (PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF | PLAYBACK_CAPTURE_MODE_MEDIA);
-}
-
-static void InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config, uint32_t mode)
-{
-    config = AudioPlaybackCaptureConfig();
-    std::vector<StreamUsage> &usages = config.filterOptions.usages;
-    usages.push_back(STREAM_USAGE_UNKNOWN);
-    usages.push_back(STREAM_USAGE_MEDIA);
-    usages.push_back(STREAM_USAGE_MUSIC);
-    usages.push_back(STREAM_USAGE_MOVIE);
-    usages.push_back(STREAM_USAGE_GAME);
-    usages.push_back(STREAM_USAGE_AUDIOBOOK);
-
-    if ((mode & PLAYBACK_CAPTURE_MODE_MEDIA) == 0) {
-        usages.push_back(STREAM_USAGE_NAVIGATION);
-        usages.push_back(STREAM_USAGE_ALARM);
-        usages.push_back(STREAM_USAGE_NOTIFICATION);
-        usages.push_back(STREAM_USAGE_VOICE_ASSISTANT);
-    }
-
-    if (mode & PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF) {
-        config.filterOptions.pids.push_back(getpid());
-        config.filterOptions.pidFilterMode = FilterMode::EXCLUDE;
-    }
-}
 
 napi_value NapiParamUtils::GetUndefinedValue(napi_env env)
 {
@@ -935,7 +939,6 @@ static napi_status GetPlaybackCaptureMode(const napi_env &env, AudioCapturerOpti
 
     opts->capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
-    opts->playbackCaptureConfig.isModernInnerCapturer = true;
     return napi_ok;
 }
 
@@ -999,7 +1002,7 @@ napi_status NapiParamUtils::GetCapturerSubStreamOptions(
     status = GetPlaybackCaptureConfigOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParsePlaybackCaptureConfig failed");
 
-    return GetPlaybackCaptureMode(env, opts, in);
+    return napi_ok;
 }
 
 napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
@@ -1013,22 +1016,11 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
         "streamInfo does not support custom sample rate");
 
-    bool hasCapturerInfo = false;
-    status = napi_has_named_property(env, in, "capturerInfo", &hasCapturerInfo);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "has capturerInfo failed");
-    if (hasCapturerInfo) {
-        status = napi_get_named_property(env, in, "capturerInfo", &result);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
-        status = GetCapturerInfo(env, &(opts->capturerInfo), result);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
-    } else {
-        bool hasPlaybackCaptureMode = false;
-        status = napi_has_named_property(env, in, "playbackCaptureMode", &hasPlaybackCaptureMode);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "has playbackCaptureMode failed");
-        CHECK_AND_RETURN_RET_LOG(hasPlaybackCaptureMode, napi_generic_failure, "get capturerInfo name failed");
-        opts->capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-        opts->capturerInfo.capturerFlags = 0;
-    }
+    status = napi_get_named_property(env, in, "capturerInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
+
+    status = GetCapturerInfo(env, &(opts->capturerInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
 
     bool hasPreferredInputDevice = false;
     status = napi_has_named_property(env, in, "preferredInputDevice", &hasPreferredInputDevice);
@@ -1044,7 +1036,10 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
         opts->preferredInputDevice = device;
     }
 
-    return GetCapturerSubStreamOptions(env, opts, in);
+    status = GetCapturerSubStreamOptions(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
+
+    return GetPlaybackCaptureMode(env, opts, in);
 }
 
 napi_status NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(const napi_env &env,
