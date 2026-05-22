@@ -59,12 +59,6 @@ public:
         DEVICE_INFO,
     };
 
-    enum class AudioParametersKey {
-        SAMPLE_RATE,
-        FORMAT,
-        SUPPORT_MMAP,
-    };
-
     class ClientInfo {
     public:
         bool hasBTPermission_ = false;
@@ -104,7 +98,9 @@ public:
 
     std::list<DeviceStreamInfo> GetAudioStreamInfo() const;
 
-    void ParseAudioParameters(const std::string &audioParameters);
+    std::unordered_map<std::string, std::string> ParseAudioParameters(const std::string &audioParameters);
+
+    void UpdateDeviceInfoByAudioParameters(const std::string &audioParameters);
 
     DeviceCategory GetDeviceCategory() const;
 
@@ -210,8 +206,6 @@ private:
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion, bool isSupportedDevice = true) const;
-    
-    uint32_t ParseArmUsbAudioParameters(const std::string &audioParameters, AudioParametersKey key);
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
