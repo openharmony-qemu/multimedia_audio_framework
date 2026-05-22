@@ -212,14 +212,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputD
 
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
 
-    if (uid == INVALID_UID) {
-        if (AudioSceneManager::GetInstance().IsInAudioCallScene()) {
-            auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
-            simpleDesc = GetCallOutputDeviceByUid(callOwnerUid);
-        } else {
-            auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::CALL_OUTPUT);
-            simpleDesc = systemSelectInfo.device_;
-        }
+    if (AudioSceneManager::GetInstance().IsInAudioCallScene()) {
+        auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
+        simpleDesc = GetCallOutputDeviceByUid(callOwnerUid);
     } else {
         simpleDesc = GetCallOutputDeviceByUid(uid);
     }
