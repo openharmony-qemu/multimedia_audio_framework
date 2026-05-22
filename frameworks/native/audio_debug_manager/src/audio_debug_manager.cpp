@@ -589,6 +589,7 @@ std::string AudioDebugManagerPrivate::ParserAudioCapturerDebugInfo(
        << "    bufferSize: " << debugInfo.bufferSize << ",\n"
        << "    overflowCount: " << debugInfo.overflowCount << ",\n"
        << "    muteWhenInterrupted: " << (debugInfo.muteWhenInterrupted ? "true" : "false") << ",\n"
+       << "    pauseWhenInterrupted: " << (debugInfo.pauseWhenInterrupted ? "true" : "false") << ",\n"
        << "    inputDeviceType: " << static_cast<int32_t>(deviceType) << "\n"
        << "  },\n"
        << "  pipeInfo: {\n"

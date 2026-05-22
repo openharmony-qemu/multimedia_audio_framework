@@ -591,7 +591,7 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
 
 size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
-    size_t frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND;
+    size_t frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND * SOURCE_PERIOD_SIZE;
     AUDIO_DEBUG_LOG("CalculateFrameLenBySampleRate: unified 20ms, sampleRate=%{public}u, frameLen=%{public}zu",
         sampleRate, frameLen);
     return frameLen;

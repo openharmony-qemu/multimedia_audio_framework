@@ -1295,6 +1295,9 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
 
     CHECK_AND_CALL_FUNC_RETURN(IsNewDevicePlaybackSupported(streamDesc),
         HILOG_COMM_ERROR("[MoveToNewOutputDevice]new device not support playback"));
+    
+    auto pipeDeviceVolumeGroup = AudioPipeManager::GetPipeManager()->GetPipeDeviceVolumeInfoForPipe(pipeInfo);
+    AudioAdapterManager::GetInstance().UpdateAudioPipeVolume(pipeDeviceVolumeGroup);
 
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
@@ -2807,8 +2810,8 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
     if (result == REFETCH_DEVICE) {
-        FetchOutputDeviceAndRoute("ActivateOutputDevice");
-        FetchInputDeviceAndRoute("ActivateOutputDevice");
+        FetchOutputDeviceAndRoute("ActivateOutputDevice", reason);
+        FetchInputDeviceAndRoute("ActivateOutputDevice", reason);
     }
     return result;
 }
@@ -2821,8 +2824,8 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
     if (result == REFETCH_DEVICE) {
-        FetchOutputDeviceAndRoute("ActivateInputDevice");
-        FetchInputDeviceAndRoute("ActivateInputDevice");
+        FetchOutputDeviceAndRoute("ActivateInputDevice", reason);
+        FetchInputDeviceAndRoute("ActivateInputDevice", reason);
     }
     return result;
 }

@@ -45,6 +45,7 @@ group("fuzztest") {
     "audioloopbackmanager_fuzzer:fuzztest",
     "audioloudvolumemanager_fuzzer:fuzztest",
     "audiooffloadstream_fuzzer:fuzztest",
+    "audiopipeinfo_fuzzer:fuzztest",
     "audiopipemanager_fuzzer:fuzztest",
     "audiopipeselector_fuzzer:fuzztest",
     "audiopnpserver_fuzzer:fuzztest",

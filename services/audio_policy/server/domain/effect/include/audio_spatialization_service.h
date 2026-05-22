@@ -126,7 +126,6 @@ private:
     bool SafeConvertToBool(const std::string token, const std::string paramName);
     void UpdateDeviceSpatialInfo(const std::string deviceSpatialInfo);
     void UpdateDeviceSpatialMapInfo(const std::string address, const std::string deviceSpatialInfo);
-    void UpdateSpatialStateToNewDevice(const AudioSpatialDeviceState audioSpatialDeviceState);
     bool IsSpatializationSupportedForDeviceInner(const std::string address);
     bool IsHeadTrackingSupportedForDeviceInner(const std::string address);
     std::string RemoveOldestDevice();

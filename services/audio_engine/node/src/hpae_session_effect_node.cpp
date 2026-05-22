@@ -100,10 +100,11 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
 
     HpaePcmBuffer *result = nullptr;
 
+    STATUS processingStatus = status_;
     if (!effectInstance_) {
         result = inputs[0];
     } else {
-        switch (status_) {
+        switch (processingStatus) {
             case STATUS::IDLE:
                 result = inputs[0];
                 break;
@@ -125,7 +126,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
         }
     }
 
-    if (result != nullptr) {
+    if (result != nullptr && !(effectInstance_ && processingStatus == STATUS::INTERCEPTING)) {
         totalBytesOut_ += byteLen;
         if (audioConfig_.inputCfg.channels > 0) {
             stats_.framesOutput += static_cast<int64_t>(byteLen / (audioConfig_.inputCfg.channels * sizeof(float)));
@@ -506,7 +507,10 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
     size_t channels = audioConfig_.inputCfg.channels;
     size_t byteLen = inputBuf->GetFrameLen() * channels * sizeof(float);
 
-    uint32_t skipFrames = ComputeSkipFrames();
+    uint32_t computedSkipFrames = ComputeSkipFrames();
+    totalBytesOut_ = static_cast<size_t>(computedSkipFrames) * byteLen;
+
+    uint32_t skipFrames = computedSkipFrames;
     int32_t ret = effectInstance_->ReadOutput(
         reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen,
         &skipFrames);
@@ -514,6 +518,10 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
         ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(),
             inputBuf->GetFrameLen() * audioConfig_.inputCfg.channels);
         status_ = STATUS::ACTIVE;
+        totalBytesOut_ += byteLen;
+        if (audioConfig_.inputCfg.channels > 0) {
+            stats_.framesOutput += static_cast<int64_t>(inputBuf->GetFrameLen());
+        }
         return inputBuf;
     }
 

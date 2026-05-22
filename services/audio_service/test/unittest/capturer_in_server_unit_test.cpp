@@ -46,7 +46,6 @@ void CapturerInServerUnitTest::SetUp() {}
 void CapturerInServerUnitTest::TearDown() {}
 
 class ConcreteIStreamListener : public IStreamListener {
-public:
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
 };
 

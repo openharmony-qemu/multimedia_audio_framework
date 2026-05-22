@@ -274,8 +274,8 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_011, Tes
 {
     std::string token = "1";
     std::string paramName = "test";
-    token = "0";
     EXPECT_EQ(sSpatializationService_->SafeConvertToBool(token, paramName), true);
+    token = "0";
     EXPECT_EQ(sSpatializationService_->SafeConvertToBool(token, paramName), false);
 }
 } // namespace AudioStandard

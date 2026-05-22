@@ -17,6 +17,7 @@
 #endif
 
 #include "napi_audio_capturer.h"
+#include <condition_variable>
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
@@ -43,6 +44,35 @@ mutex NapiAudioCapturer::createMutex_;
 int32_t NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
 std::atomic<bool> NapiAudioCapturer::firstReadCalled_{false};
 std::atomic<bool> NapiAudioCapturer::firstRegReadCbCalled_{false};
+
+namespace {
+class NapiPlaybackCaptureStartStateCallback : public AudioCapturerOnPlaybackCaptureStartCallback {
+public:
+    void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        state_ = state;
+        hasResult_ = true;
+    }
+
+    PlaybackCaptureStartState GetState()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return state_;
+    }
+
+    bool HasResult()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return hasResult_;
+    }
+
+private:
+    std::mutex mutex_;
+    PlaybackCaptureStartState state_ = START_STATE_FAILED;
+    bool hasResult_ = false;
+};
+} // namespace
 
 NapiAudioCapturer::NapiAudioCapturer()
     : audioCapturer_(nullptr),  sourceType_(SOURCE_TYPE_MIC), env_(nullptr) {}
@@ -96,6 +126,7 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
         DECLARE_NAPI_FUNCTION("setWillMuteWhenInterrupted", SetWillMuteWhenInterrupted),
         DECLARE_NAPI_FUNCTION("setMuteHint", SetMuteHint),
+        DECLARE_NAPI_FUNCTION("requestPlaybackCaptureStart", RequestPlaybackCaptureStart),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("onReadMicInData", OnReadMicInData),
@@ -143,6 +174,7 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     napiCapturer->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
 
     AudioCapturerOptions capturerOptions = *sCapturerOptions_;
+    napiCapturer->isModernInnerCapturer_ = capturerOptions.playbackCaptureConfig.isModernInnerCapturer;
 
     /* NapiAudioCapturer not support other capturerFlags, only support flag 0 */
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
@@ -536,6 +568,13 @@ napi_value NapiAudioCapturer::Start(napi_env env, napi_callback_info info)
         auto *napiAudioCapturer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
             "context object state is error.");
+        // Playback capture created by modern inner capture api forbidden to start.
+        // It should start by RequestPlaybackCaptureStart.
+        if (napiAudioCapturer->sourceType_ == SOURCE_TYPE_PLAYBACK_CAPTURE &&
+            napiAudioCapturer->isModernInnerCapturer_) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+            return;
+        }
         context->intValue = napiAudioCapturer->audioCapturer_->StartWithError();
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
@@ -1067,6 +1106,92 @@ napi_value NapiAudioCapturer::SetMuteHint(napi_env env, napi_callback_info info)
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetMuteHint", executor, complete);
+}
+
+void NapiAudioCapturer::SignPlaybackCaptureStartError(std::shared_ptr<AudioCapturerAsyncContext> context, int32_t ret)
+{
+    if (ret == ERR_ILLEGAL_STATE || ret == ERROR_ILLEGAL_STATE) {
+        context->SignError(NAPI_ERR_ILLEGAL_STATE);
+    } else if (ret == ERR_INVALID_PARAM || ret == ERROR_INVALID_PARAM) {
+        context->SignError(NAPI_ERR_INVALID_PARAM);
+    } else if (ret == ERR_NOT_SUPPORTED) {
+        context->SignError(NAPI_ERR_UNSUPPORTED);
+    } else if (ret == ERR_PERMISSION_DENIED) {
+        context->SignError(NAPI_ERR_NO_PERMISSION);
+    } else if (ret == ERR_SYSTEM_PERMISSION_DENIED) {
+        context->SignError(NAPI_ERR_PERMISSION_DENIED);
+    } else {
+        context->SignError(NAPI_ERR_SYSTEM);
+    }
+}
+
+void NapiAudioCapturer::HandlePlaybackCaptureStartResult(AudioCapturer *audioCapturer,
+    std::shared_ptr<AudioCapturerAsyncContext> context, PlaybackCaptureStartState state)
+{
+    context->playbackCaptureStartState = state;
+    if (state == START_STATE_SUCCESS) {
+        if (audioCapturer != nullptr && !audioCapturer->Start()) {
+            AUDIO_ERR_LOG("Start playback capture stream failed after authority granted");
+            context->playbackCaptureStartState = START_STATE_FAILED;
+            context->SignError(NAPI_ERR_SYSTEM, "Start playback capture stream failed after authority granted");
+        }
+    } else if (context->playbackCaptureStartState == START_STATE_NOT_AUTHORIZED) {
+        AUDIO_ERR_LOG("Playback capture start failed: not authorized");
+        context->SignError(NAPI_ERR_NO_PERMISSION, "Playback capture start failed: not authorized");
+    } else {
+        AUDIO_ERR_LOG("Playback capture start failed: unknown error");
+        context->SignError(NAPI_ERR_SYSTEM, "Playback capture start failed: unknown error");
+    }
+}
+
+napi_value NapiAudioCapturer::RequestPlaybackCaptureStart(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("RequestPlaybackCaptureStart failed : no memory");
+        NapiAudioError::ThrowError(env, "RequestPlaybackCaptureStart failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    context->GetCbInfo(env, info, nullptr, true);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "AudioCapturer state is error.");
+        CHECK_AND_RETURN_LOG(napiAudioCapturer->audioCapturer_ != nullptr, "audioCapturer_ is nullptr");
+
+        auto playbackCaptureStartCallback = std::make_shared<NapiPlaybackCaptureStartStateCallback>();
+        if (playbackCaptureStartCallback == nullptr) {
+            context->SignError(NAPI_ERR_NO_MEMORY);
+            return;
+        }
+
+        napiAudioCapturer->audioCapturer_->SetPlaybackCaptureStartStateCallback(playbackCaptureStartCallback);
+        int32_t ret = napiAudioCapturer->audioCapturer_->StartPlaybackCapture();
+        if (ret != SUCCESS) {
+            napiAudioCapturer->audioCapturer_->SetPlaybackCaptureStartStateCallback(nullptr);
+            SignPlaybackCaptureStartError(context, ret);
+            return;
+        }
+
+        if (!playbackCaptureStartCallback->HasResult()) {
+            AUDIO_ERR_LOG("Playback capture start result missing");
+            context->playbackCaptureStartState = START_STATE_FAILED;
+            context->SignError(NAPI_ERR_SYSTEM, "Playback capture start result missing");
+        } else {
+            HandlePlaybackCaptureStartResult(napiAudioCapturer->audioCapturer_.get(), context,
+                playbackCaptureStartCallback->GetState());
+        }
+        napiAudioCapturer->audioCapturer_->SetPlaybackCaptureStartStateCallback(nullptr);
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(context->playbackCaptureStartState), output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "RequestPlaybackCaptureStart", executor, complete);
 }
 
 napi_value NapiAudioCapturer::GetOverflowCountSync(napi_env env, napi_callback_info info)

@@ -249,7 +249,6 @@ group("audio_fuzz_test") {
     "fuzztest/audiomanagerstub_fuzzer:fuzztest",
     "fuzztest/audioperformancemonitor_fuzzer:fuzztest",
     "fuzztest/audiomicrophonedescriptor_fuzzer:fuzztest",
-    "fuzztest/audiopipeinfo_fuzzer:fuzztest",
     "fuzztest/audiopolicyserver_second_fuzzer:fuzztest",
     "fuzztest/audiopowerstatelistener_fuzzer:fuzztest",
     "fuzztest/audioproresamplerprocess_fuzzer:fuzztest",

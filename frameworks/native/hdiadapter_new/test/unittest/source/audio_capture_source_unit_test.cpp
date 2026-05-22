@@ -1428,14 +1428,14 @@ HWTEST_F(AudioCaptureSourceUnitTest, UpdateRawSampleAttr_003, TestSize.Level1)
 /**
  * @tc.name   : Test GetUniqueIdBySourceType API
  * @tc.number : GetUniqueIdBySourceType_012
- * @tc.desc   : Test GetUniqueIdBySourceType for AUDIO_INPUT_INTERPHON_TYPE
+ * @tc.desc   : Test GetUniqueIdBySourceType for AUDIO_INPUT_INTERPHONE_TYPE
  */
 HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_012, TestSize.Level1)
 {
     auto captureSource = std::make_shared<AudioCaptureSource>(1);
     uint32_t id = 0;
     captureSource->attr_.sourceType = SOURCE_TYPE_INTERPHONE;
-    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_INTERPHON_TYPE";
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_INTERPHONE_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHONE * UNIQUE_ID_INTERVAL);
 }

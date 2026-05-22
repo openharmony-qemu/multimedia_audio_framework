@@ -30,7 +30,7 @@
 #include "util/callback_wrapper.h"
 #include "audio_primary_source_clock.h"
 #include "audio_stream_enum.h"
-#include "hdi_adapter_info.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
