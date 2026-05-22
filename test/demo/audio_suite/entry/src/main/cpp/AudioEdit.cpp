@@ -44,6 +44,7 @@
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
 #include "multiPipelineEdit/MultiPipelineEdit.h"
+#include "AudioRenderer.h"
 #include "audioRecord/AudioRecord.h"
 #include "timeline/Timeline_napi.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
@@ -74,7 +75,6 @@ struct ConversionContext {
     int inputFd = -1;
 };
 
-const uint32_t WAV_HEADER_SIZE = 44;
 const uint32_t INPUT_BUFFER_SIZE = 256 * 1024;
 const int32_t OUTPUT_BUFFER_SIZE = 1024 * 1024;
 const uint32_t MAX_FILE_PATH_LENGTH = 512;
@@ -83,20 +83,12 @@ const uint32_t ARG_INDEX_INPUT_FORMAT = 0;
 const uint32_t ARG_INDEX_OUTPUT_FORMAT = 1;
 const uint32_t ARG_INDEX_FD = 2;
 
-// Sample format multiplier constants
-const int32_t SAMPLE_FORMAT_MULTIPLIER_1 = 1;
-const int32_t SAMPLE_FORMAT_MULTIPLIER_2 = 2;
-
 const int32_t ARGVNUM_0 = 0;
 const int32_t ARGVNUM_1 = 1;
 const int32_t ARGVNUM_2 = 2;
 const int32_t ARGVNUM_3 = 3;
-
-// WAV file info structure
-const int32_t INDEXTWO = 2;
-const int32_t INDEXTHREE = 3;
-
 const int32_t INVALID_FD = -1;
+
 const int32_t DIRECTORY_PERMISSIONS = 0755;
 const int32_t FILE_PERMISSIONS = 0644;
 const int32_t TM_YEAR_BASE = 1900;
@@ -1072,13 +1064,9 @@ static napi_value SetEffectNodeBypass(napi_env env, napi_callback_info info)
     return result;
 }
 
-static napi_value CreateFinalResult(napi_env env, FILE* outputFile, const char* outputFilePath)
+static napi_value CreateFinalResult(napi_env env, const char* outputFilePath)
 {
     napi_value napiValue;
-    if (outputFile != nullptr) {
-        fclose(outputFile);
-    }
-
     struct stat fileStat;
     if (stat(outputFilePath, &fileStat) != 0 || fileStat.st_size == 0) {
         napi_get_null(env, &napiValue);
@@ -1121,7 +1109,7 @@ static bool ProcessIteration(OH_AudioConverter* converter, FILE* outputFile)
     if (outputSize > 0 && outputFile != nullptr) {
         fwrite(outputData, 1, outputSize, outputFile);
     }
-    
+
     delete[] static_cast<uint8_t*>(outputData);
     return outputSize > 0;
 }
@@ -1159,13 +1147,14 @@ static int32_t AudioConverterRequestDataCallback(void *userData, const void **ou
     if (bytesRead <= 0) {
         *outInputData = nullptr;
         *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
+        context->inputDataSize = 0;
         return 0;
     }
     
     *outInputData = context->inputData;
     *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
-    context->inputDataSize += bytesRead;
-    return bytesRead;
+    context->inputDataSize = bytesRead;
+    return context->inputDataSize;
 }
 
 static bool ParseAudioFormat(napi_env env, napi_value formatObj,
@@ -1183,7 +1172,7 @@ static bool ParseAudioFormat(napi_env env, napi_value formatObj,
 
     uint32_t encodingType;
     uint32_t samplingRate;
-    uint32_t channelLayout;
+    int64_t channelLayout;
     uint32_t sampleFormat;
     if (napi_get_value_uint32(env, encodingTypeValue, &encodingType) != napi_ok) {
         return false;
@@ -1191,7 +1180,7 @@ static bool ParseAudioFormat(napi_env env, napi_value formatObj,
     if (napi_get_value_uint32(env, samplingRateValue, &samplingRate) != napi_ok) {
         return false;
     }
-    if (napi_get_value_uint32(env, channelLayoutValue, &channelLayout) != napi_ok) {
+    if (napi_get_value_int64(env, channelLayoutValue, &channelLayout) != napi_ok) {
         return false;
     }
     if (napi_get_value_uint32(env, sampleFormatValue, &sampleFormat) != napi_ok) {
@@ -1218,41 +1207,49 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     OH_AudioConverter_Format inputFormat;
     OH_AudioConverter_Format outputFormat;
 
+    
     if (!ParseAudioFormat(env, argv[ARG_INDEX_INPUT_FORMAT], &inputFormat) ||
         !ParseAudioFormat(env, argv[ARG_INDEX_OUTPUT_FORMAT], &outputFormat)) {
-        return CreateFinalResult(env, outputFile, outputFilePath);
+        return CreateFinalResult(env, outputFilePath);
     }
     int32_t fd;
     if (napi_get_value_int32(env, argv[ARG_INDEX_FD], &fd) != napi_ok) {
-        return CreateFinalResult(env, outputFile, outputFilePath);
+        return CreateFinalResult(env, outputFilePath);
     }
     ctx.inputFd = fd;
     ctx.inputData = new (std::nothrow) uint8_t[INPUT_BUFFER_SIZE];
     if (ctx.inputData == nullptr) {
-        return CreateFinalResult(env, outputFile, outputFilePath);
+        return CreateFinalResult(env, outputFilePath);
     }
     OH_AudioConverter_Result createResult =
         OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     if (createResult != AUDIOCONVERTER_SUCCESS) {
         CleanupConversion(ctx, converter);
-        return CreateFinalResult(env, outputFile, outputFilePath);
+        return CreateFinalResult(env, outputFilePath);
     }
     OH_AudioConverter_Result callbackResult =
         OH_AudioConverter_SetInputCallback(converter, AudioConverterRequestDataCallback, &ctx);
     if (callbackResult != AUDIOCONVERTER_SUCCESS) {
         CleanupConversion(ctx, converter);
-        return CreateFinalResult(env, outputFile, outputFilePath);
+        return CreateFinalResult(env, outputFilePath);
     }
     if (!InitializeProcessParameters(&outputFile, outputFilePath)) {
         CleanupConversion(ctx, converter);
-        return CreateFinalResult(env, outputFile, outputFilePath);
+        if (outputFile != nullptr) {
+            fclose(outputFile);
+        }
+        return CreateFinalResult(env, outputFilePath);
     }
 
-    while (ProcessIteration(converter, outputFile)) {
-        continue;
-    }
+    while (ProcessIteration(converter, outputFile));
+
     CleanupConversion(ctx, converter);
-    return CreateFinalResult(env, outputFile, outputFilePath);
+
+    if (outputFile != nullptr) {
+        fclose(outputFile);
+    }
+
+    return CreateFinalResult(env, outputFilePath);
 }
 
 // Test the function of outputting PrintInfo to a file.（fd >= 0）
@@ -1426,7 +1423,7 @@ const std::vector<napi_property_descriptor> otherDescriptors = {
     {"setCurrentTime", nullptr, setCurrentTime, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"testPrintInfoToFile", nullptr, TestPrintInfoToFile, nullptr, nullptr, nullptr, napi_default, nullptr},
-    // Real-time playback methods
+     Real-time playback methods
     {"initAudioRenderer", nullptr, InitAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"startAudioRenderer", nullptr, StartAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"stopAudioRenderer", nullptr, StopAudioRenderer, nullptr, nullptr, nullptr, napi_default, nullptr},
