@@ -113,10 +113,14 @@ void HpaeAudioFormatConverterNode::DoProcess()
         outputStream_.WriteDataToOutput(tempOut);
         return;
     }
-    // No valid input or process disabled -- still try to drain processedBuffer_
+    //drain processedBuffer_ with buffer state propagation
     if (processedFrames_ >= outputFrameLen20ms_ && enableProcess_) {
         converterOutput_.Reset();
         if (ExtractOutputFromProcessedBuffer()) {
+            if (!preOutputs.empty() && preOutputs[0] != nullptr) {
+                converterOutput_.SetBufferState(preOutputs[0]->GetBufferState());
+                converterOutput_.SetBufferValid(true);
+            }
             AUDIO_DEBUG_LOG("NodeId %{public}d: drain processedBuffer_, "
                 "remaining %{public}u frames", GetNodeId(), processedFrames_);
             outputStream_.WriteDataToOutput(&converterOutput_);
