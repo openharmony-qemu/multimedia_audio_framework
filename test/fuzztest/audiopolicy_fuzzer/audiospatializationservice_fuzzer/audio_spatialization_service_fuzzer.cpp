@@ -48,6 +48,7 @@ using namespace std;
 
 const size_t THRESHOLD = 10;
 const size_t MAX_STRING_LEN = 64;
+static int32_t NUM_3 = 3;
 const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
 typedef void (*TestPtr)(FuzzedDataProvider&);
 
@@ -694,7 +695,7 @@ void AudioSpatializationServiceUpdateRendererInfoMultipleFuzzTest(FuzzedDataProv
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
-    for (size_t i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < NUM_3; ++i) {
         auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
         if (changeInfo != nullptr) {
             changeInfo->rendererState = PickValue(fdp, g_testRendererStates);
