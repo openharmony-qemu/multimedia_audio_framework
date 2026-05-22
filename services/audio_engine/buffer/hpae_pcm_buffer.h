@@ -89,7 +89,7 @@ public:
     ~HpaePcmBuffer()
     {
     }
-    HpaePcmBuffer &operator=(HpaePcmBuffer &other);
+    HpaePcmBuffer &operator=(const HpaePcmBuffer &other);
     HpaePcmBuffer &operator=(HpaePcmBuffer &&other) = delete;
 
     PcmBufferInfo GetPcmBufferInfo() const

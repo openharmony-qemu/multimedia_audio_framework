@@ -157,7 +157,7 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     operation_ = operation;
     // fade in
     if (operation_ == OPERATION_STARTED) {
-        if (fadeInState_ == false) { // todo: add operation for softstart
+        if (fadeInState_ == false) { 
             fadeInState_ = true;
         } else {
             AUDIO_WARNING_LOG("fadeInState already set");
@@ -234,7 +234,7 @@ void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
     if (GetNodeInfo().format == INVALID_WIDTH) {
         AUDIO_WARNING_LOG("HpaePcmBuffer.SetDataSilence: invalid format");
     } else if (GetNodeInfo().format == SAMPLE_U8) {
-        // set silence data for all the frames
+        // set silence data for all the frames, 0x80 is the zero-amplitude value for unsigned 8-bit PCM
         memset_s(data, pcmBuffer->Size(), 0x80, pcmBuffer->Size());
     } else {
         memset_s(data, pcmBuffer->Size(), 0, pcmBuffer->Size());

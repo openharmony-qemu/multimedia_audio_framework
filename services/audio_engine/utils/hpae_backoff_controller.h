@@ -21,7 +21,8 @@ namespace AudioStandard {
 namespace HPAE {
 class HpaeBackoffController {
 public:
-    explicit HpaeBackoffController(int32_t minDelay = 0, int32_t maxDelay = 20, int32_t increment = 1); // max 20ms
+    explicit HpaeBackoffController(int32_t minDelay = 0, int32_t maxDelay = 20, int32_t increment = 1);
+    // maxDelay: upper limit of backoff delay, defaults to 20ms
     ~HpaeBackoffController() = default;
     void HandleResult(bool result);
 

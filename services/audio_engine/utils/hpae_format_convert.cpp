@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "securec.h"
+#include <algorithm>
 #include "hpae_format_convert.h"
 
 namespace OHOS {
@@ -70,19 +71,14 @@ static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 
 static float CapMax(float v)
 {
-    float value = v;
-    if (v >= 1.0f) {
-        value = 1.0f - FLOAT_EPS;
-    } else if (v <= -1.0f) {
-        value = -1.0f + FLOAT_EPS;
-    }
-    return value;
+    return std::clamp(v, -1.0f + FLOAT_EPS, 1.0f - FLOAT_EPS);
 }
 
 static void ConvertFromFloatToU8(unsigned n, const float *a, uint8_t *b)
 {
     for (; n > 0; n--) {
         float v = *(a++);
+        // 127.0f: amplitude range of unsigned 8-bit, 128.0f: zero-point offset (0x80 = silence)
         *(b++) = (uint8_t)(CapMax(v) * 127.0f + 128.0f);
     }
 }
