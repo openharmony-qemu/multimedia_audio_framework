@@ -805,7 +805,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 
     // MultiChannel:collaboration playback, nearlink
     if (AudioCollaborativeSerivce::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
-        streamDesc->newDeviceDescs_[0]) && streamDesc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_NEARLINK &&
+        streamDesc->newDeviceDescs_[0]) && streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_NEARLINK &&
         audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->rendererInfo_.streamUsage) &&
         !CheckRingAndVoipStreamRunning()) {
             streamDesc->isNearLinkCollaborationEnable = true;
@@ -867,7 +867,7 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     }
     auto ret = AudioSpatializationService::GetAudioSpatializationService().IsSpatializationEnabled(
         streamDesc->newDeviceDescs_[0]->macAddress_)  &&
-        AudioCollaborativeSerivce::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->newDeviceDescs_[0]) &&
         !(AudioSpatializationService::GetAudioSpatializationService().IsAdaptiveSpatialRenderingEnabled(
             streamDesc->newDeviceDescs_[0]->macAddress_) &&

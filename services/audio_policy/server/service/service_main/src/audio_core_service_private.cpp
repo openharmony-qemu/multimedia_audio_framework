@@ -1716,7 +1716,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
-    } else if (AudioCollaborative::GetAudioCollaborativeService().GetRealCollaborativeState() &&
+    } else if (AudioCollaborativeSerivce::GetAudioCollaborativeService().GetRealCollaborativeState() &&
         (streamDesc->isNearLinkCollaborationEnable || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
         CheckCollaborativeStreamRunning())) {
         // for collaboration, the route should be updated
@@ -2537,7 +2537,7 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
 void AudioCoreService::DelayReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex)
 {
     AUDIO_INFO_LOG("In");
-    CHECK_AND_RETURN_LOG(type < OFFLOAD_TYPE_NUM && !isMultiChannelInRelease_.load(), "MultiChannel is releasing");
+    CHECK_AND_RETURN_LOG(!isMultiChannelInRelease_.load(), "MultiChannel is releasing");
     isMultiChannelInRelease_.store(true);
     isMultiChannelOpened_.store(false);
     auto unloadMultiChannelThreadFuc = [this, id, paIndex] { this->ReleaseMultiChannelPipe(id, paIndex); };

@@ -213,7 +213,7 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
     CollaborationState isCurrentCollaborativeEnabledState;
     if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         isCurrentCollaborativeEnabledState = COLLABORATIVE_BLUETOOTH_OPEN;
-    } eles if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_NEARLINK) {
+    } else if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_NEARLINK) {
         isCurrentCollaborativeEnabledState = COLLABORATIVE_NEARLINK_OPEN;
     } else {
         isCurrentCollaborativeEnabledState = COLLABORATION_CLOSE;
