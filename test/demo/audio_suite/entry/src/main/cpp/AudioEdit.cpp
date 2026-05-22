@@ -1206,7 +1206,6 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     OH_AudioConverter_Format inputFormat;
     OH_AudioConverter_Format outputFormat;
-
     
     if (!ParseAudioFormat(env, argv[ARG_INDEX_INPUT_FORMAT], &inputFormat) ||
         !ParseAudioFormat(env, argv[ARG_INDEX_OUTPUT_FORMAT], &outputFormat)) {
@@ -1241,8 +1240,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
         return CreateFinalResult(env, outputFilePath);
     }
 
-    while (ProcessIteration(converter, outputFile));
-
+    while (ProcessIteration(converter, outputFile)) {}
     CleanupConversion(ctx, converter);
 
     if (outputFile != nullptr) {
