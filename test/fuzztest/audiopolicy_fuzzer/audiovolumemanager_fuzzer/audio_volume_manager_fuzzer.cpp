@@ -25,6 +25,7 @@ const std::string AUDIO_RESTORE_VOLUME_EVENT = "AUDIO_RESTORE_VOLUME_EVENT";
 const std::string AUDIO_INCREASE_VOLUME_EVENT = "AUDIO_INCREASE_VOLUME_EVENT";
 const std::string DEFAULT_MAC_ADDRESS = "11:22:33:44:55:66";
 const size_t MAX_STRING_LEN = 64;
+constexpr int32_t TEST_DEVICE_ID = 1001;
 typedef void (*TestPtr)();
 
 template<typename T>
@@ -197,7 +198,7 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
     auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
     auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
     if (desc->deviceId_ == 0) {
-        desc->deviceId_ = 1001;
+        desc->deviceId_ = TEST_DEVICE_ID;
         AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
         AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     }
