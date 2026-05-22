@@ -181,15 +181,14 @@ void AudioSocketThreadAudioPnpUeventParseFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     std::string msgStr = PickValue(fdp, g_testMsgs);
-    const char *msg = msgStr.c_str();
     ssize_t strLength;
     bool isInvalid = fdp.ConsumeBool();
     if (isInvalid) {
         strLength = UEVENT_MSG_LEN + UEVENT_MSG_PADDING;
     } else {
-        strLength = strlen(msg);
+        strLength = strlen(msgStr.c_str());
     }
-    audioSocketThread.AudioPnpUeventParse(msg, strLength);
+    audioSocketThread.AudioPnpUeventParse(msgStr.c_str(), strLength);
 }
 
 void AudioSocketThreadDetectAnalogHeadsetStateFuzzTest(FuzzedDataProvider& fdp)
