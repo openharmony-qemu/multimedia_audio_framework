@@ -2232,4 +2232,74 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainEmptyPreOutputs, TestS
     // Should drain without crash even with empty preOutputs
     EXPECT_EQ(converterNode->processedFrames_, 0u);
 }
+
+/**
+ * @tc.name  : DoProcess_DrainPath_WithPreOutputs_InvalidBuffer
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_DrainPath_WithPreOutputs_InvalidBuffer
+ * @tc.desc  : Drain path enters buffer state propagation block when upstream
+ *             provides a non-null but invalid buffer (IsValid=false)
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainPath_WithPreOutputs_InvalidBuffer, TestSize.Level0)
+{
+    // Setup upstream node with invalid buffer
+    auto upstreamNode = CreateStdConverter();
+    PcmBufferInfo pcmInfo(STEREO, DEFAULT_FRAMELEN_SECOND, SAMPLE_RATE_48000);
+    HpaePcmBuffer upstreamBuffer(pcmInfo);
+    upstreamBuffer.GetPcmDataBuffer();
+    // Set state to SILENCE|INVALID (value 3) - SetBufferState overwrites entire state word
+    upstreamBuffer.SetBufferState(PCM_BUFFER_STATE_SILENCE | PCM_BUFFER_STATE_INVALID);
+    upstreamNode->outputStream_.WriteDataToOutput(&upstreamBuffer);
+
+    // Setup test node with upstream connection
+    auto converterNode = CreateStdConverter();
+    converterNode->inputStream_.AddPreOutput(
+        upstreamNode->GetSharedInstance(), &upstreamNode->outputStream_);
+
+    // Populate drain conditions
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+    converterNode->enableProcess_ = true;
+
+    // Set pre-state to invalid so IsValid()==true proves drain path set it
+    converterNode->converterOutput_.SetBufferValid(false);
+
+    converterNode->DoProcess();
+
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    // SetBufferState copies full state (SILENCE|INVALID), then SetBufferValid(true) clears INVALID
+    EXPECT_EQ(converterNode->converterOutput_.GetBufferState(), PCM_BUFFER_STATE_SILENCE);
+    EXPECT_TRUE(converterNode->converterOutput_.IsValid());
+}
+
+/**
+ * @tc.name  : DoProcess_DrainPath_EmptyPreOutputs_NoStatePropagation
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_DrainPath_EmptyPreOutputs_NoStatePropagation
+ * @tc.desc  : Drain path skips buffer state propagation when preOutputs is empty,
+ *             converterOutput_ remains in pre-set invalid state
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainPath_EmptyPreOutputs_NoStatePropagation, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+    converterNode->enableProcess_ = true;
+
+    // Set pre-state to invalid so IsValid()==false proves drain path did NOT set it
+    converterNode->converterOutput_.SetBufferValid(false);
+
+    converterNode->DoProcess();
+
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    // preOutputs is empty, so inner if block is skipped, SetBufferValid(true) never called
+    EXPECT_FALSE(converterNode->converterOutput_.IsValid());
+}
 }
