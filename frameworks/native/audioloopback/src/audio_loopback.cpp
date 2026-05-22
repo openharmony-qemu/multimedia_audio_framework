@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioLoopback"
 #endif
 
+#include <cinttypes>
 #include "audio_loopback_private.h"
 #include "audio_loopback_wrapper.h"
 #include "audio_manager_log.h"
@@ -485,6 +486,19 @@ void AudioLoopbackPrivate::StartAudioLoopback()
     capturerState_ = CAPTURER_RUNNING;
 }
 
+void AudioLoopbackPrivate::ReportUsingDuration(uint64_t usingDuration)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::KARAOKE_FEATURE_UTILIZATION,
+        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("UID", static_cast<int32_t>(getuid()));
+    bean->Add("TYPE", (isGlobal_ ? 1 : 0));
+    bean->Add("DEVICE_TYPE", static_cast<int32_t>(activeOutputDevice_));
+    bean->Add("FEATURE", 0);
+    bean->Add("DURATION", usingDuration);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void AudioLoopbackPrivate::DisableLoopback()
 {
     if (karaokeParams_["Karaoke_enable"] == "enable") {
@@ -492,6 +506,14 @@ void AudioLoopbackPrivate::DisableLoopback()
         std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
         CHECK_AND_RETURN_LOG(SetKaraokeParameters(parameters), "DisableLoopback failed");
     }
+
+    CHECK_AND_RETURN(usingDuration_ != 0);
+    auto timeNow = std::chrono::system_clock::now();
+    uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(timeNow.time_since_epoch()).count();
+    uint64_t duration = now - usingDuration_;
+    AUDIO_INFO_LOG("disable at %{public}" PRIu64 ", using duraion is %{public}" PRIu64 " second", now, duration);
+    usingDuration_ = 0;
+    ReportUsingDuration(duration);
 }
 
 void AudioLoopbackPrivate::DestroyAudioLoopbackInner()
@@ -598,6 +620,10 @@ bool AudioLoopbackPrivate::EnableLoopback()
         CHECK_AND_RETURN_RET_LOG(ret, false,
             "EnableLoopback failed");
     }
+
+    auto timeNow = std::chrono::system_clock::now();
+    usingDuration_ = std::chrono::duration_cast<std::chrono::seconds>(timeNow.time_since_epoch()).count();
+    AUDIO_INFO_LOG("enable at %{public}" PRIu64 " second", usingDuration_);
     return true;
 }
 

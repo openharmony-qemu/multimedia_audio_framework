@@ -844,7 +844,13 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_INPUT) || (node->GetNodeType() == NODE_TYPE_OUTPUT),
         ERR_NOT_SUPPORTED, "SetAudioFormat failed, enable type %{public}d not support.",
         static_cast<int32_t>(node->GetNodeType()));
-    CHECK_AND_RETURN_RET(CheckAudioFormat(*audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT);
+    if (node->GetNodeType() == NODE_TYPE_INPUT && IsHoaFormat(audioFormat->channelLayout)) {
+        CHECK_AND_RETURN_RET_LOG(CheckHoaInputFormat(*audioFormat), ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT,
+            "SetAudioFormat failed, input node HOA format check error.");
+    } else {
+        CHECK_AND_RETURN_RET_LOG(CheckAudioFormat(*audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
+            "SetAudioFormat failed, audio format check error.");
+    }
 
     uint32_t nodeId = node->GetNodeId();
     AudioFormat format;

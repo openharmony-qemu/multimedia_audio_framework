@@ -84,6 +84,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, info);
     } else if (deviceClass == "remote_offload") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_OFFLOAD, info);
+    } else if (deviceClass == "remote_multichannel") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_MULTICHANNEL, info);
 #endif
     }
     return GetRenderIdByDeviceClassSub(deviceClass, info, routeFlag);

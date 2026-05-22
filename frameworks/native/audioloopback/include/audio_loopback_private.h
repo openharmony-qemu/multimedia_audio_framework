@@ -128,8 +128,10 @@ private:
     bool SetKaraokeParameters(const std::string &parameters);
     AudioLoopbackReportInfo GetReportInfo(AudioLoopbackErrorScope scope, AudioLoopbackErrorType type);
     void GetValidDevice();
+    void ReportUsingDuration(uint64_t usingDuration);
 
     bool isGlobal_ = false;
+    uint64_t usingDuration_ = 0;
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
     AppInfo appInfo_ = {};

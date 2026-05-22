@@ -150,6 +150,7 @@ public:
     bool needUidCheck_ = false;
     bool supportEncodingEac3_ = false;
     bool supportMultSupMode_ = false;
+    bool principal_ = false;
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
 

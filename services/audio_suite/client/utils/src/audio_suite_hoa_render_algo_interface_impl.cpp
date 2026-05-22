@@ -1,0 +1,182 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef LOG_TAG
+#define LOG_TAG "AudioSuiteHoaRenderAlgoInterface"
+#endif
+
+#include <cstring>
+#include "audio_errors.h"
+#include "audio_suite_log.h"
+#include "audio_suite_hoa_render_algo_interface_impl.h"
+#include "audio_utils.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace AudioSuite {
+
+namespace {
+static constexpr int32_t USE_FORMAT_INPUT_FLAG = 0;
+static constexpr float ALGO_QUATERNION_ONE = 1.0f;
+static constexpr float ALGO_QUATERNION_ZERO = 0.0f;
+static constexpr uint32_t QUATERNION_INDEX_W = 0;
+static constexpr uint32_t QUATERNION_INDEX_X = 1;
+static constexpr uint32_t QUATERNION_INDEX_Y = 2;
+static constexpr uint32_t QUATERNION_INDEX_Z = 3;
+}  // namespace
+
+AudioSuiteHoaRenderAlgoInterfaceImpl::AudioSuiteHoaRenderAlgoInterfaceImpl(NodeParameter &nc)
+{
+    nodeParameter_ = nc;
+    AUDIO_INFO_LOG("AudioSuiteHoaRenderAlgoInterfaceImpl constructed");
+}
+
+AudioSuiteHoaRenderAlgoInterfaceImpl::~AudioSuiteHoaRenderAlgoInterfaceImpl()
+{
+    if (isHoaAlgoInit_) {
+        Deinit();
+    }
+}
+
+int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Init()
+{
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", soPath.c_str());
+
+    algoApi_.getSize = reinterpret_cast<FunAudioHvsGetSize>(dlsym(libHandle_, "AudioHvsGetSize"));
+    algoApi_.initAlgo = reinterpret_cast<FunAudioHvsInit>(dlsym(libHandle_, "AudioHvsInit"));
+    algoApi_.setParaAlgo = reinterpret_cast<FunAudioHvsSetPara>(dlsym(libHandle_, "AudioHvsSetPara"));
+    algoApi_.applyAlgo = reinterpret_cast<FunAudioHvsApply>(dlsym(libHandle_, "AudioHvsApply"));
+
+    bool loadAlgoApiFail = algoApi_.getSize == nullptr || algoApi_.initAlgo == nullptr ||
+                           algoApi_.setParaAlgo == nullptr || algoApi_.applyAlgo == nullptr;
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
+        Deinit();
+        return ERROR;
+    }
+
+    AudioHvsMemSize memSize = {0, 0};
+    int32_t ret = algoApi_.getSize(&memSize);
+    if (ret != AUDIO_HVS_OK) {
+        AUDIO_ERR_LOG("AudioHvsGetSize failed, ret = %{public}d", ret);
+        Deinit();
+        return ret;
+    }
+
+    if (memSize.handleSize > 0) {
+        algoHandle_.resize(memSize.handleSize, 0);
+    }
+    if (memSize.scratchBufSize > 0) {
+        scratchBuf_.resize(memSize.scratchBufSize, 0);
+    }
+
+    ret = algoApi_.initAlgo(algoHandle_.data(), scratchBuf_.data());
+    if (ret != AUDIO_HVS_OK) {
+        AUDIO_ERR_LOG("AudioHvsInit failed, ret = %{public}d", ret);
+        Deinit();
+        return ret;
+    }
+
+    ret = algoApi_.setParaAlgo(algoHandle_.data(), scratchBuf_.data());
+    if (ret != AUDIO_HVS_OK) {
+        AUDIO_ERR_LOG("AudioHvsSetPara failed, ret = %{public}d", ret);
+        Deinit();
+        return ret;
+    }
+
+    isHoaAlgoInit_ = true;
+    AUDIO_INFO_LOG("AudioSuiteHoaRenderAlgoInterfaceImpl::Init end");
+    return SUCCESS;
+}
+
+int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Deinit()
+{
+    isHoaAlgoInit_ = false;
+    if (libHandle_ != nullptr) {
+        int32_t ret = dlclose(libHandle_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "dlclose failed: %{public}s", dlerror());
+        libHandle_ = nullptr;
+    }
+    static_cast<void>(memset_s(&algoApi_, sizeof(algoApi_), 0, sizeof(algoApi_)));
+    algoHandle_.clear();
+    scratchBuf_.clear();
+    AUDIO_INFO_LOG("AudioSuiteHoaRenderAlgoInterfaceImpl::Deinit end");
+    return SUCCESS;
+}
+
+int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::SetParameter(
+    const std::string &paramType, const std::string &paramValue)
+{
+    AUDIO_INFO_LOG("Set hoa render param start");
+    uint64_t layoutValue = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(paramValue, layoutValue), ERROR,
+        "Failed to convert layout value: %{public}s", paramValue.c_str());
+    channelLayout_ = static_cast<AudioChannelLayout>(layoutValue);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::GetParameter(
+    const std::string &paramType, std::string &paramValue)
+{
+    AUDIO_INFO_LOG("HOA GetParameter: %{public}s (no-op for ambisonic mode)", paramType.c_str());
+    return SUCCESS;
+}
+
+int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Apply(
+    std::vector<uint8_t *> &pcmInBuf, std::vector<uint8_t *> &pcmOutBuf)
+{
+    CHECK_AND_RETURN_RET_LOG(isHoaAlgoInit_, ERROR, "HOA algo not initialized");
+    CHECK_AND_RETURN_RET_LOG(!pcmInBuf.empty(), ERROR, "pcmInBuf is empty");
+    CHECK_AND_RETURN_RET_LOG(pcmInBuf[0] != nullptr, ERROR, "pcmInBuf[0] is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!pcmOutBuf.empty(), ERROR, "pcmOutBuf is empty");
+    CHECK_AND_RETURN_RET_LOG(pcmOutBuf[0] != nullptr, ERROR, "pcmOutBuf[0] is nullptr");
+
+    int32_t *dataIn = reinterpret_cast<int32_t *>(pcmInBuf[0]);
+    int32_t *dataOut = reinterpret_cast<int32_t *>(pcmOutBuf[0]);
+
+    int16_t dataAmbOrder = AudioSuiteUtil::GetAmbOrder(channelLayout_);
+    int32_t hoaInputFormat = AudioSuiteUtil::GetHoaInputFormat(channelLayout_);
+
+    CHECK_AND_RETURN_RET_LOG(dataAmbOrder != AUDIO_HVS_HOA_FORMAT_INVALID, ERROR,
+        "Invalid Ambisonics order: %{public}d", dataAmbOrder);
+    CHECK_AND_RETURN_RET_LOG(hoaInputFormat != AUDIO_HVS_HOA_FORMAT_INVALID, ERROR, "Invalid HOA input format");
+
+    AudioHvsDynamicData data;
+    data.dataIn = dataIn;
+    data.dataOut = dataOut;
+    data.samplingRate = nodeParameter_.inSampleRate;
+    data.stereoDownmix = 0;
+    data.dataAmbOrder = dataAmbOrder;
+    data.renderAmbOrder = dataAmbOrder;
+    data.useAFormatInput = USE_FORMAT_INPUT_FLAG;
+    data.hoaInputFormat = hoaInputFormat;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_W] = ALGO_QUATERNION_ONE;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_X] = ALGO_QUATERNION_ZERO;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_Y] = ALGO_QUATERNION_ZERO;
+    data.dynUserData.quaterninos[QUATERNION_INDEX_Z] = ALGO_QUATERNION_ZERO;
+
+    int32_t ret = algoApi_.applyAlgo(algoHandle_.data(), scratchBuf_.data(), &data);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_HVS_OK, ret,
+        "HOA algo apply failed, ret = %{public}d", ret);
+
+    return SUCCESS;
+}
+
+}  // namespace AudioSuite
+}  // namespace AudioStandard
+}  // namespace OHOS

@@ -1056,20 +1056,21 @@ void AudioRouterInfra::ClearWirelessSelectDevice(const std::shared_ptr<AudioDevi
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     CHECK_AND_RETURN(IsWirelessDevice(device));
 
-    if (IsWirelessDevice(systemSelectDevice_.mediaOutput_.device_)) {
+    if (!IsSameWirelessDevice(device, systemSelectDevice_.mediaOutput_.device_)) {
         systemSelectDevice_.mediaOutput_.device_ = nullptr;
         systemSelectDevice_.mediaOutput_.selectTime_ = 0;
     }
     for (auto& [uid, context] : appContexts_) {
         CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
-        if (IsWirelessDevice(context->appSelectDevice_.mediaOutput_.device_)) {
+        if (!IsSameWirelessDevice(device, context->appSelectDevice_.mediaOutput_.device_)) {
             context->appSelectDevice_.mediaOutput_.device_ = nullptr;
             context->appSelectDevice_.mediaOutput_.selectTime_ = 0;
         }
         auto &streamSelectDevices = context->streamSelectDevices_;
         auto it = streamSelectDevices.begin();
         while (it != streamSelectDevices.end()) {
-            if (IsWirelessDevice(it->second) && it->second->deviceRole_ == OUTPUT_DEVICE) {
+            if (!IsSameWirelessDevice(device, it->second) && it->second!= nullptr &&
+                it->second->deviceRole_ == OUTPUT_DEVICE) {
                 it = streamSelectDevices.erase(it);
             } else {
                 ++it;
@@ -1087,6 +1088,13 @@ bool AudioRouterInfra::IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleD
            type == DEVICE_TYPE_BLUETOOTH_A2DP_IN ||
            type == DEVICE_TYPE_NEARLINK ||
            type == DEVICE_TYPE_NEARLINK_IN;
+}
+
+bool AudioRouterInfra::IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
+    const std::shared_ptr<AudioDeviceSimpleDescriptor> &right)
+{
+    CHECK_AND_RETURN_RET(IsWirelessDevice(left) && IsWirelessDevice(right), false);
+    return left->macAddress_ == right->macAddress_;
 }
 }
 }

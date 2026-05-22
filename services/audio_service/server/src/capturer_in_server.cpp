@@ -47,6 +47,7 @@
 #include "extension_manager_client.h"
 #include "want.h"
 #include "parameters.h"
+#include "audio_privacy_manager_in_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,6 +55,7 @@ const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBA
 namespace {
     static constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+    static constexpr int32_t UID_AUDIO = 1041;
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
@@ -722,17 +724,28 @@ bool CapturerInServer::CheckBgRecordPermission(CapturerState capturerState)
     return true;
 }
  
+void CapturerInServer::HandleMultiAncoCapturer(const std::vector<std::string> &bundleNameList)
+{
+    bool ret = AudioPrivacyManagerInServer::GetInstance().UpdateActiveAncoCapturer(bundleNameList);
+    CHECK_AND_RETURN_LOG(ret, "UpdateActiveAncoCapturer failed, need mute anco capturer");
+}
+
 bool CapturerInServer::TurnOnMicIndicator()
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", streamIndex_);
     } else {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            RecordPrivacyManager::GetInstance().NotifyPrivacyStart(tokenId, streamIndex_), false,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_START_ILLEGAL_STATE, "NotifyPrivacyStart failed", false),
-            "NotifyPrivacyStart failed!");
+        bool startMicResult = AudioPrivacyManagerInServer::GetInstance().GetStartMicResult();
+        if (processConfig_.appInfo.appUid == UID_AUDIO) {
+            CHECK_AND_RETURN_RET_LOG(startMicResult, false, "Anco NotifyPrivacyStart failed!");
+        } else {
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+                RecordPrivacyManager::GetInstance().NotifyPrivacyStart(tokenId, streamIndex_), false,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    RECORD_START_ILLEGAL_STATE, "NotifyPrivacyStart failed", false),
+                "NotifyPrivacyStart failed!");
+        }
         AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = true;
     }

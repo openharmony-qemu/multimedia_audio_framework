@@ -17,6 +17,9 @@
 #endif
 
 #include "audio_core_config_manager.h"
+
+#include <algorithm>
+
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
@@ -28,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 constexpr int32_t MS_PER_S = 1000;
-static const unsigned int BUFFER_CALC_20MS = 20;
+static const unsigned int BUFFER_CALC_20MS = (20 * SOURCE_PERIOD_SIZE);
 static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
@@ -234,8 +237,11 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
             streamProp->channelLayout_ = layout;
             streamProp->channels_ = ConvertLayoutToAudioChannel(layout);
             streamProp->bufferSize_ = AudioDefinitionPolicyUtils::PcmFormatToBytes(streamProp->format_) *
-                streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC;
+                streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC * SOURCE_PERIOD_SIZE;
             streamPropInfos.push_back(streamProp);
+            AUDIO_INFO_LOG("convert result: channelLayout[%{public}" PRIu64 "], channels[%{public}d], "
+                "samplingRate[%{public}d], format[%{public}d]", streamProp->channelLayout_, streamProp->channels_,
+                streamProp->sampleRate_, streamProp->format_);
         }
     }
 }
@@ -256,11 +262,14 @@ void AudioCoreConfigManager::UpdateStreamPropInfo(const std::string &adapterName
             streamProp->supportDevices_.push_back(deviceName);
         }
     }
+
+    AUDIO_INFO_LOG("start to update streamProps for: %{public}s", pipeName.c_str());
     audioPolicyConfig_.UpdateDynamicStreamProps(adapterName, pipeName, streamProps);
 }
 
 void AudioCoreConfigManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
 {
+    AUDIO_INFO_LOG("start to clear streamProps for: %{public}s", pipeName.c_str());
     audioPolicyConfig_.ClearDynamicStreamProps(adapterName, pipeName);
 }
 
@@ -967,7 +976,9 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamProp
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
     CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
 
-    AUDIO_INFO_LOG("use dynamic streamProp");
+    AUDIO_INFO_LOG("use dynamic streamProp, matchStreamInfo: channelLayout[%{public}" PRIu64 "], channels[%{public}d], "
+        "samplingRate[%{public}d], format[%{public}d]", matchStreamInfo.channelLayout, matchStreamInfo.channels,
+        matchStreamInfo.samplingRate, matchStreamInfo.format);
 
     SortStreamPropInfosBySampleRate(info->dynamicStreamPropInfos_);
 
@@ -1283,6 +1294,18 @@ bool AudioCoreConfigManager::IsDeviceSimulated(std::shared_ptr<AudioDeviceDescri
         desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
     CHECK_AND_RETURN_RET(deviceInfo != nullptr, false);
     return deviceInfo->isSimulated_;
+}
+
+void AudioCoreConfigManager::AddRequiredPipe(const RequiredPipeInfo &pipeInfo)
+{
+    requiredPipes_.push_back(pipeInfo);
+    AUDIO_INFO_LOG("Add required pipe, adapter: %{public}s, routeFlag: %{public}u",
+        pipeInfo.adapterName.c_str(), pipeInfo.routeFlag);
+}
+
+std::vector<RequiredPipeInfo> AudioCoreConfigManager::GetRequiredPipes()
+{
+    return requiredPipes_;
 }
 }
 }

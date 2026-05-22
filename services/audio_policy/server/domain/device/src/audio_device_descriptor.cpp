@@ -216,6 +216,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     highQualityRecordingSupported_ = false;
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
+    isSupportRemoteMultichannel_ = true;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -253,6 +254,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     highQualityRecordingSupported_ = false;
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
+    isSupportRemoteMultichannel_ = true;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -297,6 +299,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     deviceSupportMmap_ = deviceDescriptor.GetDeviceSupportMmap();
     glassesWearCount_ = deviceDescriptor.glassesWearCount_;
     hdPlaybackMode_ = deviceDescriptor.hdPlaybackMode_;
+    isSupportRemoteMultichannel_ = deviceDescriptor.isSupportRemoteMultichannel_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -342,6 +345,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     deviceSupportMmap_ = deviceDescriptor->GetDeviceSupportMmap();
     glassesWearCount_ = deviceDescriptor->glassesWearCount_;
     hdPlaybackMode_ = deviceDescriptor->hdPlaybackMode_;
+    isSupportRemoteMultichannel_ = deviceDescriptor->isSupportRemoteMultichannel_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -514,10 +518,9 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
-        parcel.WriteBool(modemCallSupported_) &&
-        parcel.WriteBool(highQualityRecordingSupported_) &&
-        parcel.WriteString(dmDeviceInfo_) && parcel.WriteInt32(hdPlaybackMode_);
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) && parcel.WriteBool(modemCallSupported_) &&
+        parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteString(dmDeviceInfo_) &&
+        parcel.WriteInt32(hdPlaybackMode_) && parcel.WriteBool(isSupportRemoteMultichannel_);
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -586,7 +589,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(modemCallSupported_) &&
         parcel.WriteBool(highQualityRecordingSupported_) &&
         parcel.WriteString(dmDeviceInfo_) &&
-        parcel.WriteInt32(hdPlaybackMode_);
+        parcel.WriteInt32(hdPlaybackMode_) &&
+        parcel.WriteBool(isSupportRemoteMultichannel_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -626,6 +630,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     highQualityRecordingSupported_ = parcel.ReadBool();
     dmDeviceInfo_ = parcel.ReadString();
     hdPlaybackMode_ = static_cast<HdPlaybackMode>(parcel.ReadInt32());
+    isSupportRemoteMultichannel_ = parcel.ReadBool();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -868,6 +873,9 @@ void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
             cap.channels = ConvertLayoutToAudioChannel(channelLayout);
             cap.channelLayout = channelLayout;
             capabilities_.push_back(cap);
+            AUDIO_INFO_LOG("capability: channelLayout[%{public}" PRIu64 "], channels[%{public}d], "
+                "samplingRate[%{public}d], format[%{public}d]", cap.channelLayout, cap.channels, cap.samplingRate,
+                cap.format);
         }
     } else if (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         capabilities_.clear();

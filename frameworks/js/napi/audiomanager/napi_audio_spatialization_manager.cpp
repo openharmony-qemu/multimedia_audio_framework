@@ -117,7 +117,7 @@ NapiAudioSpatializationManager* NapiAudioSpatializationManager::GetParamWithSync
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "GetParamWithSync fail to napi_get_cb_info");
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioSpatializationManager);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioSpatializationManager));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr &&
         napiAudioSpatializationManager->audioSpatializationMngr_ !=

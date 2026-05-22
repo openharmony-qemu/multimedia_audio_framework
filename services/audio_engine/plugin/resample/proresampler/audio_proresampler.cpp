@@ -24,7 +24,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr uint32_t FRAME_LEN_20MS = (20 * SOURCE_PERIOD_SIZE);
+
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t MAX_CHANNELS = 16;
 constexpr uint32_t MAX_SAMPLE_RATE = SAMPLE_RATE_384000;

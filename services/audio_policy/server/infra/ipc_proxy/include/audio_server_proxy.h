@@ -61,7 +61,7 @@ public:
     int32_t CheckRemoteDeviceStateProxy(std::string networkId, DeviceRole deviceRole, bool isStartDevice);
     void SetAudioParameterProxy(const std::string &key, const std::string &value);
     bool NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume);
-    void OffloadSetVolumeProxy(float volume, const std::string &deviceClass, const std::string &networkId);
+    void OffloadSetVolumeProxy(float volume, uint32_t renderId, const std::string &networkId);
     void SetVoiceVolumeProxy(float volume);
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);

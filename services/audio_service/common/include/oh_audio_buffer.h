@@ -47,8 +47,6 @@ enum AudioBufferHolder : uint32_t {
     AUDIO_SERVER_ONLY_WITH_SYNC,
     // Independent stream
     AUDIO_SERVER_INDEPENDENT,
-    // StaticRenderer Mode, shared from soundpool
-    AUDIO_APP_SHARED
 };
 
 enum StreamStatus : uint32_t {

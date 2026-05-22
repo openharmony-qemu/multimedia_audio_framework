@@ -2187,7 +2187,7 @@ bool VolumeUtils::IsVolumeFixEnable()
 
 AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)
 {
-    std::unordered_map<AudioStreamType, AudioVolumeType> map = GetVolumeMap();
+    std::unordered_map<AudioStreamType, AudioVolumeType>& map = GetVolumeMap();
     auto it = map.find(streamType);
     if (it != map.end()) {
         return it->second;

@@ -1701,6 +1701,9 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
     if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
     }
+    desc.deviceType_ =
+        (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?
+        DEVICE_TYPE_BLUETOOTH_A2DP_IN : desc.deviceType_;
 }
 
 // LCOV_EXCL_START

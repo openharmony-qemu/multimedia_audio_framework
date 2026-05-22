@@ -636,7 +636,7 @@ int32_t AudioFormatConverterImpl::WrapInputData(
         bytesPerFrame,
         inputFormat_.sampleRate);
 
-    int32_t dataDurationMs = static_cast<int32_t>(std::round(
+    uint32_t dataDurationMs = static_cast<uint32_t>(std::round(
         static_cast<double>(inputSize) * 1000.0 / (static_cast<double>(inputFormat_.sampleRate) * bytesPerFrame)));
     int32_t result = buffer.ResizePcmBuffer(inputFormat_, dataDurationMs);
     CHECK_AND_RETURN_RET_LOG(result == 0, ERR_MEMORY_ALLOC_FAILED, "WrapInputData: Memory allocation failed.");

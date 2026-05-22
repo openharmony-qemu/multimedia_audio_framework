@@ -975,16 +975,6 @@ void PulseAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPor
 {
 }
 
-void PulseAudioServiceAdapterImpl::EnableCaptureCollaboration(uint32_t sourcePortIndex,
-    uint32_t collabSourcePortIndex, SourceType sourceType)
-{
-}
-
-void PulseAudioServiceAdapterImpl::DisableCaptureCollaboration(uint32_t sourcePortIndex,
-    uint32_t collabSourcePortIndex, SourceType sourceType)
-{
-}
-
 void PulseAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex,
     const AudioModuleInfo &audioPortInfo)
 {

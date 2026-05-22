@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("../../appgallery.gni")
 import("../../audio_framework_test_sources.gni")
 import("../../config.gni")
-import("../../config.gni")
 import("../../ressche_part.gni")
 import("../../sensor.gni")
 import("../../window_manager.gni")
@@ -740,6 +739,16 @@ audio_ohos_library("audio_process_service") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
@@ -764,6 +773,7 @@ audio_ohos_library("audio_service") {
   sources = [
     "server/src/audio_effect_server.cpp",
     "server/src/audio_manager_listener.cpp",
+    "server/src/audio_privacy_manager_in_server.cpp",
     "server/src/audio_resource_service.cpp",
     "server/src/audio_server.cpp",
     "server/src/audio_server_callback.cpp",
@@ -799,6 +809,7 @@ audio_ohos_library("audio_service") {
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",

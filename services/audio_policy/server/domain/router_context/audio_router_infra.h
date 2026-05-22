@@ -65,6 +65,8 @@ public:
         int32_t uid, SelectDeviceType type);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetLatestStreamSelectDevice(SelectDeviceType type);
     void ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
+    void ClearSystemSelectDevice(SelectDeviceType type,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
@@ -124,8 +126,6 @@ private:
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void RefreshAppSelectDevice(SelectDeviceType type, int32_t uid,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    void ClearSystemSelectDevice(SelectDeviceType type,
-        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearAllAppSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetFirstRunningStreamDefaultDeviceNoLock(
@@ -135,6 +135,8 @@ private:
     int64_t GetCurrentTimeMs() const;
     std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
+    bool IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor> &right);
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);

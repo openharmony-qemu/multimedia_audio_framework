@@ -1542,13 +1542,11 @@ int32_t AudioServer::SetVoiceVolume(float volume)
     return ERROR;
 }
 
-int32_t AudioServer::OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId)
+int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    std::string info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId);
     if (sink == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
@@ -3740,6 +3738,14 @@ int32_t AudioServer::ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTr
     int32_t ret = ioctl(fd,  IOCTL_AUDIO_WAKEUP_TRACK_REPORT_CMD, &wakeupTrackInfo);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret >= 0, ERR_OPERATION_FAILED, (void)close(fd));
     (void)close(fd);
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudioBroker(), ERR_OPERATION_FAILED, "Not audio broker calling");
+    AudioService::GetInstance()->SetAncoRecordingConfigChanged(bundleNameList);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

@@ -54,6 +54,8 @@ private:
 };
 
 bool CheckAudioFormat(OH_AudioFormat audioFormat);
+bool IsHoaFormat(OH_AudioChannelLayout channelLayout);
+bool CheckHoaInputFormat(OH_AudioFormat audioFormat);
 
 } // namespace AudioStandard
 } // namespace OHOS

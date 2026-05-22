@@ -82,7 +82,9 @@ int32_t AudioInjectorPolicy::DeInit()
             VIRTUAL_INJECTOR, AUDIO_OUTPUT_FLAG_NORMAL);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(VIRTUAL_INJECTOR);
-        audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
+        if (pipeInfo != nullptr) {
+            audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
+        }
         isOpened_ = false;
         renderPortIdx_ = HDI_INVALID_ID;
     }

@@ -278,6 +278,7 @@ void AudioSettingProvider::ExecRegisterCb(const sptr<AudioSettingObserver> &obse
 ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType)
 {
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
+    CHECK_AND_RETURN_RET_LOG(observer != nullptr, ERR_NO_INIT, "observer is nullptr");
     auto uri = AssembleUri(observer->GetKey(), tableType);
     if (!isDataShareReady_) {
         AUDIO_WARNING_LOG("DataShareHelper is not ready");

@@ -20,6 +20,7 @@
 #include "hpae_gain_node.h"
 #include "hpae_render_effect_node.h"
 #include "hpae_loudness_gain_node.h"
+#include "hpae_session_effect_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,21 @@ public:
     int32_t CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode);
     int32_t DestroyNodes(uint32_t sessionId);
     int32_t CheckNodes(uint32_t sessionId);
+
+    // Session Effect management
+    int32_t CreateSessionEffectNode(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
+    int32_t DestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency);
+    bool HasSessionEffectNode(uint32_t sessionId) const;
+    int32_t SessionEffectStart(uint32_t sessionId);
+    int32_t SessionEffectStop(uint32_t sessionId);
+    int32_t SessionEffectFlush(uint32_t sessionId);
+    int32_t SessionEffectPause(uint32_t sessionId);
+    void SessionEffectPrepareMoveStream(uint32_t sessionId);
+    int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value);
+    std::shared_ptr<HpaeSessionEffectNode> GetSessionEffectNode(uint32_t sessionId) const;
+    std::shared_ptr<HpaeLoudnessGainNode> GetLoudnessGainNode(uint32_t sessionId) const;
+
 private:
     void ConnectMixerNode();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
@@ -69,6 +85,7 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> idGainMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeLoudnessGainNode>> idLoudnessGainNodeMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeSessionEffectNode>> idSessionEffectMap_;
     HpaeSinkInfo sinkInfo_;
     bool isConnectedToOutputCluster = false;
 };

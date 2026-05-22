@@ -567,7 +567,7 @@ void AudioCoreServicePrivateNotifyRouteUpdateFuzzTest(FuzzedDataProvider& fdp)
     audioCoreService->NotifyRouteUpdate(streamDescs);
 }
 
-void AudioCoreServicePrivateUpdateRemoteOffloadModuleNameFuzzTest(FuzzedDataProvider& fdp)
+void AudioCoreServicePrivateUpdateSpecialRemoteModuleNameFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
@@ -577,7 +577,7 @@ void AudioCoreServicePrivateUpdateRemoteOffloadModuleNameFuzzTest(FuzzedDataProv
     pipeInfo->moduleInfo_.className = "remote_offload";
     pipeInfo->moduleInfo_.name = OFFLOAD_PRIMARY_SPEAKER;
     std::string moduleName;
-    audioCoreService->UpdateRemoteOffloadModuleName(pipeInfo, moduleName);
+    audioCoreService->UpdateSpecialRemoteModuleName(pipeInfo, moduleName);
 }
 
 void AudioCoreServicePrivateGetRealPidFuzzTest(FuzzedDataProvider& fdp)
@@ -750,7 +750,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioCoreServicePrivateUpdateOffloadStateFuzzTest,
     AudioCoreServicePrivateNotifyRouteUpdateFuzzTest,
     AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest2,
-    AudioCoreServicePrivateUpdateRemoteOffloadModuleNameFuzzTest,
+    AudioCoreServicePrivateUpdateSpecialRemoteModuleNameFuzzTest,
     AudioCoreServicePrivateGetRealPidFuzzTest,
     AudioCoreServicePrivateSetWakeUpAudioCapturerFromAudioServerFuzzTest,
     AudioCoreServicePrivateWriteCapturerConcurrentEventFuzzTest,

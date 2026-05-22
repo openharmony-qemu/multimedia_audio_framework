@@ -208,6 +208,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
     "server/common/src/audio_group_handle.cpp",
+    "server/common/src/multi_condition_waiter.cpp",
     "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
     "server/service/service_main/src/audio_loopback_manager.cpp",
@@ -361,6 +362,16 @@ audio_ohos_library("audio_policy_service") {
 
   if (audio_framework_feature_multi_alarm_level) {
     defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
   }
 
   if (audio_framework_feature_input_independent_routing_rule) {

@@ -38,7 +38,7 @@ public:
     AudioStaticBufferProcessor(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
     ~AudioStaticBufferProcessor();
 
-    int32_t ProcessBufferSpeed(float speed);
+    int32_t ProcessBufferSpeed(float speed, float sonicPitch = PITCH_NORMAL);
     int32_t ProcessBufferPitch(float pitch);
     int32_t GetProcessedBuffer(uint8_t **bufferBase, size_t &bufferSize);
     void SaveProcessBuffer();

@@ -76,6 +76,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::samplingRateMap = {
     {"SAMPLE_RATE_96000", SAMPLE_RATE_96000},
     {"SAMPLE_RATE_176400", SAMPLE_RATE_176400},
     {"SAMPLE_RATE_192000", SAMPLE_RATE_192000},
+    {"SAMPLE_RATE_384000", SAMPLE_RATE_384000},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::encodingTypeMap = {
@@ -316,6 +317,18 @@ const std::map<std::string, int32_t> NapiAudioEnum::interruptRequestResultTypeMa
     {"INTERRUPT_REQUEST_REJECT", INTERRUPT_REQUEST_REJECT},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::playCaptureStartStateMap = {
+    {"SUCCESS", 0},
+    {"FAILED", 1},
+    {"NOT_AUTHORIZED", 2},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureModeMap = {
+    {"DEFAULT", 0x0},
+    {"MEDIA", 0x1},
+    {"EXCLUDING_SELF", 0x8000},
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::deviceFlagMap = {
     {"NONE_DEVICES_FLAG", NONE_DEVICES_FLAG},
     {"OUTPUT_DEVICES_FLAG", OUTPUT_DEVICES_FLAG},
@@ -467,10 +480,12 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"FAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD)},
     {"FULL_DUPLEX_STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD)},
     {"FULL_DUPLEX_NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD)},
-    {"ASR_WHISPER_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::ASR_WHISPER_MODE)},
-    {"TSE_DENOISE_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::TSE_DENOISE_MODE)},
-    {"NORMAL_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::NORMAL_REG_MODE)},
-    {"PHONE_CALL_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::PHONE_CALL_MODE)}
+    /* The mode is added to match the underlying algorithm */
+    {"ASR_WHISPER_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::ASR_WHISPER)},
+    {"TSE_DENOISE_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::TSE_DENOISE)},
+    {"NORMAL_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::NORMAL_REG)},
+    {"PHONE_CALL_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::PHONE_CALL)},
+    {"TOPMIC_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::TOPMIC_REG)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
@@ -751,6 +766,10 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, interruptRequestTypeMap)),
         DECLARE_NAPI_PROPERTY("InterruptRequestResultType",
             CreateEnumObject(env, interruptRequestResultTypeMap)),
+        DECLARE_NAPI_PROPERTY("PlayCaptureStartState",
+            CreateEnumObject(env, playCaptureStartStateMap)),
+        DECLARE_NAPI_PROPERTY("PlaybackCaptureMode",
+            CreateEnumObject(env, playbackCaptureModeMap)),
         DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap)),
         DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap)),
         DECLARE_NAPI_PROPERTY("AudioDataCallbackResult",
@@ -862,7 +881,7 @@ NapiAudioEnum* NapiAudioEnum::SetValue(napi_env env, napi_callback_info info, na
         return nullptr;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioEnum));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, napiAudioEnum, "napi_unwrap failed");
 
     napi_valuetype valueType = napi_undefined;
@@ -884,7 +903,7 @@ NapiAudioEnum* NapiAudioEnum::GetValue(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioEnum));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, napiAudioEnum, "napi_unwrap failed");
     if (!((napiAudioEnum != nullptr) && (napiAudioEnum->audioParameters_ != nullptr))) {
         AUDIO_ERR_LOG("GetValue fail to napi_unwrap");

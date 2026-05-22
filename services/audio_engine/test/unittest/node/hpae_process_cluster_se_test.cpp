@@ -661,6 +661,56 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseFlushStart_fromIdle, TestSize.Le
     EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
 
+// RATE-1: GetNodeInputFormatInfo returns 48kHz when SessionEffectNode is present
+HWTEST_F(HpaeProcessClusterSeTest, GetNodeInputFormatInfo_forces48kWhenSE, TestSize.Level0)
+{
+    // Setup: cluster with sink rate = 96kHz, loudness OFF
+    HpaeNodeInfo nodeInfo = MakeTestNodeInfo();
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInput = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    cluster->CreateNodes(sinkInput);
+    cluster->Connect(sinkInput);
+
+    // Without SE node, renderEffectNode clamps rate to 48k
+    AudioBasicFormat fmt;
+    cluster->GetNodeInputFormatInfo(TEST_SESSION_ID, fmt);
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
+
+    // Create SE node
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+
+    // With SE node, rate should be forced to 48k
+    cluster->GetNodeInputFormatInfo(TEST_SESSION_ID, fmt);
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
+}
+
+// DESTROY-1: DestroyNodes cleans idSessionEffectMap_ when SE node exists
+HWTEST_F(HpaeProcessClusterSeTest, DestroyNodes_cleansSessionEffectMap, TestSize.Level0)
+{
+    // Create SE node
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    ASSERT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+
+    // DestroyNodes should clean up SE node
+    int32_t ret = cluster_->DestroyNodes(TEST_SESSION_ID);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+
+    // Verify other maps also cleaned
+    EXPECT_EQ(cluster_->GetConverterNodeCount(), 0);
+    EXPECT_EQ(cluster_->GetGainNodeCount(), 0);
+    EXPECT_EQ(cluster_->GetLoudnessGainNodeCount(), 0);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

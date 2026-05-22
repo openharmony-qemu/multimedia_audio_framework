@@ -44,6 +44,8 @@ enum class AlgoType {
     AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE = 9,
  
     AUDIO_NODE_TYPE_PURE_VOICE_CHANGE = 10,
+
+    AUDIO_NODE_TYPE_HOA_RENDER = 11,
 };
 
 class AudioSuiteAlgoInterface {

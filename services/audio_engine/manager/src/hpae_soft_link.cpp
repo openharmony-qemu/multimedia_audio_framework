@@ -131,19 +131,23 @@ int32_t HpaeSoftLink::GetDeviceInfo()
     AUDIO_INFO_LOG("get device info");
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isDeviceOperationFinish_ = 0;
-    int32_t retGetSink = ERROR;
+    auto retGetSink = std::make_shared<int32_t>(ERROR);
+    auto retGetSource = std::make_shared<int32_t>(ERROR);
     IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(sinkIdx_,
-        [this, &retGetSink](const HpaeSinkInfo &sinkInfo, int32_t result) {
-            sinkInfo_ = sinkInfo;
-            retGetSink = result;
-            OnDeviceInfoReceived(SOFTLINK_SINK_OPERATION);
+        [weakThis = weak_from_this(), retGetSink](const HpaeSinkInfo &sinkInfo, int32_t result) {
+            auto sharedThis = weakThis.lock();
+            CHECK_AND_RETURN_LOG(sharedThis != nullptr, "HpaeSoftLink already destroyed");
+            *retGetSink = result;
+            sharedThis->sinkInfo_ = sinkInfo;
+            sharedThis->OnDeviceInfoReceived(SOFTLINK_SINK_OPERATION);
     });
-    int32_t retGetSource = ERROR;
     IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(sourceIdx_,
-        [this, &retGetSource](const HpaeSourceInfo &sourceInfo, int32_t result) {
-            sourceInfo_ = sourceInfo;
-            retGetSource = result;
-            OnDeviceInfoReceived(SOFTLINK_SOURCE_OPERATION);
+        [weakThis = weak_from_this(), retGetSource](const HpaeSourceInfo &sourceInfo, int32_t result) {
+            auto sharedThis = weakThis.lock();
+            CHECK_AND_RETURN_LOG(sharedThis != nullptr, "HpaeSoftLink already destroyed");
+            *retGetSource = result;
+            sharedThis->sourceInfo_ = sourceInfo;
+            sharedThis->OnDeviceInfoReceived(SOFTLINK_SOURCE_OPERATION);
     });
     bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return (isDeviceOperationFinish_ & SOFTLINK_SINK_OPERATION) &&
@@ -155,13 +159,13 @@ int32_t HpaeSoftLink::GetDeviceInfo()
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
             "get device info timeout", false),
         "get device info timeout");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(retGetSink == SUCCESS, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(*retGetSink == SUCCESS, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
                 BusinessScenario::QUERY, ERR_OPERATION_FAILED),
             "get sink info failed", false),
         "get sink info failed");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(retGetSource == SUCCESS, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(*retGetSource == SUCCESS, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
                 BusinessScenario::QUERY, ERR_OPERATION_FAILED),

@@ -63,6 +63,7 @@ public:
     int64_t GetOverflowCountSync();
     void SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted);
     void SetMuteHintSync(bool mute);
+    PlayCaptureStartState RequestPlaybackCaptureStartSync();
     taihe::array<AudioDeviceDescriptor> GetCurrentInputDevices();
     AudioCapturerChangeInfo GetCurrentAudioCapturerChangeInfo();
     void SetInputDeviceToAccessory();
@@ -120,6 +121,7 @@ private:
     std::shared_ptr<OHOS::AudioStandard::AudioCapturerReadCallback> capturerReadDataCallbackTaihe_ = nullptr;
 
     OHOS::AudioStandard::SourceType sourceType_;
+    bool isModernInnerCapturer_ = false;
     std::mutex mutex_;
 };
 } // namespace ANI::Audio

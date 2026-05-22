@@ -40,6 +40,7 @@ constexpr int32_t VALUE_ERROR = -62980098;
 constexpr int32_t RENDERER_FLAG = 0;
 // Writing only 500 buffers of data for test
 constexpr int32_t WRITE_BUFFERS_COUNT = 500;
+constexpr int32_t WRITE_BATCH_SIZE = 20;
 constexpr int32_t MAX_BUFFER_SIZE = 20000;
 constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
 constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;

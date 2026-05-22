@@ -25,6 +25,7 @@
 #include "audio_device_info.h"
 #include "audio_errors.h"
 #include "audio_debug_info.h"
+#include "audio_shared_memory.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -118,6 +119,7 @@ public:
         RenderTarget target = NORMAL_PLAYBACK;
 
         StaticBufferInfo staticBufferInfo{};
+        std::shared_ptr<AudioSharedMemory> staticSharedMemory = nullptr;
         std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
         bool backMute = false;
     };
@@ -378,7 +380,8 @@ public:
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 
-    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;
+    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) = 0;
 
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 

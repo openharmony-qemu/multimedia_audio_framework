@@ -294,6 +294,64 @@ std::string AudioSuiteUtil::FormatOptionsValue(const std::string &name, const st
     return result;
 }
 
+bool AudioSuiteUtil::IsHoaLayout(AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER1_FUMA:
+        case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER2_FUMA:
+        case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER3_FUMA:
+            return true;
+        default:
+            return false;
+    }
+}
+
+int16_t AudioSuiteUtil::GetAmbOrder(AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER1_FUMA:
+            return AUDIO_HVS_HOA_ORDER_1;
+        case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER2_FUMA:
+            return AUDIO_HVS_HOA_ORDER_2;
+        case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER3_FUMA:
+            return AUDIO_HVS_HOA_ORDER_3;
+        default:
+            return AUDIO_HVS_HOA_FORMAT_INVALID;
+    }
+}
+
+int32_t AudioSuiteUtil::GetHoaInputFormat(AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_HOA_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_SN3D:
+            return AUDIO_HVS_HOA_FORMAT_ACN_SN3D;
+        case CH_LAYOUT_HOA_ORDER1_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER2_ACN_N3D:
+        case CH_LAYOUT_HOA_ORDER3_ACN_N3D:
+            return AUDIO_HVS_HOA_FORMAT_ACN_N3D;
+        case CH_LAYOUT_HOA_ORDER1_FUMA:
+        case CH_LAYOUT_HOA_ORDER2_FUMA:
+        case CH_LAYOUT_HOA_ORDER3_FUMA:
+            return AUDIO_HVS_HOA_FORMAT_FUMA;
+        default:
+            return AUDIO_HVS_HOA_FORMAT_INVALID;
+    }
+}
+
 }
 }
 }

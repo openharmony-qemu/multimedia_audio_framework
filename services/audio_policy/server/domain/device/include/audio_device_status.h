@@ -143,8 +143,7 @@ private:
         AudioStreamDeviceChangeReasonExt &reason);
     int32_t UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &updatedDesc);
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
-    void UpdateAllUserSelectDevice(vector<shared_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
-        AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc);
+    void ClearPreferredDevices(AudioDeviceDescriptor &desc);
     bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
     void ClearActiveHfpDevice(AudioDeviceDescriptor &desc,

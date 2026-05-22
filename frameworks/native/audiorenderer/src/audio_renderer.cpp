@@ -577,7 +577,8 @@ bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate>
     const AppInfo &appInfo)
 {
     audioRenderer->rendererInfo_.isStatic = true;
-    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
+    audioRenderer->staticSharedMemory_ = sharedMemory;
+    audioRenderer->staticBufferInfo_.bufferSize_ = sharedMemory ? sharedMemory->GetSize() : 0;
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
     bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
@@ -782,7 +783,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     audioStream_->SetStreamTrackerState(false);
 
     if (rendererInfo_.isStatic) {
-        audioStream_->SetStaticBufferInfo(staticBufferInfo_);
+        audioStream_->SetStaticBufferInfo(staticBufferInfo_, staticSharedMemory_);
     }
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
@@ -1925,7 +1926,6 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
         ERROR_INVALID_PARAM, "loudnessGain set invalid");
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
@@ -1942,7 +1942,6 @@ float AudioRendererPrivate::GetLoudnessGain() const
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         0.0f, "low latency mode not supported");
 
@@ -3718,7 +3717,7 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
     if (info.rendererInfo.isStatic) {
-        audioStream->SetStaticBufferInfo(info.staticBufferInfo);
+        audioStream->SetStaticBufferInfo(info.staticBufferInfo, info.staticSharedMemory);
         audioStream->SetRenderRate(info.renderRate);
     }
     if (info.backMute) {

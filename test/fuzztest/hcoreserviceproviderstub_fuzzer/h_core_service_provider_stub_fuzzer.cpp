@@ -28,10 +28,17 @@ static int32_t NUM_32 = 32;
 namespace OHOS {
 namespace AudioStandard {
 
+static std::unique_ptr<AudioCoreService::EventEntry> CreateEventEntry(
+    const std::shared_ptr<AudioCoreService> &audioCoreService)
+{
+    return std::make_unique<AudioCoreService::EventEntry>(
+        audioCoreService, audioCoreService->readyConditionNotifier_);
+}
+
 void UpdateSessionOperation(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     uint32_t operation = provider.ConsumeIntegral<uint32_t>();
@@ -43,7 +50,7 @@ void UpdateSessionOperation(FuzzedDataProvider &provider)
 void ReloadCaptureSession(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     uint32_t operation = provider.ConsumeIntegralInRange<uint32_t>(0, 3);
@@ -53,7 +60,7 @@ void ReloadCaptureSession(FuzzedDataProvider &provider)
 void GetAdapterNameBySessionId(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     std::string name = provider.ConsumeRandomLengthString();
@@ -63,7 +70,7 @@ void GetAdapterNameBySessionId(FuzzedDataProvider &provider)
 void GetProcessDeviceInfoBySessionId(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     AudioDeviceDescriptor deviceInfo;
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
@@ -77,7 +84,7 @@ void GetProcessDeviceInfoBySessionId(FuzzedDataProvider &provider)
 void GenerateSessionId(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     coreServiceProviderWrapper.GenerateSessionId(sessionId);
@@ -86,7 +93,7 @@ void GenerateSessionId(FuzzedDataProvider &provider)
 void SetWakeUpAudioCapturerFromAudioServer(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     AudioProcessConfig config;
     int32_t ret = provider.ConsumeIntegral<int32_t>();
@@ -96,7 +103,7 @@ void SetWakeUpAudioCapturerFromAudioServer(FuzzedDataProvider &provider)
 void GetPaIndexByPortName(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     std::string portName = provider.ConsumeRandomLengthString();
     uint32_t ret = provider.ConsumeIntegral<uint32_t>();
@@ -106,7 +113,7 @@ void GetPaIndexByPortName(FuzzedDataProvider &provider)
 void A2dpOffloadGetRenderPosition(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t delayValue = provider.ConsumeIntegral<uint32_t>();
     uint64_t sendDataSize = provider.ConsumeIntegral<uint64_t>();
@@ -118,7 +125,7 @@ void A2dpOffloadGetRenderPosition(FuzzedDataProvider &provider)
 void SetRendererTarget(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t target = provider.ConsumeIntegralInRange<uint32_t>(0, 1);
     uint32_t lastTarget = provider.ConsumeIntegralInRange<uint32_t>(0, 1);
@@ -130,7 +137,7 @@ void SetRendererTarget(FuzzedDataProvider &provider)
 void StartInjection(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t streamId = provider.ConsumeIntegral<uint32_t>();
     int32_t ret = provider.ConsumeIntegral<int32_t>();
@@ -140,7 +147,7 @@ void StartInjection(FuzzedDataProvider &provider)
 void RemoveIdForInjector(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t streamId = provider.ConsumeIntegral<uint32_t>();
     coreServiceProviderWrapper.RemoveIdForInjector(streamId);
@@ -149,7 +156,7 @@ void RemoveIdForInjector(FuzzedDataProvider &provider)
 void ReleaseCaptureInjector(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     coreServiceProviderWrapper.ReleaseCaptureInjector();
 }
@@ -157,7 +164,7 @@ void ReleaseCaptureInjector(FuzzedDataProvider &provider)
 void RebuildCaptureInjector(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t streamId = provider.ConsumeIntegral<uint32_t>();
     coreServiceProviderWrapper.RebuildCaptureInjector(streamId);
@@ -166,7 +173,7 @@ void RebuildCaptureInjector(FuzzedDataProvider &provider)
 void OnCheckActiveMusicTime(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     std::string reason = provider.ConsumeRandomLengthString();
     coreServiceProviderWrapper.OnCheckActiveMusicTime(reason);
@@ -175,7 +182,7 @@ void OnCheckActiveMusicTime(FuzzedDataProvider &provider)
 void CaptureConcurrentCheck(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     coreServiceProviderWrapper.CaptureConcurrentCheck(sessionId);

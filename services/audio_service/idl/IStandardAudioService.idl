@@ -64,7 +64,7 @@ interface IStandardAudioService {
     void SetWakeupSourceCallback([in] IRemoteObject object);
     void UpdateSpatializationState([in] AudioSpatializationState spatializationState);
     void UpdateSpatialDeviceType([in] int spatialDeviceType);
-    void OffloadSetVolume([in] float volume, [in] String deviceClass, [in] String networkId);
+    void OffloadSetVolume([in] float volume, [in] unsigned int renderId, [in] String networkId);
     void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
     void SetSpatializationSceneType([in] int spatializationSceneType);
     void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);
@@ -145,6 +145,7 @@ interface IStandardAudioService {
     void SetAuxiliarySinkEnable([in] boolean isEnabled);
     void ReportPlaybackCaptureUserChoice([in] unsigned int sessionId, [in] boolean choice);
     [oneway] void ReportWakeupEvent([in] AudioWakeupTrackInfo audioWakeupTrackInfo);
+    void SetAncoRecordingConfigChanged([in] List<String> bundleNameList);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode

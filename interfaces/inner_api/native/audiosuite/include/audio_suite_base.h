@@ -42,6 +42,7 @@ typedef enum {
     NODE_TYPE_PURE_VOICE_CHANGE = 209,
     NODE_TYPE_GENERAL_VOICE_CHANGE = 210,
     NODE_TYPE_TEMPO_PITCH = 211,
+    NODE_TYPE_HOA_RENDER = 212,
 } AudioNodeType;
 
 inline static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
@@ -59,6 +60,7 @@ inline static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP =
     {NODE_TYPE_PURE_VOICE_CHANGE, "NODE_TYPE_PURE_VOICE_CHANGE"},
     {NODE_TYPE_GENERAL_VOICE_CHANGE, "NODE_TYPE_GENERAL_VOICE_CHANGE"},
     {NODE_TYPE_TEMPO_PITCH, "NODE_TYPE_TEMPO_PITCH"},
+    {NODE_TYPE_HOA_RENDER, "NODE_TYPE_HOA_RENDER"},
 };
 
 typedef enum {
