@@ -222,7 +222,7 @@ public:
         return pcmProcessVec_.end();
     }
 
-    float *GetPcmDataBuffer()
+    float *GetPcmDataBuffer() const
     {
         return pcmDataBuffer_.data();
     }
