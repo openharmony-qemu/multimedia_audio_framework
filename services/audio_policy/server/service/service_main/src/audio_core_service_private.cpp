@@ -2810,8 +2810,8 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
     if (result == REFETCH_DEVICE) {
-        FetchOutputDeviceAndRoute("ActivateOutputDevice");
-        FetchInputDeviceAndRoute("ActivateOutputDevice");
+        FetchOutputDeviceAndRoute("ActivateOutputDevice", reason);
+        FetchInputDeviceAndRoute("ActivateOutputDevice", reason);
     }
     return result;
 }
@@ -2824,8 +2824,8 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
     if (result == REFETCH_DEVICE) {
-        FetchOutputDeviceAndRoute("ActivateInputDevice");
-        FetchInputDeviceAndRoute("ActivateInputDevice");
+        FetchOutputDeviceAndRoute("ActivateInputDevice", reason);
+        FetchInputDeviceAndRoute("ActivateInputDevice", reason);
     }
     return result;
 }
