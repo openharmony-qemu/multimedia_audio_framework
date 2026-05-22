@@ -48,7 +48,6 @@ public:
     bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
     void LoadCollaborationConfig();
     int32_t GetCollaborationLatency();
-    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
     void UpdateCollaborativeState(CollaborationState state);
 
 private:
@@ -65,7 +64,7 @@ private:
     std::unordered_map<std::string, std::map<AudioTwsMode, int32_t>> collaborativeLatencyConfig_;
     std::unordered_map<std::string, std::string> collaborativeEarphoneNameConfig_;
     std::unordered_map<std::string, int32_t> collaborativeEarphoneProductConfig_;
-    std::unordered_mapmap<DeviceType, std::set<StreamUsage>> collAbsSupportedStreamUsageConfig_;
+    std::unordered_map<DeviceType, std::set<StreamUsage>> collAbsSupportedStreamUsageConfig_;
 };
 
 }  // namespace AudioStandard

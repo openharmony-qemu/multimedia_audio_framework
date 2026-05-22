@@ -50,7 +50,7 @@ namespace {
 constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
-HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInf, CollaborationState isCollaborationEnabled) :
+HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled) :
     HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
@@ -594,10 +594,10 @@ uint64_t HpaeRenderEffectNode::GetLatency(uint32_t sessionId)
     return audioEffectChainManager->GetLatency(std::to_string(sessionId)) * AUDIO_US_PER_MS;
 }
 
-void HpaeRenderEffectNode::SetDelayCountToeffectNode(int32_t delayCount)
+void HpaeRenderEffectNode::SetDelayCountToEffectNode(int32_t delayCount)
 {
     if (tempEffectBuffer_ != nullptr) {
-        tempEffectBuffer_->SetDelayCountToeffectNode(delayCount);
+        tempEffectBuffer_->SetDelayCountToEffectNode(delayCount);
     }
 }
 
@@ -608,7 +608,7 @@ HpaeTempEffectBuffer::HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo)
                         sizeof(float) *
                         static_cast<size_t>(EFFECT_TEMP_BUFFER_MAX_CACHE_SIZE) /
                         static_cast<size_t>(EFFECT_TEMP_BUFFER_MS_PER_SECOND);
-    AUDIO_INFO_LOG("Create ring cached, size:% {public}zu", size);
+    AUDIO_INFO_LOG("Create ring cached, size: %{public}zu", size);
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     waitCountThreshold_ = EFFECT_TEMP_BUFFER_DEFAULT_WAIT_COUNT;
@@ -748,8 +748,8 @@ void HpaeTempEffectBuffer::FillSilenceFramesForEffectNode(int32_t latencyMs)
     // check writeable size;
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "get writable size failed");
-    CHECK_AND_RETURN_LOG(result.size >= writeLen,
-        "Insufficient cache space: %{public}zu < %{public}zu", result.size, writeLen)
+    CHECK_AND_RETURN_LOG(result.size >= frameSize,
+        "Insufficient cache space: %{public}zu < %{public}zu", result.size, frameSize);
     
     std::vector<uint8_t> silenceData(frameSize, 0);
     // create silence frame
@@ -766,7 +766,7 @@ void HpaeTempEffectBuffer::ChangeLatencyByCollManagerForEffectNode(int32_t &late
     latency = audioCollaborationManager->GetCollaborationLatency();
 }
 
-void HpaeTempEffectBuffer::SetDelayCountToeffectNode(int32_t delayCount)
+void HpaeTempEffectBuffer::SetDelayCountToEffectNode(int32_t delayCount)
 {
     AUDIO_INFO_LOG("setDelayCount: %{public}d", delayCount);
     // reset status flag

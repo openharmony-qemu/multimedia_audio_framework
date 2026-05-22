@@ -137,11 +137,6 @@ int32_t AudioCollaborationManager::UpdateCollaborativeProductId(const std::strin
     return SUCCESS;
 }
 
-bool AudioCollaborationManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
-{
-    return streamUsage == STREAM_USAGE_MOVIE || streamUsage == STREAM_USAGE_MUSIC;
-}
-
 void AudioCollaborationManager::LoadCollaborationConfig()
 {
     std::lock_guard<std::mutex> lock(collaborationMutex_);
