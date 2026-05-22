@@ -26,7 +26,7 @@ function convertAudioInBackground(
   outputChannelLayout: number,
   outputSampleFormat: number,
   fd: number
-): ESObject {
+): string | null {
   let inputFormat: ESObject = {
     encodingType: inputEncodingType,
     samplingRate: inputSamplingRate,
@@ -76,7 +76,6 @@ enum AudioEncodingType {
 
 // Audio file info interface
 interface AudioFileInfo {
-  encodingType: number;
   samplingRate: number;
   channelLayout: number;
   sampleFormat: number;
@@ -631,7 +630,8 @@ export struct AudioConversion {
     const file = fs.openSync(this.selectedFileUri, fs.OpenMode.READ_ONLY);
 
     try {
-      const buffer = new ArrayBuffer(WAV_HEADER_SIZE);
+      const MAX_HEADER_SIZE = 4096; // 4KB should be enough for most WAV headers
+      const buffer = new ArrayBuffer(MAX_HEADER_SIZE);
       const bytesRead = fs.readSync(file.fd, buffer);
       fs.closeSync(file.fd);
 
@@ -641,12 +641,14 @@ export struct AudioConversion {
         return;
       }
 
-      const fileInfo = this.parseWavHeader(buffer);
+      // Create a view of the actual bytes read
+      const actualBuffer = buffer.slice(0, bytesRead);
+      const fileInfo = this.parseWavHeader(actualBuffer);
 
       if (fileInfo) {
         this.fileInfo = fileInfo;
         this.inputFormat = {
-          encodingType: fileInfo.encodingType,
+          encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
           samplingRate: fileInfo.samplingRate,
           channelLayout: fileInfo.channelLayout,
           sampleFormat: fileInfo.sampleFormat,
@@ -835,11 +837,11 @@ export struct AudioConversion {
       }
     }
 
-    // If we didn't find a data chunk, assume standard format
+    // If we didn't find a data chunk in the read buffer, we need to handle this case
     if (!foundDataChunk) {
       if (foundFmtChunk) {
-        // If we found fmt chunk but not data chunk, assume data starts at standard header size
-        headerSize = WAV_HEADER_SIZE;
+        Logger.warn(TAG, `Data chunk not found in buffer, using offset ${offset} as header size estimate`);
+        headerSize = offset;
         foundDataChunk = true;
       } else {
         Logger.error(TAG, 'Invalid WAV file header: missing data chunk and fmt chunk');
@@ -851,7 +853,6 @@ export struct AudioConversion {
     const channelLayout = this.getChannelLayoutFromChannels(numChannels);
 
     return {
-      encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
       samplingRate: samplingRate,
       channelLayout: channelLayout,
       sampleFormat: sampleFormat,
@@ -889,9 +890,6 @@ export struct AudioConversion {
         Logger.error(TAG, 'AudioConverterCreate failed: returned null');
         return false;
       }
-
-      // result is the internal output file path
-      // Show save dialog and copy file to user selected location (always save as WAV)
       await this.selectOutputFileAndSave(result as string, '.wav');
 
       return true;
