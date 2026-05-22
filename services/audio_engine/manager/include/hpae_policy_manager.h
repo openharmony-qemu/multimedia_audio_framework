@@ -80,6 +80,7 @@ public:
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
     void LoadCollaborationConfig();
     void SetBypassSpatializationForStereo(bool bypass);
+    int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled);
 private:
     HpaePolicyManager();
 };
