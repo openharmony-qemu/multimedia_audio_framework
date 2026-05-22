@@ -1168,32 +1168,41 @@ static int32_t AudioConverterRequestDataCallback(void *userData, const void **ou
     return bytesRead;
 }
 
-static bool ParseAudioFormat(napi_env env, napi_value formatObj, 
+static bool ParseAudioFormat(napi_env env, napi_value formatObj,
     OH_AudioConverter_Format* format)
 {
-    napi_value encodingTypeValue, samplingRateValue;
-    napi_value channelLayoutValue, sampleFormatValue;
-    
+    napi_value encodingTypeValue;
+    napi_value channelLayoutValue;
+    napi_value samplingRateValue;
+    napi_value sampleFormatValue;
+
     napi_get_named_property(env, formatObj, "encodingType", &encodingTypeValue);
     napi_get_named_property(env, formatObj, "samplingRate", &samplingRateValue);
     napi_get_named_property(env, formatObj, "channelLayout", &channelLayoutValue);
     napi_get_named_property(env, formatObj, "sampleFormat", &sampleFormatValue);
-    
-    uint32_t encodingType, samplingRate, channelLayout, sampleFormat;
-    if (napi_get_value_uint32(env, encodingTypeValue, &encodingType) != napi_ok) 
+
+    uint32_t encodingType;
+    uint32_t samplingRate;
+    uint32_t channelLayout;
+    uint32_t sampleFormat;
+    if (napi_get_value_uint32(env, encodingTypeValue, &encodingType) != napi_ok) {
         return false;
-    if (napi_get_value_uint32(env, samplingRateValue, &samplingRate) != napi_ok) 
+    }
+    if (napi_get_value_uint32(env, samplingRateValue, &samplingRate) != napi_ok) {
         return false;
-    if (napi_get_value_uint32(env, channelLayoutValue, &channelLayout) != napi_ok) 
+    }
+    if (napi_get_value_uint32(env, channelLayoutValue, &channelLayout) != napi_ok) {
         return false;
-    if (napi_get_value_uint32(env, sampleFormatValue, &sampleFormat) != napi_ok) 
+    }
+    if (napi_get_value_uint32(env, sampleFormatValue, &sampleFormat) != napi_ok) {
         return false;
-    
+    }
+
     format->encodingType = static_cast<OH_Audio_EncodingType>(encodingType);
     format->samplingRate = static_cast<OH_Audio_SampleRate>(samplingRate);
     format->channelLayout = static_cast<OH_AudioChannelLayout>(channelLayout);
     format->sampleFormat = static_cast<OH_Audio_SampleFormat>(sampleFormat);
-    
+
     return true;
 }
 
@@ -1209,7 +1218,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     OH_AudioConverter_Format inputFormat;
     OH_AudioConverter_Format outputFormat;
 
-    if (!ParseAudioFormat(env, argv[ARG_INDEX_INPUT_FORMAT], &inputFormat) || 
+    if (!ParseAudioFormat(env, argv[ARG_INDEX_INPUT_FORMAT], &inputFormat) ||
         !ParseAudioFormat(env, argv[ARG_INDEX_OUTPUT_FORMAT], &outputFormat)) {
         return CreateFinalResult(env, outputFile, outputFilePath);
     }
@@ -1222,13 +1231,13 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     if (ctx.inputData == nullptr) {
         return CreateFinalResult(env, outputFile, outputFilePath);
     }
-    OH_AudioConverter_Result createResult = 
+    OH_AudioConverter_Result createResult =
         OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     if (createResult != AUDIOCONVERTER_SUCCESS) {
         CleanupConversion(ctx, converter);
         return CreateFinalResult(env, outputFile, outputFilePath);
     }
-    OH_AudioConverter_Result callbackResult = 
+    OH_AudioConverter_Result callbackResult =
         OH_AudioConverter_SetInputCallback(converter, AudioConverterRequestDataCallback, &ctx);
     if (callbackResult != AUDIOCONVERTER_SUCCESS) {
         CleanupConversion(ctx, converter);
@@ -1246,7 +1255,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     return CreateFinalResult(env, outputFile, outputFilePath);
 }
 
- Test the function of outputting PrintInfo to a file.（fd >= 0）
+// Test the function of outputting PrintInfo to a file.（fd >= 0）
 static napi_value TestPrintInfoToFile(napi_env env, napi_callback_info info)
 {
     napi_value result;
