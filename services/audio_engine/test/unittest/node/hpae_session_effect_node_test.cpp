@@ -1184,11 +1184,11 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_returns_input_minus_output, Test
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    uint64_t expectedLatencyUs = byteLen * 1000000ULL / (TEST_CHANNEL_COUNT * sizeof(float) * 48000);
+    uint64_t oneFrameLatencyUs = byteLen * 1000000ULL / (TEST_CHANNEL_COUNT * sizeof(float) * 48000);
 
-    // After EnterState: in == out → GetLatency = 0
-    EXPECT_EQ(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
-    EXPECT_EQ(node_->GetLatency(), 0u);
+    // Entering ACTIVE consumes one algorithm output frame, leaving one fed input frame pending.
+    EXPECT_EQ(node_->GetTotalBytesIn() - node_->GetTotalBytesOut(), byteLen);
+    EXPECT_EQ(node_->GetLatency(), oneFrameLatencyUs);
 
     // Feed input directly (simulating preheat/prebuf) without corresponding output
     PcmBufferInfo bufInfo;
@@ -1198,7 +1198,7 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_returns_input_minus_output, Test
     HpaePcmBuffer extraBuf(bufInfo);
     node_->FeedInputFromBuffer(&extraBuf);
     EXPECT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
-    EXPECT_EQ(node_->GetLatency(), expectedLatencyUs);
+    EXPECT_EQ(node_->GetLatency(), oneFrameLatencyUs * 2);
 }
 
 // SE-L2: WARMING_UP DoProcess outputs silence directly, not via SignalProcess
@@ -1216,6 +1216,31 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_includes_preheat_silence, TestSi
     EXPECT_EQ(node_->GetTotalBytesOut(), 0u);
     // Time-based skip: verify DoProcess stayed in WARMING_UP (prebuf not filled)
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+}
+
+// SE-L2-ext: INTERCEPTING silence progress follows time-based skip, not every silence frame
+HWTEST_F(SessionEffectNodeStateTest, GetLatency_interceptingSilenceProgressMatchesSkipFrames, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    node_->SetPrebufFilledForTest(true);
+
+    size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    uint32_t capturedSkipFrames = 0;
+    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::NotNull()))
+        .WillOnce(testing::DoAll(
+            testing::WithArg<2>(testing::Invoke([&capturedSkipFrames](uint32_t *skipCount) {
+                capturedSkipFrames = *skipCount;
+            })),
+            testing::Return(0)));
+
+    node_->DoProcess();
+
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
+    EXPECT_EQ(node_->GetTotalBytesOut(), static_cast<size_t>(capturedSkipFrames) * byteLen);
+    EXPECT_EQ(node_->GetStatsForTest().framesOutput, 0);
 }
 
 // SE-L3: GetLatency zero when bypass (no effect instance)
