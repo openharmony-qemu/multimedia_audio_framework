@@ -382,6 +382,7 @@ public:
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.callbackType));
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.voipNoPrivacyFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.muteWhenInterruptFlag);
+        res = res && parcel.WriteBool(interrupt.behaviorFlags_.pauseWhenInterruptFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.aibaseMuteVoip);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.independentStrategy.concurrencyMode));
         res = res && parcel.WriteBool(interrupt.mixWithWakeUp);
@@ -422,6 +423,7 @@ public:
         interrupt.callbackType = static_cast<InterruptEventCallbackType>(parcel.ReadInt32());
         interrupt.behaviorFlags_.voipNoPrivacyFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.muteWhenInterruptFlag = parcel.ReadBool();
+        interrupt.behaviorFlags_.pauseWhenInterruptFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.aibaseMuteVoip = parcel.ReadBool();
         interrupt.independentStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
         interrupt.mixWithWakeUp = parcel.ReadBool();

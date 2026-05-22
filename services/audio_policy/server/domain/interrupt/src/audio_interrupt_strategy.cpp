@@ -180,6 +180,20 @@ void AudioInterruptStrategy::UpdateMuteAudioFocusStrategy(const AudioInterrupt &
     focusEntry.hintType = INTERRUPT_HINT_MUTE;
 }
 
+void AudioInterruptStrategy::UpdatePauseAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    if (focusEntry.actionOn != CURRENT || !currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag) {
+        return;
+    }
+
+    if (focusEntry.hintType == INTERRUPT_HINT_STOP) {
+        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+        AUDIO_INFO_LOG("Change STOP to PAUSE for streamId:%{public}u with PAUSE_WHEN_INTERRUPTED flag",
+            currentInterrupt.streamId);
+    }
+}
+
 void AudioInterruptStrategy::UpdateInterPhoneStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
@@ -236,6 +250,7 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     UpdateMicFocusByUid(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateInterPhoneStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
