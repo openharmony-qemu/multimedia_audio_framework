@@ -152,7 +152,6 @@ const vector<AudioStreamType> g_testAudioStreamTypes = {
     STREAM_ENFORCED_AUDIBLE,
     STREAM_DTMF,
     STREAM_TTS,
-    STREAM_ACCESSIBILITY,
     STREAM_RECORDING,
     STREAM_MOVIE,
     STREAM_GAME,
