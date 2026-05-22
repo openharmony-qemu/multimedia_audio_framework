@@ -157,7 +157,7 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     operation_ = operation;
     // fade in
     if (operation_ == OPERATION_STARTED) {
-        if (fadeInState_ == false) { 
+        if (fadeInState_ == false) {
             fadeInState_ = true;
         } else {
             AUDIO_WARNING_LOG("fadeInState already set");

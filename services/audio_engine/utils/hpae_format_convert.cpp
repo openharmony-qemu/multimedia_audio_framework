@@ -88,7 +88,7 @@ static void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1 << (BIT_16 - 1));
-        *(b++) = (int16_t)v;
+        *(b++) = static_cast<int16_t>(v);
     }
 }
 
@@ -107,7 +107,7 @@ static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        *(b++) = (int32_t)v;
+        *(b++) = static_cast<int32_t>(v);
     }
 }
 
