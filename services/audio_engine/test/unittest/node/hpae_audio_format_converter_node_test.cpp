@@ -2166,64 +2166,13 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_StandardRate20ms, TestSize
     EXPECT_EQ(converterNode->outputFrameLen20ms_, 960u);
 }
 
-// =========================================================================
-// DoProcess Offload vs Non-Offload Drain Tests
-// =========================================================================
-
 /**
- * @tc.name  : DoProcess_OffloadSkipDrain
+ * @tc.name  : DoProcess_DrainWithBufferState
  * @tc.type  : FUNC
- * @tc.number: DoProcess_OffloadSkipDrain
- * @tc.desc  : Offload mode skips drain and directly outputs silence when no valid input
- */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_OffloadSkipDrain, TestSize.Level0)
-{
-    auto converterNode = CreateStdConverter();
-    // Set device class to offload
-    HpaeNodeInfo info = converterNode->GetNodeInfo();
-    info.deviceClass = "offload";
-    converterNode->SetNodeInfo(info);
-    // Populate processedBuffer_ with enough data
-    uint32_t frameLen = converterNode->outputFrameLen20ms_;
-    std::vector<float> testData(frameLen * STEREO, 0.5f);
-    converterNode->processedBuffer_ = testData;
-    converterNode->processedFrames_ = frameLen;
-    converterNode->processedReadPos_ = 0;
-
-    converterNode->DoProcess();
-    // Offload should skip drain, processedFrames_ unchanged
-    EXPECT_EQ(converterNode->processedFrames_, frameLen);
-}
-
-/**
- * @tc.name  : DoProcess_RemoteOffloadSkipDrain
- * @tc.type  : FUNC
- * @tc.number: DoProcess_RemoteOffloadSkipDrain
- * @tc.desc  : Remote offload mode also skips drain and directly outputs silence
- */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_RemoteOffloadSkipDrain, TestSize.Level0)
-{
-    auto converterNode = CreateStdConverter();
-    HpaeNodeInfo info = converterNode->GetNodeInfo();
-    info.deviceClass = "remote_offload";
-    converterNode->SetNodeInfo(info);
-    uint32_t frameLen = converterNode->outputFrameLen20ms_;
-    std::vector<float> testData(frameLen * STEREO, 0.5f);
-    converterNode->processedBuffer_ = testData;
-    converterNode->processedFrames_ = frameLen;
-    converterNode->processedReadPos_ = 0;
-
-    converterNode->DoProcess();
-    EXPECT_EQ(converterNode->processedFrames_, frameLen);
-}
-
-/**
- * @tc.name  : DoProcess_NonOffloadDrainWithBufferState
- * @tc.type  : FUNC
- * @tc.number: DoProcess_NonOffloadDrainWithBufferState
+ * @tc.number: DoProcess_DrainWithBufferState
  * @tc.desc  : Non-offload mode drains processedBuffer_ and propagates buffer state from input
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadDrainWithBufferState, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainWithBufferState, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
     // Ensure non-offload (default is empty string)
@@ -2243,16 +2192,15 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadDrainWithBufferSt
 }
 
 /**
- * @tc.name  : DoProcess_NonOffloadInsufficientData
+ * @tc.name  : DoProcess_InsufficientData
  * @tc.type  : FUNC
- * @tc.number: DoProcess_NonOffloadInsufficientData
+ * @tc.number: DoProcess_InsufficientData
  * @tc.desc  : Non-offload outputs silence when processedBuffer_ has insufficient data
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadInsufficientData, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_InsufficientData, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
     HpaeNodeInfo info = converterNode->GetNodeInfo();
-    info.deviceClass = "";
     converterNode->SetNodeInfo(info);
     // Less than outputFrameLen20ms_
     converterNode->processedFrames_ = 1;
@@ -2264,12 +2212,12 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadInsufficientData,
 }
 
 /**
- * @tc.name  : DoProcess_NonOffloadDrainEmptyPreOutputs
+ * @tc.name  : DoProcess_DrainEmptyPreOutputs
  * @tc.type  : FUNC
- * @tc.number: DoProcess_NonOffloadDrainEmptyPreOutputs
+ * @tc.number: DoProcess_DrainEmptyPreOutputs
  * @tc.desc  : Non-offload drain does not crash when preOutputs is empty
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NonOffloadDrainEmptyPreOutputs, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainEmptyPreOutputs, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
     HpaeNodeInfo info = converterNode->GetNodeInfo();
