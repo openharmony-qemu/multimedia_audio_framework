@@ -105,7 +105,6 @@ void AudioUsbManagerGetUsbSoundCardMapFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioUsbManagerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)
 {
-
     EventFwk::CommonEventSubscribeInfo subscribeInfo;
     auto subscriber = std::make_shared<AudioUsbManager::EventSubscriber>(subscribeInfo);
     if (subscriber == nullptr) {
