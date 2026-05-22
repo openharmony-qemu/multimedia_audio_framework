@@ -50,6 +50,8 @@ static constexpr uint32_t CAMCORDER_MICIN_CHANNEL_COUNT = 4;
 static constexpr uint32_t AUDIO_D2D = 12;
 static constexpr uint32_t AUDIO_INPUT_INTERPHONE_TYPE = 1 << 16;
 AudioInputType hdiAudioInterphoneInputType = static_cast<AudioInputType>(AUDIO_INPUT_INTERPHONE_TYPE);
+
+static constexpr uint32_t MAX_CAMCORDER_METADATA_SIZE = 1024 * 1024;
 static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
@@ -251,6 +253,7 @@ void AudioCaptureSource::DeInit(void)
     captureInited_ = false;
     deviceManager->DestroyCapture(adapterNameCase_, hdiCaptureId_);
     audioCapture_ = nullptr;
+    ResetCamcorderMetadataCallbackState();
 
     IAudioSourceCallback *callback = nullptr;
     {
@@ -1307,6 +1310,96 @@ int32_t AudioCaptureSource::CreateCapture(void)
     return SUCCESS;
 }
 
+int32_t AudioCaptureSource::RegisterCamcorderMetadataCallback()
+{
+    AUDIO_INFO_LOG("RegisterCamcorderMetadataCallback enter.");
+    CHECK_AND_RETURN_RET(attr_.sourceType == SOURCE_TYPE_CAMCORDER, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(camcorderMetadataHdiCb_.serviceCallback_ == nullptr, SUCCESS);
+
+    camcorderMetadataHdiCb_ = {};
+    camcorderMetadataHdiCb_.callback_.CaptureCallback = &AudioCaptureSource::CamcorderMetadataCallbackEntry;
+    camcorderMetadataHdiCb_.serviceCallback_ = [this](
+        const CaptureCallbackType callbackType, const std::vector<uint8_t> &callbackData) {
+        HandleCamcorderMetadataCallback(callbackType, callbackData);
+    };
+    camcorderMetadataHdiCb_.source_ = this;
+
+    int32_t ret = audioCapture_->RegCallback(audioCapture_, &camcorderMetadataHdiCb_.callback_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "register camcorder metadata callback fail, ret: %{public}d", ret);
+    AUDIO_INFO_LOG("RegisterCamcorderMetadataCallback success.");
+    return SUCCESS;
+}
+
+int32_t AudioCaptureSource::CamcorderMetadataCallbackEntry(struct IAudioCaptureCallback *self,
+    enum AudioCaptureCallbackType type, const uint8_t *data, uint32_t dataLen)
+{
+    AUDIO_INFO_LOG("CamcorderMetadataCallbackEntry enter.");
+    auto *impl = reinterpret_cast<CamcorderMetadataHdiCallback *>(self);
+    CHECK_AND_RETURN_RET_LOG(impl != nullptr, ERR_OPERATION_FAILED, "camcorder callback impl is nullptr");
+    auto *source = reinterpret_cast<AudioCaptureSource *>(impl->source_);
+    CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_OPERATION_FAILED, "camcorder callback source is nullptr");
+    if (!source->started_.load()) {
+        return SUCCESS;
+    }
+    if (type != AUDIO_CAPTURE_CALLBACK_CAMCORDER_METADATA) {
+        return SUCCESS;
+    }
+    CHECK_AND_RETURN_RET_LOG(impl->serviceCallback_ != nullptr, ERR_OPERATION_FAILED, "service callback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(data != nullptr, ERR_INVALID_PARAM, "camcorder metadata is nullptr");
+    CHECK_AND_RETURN_RET_LOG(dataLen > 0 && dataLen <= MAX_CAMCORDER_METADATA_SIZE, ERR_INVALID_PARAM,
+        "camcorder metadata length is invalid, dataLen: %{public}u", dataLen);
+
+    std::vector<uint8_t> metadata(data, data + dataLen);
+    {
+        std::lock_guard<std::mutex> lock(source->camcorderMetadataMutex_);
+        source->camcorderMetadata_ = metadata;
+    }
+    source->DumpCamcorderMetadata(metadata.data(), dataLen);
+    impl->serviceCallback_(CB_CAMCORDER_METADATA, metadata);
+    return SUCCESS;
+}
+
+void AudioCaptureSource::DumpCamcorderMetadata(const uint8_t *data, uint32_t dataLen)
+{
+    CHECK_AND_RETURN_LOG(data != nullptr, "camcorder metadata payload is nullptr");
+    CHECK_AND_RETURN_LOG(dataLen > 0 && dataLen <= MAX_CAMCORDER_METADATA_SIZE,
+        "camcorder metadata length is invalid dataLen: %{public}u", dataLen);
+
+    FILE *dumpFile = nullptr;
+    std::string dumpFileName = DumpFileUtil::GetMetadataServerDumpFileName(halName_, attr_.sourceType,
+        ClockTime::GetRealNano());
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName, &dumpFile, OTHER_NATIVE_SERVICE);
+    DumpFileUtil::WriteDumpFile(dumpFile, const_cast<uint8_t *>(data), dataLen);
+    DumpFileUtil::CloseDumpFile(&dumpFile);
+}
+
+void AudioCaptureSource::HandleCamcorderMetadataCallback(const CaptureCallbackType type,
+    const std::vector<uint8_t> &data)
+{
+    AUDIO_INFO_LOG("HandleCamcorderMetadataCallback enter");
+    CHECK_AND_RETURN_LOG(!data.empty(), "invalid camcorder metadata callback data");
+    callback_.OnHdiCaptureCallback(type, data);
+}
+
+void AudioCaptureSource::ResetCamcorderMetadataCallbackState()
+{
+    camcorderMetadataHdiCb_ = {};
+    std::lock_guard<std::mutex> lock(camcorderMetadataMutex_);
+    camcorderMetadata_.clear();
+}
+
+bool AudioCaptureSource::GetLastCamcorderMetadata(std::vector<uint8_t> &metadata) const
+{
+    std::lock_guard<std::mutex> lock(camcorderMetadataMutex_);
+    if (camcorderMetadata_.empty()) {
+        return false;
+    }
+    metadata = camcorderMetadata_;
+    return true;
+}
+
 int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -1329,6 +1422,13 @@ int32_t AudioCaptureSource::InitCapture(void)
     }
     int32_t ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
+    if (attr_.sourceType == SOURCE_TYPE_CAMCORDER) {
+        int32_t callbackRet = RegisterCamcorderMetadataCallback();
+        if (callbackRet != SUCCESS) {
+            AUDIO_WARNING_LOG("register camcorder metadata callback fail, ret: %{public}d", callbackRet);
+            ResetCamcorderMetadataCallbackState();
+        }
+    }
     if (openMic_) {
         ret = SUCCESS;
         DeviceType inputDevice;

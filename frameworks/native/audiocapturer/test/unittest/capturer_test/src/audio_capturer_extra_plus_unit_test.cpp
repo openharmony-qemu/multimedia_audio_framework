@@ -190,6 +190,15 @@ public:
     FastStatus status_ = FASTSTATUS_INVALID;
 };
 
+class AudioCapturerMetaDataCallbackTestStub : public AudioCapturerMetaDataCallback {
+public:
+    void OnMetaData(const CaptureMetaDataType type, const std::vector<uint8_t> &data) override
+    {
+        (void)type;
+        (void)data;
+    }
+};
+
 /**
 * @tc.name  : Test MISCELLANEOUS classes of module audio capturer.
 * @tc.number: Audio_Capturer_MISCELLANEOUS_001.
@@ -710,6 +719,27 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_036, TestSize.Level1)
     capturer->FastStatusChangeCallback(FASTSTATUS_NORMAL);
     EXPECT_EQ(fastStatusChangeCallback->notifyCount_, 1);
     EXPECT_EQ(fastStatusChangeCallback->status_, FASTSTATUS_FAST);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_037
+ * @tc.desc  : Test AudioCapturerPrivate::SetCapturerMetaDataCallback stream validation.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_037, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MUSIC, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+
+    auto callback = std::make_shared<AudioCapturerMetaDataCallbackTestStub>();
+    int32_t ret = capturer->SetCapturerMetaDataCallback(callback);
+    EXPECT_EQ(ret, ERROR_ILLEGAL_STATE);
+
+    capturer->audioStream_ = std::make_shared<TestAudioStremStub>();
+    ret = capturer->SetCapturerMetaDataCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

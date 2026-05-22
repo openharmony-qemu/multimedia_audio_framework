@@ -159,6 +159,32 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
+int32_t CapturerInClientInner::OnMetaData(const std::vector<uint8_t> &metaData)
+{
+    CHECK_AND_RETURN_RET_LOG(!metaData.empty(), ERR_INVALID_PARAM, "metaData is empty");
+    DumpMetadata(metaData);
+    std::shared_ptr<AudioCapturerMetaDataCallback> metaCb;
+    {
+        std::lock_guard<std::mutex> lock(metaDataCbMutex_);
+        metaCb = metaDataCb_;
+    }
+    CHECK_AND_RETURN_RET_LOG(metaCb != nullptr, ERR_ILLEGAL_STATE, "metaDataCb_ is nullptr");
+    CaptureMetaDataType metaType = CaptureMetaDataType::CAMCORDER;
+    metaCb->OnMetaData(metaType, metaData);
+    return SUCCESS;
+}
+
+void CapturerInClientInner::DumpMetadata(const std::vector<uint8_t> &metaData)
+{
+    CHECK_AND_RETURN_LOG(!metaData.empty(), "metaData is empty");
+    if (dumpMetaDataFileName_.empty()) {
+        dumpMetaDataFileName_ = DumpFileUtil::GetMetadataClientDumpFileName(sessionId_);
+    }
+    DumpFileUtil::OpenDumpFile(
+        DumpFileUtil::DUMP_CLIENT_PARA, dumpMetaDataFileName_, &dumpMetaDataFile_, OTHER_NATIVE_SERVICE);
+    DumpFileUtil::WriteDumpFile(dumpMetaDataFile_, const_cast<uint8_t *>(metaData.data()), metaData.size());
+}
+
 void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
     AUDIO_INFO_LOG("PID:%{public}d UID:%{public}d.", clientPid, clientUid);
@@ -1172,6 +1198,15 @@ int32_t CapturerInClientInner::SetCapturerReadCallback(const std::shared_ptr<Aud
     return SUCCESS;
 }
 
+int32_t CapturerInClientInner::SetCapturerMetaDataCallback(
+    const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    std::lock_guard<std::mutex> lock(metaDataCbMutex_);
+    metaDataCb_ = callback;
+    return SUCCESS;
+}
+
 bool CapturerInClientInner::WaitForRunning()
 {
     Trace trace("CapturerInClientInner::WaitForRunning");
@@ -1601,6 +1636,8 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 {
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
+        DumpFileUtil::CloseDumpFile(&dumpMetaDataFile_);
+        dumpMetaDataFileName_.clear();
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_RELEASE_ILLEGAL_STATE, "Already release, do nothing", true);
         AUDIO_WARNING_LOG("Already release, do nothing");
@@ -1618,6 +1655,13 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         AUDIO_WARNING_LOG("Release while ipcStream is null");
     }
 
+    ReleaseCallbackResources(releaseRunner);
+    FinalizeRelease();
+    return true;
+}
+
+void CapturerInClientInner::ReleaseCallbackResources(bool releaseRunner)
+{
     // no lock, call release in any case, include blocked case.
     {
         std::lock_guard<std::mutex> runnerlock(runnerMutex_);
@@ -1642,18 +1686,23 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         }
     }
     paramsIsSet_ = false;
+}
 
-    std::unique_lock<std::mutex> lock(streamCbMutex_);
-    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-    if (streamCb != nullptr) {
-        AUDIO_INFO_LOG("Notify client the state is released");
-        streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
+void CapturerInClientInner::FinalizeRelease()
+{
+    {
+        std::unique_lock<std::mutex> lock(streamCbMutex_);
+        std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+        if (streamCb != nullptr) {
+            AUDIO_INFO_LOG("Notify client the state is released");
+            streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
+        }
     }
-    lock.unlock();
 
     UpdateTracker("RELEASED");
+    DumpFileUtil::CloseDumpFile(&dumpMetaDataFile_);
+    dumpMetaDataFileName_.clear();
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
-    return true;
 }
 
 bool CapturerInClientInner::FlushAudioStream()

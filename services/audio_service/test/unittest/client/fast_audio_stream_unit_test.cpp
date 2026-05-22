@@ -202,6 +202,21 @@ public:
     virtual void OnReadData(size_t length) {}
 };
 
+class FastAudioStreamMetaDataCallbackTest : public AudioCapturerMetaDataCallback {
+public:
+    virtual ~FastAudioStreamMetaDataCallbackTest() = default;
+    void OnMetaData(const CaptureMetaDataType type, const std::vector<uint8_t> &data) override
+    {
+        callbackCount_++;
+        lastType_ = type;
+        lastData_ = data;
+    }
+
+    int32_t callbackCount_ = 0;
+    CaptureMetaDataType lastType_ = CaptureMetaDataType::CAMCORDER;
+    std::vector<uint8_t> lastData_;
+};
+
 class AudioStreamCallbackTest : public AudioStreamCallback {
 public:
     virtual ~AudioStreamCallbackTest() = default;
@@ -2619,6 +2634,27 @@ HWTEST_F(FastSystemStreamUnitTest, FAS_UT_014_SetRebuildFlag_ProcessNull, TestSi
     fastAudioStream->processClient_ = nullptr;
     int32_t result = fastAudioStream->SetRebuildFlag();
     EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetCapturerMetaDataCallback API
+ * @tc.type  : FUNC
+ * @tc.number: FAS_UT_015_SetCapturerMetaDataCallback
+ * @tc.desc  : Test SetCapturerMetaDataCallback null and success branches
+ */
+HWTEST_F(FastSystemStreamUnitTest, FAS_UT_015_SetCapturerMetaDataCallback, TestSize.Level0)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    int32_t ret = fastAudioStream->SetCapturerMetaDataCallback(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    auto callback = std::make_shared<FastAudioStreamMetaDataCallbackTest>();
+    ret = fastAudioStream->SetCapturerMetaDataCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(fastAudioStream->metaDataCb_, callback);
 }
 } // namespace AudioStandard
 } // namespace OHOS

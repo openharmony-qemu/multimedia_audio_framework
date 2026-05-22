@@ -1027,6 +1027,13 @@ int32_t RendererInClientInner::SetCapturerReadCallback(const std::shared_ptr<Aud
     return ERROR;
 }
 
+int32_t RendererInClientInner::SetCapturerMetaDataCallback(
+    const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+{
+    AUDIO_ERR_LOG("SetCapturerMetaDataCallback is not supported");
+    return ERROR;
+}
+
 int32_t RendererInClientInner::GetRawBuffer(BufferDesc &bufDesc)
 {
     Trace trace("RendererInClientInner::GetRawBuffer");

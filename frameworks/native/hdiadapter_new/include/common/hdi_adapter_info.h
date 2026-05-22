@@ -91,6 +91,7 @@ enum HdiAdapterCallbackType : uint32_t {
     HDI_CB_CAPTURE_PARAM,
     HDI_CB_CAPTURE_WAKEUP,
     HDI_CB_CAPTURE_STATE_ALL,
+    HDI_CB_CAPTURE_CAMCORDER_METADATA,
     HDI_CB_TYPE_NUM,
 };
 
@@ -105,6 +106,10 @@ enum RenderCallbackType {
     CB_FLUSH_COMPLETED = 2,
     CB_RENDER_FULL = 3,
     CB_ERROR_OCCUR = 4,
+};
+
+enum CaptureCallbackType {
+    CB_CAMCORDER_METADATA = 0,
 };
 
 enum AudioFormatBit : uint32_t {

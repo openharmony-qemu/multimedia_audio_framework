@@ -136,6 +136,7 @@ public:
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
     AudioCaptureMode GetCaptureMode() override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;
@@ -272,6 +273,8 @@ private:
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
     std::shared_ptr<FastAudioStreamRenderCallback> spkProcClientCb_ = nullptr;
     std::shared_ptr<FastAudioStreamCaptureCallback> micProcClientCb_ = nullptr;
+    std::mutex metaDataCbMutex_;
+    std::shared_ptr<AudioCapturerMetaDataCallback> metaDataCb_ = nullptr;
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;

@@ -90,6 +90,7 @@
     *CheckInnerCapVoIP*;
     *ReportWakeupEvent*;
     *SetAncoRecordingConfigChanged*;
+    *OnMetaData*;
   local:
     *;
 };
