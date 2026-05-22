@@ -41,7 +41,7 @@ static void Write24Bit(uint8_t *p, uint32_t u)
 static void ConvertFromU8ToFloat(unsigned n, const uint8_t *a, float *b)
 {
     for (; n > 0; n--, a++, b++) {
-        *b = (float)(*a - (uint8_t)0x80U) * (1.0 / 0x80U);
+        *b = static_cast<float>(*a - static_cast<uint8_t>(0x80U)) * (1.0 / 0x80U);
     }
 }
 
@@ -79,7 +79,7 @@ static void ConvertFromFloatToU8(unsigned n, const float *a, uint8_t *b)
     for (; n > 0; n--) {
         float v = *(a++);
         // 127.0f: amplitude range of unsigned 8-bit, 128.0f: zero-point offset (0x80 = silence)
-        *(b++) = (uint8_t)(CapMax(v) * 127.0f + 128.0f);
+        *(b++) = static_cast<uint8_t>(CapMax(v) * 127.0f + 128.0f);
     }
 }
 
