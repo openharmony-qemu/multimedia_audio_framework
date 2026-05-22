@@ -152,7 +152,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
         perDev_ = perRecognitionDev_;
     }
     vector<shared_ptr<AudioDeviceDescriptor>> recordDevices =
-        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
+        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
     if (Util::IsScoSupportSource(sourceType)) {
         vector<shared_ptr<AudioDeviceDescriptor>> recognitionDescs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
