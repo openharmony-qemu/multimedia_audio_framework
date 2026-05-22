@@ -2737,7 +2737,7 @@ int32_t HpaeManager::UpdateCollaborativeState(CollaborationState isCollaboration
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(curCollAbSinkName);
         CHECK_AND_RETURN_LOG(rendererManager != nullptr,
             "can not find sink[%{public}s] in rendererManagerMap_", curCollAbSinkName.c_str());
-        rendererManager->UpdateCollaborativeState(state);
+        rendererManager->UpdateCollaborativeState(isCollaborationEnabled);
     };
     SendRequest(request, __func__);
     return SUCCESS;

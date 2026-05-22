@@ -2122,8 +2122,8 @@ void HpaeRendererManager::SetCollDelayCount()
         hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
     } else if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE),
-            "sceneCluster is nullptr, sceneType: %{public}d", static_cast<int32_t>(sceneType));
-        sceneClusterMap_[sceneType]->SetDelayCountToEffectNode(COLL_ALING_COUNT);
+            "sceneCluster is nullptr, sceneType: %{public}d", static_cast<int32_t>(HPAE_SCENE_COLLABORATIVE));
+        sceneClusterMap_[HPAE_SCENE_COLLABORATIVE]->SetDelayCountToEffectNode(COLL_ALING_COUNT);
     }
 }
 
