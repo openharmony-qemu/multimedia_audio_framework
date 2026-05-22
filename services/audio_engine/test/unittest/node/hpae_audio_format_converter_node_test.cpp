@@ -2170,14 +2170,13 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_StandardRate20ms, TestSize
  * @tc.name  : DoProcess_DrainWithBufferState
  * @tc.type  : FUNC
  * @tc.number: DoProcess_DrainWithBufferState
- * @tc.desc  : Non-offload mode drains processedBuffer_ and propagates buffer state from input
+ * @tc.desc  : mode drains processedBuffer_ and propagates buffer state from input
  */
 HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainWithBufferState, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
-    // Ensure non-offload (default is empty string)
+    // Ensure (default is empty string)
     HpaeNodeInfo info = converterNode->GetNodeInfo();
-    info.deviceClass = "";
     converterNode->SetNodeInfo(info);
     // Populate processedBuffer_ with enough data
     uint32_t frameLen = converterNode->outputFrameLen20ms_;
@@ -2187,7 +2186,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainWithBufferState, TestS
     converterNode->processedReadPos_ = 0;
 
     converterNode->DoProcess();
-    // Non-offload should drain, processedFrames_ becomes 0
+    // should drain, processedFrames_ becomes 0
     EXPECT_EQ(converterNode->processedFrames_, 0u);
 }
 
@@ -2195,7 +2194,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainWithBufferState, TestS
  * @tc.name  : DoProcess_InsufficientData
  * @tc.type  : FUNC
  * @tc.number: DoProcess_InsufficientData
- * @tc.desc  : Non-offload outputs silence when processedBuffer_ has insufficient data
+ * @tc.desc  : outputs silence when processedBuffer_ has insufficient data
  */
 HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_InsufficientData, TestSize.Level0)
 {
@@ -2215,13 +2214,12 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_InsufficientData, TestSize.
  * @tc.name  : DoProcess_DrainEmptyPreOutputs
  * @tc.type  : FUNC
  * @tc.number: DoProcess_DrainEmptyPreOutputs
- * @tc.desc  : Non-offload drain does not crash when preOutputs is empty
+ * @tc.desc  : drain does not crash when preOutputs is empty
  */
 HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainEmptyPreOutputs, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
     HpaeNodeInfo info = converterNode->GetNodeInfo();
-    info.deviceClass = "";
     converterNode->SetNodeInfo(info);
     uint32_t frameLen = converterNode->outputFrameLen20ms_;
     std::vector<float> testData(frameLen * STEREO, 0.5f);
