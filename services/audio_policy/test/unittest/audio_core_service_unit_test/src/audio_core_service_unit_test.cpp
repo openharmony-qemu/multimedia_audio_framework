@@ -8489,5 +8489,22 @@ HWTEST_F(AudioCoreServiceUnitTest, ReEvaluateVoipPrivacyMuteForCapturers_001, Te
 
     ClearCapturerStreamsFromPipeManager();
 }
+
+/**
+* @tc.name  : Test IsStreamSupportIndependentPipe
+* @tc.number: IsStreamSupportIndependentPipe_001
+* @tc.desc  : Test IsStreamSupportIndependentPipe with non-VOICE_CALL_ASSISTANT streamUsage (if false)
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportIndependentPipe_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // streamUsage != STREAM_USAGE_VOICE_CALL_ASSISTANT -> if false, returns false
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    bool result = audioCoreService->IsStreamSupportIndependentPipe(streamDesc);
+    EXPECT_FALSE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS
