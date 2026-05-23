@@ -15,12 +15,15 @@
 
 #include <securec.h>
 #include "audio_log.h"
+#include "istandard_client_tracker.h"
 #include "audio_policy_client_proxy.h"
 #include "audio_stream_manager.h"
 #include "audio_client_tracker_callback_service.h"
 #include "audio_client_tracker_callback_listener.h"
 #include <fuzzer/FuzzedDataProvider.h>
 #include <map>
+#include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 using namespace std;
@@ -46,16 +49,24 @@ public:
 class AudioClientTrackerFuzzTest : public AudioClientTracker {
     public:
         ~AudioClientTrackerFuzzTest() override = default;
-        virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
-        virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
-        virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
-        virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
-        virtual void SetLowPowerVolumeImpl(float volume) {};
-        virtual void GetLowPowerVolumeImpl(float &volume) {};
-        virtual void GetSingleStreamVolumeImpl(float &volume) {};
-        virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) {};
-        virtual void UnsetOffloadModeImpl() {};
-    };
+        void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override {};
+        void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override {};
+        void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override {};
+        void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override {};
+        void SetLowPowerVolumeImpl(float volume) override {};
+        void GetLowPowerVolumeImpl(float &volume) override {};
+        void GetSingleStreamVolumeImpl(float &volume) override {};
+        void SetOffloadModeImpl(int32_t state, bool isAppBack) override {};
+        void UnsetOffloadModeImpl() override {};
+};
+
+std::shared_ptr<ClientTrackerCallbackListener> CreateClientTrackerCallbackListener()
+{
+    static std::shared_ptr<AudioClientTracker> callback = std::make_shared<AudioClientTrackerFuzzTest>();
+    std::weak_ptr<AudioClientTracker> weakCallback = callback;
+    listener->SetClientTrackerCallback(weakCallback);
+    return std::make_shared<ClientTrackerCallbackListener>(listener);
+}
 
 const vector<AudioStreamType> g_testAudioStreamTypes = {
     STREAM_DEFAULT,
@@ -228,12 +239,14 @@ void AudioPolicyClientProxyOnAppVolumeChangedFuzzTest(FuzzedDataProvider& fdp)
     bool isUiUpdated = fdp.ConsumeBool();
     VolumeEvent volumeEvent(volType, volLevel, isUiUpdated);
     int32_t appUid = fdp.ConsumeIntegral<int32_t>();
+    volumeEvent.appUid = appUid;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
     }
-    audioPolicyClientProxy->OnAppVolumeChanged(appUid, volumeEvent);
+    audioPolicyClientProxy->OnSelfAppVolumeChanged(appUid, volumeEvent);
+    audioPolicyClientProxy->OnSystemAppVolumeChanged(appUid, volumeEvent);
 }
 
 void AudioPolicyClientProxyOnDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
@@ -561,9 +574,7 @@ void AudioPolicyClientProxyOnStreamVolumeChangeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::weak_ptr<AudioClientTrackerFuzzTest> callback = std::make_shared<AudioClientTrackerFuzzTest>();
-    listener->SetClientTrackerCallback(callback);
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
         || g_testAudioStreamUsages.size() == 0) {
         return;
@@ -578,7 +589,7 @@ void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest(FuzzedDataProvider& f
 
 void AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
         || g_testAudioStreamUsages.size() == 0) {
         return;
@@ -593,7 +604,7 @@ void AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest(FuzzedDataProvider&
 
 void AudioClientTrackerCallbackProxyPausedStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
         || g_testAudioStreamUsages.size() == 0) {
         return;
@@ -608,7 +619,7 @@ void AudioClientTrackerCallbackProxyPausedStreamImplFuzzTest(FuzzedDataProvider&
 
 void AudioClientTrackerCallbackProxyResumeStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
         || g_testAudioStreamUsages.size() == 0) {
         return;
@@ -623,7 +634,7 @@ void AudioClientTrackerCallbackProxyResumeStreamImplFuzzTest(FuzzedDataProvider&
 
 void AudioClientTrackerCallbackProxySetLowPowerVolumeImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
@@ -633,7 +644,7 @@ void AudioClientTrackerCallbackProxySetLowPowerVolumeImplFuzzTest(FuzzedDataProv
 
 void AudioClientTrackerCallbackProxyGetLowPowerVolumeImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
@@ -643,7 +654,7 @@ void AudioClientTrackerCallbackProxyGetLowPowerVolumeImplFuzzTest(FuzzedDataProv
 
 void AudioClientTrackerCallbackProxyGetSingleStreamVolumeImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
@@ -653,7 +664,7 @@ void AudioClientTrackerCallbackProxyGetSingleStreamVolumeImplFuzzTest(FuzzedData
 
 void AudioClientTrackerCallbackProxySetOffloadModeImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
@@ -664,7 +675,7 @@ void AudioClientTrackerCallbackProxySetOffloadModeImplFuzzTest(FuzzedDataProvide
 
 void AudioClientTrackerCallbackProxyUnsetOffloadModeImplFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
     if (clientTrackerCallbackListener == nullptr) {
         return;
     }
@@ -729,7 +740,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::Init();
     return 0;
