@@ -14,32 +14,25 @@ import { taskpool } from '@kit.ArkTS';
 
 const TAG: string = 'AudioConversion';
 
+// Audio format interface for native layer interaction
+interface NativeAudioFormat {
+  encodingType: number;
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+}
+
+// Audio conversion parameters interface
+interface AudioConversionParams {
+  inputFormat: NativeAudioFormat;
+  outputFormat: NativeAudioFormat;
+  fd: number;
+}
+
 // Concurrent function for background audio conversion
 @Concurrent
-function convertAudioInBackground(
-  inputEncodingType: number,
-  inputSamplingRate: number,
-  inputChannelLayout: number,
-  inputSampleFormat: number,
-  outputEncodingType: number,
-  outputSamplingRate: number,
-  outputChannelLayout: number,
-  outputSampleFormat: number,
-  fd: number
-): string {
-  let inputFormat: ESObject = {
-    encodingType: inputEncodingType,
-    samplingRate: inputSamplingRate,
-    channelLayout: inputChannelLayout,
-    sampleFormat: inputSampleFormat
-  };
-  let outputFormat: ESObject = {
-    encodingType: outputEncodingType,
-    samplingRate: outputSamplingRate,
-    channelLayout: outputChannelLayout,
-    sampleFormat: outputSampleFormat
-  };
-  return audioNapi.audioFormatConverter(inputFormat, outputFormat, fd);
+function convertAudioInBackground(params: AudioConversionParams): string {
+  return audioNapi.audioFormatConverter(params.inputFormat, params.outputFormat, params.fd);
 }
 
 // Sample format enum
@@ -155,7 +148,6 @@ interface AudioConverterFormat {
   samplingRate: number;
   channelLayout: number;
   sampleFormat: number;
-  headerSize: number;
 }
 
 @Builder
@@ -168,7 +160,7 @@ export { AudioConversionBuilder };
 @Component
 export struct AudioConversion {
   pageInfos: NavPathStack = new NavPathStack();
-  outputFilePath: string = '';
+  @State outputFilePath: string = '';
   @State message: string = '音频格式转换';
   @State createResult: string = '';
   @State processResult: string = '';
@@ -176,19 +168,18 @@ export struct AudioConversion {
   @State selectedFileName: string = '';
   @State fileInfo: AudioFileInfo | null = null;
   @State outputFileName: string = '';
+  @State wavHeaderSize: number = 0; // WAV file header size, only valid for WAV input
   @State inputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
     samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
     channelLayout: 3,
-    sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE,
-    headerSize: 0
+    sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE
   };
   @State outputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
     samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_48000,
     channelLayout: 3,
-    sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE,
-    headerSize: 0
+    sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE
   };
   @State isConverting: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
@@ -262,8 +253,7 @@ export struct AudioConversion {
           encodingType: newFormat.encodingType,
           samplingRate: newFormat.samplingRate,
           channelLayout: newFormat.channelLayout,
-          sampleFormat: newFormat.sampleFormat,
-          headerSize: newFormat.headerSize
+          sampleFormat: newFormat.sampleFormat
         };
       }, false)
     }
@@ -360,8 +350,7 @@ export struct AudioConversion {
             encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
             samplingRate: rates[index],
             channelLayout: isInput ? this.inputFormat.channelLayout : this.outputFormat.channelLayout,
-            sampleFormat: isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat,
-            headerSize: isInput ? this.inputFormat.headerSize : this.outputFormat.headerSize
+            sampleFormat: isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat
           };
           onChange(newFormat);
           Logger.info(TAG,
@@ -427,8 +416,7 @@ export struct AudioConversion {
             encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
             samplingRate: isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate,
             channelLayout: layouts[index],
-            sampleFormat: isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat,
-            headerSize: isInput ? this.inputFormat.headerSize : this.outputFormat.headerSize
+            sampleFormat: isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat
           };
           onChange(newFormat);
           Logger.info(TAG,
@@ -470,8 +458,7 @@ export struct AudioConversion {
             encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
             samplingRate: isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate,
             channelLayout: isInput ? this.inputFormat.channelLayout : this.outputFormat.channelLayout,
-            sampleFormat: sampleFormats[index],
-            headerSize: isInput ? this.inputFormat.headerSize : this.outputFormat.headerSize
+            sampleFormat: sampleFormats[index]
           };
           onChange(newFormat);
           Logger.info(TAG,
@@ -647,12 +634,12 @@ export struct AudioConversion {
 
       if (fileInfo) {
         this.fileInfo = fileInfo;
+        this.wavHeaderSize = fileInfo.headerSize; // Store WAV header size separately
         this.inputFormat = {
           encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
           samplingRate: fileInfo.samplingRate,
           channelLayout: fileInfo.channelLayout,
-          sampleFormat: fileInfo.sampleFormat,
-          headerSize: fileInfo.headerSize
+          sampleFormat: fileInfo.sampleFormat
         };
 
         this.createResult =
@@ -815,11 +802,11 @@ export struct AudioConversion {
     while (offset <= buffer.byteLength - 8) {
       const chunkId = dv.getUint32(offset, true);
       const chunkSize = dv.getUint32(offset + 4, true);
-      
+
       // Convert chunk ID to string for logging
       chunkIdStr = String.fromCharCode(
         (chunkId >> 24) & 0xFF,
-        (chunkId >> 16) & 0xFF, 
+        (chunkId >> 16) & 0xFF,
         (chunkId >> 8) & 0xFF,
         chunkId & 0xFF
       );
@@ -879,23 +866,27 @@ export struct AudioConversion {
     let path: string = new fileUri.FileUri(this.selectedFileUri).path;
     let file = fs.openSync(path, fs.OpenMode.READ_ONLY);
 
-    // Move file position to PCM data start position
-    fs.lseek(file.fd, this.inputFormat.headerSize, 0);
+    // Move file position to PCM data start position (skip WAV header)
+    fs.lseek(file.fd, this.wavHeaderSize, 0);
 
     try {
       // Execute conversion in background thread using taskpool
-      const result = await taskpool.execute(
-        convertAudioInBackground,
-        this.inputFormat.encodingType,
-        this.inputFormat.samplingRate,
-        this.inputFormat.channelLayout,
-        this.inputFormat.sampleFormat,
-        this.outputFormat.encodingType,
-        this.outputFormat.samplingRate,
-        this.outputFormat.channelLayout,
-        this.outputFormat.sampleFormat,
-        file.fd
-      );
+      const conversionParams: AudioConversionParams = {
+        inputFormat: {
+          encodingType: this.inputFormat.encodingType,
+          samplingRate: this.inputFormat.samplingRate,
+          channelLayout: this.inputFormat.channelLayout,
+          sampleFormat: this.inputFormat.sampleFormat
+        },
+        outputFormat: {
+          encodingType: this.outputFormat.encodingType,
+          samplingRate: this.outputFormat.samplingRate,
+          channelLayout: this.outputFormat.channelLayout,
+          sampleFormat: this.outputFormat.sampleFormat
+        },
+        fd: file.fd
+      };
+      const result = await taskpool.execute(convertAudioInBackground, conversionParams);
 
       if (!result) {
         this.createResult = 'Conversion failed';
