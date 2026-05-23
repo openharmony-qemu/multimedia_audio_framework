@@ -22,11 +22,27 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)();
+const size_t MAX_STRING_LEN = 64;
+typedef void (*TestPtr)(FuzzedDataProvider&);
+
+template<typename T>
+T ConsumeEnum(FuzzedDataProvider& fdp)
+{
+    return static_cast<T>(fdp.ConsumeIntegral<int32_t>());
+}
+
+template<typename T>
+T PickValue(FuzzedDataProvider& fdp, const vector<T>& values)
+{
+    return values[fdp.ConsumeIntegralInRange<size_t>(0, values.size() - 1)];
+}
+
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
+{
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    return value.empty() ? fallback : value;
+}
 
 const vector<StreamUsage> g_testAudioStreamUsages = {
     STREAM_USAGE_INVALID,
@@ -163,33 +179,40 @@ public:
     IStandardSleAudioOperationCallbackFuzzTest() {}
     virtual ~IStandardSleAudioOperationCallbackFuzzTest() {}
 
-    void GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override {}
-    void GetSleVirtualAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override {}
-    bool IsInBandRingOpen(const std::string &device) override
-    {
-        return false;
-    }
-    uint32_t GetSupportStreamType(const std::string &device) override
+    int32_t GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override
     {
         return 0;
     }
-    int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType) override
+    int32_t GetSleVirtualAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override
     {
         return 0;
     }
-    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs) override
+    int32_t IsInBandRingOpen(const std::string &device, bool &ret) override
     {
         return 0;
     }
-    int32_t StopPlaying(const std::string &device, uint32_t streamType) override
+    int32_t GetSupportStreamType(const std::string &device, uint32_t &retType) override
     {
         return 0;
     }
-    int32_t ConnectAllowedProfiles(const std::string &remoteAddr) override
+    int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType, int32_t &ret) override
     {
         return 0;
     }
-    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override
+    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs, int32_t &ret) override
+    {
+        return 0;
+    }
+    int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t &ret) override
+    {
+        return 0;
+    }
+    int32_t ConnectAllowedProfiles(const std::string &remoteAddr, int32_t &ret) override
+    {
+        return 0;
+    }
+    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType,
+        int32_t &ret) override
     {
         return 0;
     }
@@ -197,42 +220,12 @@ public:
     {
         return 0;
     }
-
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override
     {
         delayValue = 0;
         return 0;
     }
 };
-
-template<class T>
-uint32_t GetArrLength(T& arr)
-{
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
-}
-
-template<class T>
-T GetData()
-{
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (g_dataSize < g_pos) {
-        return object;
-    }
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
-}
 
 void SleAudioDeviceManagerGetSleAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
 {
@@ -242,6 +235,7 @@ void SleAudioDeviceManagerGetSleAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
         manager.SetSleAudioOperationCallback(callback);
     }
     std::vector<AudioDeviceDescriptor> devices;
+    devices[0].deviceType_ = PickValue(fdp, g_testDeviceTypes);
     manager.GetSleAudioDeviceList(devices);
 }
 
@@ -253,6 +247,7 @@ void SleAudioDeviceManagerGetSleVirtualAudioDeviceListFuzzTest(FuzzedDataProvide
         manager.SetSleAudioOperationCallback(callback);
     }
     std::vector<AudioDeviceDescriptor> devices;
+    devices[0].deviceType_ = PickValue(fdp, g_testDeviceTypes);
     manager.GetSleVirtualAudioDeviceList(devices);
 }
 
@@ -263,7 +258,7 @@ void SleAudioDeviceManagerIsInBandRingOpenFuzzTest(FuzzedDataProvider& fdp)
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string device;
+    std::string device = ConsumeString(fdp, "speaker");
     manager.IsInBandRingOpen(device);
 }
 
@@ -274,7 +269,7 @@ void SleAudioDeviceManagerGetSupportStreamTypeFuzzTest(FuzzedDataProvider& fdp)
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string device;
+    std::string device = ConsumeString(fdp, "speaker");
     manager.GetSupportStreamType(device);
 }
 
@@ -289,10 +284,10 @@ void SleAudioDeviceManagerSetActiveDeviceFuzzTest(FuzzedDataProvider& fdp)
     if (g_testAudioStreamUsages.size() == 0 || g_testSourceTypes.size() == 0) {
         return;
     }
-    StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
+    StreamUsage streamUsage = PickValue(fdp, g_testAudioStreamUsages);
     manager.SetActiveDevice(deviceDesc, streamUsage);
     AudioDeviceDescriptor deviceDescBySource;
-    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
+    SourceType sourceType = PickValue(fdp, g_testSourceTypes);
     manager.SetActiveDevice(deviceDescBySource, sourceType);
 }
 
@@ -307,10 +302,10 @@ void SleAudioDeviceManagerStartPlayingFuzzTest(FuzzedDataProvider& fdp)
     if (g_testAudioStreamUsages.size() == 0 || g_testSourceTypes.size() == 0) {
         return;
     }
-    StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
+    StreamUsage streamUsage = PickValue(fdp, g_testAudioStreamUsages);
     manager.StartPlaying(deviceDesc, streamUsage);
     AudioDeviceDescriptor deviceDescBySource;
-    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
+    SourceType sourceType = PickValue(fdp, g_testSourceTypes);
     manager.StartPlaying(deviceDescBySource, sourceType);
 }
 
@@ -325,10 +320,10 @@ void SleAudioDeviceManagerStopPlayingFuzzTest(FuzzedDataProvider& fdp)
     if (g_testAudioStreamUsages.size() == 0 || g_testSourceTypes.size() == 0) {
         return;
     }
-    StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
+    StreamUsage streamUsage = PickValue(fdp, g_testAudioStreamUsages);
     manager.StopPlaying(deviceDesc, streamUsage);
     AudioDeviceDescriptor deviceDescBySource;
-    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
+    SourceType sourceType = PickValue(fdp, g_testSourceTypes);
     manager.StopPlaying(deviceDescBySource, sourceType);
 }
 
@@ -339,7 +334,7 @@ void SleAudioDeviceManagerConnectAllowedProfilesFuzzTest(FuzzedDataProvider& fdp
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string remoteAddr;
+    std::string remoteAddr = ConsumeString(fdp, "macaddress");
     manager.ConnectAllowedProfiles(remoteAddr);
 }
 
@@ -350,12 +345,12 @@ void SleAudioDeviceManagerSetDeviceAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string device;
+    std::string device = ConsumeString(fdp, "speaker");
     if (g_testAudioStreamTypes.size() == 0) {
         return;
     }
-    AudioStreamType streamType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    int32_t volume = GetData<int32_t>();
+    AudioStreamType streamType = PickValue(fdp, g_testAudioStreamTypes);
+    int32_t volume = fdp.ConsumeIntegral<int32_t>();
     manager.SetDeviceAbsVolume(device, streamType, volume);
 }
 
@@ -370,11 +365,11 @@ void SleAudioDeviceManagerSendUserSelectionFuzzTest(FuzzedDataProvider& fdp)
     if (g_testAudioStreamUsages.size() == 0 || g_testSourceTypes.size() == 0) {
         return;
     }
-    StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
-    manager.SendUserSelection(deviceDesc, streamUsage, USER_SELECT_SLE);
+    StreamUsage streamUsage = PickValue(fdp, g_testAudioStreamUsages);
+    manager.SendUserSelection(deviceDesc, streamUsage);
     AudioDeviceDescriptor deviceDescBySource;
-    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
-    manager.SendUserSelection(deviceDescBySource, sourceType, USER_SELECT_SLE);
+    SourceType sourceType = PickValue(fdp, g_testSourceTypes);
+    manager.SendUserSelection(deviceDescBySource, sourceType);
 }
 
 void SleAudioDeviceManagerGetStreamUsagesBySleStreamTypeFuzzTest(FuzzedDataProvider& fdp)
@@ -388,8 +383,7 @@ void SleAudioDeviceManagerGetStreamUsagesBySleStreamTypeFuzzTest(FuzzedDataProvi
     if (g_testSleAudioStreamTypes.size() == 0) {
         return;
     }
-    uint32_t streamType = static_cast<uint32_t>(
-        g_testSleAudioStreamTypes[GetData<uint32_t>() % g_testSleAudioStreamTypes.size()]);
+    uint32_t streamType = static_cast<uint32_t>(PickValue(fdp, g_testSleAudioStreamTypes));
     manager.GetStreamUsagesBySleStreamType(streamType);
 }
 
@@ -404,8 +398,7 @@ void SleAudioDeviceManagerGetSourceTypesBySleStreamTypeFuzzTest(FuzzedDataProvid
     if (g_testSleAudioStreamTypes.size() == 0) {
         return;
     }
-    uint32_t streamType = static_cast<uint32_t>(
-        g_testSleAudioStreamTypes[GetData<uint32_t>() % g_testSleAudioStreamTypes.size()]);
+    uint32_t streamType = static_cast<uint32_t>(PickValue(fdp, g_testSleAudioStreamTypes));
     manager.GetSourceTypesBySleStreamType(streamType);
 }
 
@@ -421,7 +414,7 @@ void SleAudioDeviceManagerAddNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp)
     if (g_testDeviceTypes.size() == 0) {
         return;
     }
-    deviceDesc.deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    deviceDesc.deviceType_ = PickValue(fdp, g_testDeviceTypes);
     manager.AddNearlinkDevice(deviceDesc);
     manager.RemoveNearlinkDevice(deviceDesc);
 }
@@ -441,22 +434,22 @@ void SleAudioDeviceManagerUpdateSleStreamTypeCountFuzzTest(FuzzedDataProvider& f
         manager.SetSleAudioOperationCallback(callback);
     }
     std::shared_ptr<AudioStreamDescriptor> streamDesc = make_shared<AudioStreamDescriptor>();
-    bool isRemoved = GetData<bool>();
+    bool isRemoved = fdp.ConsumeBool();
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = make_shared<AudioDeviceDescriptor>();
     if (g_testDeviceTypes.size() == 0 || testAudioStreamStatuses.size() == 0) {
         return;
     }
-    bool isDeviceType = GetData<bool>();
+    bool isDeviceType = fdp.ConsumeBool();
     if (isDeviceType) {
         deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
         streamDesc->audioMode_ = AUDIO_MODE_RECORD;
     } else {
-        deviceDesc->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+        deviceDesc->deviceType_ = PickValue(fdp, g_testDeviceTypes);
         streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     }
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
     streamDesc->oldDeviceDescs_.push_back(deviceDesc);
-    streamDesc->streamStatus_ = testAudioStreamStatuses[GetData<uint32_t>() % testAudioStreamStatuses.size()];
+    streamDesc->streamStatus_ = PickValue(fdp, testAudioStreamStatuses);
 
     manager.UpdateSleStreamTypeCount(streamDesc, isRemoved);
 }
@@ -474,10 +467,10 @@ void SleAudioDeviceManagerSetNearlinkDeviceMuteFuzzTest(FuzzedDataProvider& fdp)
     }
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = make_pair(configInfo, configInfo);
-    std::string device = "test_device";
+    std::string device = ConsumeString(fdp, "test_device");
     manager.deviceVolumeConfigInfo_.insert(make_pair(device, pairConfigInfo));
-    AudioStreamType streamType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    bool isMute = GetData<bool>();
+    AudioStreamType streamType = PickValue(fdp, g_testAudioStreamTypes);
+    bool isMute = fdp.ConsumeBool();
     manager.SetNearlinkDeviceMute(device, streamType, isMute);
 }
 
@@ -491,14 +484,14 @@ void SleAudioDeviceManagerSetNearlinkDeviceVolumeLevelFuzzTest(FuzzedDataProvide
 
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = make_pair(configInfo, configInfo);
-    std::string device = "test_device";
+    std::string device = ConsumeString(fdp, "test_device");
     manager.deviceVolumeConfigInfo_.insert(make_pair(device, pairConfigInfo));
     if (g_testAudioStreamTypes.size() == 0) {
         return;
     }
-    AudioStreamType streamType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    int32_t volumeLevel = GetData<int32_t>();
-    int32_t volumeDegree = GetData<int32_t>();
+    AudioStreamType streamType = PickValue(fdp, g_testAudioStreamTypes);
+    int32_t volumeLevel = fdp.ConsumeIntegral<int32_t>();
+    int32_t volumeDegree = fdp.ConsumeIntegral<int32_t>();
     VolumeScale volume{volumeLevel, volumeDegree};
     manager.SetNearlinkDeviceVolume(device, streamType, volume);
 }
@@ -513,31 +506,31 @@ void SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest(FuzzedDataProvider&
 
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = make_pair(configInfo, configInfo);
-    std::string device = "test_mac_address";
+    std::string device = ConsumeString(fdp, "test_mac_address");
     manager.deviceVolumeConfigInfo_.insert(make_pair(device, pairConfigInfo));
     if (g_testAudioStreamTypes.size() == 0) {
         return;
     }
-    AudioVolumeType volumeType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(PickValue(fdp, g_testAudioStreamTypes));
     AudioDeviceDescriptor deviceDesc;
-    deviceDesc.macAddress_ = "test_mac_address";
+    deviceDesc.macAddress_ = ConsumeString(fdp, "test_mac_address");
     manager.GetVolumeLevelByVolumeType(volumeType, deviceDesc);
 }
 
 void SleAudioDeviceManagerIsGameAppFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
-    int32_t uid = GetData<int32_t>();
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
     manager.IsGameApp(uid);
 }
 
 void SleAudioDeviceManagerUpdateStreamTypeMapFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
-    std::string deviceAddr = "test_device";
-    uint32_t streamType = GetData<uint32_t>();
-    uint32_t sessionId = GetData<uint32_t>();
-    bool isAdd = GetData<bool>();
+    std::string deviceAddr = ConsumeString(fdp, "test_device");
+    uint32_t streamType = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    bool isAdd = fdp.ConsumeBool();
     manager.UpdateStreamTypeMap(deviceAddr, streamType, sessionId, isAdd);
 }
 
@@ -548,14 +541,14 @@ void SleAudioDeviceManagerResetSleStreamTypeCountFuzzTest(FuzzedDataProvider& fd
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string deviceAddr = "test_device";
+    std::string deviceAddr = ConsumeString(fdp, "test_device");
     manager.ResetSleStreamTypeCount(deviceAddr);
 }
 
 void SleAudioDeviceManagerGetNearlinkStreamTypeMapByDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
-    std::string deviceAddr = "test_device";
+    std::string deviceAddr = ConsumeString(fdp, "test_device");
     manager.GetNearlinkStreamTypeMapByDevice(deviceAddr);
 }
 
@@ -565,7 +558,7 @@ void SleAudioDeviceManagerIsNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp)
     if (g_testDeviceTypes.size() == 0) {
         return;
     }
-    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
     manager.IsNearlinkDevice(deviceType);
 }
 
@@ -574,7 +567,7 @@ void SleAudioDeviceManagerIsMoveToNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     auto streamDesc = make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
-    streamDesc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_NEARLINK;
+    streamDesc->newDeviceDescs_[0]->deviceType_ = PickValue(fdp, g_testDeviceTypes);
     manager.IsMoveToNearlinkDevice(streamDesc);
 }
 
@@ -583,9 +576,9 @@ void SleAudioDeviceManagerIsNearlinkMoveToOtherDeviceFuzzTest(FuzzedDataProvider
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     auto streamDesc = make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
-    streamDesc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->oldDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
-    streamDesc->oldDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_NEARLINK;
+    streamDesc->newDeviceDescs_[0]->deviceType_ = PickValue(fdp, g_testDeviceTypes);
+    streamDesc->oldDeviceDescs_[0]->deviceType_ = PickValue(fdp, g_testDeviceTypes);
     manager.IsNearlinkMoveToOtherDevice(streamDesc);
 }
 
@@ -618,15 +611,7 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
+
 void Init()
 {
 }
@@ -639,12 +624,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
     OHOS::AudioStandard::Init();
     return 0;
