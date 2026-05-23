@@ -1161,6 +1161,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFor
         tempStreamProp->channels_ = CHANNEL_4;
         tempStreamProp->channelLayout_ = CH_LAYOUT_QUAD;
         tempStreamProp->isCollaborationEnable = true;
+        AUDIO_INFO_LOG("GetStreamPropInfoForMultiChannel isCollaborationEnable true");
         return tempStreamProp;
     }
     tempStreamProp->isCollaborationEnable = false;

@@ -286,6 +286,10 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     CHECK_AND_RETURN_RET(ScanPipeListForStreamDesc(pipeInfoList, streamDesc), {});
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
+    
+    if (streamDesc->isNearLinkCollaborationEnable && (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
+        streamDesc->isNearLinkCollaborationEnable = false;
+    }
 
     std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList {};
     for (auto &curPipeInfo : pipeInfoList) {
@@ -365,6 +369,10 @@ void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
     int32_t fastOutputNum = 0;
     int32_t fastInputNum = 0;
     for (auto &streamDesc : streamDescs) {
+        if (streamDesc->isNearLinkCollaborationEnable &&
+            (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
+            streamDesc->isNearLinkCollaborationEnable = false;
+        }
         if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_FAST && ++fastOutputNum > MAX_FAST_STREAM_COUNT) {
             AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
             streamDesc->ResetToNormalRoute(false);

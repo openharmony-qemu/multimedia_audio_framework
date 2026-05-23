@@ -823,6 +823,7 @@ private:
     void NotifyServiceReady();
     void NotifyRequiredPipesReady();
     bool CheckCollaborativeStreamRunning();
+    void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

@@ -39,6 +39,7 @@
 #include "parameters.h"
 #include "sco_audio_scene_manager.h"
 #include "stream_dfx_manager.h"
+#include "manager/hdi_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -239,7 +240,9 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
 void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
-    CHECK_AND_RETURN(pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
+    CHECK_AND_RETURN(pipeInfo->isCollaborationEnable && pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
+    audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    UpdateNearLinkCollaborativeState(true);
     isMultiChannelOpened_.store(true);
     multiChannelCloseCondition_.notify_all();
 }
@@ -806,9 +809,6 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
 void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    if (pipeInfo->isCollaborationEnable) {
-        audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
-    }
     uint32_t paIndex = 0;
     uint32_t id = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
     CHECK_AND_RETURN_LOG(id != HDI_INVALID_ID, "Invalid id: %{public}u", id);
@@ -849,9 +849,6 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
-    if (pipeInfo->isCollaborationEnable) {
-        audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
-    }
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
@@ -998,7 +995,12 @@ void AudioCoreService::RemoveUnusedPipe()
                 continue;
             }
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER && pipeInfo->isCollaborationEnable) {
-            DelayReleaseMultiChannelPipe(pipeInfo->id_, pipeInfo->paIndex_);
+            if (!isRingDualToneOnPrimarySpeaker_) {
+                DelayReleaseMultiChannelPipe(pipeInfo->id_, pipeInfo->paIndex_);
+                continue;
+            }
+            pipeInfo->isCollaborationEnable = false;
+            UpdateNearLinkCollaborativeState(false);
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -2277,6 +2279,13 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return false;
     }
 
+    if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->GetMainNewDeviceDesc) &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) {
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "collaborative playback effect in arm, Skipped.");
+        return false;
+    }
+
     // LowPower: Speaker, USB headset, a2dp offload, Nearlink
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
@@ -2529,7 +2538,9 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
     offloadCloseCondition_[type].wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_SEC), [this, type] () {
         return isOffloadOpened_[type].load();
     });
-
+    if (!isMultiChannelOpened_.load()) {
+        UpdateNearLinkCollaborativeState(false);
+    }
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleaseOffloadPipe(id, paIndex, type);
 }
@@ -3383,6 +3394,7 @@ void AudioCoreService::GetFlagForUltraFastStream(
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
     AUDIO_INFO_LOG("[StaticCheck] Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
 }
+
 bool AudioCoreService::CheckCollaborativeStreamRunning()
 {
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, false, "pipeManager_ is nullptr");
@@ -3394,6 +3406,16 @@ bool AudioCoreService::CheckCollaborativeStreamRunning()
         }
     }
     return false;
+}
+
+void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState) {
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    std::string keyValue = std::string("nearLink_collaborative_state=") +
+        std::to_string(static_cast<int32_t>(nearLinkCollaborativeState));
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
+    AUDIO_INFO_LOG("UpdateNearLinkCollaborativeState, value:%{public}s", keyValue.c_str());
 }
 } // namespace AudioStandard
 } // namespace OHOS
