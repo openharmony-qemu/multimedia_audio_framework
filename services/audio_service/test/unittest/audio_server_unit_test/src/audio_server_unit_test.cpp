@@ -1032,10 +1032,10 @@ HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_NewRoute_001, TestSize.Level1)
     AudioProcessConfig config;
     config.audioMode = AUDIO_MODE_PLAYBACK;
     config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    SetSysPara("persist.multimedia.enable_new_route", 1);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
     bool ret = audioServer->IsNormalIpcStream(config);
     EXPECT_TRUE(ret);
-    SetSysPara("persist.multimedia.enable_new_route", 0);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
 }
 
 /**

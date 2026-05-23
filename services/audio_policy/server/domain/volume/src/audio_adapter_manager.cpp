@@ -1333,7 +1333,7 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
  bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 {
     int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
     if (IsLowLatencyRoute(routeFlag) || IsDirectRoute(routeFlag)) {
         return enableNewRoute == 1;
     }
