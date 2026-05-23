@@ -71,11 +71,10 @@ const int32_t BITDEPTH_MODE_FLOAT = 0;
 // Conversion context structure to encapsulate all state variables
 struct ConversionContext {
     uint8_t* inputData = nullptr;
-    uint32_t inputDataSize = 0;
+    uint32_t inputDataSize = 256 * 1024;
     int inputFd = -1;
 };
 
-const uint32_t INPUT_BUFFER_SIZE = 256 * 1024;
 const int32_t OUTPUT_BUFFER_SIZE = 1024 * 1024;
 const uint32_t MAX_FILE_PATH_LENGTH = 512;
 const uint32_t CONVERSION_ARG_COUNT = 3;
@@ -1124,8 +1123,6 @@ static void CleanupConversion(ConversionContext &context, OH_AudioConverter *con
         delete[] context.inputData;
         context.inputData = nullptr;
     }
-    // Note: inputFd is managed by JavaScript layer, don't close it here
-    context.inputDataSize = 0;
 }
 
 static int32_t AudioConverterRequestDataCallback(void *userData, const void **outInputData,
@@ -1138,18 +1135,16 @@ static int32_t AudioConverterRequestDataCallback(void *userData, const void **ou
         return 0;
     }
 
-    ssize_t bytesRead = read(context->inputFd, context->inputData, INPUT_BUFFER_SIZE);
+    ssize_t bytesRead = read(context->inputFd, context->inputData, context->inputDataSize);
     if (bytesRead <= 0) {
         *outInputData = nullptr;
         *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
-        context->inputDataSize = 0;
         return 0;
     }
     
     *outInputData = context->inputData;
     *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
-    context->inputDataSize = bytesRead;
-    return context->inputDataSize;
+    return bytesRead;
 }
 
 static bool ParseAudioFormat(napi_env env, napi_value formatObj,
@@ -1211,7 +1206,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
         return CreateFinalResult(env, outputFilePath);
     }
     ctx.inputFd = fd;
-    ctx.inputData = new (std::nothrow) uint8_t[INPUT_BUFFER_SIZE];
+    ctx.inputData = new (std::nothrow) uint8_t[ctx.inputDataSize];
     if (ctx.inputData == nullptr) {
         return CreateFinalResult(env, outputFilePath);
     }
