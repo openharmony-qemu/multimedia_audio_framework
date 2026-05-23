@@ -1114,7 +1114,7 @@ static bool ProcessIteration(OH_AudioConverter* converter, FILE* outputFile)
     return outputSize > 0;
 }
 
-static void CleanupConversion(ConversionContext &context, OH_AudioConverter *converter) 
+static void CleanupConversion(ConversionContext &context, OH_AudioConverter *converter)
 {
     if (converter != nullptr) {
         OH_AudioConverter_Destroy(converter);
