@@ -26,7 +26,7 @@ function convertAudioInBackground(
   outputChannelLayout: number,
   outputSampleFormat: number,
   fd: number
-): string | null {
+): string {
   let inputFormat: ESObject = {
     encodingType: inputEncodingType,
     samplingRate: inputSamplingRate,
@@ -630,7 +630,7 @@ export struct AudioConversion {
     const file = fs.openSync(this.selectedFileUri, fs.OpenMode.READ_ONLY);
 
     try {
-      const MAX_HEADER_SIZE = 4096; // 4KB should be enough for most WAV headers
+      const MAX_HEADER_SIZE = 16384; // 16KB to support WAV files with many chunks
       const buffer = new ArrayBuffer(MAX_HEADER_SIZE);
       const bytesRead = fs.readSync(file.fd, buffer);
       fs.closeSync(file.fd);
@@ -810,10 +810,20 @@ export struct AudioConversion {
     let foundDataChunk = false;
     let foundFmtChunk = false;
     let dataChunkOffset = 0;
+    let chunkIdStr = '';
 
     while (offset <= buffer.byteLength - 8) {
       const chunkId = dv.getUint32(offset, true);
       const chunkSize = dv.getUint32(offset + 4, true);
+      
+      // Convert chunk ID to string for logging
+      chunkIdStr = String.fromCharCode(
+        (chunkId >> 24) & 0xFF,
+        (chunkId >> 16) & 0xFF, 
+        (chunkId >> 8) & 0xFF,
+        chunkId & 0xFF
+      );
+      Logger.info(TAG, `Found chunk: ${chunkIdStr} at offset ${offset}, size: ${chunkSize}`);
 
       if (chunkId === 0x20746d66) { // "fmt "
         // Parse fmt chunk
@@ -824,14 +834,17 @@ export struct AudioConversion {
         headerSize += 8 + chunkSize; // Add chunk header + chunk data
         offset += 8 + chunkSize;
         foundFmtChunk = true;
+        Logger.info(TAG, `Parsed fmt chunk: ${numChannels} channels, ${samplingRate}Hz, ${bitsPerSample} bits`);
       } else if (chunkId === 0x61746164) { // "data"
         // Found data chunk
         dataChunkOffset = offset;
-        headerSize += 8; // Add chunk header (data starts after header)
+        headerSize = offset + 8; // PCM data starts after data chunk header (8 bytes)
         foundDataChunk = true;
+        Logger.info(TAG, `Found data chunk at offset ${offset}, headerSize set to ${headerSize}`);
         break;
       } else {
         // Skip unknown chunk
+        Logger.info(TAG, `Skipping unknown chunk: ${chunkIdStr}, size: ${chunkSize}`);
         headerSize += 8 + chunkSize;
         offset += 8 + chunkSize;
       }
@@ -841,8 +854,9 @@ export struct AudioConversion {
     if (!foundDataChunk) {
       if (foundFmtChunk) {
         Logger.warn(TAG, `Data chunk not found in buffer, using offset ${offset} as header size estimate`);
-        headerSize = offset;
+        headerSize = offset + 8; // Add 8 bytes for data chunk header
         foundDataChunk = true;
+        Logger.info(TAG, `Data chunk estimated to start at headerSize: ${headerSize}`);
       } else {
         Logger.error(TAG, 'Invalid WAV file header: missing data chunk and fmt chunk');
         return null;
@@ -851,7 +865,6 @@ export struct AudioConversion {
 
     const sampleFormat = this.getSampleFormatFromBits(bitsPerSample, audioFormat);
     const channelLayout = this.getChannelLayoutFromChannels(numChannels);
-
     return {
       samplingRate: samplingRate,
       channelLayout: channelLayout,
