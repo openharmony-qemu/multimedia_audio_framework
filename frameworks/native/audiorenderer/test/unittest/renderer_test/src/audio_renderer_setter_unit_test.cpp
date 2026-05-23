@@ -2593,21 +2593,8 @@ HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_002, TestSi
     flag = AUDIO_OUTPUT_FLAG_HWDECODING;
     streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
-}
 
-/**
- * @tc.name  : Test AudioRendererPrivate
- * @tc.number: DecideStreamClassAndUpdateRendererInfo_003
- * @tc.desc  : Test DecideStreamClassAndUpdateRendererInfo with VOICE_CALL_ASSISTANT flag
- */
-HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    uint32_t flag = AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
-    IAudioStream::StreamClass streamClass;
-
+    flag = AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
     streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
     EXPECT_EQ(audioRendererPrivate->rendererInfo_.rendererFlags, AUDIO_FLAG_NORMAL);
