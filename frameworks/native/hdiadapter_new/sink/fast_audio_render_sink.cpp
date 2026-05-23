@@ -49,6 +49,13 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     AUDIO_INFO_LOG("Init with format:%{public}d, period:%{public}d", attr.format, attr.period);
     attr_ = attr;
     halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? "primary" : "voip";
+    if (attr_.period == static_cast<uint32_t>(
+        static_cast<float>(attr.sampleRate * attr.channel * GetFormatByteSize(attr.format)) *
+        ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND))) {
+        AUDIO_INFO_LOG("SetOutputRoute for ultra fast, device: %{public}d", attr_.deviceType)
+        std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
+        DoSetOutputRoute(devices);
+    }
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     ret = PrepareMmapBuffer();
