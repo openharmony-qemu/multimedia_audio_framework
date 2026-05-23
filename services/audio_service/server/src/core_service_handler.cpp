@@ -218,5 +218,15 @@ int32_t CoreServiceHandler::NotifyStreamStandbyResume(int32_t pid, uint32_t stre
         "NotifyStreamStandbyResume ipc failed, ipcRet %{public}d", ipcRet);
     return ret;
 }
+
+bool CoreServiceHandler::IsSupportIndependentPipe()
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, false, "iCoreServiceProvider_ is nullptr");
+    bool support = false;
+    int32_t ret = iCoreServiceProvider_->IsSupportIndependentPipe(support);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "IsSupportIndependentPipe failed, ret:%{public}d", ret);
+    return support;
+}
+}
 } // namespace AudioStandard
 } // namespace OHOS

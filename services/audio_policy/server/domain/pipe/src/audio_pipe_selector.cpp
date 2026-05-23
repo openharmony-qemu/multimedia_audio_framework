@@ -1221,6 +1221,8 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             return PIPE_TYPE_OUT_CELLULAR_CALL;
         } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
             return PIPE_TYPE_OUT_INTERPHONE;
+        } else if (flag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) {
+            return PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT;
         } else {
             return PIPE_TYPE_OUT_NORMAL;
         }
@@ -1608,6 +1610,12 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.fileName = "fast_voip_dump_file";
         info.moduleInfo_.name = "FastVOIPRendererSink";
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "tts_out") {
+        info.moduleInfo_.className = "primary_voice_call_assistant";
+        info.moduleInfo_.fileName = "tts_dump_file";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.name = "tts";
         info.moduleInfo_.role = "sink";
     } else if (pipeInfoPtr->name_ == "multichannel_distributed_output") {
         FillRemoteMultichannelPipeInfo(info, streamDesc);

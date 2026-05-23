@@ -512,6 +512,11 @@ bool AudioCoreService::IsSupportInnerCaptureOffload()
     return pipeManager_->IsSupportInnerCaptureOffload();
 }
 
+bool AudioCoreService::IsSupportIndependentPipe()
+{
+    return pipeManager_->IsSupportIndependentPipe();
+}
+
 bool AudioCoreService::GetEnhancedRoutingSupported()
 {
     return AudioSelectInterfaceService::GetInstance().GetEnhancedRoutingSupported();
@@ -919,6 +924,15 @@ bool AudioCoreService::IsStreamSupportOutputInterPhone(std::shared_ptr<AudioStre
     return false;
 }
 
+bool AudioCoreService::IsStreamSupportIndependentPipe(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    Trace trace("IsStreamSupportIndependentPipe");
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
+        return true;
+    }
+    return false;
+}
+
 bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     const auto &rendererInfo = streamDesc->rendererInfo_;
@@ -1095,6 +1109,9 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     }
     if (IsStreamSupportOutputInterPhone(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_INTERPHONE;
+    }
+    if (IsStreamSupportIndependentPipe(streamDesc)) {
+        return AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
     }
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }

@@ -52,6 +52,7 @@ public:
     virtual void NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) = 0;
     virtual int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId) = 0;
     virtual int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId) = 0;
+    virtual bool IsSupportIndependentPipe() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

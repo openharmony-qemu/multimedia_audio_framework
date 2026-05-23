@@ -36,6 +36,7 @@ static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
 static const char* OFFLOAD_INNER_CAPTURE_SUPPORT_NAME = "offloadInnerCaptureSupport";
+static const char* TTS_OUT_SUPPORT_NAME = "ttsOutSupport";
 
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
@@ -386,6 +387,16 @@ bool AudioCoreConfigManager::IsSupportInnerCaptureOffload()
     }
     isSupportInnerCaptureOffload_ = false;
     return isSupportInnerCaptureOffload_.value();
+}
+
+void AudioCoreConfigManager::OnIsSupportIndependentPipe(bool isSupportIndependentPipe)
+{
+    isSupportIndependentPipe_ = isSupportIndependentPipe;
+}
+
+bool AudioCoreConfigManager::IsSupportIndependentPipe()
+{
+    return isSupportIndependentPipe_;
 }
 
 int32_t AudioCoreConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
@@ -1104,6 +1115,7 @@ bool AudioCoreConfigManager::SupportImplicitConversion(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_LOWPOWER) ||
         (routeFlag & AUDIO_INPUT_FLAG_NORMAL) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) ||
         (routeFlag & AUDIO_INPUT_FLAG_WAKEUP)) {
         return true;
     }

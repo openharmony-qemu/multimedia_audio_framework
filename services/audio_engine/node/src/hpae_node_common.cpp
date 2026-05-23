@@ -128,6 +128,7 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
     {"voip", PIPE_TYPE_OUT_DIRECT_NORMAL},
     {"direct", PIPE_TYPE_OUT_DIRECT_NORMAL},
+    {"primary_voice_call_assistant", PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT},
 };
 
 static std::map<HpaeSessionState, RendererState> g_hapeToRendererStateMap = {

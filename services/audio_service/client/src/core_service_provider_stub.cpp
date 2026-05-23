@@ -187,5 +187,12 @@ int32_t CoreServiceProviderWrapper::NotifyStreamStandbyResume(int32_t pid, uint3
     ret = coreServiceWorker_->NotifyStreamStandbyResume(pid, streamId);
     return SUCCESS;
 }
+
+int32_t CoreServiceProviderWrapper::IsSupportIndependentPipe(bool &support)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    support = coreServiceWorker_->IsSupportIndependentPipe();
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
