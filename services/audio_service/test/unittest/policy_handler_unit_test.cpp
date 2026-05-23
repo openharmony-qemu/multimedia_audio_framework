@@ -271,5 +271,43 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_009, TestSize.Level1)
     policyHandler->sharedSleAbsVolumeScene_ = &sharedSleAbsVolumeScene;
     policyHandler->Dump(dumpString);
 }
+
+/**
+ * @tc.name  : Test PolicyHandler IsValidNetworkIdForSendEffectParam with null provider (NEW BRANCH).
+ * @tc.type  : FUNC
+ * @tc.number: PolicyHandler_010
+ * @tc.desc  : Test IsValidNetworkIdForSendEffectParam with null iPolicyProvider_ returns false.
+ */
+HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_010, TestSize.Level1)
+{
+    auto policyHandler = std::make_shared<PolicyHandler>();
+    EXPECT_NE(policyHandler, nullptr);
+
+    policyHandler->iPolicyProvider_ = nullptr;
+
+    std::string networkId = "test_network_id";
+    bool result = policyHandler->IsValidNetworkIdForSendEffectParam(networkId);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test PolicyHandler IsValidNetworkIdForSendEffectParam with valid provider (NEW BRANCH).
+ * @tc.type  : FUNC
+ * @tc.number: PolicyHandler_011
+ * @tc.desc  : Test IsValidNetworkIdForSendEffectParam with valid iPolicyProvider_.
+ */
+HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_011, TestSize.Level1)
+{
+    auto policyHandler = std::make_shared<PolicyHandler>();
+    EXPECT_NE(policyHandler, nullptr);
+
+    sptr<IRemoteObject> impl = nullptr;
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
+    EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
+
+    std::string networkId = "test_network_id";
+    bool result = policyHandler->IsValidNetworkIdForSendEffectParam(networkId);
+    EXPECT_EQ(result, false);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

@@ -70,6 +70,7 @@ public:
 
     virtual int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+    virtual int32_t UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId) NOT_SUPPORT_RET
 
     virtual void SetAddress(const std::string &address) {}
     virtual void SetInvalidState(void) {}

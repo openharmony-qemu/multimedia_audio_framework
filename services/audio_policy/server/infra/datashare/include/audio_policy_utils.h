@@ -100,6 +100,7 @@ public:
     int32_t SetDeclaredDeviceTypes(const std::string &bundleName, const std::vector<DeviceType> &deviceTypeVector);
     bool IsDeclaredByApp(const std::string &bundleName, DeviceType deviceType);
     bool IsSupportedDevice(const std::string &bundleName, DeviceType deviceType, bool hasSystemPermission);
+    void FilterDevicesByTokenId(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     bool IsWirelessDevice(DeviceType deviceType);
     static bool CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc);

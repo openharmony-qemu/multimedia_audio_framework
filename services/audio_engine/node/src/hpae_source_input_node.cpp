@@ -719,6 +719,15 @@ void HpaeSourceInputNode::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUi
     }
 }
 
+void HpaeSourceInputNode::UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId)
+{
+    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        "audioCapturerSource_ is nullptr");
+
+    CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "invalid source state");
+    audioCapturerSource_->UpdateAppsTokenId(appsTokenId);
+}
+
 uint32_t HpaeSourceInputNode::GetCaptureId() const
 {
     return captureId_;

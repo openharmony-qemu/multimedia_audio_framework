@@ -48,6 +48,7 @@ public:
     int32_t UnloadModernOffloadCapSource() override;
 // #endif
     int32_t ClearAudioFocusBySessionID(int32_t sessionID) override;
+    int32_t IsValidNetworkIdForSendEffectParam(const std::string &networkId, bool &ret) override;
     
 private:
     IPolicyProvider *policyWorker_;

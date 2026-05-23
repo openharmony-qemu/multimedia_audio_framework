@@ -2630,6 +2630,19 @@ std::string GenerateAppsUidStr(std::unordered_set<int32_t> appsUid)
     return uidStream.str();
 }
 
+std::string GenerateAppsTokenIdStr(std::unordered_set<uint32_t> appsTokenId)
+{
+    std::ostringstream tokenIdStream;
+    tokenIdStream << "TokenIds=";
+    bool first = true;
+    for (const auto &tokenId : appsTokenId) {
+        tokenIdStream << (first ? "" : ";");
+        tokenIdStream << tokenId;
+        first = false;
+    }
+    return tokenIdStream.str();
+}
+
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate)
 {
     float speed = 1.0f;

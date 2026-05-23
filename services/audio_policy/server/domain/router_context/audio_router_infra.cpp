@@ -30,7 +30,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid,
-    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, const uint32_t deviceTokenId)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -38,7 +38,7 @@ void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid,
     if (isSystem) {
         RefreshSystemSelectDevice(type, device);
     } else {
-        RefreshAppSelectDevice(type, uid, device);
+        RefreshAppSelectDevice(type, uid, device, deviceTokenId);
     }
 }
 
@@ -73,7 +73,7 @@ void AudioRouterInfra::RefreshSystemSelectDevice(SelectDeviceType type,
 }
 
 void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid,
-    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, const uint32_t deviceTokenId)
 {
     int64_t currentTime = GetCurrentTimeMs();
 
@@ -108,6 +108,7 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
             AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
             break;
     }
+    UpdateExclusiveUidNoLock(uid, type, deviceTokenId);
 }
 
 void AudioRouterInfra::ClearAllSelectSelectDevice(SelectDeviceType type,
@@ -178,6 +179,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.mediaInput_.device_)) {
                     appSelect.mediaInput_.device_ = nullptr;
                     appSelect.mediaInput_.selectTime_ = 0;
+                    UpdateExclusiveUidNoLock(uid, type, 0);
                 }
                 break;
             case SelectDeviceType::MEDIA_OUTPUT:
@@ -185,6 +187,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.mediaOutput_.device_)) {
                     appSelect.mediaOutput_.device_ = nullptr;
                     appSelect.mediaOutput_.selectTime_ = 0;
+                    UpdateExclusiveUidNoLock(uid, type, 0);
                 }
                 break;
             case SelectDeviceType::CALL_INPUT:
@@ -192,6 +195,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.callInput_.device_)) {
                     appSelect.callInput_.device_ = nullptr;
                     appSelect.callInput_.selectTime_ = 0;
+                    UpdateExclusiveUidNoLock(uid, type, 0);
                 }
                 break;
             case SelectDeviceType::CALL_OUTPUT:
@@ -199,6 +203,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.callOutput_.device_)) {
                     appSelect.callOutput_.device_ = nullptr;
                     appSelect.callOutput_.selectTime_ = 0;
+                    UpdateExclusiveUidNoLock(uid, type, 0);
                     WriteSelectOutputSysEvents(device, type);
                 }
                 break;
@@ -331,11 +336,10 @@ BluetoothAndNearlinkPreferredRecordCategory AudioRouterInfra::GetHighestPriority
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
-    if (inputPriorityList_.empty()) {
+    int32_t highestUid = GetHighestInputPriorityAppNoLock();
+    if (highestUid == INVALID_UID) {
         return BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
     }
-
-    int32_t highestUid = inputPriorityList_.front();
     return GetPreferredInputCategory(highestUid);
 }
 
@@ -483,31 +487,21 @@ void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
 int32_t AudioRouterInfra::GetHighestInputPriorityApp()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    if (inputPriorityList_.empty()) {
-        return INVALID_UID;
-    }
-    return inputPriorityList_.front();
+    return GetHighestInputPriorityAppNoLock();
 }
 
 int32_t AudioRouterInfra::GetHighestOutputPriorityApp()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    if (outputPriorityList_.empty()) {
-        return INVALID_UID;
-    }
-    return outputPriorityList_.front();
+    return GetHighestOutputPriorityAppNoLock();
 }
 
 bool AudioRouterInfra::HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
-    if (inputPriorityList_.empty()) {
-        return false;
-    }
-
-    int32_t highestUid = inputPriorityList_.front();
+    int32_t highestUid = GetHighestInputPriorityAppNoLock();
+    CHECK_AND_RETURN_RET(highestUid != INVALID_UID, false);
     auto it = appContexts_.find(highestUid);
     if (it == appContexts_.end()) {
         return false;
@@ -627,6 +621,9 @@ void AudioRouterInfra::OnAppDied(int32_t uid)
     appContexts_.erase(uid);
     inputPriorityList_.remove(uid);
     outputPriorityList_.remove(uid);
+    for (auto &item : exclusiveUids_) {
+        item.erase(uid);
+    }
 }
 
 void AudioRouterInfra::AdjustInputPriority(int32_t uid, bool hasRunningStream,
@@ -829,7 +826,9 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetLatestStreamSe
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
+    size_t typeIdx = static_cast<size_t>(type);
     for (const auto &uid : outputPriorityList_) {
+        CHECK_AND_CONTINUE(exclusiveUids_[typeIdx].find(uid) == exclusiveUids_[typeIdx].end());
         auto simpleDesc = GetFirstRunningStreamDefaultDeviceNoLock(uid, type);
         if (simpleDesc != nullptr) {
             return simpleDesc;
@@ -1065,6 +1064,7 @@ void AudioRouterInfra::ClearWirelessSelectDevice(const std::shared_ptr<AudioDevi
         if (!IsSameWirelessDevice(device, context->appSelectDevice_.mediaOutput_.device_)) {
             context->appSelectDevice_.mediaOutput_.device_ = nullptr;
             context->appSelectDevice_.mediaOutput_.selectTime_ = 0;
+            UpdateExclusiveUidNoLock(uid, SelectDeviceType::MEDIA_OUTPUT, 0);
         }
         auto &streamSelectDevices = context->streamSelectDevices_;
         auto it = streamSelectDevices.begin();
@@ -1096,5 +1096,42 @@ bool AudioRouterInfra::IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSim
     CHECK_AND_RETURN_RET(IsWirelessDevice(left) && IsWirelessDevice(right), false);
     return left->macAddress_ == right->macAddress_;
 }
+
+void AudioRouterInfra::UpdateExclusiveUidNoLock(int32_t uid, SelectDeviceType type, const uint32_t deviceTokenId)
+{
+    CHECK_AND_RETURN(uid != SYSTEM_UID);
+    size_t typeIdx = static_cast<size_t>(type);
+    if (deviceTokenId != 0) {
+        exclusiveUids_[typeIdx].insert(uid);
+        AUDIO_INFO_LOG("Add exclusive uid: %{public}d, type: %{public}d", uid, type);
+    } else {
+        exclusiveUids_[typeIdx].erase(uid);
+        AUDIO_INFO_LOG("Clean exclusive uid: %{public}d, type: %{public}d", uid, type);
+    }
 }
+
+int32_t AudioRouterInfra::GetHighestInputPriorityAppNoLock()
+{
+    size_t mediaInputTypeIdx = static_cast<size_t>(SelectDeviceType::MEDIA_INPUT);
+    size_t callInputTypeIdx = static_cast<size_t>(SelectDeviceType::CALL_INPUT);
+    for (const auto &uid : inputPriorityList_) {
+        CHECK_AND_CONTINUE(exclusiveUids_[mediaInputTypeIdx].find(uid) == exclusiveUids_[mediaInputTypeIdx].end() &&
+            exclusiveUids_[callInputTypeIdx].find(uid) == exclusiveUids_[callInputTypeIdx].end());
+        return uid;
+    }
+    return INVALID_UID;
 }
+
+int32_t AudioRouterInfra::GetHighestOutputPriorityAppNoLock()
+{
+    size_t mediaOutputTypeIdx = static_cast<size_t>(SelectDeviceType::MEDIA_OUTPUT);
+    size_t callOutputTypeIdx = static_cast<size_t>(SelectDeviceType::CALL_OUTPUT);
+    for (const auto &uid : outputPriorityList_) {
+        CHECK_AND_CONTINUE(exclusiveUids_[mediaOutputTypeIdx].find(uid) == exclusiveUids_[mediaOutputTypeIdx].end() &&
+            exclusiveUids_[callOutputTypeIdx].find(uid) == exclusiveUids_[callOutputTypeIdx].end());
+        return uid;
+    }
+    return INVALID_UID;
+}
+} // namespace AudioStandard
+} // namespace OHOS

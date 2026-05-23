@@ -335,6 +335,8 @@ private:
         AudioSessionStateChangedEvent &stateChangedEvent);
     void ValidatePreferredOutputDeviceCallback(int32_t clientPid,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    bool CheckCallbackTokenId(
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, uint32_t callbackTokenId);
 
     // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
     void ProcessPreferredOutputDeviceForClient(int32_t clientPid,

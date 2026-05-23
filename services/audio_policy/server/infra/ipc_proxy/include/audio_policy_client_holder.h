@@ -90,6 +90,7 @@ public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
     int32_t apiVersion_ = API_VERSION_MAX;
+    uint32_t tokenId_ = 0;
     std::set<DeviceType> needDeclaredDevices_;
     std::set<DeviceType> alreadyDeclaredDevicesByApp_;
 private:

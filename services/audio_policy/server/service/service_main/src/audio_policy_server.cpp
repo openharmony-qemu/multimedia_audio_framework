@@ -1796,6 +1796,10 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
 int32_t AudioPolicyServer::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    auto deviceTokenId = audioDeviceDescriptor ? audioDeviceDescriptor->deviceTokenId_ : 0;
+    CHECK_AND_RETURN_RET_LOG(deviceTokenId == 0 || deviceTokenId == callerTokenId, ERR_PERMISSION_DENIED,
+        "invalid tokenId");
     return eventEntry_->SelectInputDeviceByUid(audioDeviceDescriptor, callerUid);
 }
 

@@ -1010,5 +1010,21 @@ string AudioPolicyUtils::EncUsbAddr(const string &src)
     auto num = src.substr(head.length(), pos - head.length());
     return string("c**") + num + "**";
 }
+
+void AudioPolicyUtils::FilterDevicesByTokenId(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    audioDeviceDescriptors.erase(
+        std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+            [callingTokenId](const auto &device) {
+                bool filter = device != nullptr && device->deviceTokenId_ != 0 &&
+                    device->deviceTokenId_ != callingTokenId;
+                JUDGE_AND_INFO_LOG(filter, "Filter device with tokenId %{public}u, callingTokenId %{public}u",
+                    device->deviceTokenId_, callingTokenId);
+                return filter;
+            }),
+        audioDeviceDescriptors.end());
+}
 } // namespace AudioStandard
 } // namespace OHOS

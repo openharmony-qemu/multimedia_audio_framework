@@ -39,4 +39,5 @@ interface IPolicyProviderIpc {
     void LoadModernOffloadCapSource();
     void UnloadModernOffloadCapSource();
     void ClearAudioFocusBySessionID([in] int sessionID);
+    void IsValidNetworkIdForSendEffectParam([in] String networkId, [out] boolean ret);
 }
