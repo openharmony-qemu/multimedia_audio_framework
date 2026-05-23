@@ -17,6 +17,7 @@
 #include "audio_suite_converter_test.h"
 #include "audio_format_converter_impl.h"
 #include "audio_suite_log.h"
+#include "audio_suite_unittest_tools.h"
 #include <fstream>
 #include <thread>
 #include <atomic>
@@ -930,6 +931,9 @@ void AudioSuiteConverterTest::TearDownTestCase(void) { }
 
 void AudioSuiteConverterTest::SetUp(void)
 {
+    if (!AudioSuite::AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
     g_requestDataCallCount = 0;
     g_callbackCallCount = 0;
     g_callbackDataSize = DEFAULT_BUFFER_SIZE;
