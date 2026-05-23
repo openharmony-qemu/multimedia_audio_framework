@@ -807,7 +807,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
     const AudioStreamDeviceChangeReasonExt reason)
 {
     if (pipeInfo->isCollaborationEnable) {
-        audioPolicyManager_.UpdateCollaborativeState(COLLABORATIVE_NEARLINK_OPEN);
+        audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     }
     uint32_t paIndex = 0;
     uint32_t id = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
@@ -850,7 +850,7 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
 {
     Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
     if (pipeInfo->isCollaborationEnable) {
-        audioPolicyManager_.UpdateCollaborativeState(COLLABORATIVE_NEARLINK_OPEN);
+        audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     }
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
@@ -1716,7 +1716,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
-    } else if (AudioCollaborativeSerivce::GetAudioCollaborativeService().GetRealCollaborativeState() &&
+    } else if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState() &&
         (streamDesc->isNearLinkCollaborationEnable || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
         CheckCollaborativeStreamRunning())) {
         // for collaboration, the route should be updated

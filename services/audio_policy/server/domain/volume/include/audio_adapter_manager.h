@@ -389,7 +389,6 @@ public:
 
         void OnHdiRouteStateChange(const std::string& networkId, bool enable) override {};
     };
-    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
 
 private:
     friend class PolicyCallbackImpl;

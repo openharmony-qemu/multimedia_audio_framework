@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_engine_log.h"
 #include "stream_dfx_manager.h"
+#include "audio_collaboration_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -207,16 +208,18 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
 
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
 {
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
     if (isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN ||
         isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN) {
-        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE || nodeInfo.effectInfo.effectScene == SCENE_MUSIC) {
+        if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
             nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
             AUDIO_INFO_LOG("collaboration enabled, effectScene from %{public}d, sceneType changed to %{public}d",
                 nodeInfo.effectInfo.lastEffectScene, nodeInfo.sceneType);
         }
-    } else {
+    } else if (isCollaborationEnabled == COLLABORATION_CLOSE) {
         RecoverNodeInfoForCollaboration(nodeInfo);
     }
 }

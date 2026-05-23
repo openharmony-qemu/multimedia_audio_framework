@@ -262,7 +262,8 @@ int32_t HpaePolicyManager::UpdateCollaborativeState(CollaborationState isCollabo
         BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
             "null audioCollaborationManager", false),
         "null audioCollaborationManager");
-    return audioCollaborationManager->UpdateCollaborativeState(isCollaborationEnabled);
+    audioCollaborationManager->UpdateCollaborativeState(isCollaborationEnabled);
+    return SUCCESS;
 }
 
 bool HpaePolicyManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)

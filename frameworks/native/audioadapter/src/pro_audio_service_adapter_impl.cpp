@@ -622,12 +622,6 @@ int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::stri
     return collaborativeUpdateResult_;
 }
 
-bool ProAudioServiceAdapterImpl::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
-{
-    lock_guard<mutex> lock(lock_);
-    return IHpaeManager::GetHpaeManager().IsCollaborationSupportedForStreamUsage(streamUsage);
-}
-
 int32_t ProAudioServiceAdapterImpl::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)
 {
     lock_guard<mutex> lock(lock_);

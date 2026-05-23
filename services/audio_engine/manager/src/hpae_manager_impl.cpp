@@ -903,7 +903,7 @@ bool HpaeManagerImpl::IsCollaborationSupportedForStreamUsage(StreamUsage streamU
     CHECK_AND_RETURN_RET(manager_,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-            BusinessScenario::CONFING, ERR_SERVICE_UNAVAILABLE),
+            BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
         "manager is nullptr", false), false));
     return manager_->IsCollaborationSupportedForStreamUsage(streamUsage);
 }

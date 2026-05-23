@@ -70,6 +70,7 @@ private:
     std::mutex collaborativeServiceMutex_;
     std::map<std::string, CollaborativeState> addressToCollaborativeEnabledMap_;
     IAudioPolicyInterface& audioPolicyManager_;
+    DeviceType curDeviceType_ = DEVICE_TYPE_NONE;
 };
 } // OHOS
 } // AudioStandard

@@ -121,7 +121,7 @@ void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor 
     
     if (selectedAudioDevice.macAddress_ != curDeviceAddress_) {
         curDeviceAddress_ = selectedAudioDevice.macAddress_;
-        AUDIO_INFO_LOG("Update current device macAddress %{public}s for AudioCollaborativeSerivce",
+        AUDIO_INFO_LOG("Update current device macAddress %{public}s for AudioCollaborativeService",
             GetEncryptAddr(curDeviceAddress_).c_str());
     }
 
@@ -197,8 +197,8 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         return ERROR;
     }
     if (addressToCollaborativeEnabledMap_.find(curDeviceAddress_) == addressToCollaborativeEnabledMap_.end()) {
-        if (isCollaborativeStateEnabled_ == COLLABORATIVE_BLUETOOTH_OPEN ||
-            isCollaborativeStateEnabled_ == COLLABORATIVE_NEARLINK_OPEN) {
+        if (isCollaborativeStateEnabled_ == COLLABORATION_BLUETOOTH_OPEN ||
+            isCollaborativeStateEnabled_ == COLLABORATION_NEARLINK_OPEN) {
             isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
             HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current device %{public}s is not in "
                 "addressToCollaborativeEnabledMap_, close collaborative service",
@@ -212,9 +212,9 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
     bool isCurrentCollaborativeEnabledTemp = (addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED);
     CollaborationState isCurrentCollaborativeEnabledState;
     if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        isCurrentCollaborativeEnabledState = COLLABORATIVE_BLUETOOTH_OPEN;
+        isCurrentCollaborativeEnabledState = COLLABORATION_BLUETOOTH_OPEN;
     } else if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_NEARLINK) {
-        isCurrentCollaborativeEnabledState = COLLABORATIVE_NEARLINK_OPEN;
+        isCurrentCollaborativeEnabledState = COLLABORATION_NEARLINK_OPEN;
     } else {
         isCurrentCollaborativeEnabledState = COLLABORATION_CLOSE;
     }

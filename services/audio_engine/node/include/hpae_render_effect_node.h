@@ -52,7 +52,7 @@ private:
     int32_t enqueueCount_ = 1;
     uint64_t latency_  = 0; // in ms
     int32_t waitCountThreshold_ = 0;
-    std::unique_ptr<HpaePcmBuffer> tempOutPut_ = nullptr;
+    std::unique_ptr<HpaePcmBuffer> tempOutput_ = nullptr;
 };
 
 class HpaeRenderEffectNode : public HpaePluginNode, public HpaeTempEffectBuffer {

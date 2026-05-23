@@ -804,7 +804,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     Trace trace("IsStreamSupportMultiChannel");
 
     // MultiChannel:collaboration playback, nearlink
-    if (AudioCollaborativeSerivce::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+    if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->newDeviceDescs_[0]) && streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_NEARLINK &&
         audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->rendererInfo_.streamUsage) &&
         !CheckRingAndVoipStreamRunning()) {
