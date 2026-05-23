@@ -810,7 +810,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
         !CheckRingAndVoipStreamRunning()) {
             streamDesc->isNearLinkCollaborationEnable = true;
             JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable true");
-            return;
+            return true;
     }
     streamDesc->isNearLinkCollaborationEnable = false;
 
