@@ -1114,22 +1114,18 @@ static bool ProcessIteration(OH_AudioConverter* converter, FILE* outputFile)
     return outputSize > 0;
 }
 
-static void CleanupInputData(ConversionContext& context)
+static void CleanupConversion(ConversionContext &context, OH_AudioConverter *converter) 
 {
+    if (converter != nullptr) {
+        OH_AudioConverter_Destroy(converter);
+    }
+
     if (context.inputData != nullptr) {
         delete[] context.inputData;
         context.inputData = nullptr;
     }
     // Note: inputFd is managed by JavaScript layer, don't close it here
     context.inputDataSize = 0;
-}
-
-static void CleanupConversion(ConversionContext& context, OH_AudioConverter* converter)
-{
-    if (converter != nullptr) {
-        OH_AudioConverter_Destroy(converter);
-    }
-    CleanupInputData(context);
 }
 
 static int32_t AudioConverterRequestDataCallback(void *userData, const void **outInputData,
@@ -1142,8 +1138,7 @@ static int32_t AudioConverterRequestDataCallback(void *userData, const void **ou
         return 0;
     }
 
-    uint32_t dataSizeToReturn = INPUT_BUFFER_SIZE;
-    ssize_t bytesRead = read(context->inputFd, context->inputData, dataSizeToReturn);
+    ssize_t bytesRead = read(context->inputFd, context->inputData, INPUT_BUFFER_SIZE);
     if (bytesRead <= 0) {
         *outInputData = nullptr;
         *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
