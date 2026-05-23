@@ -1210,10 +1210,11 @@ HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_005, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test SetAudioScene API with phoneCallSceneType
- * @tc.number : SetAudioScene_TransferCall_001
- * @tc.desc   : Test SetAudioScene with phoneCallSceneType for transfer call connect
- */
+/**
+* @tc.name   : Test SetAudioScene API with phoneCallSceneType
+* @tc.number : SetAudioScene_TransferCall_001
+* @tc.desc   : Test SetAudioScene with phoneCallSceneType for transfer call connect
+*/
 HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_TransferCall_001, TestSize.Level1)
 {
     InitPrimarySink();
@@ -1226,10 +1227,10 @@ HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_TransferCall_001, TestSize.Level
 }
 
 /**
- * @tc.name   : Test SetAudioScene API with invalid scene
- * @tc.number : SetAudioScene_InvalidScene_001
- * @tc.desc   : Test SetAudioScene with invalid audioScene parameter
- */
+* @tc.name   : Test SetAudioScene API with invalid scene
+* @tc.number : SetAudioScene_InvalidScene_001
+* @tc.desc   : Test SetAudioScene with invalid audioScene parameter
+*/
 HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_InvalidScene_001, TestSize.Level1)
 {
     InitPrimarySink();
@@ -1242,10 +1243,10 @@ HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_InvalidScene_001, TestSize.Level
 }
 
 /**
- * @tc.name   : Test SetPhoneCallSceneType API
- * @tc.number : SetPhoneCallSceneType_001
- * @tc.desc   : Test SetPhoneCallSceneType with primary sink
- */
+* @tc.name   : Test SetPhoneCallSceneType API
+* @tc.number : SetPhoneCallSceneType_001
+* @tc.desc   : Test SetPhoneCallSceneType with primary sink
+*/
 HWTEST_F(AudioRenderSinkUnitTest, SetPhoneCallSceneType_001, TestSize.Level1)
 {
     InitPrimarySink();
@@ -1258,10 +1259,10 @@ HWTEST_F(AudioRenderSinkUnitTest, SetPhoneCallSceneType_001, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test CreateCallTransfer API
- * @tc.number : CreateCallTransfer_001
- * @tc.desc   : Test CreateCallTransfer with primary sink
- */
+* @tc.name   : Test CreateCallTransfer API
+* @tc.number : CreateCallTransfer_001
+* @tc.desc   : Test CreateCallTransfer with primary sink
+*/
 HWTEST_F(AudioRenderSinkUnitTest, CreateCallTransfer_001, TestSize.Level1)
 {
     InitPrimarySink();
@@ -1274,20 +1275,20 @@ HWTEST_F(AudioRenderSinkUnitTest, CreateCallTransfer_001, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test CreateCallTransfer API without init
- * @tc.number : CreateCallTransfer_002
- * @tc.desc   : Test CreateCallTransfer with uninitialized sink returns error
- */
+* @tc.name   : Test CreateCallTransfer API without init
+* @tc.number : CreateCallTransfer_002
+* @tc.desc   : Test CreateCallTransfer with uninitialized sink returns error
+*/
 HWTEST_F(AudioRenderSinkUnitTest, CreateCallTransfer_002, TestSize.Level1)
 {
     EXPECT_TRUE(primarySink_ == nullptr || !primarySink_->IsInited());
 }
 
 /**
- * @tc.name   : Test SelectSceneToHdi API
- * @tc.number : SelectSceneToHdi_001
- * @tc.desc   : Test SelectSceneToHdi with scene change
- */
+* @tc.name   : Test SelectSceneToHdi API
+* @tc.number : SelectSceneToHdi_001
+* @tc.desc   : Test SelectSceneToHdi with scene change
+*/
 HWTEST_F(AudioRenderSinkUnitTest, SelectSceneToHdi_001, TestSize.Level1)
 {
     InitPrimarySink();
@@ -1296,6 +1297,70 @@ HWTEST_F(AudioRenderSinkUnitTest, SelectSceneToHdi_001, TestSize.Level1)
     int32_t ret = primarySink_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_INVALID);
     EXPECT_EQ(ret, SUCCESS);
 
+    DeInitPrimarySink();
+}
+
+/**
+* @tc.name   : Test AudioRenderSink if-false branch
+* @tc.number : InitAudioSampleAttr_False_001
+* @tc.desc   : Test InitAudioSampleAttr halName_ != HDI_ID_INFO_VOICE_CALL_ASSISTANT (if false)
+*              Primary sink halName_ is "default", not "voice_call_assistant",
+*              so the VOICE_CALL_ASSISTANT branch is skipped.
+*/
+HWTEST_F(AudioRenderSinkUnitTest, InitAudioSampleAttr_False_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    // primary sink halName_ = "default" != HDI_ID_INFO_VOICE_CALL_ASSISTANT
+    // InitAudioSampleAttr if-false: param.type is not AUDIO_TTS, param is set to default values
+    // Init succeeds means the if-false path is correctly handled
+    int32_t ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
+
+/**
+* @tc.name   : Test AudioRenderSink if-false branch
+* @tc.number : InitSceneDesc_False_001
+* @tc.desc   : Test InitSceneDesc halName_ != HDI_ID_INFO_VOICE_CALL_ASSISTANT (if false)
+*              Primary sink halName_ is "default", not "voice_call_assistant",
+*              so the VOICE_CALL_ASSISTANT branch is skipped.
+*/
+HWTEST_F(AudioRenderSinkUnitTest, InitSceneDesc_False_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    // primary sink halName_ = "default" != HDI_ID_INFO_VOICE_CALL_ASSISTANT
+    // InitSceneDesc if-false: sceneDesc.scene.id is not AUDIO_TTS, falls to default
+    // Start succeeds means the if-false path is correctly handled
+    int32_t ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    DeviceType deviceType = primarySink_->GetCurrentOutputDevice();
+    EXPECT_EQ(deviceType, DEVICE_TYPE_SPEAKER);
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
+
+/**
+* @tc.name   : Test AudioRenderSink if-false branch
+* @tc.number : InitRender_False_001
+* @tc.desc   : Test InitRender halName_ != HDI_ID_INFO_VOICE_CALL_ASSISTANT (if false)
+*              Primary sink halName_ is "default", not "voice_call_assistant",
+*              so the VOICE_CALL_ASSISTANT branch is skipped, falls to else branch
+*              which calls UpdateActiveDevice with DEVICE_TYPE_SPEAKER.
+*/
+HWTEST_F(AudioRenderSinkUnitTest, InitRender_False_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    // primary sink halName_ = "default" != HDI_ID_INFO_VOICE_CALL_ASSISTANT
+    // InitRender if-false: does not enter VOICE_CALL_ASSISTANT branch,
+    // falls to else branch which calls UpdateActiveDevice
+    DeviceType deviceType = primarySink_->GetCurrentOutputDevice();
+    EXPECT_EQ(deviceType, DEVICE_TYPE_SPEAKER);
     DeInitPrimarySink();
 }
 } // namespace AudioStandard
