@@ -24,11 +24,17 @@
 #include "audio_stream_info.h"
 #include "audio_source_type.h"
 #include <cinttypes>
+#include <cstdlib>
 
 namespace {
 constexpr uint32_t SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 constexpr uint32_t INTERPHONE_CAPTURE_TIMEOUT_MS = 10 * 60 * 1000;
 constexpr uint32_t INTERPHONE_RENDER_TIMEOUT_MS = 6 * 60 * 60 * 1000;
+constexpr int32_t UID_KEY_LEN = 4;             // "uid:" length
+constexpr int32_t ERROR_CODE_KEY_LEN = 10;      // "errorCode:" length
+constexpr int32_t ERROR_REASON_KEY_LEN = 12;    // "errorReason:" length
+constexpr int32_t TIMESTAMP_KEY_LEN = 10;       // "timestamp:" length
+constexpr int32_t DECIMAL_BASE = 10;               // strtol/strtoull base parameter
 }
 
 namespace OHOS {
@@ -125,6 +131,38 @@ void StreamDfxManager::SendAudioErrorEvent(int32_t uid, int32_t errorCode, const
         AUDIO_DEBUG_LOG("check send event isClient");
     }
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void StreamDfxManager::GetErrorInfosFromMedia(std::vector<AudioFaultRecord> &errorInfos)
+{
+    std::vector<std::string> faultRecordStrs;
+    // Media::MediaMonitor::MediaMonitorManager::GetInstance().GetUnifiedFaultCodeRecords(faultRecordStrs);
+    for (const auto &recordStr : faultRecordStrs) {
+        AudioFaultRecord record;
+        size_t uidPos = recordStr.find("uid:");
+        size_t errorCodePos = recordStr.find("errorCode:");
+        size_t errorReasonPos = recordStr.find("errorReason:");
+        size_t timestampPos = recordStr.find("timestamp:");
+        if (uidPos != std::string::npos) {
+            auto uidStr = recordStr.substr(uidPos + UID_KEY_LEN,
+                recordStr.find(',', uidPos) - uidPos - UID_KEY_LEN);
+            record.uid = static_cast<int32_t>(strtol(uidStr.c_str(), nullptr, DECIMAL_BASE));
+        }
+        if (errorCodePos != std::string::npos) {
+            auto errorCodeStr = recordStr.substr(errorCodePos + ERROR_CODE_KEY_LEN,
+                recordStr.find(',', errorCodePos) - errorCodePos - ERROR_CODE_KEY_LEN);
+            record.errorCode = static_cast<int32_t>(strtol(errorCodeStr.c_str(), nullptr, DECIMAL_BASE));
+        }
+        if (errorReasonPos != std::string::npos) {
+            record.errorReason = recordStr.substr(errorReasonPos + ERROR_REASON_KEY_LEN,
+                recordStr.find(',', errorReasonPos) - errorReasonPos - ERROR_REASON_KEY_LEN);
+        }
+        if (timestampPos != std::string::npos) {
+            record.timestamp = static_cast<uint64_t>(strtoull(
+                recordStr.substr(timestampPos + TIMESTAMP_KEY_LEN).c_str(), nullptr, DECIMAL_BASE));
+        }
+        errorInfos.push_back(record);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

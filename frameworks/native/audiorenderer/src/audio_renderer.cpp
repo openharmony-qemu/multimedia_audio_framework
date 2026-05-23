@@ -3298,6 +3298,7 @@ float AudioRendererPrivate::GetSpeed()
     return speed_.value_or(1.0f);
 }
 
+
 int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const
 {
     AUDIO_DEBUG_LOG("GetRendererDebugInfo enter");
@@ -3312,6 +3313,19 @@ int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debug
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioDebugInfo failed");
 
     debugInfo = AudioRendererDebugInfo();
+    GetRendererDebugStreamInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugPipeInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugDeviceInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugVolumeInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugFocusInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugErrorInfo(debugInfo, audioDebugInfo);
+
+    return SUCCESS;
+}
+
+void AudioRendererPrivate::GetRendererDebugStreamInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.sessionId = audioDebugInfo.sessionId;
     debugInfo.samplingRate = static_cast<int32_t>(audioDebugInfo.streamParams.samplingRate);
     debugInfo.channels = static_cast<AudioChannel>(audioDebugInfo.streamParams.channels);
@@ -3322,7 +3336,15 @@ int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debug
     debugInfo.speed = audioDebugInfo.speed;
     debugInfo.pitch = audioDebugInfo.pitch;
     debugInfo.effectMode = audioDebugInfo.effectMode;
+    AUDIO_DEBUG_LOG("GetRendererDebugStreamInfo: sessionId:%{public}u, samplingRate:%{public}d, "
+        "streamUsage:%{public}d, rendererFlags:%{public}d, speed:%{public}f, pitch:%{public}f",
+        debugInfo.sessionId, debugInfo.samplingRate, debugInfo.streamUsage,
+        debugInfo.rendererFlags, debugInfo.speed, debugInfo.pitch);
+}
 
+void AudioRendererPrivate::GetRendererDebugPipeInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.pipeId = audioDebugInfo.pipeId;
     debugInfo.paIndex = audioDebugInfo.paIndex;
     debugInfo.pipeRole = audioDebugInfo.pipeRole;
@@ -3335,17 +3357,50 @@ int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debug
     debugInfo.pipeChannels = audioDebugInfo.pipeChannels;
     debugInfo.pipeChannelLayout = audioDebugInfo.pipeChannelLayout;
     debugInfo.pipeDeviceType = audioDebugInfo.pipeDeviceType;
+    AUDIO_DEBUG_LOG("GetRendererDebugPipeInfo: pipeId:%{public}u, pipeRole:%{public}d, "
+        "pipeName:%{public}s, routeFlag:%{public}u",
+        debugInfo.pipeId, static_cast<int32_t>(debugInfo.pipeRole),
+        debugInfo.pipeName.c_str(), debugInfo.routeFlag);
+}
 
+void AudioRendererPrivate::GetRendererDebugDeviceInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.mainDeviceType = audioDebugInfo.mainDeviceType;
     debugInfo.networkId = audioDebugInfo.networkId;
     debugInfo.macAddress = audioDebugInfo.macAddress;
+    AUDIO_DEBUG_LOG("GetRendererDebugDeviceInfo: mainDeviceType:%{public}d, networkId:%{public}s",
+        static_cast<int32_t>(debugInfo.mainDeviceType), debugInfo.networkId.c_str());
+}
 
+void AudioRendererPrivate::GetRendererDebugVolumeInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.volumeType = audioDebugInfo.volumeType;
     debugInfo.streamVolume = audioDebugInfo.streamVolume;
     debugInfo.systemVolume = audioDebugInfo.systemVolume;
     debugInfo.volume = audioDebugInfo.volume;
+    AUDIO_DEBUG_LOG("GetRendererDebugVolumeInfo: volumeType:%{public}d, "
+        "streamVolume:%{public}f, systemVolume:%{public}f, volume:%{public}f",
+        static_cast<int32_t>(debugInfo.volumeType),
+        debugInfo.streamVolume, debugInfo.systemVolume, debugInfo.volume);
+}
 
-    return SUCCESS;
+void AudioRendererPrivate::GetRendererDebugFocusInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
+    debugInfo.focusState = audioDebugInfo.focusState;
+    debugInfo.focusHistory = audioDebugInfo.focusHistory;
+    AUDIO_DEBUG_LOG("GetRendererDebugFocusInfo: focusState:%{public}d, focusHistory size:%{public}zu",
+        static_cast<int32_t>(debugInfo.focusState), debugInfo.focusHistory.size());
+}
+
+void AudioRendererPrivate::GetRendererDebugErrorInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
+    debugInfo.errorInfos = audioDebugInfo.errorInfos;
+    AUDIO_DEBUG_LOG("GetRendererDebugErrorInfo: errorInfos size:%{public}zu",
+        debugInfo.errorInfos.size());
 }
 
 bool AudioRendererPrivate::IsOffloadEnable()

@@ -872,6 +872,7 @@ int32_t RendererInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
     if (GetAudioSessionID(sessionId) != SUCCESS) {
         AUDIO_WARNING_LOG("GetAudioSessionID failed");
     }
+    AUDIO_INFO_LOG("GetAudioDebugInfo sessionId:%{public}u", sessionId);
 
     auto FillClientOnlyInfo = [&debugInfo, this]() {
         debugInfo.speed = GetSpeed();
@@ -881,11 +882,9 @@ int32_t RendererInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
 
     if (sessionId != UINT32_MAX) {
         int32_t ret = AudioPolicyManager::GetInstance().GetAudioDebugInfo(sessionId, debugInfo);
-        if (ret == SUCCESS) {
-            FillClientOnlyInfo();
-            return SUCCESS;
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("GetAudioDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
         }
-        AUDIO_WARNING_LOG("GetAudioDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
     }
 
     debugInfo.sessionId = sessionId;
@@ -893,7 +892,7 @@ int32_t RendererInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
     GetRendererInfo(debugInfo.rendererInfo);
 
     FillClientOnlyInfo();
-    AUDIO_DEBUG_LOG("GetAudioDebugInfo fallback with local info, sessionId:%{public}u", sessionId);
+    StreamDfxManager::GetErrorInfosFromMedia(debugInfo.errorInfos);
     return SUCCESS;
 }
 

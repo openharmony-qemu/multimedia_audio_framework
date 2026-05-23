@@ -28,6 +28,7 @@
 #include "audio_errors.h"
 #include "audio_renderer_log.h"
 #include "audio_interrupt_info.h"
+#include "audio_pipe_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,12 +137,6 @@ const std::map<SourceType, std::string> SOURCE_TYPE_MAP = {
     {SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT"},
 };
 
-const std::map<AudioPipeRole, std::string> AUDIO_PIPE_ROLE_MAP = {
-    {PIPE_ROLE_OUTPUT, "PIPE_ROLE_OUTPUT"},
-    {PIPE_ROLE_INPUT, "PIPE_ROLE_INPUT"},
-    {PIPE_ROLE_NONE, "PIPE_ROLE_NONE"},
-};
-
 const std::map<AudioStreamType, std::string> AUDIO_STREAM_TYPE_MAP = {
     {STREAM_DEFAULT, "STREAM_DEFAULT"},
     {STREAM_VOICE_CALL, "STREAM_VOICE_CALL"},
@@ -156,17 +151,46 @@ const std::map<AudioStreamType, std::string> AUDIO_STREAM_TYPE_MAP = {
     {STREAM_ENFORCED_AUDIBLE, "STREAM_ENFORCED_AUDIBLE"},
     {STREAM_DTMF, "STREAM_DTMF"},
     {STREAM_TTS, "STREAM_TTS"},
+
     {STREAM_RECORDING, "STREAM_RECORDING"},
     {STREAM_MOVIE, "STREAM_MOVIE"},
     {STREAM_GAME, "STREAM_GAME"},
     {STREAM_SPEECH, "STREAM_SPEECH"},
     {STREAM_SYSTEM_ENFORCED, "STREAM_SYSTEM_ENFORCED"},
     {STREAM_ULTRASONIC, "STREAM_ULTRASONIC"},
+    {STREAM_WAKEUP, "STREAM_WAKEUP"},
+    {STREAM_VOICE_MESSAGE, "STREAM_VOICE_MESSAGE"},
+    {STREAM_NAVIGATION, "STREAM_NAVIGATION"},
+    {STREAM_INTERNAL_FORCE_STOP, "STREAM_INTERNAL_FORCE_STOP"},
+    {STREAM_SOURCE_VOICE_CALL, "STREAM_SOURCE_VOICE_CALL"},
+    {STREAM_VOICE_COMMUNICATION, "STREAM_VOICE_COMMUNICATION"},
+    {STREAM_VOICE_RING, "STREAM_VOICE_RING"},
+    {STREAM_VOICE_CALL_ASSISTANT, "STREAM_VOICE_CALL_ASSISTANT"},
+    {STREAM_CAMCORDER, "STREAM_CAMCORDER"},
+    {STREAM_APP, "STREAM_APP"},
+    {STREAM_ANNOUNCEMENT, "STREAM_ANNOUNCEMENT"},
+    {STREAM_EMERGENCY, "STREAM_EMERGENCY"},
+    {STREAM_ALL, "STREAM_ALL"},
+};
+
+const std::map<AudioPipeRole, std::string> AUDIO_PIPE_ROLE_MAP = {
+    {PIPE_ROLE_OUTPUT, "PIPE_ROLE_OUTPUT"},
+    {PIPE_ROLE_INPUT, "PIPE_ROLE_INPUT"},
+    {PIPE_ROLE_NONE, "PIPE_ROLE_NONE"},
 };
 
 const std::map<AudioEffectMode, std::string> AUDIO_EFFECT_MODE_MAP = {
     {EFFECT_NONE, "EFFECT_NONE"},
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
+};
+
+const std::map<InterruptHint, std::string> INTERRUPT_HINT_MAP = {
+    {INTERRUPT_HINT_NONE, "INTERRUPT_HINT_NONE"},
+    {INTERRUPT_HINT_RESUME, "INTERRUPT_HINT_RESUME"},
+    {INTERRUPT_HINT_PAUSE, "INTERRUPT_HINT_PAUSE"},
+    {INTERRUPT_HINT_STOP, "INTERRUPT_HINT_STOP"},
+    {INTERRUPT_HINT_DUCK, "INTERRUPT_HINT_DUCK"},
+    {INTERRUPT_HINT_UNDUCK, "INTERRUPT_HINT_UNDUCK"},
 };
 
 template<typename T>
@@ -219,9 +243,22 @@ std::string AudioStreamTypeToString(AudioStreamType type)
     return EnumToString(AUDIO_STREAM_TYPE_MAP, type);
 }
 
+std::string VolumeTypeToString(AudioStreamType type)
+{
+    if (type == STREAM_MUSIC) {
+        return "MEDIA_STREAM";
+    }
+    return EnumToString(AUDIO_STREAM_TYPE_MAP, type);
+}
+
 std::string AudioEffectModeToString(AudioEffectMode mode)
 {
     return EnumToString(AUDIO_EFFECT_MODE_MAP, mode);
+}
+
+std::string InterruptHintToString(InterruptHint hint)
+{
+    return EnumToString(INTERRUPT_HINT_MAP, hint);
 }
 
 const std::map<AudioLoopbackState, std::string> AUDIO_LOOPBACK_STATE_MAP = {
@@ -353,6 +390,169 @@ std::string AudioSessionSceneToString(AudioSessionScene scene)
 {
     return EnumToString(AUDIO_SESSION_SCENE_MAP, scene);
 }
+
+const std::map<int32_t, std::string> AUDIO_FLAG_MAP = {
+    {AUDIO_FLAG_NORMAL, "AUDIO_FLAG_NORMAL"},
+    {AUDIO_FLAG_MMAP, "AUDIO_FLAG_MMAP"},
+    {AUDIO_FLAG_VOIP_FAST, "AUDIO_FLAG_VOIP_FAST"},
+    {AUDIO_FLAG_DIRECT, "AUDIO_FLAG_DIRECT"},
+    {AUDIO_FLAG_VOIP_DIRECT, "AUDIO_FLAG_VOIP_DIRECT"},
+    {AUDIO_FLAG_PCM_OFFLOAD, "AUDIO_FLAG_PCM_OFFLOAD"},
+    {AUDIO_FLAG_3DA_DIRECT, "AUDIO_FLAG_3DA_DIRECT"},
+    {AUDIO_FLAG_FORCED_NORMAL, "AUDIO_FLAG_FORCED_NORMAL"},
+    {AUDIO_FLAG_ULTRA_FAST, "AUDIO_FLAG_ULTRA_FAST"},
+    {AUDIO_FLAG_INTERPHONE_VOIP, "AUDIO_FLAG_INTERPHONE_VOIP"},
+    {AUDIO_FLAG_VKB_NORMAL, "AUDIO_FLAG_VKB_NORMAL"},
+    {AUDIO_FLAG_VKB_FAST, "AUDIO_FLAG_VKB_FAST"},
+};
+
+std::string AudioFlagToString(int32_t flag)
+{
+    auto it = AUDIO_FLAG_MAP.find(flag);
+    if (it != AUDIO_FLAG_MAP.end()) {
+        return it->second;
+    }
+    return "UNKNOWN(" + std::to_string(flag) + ")";
+}
+
+struct RouteFlagEntry {
+    uint32_t bits;
+    std::string name;
+};
+
+const RouteFlagEntry ROUTE_FLAG_ENTRIES[] = {
+    {AUDIO_OUTPUT_FLAG_NORMAL, "OUTPUT_FLAG_NORMAL"},
+    {AUDIO_OUTPUT_FLAG_DIRECT, "OUTPUT_FLAG_DIRECT"},
+    {AUDIO_OUTPUT_FLAG_HD, "OUTPUT_FLAG_HD"},
+    {AUDIO_OUTPUT_FLAG_MULTICHANNEL, "OUTPUT_FLAG_MULTICHANNEL"},
+    {AUDIO_OUTPUT_FLAG_LOWPOWER, "OUTPUT_FLAG_LOWPOWER"},
+    {AUDIO_OUTPUT_FLAG_FAST, "OUTPUT_FLAG_FAST"},
+    {AUDIO_OUTPUT_FLAG_VOIP, "OUTPUT_FLAG_VOIP"},
+    {AUDIO_OUTPUT_FLAG_VOIP_FAST, "OUTPUT_FLAG_VOIP_FAST"},
+    {AUDIO_OUTPUT_FLAG_HWDECODING, "OUTPUT_FLAG_HWDECODING"},
+    {AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD, "OUTPUT_FLAG_COMPRESS_OFFLOAD"},
+    {AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION, "OUTPUT_FLAG_MODEM_COMMUNICATION"},
+    {AUDIO_OUTPUT_FLAG_3DA_DIRECT, "OUTPUT_FLAG_3DA_DIRECT"},
+    {AUDIO_OUTPUT_FLAG_INTERPHONE, "OUTPUT_FLAG_INTERPHONE"},
+    {AUDIO_INPUT_FLAG_NORMAL, "INPUT_FLAG_NORMAL"},
+    {AUDIO_INPUT_FLAG_FAST, "INPUT_FLAG_FAST"},
+    {AUDIO_INPUT_FLAG_VOIP, "INPUT_FLAG_VOIP"},
+    {AUDIO_INPUT_FLAG_VOIP_FAST, "INPUT_FLAG_VOIP_FAST"},
+    {AUDIO_INPUT_FLAG_WAKEUP, "INPUT_FLAG_WAKEUP"},
+    {AUDIO_INPUT_FLAG_AI, "INPUT_FLAG_AI"},
+    {AUDIO_INPUT_FLAG_UNPROCESS, "INPUT_FLAG_UNPROCESS"},
+    {AUDIO_INPUT_FLAG_ULTRASONIC, "INPUT_FLAG_ULTRASONIC"},
+    {AUDIO_INPUT_FLAG_VOICE_RECOGNITION, "INPUT_FLAG_VOICE_RECOGNITION"},
+    {AUDIO_INPUT_FLAG_RAW_AI, "INPUT_FLAG_RAW_AI"},
+    {AUDIO_INPUT_FLAG_OFFLOAD, "INPUT_FLAG_OFFLOAD"},
+    {AUDIO_INPUT_FLAG_INTERPHONE, "INPUT_FLAG_INTERPHONE"},
+    {AUDIO_INPUT_FLAG_LIVE, "INPUT_FLAG_LIVE"},
+    {AUDIO_INPUT_FLAG_CAMCORDER, "INPUT_FLAG_CAMCORDER"},
+};
+
+std::string AudioRouteFlagToString(uint32_t routeFlag)
+{
+    CHECK_AND_RETURN_RET(routeFlag != AUDIO_FLAG_NONE, "FLAG_NONE");
+    std::string result;
+    for (const auto &entry : ROUTE_FLAG_ENTRIES) {
+        if ((routeFlag & entry.bits) != 0) {
+            if (!result.empty()) {
+                result += "|";
+            }
+            result += entry.name;
+        }
+    }
+    if (result.empty()) {
+        result = "UNKNOWN(0x" + std::to_string(routeFlag) + ")";
+    }
+    return result;
+}
+
+const std::map<AudioChannelLayout, std::string> AUDIO_CHANNEL_LAYOUT_MAP = {
+    {CH_LAYOUT_UNKNOWN, "CH_LAYOUT_UNKNOWN"},
+    {CH_LAYOUT_MONO, "CH_LAYOUT_MONO"},
+    {CH_LAYOUT_STEREO, "CH_LAYOUT_STEREO"},
+    {CH_LAYOUT_STEREO_DOWNMIX, "CH_LAYOUT_STEREO_DOWNMIX"},
+    {CH_LAYOUT_2POINT1, "CH_LAYOUT_2POINT1"},
+    {CH_LAYOUT_3POINT0, "CH_LAYOUT_3POINT0"},
+    {CH_LAYOUT_SURROUND, "CH_LAYOUT_SURROUND"},
+    {CH_LAYOUT_3POINT1, "CH_LAYOUT_3POINT1"},
+    {CH_LAYOUT_4POINT0, "CH_LAYOUT_4POINT0"},
+    {CH_LAYOUT_QUAD_SIDE, "CH_LAYOUT_QUAD_SIDE"},
+    {CH_LAYOUT_QUAD, "CH_LAYOUT_QUAD"},
+    {CH_LAYOUT_2POINT0POINT2, "CH_LAYOUT_2POINT0POINT2"},
+    {CH_LAYOUT_4POINT1, "CH_LAYOUT_4POINT1"},
+    {CH_LAYOUT_5POINT0, "CH_LAYOUT_5POINT0"},
+    {CH_LAYOUT_5POINT0_BACK, "CH_LAYOUT_5POINT0_BACK"},
+    {CH_LAYOUT_2POINT1POINT2, "CH_LAYOUT_2POINT1POINT2"},
+    {CH_LAYOUT_3POINT0POINT2, "CH_LAYOUT_3POINT0POINT2"},
+    {CH_LAYOUT_5POINT1, "CH_LAYOUT_5POINT1"},
+    {CH_LAYOUT_5POINT1_BACK, "CH_LAYOUT_5POINT1_BACK"},
+    {CH_LAYOUT_6POINT0, "CH_LAYOUT_6POINT0"},
+    {CH_LAYOUT_HEXAGONAL, "CH_LAYOUT_HEXAGONAL"},
+    {CH_LAYOUT_3POINT1POINT2, "CH_LAYOUT_3POINT1POINT2"},
+    {CH_LAYOUT_6POINT0_FRONT, "CH_LAYOUT_6POINT0_FRONT"},
+    {CH_LAYOUT_6POINT1, "CH_LAYOUT_6POINT1"},
+    {CH_LAYOUT_6POINT1_BACK, "CH_LAYOUT_6POINT1_BACK"},
+    {CH_LAYOUT_6POINT1_FRONT, "CH_LAYOUT_6POINT1_FRONT"},
+    {CH_LAYOUT_7POINT0, "CH_LAYOUT_7POINT0"},
+    {CH_LAYOUT_7POINT0_FRONT, "CH_LAYOUT_7POINT0_FRONT"},
+    {CH_LAYOUT_7POINT1, "CH_LAYOUT_7POINT1"},
+    {CH_LAYOUT_OCTAGONAL, "CH_LAYOUT_OCTAGONAL"},
+    {CH_LAYOUT_5POINT1POINT2, "CH_LAYOUT_5POINT1POINT2"},
+    {CH_LAYOUT_7POINT1_WIDE, "CH_LAYOUT_7POINT1_WIDE"},
+    {CH_LAYOUT_7POINT1_WIDE_BACK, "CH_LAYOUT_7POINT1_WIDE_BACK"},
+    {CH_LAYOUT_5POINT1POINT4, "CH_LAYOUT_5POINT1POINT4"},
+    {CH_LAYOUT_7POINT1POINT2, "CH_LAYOUT_7POINT1POINT2"},
+    {CH_LAYOUT_7POINT1POINT4, "CH_LAYOUT_7POINT1POINT4"},
+    {CH_LAYOUT_10POINT2, "CH_LAYOUT_10POINT2"},
+    {CH_LAYOUT_9POINT1POINT4, "CH_LAYOUT_9POINT1POINT4"},
+    {CH_LAYOUT_9POINT1POINT6, "CH_LAYOUT_9POINT1POINT6"},
+    {CH_LAYOUT_HEXADECAGONAL, "CH_LAYOUT_HEXADECAGONAL"},
+    {CH_LAYOUT_HOA_ORDER1_ACN_N3D, "CH_LAYOUT_HOA_ORDER1_ACN_N3D"},
+    {CH_LAYOUT_HOA_ORDER1_ACN_SN3D, "CH_LAYOUT_HOA_ORDER1_ACN_SN3D"},
+    {CH_LAYOUT_HOA_ORDER1_FUMA, "CH_LAYOUT_HOA_ORDER1_FUMA"},
+    {CH_LAYOUT_HOA_ORDER2_ACN_N3D, "CH_LAYOUT_HOA_ORDER2_ACN_N3D"},
+    {CH_LAYOUT_HOA_ORDER2_ACN_SN3D, "CH_LAYOUT_HOA_ORDER2_ACN_SN3D"},
+    {CH_LAYOUT_HOA_ORDER2_FUMA, "CH_LAYOUT_HOA_ORDER2_FUMA"},
+    {CH_LAYOUT_HOA_ORDER3_ACN_N3D, "CH_LAYOUT_HOA_ORDER3_ACN_N3D"},
+    {CH_LAYOUT_HOA_ORDER3_ACN_SN3D, "CH_LAYOUT_HOA_ORDER3_ACN_SN3D"},
+    {CH_LAYOUT_HOA_ORDER3_FUMA, "CH_LAYOUT_HOA_ORDER3_FUMA"},
+};
+
+std::string AudioChannelLayoutToString(AudioChannelLayout layout)
+{
+    auto it = AUDIO_CHANNEL_LAYOUT_MAP.find(layout);
+    CHECK_AND_RETURN_RET(it == AUDIO_CHANNEL_LAYOUT_MAP.end(), it->second);
+    return "UNKNOWN(0x" + std::to_string(static_cast<uint64_t>(layout)) + ")";
+}
+
+void AppendFocusHistory(std::stringstream &ss, const std::vector<AudioFocusBehavior> &focusHistory)
+{
+    ss << "    focusHistory: [\n";
+    for (const auto &item : focusHistory) {
+        ss << "      { streamId: " << item.streamId
+           << ", pid: " << item.pid
+           << ", uid: " << item.uid
+           << ", streamType: " << AudioStreamTypeToString(item.streamType)
+           << ", sourceType: " << SourceTypeToString(item.sourceType)
+           << ", hintType: " << InterruptHintToString(item.hintType)
+           << ", timestamp: " << item.timestamp << " },\n";
+    }
+    ss << "    ]\n";
+}
+
+void AppendErrorInfos(std::stringstream &ss, const std::vector<AudioFaultRecord> &errorInfos)
+{
+    ss << "  errorInfos: [\n";
+    for (const auto &record : errorInfos) {
+        ss << "    { uid: " << record.uid
+           << ", errorCode: " << record.errorCode
+           << ", errorReason: " << record.errorReason
+           << ", timestamp: " << record.timestamp << " },\n";
+    }
+    ss << "  ]\n";
+}
 } // namespace
 
 AudioDebugManager &AudioDebugManager::GetInstance()
@@ -375,10 +575,8 @@ int32_t AudioDebugManagerPrivate::WriteAudioDebugInfo(int32_t fd, const std::str
     size_t remainSize = output.size();
     while (remainSize > 0) {
         ssize_t writeSize = write(fd, buffer, remainSize);
-        if (writeSize <= 0) {
-            AUDIO_ERR_LOG("Write debug info failed, fd:%{public}d, writeSize:%{public}zd", fd, writeSize);
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(writeSize > 0, ERR_OPERATION_FAILED,
+            "Write debug info failed, fd:%{public}d, writeSize:%{public}zd", fd, writeSize);
         buffer += writeSize;
         remainSize -= static_cast<size_t>(writeSize);
     }
@@ -408,9 +606,8 @@ int32_t AudioDebugManagerPrivate::PrintAppAudioDebugInfo(int32_t fd) const
     ret = PrintAllAudioCapturersDebugInfo(fd) != SUCCESS ? ERR_OPERATION_FAILED : ret;
     ret = PrintAllAudioLoopbacksDebugInfo(fd) != SUCCESS ? ERR_OPERATION_FAILED : ret;
     ret = PrintAudioSessionDebugInfo(fd) != SUCCESS ? ERR_OPERATION_FAILED : ret;
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Print app audio debug info finished with partial failure");
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "Print app audio debug info finished with partial failure");
     return ret;
 }
 
@@ -421,17 +618,14 @@ int32_t AudioDebugManagerPrivate::GetAudioRendererDebugInfo(uint32_t rendererKey
     {
         std::lock_guard<std::mutex> lock(rendererMutex_);
         auto callbackIter = audioRendererDebugCallbacks_.find(rendererKey);
-        if (callbackIter == audioRendererDebugCallbacks_.end() || callbackIter->second == nullptr) {
-            AUDIO_WARNING_LOG("Get renderer debug info failed: callback not found, key:%{public}u", rendererKey);
-            return ERR_ILLEGAL_STATE;
-        }
+        CHECK_AND_RETURN_RET_LOG(callbackIter != audioRendererDebugCallbacks_.end() && callbackIter->second != nullptr,
+            ERR_ILLEGAL_STATE, "Get renderer debug info failed: callback not found, key:%{public}u", rendererKey);
         debugCallback = callbackIter->second;
     }
 
     int32_t ret = debugCallback->GetRendererDebugInfo(debugInfo);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Get renderer debug info failed, ret:%{public}d", ret);
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "Get renderer debug info failed, ret:%{public}d", ret);
     return ret;
 }
 
@@ -447,13 +641,13 @@ std::string AudioDebugManagerPrivate::ParserAudioRendererDebugInfo(
        << "    format: " << AudioSampleFormatToString(debugInfo.format) << ",\n"
        << "    encoding: " << AudioEncodingTypeToString(debugInfo.encoding) << ",\n"
        << "    streamUsage: " << StreamUsageToString(debugInfo.streamUsage) << ",\n"
-       << "    rendererFlags: " << debugInfo.rendererFlags << "\n"
+       << "    rendererFlags: " << AudioFlagToString(debugInfo.rendererFlags) << "\n"
        << "  },\n"
        << "  pipeInfo: {\n"
        << "    pipeId: " << debugInfo.pipeId << ",\n"
        << "    pipeRole: " << AudioPipeRoleToString(debugInfo.pipeRole) << ",\n"
        << "    pipeName: " << debugInfo.pipeName << ",\n"
-       << "    routeFlag: " << debugInfo.routeFlag << ",\n"
+       << "    routeFlag: " << AudioRouteFlagToString(debugInfo.routeFlag) << ",\n"
        << "    adapterName: " << debugInfo.adapterName << ",\n"
        << "    pipeFormat: " << debugInfo.pipeFormat << ",\n"
        << "    pipeRate: " << debugInfo.pipeRate << ",\n"
@@ -465,7 +659,7 @@ std::string AudioDebugManagerPrivate::ParserAudioRendererDebugInfo(
        << "    mainDeviceType: " << DeviceTypeToString(debugInfo.mainDeviceType) << "\n"
        << "  },\n"
        << "  volumeInfo: {\n"
-       << "    volumeType: " << AudioStreamTypeToString(debugInfo.volumeType) << ",\n"
+       << "    volumeType: " << VolumeTypeToString(debugInfo.volumeType) << ",\n"
        << "    streamVolume: " << debugInfo.streamVolume << ",\n"
        << "    systemVolume: " << debugInfo.systemVolume << ",\n"
        << "    volume: " << debugInfo.volume << "\n"
@@ -475,11 +669,12 @@ std::string AudioDebugManagerPrivate::ParserAudioRendererDebugInfo(
        << "    pitch: " << debugInfo.pitch << ",\n"
        << "    effectMode: " << AudioEffectModeToString(debugInfo.effectMode) << "\n"
        << "  },\n"
-       << "  interruptInfo: {\n"
-       << "    hintType: " << debugInfo.hintType << ",\n"
-       << "    historyHintType: " << debugInfo.historyHintType << "\n"
-       << "  }\n"
-       << "}";
+       << "  focusInfo: {\n"
+       << "    focusState: " << AudioFocusStateToString(debugInfo.focusState) << ",\n";
+    AppendFocusHistory(ss, debugInfo.focusHistory);
+    ss << "  },\n";
+    AppendErrorInfos(ss, debugInfo.errorInfos);
+    ss << "}";
     return ss.str();
 }
 
@@ -512,15 +707,11 @@ int32_t AudioDebugManagerPrivate::UnregisterAudioRenderer(uint32_t rendererKey)
 int32_t AudioDebugManagerPrivate::PrintAudioRendererDebugInfo(uint32_t rendererKey, int32_t fd) const
 {
     AudioRendererDebugInfo debugInfo;
-    if (GetAudioRendererDebugInfo(rendererKey, debugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print renderer debug info failed: get info failed, key:%{public}u", rendererKey);
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(GetAudioRendererDebugInfo(rendererKey, debugInfo) == SUCCESS, ERR_ILLEGAL_STATE,
+        "Print renderer debug info failed: get info failed, key:%{public}u", rendererKey);
     const std::string parsedDebugInfo = ParserAudioRendererDebugInfo(debugInfo);
-    if (PrintfAudioDebugInfo(fd, parsedDebugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print renderer debug info failed: output failed, key:%{public}u", rendererKey);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PrintfAudioDebugInfo(fd, parsedDebugInfo) == SUCCESS, ERR_OPERATION_FAILED,
+        "Print renderer debug info failed: output failed, key:%{public}u", rendererKey);
     return SUCCESS;
 }
 
@@ -552,17 +743,14 @@ int32_t AudioDebugManagerPrivate::GetAudioCapturerDebugInfo(uint32_t capturerKey
     {
         std::lock_guard<std::mutex> lock(capturerMutex_);
         auto callbackIter = audioCapturerDebugCallbacks_.find(capturerKey);
-        if (callbackIter == audioCapturerDebugCallbacks_.end() || callbackIter->second == nullptr) {
-            AUDIO_WARNING_LOG("Get capturer debug info failed: callback not found, key:%{public}u", capturerKey);
-            return ERR_ILLEGAL_STATE;
-        }
+        CHECK_AND_RETURN_RET_LOG(callbackIter != audioCapturerDebugCallbacks_.end() && callbackIter->second != nullptr,
+            ERR_ILLEGAL_STATE, "Get capturer debug info failed: callback not found, key:%{public}u", capturerKey);
         debugCallback = callbackIter->second;
     }
 
     int32_t ret = debugCallback->GetCapturerDebugInfo(debugInfo);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Get capturer debug info failed, ret:%{public}d", ret);
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "Get capturer debug info failed, ret:%{public}d", ret);
     return ret;
 }
 
@@ -570,7 +758,7 @@ std::string AudioDebugManagerPrivate::ParserAudioCapturerDebugInfo(
     const AudioCapturerDebugInfo &debugInfo)
 {
     std::stringstream ss;
-    const auto &pipeStream = debugInfo.pipeStreamInfo;
+    const auto &pipeStream = debugInfo.pipeInfo;
     const auto &timestamp = debugInfo.captureTimestamp;
     const auto deviceType = debugInfo.inputDeviceInfo.getType();
     ss << "audioCapturer {\n"
@@ -580,9 +768,9 @@ std::string AudioDebugManagerPrivate::ParserAudioCapturerDebugInfo(
        << "    channels: " << AudioChannelToString(debugInfo.channels) << ",\n"
        << "    format: " << AudioSampleFormatToString(debugInfo.format) << ",\n"
        << "    encoding: " << AudioEncodingTypeToString(debugInfo.encoding) << ",\n"
-       << "    channelLayout: " << static_cast<uint64_t>(debugInfo.channelLayout) << ",\n"
+       << "    channelLayout: " << AudioChannelLayoutToString(debugInfo.channelLayout) << ",\n"
        << "    sourceType: " << SourceTypeToString(debugInfo.sourceType) << ",\n"
-       << "    capturerFlag: " << debugInfo.capturerFlag << "\n"
+       << "    capturerFlag: " << AudioFlagToString(debugInfo.capturerFlag) << "\n"
        << "  },\n"
        << "  captureInfo: {\n"
        << "    timestamp(frame: " << timestamp.framePosition
@@ -595,14 +783,19 @@ std::string AudioDebugManagerPrivate::ParserAudioCapturerDebugInfo(
        << "    inputDeviceType: " << static_cast<int32_t>(deviceType) << "\n"
        << "  },\n"
        << "  pipeInfo: {\n"
-       << "    pipeRole: " << static_cast<int32_t>(debugInfo.pipeRole) << ",\n"
-       << "    pipeStream.samplingRate: " << static_cast<int32_t>(pipeStream.samplingRate) << ",\n"
-       << "    pipeStream.channels: " << static_cast<int32_t>(pipeStream.channels) << ",\n"
-       << "    pipeStream.format: " << static_cast<int32_t>(pipeStream.format) << ",\n"
-       << "    pipeStream.encoding: " << static_cast<int32_t>(pipeStream.encoding) << ",\n"
-       << "    pipeStream.channelLayout: " << static_cast<uint64_t>(pipeStream.channelLayout) << "\n"
-       << "  }\n"
-       << "}";
+       << "    pipeRole: " << AudioPipeRoleToString(debugInfo.pipeRole) << ",\n"
+       << "    samplingRate: " << static_cast<int32_t>(pipeStream.samplingRate) << ",\n"
+       << "    channels: " << AudioChannelToString(pipeStream.channels) << ",\n"
+       << "    format: " << AudioSampleFormatToString(pipeStream.format) << ",\n"
+       << "    encoding: " << AudioEncodingTypeToString(pipeStream.encoding) << ",\n"
+       << "    channelLayout: " << AudioChannelLayoutToString(pipeStream.channelLayout) << "\n"
+       << "  },\n"
+       << "  focusInfo: {\n"
+       << "    focusState: " << AudioFocusStateToString(debugInfo.focusState) << ",\n";
+    AppendFocusHistory(ss, debugInfo.focusHistory);
+    ss << "  },\n";
+    AppendErrorInfos(ss, debugInfo.errorInfos);
+    ss << "}";
     return ss.str();
 }
 
@@ -624,10 +817,8 @@ int32_t AudioDebugManagerPrivate::UnregisterAudioCapturer(uint32_t capturerKey)
 {
     std::lock_guard<std::mutex> lock(capturerMutex_);
     auto it = audioCapturerDebugCallbacks_.find(capturerKey);
-    if (it == audioCapturerDebugCallbacks_.end()) {
-        AUDIO_WARNING_LOG("Unregister capturer failed: key not found, key:%{public}u", capturerKey);
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(it != audioCapturerDebugCallbacks_.end(), ERR_ILLEGAL_STATE,
+        "Unregister capturer failed: key not found, key:%{public}u", capturerKey);
     audioCapturerDebugCallbacks_.erase(it);
     AUDIO_INFO_LOG("Unregister capturer success, key:%{public}u, total:%{public}zu", capturerKey,
         audioCapturerDebugCallbacks_.size());
@@ -637,15 +828,11 @@ int32_t AudioDebugManagerPrivate::UnregisterAudioCapturer(uint32_t capturerKey)
 int32_t AudioDebugManagerPrivate::PrintAudioCapturerDebugInfo(uint32_t capturerKey, int32_t fd) const
 {
     AudioCapturerDebugInfo debugInfo;
-    if (GetAudioCapturerDebugInfo(capturerKey, debugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print capturer debug info failed: get info failed, key:%{public}u", capturerKey);
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(GetAudioCapturerDebugInfo(capturerKey, debugInfo) == SUCCESS, ERR_ILLEGAL_STATE,
+        "Print capturer debug info failed: get info failed, key:%{public}u", capturerKey);
     const std::string parsedDebugInfo = ParserAudioCapturerDebugInfo(debugInfo);
-    if (PrintfAudioDebugInfo(fd, parsedDebugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print capturer debug info failed: output failed, key:%{public}u", capturerKey);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PrintfAudioDebugInfo(fd, parsedDebugInfo) == SUCCESS, ERR_OPERATION_FAILED,
+        "Print capturer debug info failed: output failed, key:%{public}u", capturerKey);
     return SUCCESS;
 }
 
@@ -677,17 +864,14 @@ int32_t AudioDebugManagerPrivate::GetAudioLoopbackDebugInfo(uint32_t loopbackKey
     {
         std::lock_guard<std::mutex> lock(loopbackMutex_);
         auto callbackIter = audioLoopbackDebugCallbacks_.find(loopbackKey);
-        if (callbackIter == audioLoopbackDebugCallbacks_.end() || callbackIter->second == nullptr) {
-            AUDIO_WARNING_LOG("Get loopback debug info failed: callback not found, key:%{public}u", loopbackKey);
-            return ERR_ILLEGAL_STATE;
-        }
+        CHECK_AND_RETURN_RET_LOG(callbackIter != audioLoopbackDebugCallbacks_.end() && callbackIter->second != nullptr,
+            ERR_ILLEGAL_STATE, "Get loopback debug info failed: callback not found, key:%{public}u", loopbackKey);
         debugCallback = callbackIter->second;
     }
 
     int32_t ret = debugCallback->GetLoopbackDebugInfo(debugInfo);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Get loopback debug info failed, ret:%{public}d", ret);
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "Get loopback debug info failed, ret:%{public}d", ret);
     return ret;
 }
 
@@ -724,10 +908,8 @@ std::string AudioDebugManagerPrivate::ParserAudioLoopbackDebugInfo(
 int32_t AudioDebugManagerPrivate::RegisterAudioLoopback(uint32_t &loopbackKey,
     const std::shared_ptr<AudioLoopbackDebugCallback> &debugCallback)
 {
-    if (debugCallback == nullptr) {
-        AUDIO_ERR_LOG("Register loopback failed: debugCallback is nullptr");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(debugCallback != nullptr, ERR_INVALID_PARAM,
+        "Register loopback failed: debugCallback is nullptr");
     loopbackKey = GenerateDebugKey();
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     audioLoopbackDebugCallbacks_[loopbackKey] = debugCallback;
@@ -744,15 +926,11 @@ int32_t AudioDebugManagerPrivate::UnregisterAudioLoopback(uint32_t loopbackKey)
 int32_t AudioDebugManagerPrivate::PrintAudioLoopbackDebugInfo(uint32_t loopbackKey, int32_t fd) const
 {
     AudioLoopbackDebugInfo debugInfo;
-    if (GetAudioLoopbackDebugInfo(loopbackKey, debugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print loopback debug info failed: get info failed, key:%{public}u", loopbackKey);
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(GetAudioLoopbackDebugInfo(loopbackKey, debugInfo) == SUCCESS, ERR_ILLEGAL_STATE,
+        "Print loopback debug info failed: get info failed, key:%{public}u", loopbackKey);
     const std::string parsedDebugInfo = ParserAudioLoopbackDebugInfo(debugInfo);
-    if (PrintfAudioDebugInfo(fd, parsedDebugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print loopback debug info failed: output failed, key:%{public}u", loopbackKey);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PrintfAudioDebugInfo(fd, parsedDebugInfo) == SUCCESS, ERR_OPERATION_FAILED,
+        "Print loopback debug info failed: output failed, key:%{public}u", loopbackKey);
     return SUCCESS;
 }
 
@@ -782,16 +960,13 @@ int32_t AudioDebugManagerPrivate::GetAudioSessionDebugInfo(AudioSessionDebugInfo
     std::shared_ptr<AudioSessionDebugCallback> debugCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(sessionMutex_);
-        if (audioSessionDebugCallback_ == nullptr) {
-            AUDIO_WARNING_LOG("Get session debug info failed: callback not registered");
-            return ERR_ILLEGAL_STATE;
-        }
+        CHECK_AND_RETURN_RET_LOG(audioSessionDebugCallback_ != nullptr, ERR_ILLEGAL_STATE,
+            "Get session debug info failed: callback not registered");
         debugCallback = audioSessionDebugCallback_;
     }
     int32_t ret = debugCallback->GetSessionDebugInfo(debugInfo);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Get session debug info failed, ret:%{public}d", ret);
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "Get session debug info failed, ret:%{public}d", ret);
     return ret;
 }
 
@@ -827,10 +1002,8 @@ std::string AudioDebugManagerPrivate::ParserAudioSessionDebugInfo(
 int32_t AudioDebugManagerPrivate::SetAudioSessionCallback(
     const std::shared_ptr<AudioSessionDebugCallback> &debugCallback)
 {
-    if (debugCallback == nullptr) {
-        AUDIO_ERR_LOG("Set session callback failed: debugCallback is nullptr");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(debugCallback != nullptr, ERR_INVALID_PARAM,
+        "Set session callback failed: debugCallback is nullptr");
 
     std::lock_guard<std::mutex> lock(sessionMutex_);
     audioSessionDebugCallback_ = debugCallback;
@@ -840,15 +1013,11 @@ int32_t AudioDebugManagerPrivate::SetAudioSessionCallback(
 int32_t AudioDebugManagerPrivate::PrintAudioSessionDebugInfo(int32_t fd) const
 {
     AudioSessionDebugInfo debugInfo;
-    if (GetAudioSessionDebugInfo(debugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print session debug info failed: get info failed");
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(GetAudioSessionDebugInfo(debugInfo) == SUCCESS, ERR_ILLEGAL_STATE,
+        "Print session debug info failed: get info failed");
     const std::string parsedDebugInfo = ParserAudioSessionDebugInfo(debugInfo);
-    if (PrintfAudioDebugInfo(fd, parsedDebugInfo) != SUCCESS) {
-        AUDIO_WARNING_LOG("Print session debug info failed: output failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PrintfAudioDebugInfo(fd, parsedDebugInfo) == SUCCESS, ERR_OPERATION_FAILED,
+        "Print session debug info failed: output failed");
     return SUCCESS;
 }
 } // namespace AudioStandard
