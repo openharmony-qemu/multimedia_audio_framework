@@ -298,6 +298,7 @@ STREAM_OCCUPANCY:
   STREAM_OR_SOURCE_TYPE: {type: INT32, desc: streamusage or sourcetype}
   START_TIME: {type: INT64, desc: time of start}
   UPLOAD_TIME: {type: INT64, desc: time of upload}
+  STANDBY_DURATION_S: {type: INT32, desc: total standby duration in seconds}
 
 ADD_REMOVE_CUSTOMIZED_TONE:
   __BASE: {type: STATISTIC, level: CRITICAL, desc: add or remove customized tone}

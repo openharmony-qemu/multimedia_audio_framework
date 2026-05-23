@@ -41,6 +41,7 @@
 #include "audio_route_select_info.h"
 #include "sco_audio_scene_manager.h"
 #include "audio_interrupt_custom.h"
+#include "audio_interrupt_service.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
 
@@ -461,6 +462,11 @@ void AudioCoreService::RecordBootStateTime(BootAnimationState state, int32_t uid
 void AudioCoreService::SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler)
 {
     audioPolicyServerHandler_ = handler;
+}
+
+void AudioCoreService::SetInterruptService(std::shared_ptr<AudioInterruptService> interruptService)
+{
+    interruptService_ = interruptService;
 }
 
 std::shared_ptr<AudioCoreService::EventEntry> AudioCoreService::GetEventEntry()
@@ -1489,6 +1495,18 @@ void AudioCoreService::NotifyStandbyStatus(uint32_t sessionId, bool standbyStatu
     } else {
         pipeManager_->ClearStandbyFlag(sessionId);
     }
+}
+
+int32_t AudioCoreService::NotifyStreamStandby(int32_t pid, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+    return interruptService_->NotifyStreamStandby(pid, streamId);
+}
+
+int32_t AudioCoreService::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+    return interruptService_->NotifyStreamStandbyResume(pid, streamId);
 }
 
 int32_t AudioCoreService::StopClient(uint32_t sessionId)

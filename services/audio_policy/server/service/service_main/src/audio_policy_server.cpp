@@ -290,6 +290,7 @@ void AudioPolicyServer::Init()
 #endif
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
+    coreService_->SetInterruptService(interruptService_);
     coreService_->SetEcAndMicRefEnableState(GetEcEnableParam(), micRefEnableState_);
     coreService_->Init();
 

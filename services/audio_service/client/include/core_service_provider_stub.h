@@ -51,6 +51,8 @@ public:
     int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
     int32_t RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime) override;
     int32_t NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
+    int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId, int32_t &ret) override;
+    int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId, int32_t &ret) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

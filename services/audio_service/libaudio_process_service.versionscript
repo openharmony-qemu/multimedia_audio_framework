@@ -64,6 +64,8 @@
     *UnloadModernOffloadCapSource*;
     *ConfigCoreServiceProvider*;
     *UpdateSessionOperation*;
+    *NotifyStreamStandby*;
+    *NotifyStreamStandbyResume*;
     *SetLatestMuteState*;
     *ForceStopAudioStream*;
     *ClearAudioFocusBySessionID*;
