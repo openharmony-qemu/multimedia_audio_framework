@@ -2005,6 +2005,12 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         AUDIO_WARNING_LOG("CreateSessionEffect failed for session %{public}u, ret %{public}d",
             sessionId, ret);
     } else {
+        auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        if (sinkInputNode != nullptr) {
+            sinkInputNode->EnsureHistoryBufferForAiss(instance->GetPreheatFrames());
+        } else {
+            AUDIO_WARNING_LOG("CreateSessionEffect: SinkInputNode not found for session %{public}u", sessionId);
+        }
         AUDIO_INFO_LOG("[SE::RendererManager] CreateSessionEffect sessionId=%{public}u",
             sessionId);
     }

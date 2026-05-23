@@ -43,7 +43,6 @@ static constexpr uint32_t CUR_NODE_ID = 100;
 static constexpr uint32_t OTHER_NODE_ID = 101;
 static constexpr uint32_t OUTPUT_NODE_ID = 200;
 static constexpr uint32_t PROBE_NODE_ID = 300;
-static constexpr int32_t HALF_ROUNDING_DIVISOR = 2;
 
 static AudioEffectConfig MakeTestConfig()
 {
@@ -156,6 +155,10 @@ protected:
         // (Connect = downstream reads from upstream)
         manager_->loudnessGainNode_->Connect(manager_->converterForLoudness_);
         manager_->converterForLoudness_->Connect(curNode_);
+
+        // Set up sinkOutputNode_ (needed for flush tests)
+        HpaeNodeInfo outputNodeInfo = MakeOutputNodeInfo();
+        manager_->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(outputNodeInfo);
     }
 
     void TearDown() override
@@ -483,8 +486,6 @@ HWTEST_F(HpaeOffloadSeDataflowTest, warmingUp_outputsSilence, TestSize.Level0)
 HWTEST_F(HpaeOffloadSeDataflowTest, intercepting_feedsAndOutputsSilence, TestSize.Level0)
 {
     fake_.SetPreheatFrames(0);
-    fake_.SetProcessThreshold(1920);
-    fake_.SetProcessDelayMs(0);
     auto instance = CreateEffectInstance();
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
     manager_->sessionEffectNode_->StartEffect();
@@ -520,7 +521,7 @@ HWTEST_F(HpaeOffloadSeDataflowTest, active_outputsAlgoData, TestSize.Level0)
 
     // Drive to ACTIVE
     probe_->DoProcess();  // WARMING_UP→INTERCEPTING
-    manager_->sessionEffectNode_->ResetSilenceFrameCountForTest();
+    manager_->sessionEffectNode_->ResetTimestampsForTest();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     probe_->DoProcess();  // INTERCEPTING→ACTIVE
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
@@ -548,7 +549,7 @@ HWTEST_F(HpaeOffloadSeDataflowTest, remove_restoresPassthrough, TestSize.Level0)
 
     // Drive to ACTIVE
     probe_->DoProcess();  // WARMING_UP→INTERCEPTING
-    manager_->sessionEffectNode_->ResetSilenceFrameCountForTest();
+    manager_->sessionEffectNode_->ResetTimestampsForTest();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     probe_->DoProcess();  // INTERCEPTING→ACTIVE
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
@@ -604,7 +605,7 @@ HWTEST_F(HpaeOffloadSeDataflowTest, pauseStart_resumesSE, TestSize.Level0)
     // Drive to ACTIVE
     manager_->sessionEffectNode_->StartEffect();
     probe_->DoProcess();  // WARMING_UP→INTERCEPTING
-    manager_->sessionEffectNode_->ResetSilenceFrameCountForTest();
+    manager_->sessionEffectNode_->ResetTimestampsForTest();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     probe_->DoProcess();  // INTERCEPTING→ACTIVE
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
@@ -648,7 +649,7 @@ HWTEST_F(HpaeOffloadSeDataflowTest, pauseFlushStart_stateTransitions, TestSize.L
     // Drive to ACTIVE state
     manager_->sessionEffectNode_->StartEffect();
     probe_->DoProcess();  // WARMING_UP→INTERCEPTING
-    manager_->sessionEffectNode_->ResetSilenceFrameCountForTest();
+    manager_->sessionEffectNode_->ResetTimestampsForTest();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     probe_->DoProcess();  // INTERCEPTING→ACTIVE
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
@@ -671,6 +672,42 @@ HWTEST_F(HpaeOffloadSeDataflowTest, pauseFlushStart_stateTransitions, TestSize.L
     fake_.Reset();
     probe_->DoProcess();
     EXPECT_GT(fake_.GetFeedInputCount(), 0u) << "FeedInput not called after Flush→Start";
+}
+
+// OSE-FLUSH-1: InsertSessionEffectNode flushes sinkOutputNode_ internal buffer
+HWTEST_F(HpaeOffloadSeTest, insert_flushesSinkOutput, TestSize.Level0)
+{
+    // Pre-fill sinkOutputNode_ internal buffer with fake data
+    manager_->sinkOutputNode_->renderFrameData_.resize(1024, 0xAB);
+    ASSERT_GT(manager_->sinkOutputNode_->GetLatency(), 0u);
+
+    auto instance = MakeTestEffectInstance();
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance",
+        instance, config_);
+    EXPECT_EQ(ret, 0);
+
+    // After insert, internal buffer should be cleared by FlushStream()
+    EXPECT_TRUE(manager_->sinkOutputNode_->renderFrameData_.empty());
+    EXPECT_EQ(manager_->sinkOutputNode_->GetLatency(), 0u);
+}
+
+// OSE-FLUSH-2: RemoveSessionEffectNode flushes sinkOutputNode_ internal buffer
+HWTEST_F(HpaeOffloadSeTest, remove_flushesSinkOutput, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    // Pre-fill sinkOutputNode_ internal buffer with fake data
+    manager_->sinkOutputNode_->renderFrameData_.resize(1024, 0xCD);
+    ASSERT_GT(manager_->sinkOutputNode_->GetLatency(), 0u);
+
+    int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
+    EXPECT_EQ(ret, 0);
+
+    // After remove, internal buffer should be cleared by FlushStream()
+    EXPECT_TRUE(manager_->sinkOutputNode_->renderFrameData_.empty());
+    EXPECT_EQ(manager_->sinkOutputNode_->GetLatency(), 0u);
 }
 
 }  // namespace HPAE

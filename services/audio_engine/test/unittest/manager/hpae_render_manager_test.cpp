@@ -28,6 +28,7 @@
 #include "hpae_node_common.h"
 #include "hpae_mocks.h"
 #include "audio_utils.h"
+#include "mock_effect_instance.h"
 #include "audio_pipe_types.h"
 #include <thread>
 #include <chrono>
@@ -3922,4 +3923,43 @@ HWTEST_F(HpaeRendererManagerTest, Process_Interphone_NoThread_001, TestSize.Leve
     EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
     ::testing::DefaultValue<int32_t>::Clear();
 }
+
+HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_EnsureHistoryBufferForAiss, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 789;
+    constexpr uint32_t testNodeId = 100;
+    constexpr uint32_t preheatFrames = 2400;
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = testNodeId;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager_->sinkInputNodeMap_[sessionId] = sinkInputNode;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].bypass = false;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, hpaeRendererManager_->sinkInfo_);
+    ASSERT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    cluster->Connect(sinkInputNode);
+    hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = cluster;
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(preheatFrames));
+
+    int32_t ret = hpaeRendererManager_->CreateSessionEffect(sessionId, "ai_audio_enhance", instance, config);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_NE(sinkInputNode->historyBuffer_, nullptr);
+    EXPECT_GE(sinkInputNode->historyBuffer_->GetFrames(), preheatFrames);
+}
+
 }  // namespace
