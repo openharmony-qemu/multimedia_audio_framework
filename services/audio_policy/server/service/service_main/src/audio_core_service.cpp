@@ -989,8 +989,8 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             streamDesc->audioFlag_ = GetFlagForMmapStream(streamDesc);
             if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
                 AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
-                streamDesc->GetMainNewDeviceDesc) &&
-                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) {
+                streamDesc->GetMainNewDeviceDesc()) &&
+                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
                 break;
             }
             return;

@@ -994,7 +994,7 @@ void AudioCoreService::RemoveUnusedPipe()
                 DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
                 continue;
             }
-        } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER && pipeInfo->isCollaborationEnable) {
+        } else if (pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER && pipeInfo->isCollaborationEnable) {
             if (!isRingDualToneOnPrimarySpeaker_) {
                 DelayReleaseMultiChannelPipe(pipeInfo->id_, pipeInfo->paIndex_);
                 continue;
@@ -2280,8 +2280,8 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
     }
 
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
-        streamDesc->GetMainNewDeviceDesc) &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) {
+        streamDesc->GetMainNewDeviceDesc()) &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "collaborative playback effect in arm, Skipped.");
         return false;
     }
