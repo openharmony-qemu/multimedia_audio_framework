@@ -28,6 +28,7 @@
 #include "hpae_node_common.h"
 #include "hpae_mocks.h"
 #include "audio_utils.h"
+#include "audio_pipe_types.h"
 #include <thread>
 #include <chrono>
 #include <cstdio>
@@ -1147,7 +1148,7 @@ HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_002, TestSize.Level1)
     outNodeInfo.samplingRate = SAMPLE_RATE_48000;
 
     bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, true);
     EXPECT_EQ(inNodeInfo.frameLen, 960);
 }
 
@@ -3576,20 +3577,20 @@ HWTEST_F(HpaeRendererManagerTest, StopInterphoneSinkIfNeeded_001, TestSize.Level
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.deviceName = "Interphone_Sink";  // deviceName contains "Interphone"
+    sinkInfo.deviceName = "Interphone_Sink";
     sinkInfo.filePath = g_rootPath + "interphone_stop_test.pcm";
     sinkInfo.frameLen = FRAME_LENGTH_960;
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     sinkInfo.format = SAMPLE_F32LE;
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
     
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     
-    // Test StopInterphoneSinkIfNeeded function directly with deviceName containing "Interphone"
     hpaeRendererManager->StopInterphoneSinkIfNeeded();
     WaitForMsgProcessing(hpaeRendererManager);
     
@@ -3606,13 +3607,13 @@ HWTEST_F(HpaeRendererManagerTest, StopInterphoneSinkIfNeeded_001, TestSize.Level
  */
 HWTEST_F(HpaeRendererManagerTest, StopInterphoneSinkIfNeeded_002, TestSize.Level1)
 {
-    HpaeSinkInfo sinkInfo = GetSinkInfo();  // deviceName is "Speaker", does not contain "Interphone"
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    sinkInfo.routeFlag = AUDIO_FLAG_NONE;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     
-    // Test StopInterphoneSinkIfNeeded - should not stop for non-interphone deviceName
     hpaeRendererManager->StopInterphoneSinkIfNeeded();
     WaitForMsgProcessing(hpaeRendererManager);
     
@@ -3633,13 +3634,14 @@ HWTEST_F(HpaeRendererManagerTest, Pause_Interphone_001, TestSize.Level1)
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.deviceName = "Interphone_Sink";  // deviceName contains "Interphone"
+    sinkInfo.deviceName = "Interphone_Sink";
     sinkInfo.filePath = g_rootPath + "interphone_pause_test.pcm";
     sinkInfo.frameLen = FRAME_LENGTH_960;
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     sinkInfo.format = SAMPLE_F32LE;
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
     
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
@@ -3659,13 +3661,11 @@ HWTEST_F(HpaeRendererManagerTest, Pause_Interphone_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
     
-    // Pause will call StopInterphoneSinkIfNeeded internally for interphone deviceName
-    // Since outputCluster is stopped immediately, fade out cannot complete, state stays at PAUSING
     EXPECT_EQ(hpaeRendererManager->Pause(TEST_STREAM_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSING);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     
     EXPECT_EQ(hpaeRendererManager->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -3808,8 +3808,118 @@ HWTEST_F(HpaeRendererManagerTest, AdjustFrameLen_007, TestSize.Level1)
 
     bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
     EXPECT_EQ(result, true);
-    // inFrameLenUs = 220 * 1000 / 11025 = 19, outFrameLenUs = 960 * 1000 / 48000 = 20
-    // 19 != 20, adjust: inNodeInfo.frameLen = 20 * 11025 / 1000 = 220
     EXPECT_EQ(inNodeInfo.frameLen, 220);
+}
+
+HWTEST_F(HpaeRendererManagerTest, Init_Interphone_NoThread_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceName = "Interphone_Sink";
+    sinkInfo.filePath = g_rootPath + "interphone_init_test.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+
+    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_, nullptr);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+HWTEST_F(HpaeRendererManagerTest, SendRequest_Interphone_Sync_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceName = "Interphone_Sink";
+    sinkInfo.filePath = g_rootPath + "interphone_sync_test.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+
+    HpaeNodeInfo nodeInfo;
+    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    ::testing::DefaultValue<int32_t>::Set(0);
+    
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_, nullptr);
+    EXPECT_NE(hpaeRendererManager->outputCluster_, nullptr);
+    
+    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    auto outputClusterImpl = std::static_pointer_cast<HpaeOutputCluster>(hpaeRendererManager->outputCluster_);
+    outputClusterImpl->hpaeSinkOutputNode_->audioRendererSink_ = mockRenderSink;
+    outputClusterImpl->hpaeSinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sinkInputNodeMap_.insert_or_assign(1, sinkInputNode);
+    sinkInputNode->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_CALL(*mockRenderSink, RenderFrame(_, _, _)).Times(0);
+    EXPECT_CALL(*mockRenderSink, Stop()).Times(0);
+    hpaeRendererManager->Process();
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+
+    EXPECT_CALL(*mockRenderSink, Stop()).Times(AtLeast(1)).WillRepeatedly(Return(0));
+    hpaeRendererManager->StopInterphoneSinkIfNeeded();
+    
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    ::testing::DefaultValue<int32_t>::Clear();
+}
+
+HWTEST_F(HpaeRendererManagerTest, Process_Interphone_NoThread_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceName = "Interphone_Sink";
+    sinkInfo.filePath = g_rootPath + "interphone_process_nothread_test.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+
+    HpaeNodeInfo nodeInfo;
+    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    auto outputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    hpaeRendererManager->outputCluster_ = outputCluster;
+    ::testing::DefaultValue<int32_t>::Set(0);
+    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    outputCluster->hpaeSinkOutputNode_->audioRendererSink_ = mockRenderSink;
+    outputCluster->hpaeSinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_, nullptr);
+    
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sinkInputNodeMap_.insert_or_assign(1, sinkInputNode);
+    sinkInputNode->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_CALL(*mockRenderSink, RenderFrame(_, _, _)).Times(0);
+    EXPECT_CALL(*mockRenderSink, Stop()).Times(0);
+    hpaeRendererManager->Process();
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+
+    hpaeRendererManager->sinkInputNodeMap_.erase(1);
+    EXPECT_CALL(*mockRenderSink, Stop()).WillOnce(Return(0));
+    hpaeRendererManager->StopInterphoneSinkIfNeeded();
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+    ::testing::DefaultValue<int32_t>::Clear();
 }
 }  // namespace
