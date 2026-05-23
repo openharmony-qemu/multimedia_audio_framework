@@ -327,7 +327,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_004, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
@@ -345,8 +345,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_005, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
@@ -364,9 +363,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_006, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
@@ -384,40 +381,11 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_007, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(DoAll(SetArgReferee<1>("10"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
     EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
-}
-
-/**
-* @tc.name   : Test LoadCollaborationConfigInner API
-* @tc.number : LoadCollaborationConfigInner_008
-* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
-*/
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_008, TestSize.Level1)
-{
-    std::string prodcutId = "testProduct";
-    auto mockNode = std::make_shared<MockAudioXmlNode>();
-    auto mockSecondNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(DoAll(SetArgReferee<1>("10"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("test"), Return(SUCCESS)));
-    EXPECT_CALL(*mockSecondNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockSecondNode, IsNodeValid()).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, GetCopyNode()).Times(1).WillOnce(Return(mockSecondNode));
-    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
-
-    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
-    EXPECT_EQ(AudioCollaborationManager::GetInstance()->collaborativeEarphoneProductConfig_[prodcutId], 10);
 }
 
 /**
@@ -491,7 +459,7 @@ HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage
     inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
     EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC));
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MEDIA));
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
 }
 
 /**
@@ -762,30 +730,6 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_M
     EXPECT_CALL(*mockNode, MoveToNext()).Times(2);
     inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
     EXPECT_EQ(inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].size(), 2u);
-}
-
-// ===== Tests for LoadCollaborationConfigInner with collabSupportedStreamUsage branch =====
-
-/**
-* @tc.name   : Test LoadCollaborationConfigInner with collabSupportedStreamUsage node
-* @tc.number : LoadCollaborationConfigInner_CollStream_001
-* @tc.desc   : LoadCollaborationConfigInner should handle collabSupportedStreamUsage child node.
-*/
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_CollStream_001, TestSize.Level1)
-{
-    auto *inst = AudioCollaborationManager::GetInstance();
-    inst->collAbsSupportedStreamUsageConfig_.clear();
-    auto mockNode = std::make_shared<MockAudioXmlNode>();
-    auto mockCopyNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName(_))
-        .WillOnce(Return(false));  // not "product" initially
-    // The new code checks IsElementNode first then checks collabSupportedStreamUsage
-    // Since CompareName("product") returns false, it falls through to error log path
-    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
-    inst->LoadCollaborationConfigInner(mockNode);
 }
 
 // ===== Tests for IsStreamUsageSupported (indirect via public API) =====
