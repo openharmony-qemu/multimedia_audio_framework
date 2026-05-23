@@ -917,11 +917,13 @@ void OHAudioRenderer::SetRendererFastStatusChangeCallback(OH_AudioRenderer_OnFas
 
 void OHAudioRenderer::SetPreferredFrameSize(int32_t frameSize)
 {
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetPreferredFrameSize(frameSize);
 }
 
 bool OHAudioRenderer::IsFastRenderer()
 {
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->IsFastRenderer();
 }
 
