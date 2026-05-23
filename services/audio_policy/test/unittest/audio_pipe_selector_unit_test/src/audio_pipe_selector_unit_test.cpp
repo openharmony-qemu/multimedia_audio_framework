@@ -290,6 +290,20 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_015, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetPipeType_016
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_PLAYBACK and flag contains
+ *  AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_016, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT);
+}
+
+/**
  * @tc.name: GetAdapterNameByStreamDesc_001
  * @tc.desc: Test GetAdapterNameByStreamDesc when streamDesc is not nullptr and pipeInfoPtr
  *  and adapterInfoPtr are not nullptr.

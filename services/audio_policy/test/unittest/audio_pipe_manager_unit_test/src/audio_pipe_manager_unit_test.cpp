@@ -642,6 +642,19 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_012, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsSpecialPipe_013
+ * @tc.desc: Test IsSpecialPipe when routeFlag includes AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_013, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    EXPECT_TRUE(result);
+}
+
+/**
  * @tc.name: GetPipeinfoByNameAndFlag_001
  * @tc.desc: Test GetPipeinfoByNameAndFlag when adapterName does not match.
  * @tc.type: FUNC
