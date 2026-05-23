@@ -69,7 +69,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_001, TestS
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_002, TestSize.Level0)
 {
     audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice1 = std::make_shared<AudioDeviceDescriptor>();
     audioDevice1->macAddress_ = testAddr1;
     AudioCoreService::GetCoreService()->Init();
@@ -130,11 +130,11 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_004, TestS
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(AudioDevice2, false);
     EXPECT_EQ(ret, SUCCESS);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice2);
-    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, false);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, COLLABORATION_CLOSE);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice1);
-    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, true);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, COLLABORATION_BLUETOOTH_OPEN);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice3);
-    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, false);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, COLLABORATION_CLOSE);
 }
 
 /**
@@ -183,22 +183,22 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestS
     audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
     // current device is not in addressToCollaborativeEnabledMap_ but collaborative state is true
     audioCollaborativeServicePtr_->curDeviceAddress_ = testAddr1;
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERR_OPERATION_FAILED);
 
     // current device is not in addressToCollaborativeEnabledMap_ but collaborative state is false
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = false;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
     
     // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should be changed
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = false;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR] = COLLABORATIVE_OPENED;
     audioCollaborativeServicePtr_->curDeviceAddress_ = TEST_MAC_ADDR;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERR_OPERATION_FAILED);
     EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), true);
 
     // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should not be changed
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
 }
 
