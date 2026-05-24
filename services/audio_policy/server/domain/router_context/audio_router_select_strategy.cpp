@@ -230,7 +230,8 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
     } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
         streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
         streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-        streamUsage == STREAM_USAGE_INTERPHONE) {
+        streamUsage == STREAM_USAGE_INTERPHONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
         auto before = GetCallDefaultOutputDevice(uid, streamId);
         UpdateCallDefaultOutputDevice(uid, streamId, setDev);
         auto after = GetCallDefaultOutputDevice(uid, streamId);

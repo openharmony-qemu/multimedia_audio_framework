@@ -508,10 +508,14 @@ bool AudioDeviceCommon::IsRendererStreamRunning(std::shared_ptr<AudioRendererCha
 {
     StreamUsage usage = rendererChangeInfo->rendererInfo.streamUsage;
     RendererState rendererState = rendererChangeInfo->rendererState;
-    if ((usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
-        audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL) ||
-        (usage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
-            (rendererState != RENDERER_RUNNING && !rendererChangeInfo->prerunningState))) {
+    if ((usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        usage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) &&
+        audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL) {
+        return false;
+    }
+    if (usage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        usage != STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION &&
+        (rendererState != RENDERER_RUNNING && !rendererChangeInfo->prerunningState)) {
         return false;
     }
     return true;

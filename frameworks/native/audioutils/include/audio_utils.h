@@ -82,6 +82,8 @@ public:
 
     static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
 
+    static bool IsRingerStreamUsage(const StreamUsage &usage);
+
     static bool IsRingerAudioScene(const AudioScene &audioScene);
 
     static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);

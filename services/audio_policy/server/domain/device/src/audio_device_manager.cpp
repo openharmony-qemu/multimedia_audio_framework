@@ -827,7 +827,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCap
 // LCOV_EXCL_STOP
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice(StreamUsage streamUsage)
 {
-    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         AUDIO_DEBUG_LOG("Invalid stream usage");
     }
 

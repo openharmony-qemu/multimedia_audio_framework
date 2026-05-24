@@ -682,5 +682,38 @@ void LocalDeviceManager::SetAudioScene(const AudioScene scene)
     currentAudioScene_.store(scene);
 }
 
+int32_t LocalDeviceManager::SetPhoneCallSceneType(const std::string &adapterName, int32_t type)
+{
+    AUDIO_INFO_LOG("SetPhoneCallSceneType: adapterName=%{public}s, type=%{public}d",
+        adapterName.c_str(), type);
+    CHECK_AND_RETURN_RET_LOG(type == SCENE_TYPE_MODEM || type == SCENE_TYPE_TRANSFER,
+        ERR_INVALID_PARAM, "invalid type=%{public}d, only 0(MODEM) or 1(TRANSFER) allowed", type);
+
+    currentPhoneCallSceneType_.store(type);
+
+    std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr,
+        ERR_INVALID_HANDLE, "adapter %{public}s is nullptr", adapterName.c_str());
+
+    SceneType hdiType = SceneType(type);
+    int32_t ret = wrapper->adapter_->SetPhoneCallScene(wrapper->adapter_, hdiType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "SetPhoneCallSceneType to HDI failed, ret=%{public}d", ret);
+    return SUCCESS;
+}
+
+int32_t LocalDeviceManager::CreateCallTransfer(const std::string &adapterName)
+{
+    AUDIO_INFO_LOG("CreateCallTransfer: adapterName=%{public}s", adapterName.c_str());
+    std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr,
+        ERR_INVALID_HANDLE, "adapter %{public}s is nullptr", adapterName.c_str());
+
+    int32_t ret = wrapper->adapter_->CreateCallTransfer(wrapper->adapter_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "CreateCallTransfer to HDI failed, ret=%{public}d", ret);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -923,6 +923,29 @@ void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<Audio
     }
 }
 
+bool AudioPipeManager::IsTransferCallOrRingtoneScene()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &entry : modemCommunicationIdMap_) {
+        if (entry.second != nullptr &&
+            entry.second->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION &&
+            entry.second->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            if (desc != nullptr &&
+                desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE &&
+                desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void AudioPipeManager::UpdateRingAndVoipStreamStatus(const AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
@@ -1439,7 +1462,8 @@ bool AudioPipeManager::IsVoipOrCellularStreamActive()
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         if ((desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) &&
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) &&
             desc->streamStatus_ == STREAM_STATUS_STARTED) {
             return true;
         }

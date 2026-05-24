@@ -379,7 +379,8 @@ bool MultichannelAudioRenderSink::SetPlayingAppNameParam(const std::string &para
     return true;
 }
 
-int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
+int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,
+    int32_t phoneCallSceneType)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");

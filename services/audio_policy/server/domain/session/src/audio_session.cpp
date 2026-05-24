@@ -276,7 +276,8 @@ bool AudioSession::IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &st
     return (streamUsage == STREAM_USAGE_VOICE_MESSAGE) ||
         (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
         (streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
-        (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+        (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) ||
+        (streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION);
 }
 
 bool AudioSession::CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt)

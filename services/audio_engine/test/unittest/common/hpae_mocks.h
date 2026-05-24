@@ -73,7 +73,8 @@ public:
     MOCK_METHOD(int32_t, SetDeviceConnectedFlag, (bool flag), (override));
     MOCK_METHOD(void, SetSpeed, (float speed), (override));
 
-    MOCK_METHOD(int32_t, SetAudioScene, (AudioScene audioScene, bool scoExcludeFlag), (override));
+    MOCK_METHOD(int32_t, SetAudioScene,
+        (AudioScene audioScene, bool scoExcludeFlag, int32_t phoneCallSceneType), (override));
     MOCK_METHOD(int32_t, GetAudioScene, (), (override));
 
     MOCK_METHOD(int32_t, UpdateActiveDevice, (std::vector<DeviceType> &outputDevices), (override));

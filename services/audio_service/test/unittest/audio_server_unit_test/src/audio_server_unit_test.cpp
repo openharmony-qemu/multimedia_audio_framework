@@ -488,7 +488,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     bool scoExcludeFlag = false;
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag,
+        SCENE_TYPE_INVALID);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -528,12 +529,14 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
 
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     deviceTypes.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag,
+        SCENE_TYPE_INVALID);
 
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag);
+    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag,
+        SCENE_TYPE_INVALID);
     activeOutputDevices.clear();
     activeOutputDevices.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
     deviceTypes.clear();
@@ -2611,7 +2614,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioSceneInner_005, TestSize.Level1
     AudioScene audioScene = AUDIO_SCENE_RINGING;
     BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
     bool scoExcludeFlag = true;
-    int32_t ret = audioServer->SetAudioSceneInner(audioScene, a2dpOffloadFlag, scoExcludeFlag);
+    int32_t phoneCallSceneType = SCENE_TYPE_INVALID;
+    int32_t ret = audioServer->SetAudioSceneInner(audioScene, a2dpOffloadFlag, scoExcludeFlag,
+        phoneCallSceneType);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -3410,5 +3415,6 @@ HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_003, TestSize.Level
     bool ret = audioServer->CheckRecorderFormat(config);
     EXPECT_EQ(ret, true);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

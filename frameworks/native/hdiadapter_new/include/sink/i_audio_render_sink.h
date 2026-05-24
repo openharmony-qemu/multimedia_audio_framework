@@ -71,8 +71,12 @@ public:
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute) SUCCESS_RET
     virtual void SetSpeed(float speed) {}
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) NOT_SUPPORT_RET
+    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID) NOT_SUPPORT_RET
     virtual int32_t GetAudioScene(void) NOT_SUPPORT_RET
+
+    virtual int32_t SetPhoneCallSceneType(int32_t type) NOT_SUPPORT_RET
+    virtual int32_t CreateCallTransfer() NOT_SUPPORT_RET
 
     virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) NOT_SUPPORT_RET
 

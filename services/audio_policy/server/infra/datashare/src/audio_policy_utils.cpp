@@ -319,6 +319,8 @@ bool AudioPolicyUtils::IsVoiceStreamType(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             result = true;
             break;
@@ -860,6 +862,7 @@ AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage 
     switch (streamUsage) {
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return CALL_OUTPUT_DEVICES;
@@ -873,6 +876,7 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
     switch (streamUsage) {
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return AUDIO_CALL_RENDER;

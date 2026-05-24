@@ -366,7 +366,8 @@ void RemoteAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
-int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
+int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,
+    int32_t phoneCallSceneType)
 {
     CHECK_AND_RETURN_RET_LOG(renderInited_.load() && IsValidState(), ERR_ILLEGAL_STATE, "not create, invalid state");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,

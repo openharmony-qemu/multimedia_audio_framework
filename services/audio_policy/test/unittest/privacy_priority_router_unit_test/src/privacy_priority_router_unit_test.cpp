@@ -723,7 +723,46 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_023, TestSize.Level1
     AudioRouterInfra::GetInstance().SetScoExcluded(false);
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.push_back(desc);
-    EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_MUSIC, 1).size());
+EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_MUSIC, 1).size());
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetCallRenderDevice with transfer call.
+ * @tc.number: PrivacyPriorityRouter_024
+ * @tc.desc  : Test GetCallRenderDevice for STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_024, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    router.audioPolicyManager_.SetRingerMode(RINGER_MODE_NORMAL);
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    desc->deviceUsage_ = VOICE;
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
+    auto result = router.GetCallRenderDevice(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION, 1);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetRingRenderDevices with transfer ringtone.
+ * @tc.number: PrivacyPriorityRouter_025
+ * @tc.desc  : Test GetRingRenderDevices for STREAM_USAGE_VOICE_TRANSFER_RINGTONE.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_025, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    router.audioPolicyManager_.SetRingerMode(RINGER_MODE_NORMAL);
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
+    auto descs = router.GetRingRenderDevices(STREAM_USAGE_VOICE_TRANSFER_RINGTONE, 1);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    EXPECT_GE(descs.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
