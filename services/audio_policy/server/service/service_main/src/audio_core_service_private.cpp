@@ -18,6 +18,7 @@
 
 #include "audio_core_service.h"
 
+#include <algorithm>
 #include <variant>
 
 #include "system_ability.h"
@@ -348,7 +349,8 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
 int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu input streams", streamDescs.size());
+    AUDIO_INFO_LOG("[NewPipeFetch] === FetchCapturerPipesAndExecute START === stream count=%{public}zu",
+        streamDescs.size());
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
     bool removeFlag = false;
@@ -365,6 +367,8 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
             ProcessInputPipeUpdate(pipeInfo, audioFlag);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
             ProcessInputPipeNew(pipeInfo, audioFlag);
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) {
+            ProcessInputPipeReload(pipeInfo, audioFlag);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) {
             // Do nothing
         }
@@ -886,6 +890,8 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
             ProcessInputPipeUpdate(pipeInfo, audioFlag);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
             ProcessInputPipeNew(pipeInfo, audioFlag);
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) {
+            ProcessInputPipeReload(pipeInfo, audioFlag);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) {
             // Do nothing
         }
@@ -963,6 +969,22 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
         }
     }
     pipeManager_->UpdateAudioPipeInfo(pipeInfo);
+}
+
+void AudioCoreService::ProcessInputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag)
+{
+    CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+    AUDIO_INFO_LOG("[NewPipeFetch] === ProcessInputPipeReload EXECUTE === "
+        "pipeName=%{public}s, adapter=%{public}s, ecType=%{public}s, openMicRef=%{public}s",
+        pipeInfo->moduleInfo_.name.c_str(), pipeInfo->moduleInfo_.adapterName.c_str(),
+        pipeInfo->moduleInfo_.ecType.c_str(), pipeInfo->moduleInfo_.openMicRef.c_str());
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+
+    uint32_t paIndex = HDI_INVALID_ID;
+    audioPolicyManager_.ReloadAudioPort(pipeInfo->moduleInfo_, paIndex);
+    CHECK_AND_RETURN_LOG(paIndex != HDI_INVALID_ID, "ReloadAudioPort failed");
+    pipeInfo->paIndex_ = paIndex;
+    ProcessInputPipeUpdate(pipeInfo, flag);
 }
 
 void AudioCoreService::RemoveUnusedPipe()

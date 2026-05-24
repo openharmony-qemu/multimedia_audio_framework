@@ -97,8 +97,10 @@ private:
     static int32_t GetByteSizeByFormat(AudioSampleFormat format);
     static bool IsFormalSourceType(int32_t sourceType);
     uint32_t GetUniqueId(void) const;
+    uint32_t GetMultiDeviceUniqueId(void) const;
     uint32_t GetUniqueIdBySourceType(void) const;
     void InitEcOrMicRefAttr(const IAudioSourceAttr &attr);
+    AudioPortPin GetAudiocapturerPortPin(void) const noexcept;
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
     void InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene);

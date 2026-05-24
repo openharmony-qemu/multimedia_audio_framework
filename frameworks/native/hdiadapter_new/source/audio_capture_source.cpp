@@ -52,6 +52,8 @@ static constexpr uint32_t AUDIO_INPUT_INTERPHONE_TYPE = 1 << 16;
 AudioInputType hdiAudioInterphoneInputType = static_cast<AudioInputType>(AUDIO_INPUT_INTERPHONE_TYPE);
 
 static constexpr uint32_t MAX_CAMCORDER_METADATA_SIZE = 1024 * 1024;
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
@@ -92,6 +94,12 @@ static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_
     {AudioChannelLayout::CH_LAYOUT_9POINT1POINT4, AudioChannel::CHANNEL_14},
     {AudioChannelLayout::CH_LAYOUT_9POINT1POINT6, AudioChannel::CHANNEL_16},
     {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
+};
+
+const std::unordered_map<std::string, HdiCaptureOffset> HALNAME_TO_HDI_OFFSET = {
+    {HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_TYPEC, HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_TYPEC},
+    {HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_WIRED, HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_WIRED},
+    {HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_BT_NEARLINK, HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_BT_NER},
 };
 
 static bool ResolveVoiceRecognitionLayout(uint64_t frameLen, size_t bytesPerSample, size_t &frameCount)
@@ -1072,6 +1080,15 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
     return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
 }
 
+uint32_t AudioCaptureSource::GetMultiDeviceUniqueId(void) const
+{
+    auto it = HALNAME_TO_HDI_OFFSET.find(halName_);
+    if (it != HALNAME_TO_HDI_OFFSET.end()) {
+        return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, it->second);
+    }
+    return GetUniqueIdBySourceType();
+}
+
 uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const
 {
     if (hdiSource == static_cast<AudioInputType>(AUDIO_INPUT_INTERPHONE_TYPE)) {
@@ -1173,7 +1190,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.sampleRate = AUDIO_SAMPLE_RATE_48K;
     param.interleaved = true;
-    param.streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
+    param.streamId = static_cast<int32_t>(GetMultiDeviceUniqueId());
     param.type = AUDIO_IN_MEDIA;
     if (attr_.routeFlag == AUDIO_INPUT_FLAG_INTERPHONE) {
         param.type = static_cast<AudioCategory>(AUDIO_D2D);
@@ -1213,9 +1230,25 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     UpdateRawSampleAttr(param);
 }
 
+AudioPortPin AudioCaptureSource::GetAudiocapturerPortPin(void) const noexcept
+{
+    switch (attr_.deviceType) {
+        case DEVICE_TYPE_MIC:
+            return PIN_IN_MIC;
+        case DEVICE_TYPE_USB_HEADSET:
+            return PIN_IN_USB_EXT;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            return PIN_IN_BLUETOOTH_SCO_HEADSET;
+        case DEVICE_TYPE_NEARLINK_IN:
+            return PIN_IN_NEARLINK;
+        default:
+            return PIN_IN_MIC;
+    }
+}
+
 void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
-    deviceDesc.pins = PIN_IN_MIC;
+    deviceDesc.pins = IS_DEVICE_ENHANCED_SUPPORTED ? GetAudiocapturerPortPin() : PIN_IN_MIC;
     address_ = attr_.macAddress.c_str();
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
@@ -1405,7 +1438,7 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
+    int32_t streamId = static_cast<int32_t>(GetMultiDeviceUniqueId());
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType, attr_.hdiSourceType));
     CheckAcousticEchoCancelerSupported(attr_.sourceType, inputType);
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",

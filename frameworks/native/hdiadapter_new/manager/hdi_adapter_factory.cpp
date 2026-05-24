@@ -207,6 +207,12 @@ bool HdiAdapterFactory::IsMultiStreamInfo(const std::string &info)
            info == "Hdmi_Speaker" || info == "Wireless_Speaker";
 }
 
+bool HdiAdapterFactory::IsMultiStreamCaptureInfo(const std::string &info)
+{
+    return info == "Built_in_typec" || info == "Built_in_wired" ||
+        info == "Built_in_bt";
+}
+
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreatePrimaryRenderSink(const uint32_t renderId,
     const std::string &info)
 {
@@ -262,6 +268,9 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSour
 {
     AUDIO_INFO_LOG("info: %{public}s", info.c_str());
     if (info == HDI_ID_INFO_USB || info == HDI_ID_INFO_ACCESSORY) {
+        return std::make_shared<AudioCaptureSource>(captureId, info);
+    }
+    if (IsMultiStreamCaptureInfo(info)) {
         return std::make_shared<AudioCaptureSource>(captureId, info);
     }
     return std::make_shared<AudioCaptureSource>(captureId);

@@ -68,6 +68,9 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_DP_FAST "dp_fast"
 #define HDI_ID_INFO_RAW_AI "raw_ai"
 #define HDI_ID_INFO_INTERPHONE "interphone"
+#define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_TYPEC "Built_in_typec"
+#define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_WIRED "Built_in_wired"
+#define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_BT_NEARLINK "Built_in_bt"
 #define HDI_ID_INFO_CAMCORDER "camcorder"
 
 #define HDI_ID_INFO_PRIMARY_EXTRA_TYPEC "Typec_Speaker"

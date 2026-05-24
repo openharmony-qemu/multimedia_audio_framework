@@ -1689,6 +1689,9 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_CAMCORDER;
         }
+    } else if (pipeInfo->adapterName_ == "primary_extra_capturer") {
+        idType = HDI_ID_TYPE_PRIMARY;
+        idInfo = pipeInfo->moduleInfo_.name;
     } else if (pipeInfo->adapterName_ == "usb") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
@@ -2102,6 +2105,9 @@ std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audio
     }
     if (audioModuleInfo.className == "remote") {
         return audioModuleInfo.networkId;
+    }
+    if (audioModuleInfo.className == "primary_extra_capturer") {
+        return audioModuleInfo.name;
     }
     return HDI_ID_INFO_DEFAULT;
 }

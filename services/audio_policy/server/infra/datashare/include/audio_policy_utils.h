@@ -115,6 +115,7 @@ private:
 public:
     static int32_t startDeviceId;
     static std::map<std::string, ClassType> portStrToEnum;
+    static std::map<DeviceType, std::string> deviceMsmd;
     static std::set<DeviceType> needDeclaredDevices;
 private:
     std::mutex mutex_;

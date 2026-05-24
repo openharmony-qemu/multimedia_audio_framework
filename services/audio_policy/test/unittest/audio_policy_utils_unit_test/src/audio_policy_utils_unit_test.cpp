@@ -314,6 +314,38 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_010, TestSize.Level1)
 /**
  * @tc.name  : Test GetInputDeviceClassBySourcePortName API
  * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_010A
+ * @tc.desc  : Test GetInputDeviceClassBySourcePortName for primary extra input ports
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_010A, TestSize.Level1)
+{
+    AudioPolicyUtils *audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    EXPECT_EQ(audioPolicyUtilsTest_->GetInputDeviceClassBySourcePortName(PRIMARY_TYPEC_CLASS), PRIMARY_CLASS);
+    EXPECT_EQ(audioPolicyUtilsTest_->GetInputDeviceClassBySourcePortName(PRIMARY_WIRED_CLASS), PRIMARY_CLASS);
+    EXPECT_EQ(audioPolicyUtilsTest_->GetInputDeviceClassBySourcePortName(PRIMARY_BT_CLASS), PRIMARY_CLASS);
+}
+
+/**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_010B
+ * @tc.desc  : Test enhanced routing input source port names use deviceMsmd mapping
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_010B, TestSize.Level1)
+{
+    AudioPolicyUtils *audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    EXPECT_EQ(audioPolicyUtilsTest_->deviceMsmd[DEVICE_TYPE_USB_HEADSET], PRIMARY_TYPEC_CLASS);
+    EXPECT_EQ(audioPolicyUtilsTest_->deviceMsmd[DEVICE_TYPE_NEARLINK_IN], PRIMARY_BT_CLASS);
+    EXPECT_EQ(audioPolicyUtilsTest_->deviceMsmd[DEVICE_TYPE_BLUETOOTH_SCO], PRIMARY_BT_CLASS);
+}
+
+/**
+ * @tc.name  : Test GetInputDeviceClassBySourcePortName API
+ * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_010_Ext01
  * @tc.desc  : Test GetInputDeviceClassBySourcePortName
  */
