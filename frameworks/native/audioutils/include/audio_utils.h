@@ -181,6 +181,7 @@ public:
         const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
+    static bool VerifyCapturePrivatePlayback(uint32_t tokenId);
     static bool CheckCallingUidPermission(const std::vector<uid_t> &allowedUids);
     static int32_t StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
         const char* permission);

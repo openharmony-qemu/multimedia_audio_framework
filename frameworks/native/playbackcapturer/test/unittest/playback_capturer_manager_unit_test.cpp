@@ -136,5 +136,25 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, CheckCaptureLimit_001, TestSize.
     bool checkOffloadRet = playbackCapturerMgr_->CheckReleaseUnloadModernOffloadCapSource();
     EXPECT_FALSE(checkOffloadRet);
 }
+
+/**
+ * @tc.name  : Test CheckCaptureLimit API with private flag and normalized usages
+ * @tc.type  : FUNC
+ * @tc.number: CheckCaptureLimit_002
+ * @tc.desc  : Test empty usages reuse default config while private flag creates another inner cap.
+ */
+HWTEST(PlaybackPlaybackCapturerManagerUnitTest, CheckCaptureLimit_002, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig emptyUsageConfig;
+    AudioPlaybackCaptureConfig explicitDefaultConfig;
+    explicitDefaultConfig.filterOptions.usages = playbackCapturerMgr_->GetDefaultUsages();
+
+    int32_t emptyUsageInnerCapId = 0;
+    int32_t explicitDefaultInnerCapId = 0;
+
+    playbackCapturerMgr_->CheckCaptureLimit(emptyUsageConfig, emptyUsageInnerCapId);
+    playbackCapturerMgr_->CheckCaptureLimit(explicitDefaultConfig, explicitDefaultInnerCapId);
+    EXPECT_EQ(emptyUsageInnerCapId, explicitDefaultInnerCapId);
+}
 }
 }
