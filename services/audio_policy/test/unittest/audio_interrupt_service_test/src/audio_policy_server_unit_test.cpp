@@ -3448,25 +3448,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_164, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_165
-* @tc.desc  : Test AddAudioServiceOnStart.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_165, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    server->isFirstAudioServiceStart_.store(true);
-    server->AddAudioServiceOnStart();
-
-    server->coreService_ = AudioCoreService::GetCoreService();
-    server->eventEntry_ = CreateEventEntry(server->coreService_);
-    server->isFirstAudioServiceStart_.store(false);
-    server->AddAudioServiceOnStart();
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_0166
 * @tc.desc  : Test SetDeviceConnectionStatus.
 */

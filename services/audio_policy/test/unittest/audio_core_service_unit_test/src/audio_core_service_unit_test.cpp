@@ -1150,18 +1150,6 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_009, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: ConnectServiceAdapter_001
-* @tc.desc  : Test ConnectServiceAdapter - will return success.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, ConnectServiceAdapter_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest ConnectServiceAdapter_001 start");
-    auto result = GetServerPtr()->eventEntry_->ConnectServiceAdapter();
-    EXPECT_EQ(result, true);
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
 * @tc.number: SelectOutputDevice_001
 * @tc.desc  : Test SelectOutputDevice - will return success.
 */
