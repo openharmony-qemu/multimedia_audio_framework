@@ -890,6 +890,27 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024B, TestSize.Level
         capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VIDEO_COMMUNICATION),
         capturerInServer_->filterConfig_.filterOptions.usages.end());
 }
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_024C.
+ * @tc.desc  : Test UpdatePlaybackCaptureConfig rejects private playback capture without permission.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024C, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    AudioPlaybackCaptureConfig config;
+    config.filterOptions.capturePrivatePrivacyStreams = true;
+    processConfig.innerCapMode = MODERN_INNER_CAP;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    processConfig.appInfo.appTokenId = 0;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
+    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+}
+
 #endif
 
 /**

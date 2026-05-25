@@ -675,6 +675,12 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
+bool PermissionUtil::VerifyCapturePrivatePlayback(uint32_t tokenId)
+{
+    static const std::string CAPTURE_PLAYBACK_PRIVATE_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK_PRIVATE";
+    return VerifyPermission(CAPTURE_PLAYBACK_PRIVATE_PERMISSION, tokenId);
+}
+
 bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowedUids)
 {
     CHECK_AND_RETURN_RET_LOG(allowedUids.size() > 0, false, "allowedUids is empty");

@@ -1140,6 +1140,11 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
             return ERR_PERMISSION_DENIED;
         }
     }
+    if (config.filterOptions.capturePrivatePrivacyStreams) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyCapturePrivatePlayback(processConfig_.appInfo.appTokenId),
+            ERR_PERMISSION_DENIED,
+            "capture private playback permission check failed");
+    }
     filterConfig_ = config;
     if (filterConfig_.isModernInnerCapturer) {
         AppendUsageIfMissing(filterConfig_.filterOptions.usages, STREAM_USAGE_VOICE_COMMUNICATION);
