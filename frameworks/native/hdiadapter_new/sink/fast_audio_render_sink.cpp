@@ -52,7 +52,7 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     if (attr_.period == static_cast<uint32_t>(
         static_cast<float>(attr.sampleRate * attr.channel * GetFormatByteSize(attr.format)) *
         ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND))) {
-        AUDIO_INFO_LOG("SetOutputRoute for ultra fast, device: %{public}d", attr_.deviceType)
+        AUDIO_INFO_LOG("SetOutputRoute for ultra fast, device: %{public}d", attr_.deviceType);
         std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
         DoSetOutputRoute(devices);
     }
