@@ -503,17 +503,6 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
     return SUCCESS;
 }
 
-void HpaeSourceInputNode::CheckInitedState()
-{
-    CHECK_AND_CALL_FUNC_RETURN_LOG(audioCapturerSource_->IsInited(),
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
-            "invalid source state", false),
-        "invalid source state");
-    audioCapturerSource_->DeInit();
-}
-
 int32_t HpaeSourceInputNode::CapturerSourceDeInit()
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID, ERROR,
@@ -523,7 +512,9 @@ int32_t HpaeSourceInputNode::CapturerSourceDeInit()
             "invalid audioCapturerSource", false),
         "invalid audioCapturerSource");
     Trace trace("HpaeSourceInputNode::CapturerSourceDeInit");
-    CheckInitedState();
+    if (audioCapturerSource_->IsInited()) {
+        audioCapturerSource_->DeInit();
+    }
     audioCapturerSource_ = nullptr;
     HdiAdapterManager::GetInstance().ReleaseId(captureId_);
     return SUCCESS;

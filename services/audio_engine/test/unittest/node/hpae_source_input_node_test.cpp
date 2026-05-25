@@ -1292,6 +1292,24 @@ HWTEST_F(HpaeSourceInputNodeTest, FaultCode_ReadDataFromSource_CaptureFrameFail,
     uint64_t reply = 0;
     node->ReadDataFromSource(nodeInfo.sourceBufferType, reply);
 }
+
+/**
+ * @tc.name  : Test CapturerSourceDeInit
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceDeInit_001
+ * @tc.desc  : Test CapturerSourceDeInit while audioCapturerSource IsInited returns false
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceDeInit_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    EXPECT_CALL(*mockCaptureSource, IsInited()).WillOnce(Return(false));
+    EXPECT_EQ(hpaeSourceInputNode->CapturerSourceDeInit(), SUCCESS);
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
