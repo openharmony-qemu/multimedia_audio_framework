@@ -2548,6 +2548,12 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
         OffloadSetVolumeInner();
     }
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(processConfig_.appInfo.appPid);
+
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(streamIndex_);
+    payload["isMute"] = std::to_string(isMuted);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_SESSION_SILENT);
     return SUCCESS;
 }
 
@@ -2566,6 +2572,13 @@ int32_t RendererInServer::SetClientVolume()
     int32_t ret = stream_->SetClientVolume(clientVolume);
     SetStreamVolumeInfoForEnhanceChain();
     AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
+
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(streamIndex_);
+    payload["isMute"] = std::to_string(clientVolume == 0.0f);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_SESSION_SILENT);
+
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
@@ -2619,6 +2632,13 @@ int32_t RendererInServer::SetMute(bool isMute)
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
+
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(streamIndex_);
+    payload["isMute"] = std::to_string(isMuted);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_SESSION_SILENT);
+
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
