@@ -98,7 +98,7 @@ void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId
     if (isConnect) {
         dfxTree_.ConnectNodes(parentId, childId);
     } else {
-        dfxTree_.DisConnectNodes(parentId, childId);
+        dfxTree_.DisconnectNodes(parentId, childId);
     }
 #endif
 };

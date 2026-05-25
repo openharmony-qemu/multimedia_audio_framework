@@ -30,7 +30,7 @@ HpaePcmBuffer::HpaePcmBuffer(PcmBufferInfo &pcmBufferInfo) : pcmBufferInfo_(pcmB
     InitPcmProcess();
 }
 
-HpaePcmBuffer &HpaePcmBuffer::operator=(HpaePcmBuffer &other)
+HpaePcmBuffer &HpaePcmBuffer::operator=(const HpaePcmBuffer &other)
 {
     if (this != &other) {
         pcmBufferInfo_ = other.pcmBufferInfo_;

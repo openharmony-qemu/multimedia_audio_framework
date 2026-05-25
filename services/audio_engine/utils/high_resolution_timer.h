@@ -43,8 +43,8 @@ public:
     }
 
 private:
-    std::chrono::high_resolution_clock::time_point startTime_;
-    std::chrono::high_resolution_clock::time_point endTime_;
+    TimePoint startTime_;
+    TimePoint endTime_;
 };
 
 }  // namespace HPAE

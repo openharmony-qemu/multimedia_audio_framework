@@ -181,7 +181,7 @@ bool HpaeDfxMapTree::ConnectNodes(uint32_t parentId, uint32_t childId)
     return true;
 }
 
-bool HpaeDfxMapTree::DisConnectNodes(uint32_t parentId, uint32_t childId)
+bool HpaeDfxMapTree::DisconnectNodes(uint32_t parentId, uint32_t childId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto parent = FindDfxNode(parentId);

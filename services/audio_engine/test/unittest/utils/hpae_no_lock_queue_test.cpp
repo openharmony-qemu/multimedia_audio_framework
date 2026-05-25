@@ -261,14 +261,14 @@ HWTEST_F(HpaeNoLockQueueTest, tryExpandQueueExpandsAtThreshold, TestSize.Level0)
 HWTEST_F(HpaeNoLockQueueTest, tryExpandQueueForceExpandsAfterFreeListIsExhausted, TestSize.Level0)
 {
     for (size_t i = 0; i < CURRENT_REQUEST_COUNT; ++i) {
-        EXPECT_NE(queue_->GetRequsetIndex(queue_->GetRequestNode(&queue_->freeRequestHeadIndex_)),
+        EXPECT_NE(queue_->GetRequestIndex(queue_->GetRequestNode(&queue_->freeRequestHeadIndex_)),
             INVALID_REQUEST_ID_TEST);
     }
-    EXPECT_EQ(queue_->GetRequsetIndex(queue_->freeRequestHeadIndex_.load()), INVALID_REQUEST_ID_TEST);
+    EXPECT_EQ(queue_->GetRequestIndex(queue_->freeRequestHeadIndex_.load()), INVALID_REQUEST_ID_TEST);
 
     EXPECT_TRUE(queue_->TryExpandQueue(true));
     EXPECT_EQ(queue_->requestCount_.load(), CURRENT_REQUEST_COUNT + EXPAND_REQUEST_COUNT);
-    EXPECT_EQ(queue_->GetRequsetIndex(queue_->freeRequestHeadIndex_.load()), CURRENT_REQUEST_COUNT);
+    EXPECT_EQ(queue_->GetRequestIndex(queue_->freeRequestHeadIndex_.load()), CURRENT_REQUEST_COUNT);
     EXPECT_NE(queue_->GetRequestNodePtr(CURRENT_REQUEST_COUNT), nullptr);
 }
 
@@ -345,10 +345,10 @@ HWTEST_F(HpaeNoLockQueueTest, pushRequestNodeChainPrependsExpandedBlockToFreeLis
     ASSERT_TRUE(queue_->TryExpandQueue(false));
 
     for (size_t i = 0; i < EXPAND_REQUEST_COUNT; ++i) {
-        EXPECT_EQ(queue_->GetRequsetIndex(queue_->GetRequestNode(&queue_->freeRequestHeadIndex_)),
+        EXPECT_EQ(queue_->GetRequestIndex(queue_->GetRequestNode(&queue_->freeRequestHeadIndex_)),
             CURRENT_REQUEST_COUNT + i);
     }
-    EXPECT_EQ(queue_->GetRequsetIndex(queue_->GetRequestNode(&queue_->freeRequestHeadIndex_)), 0U);
+    EXPECT_EQ(queue_->GetRequestIndex(queue_->GetRequestNode(&queue_->freeRequestHeadIndex_)), 0U);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
