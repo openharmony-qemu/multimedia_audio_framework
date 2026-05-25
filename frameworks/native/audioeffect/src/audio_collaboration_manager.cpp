@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_effect_log.h"
 #include "audio_utils.h"
+#include "audio_device_type.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,35 +34,6 @@ static std::map<std::string, AudioTwsMode> twsModeMap = {
     {"default", TWS_MODE_DEFAULT},
     {"listen", TWS_MODE_LISTEN},
     {"hitws", TWS_MODE_HITWS},
-};
-
-static std::map<std::string, DeviceType> deviceTypeMap = {
-    {"DEVICE_TYPE_EARPIECE", DEVICE_TYPE_EARPIECE},
-    {"DEVICE_TYPE_SPEAKER", DEVICE_TYPE_SPEAKER},
-    {"DEVICE_TYPE_WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
-    {"DEVICE_TYPE_WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
-    {"DEVICE_TYPE_BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
-    {"DEVICE_TYPE_BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
-    {"DEVICE_TYPE_BLUETOOTH_A2DP_IN", DEVICE_TYPE_BLUETOOTH_A2DP_IN},
-    {"DEVICE_TYPE_MIC", DEVICE_TYPE_MIC},
-    {"DEVICE_TYPE_WAKEUP", DEVICE_TYPE_WAKEUP},
-    {"DEVICE_TYPE_USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
-    {"DEVICE_TYPE_DP", DEVICE_TYPE_DP},
-    {"DEVICE_TYPE_REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
-    {"DEVICE_TYPE_HDMI", DEVICE_TYPE_HDMI},
-    {"DEVICE_TYPE_LINE_DIGITAL", DEVICE_TYPE_LINE_DIGITAL},
-    {"DEVICE_TYPE_FILE_SINK", DEVICE_TYPE_FILE_SINK},
-    {"DEVICE_TYPE_FILE_SOURCE", DEVICE_TYPE_FILE_SOURCE},
-    {"DEVICE_TYPE_EXTERN_CABLE", DEVICE_TYPE_EXTERN_CABLE},
-    {"DEVICE_TYPE_DEFAULT", DEVICE_TYPE_DEFAULT},
-    {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
-    {"DEVICE_TYPE_WIRED_MICIN", DEVICE_TYPE_WIRED_MICIN},
-    {"DEVICE_TYPE_ACCESSORY", DEVICE_TYPE_ACCESSORY},
-    {"DEVICE_TYPE_NEARLINK", DEVICE_TYPE_NEARLINK},
-    {"DEVICE_TYPE_NEARLINK_IN", DEVICE_TYPE_NEARLINK_IN},
-    {"DEVICE_TYPE_HEARING_AID", DEVICE_TYPE_HEARING_AID},
-    {"DEVICE_TYPE_REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
-    {"DEVICE_TYPE_BT_SPP", DEVICE_TYPE_BT_SPP},
 };
 
 static std::map<std::string, StreamUsage> streamUsageMap = {
@@ -294,7 +266,7 @@ void AudioCollaborationManager::LoadCollAbsSupportedStreamUsageInner(const std::
         AUDIO_ERR_LOG("collAbsSupportedStreamUsage node without deviceType");
         return;
     }
-
+    const std::unordered_map<std::string, DeviceType> &deviceTypeMap = GetSupportedDeviceTypeMP();
     auto devIt = deviceTypeMap.find(deviceTypeStr);
     if (devIt == deviceTypeMap.end()) {
         AUDIO_ERR_LOG("Invalid deviceType:%{public}s", deviceTypeStr.c_str());
@@ -332,19 +304,18 @@ void AudioCollaborationManager::LoadCollAbsSupportedStreamUsageInner(const std::
 
 bool AudioCollaborationManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
 {
-    switch(state_) {
+    switch(state_.load()) {
         case COLLABORATION_BLUETOOTH_OPEN:
-        return IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, streamUsage);
+            return IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, streamUsage);
         case COLLABORATION_NEARLINK_OPEN:
-        return IsStreamUsageSupported(DEVICE_TYPE_NEARLINK, streamUsage);
+            return IsStreamUsageSupported(DEVICE_TYPE_NEARLINK, streamUsage);
         default:
-        return false;
+            return false;
     }
 }
 
 bool AudioCollaborationManager::IsStreamUsageSupported(DeviceType deviceType, StreamUsage streamUsage)
 {
-    std::lock_guard<std::mutex> lock(collaborationMutex_);
     auto devIt = collAbsSupportedStreamUsageConfig_.find(deviceType);
     if (devIt == collAbsSupportedStreamUsageConfig_.end()) {
         return false;
@@ -354,8 +325,7 @@ bool AudioCollaborationManager::IsStreamUsageSupported(DeviceType deviceType, St
 
 void AudioCollaborationManager::UpdateCollaborativeState(CollaborationState state)
 {
-    std::lock_guard<std::mutex> lock(collaborationMutex_);
-    state_ = state;
+    state_.store(state);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -60,7 +60,7 @@ private:
     int32_t latencyMs_ = 0;
     std::string productId_ = "default";
     AudioTwsMode twsMode_ = TWS_MODE_DEFAULT;
-    CollaborationState state_ = COLLABORATION_CLOSE;
+    std::atomic<CollaborationState> state_ = COLLABORATION_CLOSE;
     std::unordered_map<std::string, std::map<AudioTwsMode, int32_t>> collaborativeLatencyConfig_;
     std::unordered_map<std::string, std::string> collaborativeEarphoneNameConfig_;
     std::unordered_map<std::string, int32_t> collaborativeEarphoneProductConfig_;
