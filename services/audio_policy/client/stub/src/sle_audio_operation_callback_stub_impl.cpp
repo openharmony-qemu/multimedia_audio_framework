@@ -181,6 +181,5 @@ int32_t SleAudioOperationCallbackStubImpl::GetDeviceProductId(const std::string 
 
     return sleAudioOperationCallback->GetDeviceProductId(remoteAddr, productId);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

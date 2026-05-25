@@ -1188,6 +1188,9 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
         std::string newmainkey = "audio_effect";
         AUDIO_INFO_LOG("outdoor_mode key = %{public}s, value = %{public}s", key.c_str(), value.c_str());
         RecognizeAudioEffectType(newmainkey, key, value);
+    } else if (key == "nearLink_collaborative_state") {
+        parmKey = AudioParamKey::NONE;
+        valueNew = key + "=" + value;
     } else {
         return false;
     }

@@ -58,7 +58,7 @@ public:
 
     bool isRunning_ = false;
 
-    bool isCollaborationEnable = false;
+    bool isCollaborationEnable_ = false;
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 

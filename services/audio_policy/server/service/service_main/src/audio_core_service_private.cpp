@@ -39,7 +39,6 @@
 #include "parameters.h"
 #include "sco_audio_scene_manager.h"
 #include "stream_dfx_manager.h"
-#include "manager/hdi_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -240,7 +239,7 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
 void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
-    CHECK_AND_RETURN(pipeInfo->isCollaborationEnable && pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
+    CHECK_AND_RETURN(pipeInfo->isCollaborationEnable_ && pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
     audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     UpdateNearLinkCollaborativeState(true);
     isMultiChannelOpened_.store(true);
@@ -994,12 +993,12 @@ void AudioCoreService::RemoveUnusedPipe()
                 DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
                 continue;
             }
-        } else if (pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER && pipeInfo->isCollaborationEnable) {
+        } else if (pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER && pipeInfo->isCollaborationEnable_) {
             if (!isRingDualToneOnPrimarySpeaker_) {
                 DelayReleaseMultiChannelPipe(pipeInfo->id_, pipeInfo->paIndex_);
                 continue;
             }
-            pipeInfo->isCollaborationEnable = false;
+            pipeInfo->isCollaborationEnable_ = false;
             UpdateNearLinkCollaborativeState(false);
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
@@ -1713,13 +1712,12 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         AudioServerProxy::GetInstance().SetAudioSceneForPipeProxy(pipeId, pipeScene, false);
         AUDIO_INFO_LOG("Set AudioScene %{public}d for pipe %{public}u in multi-device mode", pipeScene, pipeId);
     }
-
     shouldUpdateDeviceDueToDualTone_ = false;
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
     } else if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState() &&
-        (streamDesc->isNearLinkCollaborationEnable || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        (streamDesc->isNearLinkCollaborationEnable_ || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
         CheckCollaborativeStreamRunning())) {
         // for collaboration, the route should be updated
         UpdateRouteForCollaboration(deviceType, streamDesc->sessionId_);
@@ -3401,7 +3399,7 @@ bool AudioCoreService::CheckCollaborativeStreamRunning()
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
     for (auto &desc : outputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-        if (desc->isNearLinkCollaborationEnable && desc->streamStatus_ == STREAM_STATUS_STARTED) {
+        if (desc->isNearLinkCollaborationEnable_ && desc->streamStatus_ == STREAM_STATUS_STARTED) {
             return true;
         }
     }
@@ -3409,13 +3407,9 @@ bool AudioCoreService::CheckCollaborativeStreamRunning()
 }
 
 void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState) {
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
-    std::string keyValue = std::string("nearLink_collaborative_state=") +
-        std::to_string(static_cast<int32_t>(nearLinkCollaborativeState));
-    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
-    AUDIO_INFO_LOG("UpdateNearLinkCollaborativeState, value:%{public}s", keyValue.c_str());
+    AudioServerProxy::GetInstance().SetAudioParameterProxy("nearLink_collaborative_state",
+        std::to_string(static_cast<int32_t>(nearLinkCollaborativeState)));
+    AUDIO_INFO_LOG("UpdateNearLinkCollaborativeState, value:%{public}d", nearLinkCollaborativeState);
 }
 } // namespace AudioStandard
 } // namespace OHOS
