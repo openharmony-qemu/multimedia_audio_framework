@@ -220,8 +220,7 @@ void AudioZoneBindKeyGetSupportKeysFuzzTest(FuzzedDataProvider& fdp)
     int32_t uid = fdp.ConsumeIntegral<int32_t>();
     StreamUsage usage = PickValue(fdp, g_testStreamUsages);
     AudioZoneBindKey audioZoneBindKey(uid, deviceTag);
-    AudioZoneBindKey audioZoneBindKey_1(uid, deviceTag);
-    audioZoneBindKey.GetSupportKeys(audioZoneBindKey_1);
+    audioZoneBindKey.GetSupportKeys(audioZoneBindKey);
     audioZoneBindKey.GetSupportKeys(uid, deviceTag, streamId, usage);
 }
 
