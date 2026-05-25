@@ -1470,6 +1470,79 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_014, TestSize.Level
 }
 
 /**
+ * @tc.name   : Test GetMultiDeviceUniqueId API
+ * @tc.number : GetMultiDeviceUniqueId_001
+ * @tc.desc   : Test GetMultiDeviceUniqueId for primary extra typec capturer
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetMultiDeviceUniqueId_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1, HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_TYPEC);
+    uint32_t id = captureSource->GetMultiDeviceUniqueId();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_TYPEC * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetMultiDeviceUniqueId API
+ * @tc.number : GetMultiDeviceUniqueId_002
+ * @tc.desc   : Test GetMultiDeviceUniqueId for primary extra wired capturer
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetMultiDeviceUniqueId_002, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1, HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_WIRED);
+    uint32_t id = captureSource->GetMultiDeviceUniqueId();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_WIRED * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetMultiDeviceUniqueId API
+ * @tc.number : GetMultiDeviceUniqueId_003
+ * @tc.desc   : Test GetMultiDeviceUniqueId for primary extra bt capturer
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetMultiDeviceUniqueId_003, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1, HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_BT_NEARLINK);
+    uint32_t id = captureSource->GetMultiDeviceUniqueId();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_BT_NER * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetMultiDeviceUniqueId API
+ * @tc.number : GetMultiDeviceUniqueId_004
+ * @tc.desc   : Test GetMultiDeviceUniqueId fallback to GetUniqueIdBySourceType
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetMultiDeviceUniqueId_004, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    captureSource->attr_.sourceType = SOURCE_TYPE_WAKEUP;
+    uint32_t id = captureSource->GetMultiDeviceUniqueId();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_WAKEUP * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetAudiocapturerPortPin API
+ * @tc.number : GetAudiocapturerPortPin_001
+ * @tc.desc   : Test port pin mapping for supported input devices
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetAudiocapturerPortPin_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    captureSource->attr_.deviceType = DEVICE_TYPE_MIC;
+    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_MIC);
+
+    captureSource->attr_.deviceType = DEVICE_TYPE_USB_HEADSET;
+    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_USB_EXT);
+
+    captureSource->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_BLUETOOTH_SCO_HEADSET);
+
+    captureSource->attr_.deviceType = DEVICE_TYPE_NEARLINK_IN;
+    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_NEARLINK);
+
+    captureSource->attr_.deviceType = DEVICE_TYPE_INVALID;
+    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_MIC);
+}
+
+/**
  * @tc.name   : Test ConvertToAudioInputRouteFlag API
  * @tc.number : ConvertToAudioInputRouteFlag_002
  * @tc.desc   : Test ConvertToAudioInputRouteFlag for SOURCE_TYPE_INTERPHONE

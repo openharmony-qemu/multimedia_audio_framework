@@ -591,6 +591,7 @@ private:
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     void ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
+    void ProcessInputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void RemoveUnusedPipe();
     void RemoveUnusedRecordPipe();
     void MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> streamDesc,

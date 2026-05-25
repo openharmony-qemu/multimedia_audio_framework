@@ -3871,13 +3871,19 @@ void AudioCoreService::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &
         "target session: %{public}u not found", targetSessionInfo.second);
     inputDeviceForReload_ = inputDevice;
     AUDIO_INFO_LOG("start reload session: %{public}u for device change", targetSessionInfo.second);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(targetSessionInfo.second);
-    if (streamDesc == nullptr) {
-        return;
+    if (isEcFeatureEnable_) {
+        AUDIO_INFO_LOG("[NewPipeFetch] ReloadSourceForDeviceChange: PC scene, use new flow, caller=%{public}s",
+            caller.c_str());
+        FetchInputDeviceAndRoute("ReloadSourceForDeviceChange");
+    } else {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(targetSessionInfo.second);
+        if (streamDesc == nullptr) {
+            return;
+        }
+        SessionInfo targetSession = ConstructSessionByStream(streamDesc);
+        ReloadSourceForSession(targetSession, targetSessionInfo.second);
+        SetOpenedNormalSourceSessionId(targetSessionInfo.second);
     }
-    SessionInfo targetSession = ConstructSessionByStream(streamDesc);
-    ReloadSourceForSession(targetSession, targetSessionInfo.second);
-    SetOpenedNormalSourceSessionId(targetSessionInfo.second);
 }
 
 std::string AudioCoreService::GetEnhancePropByName(const AudioEffectPropertyArray &propertyArray,
@@ -3914,13 +3920,19 @@ void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArray &old
         CHECK_AND_RETURN_LOG(specialSourceTypeSet_.count(targetSessionInfo.first) == 0,
             "target sessionId: %{public}u not found", targetSessionInfo.second);
         AUDIO_INFO_LOG("start reload sessionId: %{public}u for effect change", targetSessionInfo.second);
-        std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(targetSessionInfo.second);
-        if (streamDesc == nullptr) {
-            return;
+        if (isEcFeatureEnable_) {
+            AUDIO_INFO_LOG("[NewPipeFetch] ReloadSourceForEffect: PC scene, use new flow");
+            FetchInputDeviceAndRoute("ReloadSourceForEffect");
+        } else {
+            std::shared_ptr<AudioStreamDescriptor> streamDesc =
+                pipeManager_->GetStreamDescById(targetSessionInfo.second);
+            if (streamDesc == nullptr) {
+                return;
+            }
+            SessionInfo targetSession = ConstructSessionByStream(streamDesc);
+            ReloadSourceForSession(targetSession, targetSessionInfo.second);
+            SetOpenedNormalSourceSessionId(targetSessionInfo.second);
         }
-        SessionInfo targetSession = ConstructSessionByStream(streamDesc);
-        ReloadSourceForSession(targetSession, targetSessionInfo.second);
-        SetOpenedNormalSourceSessionId(targetSessionInfo.second);
     }
 }
 
