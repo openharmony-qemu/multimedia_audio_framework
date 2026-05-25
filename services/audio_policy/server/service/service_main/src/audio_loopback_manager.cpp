@@ -68,8 +68,7 @@ int32_t AudioLoopbackManager::CheckCreateCondition(LoopbackType type, int32_t pi
             return SUCCESS;
         case LOOPBACK_TYPE_GLOBAL_HANDLER:
             if (globalHandlerCallback_ != nullptr) {
-                AUDIO_ERR_LOG("global handler already exists, pid %{public}d", handlerPid_);
-                return ERROR_LOOPBACK_HANDLER_ALREADY_EXIST;
+                AUDIO_WARNING_LOG("global handler already exists, pid %{public}d", handlerPid_);
             }
             return SUCCESS;
         case LOOPBACK_TYPE_GLOBAL_CONTROL:
