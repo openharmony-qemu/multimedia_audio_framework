@@ -314,6 +314,10 @@ int32_t AudioSpatializationService::GetCurrentSpatialAudioSourceType()
 void AudioSpatializationService::SetSpatialAudioSourceType(SpatialAudioSourceType mode)
 {
     AUDIO_INFO_LOG("set sourceType: %{public}d", mode);
+    if (spatialAudioSourceType_ == mode) {
+        AUDIO_INFO_LOG("set same sourceType: %{public}d", mode);
+        return;
+    }
     spatialAudioSourceType_ = mode;
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendSpatialAudioSourceTypeChangeEvent(mode);
