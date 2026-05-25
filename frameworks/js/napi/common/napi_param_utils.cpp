@@ -333,7 +333,7 @@ napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const std::st
 {
     napi_value value = nullptr;
 
-    napi_status status = napi_create_arraybuffer(env, bufferLen, (void**)&bufferData, &value);
+    napi_status status = napi_create_arraybuffer(env, bufferLen, reinterpret_cast<void **>(&bufferData), &value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_create_arraybuffer failed");
     status = napi_set_named_property(env, result, fieldStr.c_str(), value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_set_named_property failed");
