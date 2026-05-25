@@ -83,7 +83,6 @@ private:
     void DumpInput(HpaeSourceBufferType &micType, HpaeSourceBufferType &ecType,
         const uint64_t &replyBytes, const uint64_t &replyBytesEc);
     void DumpOutput(HpaeSourceBufferType &micType);
-    void CheckInitedState();
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;
