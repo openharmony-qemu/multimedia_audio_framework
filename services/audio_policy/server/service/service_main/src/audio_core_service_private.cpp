@@ -412,6 +412,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
     } else {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
+        CheckScoState(streamDesc);
     }
     FetchDeviceInfo info = { streamUsage, "CheckModemScene" };
     descs = audioRouterCenter_.FetchOutputDevices(info);
