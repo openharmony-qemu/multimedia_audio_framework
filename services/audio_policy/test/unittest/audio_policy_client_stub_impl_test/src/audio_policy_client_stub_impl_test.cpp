@@ -544,7 +544,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_027, TestSize.Le
 {
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioSpatializationEnabledChangeCallback>();
-    int32_t result = audioPolicyClient->AddSpatializationEnabledChangeCallback(cb, true);
+    int32_t result = audioPolicyClient->AddSpatializationEnabledChangeCallback(cb);
     EXPECT_EQ(result, SUCCESS);
 
     bool enabled = true;
@@ -565,7 +565,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_028, TestSize.Le
 {
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioHeadTrackingEnabledChangeCallback>();
-    int32_t result = audioPolicyClient->AddHeadTrackingEnabledChangeCallback(cb, true);
+    int32_t result = audioPolicyClient->AddHeadTrackingEnabledChangeCallback(cb);
     EXPECT_EQ(result, SUCCESS);
 
     bool enabled = true;

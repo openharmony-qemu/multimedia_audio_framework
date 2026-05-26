@@ -248,8 +248,7 @@ bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
     MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
     AudioBufferHolder bufferHolder = bufferHolder_;
     CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
-        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT ||
-        bufferHolder == AudioBufferHolder::AUDIO_APP_SHARED,
+        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
         false, "buffer holder error:%{public}d", bufferHolder);
     CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, false, "dataMem_ is nullptr.");
     CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, false, "statusInfoMem_ is nullptr.");
@@ -268,8 +267,7 @@ OHAudioBufferBase *OHAudioBufferBase::Unmarshalling(Parcel &parcel)
     uint32_t holder = messageParcel.ReadUint32();
     AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
     if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
-        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT &&
-        bufferHolder != AudioBufferHolder::AUDIO_APP_SHARED) {
+        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
         AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
         return nullptr;
     }
@@ -340,8 +338,7 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
 
     // init for statusInfoBuffer
     size_t statusInfoSize = sizeof(BasicBufferInfo) + statusInfoExtSize;
-    if (infoFd != INVALID_FD && (bufferHolder_ == AUDIO_CLIENT || bufferHolder_ == AUDIO_SERVER_INDEPENDENT ||
-        bufferHolder_ == AUDIO_APP_SHARED)) {
+    if (infoFd != INVALID_FD && (bufferHolder_ == AUDIO_CLIENT || bufferHolder_ == AUDIO_SERVER_INDEPENDENT)) {
         statusInfoMem_ = AudioSharedMemory::CreateFromRemote(infoFd, statusInfoSize, STATUS_INFO_BUFFER);
     } else {
         statusInfoMem_ = AudioSharedMemory::CreateFromLocal(statusInfoSize, STATUS_INFO_BUFFER);
@@ -353,9 +350,6 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
         dataMem_ = AudioSharedMemory::CreateFromLocal(totalSizeInByte_, "server_client_buffer");
     } else {
         std::string memoryDesc = (bufferHolder_ == AUDIO_SERVER_ONLY ? "server_hdi_buffer" : "server_client_buffer");
-        if (bufferHolder_ == AUDIO_APP_SHARED) {
-            memoryDesc = "app_created_buffer";
-        }
         if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
             AUDIO_INFO_LOG("Init sever_hdi_buffer with sync info");
             dataMem_ = AudioSharedMemory::CreateFromRemote(dataFd, totalSizeInByte_ + BASIC_SYNC_INFO_SIZE, memoryDesc);

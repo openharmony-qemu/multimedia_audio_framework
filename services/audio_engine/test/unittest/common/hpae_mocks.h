@@ -73,7 +73,8 @@ public:
     MOCK_METHOD(int32_t, SetDeviceConnectedFlag, (bool flag), (override));
     MOCK_METHOD(void, SetSpeed, (float speed), (override));
 
-    MOCK_METHOD(int32_t, SetAudioScene, (AudioScene audioScene, bool scoExcludeFlag), (override));
+    MOCK_METHOD(int32_t, SetAudioScene,
+        (AudioScene audioScene, bool scoExcludeFlag, int32_t phoneCallSceneType), (override));
     MOCK_METHOD(int32_t, GetAudioScene, (), (override));
 
     MOCK_METHOD(int32_t, UpdateActiveDevice, (std::vector<DeviceType> &outputDevices), (override));
@@ -125,6 +126,7 @@ public:
     MOCK_METHOD(void, OnFadeDone, (uint32_t), (override));
     MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
     MOCK_METHOD(void, OnRewindAndFlush, (uint64_t, uint64_t), (override));
+    MOCK_METHOD(void, OnRewindBuffer, (uint32_t, uint64_t), (override));
     MOCK_METHOD(void, OnNotifyQueue, (), (override));
     MOCK_METHOD(void, OnDisConnectProcessCluster, (HpaeProcessorType), (override));
     MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, uint32_t), (override));

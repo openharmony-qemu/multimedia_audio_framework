@@ -64,6 +64,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    isNonStandardSampleRate_ = IsNonStandardSampleRate(nodeInfo.GetEffectiveSampleRate());
 }
 
 HpaeSinkInputNode::~HpaeSinkInputNode()
@@ -265,6 +266,20 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     OnStreamInfoChange(false);
 }
 
+void HpaeSinkInputNode::EnsureHistoryBufferForAiss(uint32_t preheatFrames)
+{
+    if (offloadEnable_) return;  // Offload already has sufficient buffer
+    if (historyBuffer_ && historyBuffer_->GetFrames() >= preheatFrames) return;
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
+    PcmBufferInfo pcmInfo = PcmBufferInfo{
+        nodeInfo.channels, nodeInfo.frameLen,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate,
+        nodeInfo.channelLayout, preheatFrames};
+    pcmInfo.isMultiFrames = true;
+    historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
+    AUDIO_INFO_LOG("AISS: historyBuffer allocated for %{public}u frames", preheatFrames);
+}
+
 void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     auto writeCallback = writeCallback_.lock();
@@ -310,6 +325,11 @@ bool HpaeSinkInputNode::GetDirect() const noexcept
     return isDirect_;
 }
 
+bool HpaeSinkInputNode::GetIsNonStandardSampleRate() const
+{
+    return isNonStandardSampleRate_;
+}
+
 void HpaeSinkInputNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
 {
     // If frameLen changed, reset pcm bufer
@@ -332,6 +352,7 @@ void HpaeSinkInputNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
         }
     }
     HpaeNode::SetNodeInfo(nodeInfo);
+    isNonStandardSampleRate_ = IsNonStandardSampleRate(nodeInfo.GetEffectiveSampleRate());
 }
 
 int32_t HpaeSinkInputNode::SetLoudnessGain(float loudnessGain)
@@ -364,14 +385,15 @@ uint64_t HpaeSinkInputNode::GetLatency()
 int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET(writeCallback,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(writeCallback, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "writeCallback is null, fatal err", false), ERROR));
+            "writeCallback is null, fatal err", false),
+        "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
-    // offload enable or direct, never force data
-    bool forceData = (offloadEnable_ | isDirect_) ? false : true;
+    // offload enable, direct, or non-standard sample rate: never force data
+    bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_) ? false : true;
     uint64_t latency = 0;
     OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();
@@ -403,11 +425,12 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 bool HpaeSinkInputNode::QueryUnderrun()
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET(writeCallback,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(writeCallback, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "writeCallback is null, fatal err", false), false));
+            "writeCallback is null, fatal err", false),
+        "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     return writeCallback->OnQueryUnderrun();
 }
 

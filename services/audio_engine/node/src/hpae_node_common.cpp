@@ -63,12 +63,6 @@ static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneType
     {SOURCE_TYPE_VOICE_RECOGNITION, HPAE_SCENE_RECOGNITION}
 };
 
-// 支持协同拾音的 sourceType，激活后映射到 HPAE_SCENE_COLLABORATIVE_RECORD
-static std::set<SourceType> g_collabRecordSupportedSourceTypes = {
-    SOURCE_TYPE_LIVE,
-};
-
-
 static std::unordered_set<HpaeProcessorType> g_processorTypeNeedEcSet = {
     HPAE_SCENE_VOIP_UP,
     HPAE_SCENE_PRE_ENHANCE,
@@ -86,7 +80,6 @@ static std::unordered_map<HpaeProcessorType, AudioEnhanceScene> g_processorTypeT
     {HPAE_SCENE_PRE_ENHANCE, SCENE_PRE_ENHANCE},
     {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE},
     {HPAE_SCENE_RECOGNITION, SCENE_RECOGNITION},
-    {HPAE_SCENE_COLLABORATIVE_RECORD, SCENE_COLLABORATIVE_RECORD},
 };
 
 static std::unordered_map<HpaeSessionState, std::string> g_sessionStateToStrMap = {
@@ -164,11 +157,8 @@ static long StringToNum(const std::string &str)
 {
     char *endptr;
     long num = strtol(str.c_str(), &endptr, BASE_TEN);
-    CHECK_AND_RETURN_RET(endptr != nullptr && *endptr == '\0',
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-            "trans str to num failed", false), 0));
+    CHECK_AND_RETURN_RET_LOG(endptr != nullptr && *endptr == '\0', 0,
+        "trans str \"%{public}s\" to num failed", str.c_str());
     return num;
 }
 
@@ -237,11 +227,6 @@ HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType)
     } else {
         return g_sourceTypeToSceneTypeMap[sourceType];
     }
-}
-
-bool IsCollabRecordSupported(SourceType sourceType)
-{
-    return g_collabRecordSupportedSourceTypes.count(sourceType) > 0;
 }
 
 bool CheckSceneTypeNeedEc(HpaeProcessorType processorType)
@@ -352,11 +337,12 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
-    CHECK_AND_RETURN_RET(sinkInfo.channels != CHANNEL_UNKNOW && sinkInfo.format != INVALID_WIDTH,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkInfo.channels != CHANNEL_UNKNOW && sinkInfo.format != INVALID_WIDTH, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-            "sink channels or format is invalid", false), ERROR));
+            "sink channels or format is invalid", false),
+        "sink channels or format is invalid");
     sinkInfo.frameLen = static_cast<size_t>(bufferSize) / (sinkInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
     sinkInfo.channelLayout = static_cast<uint64_t>(StringToNum(audioModuleInfo.channelLayout));
@@ -397,11 +383,12 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
     sourceInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
-    CHECK_AND_RETURN_RET(sourceInfo.channels != CHANNEL_UNKNOW && sourceInfo.format != INVALID_WIDTH,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sourceInfo.channels != CHANNEL_UNKNOW && sourceInfo.format != INVALID_WIDTH,
+        ERROR, StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
                 BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-            "source channels or format is invalid", false), ERROR));
+            "source channels or format is invalid", false),
+        "source channels or format is invalid");
     sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.rate));
@@ -497,11 +484,9 @@ void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)
 
 std::string TransFormatFromEnumToString(AudioSampleFormat format)
 {
-    CHECK_AND_RETURN_RET(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL,
-                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-            "error param format", false), ""));
+    CHECK_AND_RETURN_RET_LOG(
+        g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(), "",
+        "error param format");
     return g_formatFromParserEnumToStr[format];
 }
 
@@ -606,7 +591,7 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
 
 size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
-    size_t frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND;
+    size_t frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND * SOURCE_PERIOD_SIZE;
     AUDIO_DEBUG_LOG("CalculateFrameLenBySampleRate: unified 20ms, sampleRate=%{public}u, frameLen=%{public}zu",
         sampleRate, frameLen);
     return frameLen;

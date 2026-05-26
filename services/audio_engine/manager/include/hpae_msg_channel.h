@@ -23,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+#define HDI_INVALID_RENDER_ID 0xFFFFFFFF
 typedef std::chrono::high_resolution_clock::time_point TimePoint;
 enum HpaeMsgCode {
     UPDATE_STATUS,
@@ -108,9 +109,6 @@ enum HpaeProcessorType {
     // scene for collaboration
     HPAE_SCENE_COLLABORATIVE = 25,
     HPAE_SCENE_RECOGNITION = 26,
-
-    // scene for collaborative record
-    HPAE_SCENE_COLLABORATIVE_RECORD = 27,
 };
 
 // mark sourceInputNode(cluster)
@@ -143,6 +141,8 @@ struct HpaeDfxNodeInfo {
     SourceType sourceType;
     uint32_t routeFlag = 0;
     bool keepRunning = false;
+    int32_t deviceType = 0;
+    uint32_t renderId = HDI_INVALID_RENDER_ID;
 
     uint32_t GetEffectiveSampleRate() const
     {
@@ -162,6 +162,7 @@ public:
     virtual void OnFadeDone(uint32_t sessionId){};
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
     virtual void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0){};
+    virtual void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs){};
     virtual void OnNotifyQueue(){};
     virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
     virtual void OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo){};

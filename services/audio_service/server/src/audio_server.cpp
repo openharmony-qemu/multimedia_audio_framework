@@ -104,6 +104,8 @@ const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
 const std::string HOME_MUSIC_KEY = "HomeMusic";
 const std::string COCKPIT_DIRECT_KEY = "cockpit_direct";
+const std::string AUDIO_EFFECT_KEY = "audio_effect";
+const std::string NETWORK_ID_KEY = "NETWORK_ID";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
 const std::string MAIN_KEY_DFX = "dfx";
 const std::string SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT = "update_wakeup_trace_result";
@@ -121,6 +123,24 @@ static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_ULTRASONIC,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
+
+std::shared_ptr<Media::MediaMonitor::EventBean> CreateStreamOccupancyEventBean(
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
+        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    CHECK_AND_RETURN_RET_LOG(bean != nullptr, nullptr, "bean is nullptr");
+
+    bean->Add("IS_PLAYBACK", info.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
+    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
+    bean->Add("UID", info.clientUID);
+    bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
+    bean->Add("START_TIME", static_cast<uint64_t>(0));
+    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
+    return bean;
+}
+
 const int32_t KVPAIRS_LEN = 2;
 static const int32_t MODERN_INNER_API_VERSION = 12;
 const int32_t API_VERSION_REMAINDER = 1000;
@@ -150,7 +170,7 @@ static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
     AAM_CONN_SVC_UID
 };
 const int32_t RSS_THRESHOLD = 2;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enbale";
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
@@ -327,15 +347,16 @@ static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag
 #endif
 }
 
-static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
+static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag,
+    int32_t phoneCallSceneType = SCENE_TYPE_INVALID)
 {
     std::shared_ptr<IAudioRenderSink> usbSink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     if (usbSink != nullptr && usbSink->IsInited()) {
-        usbSink->SetAudioScene(audioScene, scoExcludeFlag);
+        usbSink->SetAudioScene(audioScene, scoExcludeFlag, phoneCallSceneType);
     }
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
     if (primarySink != nullptr && primarySink->IsInited()) {
-        primarySink->SetAudioScene(audioScene, scoExcludeFlag);
+        primarySink->SetAudioScene(audioScene, scoExcludeFlag, phoneCallSceneType);
     }
 }
 
@@ -496,6 +517,64 @@ private:
     // callback to audioserver
     std::function<void(bool, size_t, size_t)> callback_;
 };
+
+class CamcorderMetadataOb final : public IAudioSourceCallback {
+public:
+    explicit CamcorderMetadataOb(uint32_t captureId)
+        : captureId_(captureId)
+    {
+    }
+
+    ~CamcorderMetadataOb() final
+    {
+    }
+
+    void OnHdiCaptureCallback(CaptureCallbackType type, const std::vector<uint8_t> &data) final
+    {
+        CHECK_AND_RETURN_LOG(type == CB_CAMCORDER_METADATA, "unsupported callback type: %{public}d", type);
+        CHECK_AND_RETURN_LOG(!data.empty(), "metadata is null.");
+        AUDIO_INFO_LOG("captureId: %{public}u, metadata size: %{public}zu", captureId_, data.size());
+
+        auto captureSource = HdiAdapterManager::GetInstance().GetCaptureSource(captureId_, false);
+        CHECK_AND_RETURN_LOG(captureSource != nullptr, "capture source is null for captureId: %{public}u", captureId_);
+
+        auto pipeInfo = captureSource->GetInputPipeInfo();
+        CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipe info is null for captureId: %{public}u", captureId_);
+        auto streams = pipeInfo->GetStreams();
+        for (const auto &stream : streams) {
+            uint32_t streamId = stream.first;
+            auto capturerInServer = AudioService::GetInstance()->GetCapturerBySessionID(streamId);
+            if (capturerInServer == nullptr) {
+                AUDIO_WARNING_LOG("failed to find capturer for streamId: %{public}u", streamId);
+                continue;
+            }
+
+            int32_t ret = capturerInServer->OnMetaData(data);
+            if (ret != SUCCESS) {
+                AUDIO_WARNING_LOG("failed for streamId: %{public}u, ret: %{public}d", streamId, ret);
+            }
+        }
+    }
+
+private:
+    uint32_t captureId_;
+};
+
+static void RegisterCamcorderMetadataCallback()
+{
+    std::function<bool(uint32_t)> limitFunc = [](uint32_t id) -> bool {
+        IdHandler &idHandler = IdHandler::GetInstance();
+        uint32_t type = idHandler.ParseType(id);
+        std::string info = idHandler.ParseInfo(id);
+        return type == HDI_ID_TYPE_PRIMARY && info == HDI_ID_INFO_CAMCORDER;
+    };
+    std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> callbackGenerator =
+        [](uint32_t captureId) -> std::shared_ptr<IAudioSourceCallback> {
+        return std::make_shared<CamcorderMetadataOb>(captureId);
+    };
+    HdiAdapterManager::GetInstance().RegistSourceCallbackGenerator(HDI_CB_CAPTURE_CAMCORDER_METADATA,
+        callbackGenerator, limitFunc);
+}
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -703,18 +782,22 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 {
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
+        NotifyStreamStandbyState(info, true);
         CHECK_AND_RETURN(info.audioMode == AUDIO_MODE_PLAYBACK);
         std::string bundleName = AppBundleManager::GetBundleNameFromUid(info.clientUID);
         CHECK_AND_RETURN_LOG(AudioService::GetInstance()->InRenderWhitelist(bundleName),
             "%{public}s not in whitelist", bundleName.c_str());
         if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
             (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_INTERPHONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_RINGTONE) ||
             (info.streamUsage == STREAM_USAGE_NOTIFICATION)) && info.isBackground) {
             int32_t ret = PolicyHandler::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "focus clear fail");
         }
+    } else if (info.stateChangeType == DATA_TRANS_RESUME) {
+        NotifyStreamStandbyState(info, false);
     }
 }
 // LCOV_EXCL_STOP
@@ -722,18 +805,70 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     const AudioRendererDataTransferStateChangeInfo &info)
 {
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
-        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = CreateStreamOccupancyEventBean(info);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+    bean->Add("STANDBY_DURATION_S", static_cast<uint64_t>(0));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void DataTransferStateChangeCallbackInnerImpl::ReportStandbyEvent(
+    const AudioRendererDataTransferStateChangeInfo &info, int32_t standbyDurationS)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = CreateStreamOccupancyEventBean(info);
     CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
 
-    bean->Add("IS_PLAYBACK", info.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
-    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
-    bean->Add("UID", info.clientUID);
-    bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
-    bean->Add("START_TIME", static_cast<uint64_t>(0));
-    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
+    bean->Add("STANDBY_DURATION_S", standbyDurationS);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+bool DataTransferStateChangeCallbackInnerImpl::IsNeedNotifyStandbyState(
+    const AudioRendererDataTransferStateChangeInfo &info, bool isStandby)
+{
+    CHECK_AND_RETURN_RET(info.audioMode == AUDIO_MODE_PLAYBACK, false);
+    if (isStandby && !info.isBackground) {
+        return false;
+    }
+    return info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        info.streamUsage == STREAM_USAGE_INTERPHONE ||
+        info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
+        info.streamUsage == STREAM_USAGE_RINGTONE ||
+        info.streamUsage == STREAM_USAGE_NOTIFICATION;
+}
+
+void DataTransferStateChangeCallbackInnerImpl::NotifyStreamStandbyState(
+    const AudioRendererDataTransferStateChangeInfo &info, bool isStandby)
+{
+    CHECK_AND_RETURN_LOG(IsNeedNotifyStandbyState(info, isStandby), "stream no need notify standby state");
+    uint32_t sessionId = static_cast<uint32_t>(info.sessionId);
+    if (isStandby) {
+        int64_t startTime = ClockTime::GetCurNano();
+        {
+            std::lock_guard<std::mutex> lock(standbyMutex_);
+            standbyStartTimeMap_[sessionId] = startTime;
+        }
+        int32_t ret = CoreServiceHandler::GetInstance().NotifyStreamStandby(info.clientPid, info.sessionId);
+        if (ret != SUCCESS) {
+            std::lock_guard<std::mutex> lock(standbyMutex_);
+            standbyStartTimeMap_.erase(sessionId);
+            AUDIO_ERR_LOG("notify stream standby fail, ret %{public}d", ret);
+        }
+        return;
+    }
+
+    int64_t uploadTime = ClockTime::GetCurNano();
+    int64_t startTime = 0;
+    {
+        std::lock_guard<std::mutex> lock(standbyMutex_);
+        auto iter = standbyStartTimeMap_.find(sessionId);
+        CHECK_AND_RETURN_LOG(iter != standbyStartTimeMap_.end(), "standby start time not found");
+        startTime = iter->second;
+        standbyStartTimeMap_.erase(iter);
+    }
+    int32_t standbyDurationS = static_cast<int32_t>((uploadTime - startTime) / AUDIO_NS_PER_SECOND);
+    ReportStandbyEvent(info, standbyDurationS);
+    int32_t ret = CoreServiceHandler::GetInstance().NotifyStreamStandbyResume(info.clientPid, info.sessionId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "notify stream standby resume fail, ret %{public}d", ret);
 }
 
 // LCOV_EXCL_START
@@ -956,6 +1091,34 @@ void AudioServer::HapReportWakeupEvent(const std::string &key,
     }
 }
 
+int32_t AudioServer::TrySetAudioEffectParameterToRemote(const std::vector<std::pair<std::string, std::string>> &newPair)
+{
+    std::string networkId = LOCAL_NETWORK_ID;
+    std::string value = "";
+    for (const auto &item : newPair) {
+        if (item.first == NETWORK_ID_KEY) {
+            networkId = item.second;
+        } else {
+            std::string itemValue = (value == "" ? "" : ";") + item.first + "=" + item.second;
+            value += itemValue;
+        }
+    }
+    CHECK_AND_RETURN_RET(networkId != LOCAL_NETWORK_ID &&
+        PolicyHandler::GetInstance().IsValidNetworkIdForSendEffectParam(networkId), ERR_NOT_SUPPORTED);
+
+    AUDIO_INFO_LOG("found match device, networkId: %{public}s", GetEncryptStr(networkId).c_str());
+
+    auto mainKeyIt = audioParameterKeys.find(AUDIO_EFFECT_KEY);
+    CHECK_AND_RETURN_RET_LOG(mainKeyIt != audioParameterKeys.end(), ERR_INVALID_PARAM, "invalid mainkey");
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> remoteDeviceManager =
+        manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(remoteDeviceManager != nullptr, ERROR, "remote device manager is nullptr");
+    remoteDeviceManager->SetAudioParameter(networkId, AudioParamKey::NONE, "", value);
+    return SUCCESS;
+}
+
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
 {
@@ -986,6 +1149,11 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
 
     if (key == COCKPIT_DIRECT_KEY) {
         return SetCockpitDirectExtraParameters(newPair);
+    }
+
+    if (key == AUDIO_EFFECT_KEY) {
+        int32_t ret = TrySetAudioEffectParameterToRemote(newPair);
+        CHECK_AND_RETURN_RET(ret == ERR_NOT_SUPPORTED, SUCCESS);
     }
 
     return SetCommonExtraParameters(key, newPair);
@@ -1541,13 +1709,11 @@ int32_t AudioServer::SetVoiceVolume(float volume)
     return ERROR;
 }
 
-int32_t AudioServer::OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId)
+int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    std::string info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId);
     if (sink == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
@@ -1555,17 +1721,20 @@ int32_t AudioServer::OffloadSetVolume(float volume, const std::string &deviceCla
     return sink->SetVolume(volume, volume);
 }
 
-int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag)
+int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag,
+    int32_t phoneCallSceneType)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, a2dpOffloadFlag, scoExcludeFlag);
+    AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, "
+        "scoExcludeFlag: %{public}d, phoneCallSceneType: %{public}d",
+        audioScene, a2dpOffloadFlag, scoExcludeFlag, phoneCallSceneType);
     AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
     CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "param is invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), scoExcludeFlag);
+    return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag),
+        scoExcludeFlag, phoneCallSceneType);
 }
 
 int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag)
@@ -1609,16 +1778,29 @@ int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, b
 }
 
 int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
-    bool scoExcludeFlag)
+    bool scoExcludeFlag, int32_t phoneCallSceneType)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     SetAudioSceneForAllSource(audioScene, scoExcludeFlag);
-    SetAudioSceneForAllSink(audioScene, scoExcludeFlag);
+    SetAudioSceneForAllSink(audioScene, scoExcludeFlag, phoneCallSceneType);
     audioScene_ = audioScene;
     SetAudioBalanceStatus();
+    return SUCCESS;
+}
+
+int32_t AudioServer::CreateCallTransferProxy()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED,
+        "refused for uid %{public}d", callingUid);
+
+    auto primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, false);
+    if (primarySink != nullptr) {
+        primarySink->CreateCallTransfer();
+    }
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -2390,7 +2572,7 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
     int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
     if (enableNewRoute == 1) {
         return true;
     }
@@ -2900,6 +3082,8 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         );
     };
     HdiAdapterManager::GetInstance().RegistSourceCallbackGenerator(HDI_CB_CAPTURE_STATE, callbackGenerator, limitFunc);
+
+    RegisterCamcorderMetadataCallback();
 }
 
 void AudioServer::RegisterAudioRendererSinkCallback()
@@ -3739,6 +3923,14 @@ int32_t AudioServer::ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTr
     int32_t ret = ioctl(fd,  IOCTL_AUDIO_WAKEUP_TRACK_REPORT_CMD, &wakeupTrackInfo);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret >= 0, ERR_OPERATION_FAILED, (void)close(fd));
     (void)close(fd);
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudioBroker(), ERR_OPERATION_FAILED, "Not audio broker calling");
+    AudioService::GetInstance()->SetAncoRecordingConfigChanged(bundleNameList);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

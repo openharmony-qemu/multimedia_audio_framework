@@ -46,6 +46,8 @@ public:
 
     int32_t GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp);
     void RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition = 0);
+    // Ensure history buffer is at least preheatFrames for AISS (non-Offload path)
+    void EnsureHistoryBufferForAiss(uint32_t preheatFrames);
 
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
@@ -70,6 +72,7 @@ public:
     void TriggerClientWake();
     void SetDirect(bool isDirect);
     bool GetDirect() const noexcept;
+    bool GetIsNonStandardSampleRate() const;
     void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
 
     bool isConnected_ = false;
@@ -100,6 +103,7 @@ private:
     uint32_t standbyCounter_ = 0;
     bool isLowLatency_ = false;
     bool isDirect_ = false;
+    bool isNonStandardSampleRate_ = false;
 };
 
 }  // namespace HPAE

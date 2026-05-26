@@ -64,6 +64,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_TRANSFER_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
     streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
     streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
@@ -94,6 +96,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_INTERPHONE)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_TRANSFER_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MESSAGE)] = STREAM_VOICE_MESSAGE;
@@ -477,7 +481,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
             RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
             StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
-            if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+            if (Util::IsRingerStreamUsage(streamUsage)) {
                 ResetRingerModeMute(rendererState, streamUsage);
             }
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
@@ -1775,7 +1779,8 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
 bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
 {
     if (usage == STREAM_USAGE_VOICE_COMMUNICATION || usage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-        usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION || usage == STREAM_USAGE_INTERPHONE) {
+        usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION || usage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
+        usage == STREAM_USAGE_INTERPHONE) {
         return true;
     }
     return false;
@@ -1949,7 +1954,7 @@ std::vector<std::pair<int32_t, AudioStreamType>> AudioStreamCollector::GetActive
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     std::vector<std::pair<int32_t, AudioStreamType>> result;
     for (auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING) {
+        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING && !changeInfo->backMute) {
             int32_t uid = changeInfo->clientUID;
             AudioStreamType streamType = GetStreamType(
                 changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage);

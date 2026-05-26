@@ -84,6 +84,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, info);
     } else if (deviceClass == "remote_offload") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_OFFLOAD, info);
+    } else if (deviceClass == "remote_multichannel") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_MULTICHANNEL, info);
 #endif
     }
     return GetRenderIdByDeviceClassSub(deviceClass, info, routeFlag);
@@ -102,8 +104,10 @@ uint32_t IdHandler::GetRenderIdByDeviceClassSub(const std::string &deviceClass, 
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOIP);
     } else if (deviceClass == "primary_mmap_voip") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP);
-    } else if (deviceClass == "primary_mmap") {
+    } else if (deviceClass == "primary_mmap" || deviceClass == "ultra_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "usb_arm_fast" || deviceClass == "usb_arm_ultra_fast") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB);
     } else if (deviceClass == "primary_direct") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DIRECT);
     } else if (deviceClass == "Virtual_Injector") {
@@ -157,6 +161,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
             return GetIdForSolePipeSource(sourceType, routeFlag);
         }
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "primary_extra_capturer") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
     } else if (deviceClass == "va") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
     } else if (deviceClass == "usb") {

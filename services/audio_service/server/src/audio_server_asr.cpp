@@ -56,10 +56,12 @@ static const std::map<std::string, AsrNoiseSuppressionMode> NS_MODE_MAP = {
     {"FAR_FIELD", AsrNoiseSuppressionMode::FAR_FIELD},
     {"FULL_DUPLEX_STANDARD", AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD},
     {"FULL_DUPLEX_NEAR_FIELD", AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD},
-    {"ASR_WHISPER_MODE", AsrNoiseSuppressionMode::ASR_WHISPER_MODE},
-    {"TSE_DENOISE_MODE", AsrNoiseSuppressionMode::TSE_DENOISE_MODE},
-    {"NORMAL_REG_MODE", AsrNoiseSuppressionMode::NORMAL_REG_MODE},
-    {"PHONE_CALL_MODE", AsrNoiseSuppressionMode::PHONE_CALL_MODE}
+    /* The mode is added to match the underlying algorithm */
+    {"ASR_WHISPER_MODE", AsrNoiseSuppressionMode::ASR_WHISPER},
+    {"TSE_DENOISE_MODE", AsrNoiseSuppressionMode::TSE_DENOISE},
+    {"NORMAL_REG_MODE", AsrNoiseSuppressionMode::NORMAL_REG},
+    {"PHONE_CALL_MODE", AsrNoiseSuppressionMode::PHONE_CALL},
+    {"TOPMIC_REG_MODE", AsrNoiseSuppressionMode::TOPMIC_REG}
 };
 
 static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = {
@@ -69,10 +71,12 @@ static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = 
     {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"},
     {AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD, "FULL_DUPLEX_STANDARD"},
     {AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD, "FULL_DUPLEX_NEAR_FIELD"},
-    {AsrNoiseSuppressionMode::ASR_WHISPER_MODE, "ASR_WHISPER_MODE"},
-    {AsrNoiseSuppressionMode::TSE_DENOISE_MODE, "TSE_DENOISE_MODE"},
-    {AsrNoiseSuppressionMode::NORMAL_REG_MODE, "NORMAL_REG_MODE"},
-    {AsrNoiseSuppressionMode::PHONE_CALL_MODE, "PHONE_CALL_MODE"}
+    /* The mode is added to match the underlying algorithm */
+    {AsrNoiseSuppressionMode::ASR_WHISPER, "ASR_WHISPER_MODE"},
+    {AsrNoiseSuppressionMode::TSE_DENOISE, "TSE_DENOISE_MODE"},
+    {AsrNoiseSuppressionMode::NORMAL_REG, "NORMAL_REG_MODE"},
+    {AsrNoiseSuppressionMode::PHONE_CALL, "PHONE_CALL_MODE"},
+    {AsrNoiseSuppressionMode::TOPMIC_REG, "TOPMIC_REG_MODE"}
 };
 
 static const std::map<std::string, AsrWhisperDetectionMode> WHISPER_DETECTION_MODE_MAP = {

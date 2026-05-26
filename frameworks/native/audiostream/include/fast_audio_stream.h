@@ -136,6 +136,7 @@ public:
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
     AudioCaptureMode GetCaptureMode() override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;
@@ -245,7 +246,8 @@ public:
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
     bool IsRestoreNeeded() override;
     int32_t SetRebuildFlag() override;
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
@@ -271,6 +273,8 @@ private:
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
     std::shared_ptr<FastAudioStreamRenderCallback> spkProcClientCb_ = nullptr;
     std::shared_ptr<FastAudioStreamCaptureCallback> micProcClientCb_ = nullptr;
+    std::mutex metaDataCbMutex_;
+    std::shared_ptr<AudioCapturerMetaDataCallback> metaDataCb_ = nullptr;
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;
@@ -320,6 +324,7 @@ private:
 
     // for static audio renderer
     StaticBufferInfo staticBufferInfo_;
+    std::shared_ptr<AudioSharedMemory> staticSharedMemory_ = nullptr;
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
     std::shared_ptr<AudioFirstFrameCallback> procFirstFrameClientCb_ = nullptr;
 

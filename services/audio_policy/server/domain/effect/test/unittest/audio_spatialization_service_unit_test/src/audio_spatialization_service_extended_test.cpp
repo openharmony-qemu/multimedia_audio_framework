@@ -252,5 +252,31 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_010, Tes
     sSpatializationService_->currentDeviceAddress_ = TEST_MAC_ADDRESS;
     EXPECT_NO_THROW(sSpatializationService_->UpdateHeadTrackingDeviceState(outputDeviceChange, preDeviceAddress));
 }
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_010
+* @tc.desc  : Test SafeConvertToBool
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_012, TestSize.Level4)
+{
+    std::string token = "123456";
+    std::string paramName = "test";
+    EXPECT_EQ(sSpatializationService_->SafeConvertToBool(token, paramName), false);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_010
+* @tc.desc  : Test SafeConvertToBool
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_011, TestSize.Level4)
+{
+    std::string token = "1";
+    std::string paramName = "test";
+    EXPECT_EQ(sSpatializationService_->SafeConvertToBool(token, paramName), true);
+    token = "0";
+    EXPECT_EQ(sSpatializationService_->SafeConvertToBool(token, paramName), false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -37,6 +37,7 @@ public:
 
     // override IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
+    int32_t OnMetaData(const std::vector<uint8_t> &metaData) override;
 private:
     bool IsWakeUpLaterNeeded(Operation operation);
     std::mutex listenerMutex_;

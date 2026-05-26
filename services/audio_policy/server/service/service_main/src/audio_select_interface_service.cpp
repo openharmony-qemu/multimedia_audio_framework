@@ -79,6 +79,13 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     }
+
+    // Force trigger callback to bypass currentOutputDevice change check
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_OPERATION_FAILED, "coreService is null");
+    coreService->OnPreferredOutputDeviceUpdated(
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(uid),
+        AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -187,11 +194,11 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
             StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
                 ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SelectOutputDevice: SetRenderDeviceForUsage failed", false));
     }
-    
+
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
-    
+
     // If the selected device is virtual device, connect it.
     if (AudioDeviceManager::GetAudioDeviceManager().IsVirtualConnectedDevice(selectedDesc[0])) {
         int32_t ret = AudioRecoveryDevice::GetInstance().ConnectVirtualDevice(selectedDesc[0]);
@@ -281,7 +288,7 @@ int32_t AudioSelectInterfaceService::SetRenderDeviceForUsage(StreamUsage streamU
         desc : std::make_shared<AudioDeviceDescriptor>(**itr));
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
 
-    auto callerUid = uid == -1 ? IPCSkeleton::GetCallingUid() : uid;
+    auto callerUid = uid == INVALID_UID ? IPCSkeleton::GetCallingUid() : uid;
     if (preferredType == AUDIO_CALL_RENDER) {
         int32_t PreferUid = GetPreferredUid(callerUid);
         AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, callerUid, "SelectOutputDevice");
@@ -609,7 +616,8 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
         }
         if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE) {
             CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
@@ -622,11 +630,9 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     }
 
     int32_t ret = SUCCESS;
-    if (isRunning) {
-        ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(deviceType, clientUid,
-            sessionID, streamUsage);
-    }
-    if (ret == NEED_TO_FETCH || forceFetch) {
+    ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(deviceType, clientUid,
+        sessionID, streamUsage);
+    if ((isRunning && ret == NEED_TO_FETCH) || forceFetch) {
         AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;
@@ -689,6 +695,13 @@ void AudioSelectInterfaceService::OnForcedDeviceSelected(DeviceType devType, con
             SelectOutputDevice(filter, {devDesc}, 0, isNeedNotifyBt);
         }
     }
+
+    // Force trigger callback, same as OnForcedDeviceSelected in audio_device_status.cpp
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
+    coreService->OnPreferredOutputDeviceUpdated(
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(filter->uid),
+        AudioStreamDeviceChangeReason::OVERRODE);
 }
 
 void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,

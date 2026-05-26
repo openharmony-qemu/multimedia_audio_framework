@@ -30,6 +30,10 @@
 
 using namespace OHOS;
 using namespace AudioStandard;
+
+namespace {
+constexpr int32_t TEST_SYNC_ERROR = -999;
+}
 using namespace HPAE;
 using namespace testing::ext;
 using namespace testing;
@@ -893,6 +897,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Lev
     AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+    sleep(1);
     hpaeManager_->SetDefaultSource(audioModuleInfo.name);
     HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
     hpaeManager_->CreateStream(streamInfo);
@@ -949,6 +954,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002, TestSize.Lev
     AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+    sleep(1);
     hpaeManager_->SetDefaultSource(audioModuleInfo.name);
     HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
     hpaeManager_->CreateStream(streamInfo);
@@ -2285,154 +2291,182 @@ HWTEST_F(HpaeManagerUnitTest, HandleAppsEnhanceMuteState_003, TestSize.Level1)
     }
 }
 
-/**
- * @tc.name  : Test HpaeManager EnableCaptureCollaboration API
- * @tc.type  : FUNC
- * @tc.number: EnableCaptureCollaboration_001
- * @tc.desc  : Test EnableCaptureCollaboration without init and with invalid sourcePortIndex
- */
-HWTEST_F(HpaeManagerUnitTest, EnableCaptureCollaboration_001, TestSize.Level1)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    // call without init, should not crash
-    hpaeManager_->EnableCaptureCollaboration(0, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
+// ==================== SendRequestSync Tests ====================
 
+/**
+ * @brief SendRequestSync returns actual result from lambda executed on HpaeManagerThread
+ */
+HWTEST_F(HpaeManagerUnitTest, sendRequestSyncReturnsActualResult, TestSize.Level0)
+{
     hpaeManager_->Init();
     sleep(1);
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
 
-    // call with non-existent sourcePortIndex, should log and return
-    hpaeManager_->EnableCaptureCollaboration(999, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
+    auto result = hpaeManager_->SendRequestSync<int32_t>(
+        []() -> int32_t { return 42; },
+        "TestReturn42",
+        -1);
+
+    EXPECT_EQ(result, 42);
+    hpaeManager_->DeInit();
 }
 
 /**
- * @tc.name  : Test HpaeManager EnableCaptureCollaboration API
- * @tc.type  : FUNC
- * @tc.number: EnableCaptureCollaboration_002
- * @tc.desc  : Test EnableCaptureCollaboration after opening source port
+ * @brief SendRequestSync returns default value when lambda returns error
  */
-HWTEST_F(HpaeManagerUnitTest, EnableCaptureCollaboration_002, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, sendRequestSyncReturnsErrorFromLambda, TestSize.Level0)
 {
-    EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     sleep(1);
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
 
-    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
-        std::make_shared<HpaeAudioServiceCallbackUnitTest>();
-    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    auto result = hpaeManager_->SendRequestSync<int32_t>(
+        []() -> int32_t { return TEST_SYNC_ERROR; },
+        "TestReturnError",
+        SUCCESS);
 
-    AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
-    EXPECT_EQ(hpaeManager_->OpenAudioPort(sourceAudioModuleInfo), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t sourcePortId = callback->GetPortId();
-
-    // enable collaboration on valid source port
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // duplicate enable, should be ignored
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    EXPECT_EQ(hpaeManager_->CloseAudioPort(sourcePortId), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(result, TEST_SYNC_ERROR);
+    hpaeManager_->DeInit();
 }
 
 /**
- * @tc.name  : Test HpaeManager DisableCaptureCollaboration API
- * @tc.type  : FUNC
- * @tc.number: DisableCaptureCollaboration_001
- * @tc.desc  : Test DisableCaptureCollaboration full lifecycle
+ * @brief SendRequestSync returns default value on timeout when thread is not running
  */
-HWTEST_F(HpaeManagerUnitTest, DisableCaptureCollaboration_001, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, sendRequestSyncReturnsDefaultOnTimeout, TestSize.Level0)
 {
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    sleep(1);
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    // Don't Init - no HpaeManagerThread running, so the request won't be processed
+    EXPECT_EQ(hpaeManager_->IsRunning(), false);
 
-    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
-        std::make_shared<HpaeAudioServiceCallbackUnitTest>();
-    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    auto result = hpaeManager_->SendRequestSync<int32_t>(
+        []() -> int32_t { return 42; },
+        "TestTimeout",
+        -1,
+        100);  // 100ms timeout for fast test
 
-    AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
-    EXPECT_EQ(hpaeManager_->OpenAudioPort(sourceAudioModuleInfo), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t sourcePortId = callback->GetPortId();
-
-    // disable without enable, should be ignored without crash
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // enable then disable
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // double disable, should be ignored without crash
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // disable on non-existent port, should not crash
-    hpaeManager_->DisableCaptureCollaboration(999, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    EXPECT_EQ(hpaeManager_->CloseAudioPort(sourcePortId), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(result, -1);  // Should return default value due to timeout
 }
 
 /**
- * @tc.name  : Test HpaeManager Enable/DisableCaptureCollaboration API
- * @tc.type  : FUNC
- * @tc.number: CaptureCollaboration_001
- * @tc.desc  : Test collaboration enable/disable with stream operations
+ * @brief SendRequestSync works with multiple sequential calls
  */
-HWTEST_F(HpaeManagerUnitTest, CaptureCollaboration_001, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, sendRequestSyncSequentialCalls, TestSize.Level0)
+{
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
+
+    int32_t counter = 0;
+    for (int i = 0; i < 5; i++) {
+        std::string funcName = "TestSequential_" + std::to_string(i);
+        auto result = hpaeManager_->SendRequestSync<int32_t>(
+            [&counter]() -> int32_t { return ++counter; },
+            funcName,
+            -1);
+        EXPECT_EQ(result, i + 1);
+    }
+    EXPECT_EQ(counter, 5);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @brief SetAissEnabled returns error when sessionEffectManager_ is null (before Init)
+ */
+HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NullSessionEffectManager, TestSize.Level0)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    // Do NOT Init — sessionEffectManager_ stays null
+    EXPECT_EQ(hpaeManager_->SetAissEnabled(12345, true), ERR_OPERATION_FAILED);
+    EXPECT_EQ(hpaeManager_->SetAissEnabled(12345, false), ERR_OPERATION_FAILED);
+}
+
+/**
+ * @brief SetAissEnabled returns error when rendererManager not found for sessionId
+ */
+HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NoRendererManager, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     sleep(1);
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
-
-    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
-        std::make_shared<HpaeAudioServiceCallbackUnitTest>();
-    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
-
-    // open source port
-    AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
-    EXPECT_EQ(hpaeManager_->OpenAudioPort(sourceAudioModuleInfo), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t sourcePortId = callback->GetPortId();
-
-    // create capture stream
-    HpaeStreamInfo captureStreamInfo = GetCaptureStreamInfo();
-    EXPECT_EQ(hpaeManager_->CreateStream(captureStreamInfo), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // enable collaboration while stream exists
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // start stream after collaboration enabled
-    EXPECT_EQ(hpaeManager_->Start(captureStreamInfo.streamClassType, captureStreamInfo.sessionId), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // disable collaboration while stream running
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
-    WaitForMsgProcessing(hpaeManager_);
-
-    // stop and cleanup
-    EXPECT_EQ(hpaeManager_->Stop(captureStreamInfo.streamClassType, captureStreamInfo.sessionId), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->DestroyStream(captureStreamInfo.streamClassType, captureStreamInfo.sessionId), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->CloseAudioPort(sourcePortId), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
+    // Session 99999 has no rendererManager — should return ERR_SESSION_NOT_FOUND
+    EXPECT_EQ(hpaeManager_->SetAissEnabled(99999, true),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+    hpaeManager_->DeInit();
 }
+
+/**
+ * @brief PostCreateSessionEffect / PostDestroySessionEffect exist on IHpaeRendererManager interface.
+ * Verifies the default (base-class) implementation does not crash.
+ */
+HWTEST_F(HpaeManagerUnitTest, PostSessionEffect_DefaultImplNoop, TestSize.Level0)
+{
+    // IHpaeRendererManager base-class default impl is no-op — calling them should not crash
+    // We test this indirectly: CreateRendererManager gives us a concrete subclass,
+    // but the base-class defaults are what non-RendererManager implementations get.
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceName = "test";
+    auto rm = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    // The concrete renderer manager implements these — but if it's a nullptr sink,
+    // it still shouldn't crash. The method exists on the interface.
+    // We can't easily test the base-class default without a mock, but we verify it compiles.
+    AudioEffectConfig config;
+    auto dummyInstance = std::make_shared<EffectInstance>();
+    // Just verifying the interface exists and is callable
+    if (rm != nullptr) {
+        rm->PostCreateSessionEffect(12345, "test_effect", dummyInstance, config);
+        rm->PostDestroySessionEffect(12345);
+    }
+}
+
+/**
+ * @brief SetAissEnabled enable/disable round-trip with audio port and stream.
+ * Verifies the async Post* path does not crash on a full pipeline.
+ */
+HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_EnableDisableRoundTrip, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
+
+    // Setup audio port and stream
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    WaitForMsgProcessing(hpaeManager_);
+
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Start the stream so SignalProcessThread is active and cluster has converter/gain nodes
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Enable AISS — should succeed (Bind + async PostCreateSessionEffect)
+    int32_t ret = hpaeManager_->SetAissEnabled(streamInfo.sessionId, true);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    // Give async PostCreateSessionEffect time to execute on SignalProcessThread
+    usleep(100000); // 100ms
+
+    // Disable AISS — should succeed (async PostDestroySessionEffect + Unbind)
+    ret = hpaeManager_->SetAissEnabled(streamInfo.sessionId, false);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    usleep(100000); // 100ms
+
+    // Cleanup
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Speaker_File"), SUCCESS);
+    hpaeManager_->DeInit();
+}
+
+// ==================== Upstream Tests ====================
+
 
 HWTEST_F(HpaeManagerUnitTest, GetStreamSpanSize_001, TestSize.Level1)
 {

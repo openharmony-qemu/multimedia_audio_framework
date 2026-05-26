@@ -211,6 +211,14 @@ int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &devic
     return SUCCESS;
 }
 
+DeviceType HpaeRemoteSinkOutputNode::GetCurrentOutputDevice() const
+{
+    if (audioRendererSink_ == nullptr) {
+        return DEVICE_TYPE_NONE;
+    }
+    return audioRendererSink_->GetCurrentOutputDevice();
+}
+
 int32_t HpaeRemoteSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 {
     if (audioRendererSink_ == nullptr) {
@@ -228,11 +236,12 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_RETURN_RET(ret == SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
-            __FUNCTION__, false), ret));
+        __FUNCTION__, false),
+        "RenderSinkInit failed, ret: %{public}d", ret);
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -383,17 +392,24 @@ size_t HpaeRemoteSinkOutputNode::GetPreOutNum()
 
 int32_t HpaeRemoteSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
-    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::SEND_DATA, ERR_NULL_POINTER),
-            "audioRendererSink_ is nullptr", false), ERROR));
-    CHECK_AND_RETURN_RET(audioRendererSink_->IsInited(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            "audioRendererSink_ is nullptr", false),
+        "audioRendererSink_ is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::START, ERR_ILLEGAL_STATE),
-            "audioRendererSink_ not init", false), ERR_ILLEGAL_STATE));
+            "audioRendererSink_ not init", false),
+        "audioRendererSink_ not init");
     return audioRendererSink_->UpdateAppsUid(appsUid);
+}
+
+uint32_t HpaeRemoteSinkOutputNode::GetRenderId() const
+{
+    return renderId_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

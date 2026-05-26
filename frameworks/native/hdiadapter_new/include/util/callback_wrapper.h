@@ -67,6 +67,7 @@ public:
     void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
     void OnCaptureState(bool isActive) override;
+    void OnHdiCaptureCallback(CaptureCallbackType type, const std::vector<uint8_t> &data) override;
     void OnWakeupClose(void) override;
     void OnInputPipeChange(AudioPipeChangeType changeType,
         std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo) override;

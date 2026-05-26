@@ -30,6 +30,7 @@ public:
 
     // IpcStreamListenerStub
     int32_t OnOperationHandled(int32_t operation, int64_t result) override;
+    int32_t OnMetaData(const std::vector<uint8_t> &metaData) override;
     int32_t OnOperationHandledLazy(int32_t operation, int64_t result) override;
 private:
     std::weak_ptr<IStreamListener> innerListener_;

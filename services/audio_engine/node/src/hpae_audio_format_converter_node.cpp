@@ -40,6 +40,11 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
     converterOutput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tmpOutBuf_(pcmBufferInfo_)
 {
+    int32_t enableNewRoute = 0;
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
+    frameLenInMs_ = enableNewRoute == 1 ?
+        static_cast<float>(nodeInfo.frameLen * MILLISECOND_PER_SECOND) / static_cast<float>(nodeInfo.samplingRate) :
+        static_cast<float>(FRAME_LEN_20MS);
     converterOutput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
     // use ProResamppler as default
     resampler_ = std::make_unique<ProResampler>(preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
@@ -108,10 +113,14 @@ void HpaeAudioFormatConverterNode::DoProcess()
         outputStream_.WriteDataToOutput(tempOut);
         return;
     }
-    // No valid input or process disabled -- still try to drain processedBuffer_
+    //drain processedBuffer_ with buffer state propagation
     if (processedFrames_ >= outputFrameLen20ms_ && enableProcess_) {
         converterOutput_.Reset();
         if (ExtractOutputFromProcessedBuffer()) {
+            if (!preOutputs.empty() && preOutputs[0] != nullptr) {
+                converterOutput_.SetBufferState(preOutputs[0]->GetBufferState());
+                converterOutput_.SetBufferValid(true);
+            }
             AUDIO_DEBUG_LOG("NodeId %{public}d: drain processedBuffer_, "
                 "remaining %{public}u frames", GetNodeId(), processedFrames_);
             outputStream_.WriteDataToOutput(&converterOutput_);
@@ -199,10 +208,11 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     if (inputs.size() != 1) {
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
-    CHECK_AND_RETURN_RET(resampler_,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(resampler_, &silenceData_,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-                BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false), &silenceData_));
+                BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false),
+        "NodeId %{public}d resampler_ is nullptr", GetNodeId());
 
     // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
     CheckAndUpdateInfo(inputs[0]);
@@ -229,10 +239,11 @@ bool HpaeAudioFormatConverterNode::UpdateOutChannelInfo(uint32_t numChannels, Au
     };
     HILOG_COMM_INFO("[CheckUpdateOutInfo]NodeId %{public}d, update out channels and channelLayout: "
         "channels %{public}d -> %{public}d", GetNodeId(), curOutChannelInfo.numChannels, numChannels);
-    CHECK_AND_RETURN_RET(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == MIX_ERR_SUCCESS,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == MIX_ERR_SUCCESS, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL, BusinessScenario::SEND_DATA,
-                ERR_ILLEGAL_STATE), "Fail to set output channel info", false), false));
+                ERR_ILLEGAL_STATE), "Fail to set output channel info", false),
+        "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
     uint32_t resampleChannels = std::min(channelConverter_.GetInChannelInfo().numChannels, numChannels);
     if (resampleChannels != resampler_->GetChannels()) {
         AUDIO_INFO_LOG("NodeId: %{public}d, Update resampler work channel from effectNode!", GetNodeId());
@@ -374,7 +385,7 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
         uint32_t curInRate = resampler_->GetInRate();
         uint32_t curOutRate = resampler_->GetOutRate();
         outPcmBufferInfo.frameLen = (curInRate == curOutRate) ? GetFrameLen() :
-            curOutRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+            static_cast<uint32_t>(curOutRate * frameLenInMs_ / MILLISECOND_PER_SECOND);
     }
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
 
@@ -436,7 +447,7 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
     uint32_t inRate = resampler_->GetInRate();
     // Same-rate path (e.g., low-latency 5ms): use node's actual output frameLen to match converterOutput_ buffer
     outputFrameLen20ms_ = (inRate == outRate) ? GetFrameLen() :
-        outRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+        static_cast<uint32_t>(outRate * frameLenInMs_ / MILLISECOND_PER_SECOND);
 
     AudioChannelInfo inChannelInfo = channelConverter_.GetInChannelInfo();
     AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
@@ -486,7 +497,7 @@ uint32_t HpaeAudioFormatConverterNode::CalculateResamplerInputThreshold() const
     uint32_t inRate = resampler_->GetInRate();
     uint32_t outRate = resampler_->GetOutRate();
     if (inRate == outRate) {
-        return inRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+        return static_cast<uint32_t>(inRate * frameLenInMs_ / MILLISECOND_PER_SECOND);
     }
     // Find the minimum span that produces exact output at outRate.
     // This avoids rounding errors in the resampler output.
@@ -497,7 +508,7 @@ uint32_t HpaeAudioFormatConverterNode::CalculateResamplerInputThreshold() const
     } else if (inRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
         return inRate * FRAME_LEN_100MS / MILLISECOND_PER_SECOND; // e.g., 801 for 8010Hz
     } else {
-        return inRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND; // standard 20ms
+        return static_cast<uint32_t>(inRate * frameLenInMs_ / MILLISECOND_PER_SECOND); // standard 20ms
     }
 }
 

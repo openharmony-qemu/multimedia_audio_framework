@@ -51,6 +51,9 @@ public:
         uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID) {};
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
     virtual void SetCollaborationState(bool collaborationState) {};
+    virtual uint32_t GetRenderId() const { return HDI_INVALID_ID; }
+    virtual DeviceType GetCurrentOutputDevice() const { return DEVICE_TYPE_NONE; }
+    virtual void SetDeviceChangeCallback(std::function<void()> callback) {}
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

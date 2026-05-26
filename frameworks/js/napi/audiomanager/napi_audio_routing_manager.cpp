@@ -172,7 +172,7 @@ NapiAudioRoutingManager* NapiAudioRoutingManager::GetParamWithSync(const napi_en
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "GetParamWithSync fail to napi_get_cb_info");
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioRoutingManager);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioRoutingManager));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr && napiAudioRoutingManager->audioMngr_  !=
         nullptr, napiAudioRoutingManager, "GetParamWithSync fail to napi_unwrap");
@@ -325,7 +325,11 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
             context->bArgTransFlag, argv[PARAM0]);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
             context->bArgTransFlag, argv[PARAM1]);
-        context->audioDeviceSelectMode = 0;
+
+        if (context->audioRendererFilter->uid > INVALID_UID) {
+            context->audioDeviceSelectMode = 1;
+        }
+
         if (argc == ARGS_THREE) {
             napi_status status = NapiParamUtils::GetValueInt32(env, context->audioDeviceSelectMode, argv[PARAM2]);
             NAPI_CHECK_ARGS_RETURN_VOID(context, status == napi_ok, "invalid audioDeviceSelectMode",

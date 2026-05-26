@@ -63,6 +63,7 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    int32_t UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId) final;
 
     void SetInvalidState(void) override;
 
@@ -111,6 +112,7 @@ private:
     mutable int64_t volumeDataCount_ = 0;
     bool muteState_ = false;
     std::unordered_set<int32_t> appsUid_;
+    std::unordered_set<uint32_t> appsTokenId_;
     uint32_t captureId_ = HDI_INVALID_ID;
     std::shared_ptr<AudioSourceClock> audioSrcClock_ = nullptr;
 };

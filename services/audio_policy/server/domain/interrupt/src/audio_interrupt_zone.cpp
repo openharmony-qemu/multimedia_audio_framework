@@ -142,7 +142,11 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
 
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     if (service_->handler_ != nullptr) {
-        service_->handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, interrupt.streamId);
+        if (interrupt.isAudioSessionInterrupt) {
+            service_->SendAudioSessionInterruptEventCallback(interruptEvent, interrupt);
+        } else {
+            service_->handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, interrupt.streamId);
+        }
     }
 
     AudioVolume::GetInstance()->SetStreamVolumeMute(interrupt.streamId, true);

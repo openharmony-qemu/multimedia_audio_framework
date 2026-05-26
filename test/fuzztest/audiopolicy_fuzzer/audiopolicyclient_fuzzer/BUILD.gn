@@ -41,6 +41,7 @@ ohos_fuzztest("AudioPolicyClientFuzzTest") {
   deps = [
     "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../services/audio_policy:audio_policy_service_static",
+    "../../../../services/audio_policy:audio_policy_client_static",
   ]
   external_deps = [
     "c_utils:utils",

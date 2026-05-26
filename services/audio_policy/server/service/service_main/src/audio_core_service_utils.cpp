@@ -103,7 +103,8 @@ bool AudioCoreServiceUtils::IsDualOnActive()
     CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
     return pipeManager->IsStreamUsageActive(STREAM_USAGE_ALARM) ||
         pipeManager->IsStreamUsageActive(STREAM_USAGE_VOICE_RINGTONE) ||
-        pipeManager->IsStreamUsageActive(STREAM_USAGE_RINGTONE);
+        pipeManager->IsStreamUsageActive(STREAM_USAGE_RINGTONE) ||
+        pipeManager->IsStreamUsageActive(STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
 }
 
 void AudioCoreServiceUtils::SortOutputStreamDescsForUsage(
@@ -113,10 +114,12 @@ void AudioCoreServiceUtils::SortOutputStreamDescsForUsage(
     for (auto &streamDesc : streamDescs) {
         if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
             streamDescsPriority[streamDesc->sessionId_] = FIRST_STREAM_PRIORITY;
         } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
-                streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+                streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+                streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
             streamDescsPriority[streamDesc->sessionId_] = SECOND_STREAM_PRIORITY;
         } else {
             streamDescsPriority[streamDesc->sessionId_] = THIRD_STREAM_PRIORITY;

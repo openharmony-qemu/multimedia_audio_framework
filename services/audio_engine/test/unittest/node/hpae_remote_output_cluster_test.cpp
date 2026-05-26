@@ -320,6 +320,65 @@ HWTEST_F(HpaeRemoteOutputClusterTest, TransStreamUsageToSplitSceneType_05, TestS
     EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_ULTRASONIC, mode3), HPAE_SCENE_SPLIT_MEDIA);
     EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MOVIE, mode3), HPAE_SCENE_SPLIT_MEDIA);
 }
+// ==================== New UT for GetRenderId and GetCurrentOutputDevice ====================
+
+/**
+ * @tc.name  : GetRenderId_Default_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderId returns HDI_INVALID_ID by default.
+ */
+HWTEST_F(HpaeRemoteOutputClusterTest, GetRenderId_Default_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = 960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote";
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRemoteOutputCluster->GetRenderId(), HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : GetCurrentOutputDevice_NullSink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetCurrentOutputDevice returns DEVICE_TYPE_NONE when sink is null.
+ */
+HWTEST_F(HpaeRemoteOutputClusterTest, GetCurrentOutputDevice_NullSink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = 960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote";
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRemoteOutputCluster->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : GetRenderId_SetValue_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderId returns correct value after setting via sink output node.
+ */
+HWTEST_F(HpaeRemoteOutputClusterTest, GetRenderId_SetValue_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 100;
+    nodeInfo.frameLen = 960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote";
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
+    hpaeRemoteOutputCluster->hpaeSinkOutputNode_->renderId_ = 300;
+    EXPECT_EQ(hpaeRemoteOutputCluster->GetRenderId(), 300u);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

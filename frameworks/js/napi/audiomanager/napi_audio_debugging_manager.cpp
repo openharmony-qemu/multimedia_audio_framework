@@ -20,6 +20,7 @@
 #include "napi_audio_renderer.h"
 #include "napi_audio_capturer.h"
 #include "napi_audio_loopback.h"
+#include "napi_audio_session_manager.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "audio_errors.h"
@@ -90,6 +91,12 @@ void NapiAudioDebuggingManager::Destructor(napi_env env, void *nativeObject, voi
     }
 }
 
+/**
+ * @brief Create a JS AudioDebuggingManager wrapper instance.
+ *
+ * @param env NAPI environment handle.
+ * @return napi_value The created JS AudioDebuggingManager instance.
+ */
 napi_value NapiAudioDebuggingManager::CreateDebuggingManagerWrapper(napi_env env)
 {
     napi_value constructor = Init(env, nullptr);
@@ -149,6 +156,18 @@ napi_value NapiAudioDebuggingManager::PrintAppInfo(napi_env env, napi_callback_i
     return NapiParamUtils::GetUndefinedValue(env);
 }
 
+/**
+ * @brief Prints full audio runtime snapshot for target audio renderer instance.
+ *
+ * The snapshot will contain the stream, pipe, volume and device information.
+ * Note that the information details and format may vary from different version,
+ * it can only be used for manual debugging, user should not rely on the
+ * information for actual function realization or file content extraction.
+ *
+ * @param env NAPI environment handle.
+ * @param info NAPI callback info. Expects 2 arguments: renderer (AudioRenderer), fd (number).
+ * @return napi_value Undefined.
+ */
 napi_value NapiAudioDebuggingManager::PrintRendererInfo(napi_env env, napi_callback_info info)
 {
     size_t argc = ARG_COUNT_TWO;
@@ -172,7 +191,7 @@ napi_value NapiAudioDebuggingManager::PrintRendererInfo(napi_env env, napi_callb
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    uintptr_t rendererKey = reinterpret_cast<uintptr_t>(napiRenderer->audioRenderer_.get());
+    uint32_t rendererKey = napiRenderer->audioRenderer_->GetRendererDebugKey();
     if (AudioDebugManager::GetInstance().PrintAudioRendererDebugInfo(rendererKey, fd) != SUCCESS) {
         NapiAudioError::ThrowError(env, "PrintRendererInfo failed", NAPI_ERR_SYSTEM);
     }
@@ -202,7 +221,7 @@ napi_value NapiAudioDebuggingManager::PrintCapturerInfo(napi_env env, napi_callb
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    uintptr_t capturerKey = reinterpret_cast<uintptr_t>(napiCapturer->audioCapturer_.get());
+    uint32_t capturerKey = napiCapturer->audioCapturer_->GetCapturerDebugKey();
     if (AudioDebugManager::GetInstance().PrintAudioCapturerDebugInfo(capturerKey, fd) != SUCCESS) {
         NapiAudioError::ThrowError(env, "PrintCapturerInfo failed", NAPI_ERR_SYSTEM);
     }
@@ -232,7 +251,7 @@ napi_value NapiAudioDebuggingManager::PrintLoopbackInfo(napi_env env, napi_callb
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    uint32_t loopbackKey = reinterpret_cast<uint32_t>(napiLoopback->loopback_.get());
+    uint32_t loopbackKey = napiLoopback->loopback_->GetDebugKey();
     if (AudioDebugManager::GetInstance().PrintAudioLoopbackDebugInfo(loopbackKey, fd) != SUCCESS) {
         NapiAudioError::ThrowError(env, "PrintLoopbackInfo failed", NAPI_ERR_SYSTEM);
     }
@@ -249,7 +268,22 @@ napi_value NapiAudioDebuggingManager::PrintSessionInfo(napi_env env, napi_callba
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    NapiAudioError::ThrowError(env, "PrintSessionInfo is unsupported now", NAPI_ERR_UNSUPPORTED);
+    NapiAudioSessionMgr *napiSessionMgr = nullptr;
+    status = napi_unwrap(env, args[0], reinterpret_cast<void **>(&napiSessionMgr));
+    if (status != napi_ok || napiSessionMgr == nullptr) {
+        NapiAudioError::ThrowError(env, "PrintSessionInfo session manager invalid", NAPI_ERR_INVALID_PARAM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    int32_t fd = -1;
+    if (NapiParamUtils::GetValueInt32(env, fd, args[1]) != napi_ok) {
+        NapiAudioError::ThrowError(env, "PrintSessionInfo fd type invalid", NAPI_ERR_INVALID_PARAM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    if (AudioDebugManager::GetInstance().PrintAudioSessionDebugInfo(fd) != SUCCESS) {
+        NapiAudioError::ThrowError(env, "PrintSessionInfo failed", NAPI_ERR_SYSTEM);
+    }
     return NapiParamUtils::GetUndefinedValue(env);
 }
 } // namespace AudioStandard

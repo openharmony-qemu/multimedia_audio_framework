@@ -44,6 +44,7 @@
 #endif
 #include "audio_resource_service.h"
 #include "stream_dfx_manager.h"
+#include "audio_privacy_manager_in_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,6 +64,7 @@ static const uint32_t RECHECK_SINK_STATE_IN_US = 300000; // 300ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+static const int32_t UID_AUDIO = 1041;
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -579,12 +581,23 @@ bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
     return (mode == FilterMode::INCLUDE && isFound) || (mode == FilterMode::EXCLUDE && !isFound);
 }
 
+bool AudioService::CanCapturePrivateStream(const AudioPlaybackCaptureConfig &config) const
+{
+    return config.filterOptions.capturePrivatePrivacyStreams;
+}
+
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
-    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     std::lock_guard<std::mutex> lock(workingConfigsMutex_);
-    if (!canBeCaptured || innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
-        AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
+    if (innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
+        return false;
+    }
+    const auto &config = workingConfigs_[innerCapId];
+    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC ||
+        (rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PRIVATE && CanCapturePrivateStream(config));
+    if (!canBeCaptured) {
+        AUDIO_INFO_LOG("%{public}d privacyType %{public}d can not be captured by innerCapId %{public}d",
+            rendererConfig.appInfo.appPid, rendererConfig.privacyType, innerCapId);
         return false;
     }
     return CheckShouldCap(rendererConfig, innerCapId);
@@ -592,14 +605,15 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, in
 
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds)
 {
-    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
-    if (!canBeCaptured) {
-        AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
-        return false;
-    }
     bool ret = false;
     std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     for (auto& filter : workingConfigs_) {
+        bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC ||
+            (rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PRIVATE &&
+            CanCapturePrivateStream(filter.second));
+        if (!canBeCaptured) {
+            continue;
+        }
         if (CheckShouldCap(rendererConfig, filter.first)) {
             ret = true;
             beCapIds.insert(filter.first);
@@ -1601,6 +1615,15 @@ int32_t AudioService::GetCurrentRendererStreamCnt()
 void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
     IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
+    int32_t enableNewRoute = 0;
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
+    CHECK_AND_RETURN(enableNewRoute == 1);
+    std::vector<SinkInput> directSinkInputs;
+    IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetAllSinkInputs(directSinkInputs);
+    sinkInputs.insert(sinkInputs.end(), directSinkInputs.begin(), directSinkInputs.end());
+    std::vector<SinkInput> voipSinkInputs;
+    IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetAllSinkInputs(voipSinkInputs);
+    sinkInputs.insert(sinkInputs.end(), voipSinkInputs.begin(), voipSinkInputs.end());
 }
 
 // need call with streamLifeCycleMutex_ lock
@@ -2077,6 +2100,21 @@ void AudioService::CheckInnerCapVoIP(uint32_t sessionId)
         }
     }
 #endif
+}
+
+void AudioService::SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList)
+{
+    std::lock_guard<std::mutex> lock(capturerMapMutex_);
+    bool isAncoCapturerExist = false;
+    for (auto &capturerMap : allCapturerMap_) {
+        std::shared_ptr<CapturerInServer> capturerInServer = capturerMap.second.lock();
+        CHECK_AND_CONTINUE(capturerInServer != nullptr && capturerInServer->GetAppUid() == UID_AUDIO);
+        capturerInServer->HandleMultiAncoCapturer(bundleNameList);
+        isAncoCapturerExist = true;
+    }
+    AUDIO_ERR_LOG("isAncoCapturerExist: %{public}d", isAncoCapturerExist);
+    CHECK_AND_CALL_FUNC_RETURN(isAncoCapturerExist,
+        AudioPrivacyManagerInServer::GetInstance().UpdateActiveAncoCapturer(bundleNameList));
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -56,6 +56,8 @@ public:
 
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
 
+    bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) override;
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
@@ -124,6 +126,11 @@ int32_t MockPolicyProvider::UnloadModernInnerCapSink(int32_t innerCapId)
 int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return SUCCESS;
+}
+
+bool MockPolicyProvider::IsValidNetworkIdForSendEffectParam(const std::string &networkId)
+{
+    return false;
 }
 
 class PolicyProviderStubUnitTest : public ::testing::Test {
@@ -596,6 +603,41 @@ HWTEST_F(PolicyProviderStubUnitTest, PolicyProviderStub_017, TestSize.Level1)
 
     ret = policyProviderStub->HandleInitSharedVolume(data, reply);
     EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test PolicyProviderWrapper IsValidNetworkIdForSendEffectParam with null policyWorker (NEW BRANCH).
+ * @tc.type  : FUNC
+ * @tc.number: PolicyProviderStub_018
+ * @tc.desc  : Test IsValidNetworkIdForSendEffectParam() with null policyWorker returns AUDIO_INIT_FAIL.
+ */
+HWTEST_F(PolicyProviderStubUnitTest, PolicyProviderStub_018, TestSize.Level1)
+{
+    auto policyProviderStub = std::make_shared<PolicyProviderWrapper>(nullptr);
+    EXPECT_NE(policyProviderStub, nullptr);
+
+    std::string networkId = "test_network_id";
+    bool ret = false;
+    int32_t result = policyProviderStub->IsValidNetworkIdForSendEffectParam(networkId, ret);
+    EXPECT_EQ(result, AUDIO_INIT_FAIL);
+}
+
+/**
+ * @tc.name  : Test PolicyProviderWrapper IsValidNetworkIdForSendEffectParam with valid policyWorker (NEW BRANCH).
+ * @tc.type  : FUNC
+ * @tc.number: PolicyProviderStub_019
+ * @tc.desc  : Test IsValidNetworkIdForSendEffectParam() with valid policyWorker returns SUCCESS.
+ */
+HWTEST_F(PolicyProviderStubUnitTest, PolicyProviderStub_019, TestSize.Level1)
+{
+    MockPolicyProvider mockProvider;
+    auto policyProviderStub = std::make_shared<PolicyProviderWrapper>(&mockProvider);
+    EXPECT_NE(policyProviderStub, nullptr);
+
+    std::string networkId = "test_network_id";
+    bool ret = false;
+    int32_t result = policyProviderStub->IsValidNetworkIdForSendEffectParam(networkId, ret);
+    EXPECT_EQ(result, SUCCESS);
 }
 }
 }

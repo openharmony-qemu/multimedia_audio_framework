@@ -252,6 +252,37 @@ HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_005, Te
 }
 
 /**
+ * @tc.name  : Test OH_AudioSuiteNodeBuilder_SetFormat.
+ * @tc.number: OH_AudioSuiteNodeBuilder_SetFormat_006
+ * @tc.desc  : Test HoaNode setFormat.
+ */
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_006, TestSize.Level0)
+{
+    OH_AudioFormat audioFormat;
+    OH_AudioNodeBuilder *builder = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, INPUT_NODE_TYPE_DEFAULT);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    audioFormat.channelCount = AudioChannel::CHANNEL_4;
+    audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_AMB_ORDER1_ACN_SN3D;
+    audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_16000;
+    ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
+    ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT);
+
+    ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
  * @tc.name  : Test OH_AudioSuiteNodeBuilder_SetRequestDataCallback.
  * @tc.number: OH_AudioSuiteNodeBuilder_SetRequestDataCallback_001
  * @tc.desc  : Test nullptr.

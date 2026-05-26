@@ -99,6 +99,7 @@ if (audio_framework_feature_audiosuite_support) {
       "node/audio_suite_tempo_pitch_node_test.cpp",
       "node/audio_suite_space_render_node_test.cpp",
       "node/audio_suite_mixer_processor_node_test.cpp",
+      "node/audio_suite_hoa_render_node_test.cpp",
       "converter/src/audio_suite_converter_test.cpp",
     ]
 
@@ -143,6 +144,7 @@ if (audio_framework_feature_audiosuite_support) {
       "utils/audio_suite_soundfield_algo_interface_impl_test.cpp",
       "utils/audio_suite_voice_morphing_algo_interface_impl_test.cpp",
       "utils/audio_suite_tempo_pitch_algo_interface_impl_test.cpp",
+      "utils/audio_suite_hoa_render_algo_interface_test.cpp",
     ]
 
     sanitize = {
@@ -173,6 +175,7 @@ if (audio_framework_feature_audiosuite_support) {
     module_out_path = module_output_path
     sources = [
       "pcm_process/audio_pcm_process_impl_test.cpp",
+      "tool/audio_suite_unittest_tools.cpp",
     ]
 
     sanitize = {
@@ -189,6 +192,7 @@ if (audio_framework_feature_audiosuite_support) {
 
     deps = [
       "../../:audio_pcm_process",
+      "../../:audio_suite_static",
     ]
 
     external_deps = [

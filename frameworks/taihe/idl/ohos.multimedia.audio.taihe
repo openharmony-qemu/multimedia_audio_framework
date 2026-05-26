@@ -182,7 +182,8 @@ enum AudioSamplingRate: i32 {
   SAMPLE_RATE_88200 = 88200,
   SAMPLE_RATE_96000 = 96000,
   SAMPLE_RATE_176400 = 176400,
-  SAMPLE_RATE_192000 = 192000
+  SAMPLE_RATE_192000 = 192000,
+  SAMPLE_RATE_384000 = 384000
 }
 
 enum AudioEncodingType: i32 {
@@ -222,8 +223,13 @@ enum VolumeFlag: i32 {
   FLAG_SHOW_SYSTEM_UI = 1
 }
 
+union AudioSamplingRateOrInt {
+  type_enum: AudioSamplingRate;
+  type_int: i32;
+}
+
 struct AudioStreamInfo {
-  samplingRate: AudioSamplingRate;
+  samplingRate: AudioSamplingRateOrInt;
   channels: AudioChannel;
   sampleFormat: AudioSampleFormat;
   encodingType: AudioEncodingType;
@@ -873,6 +879,7 @@ enum AudioSessionBehaviorFlags: i32 {
   DEFAULT_BEHAVIOR = 0x00000000,
   VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
   MUTE_WHEN_INTERRUPTED = 0x00000002,
+  PAUSE_WHEN_INTERRUPTED = 0x00000004,
 }
 
 enum OutputDeviceChangeRecommendedAction: i32 {
@@ -1002,10 +1009,23 @@ struct AudioCapturerInfo {
   capturerFlags: i32;
 }
 
+enum PlaybackCaptureMode: i32 {
+  DEFAULT = 0,
+  MEDIA = 1,
+  EXCLUDING_SELF = 32768,
+}
+
 struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  playbackCaptureMode: Optional<PlaybackCaptureMode>;
+}
+
+enum PlayCaptureStartState: i32 {
+  SUCCESS = 0,
+  FAILED = 1,
+  NOT_AUTHORIZED = 2,
 }
 
 interface AudioCapturer {
@@ -1056,6 +1076,9 @@ interface AudioCapturer {
 
   @gen_promise("setMuteHint")
   SetMuteHintSync(mute: bool): void;
+
+  @gen_promise("requestPlaybackCaptureStart")
+  RequestPlaybackCaptureStartSync(): PlayCaptureStartState;
 
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 

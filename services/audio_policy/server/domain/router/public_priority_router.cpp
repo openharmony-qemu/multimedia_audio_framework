@@ -27,7 +27,8 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         descs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
         audioDevUsage = CALL_OUTPUT_DEVICES;
         if (descs.size() == 0) {
@@ -37,6 +38,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
     } else {
         descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
     }
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(audioDevUsage, descs, streamUsage);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);
@@ -61,13 +63,14 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
         audioDevUsage = MEDIA_OUTPUT_DEVICES;
     }
-
+    RouterBase::ClearConflictDevice(curDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs,
         streamUsage);
     if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
@@ -97,6 +100,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
                 break;
             case STREAM_USAGE_VOICE_RINGTONE:
             case STREAM_USAGE_RINGTONE:
+            case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
                 if (curRingerMode == RINGER_MODE_NORMAL) {
                     // Add default devices at same time only in ringer normal mode.
                     descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
@@ -119,6 +123,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetRecordCaptureDevice(S
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePublicDevices();
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);

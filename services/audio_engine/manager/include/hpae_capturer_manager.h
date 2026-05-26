@@ -18,7 +18,6 @@
 #include <memory>
 #include <atomic>
 #include <string>
-#include <set>
 #include <mutex>
 #include <shared_mutex>
 #include "audio_effect.h"
@@ -84,10 +83,6 @@ public:
         const SourceType &sourceType) override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
-
-    void EnableCaptureCollaboration(SourceType sourceType) override;
-    void DisableCaptureCollaboration(SourceType sourceType) override;
-
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
@@ -123,12 +118,6 @@ private:
     void UpdateSourceAttr(IAudioSourceAttr &attr);
     void UpdateSourceInputNodeInfoForRecognition(HpaeNodeInfo &nodeInfo);
     void UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo);
-    int32_t OpenCollaborativePrimary();
-    void CloseCollaborativePrimary();
-    void OpenCollaboration(SourceType sourceType);
-    void CloseCollaboration(SourceType sourceType);
-    void GetCollaborativeSourceInfo(IAudioSourceAttr &attr, HpaeNodeInfo &nodeInfo);
-    HpaeProcessorType GetEffectiveSceneType(uint32_t sessionId);
     void StopInterphoneSourceIfNeeded();
 
 private:
@@ -147,9 +136,8 @@ private:
     uint32_t renderId_ = 0;
 
     std::vector<int32_t> appsUid_;
+    std::vector<uint32_t> appsTokenId_;
     std::vector<int32_t> sessionsId_;
-
-    std::set<SourceType> activeCollabSourceTypes_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -379,6 +379,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
             deviceList.push_back(devDesc);
         }
     }
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
 
     AUDIO_DEBUG_LOG("GetDevices list size = [%{public}zu]", deviceList.size());
     return deviceList;

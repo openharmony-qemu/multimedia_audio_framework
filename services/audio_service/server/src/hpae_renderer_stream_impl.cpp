@@ -48,6 +48,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
+static constexpr float FRAME_LEN_2_5MS_IN_MS = 2.5f;
 static constexpr uint64_t FRAME_LEN_5MS = 5;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
@@ -65,10 +66,16 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     processConfig_ = processConfig;
     usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
+    
     if (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST &&
         processConfig_.isInnerCapturer == false) {
-        spanSizeInFrame_ = FRAME_LEN_5MS * usedSampleRate_ / AUDIO_MS_PER_S;
-        AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
+        if (IsUltraFastStreamAndRoute(processConfig_.ultraFastFlag)) {
+            spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_2_5MS_IN_MS * usedSampleRate_ / AUDIO_MS_PER_S);
+            AUDIO_INFO_LOG("ultra fast for spanSizeInFrame_ to 2.5ms: %{public}zu", spanSizeInFrame_);
+        } else {
+            spanSizeInFrame_ = FRAME_LEN_5MS * usedSampleRate_ / AUDIO_MS_PER_S;
+            AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
+        }
     } else {
         spanSizeInFrame_ = FRAME_LEN_20MS * usedSampleRate_ / AUDIO_MS_PER_S;
         AUDIO_INFO_LOG("RendererStream: unified 20ms span, usedSampleRate=%{public}u, spanSizeInFrame=%{public}zu",
@@ -803,6 +810,8 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
     }
+    CHECK_AND_RETURN_RET_LOG((deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD || deviceClass == DEVICE_CLASS_OFFLOAD),
+        SUCCESS, "not offload sink, skip");
     AudioStreamType streamType = processConfig_.streamType;
     std::string volumeDeviceClass = deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(volumeDeviceClass, deviceNetId);

@@ -1,0 +1,163 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef REMOTE_MULTICHANNEL_AUDIO_RENDER_SINK_H
+#define REMOTE_MULTICHANNEL_AUDIO_RENDER_SINK_H
+
+#include "sink/i_audio_render_sink.h"
+#include <iostream>
+#include <cstring>
+#include <unordered_map>
+#include <v2_0/iaudio_manager.h>
+#include <thread>
+#include <shared_mutex>
+#include "audio_utils.h"
+#include "adapter/i_device_manager.h"
+#include "util/audio_running_lock.h"
+#include "util/callback_wrapper.h"
+
+namespace OHOS {
+namespace AudioStandard {
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioCategory RemoteAudioCategory;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioRender RemoteIAudioRender;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioFormat RemoteAudioFormat;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioSampleAttributes RemoteAudioSampleAttributes;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
+
+class RemoteMultichannelAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback,
+    public std::enable_shared_from_this<RemoteMultichannelAudioRenderSink> {
+public:
+    explicit RemoteMultichannelAudioRenderSink(const std::string &deviceNetworkId);
+    ~RemoteMultichannelAudioRenderSink();
+
+    int32_t Init(const IAudioSinkAttr &attr) override;
+    void DeInit(void) override;
+    bool IsInited(void) override;
+
+    int32_t Start(void) override;
+    int32_t Stop(void) override;
+    int32_t Resume(void) override;
+    int32_t Pause(void) override;
+    int32_t Flush(void) override;
+    int32_t Reset(void) override;
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
+
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
+
+    int32_t SetVolume(float left, float right) override;
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override;
+    int32_t GetVolume(float &left, float &right) override;
+
+    int32_t GetLatency(uint32_t &latency) override;
+    int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    float GetMaxAmplitude(void) override;
+    void SetAudioMonoState(bool audioMono) override;
+    void SetAudioBalanceValue(float audioBalance) override;
+
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
+    int32_t GetAudioScene(void) override;
+
+    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
+    DeviceType GetCurrentOutputDevice() override;
+    void ResetActiveDeviceForDisconnect(DeviceType device) override;
+
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
+    void SetInvalidState(void) override;
+
+    void DumpInfo(std::string &dumpString) override;
+
+    void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
+        const std::string &value) override;
+private:
+    static uint32_t PcmFormatToBit(AudioSampleFormat format);
+    static RemoteAudioFormat ConvertToHdiFormat(AudioSampleFormat format);
+    static AudioSampleFormat ParseAudioFormat(const std::string &format);
+    static RemoteAudioCategory GetAudioCategory(AudioScene audioScene);
+    void InitAudioSampleAttr(RemoteAudioSampleAttributes &param);
+    void InitDeviceDesc(RemoteAudioDeviceDescriptor &deviceDesc);
+    void InitDumpFile();
+    int32_t CreateRender(void);
+    void DestroyRender();
+    int32_t DoSetOutputRoute();
+    void InitLatencyMeasurement(void);
+    void CheckLatencySignal(uint8_t *data, size_t len);
+    bool IsValidState();
+    void CheckUpdateState(char *data, uint64_t len);
+    void UpdateSinkState(bool started);
+
+private:
+    static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
+    static constexpr uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
+    static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
+    static constexpr float DEFAULT_VOLUME_LEVEL = 1.0f;
+    static constexpr uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
+    static constexpr int32_t HALF_FACTOR = 2;
+    static constexpr const char *DUMP_REMOTE_MCH_RENDER_SINK_FILENAME = "dump_remote_multichannel_audiosink";
+#ifdef FEATURE_POWER_MANAGER
+    static constexpr const char *RUNNING_LOCK_NAME_BASE = "AudioRemoteMultichannelBackgroundPlay";
+    static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
+#endif
+
+    const std::string deviceNetworkId_ = "";
+    IAudioSinkAttr attr_ = {};
+    std::atomic<bool> sinkInited_ = false;
+    std::atomic<bool> renderInited_ = false;
+    std::atomic<bool> started_ = false;
+    std::atomic<bool> paused_ = false;
+    std::atomic<bool> validState_ = true;
+
+    float leftVolume_ = DEFAULT_VOLUME_LEVEL;
+    float rightVolume_ = DEFAULT_VOLUME_LEVEL;
+
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
+    sptr<RemoteIAudioRender> audioRender_ = nullptr;
+
+    // for signal detect
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    bool signalDetected_ = false;
+    size_t signalDetectedTime_ = 0;
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int renderFrameNum_ = 0;
+    // for dfx log
+    int32_t logMode_ = 0;
+    std::string logUtilsTag_ = "RemoteMultichannelSink";
+    mutable int64_t volumeDataCount_ = 0;
+
+    std::unordered_set<int32_t> appsUid_;
+#ifdef FEATURE_POWER_MANAGER
+    std::shared_ptr<AudioRunningLock> runningLock_;
+#endif
+    FILE *dumpFile_ = nullptr;
+    std::string dumpFileName_ = "";
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+
+    // for device switch
+    std::atomic<bool> switchDeviceMute_ = false;
+};
+
+} // namespace AudioStandard
+} // namespace OHOS
+
+#endif // REMOTE_MULTICHANNEL_AUDIO_RENDER_SINK_H

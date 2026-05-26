@@ -31,6 +31,7 @@
 #include "hpae_gain_node.h"
 #include "hpae_limiter_node.h"
 #include "hpae_volume_sync_node.h"
+#include "hpae_loudness_gain_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -132,6 +133,7 @@ private:
     std::shared_ptr<HpaeGainNode> gainNode_ = nullptr;
     std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode_ = nullptr;
     std::shared_ptr<HpaeLimiterNode> limiterNode_ = nullptr;
+    std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = nullptr;
     std::unique_ptr<HpaeDirectSinkOutputNode> sinkOutputNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

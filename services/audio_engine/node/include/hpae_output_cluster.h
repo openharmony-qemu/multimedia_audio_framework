@@ -57,6 +57,9 @@ public:
         uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     void SetCollaborationState(bool collaborationState) override;
+    uint32_t GetRenderId() const override;
+    DeviceType GetCurrentOutputDevice() const override;
+    void SetDeviceChangeCallback(std::function<void()> callback) override;
 
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
@@ -67,6 +70,7 @@ private:
     uint32_t timeoutStopCount_ = 0;
     uint32_t frameLenMs_ = FRAME_LEN_MS_DEFAULT_MS;
     std::set<HpaeProcessorType> connectedProcessCluster_;
+    std::function<void()> deviceChangeCallback_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -47,6 +47,7 @@
 #include "extension_manager_client.h"
 #include "want.h"
 #include "parameters.h"
+#include "audio_privacy_manager_in_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,6 +55,7 @@ const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBA
 namespace {
     static constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+    static constexpr int32_t UID_AUDIO = 1041;
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
@@ -325,6 +327,14 @@ int32_t CapturerInServer::SetInMainThreadState(bool isInMainThread)
 {
     isInMainThread_ = isInMainThread;
     return SUCCESS;
+}
+
+int32_t CapturerInServer::OnMetaData(const std::vector<uint8_t> &metaData)
+{
+    CHECK_AND_RETURN_RET_LOG(!metaData.empty(), ERR_INVALID_PARAM, "metaData is empty");
+    std::shared_ptr<IStreamListener> listener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
+    return listener->OnMetaData(metaData);
 }
 
 bool CapturerInServer::IsAppStateBackground(int32_t appPid)
@@ -658,7 +668,7 @@ int32_t CapturerInServer::SetMuteHint(bool mute)
     int32_t ret = GetSessionId(sessionId);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "SetMuteHint failed to get sessionId", false),
+            RECORD_CONFIG_ILLEGAL_STATE, "SetMuteHint failed to get sessionId", false),
         "SetMuteHint failed to get sessionId");
 
     return CoreServiceHandler::GetInstance().SetCapturerMuteHint(sessionId, mute);
@@ -722,17 +732,28 @@ bool CapturerInServer::CheckBgRecordPermission(CapturerState capturerState)
     return true;
 }
  
+void CapturerInServer::HandleMultiAncoCapturer(const std::vector<std::string> &bundleNameList)
+{
+    bool ret = AudioPrivacyManagerInServer::GetInstance().UpdateActiveAncoCapturer(bundleNameList);
+    CHECK_AND_RETURN_LOG(ret, "UpdateActiveAncoCapturer failed, need mute anco capturer");
+}
+
 bool CapturerInServer::TurnOnMicIndicator()
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", streamIndex_);
     } else {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            RecordPrivacyManager::GetInstance().NotifyPrivacyStart(tokenId, streamIndex_), false,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_START_ILLEGAL_STATE, "NotifyPrivacyStart failed", false),
-            "NotifyPrivacyStart failed!");
+        bool startMicResult = AudioPrivacyManagerInServer::GetInstance().GetStartMicResult();
+        if (processConfig_.appInfo.appUid == UID_AUDIO) {
+            CHECK_AND_RETURN_RET_LOG(startMicResult, false, "Anco NotifyPrivacyStart failed!");
+        } else {
+            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+                RecordPrivacyManager::GetInstance().NotifyPrivacyStart(tokenId, streamIndex_), false,
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    RECORD_START_ILLEGAL_STATE, "NotifyPrivacyStart failed", false),
+                "NotifyPrivacyStart failed!");
+        }
         AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = true;
     }
@@ -858,7 +879,7 @@ void CapturerInServer::RebuildCaptureInjector()
 {
     CHECK_AND_CALL_FUNC_RETURN_LOG(rebuildFlag_,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_ILLEGAL_STATE, "no need to rebuild", false),
+            RECORD_CONFIG_ILLEGAL_STATE, "no need to rebuild", false),
         "no need to rebuild");
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
@@ -1104,7 +1125,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE,
         ERR_INVALID_OPERATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_NOT_SUPPORTED, "This not a inner-cap source", false),
+            RECORD_CONFIG_NOT_SUPPORTED, "This not a inner-cap source", false),
         "This not a inner-cap source!");
 
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
@@ -1118,6 +1139,11 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
             AUDIO_ERR_LOG("downlink capturer permission check failed");
             return ERR_PERMISSION_DENIED;
         }
+    }
+    if (config.filterOptions.capturePrivatePrivacyStreams) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyCapturePrivatePlayback(processConfig_.appInfo.appTokenId),
+            ERR_PERMISSION_DENIED,
+            "capture private playback permission check failed");
     }
     filterConfig_ = config;
     if (filterConfig_.isModernInnerCapturer) {
@@ -1351,7 +1377,7 @@ void CapturerInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
 {
     CHECK_AND_CALL_FUNC_RETURN(sourceType == SOURCE_TYPE_VOICE_COMMUNICATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CONFING_INVALID_PARAM, "sourceType not VOICE_COMMUNICATION", false));
+            RECORD_CONFIG_INVALID_PARAM, "sourceType not VOICE_COMMUNICATION", false));
     InitCallbackHandler();
     std::lock_guard<std::mutex> lock(runnerMutex_);
     CHECK_AND_CALL_FUNC_RETURN(callbackHandler_ != nullptr,

@@ -49,6 +49,7 @@ public:
     HpaeSourceInputNodeType GetSourceInputNodeType();
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
+    void UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId);
     uint32_t GetCaptureId();
     void SetInjectState(bool isInjecting);
     void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, SourceType source,

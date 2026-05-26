@@ -38,41 +38,49 @@ const int64_t LIMIT_TIME = 1;
 const uint32_t ENUMSIZE = 4;
 const uint64_t COMMON_UINT64_NUM = 2;
 const int64_t COMMON_INT64_NUM = 2;
-bool g_hasPermission = false;
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
 const size_t THRESHOLD = 10;
+const size_t MAX_STRING_LEN = 64;
+bool g_hasPermission = false;
 
-/*
-* describe: get data from outside untrusted data(g_data) which size is according to sizeof(T)
-* tips: only support basic type
-*/
-template<class T>
-T GetData()
+template<typename T>
+T ConsumeEnum(FuzzedDataProvider& fdp)
 {
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
+    return static_cast<T>(fdp.ConsumeIntegral<int32_t>());
 }
 
-template<class T>
-uint32_t GetArrLength(T& arr)
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& fallback)
 {
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    return value.empty() ? fallback : value;
 }
+
+const vector<ChannelBlendMode> g_testBlendModes = {
+    ChannelBlendMode::MODE_DEFAULT,
+    ChannelBlendMode::MODE_BLEND_LR,
+    ChannelBlendMode::MODE_ALL_LEFT,
+    ChannelBlendMode::MODE_ALL_RIGHT,
+};
+
+const vector<SourceType> g_testSourceTypes = {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_EC,
+    SOURCE_TYPE_MIC_REF,
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_MAX,
+};
 
 void AudioFuzzTestGetPermission()
 {
@@ -120,33 +128,27 @@ void GetCurNanoFuzzTest(const uint8_t* rawData, size_t size)
 
 void AbsoluteSleepFuzzTest(FuzzedDataProvider& fdp)
 {
-    int64_t nanoTime = COMMON_INT64_NUM;
-    if (nanoTime > LIMIT_TIME) {
-        nanoTime = LIMIT_TIME;
-    }
+    int64_t nanoTime = fdp.ConsumeIntegralInRange<int64_t>(0, LIMIT_TIME);
     ClockTime::AbsoluteSleep(nanoTime);
 }
 
 void RelativeSleepFuzzTest(FuzzedDataProvider& fdp)
 {
-    int64_t nanoTime = COMMON_INT64_NUM;
-    if (nanoTime > LIMIT_TIME) {
-        nanoTime = LIMIT_TIME;
-    }
+    int64_t nanoTime = fdp.ConsumeIntegralInRange<int64_t>(0, LIMIT_TIME);
     ClockTime::RelativeSleep(nanoTime);
 }
 
 void CountFuzzTest(FuzzedDataProvider& fdp)
 {
-    int64_t count = COMMON_INT64_NUM;
-    const std::string value = "value";
+    int64_t count = fdp.ConsumeIntegral<int64_t>();
+    std::string value = ConsumeString(fdp, "value");
     Trace::Count(value, count);
 }
 
 void CountVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
-    uint8_t data = GetData<uint8_t>();
-    const std::string value = "value";
+    uint8_t data = fdp.ConsumeIntegral<uint8_t>();
+    std::string value = ConsumeString(fdp, "value");
     Trace::CountVolume(value, data);
 }
 
@@ -210,6 +212,7 @@ void VerifyBackgroundCaptureFuzzTest(const uint8_t* rawData, size_t size)
 
 void GetTimeFuzzTest(FuzzedDataProvider& fdp)
 {
+    int64_t nanoTime = fdp.ConsumeIntegral<int64_t>();
     GetTime();
 }
 
@@ -217,30 +220,34 @@ void AudioBlendFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioBlend> audioBlend = nullptr;
     audioBlend = std::make_shared<AudioBlend>();
-    uint32_t blendModeInt = GetData<uint32_t>();
-    blendModeInt = blendModeInt % ENUMSIZE;
-    ChannelBlendMode blendMode = static_cast<ChannelBlendMode>(blendModeInt);
-    uint8_t format = GetData<uint8_t>();
-    format = format % ENUMSIZE;
-    uint8_t channel = GetData<uint8_t>();
+    ChannelBlendMode blendMode = ConsumeEnum<ChannelBlendMode>(fdp);
+    uint8_t format = fdp.ConsumeIntegral<uint8_t>();
+    uint8_t channel = fdp.ConsumeIntegral<uint8_t>();
     audioBlend->SetParams(blendMode, format, channel);
-    uint8_t *buffer = new uint8_t[LIMITSIZE];
-    memcpy_s(buffer, LIMITSIZE, RAW_DATA, LIMITSIZE);
-    audioBlend->Process(buffer, LIMITSIZE);
-    delete[] buffer;
+    std::vector<uint8_t> bufferData = fdp.ConsumeBytes<uint8_t>(LIMITSIZE);
+    if (bufferData.size() < LIMITSIZE) {
+        return;
+    }
+    audioBlend->Process(bufferData.data(), LIMITSIZE);
 }
 
 void VolumeRampFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<VolumeRamp> volumeRamp = nullptr;
     volumeRamp = std::make_shared<VolumeRamp>();
-    float targetVolume = GetData<float>();
-    float currStreamVolume = GetData<float>();
-    int32_t duration = GetData<int32_t>();
+    float targetVolume = fdp.ConsumeFloatingPoint<float>();
+    float currStreamVolume = fdp.ConsumeFloatingPoint<float>();
+    int32_t duration = fdp.ConsumeIntegral<int32_t>();
     volumeRamp->SetVolumeRampConfig(targetVolume, currStreamVolume, duration);
     volumeRamp->GetRampVolume();
     volumeRamp->IsActive();
     volumeRamp->Terminate();
+}
+
+void GetSourceNameFuzzTest(FuzzedDataProvider& fdp)
+{
+    SourceType sourceType = ConsumeEnum<SourceType>(fdp);
+    AudioInfoDumpUtils::GetSourceName(sourceType);
 }
 
 void Test(FuzzedDataProvider& fdp)
@@ -253,18 +260,11 @@ void Test(FuzzedDataProvider& fdp)
     GetTimeFuzzTest,
     AudioBlendFuzzTest,
     VolumeRampFuzzTest,
+    GetSourceNameFuzzTest,
     });
     func(fdp);
 }
-void Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return;
-    }
-    RAW_DATA = data;
-    g_dataSize = size;
-    g_pos = 0;
-}
+
 void Init()
 {
 }
@@ -277,12 +277,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
     OHOS::AudioStandard::Init();
     return 0;

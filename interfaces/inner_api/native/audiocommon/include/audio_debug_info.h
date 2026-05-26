@@ -92,6 +92,7 @@ struct AudioCapturerDebugInfo {
     uint64_t bufferSize = 0;
     uint32_t overflowCount = 0;
     bool muteWhenInterrupted = false;
+    bool pauseWhenInterrupted = false;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     AudioPipeRole pipeRole = PIPE_ROLE_INPUT;
     AudioStreamInfo pipeStreamInfo = AudioStreamInfo(SAMPLE_RATE_8000, AudioEncodingType::ENCODING_PCM,
@@ -124,13 +125,13 @@ struct AudioLoopbackDebugInfo {
 struct AudioStreamDebugInfo : public Parcelable {
     uint32_t streamId = 0;
     AudioStreamType streamType = STREAM_DEFAULT;
-    SourceType sourceType = SOURCE_TYPE_INVALID;
+    AudioFocuState focusState = ACTIVE;
 
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteUint32(streamId) &&
             parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
-            parcel.WriteInt32(static_cast<int32_t>(sourceType));
+            parcel.WriteInt32(static_cast<int32_t>(focusState));
     }
 
     static AudioStreamDebugInfo *Unmarshalling(Parcel &parcel)
@@ -141,7 +142,7 @@ struct AudioStreamDebugInfo : public Parcelable {
         }
         info->streamId = parcel.ReadUint32();
         info->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
-        info->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        info->focusState = static_cast<AudioFocuState>(parcel.ReadInt32());
         return info;
     }
 };
@@ -151,8 +152,7 @@ struct AudioSessionDebugInfo : public Parcelable {
     AudioSessionScene audioSessionScene {AudioSessionScene::INVALID};
     DeviceType defaultDeviceType = DEVICE_TYPE_INVALID;
     AudioSessionState state = AudioSessionState::SESSION_INVALID;
-    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    AudioFocuState focusState = ACTIVE;
+    AudioFocuState fakeFocusState = ACTIVE;
     int32_t pid { -1 };
     int32_t uid { -1 };
     std::vector<AudioStreamDebugInfo> streamInfos;
@@ -163,8 +163,7 @@ struct AudioSessionDebugInfo : public Parcelable {
             parcel.WriteInt32(static_cast<int32_t>(audioSessionScene)) &&
             parcel.WriteInt32(static_cast<int32_t>(defaultDeviceType)) &&
             parcel.WriteInt32(static_cast<int32_t>(state)) &&
-            parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
-            parcel.WriteInt32(static_cast<int32_t>(focusState)) &&
+            parcel.WriteInt32(static_cast<int32_t>(fakeFocusState)) &&
             parcel.WriteInt32(pid) &&
             parcel.WriteInt32(uid) &&
             parcel.WriteUint32(static_cast<uint32_t>(streamInfos.size())) &&
@@ -188,8 +187,7 @@ struct AudioSessionDebugInfo : public Parcelable {
         info->audioSessionScene = static_cast<AudioSessionScene>(parcel.ReadInt32());
         info->defaultDeviceType = static_cast<DeviceType>(parcel.ReadInt32());
         info->state = static_cast<AudioSessionState>(parcel.ReadInt32());
-        info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        info->focusState = static_cast<AudioFocuState>(parcel.ReadInt32());
+        info->fakeFocusState = static_cast<AudioFocuState>(parcel.ReadInt32());
         info->pid = parcel.ReadInt32();
         info->uid = parcel.ReadInt32();
         uint32_t streamsSize = parcel.ReadUint32();
@@ -255,6 +253,7 @@ struct AudioDebugInfo : public Parcelable {
     uint64_t captureBufferSize = 0;
     uint32_t captureOverflowCount = 0;
     bool muteWhenInterrupted = false;
+    bool pauseWhenInterrupted = false;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
 
     // debug info about loopback
@@ -356,6 +355,7 @@ struct AudioDebugInfo : public Parcelable {
             parcel.WriteUint64(captureBufferSize) &&
             parcel.WriteUint32(captureOverflowCount) &&
             parcel.WriteBool(muteWhenInterrupted) &&
+            parcel.WriteBool(pauseWhenInterrupted) &&
             inputDeviceInfo.Marshalling(parcel);
     }
 
@@ -477,6 +477,7 @@ struct AudioDebugInfo : public Parcelable {
         captureBufferSize = parcel.ReadUint64();
         captureOverflowCount = parcel.ReadUint32();
         muteWhenInterrupted = parcel.ReadBool();
+        pauseWhenInterrupted = parcel.ReadBool();
         inputDeviceInfo.UnmarshallingSelf(parcel);
         return true;
     }

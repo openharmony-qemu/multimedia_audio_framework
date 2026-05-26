@@ -163,11 +163,10 @@ public:
     virtual float GetMaxAmplitude() { return 0.0f; }
     virtual void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) = 0;
 
-    // interface for collaborative record
-    virtual void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType);
-    virtual void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType);
+    // Session effect control (AISS / vocal ratio)
+    virtual int32_t SetAissEnabled(uint32_t sessionId, bool enabled) = 0;
+    virtual int32_t SetVocalRatio(float ratio) = 0;
+    virtual int32_t SetAissEnabledByUid(int32_t uid, bool enabled) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

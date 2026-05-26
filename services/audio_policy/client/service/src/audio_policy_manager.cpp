@@ -2044,7 +2044,7 @@ int32_t AudioPolicyManager::SetHeadTrackingEnabled(
 }
 
 int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(
-    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback, bool isFromNearlink)
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("Start to register");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -2060,7 +2060,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(
 
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddSpatializationEnabledChangeCallback(callback, isFromNearlink);
+        audioPolicyClientStubCB_->AddSpatializationEnabledChangeCallback(callback);
         size_t callbackSize = audioPolicyClientStubCB_->GetSpatializationEnabledChangeCallbackSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].isEnable = true;
@@ -2099,7 +2099,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledForCurrentDeviceEventLi
 }
 
 int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
-    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback, bool isFromNearlink)
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("Start to register");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -2115,7 +2115,7 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
 
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddHeadTrackingEnabledChangeCallback(callback, isFromNearlink);
+        audioPolicyClientStubCB_->AddHeadTrackingEnabledChangeCallback(callback);
         size_t callbackSize = audioPolicyClientStubCB_->GetHeadTrackingEnabledChangeCallbacSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].isEnable = true;

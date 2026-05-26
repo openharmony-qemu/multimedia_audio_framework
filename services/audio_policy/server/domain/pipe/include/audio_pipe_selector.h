@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <mutex>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "audio_pipe_manager.h"
@@ -26,6 +27,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum class CapturerPipeExecOrder : int32_t {
+    CLOSE_BEFORE_OPEN = 0,
+    NORMAL = 1,
+    OPEN_AFTER_CLOSE = 2,
+};
 struct AudioRouteSelectInfo;
 
 class AudioPipeSelector {
@@ -47,6 +53,9 @@ public:
     int32_t UnsetAudioRouteSelectorCallback();
 
 private:
+    using InputPipeStreamPair = std::pair<std::shared_ptr<AudioPipeInfo>, std::shared_ptr<AudioStreamDescriptor>>;
+    using InputPipeStreamPairList = std::vector<InputPipeStreamPair>;
+
     std::shared_ptr<AudioRouteSelectInfo> BuildRouteSelectInfo(
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const;
     void UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -92,12 +101,20 @@ private:
                            const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
                            std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &busPipeIter);
 #endif
+    void UpdatePipeAndStreamAction(std::shared_ptr<AudioPipeInfo> &newPipeInfo,
+        const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo);
+    std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> BuildOldPipeMap(
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList) const;
+    void UpdateInputPipeReloadAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+        const std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> &oldPipeMap,
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList);
     void HandleFindMatchPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
                              const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
                              const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo,
                              std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &matchPipeIter);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
-        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
+        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList);
     void MoveStreamsToNormalPipes(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove,
         std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList);
     void RemoveTargetStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
@@ -115,7 +132,8 @@ private:
     bool FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,
         const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo);
-    void MatchRemoteOffloadPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    bool IsSpecialRemotePipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void MatchSpecialRemotePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
@@ -144,9 +162,36 @@ private:
     bool GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     bool IsMultiStreamPrimary(const std::string &pipeName);
-    
     void UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
+    InputPipeStreamPairList DetermineInputPipeBaseConfig(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList);
+    void DetermineInputPipeEcAndMicRef(const InputPipeStreamPairList &pipePairs);
+    int32_t GetPipePriority(const std::shared_ptr<AudioPipeInfo> &pipeInfo) const;
+    std::shared_ptr<AudioStreamDescriptor> GetHighestPriorityStream(
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams) const;
+    std::string DetermineTargetEcType(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::string &currentEcType) const;
+    std::vector<std::shared_ptr<AudioPipeInfo>> GetSortedInputPipes(
+        std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList) const;
+    std::shared_ptr<AudioPipeInfo> FindOldInputPipe(const std::shared_ptr<AudioPipeInfo> &newPipe,
+        const std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> &oldPipeMap,
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList) const;
+    void UpdateInputPipeParamByHighestStream(const std::shared_ptr<AudioStreamDescriptor> &highestStream,
+        std::shared_ptr<AudioPipeInfo> &newPipe);
+    void UpdateInputPipeEcAndMicRefByHighestStream(const std::shared_ptr<AudioStreamDescriptor> &highestStream,
+        std::shared_ptr<AudioPipeInfo> &newPipe, std::unordered_set<std::string> &ecOccupiedAdapters,
+        std::unordered_set<std::string> &micRefOccupiedAdapters);
+    bool IsNeedReloadForInputPipe(const std::shared_ptr<AudioPipeInfo> &newPipe,
+        const std::shared_ptr<AudioPipeInfo> &oldPipe, const std::shared_ptr<AudioStreamDescriptor> &highestStream,
+        const std::shared_ptr<AudioStreamDescriptor> &oldHighestStream) const;
+    CapturerPipeExecOrder GetCapturerPipeExecOrder(const std::shared_ptr<AudioPipeInfo> &newPipe,
+        const std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> &oldPipeMap,
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList) const;
+    void SortCapturerPipesByExecOrder(const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
+        std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList) const;
+    void HandleEmptyInputPipeReload(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+        const std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> &oldPipeMap,
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList);
     bool ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream,
         const std::shared_ptr<AudioStreamDescriptor> &targetStream);

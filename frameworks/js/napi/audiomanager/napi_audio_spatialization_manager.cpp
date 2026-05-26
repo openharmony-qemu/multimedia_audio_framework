@@ -117,7 +117,7 @@ NapiAudioSpatializationManager* NapiAudioSpatializationManager::GetParamWithSync
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "GetParamWithSync fail to napi_get_cb_info");
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioSpatializationManager);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioSpatializationManager));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr &&
         napiAudioSpatializationManager->audioSpatializationMngr_ !=
@@ -659,7 +659,8 @@ napi_value NapiAudioSpatializationManager::updatePersonalizedSpatializationEnabl
             "audio spatialization manager state is error.");
         if (argc == ARGS_TWO) {
             bool isPersonalizedSpatializationSupported = napiAudioSpatializationManager->
-                audioSpatializationMngr_->IsSpatializationSupportedForDevice(context->deviceDescriptor);
+                audioSpatializationMngr_->IsSpatializationSupportedForDevice(context->deviceDescriptor) &&
+                napiAudioSpatializationManager->audioSpatializationMngr_->IsPersonalizedSpatializationSupported();
             context->intValue = isPersonalizedSpatializationSupported ?
                 napiAudioSpatializationManager->audioSpatializationMngr_->SetPersonalizedSpatializationEnabled(
                     context->deviceDescriptor, context->personalizedSpatializationEnable) : ERR_DEVICE_NOT_SUPPORTED;
@@ -1701,9 +1702,12 @@ napi_value NapiAudioSpatializationManager::executeDownloadPersonalizedHRTF(
         CHECK_AND_RETURN_LOG(CheckAudioSpatializationManagerStatus(napiAudioSpatializationManager, context),
             "audio spatialization manager state is error.");
 
-        int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->DownloadPersonalizedHRTF(
-            context->audioHRTFAnonymousDescriptor.fd,
-            context->audioHRTFAnonymousDescriptor.length);
+        bool isPersonalizedSpatializationSupported = napiAudioSpatializationManager->audioSpatializationMngr_->
+            IsPersonalizedSpatializationSupported();
+        int32_t ret = isPersonalizedSpatializationSupported ?
+            napiAudioSpatializationManager->audioSpatializationMngr_->DownloadPersonalizedHRTF(
+                context->audioHRTFAnonymousDescriptor.fd,
+                context->audioHRTFAnonymousDescriptor.length) : ERR_DEVICE_NOT_SUPPORTED;
 
         switch (ret) {
             case SUCCESS:

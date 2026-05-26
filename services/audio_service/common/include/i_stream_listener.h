@@ -42,6 +42,11 @@ public:
     virtual ~IStreamListener() = default;
 
     virtual int32_t OnOperationHandled(Operation operation, int64_t result) = 0;
+
+    virtual int32_t OnMetaData(const std::vector<uint8_t> &metaData)
+    {
+        return 0;
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

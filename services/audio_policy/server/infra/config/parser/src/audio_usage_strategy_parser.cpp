@@ -74,6 +74,8 @@ void AudioUsageStrategyParser::ParserStreamUsageList(std::shared_ptr<AudioXmlNod
             std::string streamUsages;
             curNode->GetProp("name", strategyName);
             curNode->GetProp("streamUsage", streamUsages);
+            AUDIO_INFO_LOG("[XMLParse] strategyName=%{public}s, streamUsages=%{public}s",
+                strategyName.c_str(), streamUsages.c_str());
             ParserStreamUsageInfo(strategyName, streamUsages);
         }
         curNode->MoveToNext();
@@ -119,8 +121,13 @@ void AudioUsageStrategyParser::ParserStreamUsage(const std::vector<std::string> 
         auto pos = streamUsageMap.find(name);
         if (pos != streamUsageMap.end()) {
             usage = pos->second;
+            AUDIO_INFO_LOG("[XMLParse] Found: %{public}s -> %{public}d, router=%{public}s",
+                name.c_str(), pos->second, routerName.c_str());
+        } else {
+            AUDIO_WARNING_LOG("[XMLParse] NOT found: %{public}s, current usage=%{public}d", name.c_str(), usage);
         }
         renderConfigMap_[usage] = routerName;
+        AUDIO_INFO_LOG("[XMLParse] Write: renderConfigMap_[%{public}d] = %{public}s", usage, routerName.c_str());
     }
 }
 

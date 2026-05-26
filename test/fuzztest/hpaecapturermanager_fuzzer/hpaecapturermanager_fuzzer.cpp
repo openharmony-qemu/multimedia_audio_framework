@@ -1037,33 +1037,6 @@ void EcDiffAdapterFullFlowFuzzTest()
     mgr->DeInit();
 }
 
-void EnableDisableCaptureCollaborationFuzzTest()
-{
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
-
-    HpaeStreamInfo streamInfo;
-    InitStreamInfo(streamInfo);
-    mgr->CreateStream(streamInfo);
-    WaitForMsgProcessing(mgr);
-    mgr->Start(streamInfo.sessionId);
-    WaitForMsgProcessing(mgr);
-
-    SourceType collabType;
-    RoundVal(collabType, VALID_SOURCE_TYPES);
-    mgr->EnableCaptureCollaboration(collabType);
-    WaitForMsgProcessing(mgr);
-    mgr->DisableCaptureCollaboration(collabType);
-    WaitForMsgProcessing(mgr);
-
-    mgr->Stop(streamInfo.sessionId);
-    WaitForMsgProcessing(mgr);
-    mgr->DeInit();
-}
-
 void DeleteOutputSessionWithActiveClusterFuzzTest()
 {
     auto mgr = CreateAndInitManager();
@@ -1420,41 +1393,6 @@ void FlushDrainCapturerFuzzTest()
     mgr->DeInit();
 }
 
-void EnableCollaborationFullFuzzTest()
-{
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
-
-    HpaeStreamInfo streamInfo;
-    InitReloadStreamInfo(streamInfo);
-    mgr->CreateStream(streamInfo);
-    WaitForMsgProcessing(mgr);
-    mgr->Start(streamInfo.sessionId);
-    WaitForMsgProcessing(mgr);
-
-    SourceType collabType;
-    RoundVal(collabType, VALID_SOURCE_TYPES);
-    mgr->EnableCaptureCollaboration(collabType);
-    WaitForMsgProcessing(mgr);
-    mgr->DisableCaptureCollaboration(collabType);
-    WaitForMsgProcessing(mgr);
-
-    mgr->Stop(streamInfo.sessionId);
-    WaitForMsgProcessing(mgr);
-    mgr->DestroyStream(streamInfo.sessionId);
-    WaitForMsgProcessing(mgr);
-    mgr->DeInit();
-}
-
 void DeleteOutputSessionFullFuzzTest()
 {
     HpaeSourceInfo sourceInfo;
@@ -1515,7 +1453,6 @@ TestFuncs g_testFuncs[] = {
     GetSourceOutputInfoFuzzTest,
     MicRefSourceInitFuzzTest,
     EcDiffAdapterFullFlowFuzzTest,
-    EnableDisableCaptureCollaborationFuzzTest,
     DeleteOutputSessionWithActiveClusterFuzzTest,
     MoveStreamWithValidSessionFuzzTest,
     DisConnectSceneClusterFullFuzzTest,
@@ -1529,7 +1466,6 @@ TestFuncs g_testFuncs[] = {
     MultiStreamCapturerFuzzTest,
     CapturerSourceStartStopCycleFuzzTest,
     FlushDrainCapturerFuzzTest,
-    EnableCollaborationFullFuzzTest,
     DeleteOutputSessionFullFuzzTest,
 };
 

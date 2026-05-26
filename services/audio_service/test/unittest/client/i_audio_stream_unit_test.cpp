@@ -1040,5 +1040,34 @@ HWTEST(IAudioStreamNewUnitTest, CapturerInClient_DifferentTypes_001, TestSize.Le
     }
 }
 
+/**
+ * @tc.name  : Test IAudioStream CreateStreamMap with transfer stream usages.
+ * @tc.number: IAudioStream_TransferStreamMap_001
+ * @tc.desc  : Test stream map includes VOICE_TRANSFER_COMMUNICATION and VOICE_TRANSFER_RINGTONE.
+ */
+HWTEST(IAudioStreamUnitTest, IAudioStream_TransferStreamMap_001, TestSize.Level1)
+{
+    auto streamMap = IAudioStream::CreateStreamMap();
+    auto it = streamMap.find(std::make_pair(CONTENT_TYPE_SPEECH,
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_CALL);
+
+    it = streamMap.find(std::make_pair(CONTENT_TYPE_MUSIC,
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_RING);
+
+    it = streamMap.find(std::make_pair(CONTENT_TYPE_UNKNOWN,
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_CALL);
+
+    it = streamMap.find(std::make_pair(CONTENT_TYPE_UNKNOWN,
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_RING);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

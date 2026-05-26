@@ -32,8 +32,7 @@ constexpr int PRIORITY_NONE = 0;
 class WirelessConflictHandler : public ConflictHandler {
 public:
     ~WirelessConflictHandler() override = default;
-    bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
-        StreamUsage streamUsage, SourceType sourceType, bool isOutput) override;
+    bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType) override;
     void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
         const std::vector<StreamDeviceInfo> &inputDevices);
     void ClearSelectedDevices();
@@ -47,10 +46,12 @@ private:
     bool IsScoDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    int FindHighestPriorityDevice(std::string &highestPriorityMac);
+    void FindHighestPriorityDevice();
     
     std::vector<StreamDeviceInfo> outputStreamDevices_;
     std::vector<StreamDeviceInfo> inputStreamDevices_;
+    int cachedHighestPriority_ = 0;
+    std::string cachedHighestPriorityMac_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

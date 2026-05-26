@@ -47,6 +47,7 @@ shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(Stream
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    RouterBase::ClearConflictDevice(carDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_OUTPUT_DEVICES, carDescs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);
@@ -59,6 +60,7 @@ shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(Sourc
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    RouterBase::ClearConflictDevice(carDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, carDescs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
@@ -73,6 +75,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    RouterBase::ClearConflictDevice(carDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(CALL_OUTPUT_DEVICES, carDescs);
     if (!latestConnDesc.get()) {
         AUDIO_INFO_LOG("Have no latest connecte desc, dont add the other device.");
@@ -93,6 +96,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
                 break;
             case STREAM_USAGE_VOICE_RINGTONE:
             case STREAM_USAGE_RINGTONE:
+            case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
                 if (curRingerMode == RINGER_MODE_NORMAL) {
                     // Add default devices at same time only in ringer normal mode.
                     descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());

@@ -66,11 +66,12 @@ int32_t HpaeVirtualCapturerManager::Start(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualCapturerManager::Start");
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET(captureStream_.find(sessionId) != captureStream_.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
                 BusinessScenario::START, ERR_NULL_POINTER),
-        "sessionId is not exist", false), SUCCESS));
+            "sessionId is not exist", false),
+        "sessionId %{public}u is not exist", sessionId);
     SetSessionState(captureStream_[sessionId], HPAE_SESSION_RUNNING);
     return SUCCESS;
 }
@@ -79,11 +80,12 @@ int32_t HpaeVirtualCapturerManager::Pause(uint32_t sessionId, bool isStandby)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualCapturerManager::Pause");
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET(captureStream_.find(sessionId) != captureStream_.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::PAUSE, ERR_NULL_POINTER),
-        "sessionId is not exist", false), SUCCESS));
+            "sessionId is not exist", false),
+        "sessionId %{public}u is not exist", sessionId);
     SetSessionState(captureStream_[sessionId], HPAE_SESSION_PAUSED);
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
         HPAE_SESSION_PAUSED, OPERATION_PAUSED);
@@ -101,11 +103,12 @@ int32_t HpaeVirtualCapturerManager::Drain(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualCapturerManager::Drain");
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET(captureStream_.find(sessionId) != captureStream_.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sessionId is not exist", false), SUCCESS));
+            "sessionId is not exist", false),
+        "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
         captureInfo.sessionInfo.state, OPERATION_DRAINED);
@@ -116,11 +119,12 @@ int32_t HpaeVirtualCapturerManager::Stop(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualCapturerManager::Stop");
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET(captureStream_.find(sessionId) != captureStream_.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::STOP, ERR_NULL_POINTER),
-        "sessionId is not exist", false), SUCCESS));
+            "sessionId is not exist", false),
+        "sessionId %{public}u is not exist", sessionId);
     SetSessionState(captureStream_[sessionId], HPAE_SESSION_STOPPED);
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
         HPAE_SESSION_STOPPED, OPERATION_STOPPED);
@@ -136,11 +140,12 @@ int32_t HpaeVirtualCapturerManager::Release(uint32_t sessionId)
 int32_t HpaeVirtualCapturerManager::MoveStream(uint32_t sessionId, const std::string &sourceName)
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET(captureStream_.find(sessionId) != captureStream_.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sessionId is not exist", false), SUCCESS));
+            "sessionId is not exist", false),
+        "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
     std::string name = sourceName;
     AUDIO_INFO_LOG("[StartMove] session: %{public}u, source [virtual] ---> [%{public}s]",
@@ -176,17 +181,19 @@ int32_t HpaeVirtualCapturerManager::MoveAllStream(const std::string &sourceName,
 int32_t HpaeVirtualCapturerManager::SetStreamMute(uint32_t sessionId, bool isMute)
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET(captureStream_.find(sessionId) != captureStream_.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sessionId is not exist", false), SUCCESS));
+            "sessionId is not exist", false),
+        "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
-    CHECK_AND_RETURN_RET(captureInfo.sourceOutputNode,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureInfo.sourceOutputNode, SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "captureInfo.sourceOutputNode is nullptr", false), SUCCESS));
+            "captureInfo.sourceOutputNode is nullptr", false),
+        "captureInfo.sourceOutputNode is nullptr, sessionId %{public}u", sessionId);
     captureStream_[sessionId].sourceOutputNode->SetMute(isMute);
     return SUCCESS;
 }
@@ -249,17 +256,19 @@ int32_t HpaeVirtualCapturerManager::RegisterReadCallback(uint32_t sessionId,
 int32_t HpaeVirtualCapturerManager::GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo)
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET(captureStream_.find(sessionId) != captureStream_.end(),
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sessionId is not exist", false), SUCCESS));
+            "sessionId is not exist", false),
+        "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
-    CHECK_AND_RETURN_RET(captureInfo.sourceOutputNode,
-        (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(captureInfo.sourceOutputNode, SUCCESS,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                 BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "captureInfo.sourceOutputNode is nullptr", false), SUCCESS));
+            "captureInfo.sourceOutputNode is nullptr", false),
+        "captureInfo.sourceOutputNode is nullptr, sessionId %{public}u", sessionId);
     sourceOutputInfo.nodeInfo = captureInfo.sourceOutputNode->GetNodeInfo();
     sourceOutputInfo.capturerSessionInfo = captureInfo.sessionInfo;
     return SUCCESS;

@@ -150,6 +150,7 @@ public:
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
     void CheckInnerCapVoIP(uint32_t sessionId);
+    void SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -170,6 +171,7 @@ private:
     int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord);
 #endif
     InnerCapFilterPolicy GetInnerCapFilterPolicy(int32_t innerCapId);
+    bool CanCapturePrivateStream(const AudioPlaybackCaptureConfig &config) const;
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds);
     bool CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);

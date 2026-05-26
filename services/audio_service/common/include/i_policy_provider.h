@@ -136,6 +136,8 @@ public:
 #endif
 
     virtual int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) = 0;
+
+    virtual bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) = 0;
     
     virtual ~IPolicyProvider() = default;
 

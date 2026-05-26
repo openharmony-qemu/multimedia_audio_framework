@@ -41,6 +41,8 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_001, TestSize.Level1)
     EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VIDEO_COMMUNICATION));
     EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_RINGTONE));
     EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_RINGTONE));
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
     EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_MUSIC));
     EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_MEDIA));
     EXPECT_FALSE(handler.IsCallStreamUsage(STREAM_USAGE_UNKNOWN));
@@ -56,7 +58,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_002, TestSize.Level1)
     WirelessConflictHandler handler;
     
     EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_USER_SELECT));
-    EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_APP_SELECT));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_DEFAULT));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_PAIR_DEVICE));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_NONE));
@@ -81,8 +82,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
     // Forced input: priority PRIORITY_FORCED_INPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, false), PRIORITY_FORCED_INPUT);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
-        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, false), PRIORITY_FORCED_INPUT);
     
     // Normal input: priority PRIORITY_NORMAL_INPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
@@ -91,8 +90,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
     // Forced output: priority PRIORITY_FORCED_OUTPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, true), PRIORITY_FORCED_OUTPUT);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
-        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, true), PRIORITY_FORCED_OUTPUT);
     
     // Normal output: priority PRIORITY_NORMAL_OUTPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
@@ -108,7 +105,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_004, TestSize.Level1)
 {
     WirelessConflictHandler handler;
     
-    EXPECT_FALSE(handler.Detect(nullptr, ROUTER_TYPE_NONE, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(nullptr, ROUTER_TYPE_NONE));
 }
 
 /**
@@ -122,7 +119,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_005, TestSize.Level1)
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device->macAddress_ = "";
     
-    EXPECT_FALSE(handler.Detect(device, ROUTER_TYPE_NONE, STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(device, ROUTER_TYPE_NONE));
 }
 
 /**
@@ -187,8 +184,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_007, TestSize.Level1)
     // Same mac address, no conflict
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -216,8 +212,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_009, TestSize.Level1)
     // existing is music (priority PRIORITY_NORMAL_OUTPUT), no conflict
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:66";
-    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT,
-        STREAM_USAGE_VOICE_COMMUNICATION, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -313,8 +308,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -342,8 +336,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:55";
     
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -371,12 +364,38 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_018, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
     
     outputDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT,
-        STREAM_USAGE_MUSIC, SOURCE_TYPE_INVALID, true));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler IsCallStreamUsage with transfer stream usages.
+ * @tc.number: WirelessConflictHandler_019
+ * @tc.desc  : Test IsCallStreamUsage with VOICE_TRANSFER_COMMUNICATION and VOICE_TRANSFER_RINGTONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_019, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler GetPriority with transfer stream usage.
+ * @tc.number: WirelessConflictHandler_020
+ * @tc.desc  : Test GetPriority for STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_020, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_TRANSFER_RINGTONE,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
 }
 
 } // namespace AudioStandard

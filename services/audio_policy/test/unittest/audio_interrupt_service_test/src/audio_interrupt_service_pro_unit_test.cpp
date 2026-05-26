@@ -681,7 +681,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, RemoveClient_004, TestSize.Level4)
     zone1->interruptCbsMap.insert({streamId, nullptr});
     audioInterruptService_->zonesMap_.insert({zoneId, zone1});
 
-    audioInterruptService_->RemoveClient(zoneId, streamId);
+    audioInterruptService_->RemoveClient(streamId);
     EXPECT_EQ(audioInterruptService_->zonesMap_.size(), 1);
 }
 
@@ -979,6 +979,106 @@ HWTEST_F(AudioInterruptServiceUnitTest, UpdateInterPhoneStrategy03, TestSize.Lev
  
     audioInterruptStrategy->UpdateInterPhoneStrategy(activeInterrupt, incomingInterrupt, focusEntry);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_NONE);
+}
+
+/**
+ * @tc.name  : Test UpdatePauseAudioFocusStrategy
+ * @tc.number: UpdatePauseAudioFocusStrategy_001
+ * @tc.desc  : Test UpdatePauseAudioFocusStrategy when actionOn is not CURRENT
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, UpdatePauseAudioFocusStrategy_001, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+
+    AudioInterrupt currentInterrupt;
+    currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag = true;
+    currentInterrupt.streamId = 888;
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = 889;
+
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = INCOMING;
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+
+    audioInterruptStrategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_STOP);
+}
+
+/**
+ * @tc.name  : Test UpdatePauseAudioFocusStrategy
+ * @tc.number: UpdatePauseAudioFocusStrategy_002
+ * @tc.desc  : Test UpdatePauseAudioFocusStrategy when pauseWhenInterruptFlag is false
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, UpdatePauseAudioFocusStrategy_002, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+
+    AudioInterrupt currentInterrupt;
+    currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag = false;
+    currentInterrupt.streamId = 888;
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = 889;
+
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+
+    audioInterruptStrategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_STOP);
+}
+
+/**
+ * @tc.name  : Test UpdatePauseAudioFocusStrategy
+ * @tc.number: UpdatePauseAudioFocusStrategy_003
+ * @tc.desc  : Test UpdatePauseAudioFocusStrategy when hintType is not STOP
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, UpdatePauseAudioFocusStrategy_003, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+
+    AudioInterrupt currentInterrupt;
+    currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag = true;
+    currentInterrupt.streamId = 888;
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = 889;
+
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+
+    audioInterruptStrategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+}
+
+/**
+ * @tc.name  : Test UpdatePauseAudioFocusStrategy
+ * @tc.number: UpdatePauseAudioFocusStrategy_004
+ * @tc.desc  : Test UpdatePauseAudioFocusStrategy when all conditions met, STOP should change to PAUSE
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, UpdatePauseAudioFocusStrategy_004, TestSize.Level1)
+{
+    auto audioInterruptStrategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(audioInterruptStrategy, nullptr);
+
+    AudioInterrupt currentInterrupt;
+    currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag = true;
+    currentInterrupt.streamId = 888;
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = 889;
+
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+
+    audioInterruptStrategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
 }
 
 } // namespace AudioStandard

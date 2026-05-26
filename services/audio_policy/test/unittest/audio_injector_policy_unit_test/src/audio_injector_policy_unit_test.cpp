@@ -13,6 +13,7 @@
 * limitations under the License.
 */
 #include "audio_injector_policy_unit_test.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
@@ -193,6 +194,33 @@ HWTEST_F(AudioInjectorPolicyUnitTest, AddCaptureInjector_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AddCaptureInjectorInner_001
+ * @tc.desc: Test AddCaptureInjectorInner when enable_new_route is enabled
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, AddCaptureInjectorInner_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
+
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.voipType_ = NO_VOIP;
+    audioInjectorPolicy.renderPortIdx_ = 1111;
+    audioInjectorPolicy.capturePortIdx_ = 2222;
+
+    int32_t ret = audioInjectorPolicy.AddCaptureInjectorInner();
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(true, audioInjectorPolicy.isConnected_);
+
+    audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.capturePortIdx_ = HDI_INVALID_ID;
+    audioInjectorPolicy.voipType_ = NO_VOIP;
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
+}
+
+/**
  * @tc.name: RemoveCaptureInjector_001
  * @tc.desc: wzwzwz
  * @tc.type: FUNC
@@ -260,6 +288,65 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_004, TestSize.Level1
     audioInjectorPolicy.isOpened_ = false;
     int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(false);
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name: RemoveCaptureInjectorInner_001
+ * @tc.desc: Test RemoveCaptureInjectorInner when enable_new_route is enabled
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjectorInner_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc;
+    audioInjectorPolicy.isConnected_ = true;
+    audioInjectorPolicy.voipType_ = NO_VOIP;
+    audioInjectorPolicy.renderPortIdx_ = 2222;
+    audioInjectorPolicy.capturePortIdx_ = 3333;
+
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjectorInner(true);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(false, audioInjectorPolicy.isConnected_);
+    EXPECT_EQ(HDI_INVALID_ID, audioInjectorPolicy.capturePortIdx_);
+    EXPECT_EQ(NO_VOIP, audioInjectorPolicy.voipType_);
+
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
+}
+
+/**
+ * @tc.name: RemoveCaptureInjectorInner_002
+ * @tc.desc: Test RemoveCaptureInjectorInner when enable_new_route is disabled
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjectorInner_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc;
+    audioInjectorPolicy.isConnected_ = true;
+    audioInjectorPolicy.voipType_ = NO_VOIP;
+    audioInjectorPolicy.renderPortIdx_ = 2222;
+    audioInjectorPolicy.capturePortIdx_ = 3333;
+
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjectorInner(true);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(true, audioInjectorPolicy.isConnected_);
+    EXPECT_EQ(3333, audioInjectorPolicy.capturePortIdx_);
+    EXPECT_EQ(NO_VOIP, audioInjectorPolicy.voipType_);
+
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.capturePortIdx_ = HDI_INVALID_ID;
 }
 
 /**

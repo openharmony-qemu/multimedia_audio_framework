@@ -43,6 +43,7 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_VIRTUAL_INJECTOR,
     HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT,
     HDI_ID_TYPE_INTERPHONE,
+    HDI_ID_TYPE_REMOTE_MULTICHANNEL,
     HDI_ID_TYPE_NUM,
 };
 
@@ -67,6 +68,9 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_DP_FAST "dp_fast"
 #define HDI_ID_INFO_RAW_AI "raw_ai"
 #define HDI_ID_INFO_INTERPHONE "interphone"
+#define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_TYPEC "Built_in_typec"
+#define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_WIRED "Built_in_wired"
+#define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_BT_NEARLINK "Built_in_bt"
 #define HDI_ID_INFO_CAMCORDER "camcorder"
 
 #define HDI_ID_INFO_PRIMARY_EXTRA_TYPEC "Typec_Speaker"
@@ -90,6 +94,7 @@ enum HdiAdapterCallbackType : uint32_t {
     HDI_CB_CAPTURE_PARAM,
     HDI_CB_CAPTURE_WAKEUP,
     HDI_CB_CAPTURE_STATE_ALL,
+    HDI_CB_CAPTURE_CAMCORDER_METADATA,
     HDI_CB_TYPE_NUM,
 };
 
@@ -104,6 +109,10 @@ enum RenderCallbackType {
     CB_FLUSH_COMPLETED = 2,
     CB_RENDER_FULL = 3,
     CB_ERROR_OCCUR = 4,
+};
+
+enum CaptureCallbackType {
+    CB_CAMCORDER_METADATA = 0,
 };
 
 enum AudioFormatBit : uint32_t {

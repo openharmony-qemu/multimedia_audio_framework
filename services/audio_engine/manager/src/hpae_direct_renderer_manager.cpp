@@ -297,11 +297,10 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
     }
     if (sinkInfo_.deviceClass == VOIP_DIRECT_DEVICE_CLASS) {
         volumeSyncNode_ = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
-        volumeSyncNode_->ResetVolume();
         AUDIO_INFO_LOG("SessionId %{public}u, using HpaeVolumeSyncNode for VOIP device", sessionId);
     } else {
         gainNode_ = std::make_shared<HpaeGainNode>(nodeInfo);
-        gainNode_->ResetVolume();
+        loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     }
     converterForGain_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
     converterForGain_->SetDownmixNormalization(false);
@@ -318,9 +317,11 @@ int32_t HpaeDirectRendererManager::CreateDirectNodes()
 
     AUDIO_INFO_LOG("SessionId %{public}u, Success create direct nodes: "
         "converterForGainId %{public}u, gainNodeId %{public}u, volumeSyncNodeId %{public}u, limiterNodeId %{public}u,"
-        " converterForOutputNodeId %{public}u", curNode_->GetSessionId(), converterForGain_->GetNodeId(),
+        " converterForOutputNodeId %{public}u, loudnessGainNodeId %{public}u", curNode_->GetSessionId(),
+        converterForGain_->GetNodeId(),
         gainNode_ ? gainNode_->GetNodeId() : 0, volumeSyncNode_ ? volumeSyncNode_->GetNodeId() : 0,
-        limiterNode_ ? limiterNode_->GetNodeId() : 0, converterForOutput_->GetNodeId());
+        limiterNode_ ? limiterNode_->GetNodeId() : 0, converterForOutput_->GetNodeId(),
+        loudnessGainNode_ ? loudnessGainNode_->GetNodeId() : 0);
     return SUCCESS;
 }
 
@@ -332,16 +333,18 @@ int32_t HpaeDirectRendererManager::DestroyDirectNodes()
         "direct nodes not exist, fail to destroy direct nodes");
     AUDIO_INFO_LOG("SessionId %{public}u, Success destroy direct nodes: "
         "converterForGainId %{public}u, gainNodeId %{public}u, volumeSyncNodeId %{public}u, limiterNodeId %{public}u,"
-        " converterForOutputNodeId %{public}u ",
+        " converterForOutputNodeId %{public}u, loudnessGainNodeId %{public}u",
         curNode_->GetSessionId(), converterForGain_->GetNodeId(),
         gainNode_ ? gainNode_->GetNodeId() : 0,
         volumeSyncNode_ ? volumeSyncNode_->GetNodeId() : 0,
-        limiterNode_ ? limiterNode_->GetNodeId() : 0, converterForOutput_->GetNodeId());
+        limiterNode_ ? limiterNode_->GetNodeId() : 0, converterForOutput_->GetNodeId(),
+        loudnessGainNode_ ? loudnessGainNode_->GetNodeId() : 0);
     converterForGain_ = nullptr;
     gainNode_ = nullptr;
     volumeSyncNode_ = nullptr;
     converterForOutput_ = nullptr;
     limiterNode_ = nullptr;
+    loudnessGainNode_ = nullptr;
     return SUCCESS;
 }
 
@@ -361,17 +364,25 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
         if (volumeSyncNode_ != nullptr) {
             limiterNode_->Connect(volumeSyncNode_);
             volumeSyncNode_->Connect(converterForGain_);
+            volumeSyncNode_->ResetVolume();
         } else {
             limiterNode_->Connect(gainNode_);
-            gainNode_->Connect(converterForGain_);
+            gainNode_->Connect(loudnessGainNode_);
+            loudnessGainNode_->Connect(converterForGain_);
+            gainNode_->ResetVolume();
+            loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
         }
     } else {
         if (volumeSyncNode_ != nullptr) {
             converterForOutput_->Connect(volumeSyncNode_);
             volumeSyncNode_->Connect(converterForGain_);
+            volumeSyncNode_->ResetVolume();
         } else {
             converterForOutput_->Connect(gainNode_);
-            gainNode_->Connect(converterForGain_);
+            gainNode_->Connect(loudnessGainNode_);
+            loudnessGainNode_->Connect(converterForGain_);
+            gainNode_->ResetVolume();
+            loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
         }
     }
     converterForGain_->Connect(curNode_);
@@ -408,7 +419,8 @@ int32_t HpaeDirectRendererManager::DisConnectInputSession(bool isStandby)
             volumeSyncNode_->DisConnect(converterForGain_);
             limiterNode_->DisConnect(volumeSyncNode_);
         } else {
-            gainNode_->DisConnect(converterForGain_);
+            loudnessGainNode_->DisConnect(converterForGain_);
+            gainNode_->DisConnect(loudnessGainNode_);
             limiterNode_->DisConnect(gainNode_);
         }
         converterForOutput_->DisConnect(limiterNode_);
@@ -417,7 +429,8 @@ int32_t HpaeDirectRendererManager::DisConnectInputSession(bool isStandby)
             volumeSyncNode_->DisConnect(converterForGain_);
             converterForOutput_->DisConnect(volumeSyncNode_);
         } else {
-            gainNode_->DisConnect(converterForGain_);
+            loudnessGainNode_->DisConnect(converterForGain_);
+            gainNode_->DisConnect(loudnessGainNode_);
             converterForOutput_->DisConnect(gainNode_);
         }
     }
@@ -992,6 +1005,10 @@ void HpaeDirectRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &l
         processLatency += limiterNode_->GetLatency();
     }
 
+    if (loudnessGainNode_) {
+        processLatency += loudnessGainNode_->GetLatency(sessionId);
+    }
+
     if (converterForOutput_) {
         processLatency += converterForOutput_->GetLatency();
     }
@@ -1035,7 +1052,17 @@ std::string HpaeDirectRendererManager::GetDeviceHDFDumpInfo()
 
 int32_t HpaeDirectRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
-    // direct mode does not support loudness gain
+    auto request = [this, sessionId, loudnessGain]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeDirectRendererManager::SetLoudnessGain[" +
+            std::to_string(loudnessGain) + "]");
+        auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(node, "sessionId %{public}d, sinkInputNode is nullptr", sessionId);
+        node->SetLoudnessGain(loudnessGain);
+        if (curNode_ && curNode_->GetSessionId() == sessionId && loudnessGainNode_) {
+            loudnessGainNode_->SetLoudnessGain(loudnessGain);
+        }
+    };
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 

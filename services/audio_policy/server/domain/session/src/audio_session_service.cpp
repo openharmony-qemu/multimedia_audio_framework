@@ -374,6 +374,7 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
         fakeAudioInterrupt.streamUsage = session->second->GetSessionStreamUsage();
         auto sessionBehaviors = session->second->GetSessionBehaviors();
         fakeAudioInterrupt.behaviorFlags_.muteWhenInterruptFlag = sessionBehaviors.muteWhenInterruptFlag;
+        fakeAudioInterrupt.behaviorFlags_.pauseWhenInterruptFlag = sessionBehaviors.pauseWhenInterruptFlag;
     } else {
         AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -812,12 +813,13 @@ AudioSessionActiveBehaviors AudioSessionService::GetSessionBehaviors(const int32
     return session->second->GetSessionBehaviors();
 }
 
-void AudioSessionService::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+void AudioSessionService::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo,
+    const bool isAudioSessionInterrupt)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(sessionDebugInfo.pid);
     if (session != sessionMap_.end()) {
-        session->second->GetSessionDebugInfo(sessionDebugInfo);
+        session->second->GetSessionDebugInfo(sessionDebugInfo, isAudioSessionInterrupt);
     }
 }
 } // namespace AudioStandard

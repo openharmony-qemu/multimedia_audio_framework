@@ -17,6 +17,7 @@
 #define AUDIO_CAPTURER_H
 
 #include <memory>
+#include <vector>
 
 #include "audio_errors.h"
 #include "audio_stream_change_info.h"
@@ -93,6 +94,11 @@ public:
      * @since 8
      */
     virtual void OnStateChange(const CapturerState state) = 0;
+
+    virtual void OnMetaData(const std::vector<uint8_t> &metaData)
+    {
+        (void)metaData;
+    }
 };
 
 class CapturerPositionCallback {
@@ -132,6 +138,16 @@ public:
      * @since 9
      */
     virtual void OnReadData(size_t length) = 0;
+};
+
+enum class CaptureMetaDataType : int32_t {
+    CAMCORDER = 0,
+};
+
+class AudioCapturerMetaDataCallback {
+public:
+    virtual ~AudioCapturerMetaDataCallback() = default;
+    virtual void OnMetaData(const CaptureMetaDataType type, const std::vector<uint8_t> &data) = 0;
 };
 
 class AudioCapturerDeviceChangeCallback {
@@ -656,6 +672,20 @@ public:
     virtual int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) = 0;
 
     /**
+     * @brief Registers the capturer metadata callback listener.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    virtual int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+    {
+        (void)callback;
+        return ERR_NOT_SUPPORTED;
+    }
+
+    /**
      * @brief Gets the BufferDesc to read the data.
      * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
      *
@@ -890,6 +920,8 @@ public:
         (void)debugInfo;
         return 0;
     }
+
+    virtual uint32_t GetCapturerDebugKey() const { return 0; }
 
     virtual int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) = 0;
 

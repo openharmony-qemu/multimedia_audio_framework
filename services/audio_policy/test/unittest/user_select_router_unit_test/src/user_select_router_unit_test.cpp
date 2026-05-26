@@ -241,5 +241,34 @@ HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_003, TestSize.Level3)
     auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
 }
+
+/**
+ * @tc.name  : Test GetRecordCaptureDevice.
+ * @tc.number: GetRecordCaptureDevice_004
+ * @tc.desc  : GetRecordCaptureDevice.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_004, TestSize.Level4)
+{
+    UserSelectRouter userSelectRouter;
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 678;
+    auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetMediaRenderDevice with transfer ringtone.
+ * @tc.number: GetMediaRenderDevice_TransferRing_001
+ * @tc.desc  : Test GetMediaRenderDevice skips user select for VOICE_TRANSFER_RINGTONE.
+ */
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_TransferRing_001, TestSize.Level3)
+{
+    UserSelectRouter userSelectRouter;
+    auto result = userSelectRouter.GetMediaRenderDevice(
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE, 1, 1);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

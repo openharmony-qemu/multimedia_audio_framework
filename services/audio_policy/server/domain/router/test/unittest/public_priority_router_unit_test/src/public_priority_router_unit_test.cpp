@@ -195,5 +195,6 @@ HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_009, TestSize.Level4)
     auto descriptors = router.GetRingRenderDevices(streamUsage, clientUID);
     EXPECT_TRUE(!descriptors.empty() && descriptors[0]->deviceType_ != DEVICE_TYPE_DP);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

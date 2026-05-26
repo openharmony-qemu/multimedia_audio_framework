@@ -44,6 +44,18 @@ constexpr uint32_t TEST_ID = 1234;
 constexpr uint32_t TEST_FRAMELEN = 960;
 constexpr int TIMES = 5;
 constexpr float LOUDNESS_GAIN_VALUE = 10.0f;
+constexpr float EPSILON_TOLERANCE = 1e-4f;
+constexpr uint32_t TEST_FRAMELEN_96K = 1920;
+constexpr uint32_t TEST_FRAMELEN_192K = 3840;
+
+static void FillBufferWithValue(HpaePcmBuffer& buffer, float value)
+{
+    float* data = buffer.GetPcmDataBuffer();
+    uint32_t totalSamples = buffer.GetFrameLen() * buffer.GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples; i++) {
+        data[i] = value;
+    }
+}
 
 HWTEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode, TestSize.Level0)
 {
@@ -177,5 +189,272 @@ HWTEST_F(HpaeLoudnessGainNodeTest, FaultCode_SignalProcess_NullFirstInput, TestS
     std::vector<HpaePcmBuffer*> inputs = {nullptr};
     HpaePcmBuffer* result = hpaeLoudnessGainNode->SignalProcess(inputs);
     EXPECT_EQ(result, &hpaeLoudnessGainNode->silenceData_);
+}
+
+/**
+* @tc.name  : signalProcess96kHz_001
+* @tc.type  : FUNC
+* @tc.desc  : Test SignalProcess at 96000Hz with linear gain fallback
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, signalProcess96kHz_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN_96K;
+    nodeInfo.samplingRate = SAMPLE_RATE_96000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN_96K, SAMPLE_RATE_96000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
+
+    node->SetLoudnessGain(6.0f);
+
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
+
+    float expectedGain = pow(10, 6.0f / 20);
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples && i < 16; i++) {
+        EXPECT_LT(fabs(outData[i] - expectedGain), EPSILON_TOLERANCE);
+    }
+}
+
+/**
+* @tc.name  : signalProcess192kHz_001
+* @tc.type  : FUNC
+* @tc.desc  : Test SignalProcess at 192000Hz with linear gain fallback
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, signalProcess192kHz_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN_192K;
+    nodeInfo.samplingRate = SAMPLE_RATE_192000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN_192K, SAMPLE_RATE_192000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
+
+    node->SetLoudnessGain(6.0f);
+
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
+
+    float expectedGain = pow(10, 6.0f / 20);
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples && i < 16; i++) {
+        EXPECT_LT(fabs(outData[i] - expectedGain), EPSILON_TOLERANCE);
+    }
+}
+
+/**
+* @tc.name  : dynamicRateSwitch48kTo96k_001
+* @tc.type  : FUNC
+* @tc.desc  : Test dynamic sample rate switch from 48kHz to 96kHz updates internal pcmBufferInfo_
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, dynamicRateSwitch48kTo96k_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    // Process at 48kHz first
+    PcmBufferInfo pcmBufferInfo48k(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer buffer48k(pcmBufferInfo48k);
+    FillBufferWithValue(buffer48k, 1.0f);
+    std::vector<HpaePcmBuffer*> inputs48k = {&buffer48k};
+    node->SignalProcess(inputs48k);
+
+    node->SetLoudnessGain(3.0f);
+
+    // Process at 96kHz
+    PcmBufferInfo pcmBufferInfo96k(STEREO, TEST_FRAMELEN_96K, SAMPLE_RATE_96000);
+    HpaePcmBuffer buffer96k(pcmBufferInfo96k);
+    FillBufferWithValue(buffer96k, 1.0f);
+    std::vector<HpaePcmBuffer*> inputs96k = {&buffer96k};
+    node->SignalProcess(inputs96k);
+
+    EXPECT_EQ(node->pcmBufferInfo_.rate, SAMPLE_RATE_96000);
+    EXPECT_FLOAT_EQ(node->GetLoudnessGain(), 3.0f);
+}
+
+/**
+* @tc.name  : gainZeroPassthrough_001
+* @tc.type  : FUNC
+* @tc.desc  : Test SignalProcess returns input directly when gain is 0.0 dB
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, gainZeroPassthrough_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 0.75f);
+
+    // Default gain is 0.0f
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* result = node->SignalProcess(inputs);
+
+    EXPECT_EQ(result, inputs[0]);
+}
+
+/**
+* @tc.name  : linearGainFallbackValue_001
+* @tc.type  : FUNC
+* @tc.desc  : Test linear gain fallback applies correct +20dB conversion
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, linearGainFallbackValue_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
+
+    node->SetLoudnessGain(20.0f);
+
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
+
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples; i++) {
+        EXPECT_LT(fabs(outData[i] - 10.0f), EPSILON_TOLERANCE);
+    }
+}
+
+/**
+* @tc.name  : linearGainFallbackNeg3dB_001
+* @tc.type  : FUNC
+* @tc.desc  : Test linear gain fallback applies correct -3dB conversion
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, linearGainFallbackNeg3dB_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    FillBufferWithValue(hpaePcmBuffer, 1.0f);
+
+    node->SetLoudnessGain(-3.0f);
+
+    std::vector<HpaePcmBuffer*> inputs = {&hpaePcmBuffer};
+    HpaePcmBuffer* output = node->SignalProcess(inputs);
+
+    float expectedGain = pow(10, -3.0f / 20);
+    float* outData = output->GetPcmDataBuffer();
+    uint32_t totalSamples = output->GetFrameLen() * output->GetChannelCount();
+    for (uint32_t i = 0; i < totalSamples; i++) {
+        EXPECT_LT(fabs(outData[i] - expectedGain), EPSILON_TOLERANCE);
+    }
+}
+
+/**
+* @tc.name  : isLoudnessAlgoOn_001
+* @tc.type  : FUNC
+* @tc.desc  : Test IsLoudnessAlgoOn returns false when DSP library is not loaded
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, isLoudnessAlgoOn_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    EXPECT_FALSE(node->IsLoudnessAlgoOn());
+
+    node->SetLoudnessGain(6.0f);
+    EXPECT_FALSE(node->IsLoudnessAlgoOn());
+}
+
+/**
+* @tc.name  : getLatency_001
+* @tc.type  : FUNC
+* @tc.desc  : Test GetLatency returns 0 when handle_ is null
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, getLatency_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    EXPECT_EQ(node->GetLatency(), 0);
+}
+
+/**
+* @tc.name  : getLatencyWithSessionId_001
+* @tc.type  : FUNC
+* @tc.desc  : Test GetLatency with sessionId returns 0 when handle_ is null
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, getLatencyWithSessionId_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    EXPECT_EQ(node->GetLatency(12345), 0);
+}
+
+/**
+* @tc.name  : setLoudnessGainUpdatesLinearGain_001
+* @tc.type  : FUNC
+* @tc.desc  : Test SetLoudnessGain correctly updates internal linearGain_ member
+*/
+HWTEST_F(HpaeLoudnessGainNodeTest, setLoudnessGainUpdatesLinearGain_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+
+    node->SetLoudnessGain(6.0f);
+    EXPECT_LT(fabs(node->linearGain_ - pow(10, 6.0f / 20)), EPSILON_TOLERANCE);
+
+    node->SetLoudnessGain(0.0f);
+    EXPECT_LT(fabs(node->linearGain_ - 1.0f), EPSILON_TOLERANCE);
 }
 }

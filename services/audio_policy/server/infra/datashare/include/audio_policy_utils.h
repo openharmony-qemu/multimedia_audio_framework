@@ -100,16 +100,10 @@ public:
     int32_t SetDeclaredDeviceTypes(const std::string &bundleName, const std::vector<DeviceType> &deviceTypeVector);
     bool IsDeclaredByApp(const std::string &bundleName, DeviceType deviceType);
     bool IsSupportedDevice(const std::string &bundleName, DeviceType deviceType, bool hasSystemPermission);
+    void FilterDevicesByTokenId(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     bool IsWirelessDevice(DeviceType deviceType);
-    bool IsBluetoothOrNearlinkDevice(DeviceType deviceType);
-    void ClearOutputWirelessPreferred(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        PreferredType preferredType);
-    void ClearInputWirelessPreferred(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        PreferredType preferredType);
-    void ClearWirelessPreferredDevicesIfNeeded(PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc);
-
+    static bool CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -121,6 +115,7 @@ private:
 public:
     static int32_t startDeviceId;
     static std::map<std::string, ClassType> portStrToEnum;
+    static std::map<DeviceType, std::string> deviceMsmd;
     static std::set<DeviceType> needDeclaredDevices;
 private:
     std::mutex mutex_;

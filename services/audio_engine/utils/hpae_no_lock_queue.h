@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NOLOCK_REQUEST_QUEUE_H
-#define NOLOCK_REQUEST_QUEUE_H
+#ifndef HPAE_NO_LOCK_QUEUE_H
+#define HPAE_NO_LOCK_QUEUE_H
 #include <array>
 #include <vector>
 #include <atomic>
@@ -55,9 +55,9 @@ private:
     void InitQueue(size_t maxRequestCount);
     bool TryExpandQueue(bool forceExpand = false);
     size_t GetExpandThreshold(size_t requestCount) const;
-    uint64_t IncRequsetIndex(uint64_t requestIndex);
-    uint64_t GetRequsetIndex(uint64_t requestIndex);
-    uint64_t GetRequsetFlag(uint64_t requestFlag);
+    uint64_t IncRequestIndex(uint64_t requestIndex);
+    uint64_t GetRequestIndex(uint64_t requestIndex);
+    uint64_t GetRequestFlag(uint64_t requestFlag);
     RequestNode *GetRequestNodePtr(uint64_t requestIndex);
 
     void PushRequestNode(std::atomic<uint64_t> *pRequestHeadIndex, uint64_t index);

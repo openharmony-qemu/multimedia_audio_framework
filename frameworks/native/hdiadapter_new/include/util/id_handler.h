@@ -65,10 +65,10 @@ private:
 
 private:
     static constexpr uint32_t HDI_ID_BASE_OFFSET = 12;
-    static constexpr uint32_t HDI_ID_TYPE_OFFSET = 8;
+    static constexpr uint32_t HDI_ID_TYPE_OFFSET = 6;
     static constexpr uint32_t HDI_ID_BASE_MASK = 0x3000;
-    static constexpr uint32_t HDI_ID_TYPE_MASK = 0x0F00;
-    static constexpr uint32_t HDI_ID_INFO_MASK = 0x00FF;
+    static constexpr uint32_t HDI_ID_TYPE_MASK = 0x0FC0;
+    static constexpr uint32_t HDI_ID_INFO_MASK = 0x003F;
 
     std::unordered_map<uint32_t, InfoAttr> infoIdMap_;
     std::unordered_set<uint32_t> freeInfoIdSet_;

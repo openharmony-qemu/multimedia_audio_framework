@@ -15,6 +15,8 @@
 
 #ifndef HPAE_DEFINE_H
 #define HPAE_DEFINE_H
+#include <array>
+#include <algorithm>
 #include "hpae_msg_channel.h"
 #include "i_stream.h"
 
@@ -23,6 +25,22 @@ namespace AudioStandard {
 namespace HPAE {
 constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 constexpr uint32_t FRAME_LEN_20MS = 20; // 20ms
+
+// Standard sample rates supported by the audio engine for forceData purposes.
+// 11025 and 22050 are excluded because the audio engine cannot resample from them correctly.
+constexpr std::array<uint32_t, 13> STANDARD_SAMPLE_RATES_FOR_FORCE_DATA = {
+    SAMPLE_RATE_8000, SAMPLE_RATE_12000, SAMPLE_RATE_16000, SAMPLE_RATE_24000,
+    SAMPLE_RATE_32000, SAMPLE_RATE_44100, SAMPLE_RATE_48000, SAMPLE_RATE_64000,
+    SAMPLE_RATE_88200, SAMPLE_RATE_96000, SAMPLE_RATE_176400, SAMPLE_RATE_192000,
+    SAMPLE_RATE_384000
+};
+
+inline bool IsNonStandardSampleRate(uint32_t effectiveSampleRate)
+{
+    return std::find(STANDARD_SAMPLE_RATES_FOR_FORCE_DATA.begin(),
+        STANDARD_SAMPLE_RATES_FOR_FORCE_DATA.end(), effectiveSampleRate)
+        == STANDARD_SAMPLE_RATES_FOR_FORCE_DATA.end();
+}
 
 struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
@@ -54,7 +72,6 @@ struct HpaeCapturerSessionInfo {
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;
     bool mixWithWakeUp = false;
-    SourceType sourceType = SOURCE_TYPE_INVALID;
 };
 
 struct HpaeSourceOutputInfo {
@@ -65,6 +82,25 @@ struct HpaeSourceOutputInfo {
 enum HpaeBufferType {
     HPAE_BUFFER_TYPE_DEFAULT = 0,
     HPAE_BUFFER_TYPE_COBUFFER
+};
+
+// Session Effect error codes
+enum class SessionEffectErrCode : int32_t {
+    SUCCESS = 0,
+    ERR_SESSION_NOT_FOUND = -1,
+    ERR_SESSION_ALREADY_BOUND = -2,
+    ERR_EFFECT_LIBRARY_NOT_FOUND = -3,
+    ERR_EFFECT_CREATE_FAILED = -4,
+    ERR_EFFECT_PROCESS_FAILED = -5,
+    ERR_EFFECT_NOT_BOUND = -6,
+    ERR_INVALID_PARAMETER = -7,
+    ERR_SESSION_NOT_RUNNING = -8,
+    ERR_NOT_SUPPORTED = -9,
+};
+
+// Session Effect parameter types for SetParameter routing
+enum class EffectParameterType : int32_t {
+    VOCAL_RATIO = 1,
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

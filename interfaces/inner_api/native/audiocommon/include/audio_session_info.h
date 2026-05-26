@@ -43,6 +43,7 @@ struct AudioSessionDeactiveEvent {
 struct AudioSessionActiveBehaviors {
     bool voipNoPrivacyFlag = false;   // VOIP_PRIVACY_TYPE_PUBLIC
     bool muteWhenInterruptFlag = false;  // MUTE_WHEN_INTERRUPT
+    bool pauseWhenInterruptFlag = false; // PAUSE_WHEN_INTERRUPT
     bool aibaseMuteVoip = false;
 };
 
@@ -201,12 +202,20 @@ enum class AudioSessionBehaviorFlags {
      */
     MUTE_WHEN_INTERRUPTED = 0x00000002,
 
+    /**
+     * When the audio stream is interrupted by the system, perform pause instead.
+     * @syscap SystemCapability.Multimedia.Audio.Core
+     * @stagemodelonly
+     * @since 26 dynamic&static
+     */
+    PAUSE_WHEN_INTERRUPTED = 0x00000004,
+
     AIBASE_MUTE_VOIP = 0x80000000,
 
     /**
      * Behavior validation mask.
      */
-    MASK_VALID_BEHAVIOR = 0x80000003,
+    MASK_VALID_BEHAVIOR = 0x80000007,
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -28,15 +28,16 @@ bool WirelessConflictHandler::IsCallStreamUsage(StreamUsage streamUsage)
 {
     return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
            streamUsage == STREAM_USAGE_RINGTONE ||
-           streamUsage == STREAM_USAGE_VOICE_RINGTONE;
+           streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
 }
 
 bool WirelessConflictHandler::IsForcedRouterType(RouterType routerType)
 {
-    return routerType == ROUTER_TYPE_USER_SELECT ||
-           routerType == ROUTER_TYPE_APP_SELECT;
+    return routerType == ROUTER_TYPE_USER_SELECT;
 }
 
 int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sourceType,
@@ -96,30 +97,38 @@ bool WirelessConflictHandler::AllScoPairSelected()
     return allScoPair;
 }
 
-int WirelessConflictHandler::FindHighestPriorityDevice(std::string &highestPriorityMac)
+void WirelessConflictHandler::FindHighestPriorityDevice()
 {
-    int highestPriority = 0;
-    for (auto &info : outputStreamDevices_) {
-        if (info.device == nullptr || info.device->macAddress_.empty()) continue;
-        int priority = GetPriority(info.streamUsage, SOURCE_TYPE_INVALID, info.routerType, true);
-        if (priority > highestPriority) {
-            highestPriority = priority;
-            highestPriorityMac = info.device->macAddress_;
+    cachedHighestPriority_ = 0;
+    cachedHighestPriorityMac_.clear();
+    
+    auto findPriority = [this](const std::vector<StreamDeviceInfo>& devices, bool isOutput, bool requireRunning) {
+        for (auto &info : devices) {
+            if (info.device == nullptr || info.device->macAddress_.empty() || !IsWirelessDevice(info.device)) continue;
+            if (requireRunning && !info.isRunning) continue;
+            int priority = GetPriority(
+                isOutput ? info.streamUsage : STREAM_USAGE_UNKNOWN,
+                isOutput ? SOURCE_TYPE_INVALID : info.sourceType,
+                info.routerType, isOutput);
+            if (priority > cachedHighestPriority_) {
+                cachedHighestPriority_ = priority;
+                cachedHighestPriorityMac_ = info.device->macAddress_;
+            }
         }
+    };
+    
+    findPriority(outputStreamDevices_, true, true);
+    findPriority(inputStreamDevices_, false, true);
+    
+    if (cachedHighestPriority_ > 0) {
+        return;
     }
-    for (auto &info : inputStreamDevices_) {
-        if (info.device == nullptr || info.device->macAddress_.empty()) continue;
-        int priority = GetPriority(STREAM_USAGE_UNKNOWN, info.sourceType, info.routerType, false);
-        if (priority > highestPriority) {
-            highestPriority = priority;
-            highestPriorityMac = info.device->macAddress_;
-        }
-    }
-    return highestPriority;
+    
+    findPriority(outputStreamDevices_, true, false);
+    findPriority(inputStreamDevices_, false, false);
 }
 
-bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
-    StreamUsage streamUsage, SourceType sourceType, bool isOutput)
+bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType)
 {
     if (device == nullptr || device->macAddress_.empty() || !IsWirelessDevice(device)) {
         return false;
@@ -129,11 +138,7 @@ bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor
         return true;
     }
     
-    int currentPriority = GetPriority(streamUsage, sourceType, routerType, isOutput);
-    std::string highestPriorityMac;
-    int highestPriority = FindHighestPriorityDevice(highestPriorityMac);
-    
-    return highestPriority > currentPriority && highestPriorityMac != device->macAddress_;
+    return cachedHighestPriority_ > 0 && cachedHighestPriorityMac_ != device->macAddress_;
 }
 
 void WirelessConflictHandler::SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
@@ -141,12 +146,15 @@ void WirelessConflictHandler::SetSelectedDevices(const std::vector<StreamDeviceI
 {
     outputStreamDevices_ = outputDevices;
     inputStreamDevices_ = inputDevices;
+    FindHighestPriorityDevice();
 }
 
 void WirelessConflictHandler::ClearSelectedDevices()
 {
     outputStreamDevices_.clear();
     inputStreamDevices_.clear();
+    cachedHighestPriority_ = 0;
+    cachedHighestPriorityMac_.clear();
 }
 
 } // namespace AudioStandard

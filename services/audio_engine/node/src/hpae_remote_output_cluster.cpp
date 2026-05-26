@@ -288,6 +288,16 @@ uint64_t HpaeRemoteOutputCluster::GetLatency(HpaeProcessorType sceneType)
 
     return latency;
 }
+
+uint32_t HpaeRemoteOutputCluster::GetRenderId() const
+{
+    return hpaeSinkOutputNode_->GetRenderId();
+}
+
+DeviceType HpaeRemoteOutputCluster::GetCurrentOutputDevice() const
+{
+    return hpaeSinkOutputNode_->GetCurrentOutputDevice();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

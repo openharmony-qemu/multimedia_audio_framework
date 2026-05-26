@@ -276,7 +276,8 @@ bool AudioSession::IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &st
     return (streamUsage == STREAM_USAGE_VOICE_MESSAGE) ||
         (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
         (streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
-        (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+        (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) ||
+        (streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION);
 }
 
 bool AudioSession::CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt)
@@ -427,13 +428,13 @@ int32_t AudioSession::UpdateStreamFocusState(uint32_t streamId, AudioFocuState f
 {
     auto it = interruptMap_.find(streamId);
     if (it == interruptMap_.end()) {
-        AUDIO_ERR_LOG("streamId %u not found in interruptMap", streamId);
+        AUDIO_ERR_LOG("streamId %{public}u not found in interruptMap", streamId);
         return ERR_INVALID_PARAM;
     }
     if (focuState == AudioFocuState::STANDBY) {
         if (it->second.second != AudioFocuState::ACTIVE &&
             it->second.second != AudioFocuState::DUCK) {
-            AUDIO_INFO_LOG("streamId %u state %d, cannot set to STANDBY",
+            AUDIO_INFO_LOG("streamId %{public}u state %{public}d, cannot set to STANDBY",
                 streamId, it->second.second);
             return SUCCESS;
         }
@@ -547,7 +548,10 @@ int32_t AudioSession::SetAudioSessionBehavior(const uint32_t behavior)
         behaviorFlags_.voipNoPrivacyFlag = true;
         AUDIO_INFO_LOG("Session pid: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", callerPid_);
     }
-    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
+        behaviorFlags_.pauseWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Session pid: %{public}d activated PAUSE_WHEN_INTERRUPTED success", callerPid_);
+    } else if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
         behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Session pid: %{public}d activated MUTE_WHEN_INTERRUPT success", callerPid_);
     }
@@ -559,20 +563,20 @@ AudioSessionActiveBehaviors AudioSession::GetSessionBehaviors()
     return behaviorFlags_;
 }
 
-void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
+void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo, const bool isAudioSessionInterrupt)
 {
     sessionDebugInfo.strategy = strategy_;
-    sessionDebugInfo.audioSessionScene = audioSessionScene_;
     sessionDebugInfo.defaultDeviceType = defaultDeviceType_;
     sessionDebugInfo.state = state_;
-    sessionDebugInfo.streamUsage = GetSessionStreamUsage();
-    sessionDebugInfo.streamInfos.clear();
-    for (const auto &iter : interruptMap_) {
-        AudioStreamDebugInfo streamDebugInfo;
-        streamDebugInfo.streamId = iter.second.first.streamId;
-        streamDebugInfo.streamType = iter.second.first.audioFocusType.streamType;
-        streamDebugInfo.sourceType = iter.second.first.audioFocusType.sourceType;
-        sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+    if (isAudioSessionInterrupt) {
+        sessionDebugInfo.audioSessionScene = audioSessionScene_;
+        sessionDebugInfo.streamInfos.clear();
+        for (const auto &iter : interruptMap_) {
+            AudioStreamDebugInfo streamDebugInfo;
+            streamDebugInfo.streamId = iter.second.first.streamId;
+            streamDebugInfo.streamType = iter.second.first.audioFocusType.streamType;
+            sessionDebugInfo.streamInfos.push_back(streamDebugInfo);
+        }
     }
 }
 } // namespace AudioStandard

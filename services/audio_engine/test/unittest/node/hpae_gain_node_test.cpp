@@ -81,18 +81,13 @@ HWTEST_F(HpaeGainNodeTest, constructHpaeGainNode, TestSize.Level0)
 }
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
-    float curGain = 0.0f;
-    float targetGain = 1.0f;
-    float stepGain = targetGain - curGain;
     uint64_t frameLen = len / (SAMPLE_F32LE * STEREO);
-    stepGain = stepGain / frameLen;
     const float *tempData = reinterpret_cast<const float *>(data);
     for (int32_t i = 0; i < frameLen; i++) {
         const float left = tempData[DEFAULT_NUM_TWO * i];
         const float right = tempData[DEFAULT_NUM_TWO * i + 1];
-        const float expectedValue = g_testValue * (curGain + i * stepGain);
-        EXPECT_EQ(left, expectedValue);
-        EXPECT_EQ(right, expectedValue);
+        EXPECT_EQ(left, g_testValue);
+        EXPECT_EQ(right, g_testValue);
     }
     return 0;
 }

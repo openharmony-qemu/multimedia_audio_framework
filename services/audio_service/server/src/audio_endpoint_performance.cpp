@@ -108,7 +108,6 @@ void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
 
 void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
 {
-    CHECK_AND_RETURN(needCheckZeroVolume_);
     if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
         return;
     }
@@ -118,6 +117,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
         }
 
         if (zeroVolumeState_ == INACTIVE) {
+            CHECK_AND_RETURN(needCheckZeroVolume_);
             zeroVolumeStartTime_ = ClockTime::GetCurNano();
             zeroVolumeState_ = IN_TIMING;
             AUDIO_INFO_LOG("zero volume, will stop fastSink in 4s.");

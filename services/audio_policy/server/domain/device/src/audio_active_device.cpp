@@ -481,8 +481,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
     std::vector<StreamUsage> typeList = {
         STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION,
         STREAM_USAGE_VOICE_COMMUNICATION,
         STREAM_USAGE_VIDEO_COMMUNICATION,
+        STREAM_USAGE_INTERPHONE,
         STREAM_USAGE_VOICE_MESSAGE,
         STREAM_USAGE_NOTIFICATION,
         STREAM_USAGE_VOICE_ASSISTANT,

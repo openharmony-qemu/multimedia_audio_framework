@@ -968,5 +968,45 @@ HWTEST(AudioRouterCenterUnitTest, IsVehicleDevice_001, TestSize.Level1)
     desc5->deviceCategory_ = BT_CAR;
     EXPECT_FALSE(audioRouterCenter.IsVehicleDevice(desc5));
 }
+
+/**
+ * @tc.name  : Test IsBlockedDeviceForTransferCall.
+ * @tc.number: IsBlockedDeviceForTransferCall_001
+ * @tc.desc  : Verify that IsBlockedDeviceForTransferCall blocks BT SCO, A2DP, Nearlink, remote devices.
+ */
+HWTEST(AudioRouterCenterUnitTest, IsBlockedDeviceForTransferCall_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(nullptr));
+
+    auto scoDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(scoDesc));
+
+    auto a2dpDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(a2dpDesc));
+
+    auto nearlinkDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(nearlinkDesc));
+
+    auto remoteCastDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(remoteCastDesc));
+
+    auto remoteDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    remoteDesc->networkId_ = "remote_network_id";
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(remoteDesc));
+
+    auto localSpeakerDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    localSpeakerDesc->networkId_ = LOCAL_NETWORK_ID;
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(localSpeakerDesc));
+
+    auto wiredDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    wiredDesc->networkId_ = LOCAL_NETWORK_ID;
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(wiredDesc));
+
+    auto usbDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, OUTPUT_DEVICE);
+    usbDesc->networkId_ = LOCAL_NETWORK_ID;
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(usbDesc));
+}
 } // namespace AudioStandard
 } // namespace OHOS

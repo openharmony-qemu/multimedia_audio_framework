@@ -44,9 +44,10 @@ public:
     }
 
     void RefreshSelectDevice(SelectDeviceType type, int32_t uid,
-        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, const uint32_t deviceTokenId = 0);
     void ClearAllSelectSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device = nullptr);
+    void ClearWirelessSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
     void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
@@ -64,6 +65,8 @@ public:
         int32_t uid, SelectDeviceType type);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetLatestStreamSelectDevice(SelectDeviceType type);
     void ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
+    void ClearSystemSelectDevice(SelectDeviceType type,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
@@ -122,9 +125,7 @@ private:
     void RefreshSystemSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void RefreshAppSelectDevice(SelectDeviceType type, int32_t uid,
-        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    void ClearSystemSelectDevice(SelectDeviceType type,
-        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, const uint32_t deviceTokenId);
     void ClearAllAppSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetFirstRunningStreamDefaultDeviceNoLock(
@@ -133,6 +134,12 @@ private:
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     int64_t GetCurrentTimeMs() const;
     std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
+    bool IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
+    bool IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor> &right);
+    void UpdateExclusiveUidNoLock(int32_t uid, SelectDeviceType type, const uint32_t deviceTokenId);
+    int32_t GetHighestInputPriorityAppNoLock();
+    int32_t GetHighestOutputPriorityAppNoLock();
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);
@@ -162,6 +169,7 @@ private:
         CompareExcludedSimpleDevice> excludedDevices_;
     std::list<int32_t> inputPriorityList_;
     std::list<int32_t> outputPriorityList_;
+    std::unordered_set<int32_t> exclusiveUids_[static_cast<size_t>(SelectDeviceType::SELECT_DEVICE_TYPE_NUM)];
     std::atomic<bool> isScoExcluded_ {false};
 };
 

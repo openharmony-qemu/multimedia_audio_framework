@@ -579,11 +579,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceTypeFromPin_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test GetPreferredDeviceInfo.
- * @tc.number: GetPreferredDeviceInfo_001
- * @tc.desc  : Test GetPreferredDeviceInfo interfaces.
+ * @tc.name  : Test GetVoipDeviceInfo.
+ * @tc.number: GetVoipDeviceInfo_001
+ * @tc.desc  : Test GetVoipDeviceInfo interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetPreferredDeviceInfo_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipDeviceInfo_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioRendererInfo rendererInfo;
@@ -596,20 +596,20 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPreferredDeviceInfo_001, TestSize.Lev
     int32_t ret;
 
     type = AUDIO_FLAG_NORMAL;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, ERROR);
 
     type = AUDIO_FLAG_DIRECT;
     config.streamInfo.samplingRate = SAMPLE_RATE_8000;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, SUCCESS);
 
     config.streamInfo.samplingRate = SAMPLE_RATE_192000;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, SUCCESS);
 
     type = AUDIO_FLAG_VOIP_DIRECT;
-    ret = server->audioPolicyService_.GetPreferredDeviceInfo(config, deviceInfo, type, preferredDeviceList);
+    ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -660,16 +660,27 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetTargetSourceTypeAndMatchingFlag_001, 
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcType_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
-    DeviceType inputDevice = DeviceType::DEVICE_TYPE_MIC;
-    DeviceType outputDevice = DeviceType::DEVICE_TYPE_SPEAKER;
+    struct EcTypeTestCase {
+        DeviceType inputDevice;
+        DeviceType outputDevice;
+        EcType expectedEcType;
+    };
+    std::vector<EcTypeTestCase> testCases = {
+        {DeviceType::DEVICE_TYPE_MIC, DeviceType::DEVICE_TYPE_SPEAKER, EcType::EC_TYPE_SAME_ADAPTER},
+        {DeviceType::DEVICE_TYPE_MIC, DeviceType::DEVICE_TYPE_MIC, EcType::EC_TYPE_SAME_ADAPTER},
+        {DeviceType::DEVICE_TYPE_MIC, DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, EcType::EC_TYPE_DIFF_ADAPTER},
+        {DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceType::DEVICE_TYPE_NEARLINK, EcType::EC_TYPE_SAME_ADAPTER},
+        {DeviceType::DEVICE_TYPE_WIRED_HEADSET, DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+            EcType::EC_TYPE_SAME_ADAPTER},
+        {DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceType::DEVICE_TYPE_NEARLINK, EcType::EC_TYPE_SAME_ADAPTER},
+        {DeviceType::DEVICE_TYPE_MIC, DeviceType::DEVICE_TYPE_HDMI, EcType::EC_TYPE_NONE},
+    };
 
-    EcType ecType = AudioCoreService::GetCoreService()->GetEcType(inputDevice, outputDevice);
-    EXPECT_EQ(ecType, EcType::EC_TYPE_SAME_ADAPTER);
-
-    inputDevice = DeviceType::DEVICE_TYPE_MIC;
-    outputDevice = DeviceType::DEVICE_TYPE_MIC;
-    ecType = AudioCoreService::GetCoreService()->GetEcType(inputDevice, outputDevice);
-    EXPECT_EQ(ecType, EcType::EC_TYPE_NONE);
+    for (const auto &testCase : testCases) {
+        EcType ecType = AudioCoreService::GetCoreService()->GetEcType(testCase.inputDevice, testCase.outputDevice);
+        EXPECT_EQ(ecType, testCase.expectedEcType)
+            << "inputDevice: " << testCase.inputDevice << ", outputDevice: " << testCase.outputDevice;
+    }
 }
 
 /**

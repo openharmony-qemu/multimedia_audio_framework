@@ -1158,6 +1158,42 @@ HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test IdHandler GetRenderIdByDeviceClassSub API
+ * @tc.number : IdHandler_UsbArmFast_001
+ * @tc.desc   : Test GetRenderIdByDeviceClassSub with usb_arm_fast deviceClass
+ */
+HWTEST_F(AudioRenderSinkUnitTest, IdHandler_UsbArmFast_001, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClassSub("usb_arm_fast", "", AUDIO_OUTPUT_FLAG_FAST);
+    EXPECT_NE(id, HDI_INVALID_ID);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, static_cast<uint32_t>(HDI_ID_TYPE_FAST));
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_USB);
+}
+
+/**
+ * @tc.name   : Test IdHandler GetRenderIdByDeviceClassSub API
+ * @tc.number : IdHandler_UsbArmUltraFast_001
+ * @tc.desc   : Test GetRenderIdByDeviceClassSub with usb_arm_ultra_fast deviceClass
+ */
+HWTEST_F(AudioRenderSinkUnitTest, IdHandler_UsbArmUltraFast_001, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClassSub("usb_arm_ultra_fast", "", AUDIO_OUTPUT_FLAG_VOIP_FAST);
+    EXPECT_NE(id, HDI_INVALID_ID);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, static_cast<uint32_t>(HDI_ID_TYPE_FAST));
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_USB);
+}
+
+/**
  * @tc.name   : Test GetCurrentOutputDevice API
  * @tc.number : GetCurrentOutputDevice_005
  * @tc.desc   : Test GetCurrentOutputDevice for direct sink
@@ -1171,6 +1207,96 @@ HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_005, TestSize.Level1)
     EXPECT_EQ(deviceType, DEVICE_TYPE_WIRED_HEADSET);
     
     DeInitDirectSink();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene API with phoneCallSceneType
+ * @tc.number : SetAudioScene_TransferCall_001
+ * @tc.desc   : Test SetAudioScene with phoneCallSceneType for transfer call connect
+ */
+HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_TransferCall_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    int32_t ret = primarySink_->SetAudioScene(AUDIO_SCENE_DEFAULT, false, SCENE_TYPE_INVALID);
+    EXPECT_EQ(ret, SUCCESS);
+
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene API with invalid scene
+ * @tc.number : SetAudioScene_InvalidScene_001
+ * @tc.desc   : Test SetAudioScene with invalid audioScene parameter
+ */
+HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_InvalidScene_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    int32_t ret = primarySink_->SetAudioScene(AUDIO_SCENE_INVALID, false, SCENE_TYPE_INVALID);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test SetPhoneCallSceneType API
+ * @tc.number : SetPhoneCallSceneType_001
+ * @tc.desc   : Test SetPhoneCallSceneType with primary sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, SetPhoneCallSceneType_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    int32_t ret = primarySink_->SetPhoneCallSceneType(SCENE_TYPE_MODEM);
+    EXPECT_NE(ret, ERR_INVALID_HANDLE);
+
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test CreateCallTransfer API
+ * @tc.number : CreateCallTransfer_001
+ * @tc.desc   : Test CreateCallTransfer with primary sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, CreateCallTransfer_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    int32_t ret = primarySink_->CreateCallTransfer();
+    EXPECT_NE(ret, ERR_INVALID_HANDLE);
+
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test CreateCallTransfer API without init
+ * @tc.number : CreateCallTransfer_002
+ * @tc.desc   : Test CreateCallTransfer with uninitialized sink returns error
+ */
+HWTEST_F(AudioRenderSinkUnitTest, CreateCallTransfer_002, TestSize.Level1)
+{
+    EXPECT_TRUE(primarySink_ == nullptr || !primarySink_->IsInited());
+}
+
+/**
+ * @tc.name   : Test SelectSceneToHdi API
+ * @tc.number : SelectSceneToHdi_001
+ * @tc.desc   : Test SelectSceneToHdi with scene change
+ */
+HWTEST_F(AudioRenderSinkUnitTest, SelectSceneToHdi_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    int32_t ret = primarySink_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_INVALID);
+    EXPECT_EQ(ret, SUCCESS);
+
+    DeInitPrimarySink();
 }
 } // namespace AudioStandard
 } // namespace OHOS

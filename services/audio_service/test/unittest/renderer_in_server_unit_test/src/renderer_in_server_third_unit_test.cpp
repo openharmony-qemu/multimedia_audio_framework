@@ -2826,7 +2826,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerConfigServerBuffer_001, 
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     InitAudioProcessConfig(testStreamInfo);
-    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    processConfig.staticBufferInfo.bufferSize_ = 10;
     processConfig.rendererInfo.isStatic = true;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
@@ -2847,7 +2847,7 @@ HWTEST_F(RendererInServerThirdUnitTest, SelectModeAndWriteData_001, TestSize.Lev
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     InitAudioProcessConfig(testStreamInfo);
-    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    processConfig.staticBufferInfo.bufferSize_ = 10;
     processConfig.rendererInfo.isStatic = true;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
@@ -3006,7 +3006,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_001, TestSize.
         AudioChannelLayout::CH_LAYOUT_MONO);
     InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
     processConfig.rendererInfo.isStatic = true;
-    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(100, "test");
+    processConfig.staticBufferInfo.bufferSize_ = 100;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
     
@@ -3087,7 +3087,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_005, TestSize.
         AudioChannelLayout::CH_LAYOUT_MONO);
     InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
     processConfig.rendererInfo.isStatic = true;
-    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(100, "test");
+    processConfig.staticBufferInfo.bufferSize_ = 100;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
     

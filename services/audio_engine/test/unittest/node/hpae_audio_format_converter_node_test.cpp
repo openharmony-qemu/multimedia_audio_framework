@@ -51,6 +51,16 @@ constexpr uint32_t SAMPLE_RATE_8010 = 8010;
 constexpr uint32_t FRAME_LEN_20MS = 20;
 constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 
+class MockNodeFormatInfoCallback : public INodeFormatInfoCallback {
+public:
+    AudioBasicFormat formatToReturn_;
+    int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override
+    {
+        basicFormat = formatToReturn_;
+        return 0;
+    }
+};
+
 // Helper: create a standard 48kHz stereo->stereo converter node
 static std::shared_ptr<HpaeAudioFormatConverterNode> CreateStdConverter()
 {
@@ -458,6 +468,174 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_CheckUpdateOutInfo_SetOutCh
     // nodeFormatInfoCallback_ is null by default, so CheckUpdateOutInfo returns false
     bool result = converterNode->CheckUpdateOutInfo();
     EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_NoChange
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_NoChange
+ * @tc.desc  : CheckUpdateOutInfo returns false when callback returns same format as current output
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_NoChange, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = STEREO;
+    mockCallback.formatToReturn_.rate = SAMPLE_RATE_48000;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_FallbackZeroChannelsNoChange
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_FallbackZeroChannelsNoChange
+ * @tc.desc  : CheckUpdateOutInfo returns false when callback returns numChannels=0 (fallback to node info matches)
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_FallbackZeroChannelsNoChange, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = 0;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_ChannelChangedSuccess
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_ChannelChangedSuccess
+ * @tc.desc  : CheckUpdateOutInfo returns true and updates channel converter when channel changes
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_ChannelChangedSuccess, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = MONO;
+    mockCallback.formatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_MONO;
+    mockCallback.formatToReturn_.rate = SAMPLE_RATE_48000;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_TRUE(result);
+    EXPECT_EQ(converterNode->channelConverter_.GetOutChannelInfo().numChannels, static_cast<uint32_t>(MONO));
+    EXPECT_EQ(converterNode->GetNodeInfo().channels, static_cast<AudioChannel>(MONO));
+    EXPECT_EQ(converterNode->GetSampleRate(), SAMPLE_RATE_48000);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_ChannelUpdateFails
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_ChannelUpdateFails
+ * @tc.desc  : CheckUpdateOutInfo returns false when UpdateOutChannelInfo fails due to invalid inChannelInfo
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_ChannelUpdateFails, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    // Poison channelConverter by setting invalid inChannelInfo
+    converterNode->channelConverter_.SetInChannelInfo({CH_LAYOUT_UNKNOWN, 0});
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = MONO;
+    mockCallback.formatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_MONO;
+    mockCallback.formatToReturn_.rate = SAMPLE_RATE_48000;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_RateChangedFrameLenUpdated
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_RateChangedFrameLenUpdated
+ * @tc.desc  : CheckUpdateOutInfo returns true and proportionally updates frameLen when rate changes
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_RateChangedFrameLenUpdated, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = STEREO;
+    mockCallback.formatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    mockCallback.formatToReturn_.rate = SAMPLE_RATE_44100;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_TRUE(result);
+    EXPECT_EQ(converterNode->resampler_->GetOutRate(), SAMPLE_RATE_44100);
+    EXPECT_EQ(converterNode->GetNodeInfo().frameLen, 882u);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_ChannelAndRateBothChanged
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_ChannelAndRateBothChanged
+ * @tc.desc  : CheckUpdateOutInfo returns true and updates both channel and rate when both change
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_ChannelAndRateBothChanged, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = MONO;
+    mockCallback.formatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_MONO;
+    mockCallback.formatToReturn_.rate = SAMPLE_RATE_44100;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_TRUE(result);
+    EXPECT_EQ(converterNode->channelConverter_.GetOutChannelInfo().numChannels, static_cast<uint32_t>(MONO));
+    EXPECT_EQ(converterNode->resampler_->GetOutRate(), SAMPLE_RATE_44100);
+    EXPECT_EQ(converterNode->GetNodeInfo().frameLen, 882u);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_FrameLenNotUpdatedOldRateZero
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_FrameLenNotUpdatedOldRateZero
+ * @tc.desc  : CheckUpdateOutInfo does not proportionally update frameLen when oldOutRate was 0
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_FrameLenNotUpdatedOldRateZero, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    // Force resampler outRate to 0 (leaves resampler in broken state with state_=nullptr)
+    converterNode->resampler_->UpdateRates(SAMPLE_RATE_44100, 0);
+    ASSERT_EQ(converterNode->resampler_->GetOutRate(), 0u);
+    size_t frameLenBefore = converterNode->GetNodeInfo().frameLen;
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = STEREO;
+    mockCallback.formatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    mockCallback.formatToReturn_.rate = SAMPLE_RATE_48000;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_TRUE(result);
+    // frameLen NOT proportionally updated because oldOutRate was 0
+    EXPECT_EQ(converterNode->GetNodeInfo().frameLen, frameLenBefore);
+}
+
+/**
+ * @tc.name  : CheckUpdateOutInfo_FallbackWithModifiedResampler
+ * @tc.type  : FUNC
+ * @tc.number: CheckUpdateOutInfo_FallbackWithModifiedResampler
+ * @tc.desc  : CheckUpdateOutInfo with fallback (numChannels=0) detects rate mismatch with modified resampler
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateOutInfo_FallbackWithModifiedResampler, TestSize.Level0)
+{
+    auto converterNode = CreateConverter(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, STEREO);
+    // Change resampler so outRate differs from node info (48000)
+    converterNode->resampler_->UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_44100);
+    ASSERT_EQ(converterNode->resampler_->GetOutRate(), SAMPLE_RATE_44100);
+    MockNodeFormatInfoCallback mockCallback;
+    mockCallback.formatToReturn_.audioChannelInfo.numChannels = 0;
+    converterNode->nodeFormatInfoCallback_ = &mockCallback;
+
+    bool result = converterNode->CheckUpdateOutInfo();
+    EXPECT_TRUE(result);
+    // Rate was restored: fallback uses GetSampleRate()=48000, resampler outRate updated to match
+    EXPECT_EQ(converterNode->resampler_->GetOutRate(), SAMPLE_RATE_48000);
 }
 
 // =========================================================================
@@ -1986,5 +2164,142 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_StandardRate20ms, TestSize
     // Same rate with 20ms frameLen: outputFrameLen20ms_ = 960
     EXPECT_EQ(converterNode->outputFrameLen20ms_, DEFAULT_FRAMELEN_SECOND);
     EXPECT_EQ(converterNode->outputFrameLen20ms_, 960u);
+}
+
+/**
+ * @tc.name  : DoProcess_DrainWithBufferState
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_DrainWithBufferState
+ * @tc.desc  : mode drains processedBuffer_ and propagates buffer state from input
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainWithBufferState, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    // Ensure (default is empty string)
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    converterNode->SetNodeInfo(info);
+    // Populate processedBuffer_ with enough data
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+
+    converterNode->DoProcess();
+    // should drain, processedFrames_ becomes 0
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+}
+
+/**
+ * @tc.name  : DoProcess_InsufficientData
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_InsufficientData
+ * @tc.desc  : outputs silence when processedBuffer_ has insufficient data
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_InsufficientData, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    converterNode->SetNodeInfo(info);
+    // Less than outputFrameLen20ms_
+    converterNode->processedFrames_ = 1;
+    converterNode->processedReadPos_ = 0;
+
+    converterNode->DoProcess();
+    // Not enough data to drain, should fall through to silence
+    EXPECT_EQ(converterNode->processedFrames_, 1u);
+}
+
+/**
+ * @tc.name  : DoProcess_DrainEmptyPreOutputs
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_DrainEmptyPreOutputs
+ * @tc.desc  : drain does not crash when preOutputs is empty
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainEmptyPreOutputs, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    HpaeNodeInfo info = converterNode->GetNodeInfo();
+    converterNode->SetNodeInfo(info);
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+    // No upstream connected, so preOutputs will be empty
+
+    converterNode->DoProcess();
+    // Should drain without crash even with empty preOutputs
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+}
+
+/**
+ * @tc.name  : DoProcess_DrainPath_WithPreOutputs_InvalidBuffer
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_DrainPath_WithPreOutputs_InvalidBuffer
+ * @tc.desc  : Drain path enters buffer state propagation block when upstream
+ *             provides a non-null but invalid buffer (IsValid=false)
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainPath_WithPreOutputs_InvalidBuffer, TestSize.Level0)
+{
+    // Setup upstream node with invalid buffer
+    auto upstreamNode = CreateStdConverter();
+    PcmBufferInfo pcmInfo(STEREO, DEFAULT_FRAMELEN_SECOND, SAMPLE_RATE_48000);
+    HpaePcmBuffer upstreamBuffer(pcmInfo);
+    upstreamBuffer.GetPcmDataBuffer();
+    // Set state to SILENCE|INVALID (value 3) - SetBufferState overwrites entire state word
+    upstreamBuffer.SetBufferState(PCM_BUFFER_STATE_SILENCE | PCM_BUFFER_STATE_INVALID);
+    upstreamNode->outputStream_.WriteDataToOutput(&upstreamBuffer);
+
+    // Setup test node with upstream connection
+    auto converterNode = CreateStdConverter();
+    converterNode->inputStream_.AddPreOutput(
+        upstreamNode->GetSharedInstance(), &upstreamNode->outputStream_);
+
+    // Populate drain conditions
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+    converterNode->enableProcess_ = true;
+
+    // Set pre-state to invalid so IsValid()==true proves drain path set it
+    converterNode->converterOutput_.SetBufferValid(false);
+
+    converterNode->DoProcess();
+
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    // SetBufferState copies full state (SILENCE|INVALID), then SetBufferValid(true) clears INVALID
+    EXPECT_EQ(converterNode->converterOutput_.GetBufferState(), PCM_BUFFER_STATE_SILENCE);
+    EXPECT_TRUE(converterNode->converterOutput_.IsValid());
+}
+
+/**
+ * @tc.name  : DoProcess_DrainPath_EmptyPreOutputs_NoStatePropagation
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_DrainPath_EmptyPreOutputs_NoStatePropagation
+ * @tc.desc  : Drain path skips buffer state propagation when preOutputs is empty,
+ *             converterOutput_ remains in pre-set invalid state
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_DrainPath_EmptyPreOutputs_NoStatePropagation, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+
+    uint32_t frameLen = converterNode->outputFrameLen20ms_;
+    std::vector<float> testData(frameLen * STEREO, 0.5f);
+    converterNode->processedBuffer_ = testData;
+    converterNode->processedFrames_ = frameLen;
+    converterNode->processedReadPos_ = 0;
+    converterNode->enableProcess_ = true;
+
+    // Set pre-state to invalid so IsValid()==false proves drain path did NOT set it
+    converterNode->converterOutput_.SetBufferValid(false);
+
+    converterNode->DoProcess();
+
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    // preOutputs is empty, so inner if block is skipped, SetBufferValid(true) never called
+    EXPECT_FALSE(converterNode->converterOutput_.IsValid());
 }
 }

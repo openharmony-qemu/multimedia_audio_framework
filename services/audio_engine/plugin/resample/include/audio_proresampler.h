@@ -39,6 +39,7 @@ public:
     uint32_t GetInRate() const override;
     uint32_t GetOutRate() const override;
     uint32_t GetChannels() const override;
+    uint32_t GetDelayFrames() const override;
     uint32_t GetQuality() const;
 private:
     std::string ErrCodeToString(int32_t errCode);
@@ -51,6 +52,7 @@ private:
     uint32_t quality_;
     uint32_t expectedOutFrameLen_ = 0;
     uint32_t expectedInFrameLen_ = 0;
+    uint32_t lastDelayFrames_ = 0;
     SingleStagePolyphaseResamplerState* state_ = nullptr;
     std::vector<float> tmpOutBuf_;
 };

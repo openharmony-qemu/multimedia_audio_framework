@@ -82,6 +82,8 @@ public:
 
     static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
 
+    static bool IsRingerStreamUsage(const StreamUsage &usage);
+
     static bool IsRingerAudioScene(const AudioScene &audioScene);
 
     static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
@@ -181,6 +183,7 @@ public:
         const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
+    static bool VerifyCapturePrivatePlayback(uint32_t tokenId);
     static bool CheckCallingUidPermission(const std::vector<uid_t> &allowedUids);
     static int32_t StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
         const char* permission);
@@ -288,9 +291,16 @@ public:
     static void CloseDumpFile(FILE **dumpFile);
     static std::map<std::string, std::string> g_lastPara;
     static void OpenDumpFile(std::string para, std::string fileName, FILE **file);
+    static void OpenDumpFile(const std::string &para, const std::string &fileName, FILE **file,
+        AudioDumpFileType fileType);
+    static std::string GetMetadataServerDumpFileName(const std::string &halName, int32_t sourceType,
+        int64_t timestamp);
+    static std::string GetMetadataClientDumpFileName(uint32_t sessionId);
 private:
     static FILE *OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType);
     static void ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName);
+    static void ChangeDumpFileState(const std::string &para, FILE **dumpFile, const std::string &fileName,
+        AudioDumpFileType fileType);
 };
 
 template <typename...Args>
@@ -622,6 +632,9 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
     HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT = 16,
     HDI_CAPTURE_OFFSET_INTERPHONE = 17,
+    HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_TYPEC = 18,
+    HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_WIRED = 19,
+    HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_BT_NER = 20,
     HDI_CAPTURE_OFFSET_LIVE = 21,
     HDI_CAPTURE_OFFSET_CAMCORDER = 23,
 };
@@ -647,7 +660,8 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_TYPEC = 18,
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED = 19,
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS = 20, // include bt_sco, a2dp_offload and nearlink
-    HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21
+    HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21,
+    HDI_RENDER_OFFSET_REMOTE_MULTICHANNEL = 22
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
@@ -674,12 +688,15 @@ std::string ConvertToStringForChannel(const AudioChannel channel);
 uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
 
 std::string GenerateAppsUidStr(std::unordered_set<int32_t> appsUid);
+std::string GenerateAppsTokenIdStr(std::unordered_set<uint32_t> appsTokenId);
 
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
 
 uint64_t HexStrToNum(const std::string &str);
 
 void BindBigAndMidCore();
+
+bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

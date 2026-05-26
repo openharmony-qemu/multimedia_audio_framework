@@ -43,6 +43,20 @@ public:
     virtual void TearDown() {}
 };
 
+class SourceWrapperMetadataCallbackTest : public IAudioSourceCallback {
+public:
+    void OnHdiCaptureCallback(CaptureCallbackType type, const std::vector<uint8_t> &data) override
+    {
+        callbackCount_++;
+        lastType_ = type;
+        lastData_ = data;
+    }
+
+    int32_t callbackCount_ = 0;
+    CaptureCallbackType lastType_ = CB_CAMCORDER_METADATA;
+    std::vector<uint8_t> lastData_;
+};
+
 /**
  * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_001
@@ -372,6 +386,34 @@ HWTEST_F(UtilUnitTest, CallbackWrapperUnitTest_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test CallbackWrapper API
+ * @tc.number : CallbackWrapperUnitTest_003
+ * @tc.desc   : Test SourceCallbackWrapper metadata callback dispatch
+ */
+HWTEST_F(UtilUnitTest, CallbackWrapperUnitTest_003, TestSize.Level1)
+{
+    SourceCallbackWrapper sourceCbWrapper;
+    auto sourceCb = std::make_shared<SourceWrapperMetadataCallbackTest>();
+    SourceWrapperMetadataCallbackTest sourceRawCb;
+    std::shared_ptr<IAudioSourceCallback> nullSourceCb = nullptr;
+    IAudioSourceCallback *nullSourceRawCb = nullptr;
+    std::vector<uint8_t> metadata = { 1, 2, 3, 4 };
+
+    sourceCbWrapper.RegistCallback(HDI_CB_CAPTURE_STATE, nullSourceCb);
+    sourceCbWrapper.RegistCallback(HDI_CB_CAPTURE_STATE, nullSourceRawCb);
+    sourceCbWrapper.RegistCallback(HDI_CB_CAPTURE_CAMCORDER_METADATA, sourceCb);
+    sourceCbWrapper.RegistCallback(HDI_CB_CAPTURE_CAMCORDER_METADATA, &sourceRawCb);
+    sourceCbWrapper.OnHdiCaptureCallback(CB_CAMCORDER_METADATA, metadata);
+
+    EXPECT_EQ(sourceCb->callbackCount_, 1);
+    EXPECT_EQ(sourceCb->lastType_, CB_CAMCORDER_METADATA);
+    EXPECT_EQ(sourceCb->lastData_, metadata);
+    EXPECT_EQ(sourceRawCb.callbackCount_, 1);
+    EXPECT_EQ(sourceRawCb.lastType_, CB_CAMCORDER_METADATA);
+    EXPECT_EQ(sourceRawCb.lastData_, metadata);
+}
+
+/**
  * @tc.name   : Test KvPair API
  * @tc.number : KvPairUnitTest_001
  * @tc.desc   : Test KvPair action
@@ -494,6 +536,24 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_014, TestSize.Level1)
 
     info = idHandler.ParseInfo(btId);
     EXPECT_EQ(info, "BT_Speaker");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_015
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with remote_multichannel
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_015, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClass("remote_multichannel");
+    EXPECT_NE(id, HDI_INVALID_ID);
+    
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_REMOTE_MULTICHANNEL);
 }
 
 } // namespace AudioStandard

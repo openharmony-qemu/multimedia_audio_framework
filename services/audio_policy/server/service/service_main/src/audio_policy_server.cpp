@@ -143,7 +143,6 @@ const std::string NEARLINK_LIST = "audio_nearlink_list";
 constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
-static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // HRTF size
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -290,6 +289,7 @@ void AudioPolicyServer::Init()
 #endif
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
+    coreService_->SetInterruptService(interruptService_);
     coreService_->SetEcAndMicRefEnableState(GetEcEnableParam(), micRefEnableState_);
     coreService_->Init();
 
@@ -1701,6 +1701,9 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
     if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
     }
+    desc.deviceType_ =
+        (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?
+        DEVICE_TYPE_BLUETOOTH_A2DP_IN : desc.deviceType_;
 }
 
 // LCOV_EXCL_START
@@ -1793,6 +1796,10 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
 int32_t AudioPolicyServer::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    auto deviceTokenId = audioDeviceDescriptor ? audioDeviceDescriptor->deviceTokenId_ : 0;
+    CHECK_AND_RETURN_RET_LOG(deviceTokenId == 0 || deviceTokenId == callerTokenId, ERR_PERMISSION_DENIED,
+        "invalid tokenId");
     return eventEntry_->SelectInputDeviceByUid(audioDeviceDescriptor, callerUid);
 }
 
@@ -1803,6 +1810,9 @@ int32_t AudioPolicyServer::ExcludeOutputDevices(int32_t audioDevUsageIn,
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(audioDevUsageIn);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "No system permission");
+    CHECK_AND_RETURN_RET_LOG(!newAudioDeviceDescriptors.empty() && newAudioDeviceDescriptors[0] != nullptr,
+        ERROR, "audioDeviceDescriptors is empty or audioDeviceDescriptors[0] is nullptr");
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "eventEntry_ is nullptr");
     return eventEntry_->ExcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
@@ -1813,7 +1823,9 @@ int32_t AudioPolicyServer::UnexcludeOutputDevices(int32_t audioDevUsageIn,
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(audioDevUsageIn);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "No system permission");
-
+    CHECK_AND_RETURN_RET_LOG(!newAudioDeviceDescriptors.empty() && newAudioDeviceDescriptors[0] != nullptr,
+        ERROR, "audioDeviceDescriptors is empty or audioDeviceDescriptors[0] is nullptr");
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_MEMORY_ALLOC_FAILED, "eventEntry_ is nullptr");
     return eventEntry_->UnexcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
@@ -2931,22 +2943,6 @@ int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt,
 {
     if (interruptService_ != nullptr) {
         return interruptService_->GetSessionInfoInFocus(audioInterrupt, zoneID);
-    }
-    return ERR_UNKNOWN;
-}
-
-int32_t AudioPolicyServer::NotifyStreamStandby(int32_t pid, uint32_t streamId)
-{
-    if (interruptService_ != nullptr) {
-        return interruptService_->UpdateStreamFocusStateToStandby(pid, streamId);
-    }
-    return ERR_UNKNOWN;
-}
-
-int32_t AudioPolicyServer::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
-{
-    if (interruptService_ != nullptr) {
-        return interruptService_->UpdateStreamFocusStateToActive(pid, streamId);
     }
     return ERR_UNKNOWN;
 }
@@ -4355,9 +4351,6 @@ int32_t AudioPolicyServer::SetPersonalizedSpatializationEnabled(
 
 int32_t AudioPolicyServer::DownloadPersonalizedHRTF(int32_t fd, int64_t length)
 {
-    CHECK_AND_RETURN_RET_LOG(fd >= 0, ERR_INVALID_PARAM, "invalid fd: %{public}d", fd);
-    CHECK_AND_RETURN_RET_LOG(length > 0 && length<= MAX_HRTF_LENGTH,
-        ERR_INVALID_PARAM, "invalid length: %{public}" PRId64, length);
     if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;

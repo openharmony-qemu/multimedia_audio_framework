@@ -109,7 +109,10 @@ public:
     static string ToTaiheString(const std::string &src);
     static AudioRendererInfo ToTaiheRendererInfo(const OHOS::AudioStandard::AudioRendererInfo &rendererInfo);
     static AudioCapturerInfo ToTaiheCapturerInfo(const OHOS::AudioStandard::AudioCapturerInfo &capturerInfo);
-    static AudioSamplingRate ToTaiheAudioSamplingRate(OHOS::AudioStandard::AudioSamplingRate audioSamplingRate);
+    static AudioSamplingRateOrInt ToTaiheAudioSamplingRate(OHOS::AudioStandard::AudioSamplingRate audioSamplingRate);
+    static int32_t GetIntValueFromSamplingRateUnion(AudioSamplingRateOrInt const &samplingRate);
+    static bool IsRendererCustomSampleRateValid(int32_t sampleRate);
+    static bool IsValidAudioSamplingRate(int32_t sampleRate);
     static AudioChannel ToTaiheAudioChannel(OHOS::AudioStandard::AudioChannel audioChannel);
     static AudioSampleFormat ToTaiheAudioSampleFormat(OHOS::AudioStandard::AudioSampleFormat audioSampleFormat);
     static AudioStreamInfo ToTaiheAudioStreamInfo(std::shared_ptr<OHOS::AudioStandard::AudioStreamInfo> &src);

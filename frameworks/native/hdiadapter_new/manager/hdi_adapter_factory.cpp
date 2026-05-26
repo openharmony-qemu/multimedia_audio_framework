@@ -45,6 +45,7 @@
 #include "sink/remote_audio_render_sink.h"
 #include "sink/remote_fast_audio_render_sink.h"
 #include "sink/remote_offload_audio_render_sink.h"
+#include "sink/remote_multichannel_audio_render_sink.h"
 #include "source/remote_audio_capture_source.h"
 #include "source/remote_fast_audio_capture_source.h"
 #include "adapter/remote_device_manager.h"
@@ -61,6 +62,34 @@ HdiAdapterFactory &HdiAdapterFactory::GetInstance(void)
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateAuxiliarySink(void)
 {
     return std::make_shared<AuxiliarySink>();
+}
+
+std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSinkExt(uint32_t type, const std::string &info)
+{
+    std::shared_ptr<IAudioRenderSink> sink = nullptr;
+    switch (type) {
+#ifdef FEATURE_DISTRIBUTE_AUDIO
+        case HDI_ID_TYPE_REMOTE:
+            sink = CreateRemoteRenderSink(info);
+            break;
+        case HDI_ID_TYPE_REMOTE_FAST:
+            sink = CreateRemoteFastRenderSink(info);
+            break;
+        case HDI_ID_TYPE_REMOTE_OFFLOAD:
+            sink = CreateRemoteOffloadRenderSink(info);
+            break;
+        case HDI_ID_TYPE_INTERPHONE:
+            sink = CreateRemoteOffloadRenderSink(info);
+            break;
+        case HDI_ID_TYPE_REMOTE_MULTICHANNEL:
+            sink = CreateRemoteMultichannelRenderSink(info);
+            break;
+#endif
+        default:
+            AUDIO_ERR_LOG("invalid type");
+            break;
+    }
+    return sink;
 }
 
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t renderId)
@@ -97,22 +126,8 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT:
             sink = std::make_shared<CabinAudioRenderSink>();
             break;
-#ifdef FEATURE_DISTRIBUTE_AUDIO
-        case HDI_ID_TYPE_REMOTE:
-            sink = CreateRemoteRenderSink(info);
-            break;
-        case HDI_ID_TYPE_REMOTE_FAST:
-            sink = CreateRemoteFastRenderSink(info);
-            break;
-        case HDI_ID_TYPE_REMOTE_OFFLOAD:
-            sink = CreateRemoteOffloadRenderSink(info);
-            break;
-        case HDI_ID_TYPE_INTERPHONE:
-            sink = CreateRemoteOffloadRenderSink(info);
-            break;
-#endif
         default:
-            AUDIO_ERR_LOG("invalid type");
+            sink = CreateRenderSinkExt(type, info);
             break;
     }
     return sink;
@@ -192,6 +207,12 @@ bool HdiAdapterFactory::IsMultiStreamInfo(const std::string &info)
            info == "Hdmi_Speaker" || info == "Wireless_Speaker";
 }
 
+bool HdiAdapterFactory::IsMultiStreamCaptureInfo(const std::string &info)
+{
+    return info == "Built_in_typec" || info == "Built_in_wired" ||
+        info == "Built_in_bt";
+}
+
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreatePrimaryRenderSink(const uint32_t renderId,
     const std::string &info)
 {
@@ -234,6 +255,12 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteOffloadRenderSi
     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
     return std::make_shared<RemoteOffloadAudioRenderSink>(info);
 }
+
+std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteMultichannelRenderSink(const std::string &info)
+{
+    CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
+    return std::make_shared<RemoteMultichannelAudioRenderSink>(info);
+}
 #endif
 
 std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSource(const uint32_t captureId,
@@ -241,6 +268,9 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSour
 {
     AUDIO_INFO_LOG("info: %{public}s", info.c_str());
     if (info == HDI_ID_INFO_USB || info == HDI_ID_INFO_ACCESSORY) {
+        return std::make_shared<AudioCaptureSource>(captureId, info);
+    }
+    if (IsMultiStreamCaptureInfo(info)) {
         return std::make_shared<AudioCaptureSource>(captureId, info);
     }
     return std::make_shared<AudioCaptureSource>(captureId);

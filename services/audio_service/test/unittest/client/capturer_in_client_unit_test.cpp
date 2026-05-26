@@ -22,6 +22,7 @@
 #include "audio_policy_manager.h"
 #include "system_ability_definition.h"
 #include "capturer_in_client_inner.h"
+#include "ipc_stream_listener_impl.h"
 
 using namespace testing::ext;
 
@@ -97,6 +98,40 @@ public:
 class CapturerPositionCallbackTest : public CapturerPositionCallback {
 public:
     void OnMarkReached(const int64_t &framePosition) override {};
+};
+
+class CapturerInClientMetaDataCallbackTest : public AudioCapturerMetaDataCallback {
+public:
+    void OnMetaData(const CaptureMetaDataType type, const std::vector<uint8_t> &data) override
+    {
+        callbackCount_++;
+        lastType_ = type;
+        lastData_ = data;
+    }
+
+    int32_t callbackCount_ = 0;
+    CaptureMetaDataType lastType_ = CaptureMetaDataType::CAMCORDER;
+    std::vector<uint8_t> lastData_;
+};
+
+class CapturerInClientStreamListenerTest : public IStreamListener {
+public:
+    int32_t OnOperationHandled(Operation operation, int64_t result) override
+    {
+        (void)operation;
+        (void)result;
+        return SUCCESS;
+    }
+
+    int32_t OnMetaData(const std::vector<uint8_t> &metaData) override
+    {
+        callbackCount_++;
+        lastData_ = metaData;
+        return SUCCESS;
+    }
+
+    int32_t callbackCount_ = 0;
+    std::vector<uint8_t> lastData_;
 };
 
 class IpcStreamTest : public IIpcStream {
@@ -312,6 +347,63 @@ HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
     operation = Operation::START_STREAM;
     ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnMetaData API
+ * @tc.type  : FUNC
+ * @tc.number: OnMetaData_001
+ * @tc.desc  : Test metadata callback validation and dispatch.
+ */
+HWTEST(CapturerInClientUnitTest, OnMetaData_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+
+    std::vector<uint8_t> emptyMetadata;
+    int32_t ret = capturerInClientInner->OnMetaData(emptyMetadata);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    capturerInClientInner->DumpMetadata(emptyMetadata);
+
+    std::vector<uint8_t> metadata = { 1, 2, 3, 4 };
+    ret = capturerInClientInner->OnMetaData(metadata);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+
+    auto callback = std::make_shared<CapturerInClientMetaDataCallbackTest>();
+    EXPECT_EQ(capturerInClientInner->SetCapturerMetaDataCallback(nullptr), ERR_INVALID_PARAM);
+    EXPECT_EQ(capturerInClientInner->SetCapturerMetaDataCallback(callback), SUCCESS);
+
+    ret = capturerInClientInner->OnMetaData(metadata);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(callback->callbackCount_, 1);
+    EXPECT_EQ(callback->lastType_, CaptureMetaDataType::CAMCORDER);
+    EXPECT_EQ(callback->lastData_, metadata);
+}
+
+/**
+ * @tc.name  : Test IpcStreamListenerImpl OnMetaData API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamListenerImplOnMetaData_001
+ * @tc.desc  : Test metadata listener dispatch and expired listener branches.
+ */
+HWTEST(CapturerInClientUnitTest, IpcStreamListenerImplOnMetaData_001, TestSize.Level1)
+{
+    std::vector<uint8_t> metadata = { 1, 2, 3, 4 };
+    auto streamListener = std::make_shared<CapturerInClientStreamListenerTest>();
+    auto ipcListener = sptr<IpcStreamListenerImpl>::MakeSptr(streamListener);
+    ASSERT_NE(ipcListener, nullptr);
+
+    int32_t ret = ipcListener->OnMetaData(metadata);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(streamListener->callbackCount_, 1);
+    EXPECT_EQ(streamListener->lastData_, metadata);
+
+    auto expiredListener = std::make_shared<CapturerInClientStreamListenerTest>();
+    auto expiredIpcListener = sptr<IpcStreamListenerImpl>::MakeSptr(expiredListener);
+    ASSERT_NE(expiredIpcListener, nullptr);
+    expiredListener.reset();
+    ret = expiredIpcListener->OnMetaData(metadata);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 /**

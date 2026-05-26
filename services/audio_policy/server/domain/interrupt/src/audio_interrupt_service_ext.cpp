@@ -97,7 +97,7 @@ void AudioInterruptService::AudioInterruptDeathRecipient::OnRemoteDied(const wpt
 {
     std::shared_ptr<AudioInterruptService> service = service_.lock();
     if (service != nullptr) {
-        service->RemoveClient(ZONEID_DEFAULT, streamId_);
+        service->RemoveClient(streamId_);
     }
 }
 
@@ -530,6 +530,7 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
     SendInterruptEventCallback(forceUnmute, sessionId, audioInterrupt);
     AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
     streamCollector_.CapturerMutedFlagChange(sessionId, 0);
+    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer_ is nullptr");
     policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::ResetInterruptMuteState");
 }
 

@@ -18,6 +18,7 @@
 
 #include "audio_device_manager.h"
 
+#include "ipc_skeleton.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_device_parser.h"
@@ -826,12 +827,12 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCap
 // LCOV_EXCL_STOP
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice(StreamUsage streamUsage)
 {
-    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         AUDIO_DEBUG_LOG("Invalid stream usage");
     }
 
     shared_ptr<AudioDeviceDescriptor> devDesc;
-    if (hasEarpiece_ && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION) {
+    if (hasEarpiece_ && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION && streamUsage != STREAM_USAGE_INTERPHONE) {
         devDesc = make_shared<AudioDeviceDescriptor>(earpiece_);
     } else {
         devDesc = make_shared<AudioDeviceDescriptor>(speaker_);
@@ -1081,6 +1082,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     if (remoteInfoNetworkId_ != "" && remoteInfoDeviceType_ != DEVICE_TYPE_DEFAULT) {
         ReorderAudioDevices(audioDeviceDescriptors, remoteInfoNetworkId_, remoteInfoDeviceType_);
     }
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(audioDeviceDescriptors);
     return audioDeviceDescriptors;
 }
 
