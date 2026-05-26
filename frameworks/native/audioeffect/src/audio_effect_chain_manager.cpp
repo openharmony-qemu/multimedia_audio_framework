@@ -41,6 +41,7 @@ constexpr float EPSILON = 1e-6f;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
 const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
+constexpr int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024;
 
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
@@ -2813,8 +2814,8 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBin(const int32_t &fd, co
 
 int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length)
 {
-    if (fd < 0 || length == 0) {
-        AUDIO_INFO_LOG("fd < 0 or length == 0, UpdatePersonalizedHRTFBinToArm failed");
+    if (fd < 0 || length <= 0 || length > MAX_HRTF_LENGTH) {
+        AUDIO_INFO_LOG("fd < 0 or length invalid, UpdatePersonalizedHRTFBinToArm failed");
         return ERR_SAVE_HRTF_FAIL;
     }
 
@@ -2839,7 +2840,8 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
     ssize_t n;
 
     while (remaining > 0) {
-        size_t toRead = (remaining < sizeof(buffer)) ? remaining : sizeof(buffer);
+        size_t toRead = (static_cast<size_t>(remaining) < sizeof(buffer)) ?
+            static_cast<size_t>(remaining) : sizeof(buffer);
         n = read(fd, buffer.data(), toRead);
         if (n <= 0) {
             close(outFd);
