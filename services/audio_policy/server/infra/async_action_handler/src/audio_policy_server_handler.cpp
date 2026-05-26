@@ -1635,6 +1635,25 @@ bool AudioPolicyServerHandler::ShouldSkipDuplicateInputCallback(int32_t clientPi
     return true;  // All devices same, skip callback
 }
 
+void AudioPolicyServerHandler::ClearPreferredDeviceDedupCache(int32_t clientId, CallbackChange callbackchange)
+{
+    if (callbackchange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
+        lastSentOutputDeviceMap_.erase(clientId);
+        {
+            std::lock_guard<std::mutex> rendererLock(clientCbRendererInfoMapMutex_);
+            clientCbRendererInfoMap_.erase(clientId);
+        }
+        AUDIO_INFO_LOG("Cleared output dedup cache and renderer info for clientId:%{public}d", clientId);
+    } else if (callbackchange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
+        lastSentInputDeviceMap_.erase(clientId);
+        {
+            std::lock_guard<std::mutex> capturerLock(clientCbCapturerFilterMapMutex_);
+            clientCbCapturerFilterMap_.erase(clientId);
+        }
+        AUDIO_INFO_LOG("Cleared input dedup cache and capturer filter for clientId:%{public}d", clientId);
+    }
+}
+
 void AudioPolicyServerHandler::HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -2380,8 +2399,11 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
     if (uid == RSS_UID) {
         pidOfRss_ = clientId;
     }
-    lock_guard<mutex> runnerlock(handleMapMutex_);
+    std::lock_guard<std::mutex> runnerlock(handleMapMutex_);
     clientCallbacksMap_[clientId][callbackchange] = enable;
+    if (!enable) {
+        ClearPreferredDeviceDedupCache(clientId, callbackchange);
+    }
     string str = (enable ? "true" : "false");
     AUDIO_INFO_LOG("Set clientId:%{public}d, callbacks:%{public}d, enable:%{public}s",
         clientId, callbackchange, str.c_str());

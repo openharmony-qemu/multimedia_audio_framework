@@ -79,6 +79,13 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     }
+
+    // Force trigger callback to bypass currentOutputDevice change check
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_OPERATION_FAILED, "coreService is null");
+    coreService->OnPreferredOutputDeviceUpdated(
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(uid),
+        AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -688,6 +695,13 @@ void AudioSelectInterfaceService::OnForcedDeviceSelected(DeviceType devType, con
             SelectOutputDevice(filter, {devDesc}, 0, isNeedNotifyBt);
         }
     }
+
+    // Force trigger callback, same as OnForcedDeviceSelected in audio_device_status.cpp
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
+    coreService->OnPreferredOutputDeviceUpdated(
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(filter->uid),
+        AudioStreamDeviceChangeReason::OVERRODE);
 }
 
 void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
