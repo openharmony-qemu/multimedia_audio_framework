@@ -113,12 +113,15 @@ void HpaeAudioFormatConverterNode::DoProcess()
         "credit=%{public}u/%{public}u, threshold=%{public}u",
         GetNodeId(), hasValidInput, enableProcess_, processedFrames_, outputFrameLen20ms_,
         unprocessedFrames_, pullAheadCredit_, pullAheadMaxCredit_, resamplerInputThreshold_);
+    if (resampler_ == nullptr) {
+        AUDIO_ERR_LOG("NodeId %{public}d resampler_ is nullptr", GetNodeId());
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false);
+        outputStream_.WriteDataToOutput(&silenceData_);
+        return;
+    }
     if (hasPreOutput) {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(resampler_, &silenceData_,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-                    BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false),
-            "NodeId %{public}d resampler_ is nullptr", GetNodeId());
         // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
         CheckAndUpdateInfo(preOutputs[0]);
     }
