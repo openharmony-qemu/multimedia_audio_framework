@@ -131,6 +131,7 @@ int32_t AudioRenderSink::Start(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Start");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     struct AudioSampleAttributes attrInfo = {};
     audioRender_->GetSampleAttributes(audioRender_, &attrInfo);
 #ifdef FEATURE_POWER_MANAGER
