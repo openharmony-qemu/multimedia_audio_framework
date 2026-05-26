@@ -104,7 +104,6 @@ const vector<RouterType> g_testRouterTypes = {
     ROUTER_TYPE_PUBLIC_PRIORITY,
     ROUTER_TYPE_PAIR_DEVICE,
     ROUTER_TYPE_USER_SELECT,
-    ROUTER_TYPE_APP_SELECT,
 };
 
 const vector<DeviceType> g_testDeviceTypes = {

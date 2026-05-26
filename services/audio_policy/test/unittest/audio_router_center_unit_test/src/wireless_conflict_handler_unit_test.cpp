@@ -58,7 +58,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_002, TestSize.Level1)
     WirelessConflictHandler handler;
     
     EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_USER_SELECT));
-    EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_APP_SELECT));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_DEFAULT));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_PAIR_DEVICE));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_NONE));
@@ -83,8 +82,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
     // Forced input: priority PRIORITY_FORCED_INPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, false), PRIORITY_FORCED_INPUT);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
-        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, false), PRIORITY_FORCED_INPUT);
     
     // Normal input: priority PRIORITY_NORMAL_INPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
@@ -93,8 +90,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
     // Forced output: priority PRIORITY_FORCED_OUTPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, true), PRIORITY_FORCED_OUTPUT);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
-        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, true), PRIORITY_FORCED_OUTPUT);
     
     // Normal output: priority PRIORITY_NORMAL_OUTPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,

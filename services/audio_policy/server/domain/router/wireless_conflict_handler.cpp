@@ -37,8 +37,7 @@ bool WirelessConflictHandler::IsCallStreamUsage(StreamUsage streamUsage)
 
 bool WirelessConflictHandler::IsForcedRouterType(RouterType routerType)
 {
-    return routerType == ROUTER_TYPE_USER_SELECT ||
-           routerType == ROUTER_TYPE_APP_SELECT;
+    return routerType == ROUTER_TYPE_USER_SELECT;
 }
 
 int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sourceType,

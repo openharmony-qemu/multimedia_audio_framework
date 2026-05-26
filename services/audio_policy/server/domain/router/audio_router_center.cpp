@@ -70,7 +70,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
         shared_ptr<AudioDeviceDescriptor> desc = FetchMediaRenderDevice(info.streamUsage, info.clientUID, routerType,
             {bypassType, ROUTER_TYPE_PRIVACY_PRIORITY}, streamId);
         static std::set<RouterType> higherRouterSet = {
-            ROUTER_TYPE_APP_SELECT, ROUTER_TYPE_USER_SELECT, ROUTER_TYPE_PAIR_DEVICE};
+            ROUTER_TYPE_USER_SELECT, ROUTER_TYPE_PAIR_DEVICE};
         CHECK_AND_RETURN_RET(higherRouterSet.count(routerType) == 0, desc);
         RouterType lowerRouterType = routerType;
 
