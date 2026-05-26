@@ -1823,7 +1823,7 @@ int32_t RendererInServer::StopInner()
         managerType_ == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
+    AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(streamIndex_, false);
     MarkStaticFadeOut();
 
     if (IsMovieOffloadStream()) {

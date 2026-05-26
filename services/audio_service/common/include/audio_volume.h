@@ -61,6 +61,7 @@ public:
     void SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor, uint32_t durationMs = 0);
     void SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPowerFactor);
     void SetStreamVolumeMute(uint32_t sessionId, bool isMuted);
+    void SetStreamVolumeMuteForZone(uint32_t sessionId, bool isMuted);
     void SetNonInterruptMute(uint32_t sessionId, bool muteFlag);
     void SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted);
 
@@ -151,6 +152,7 @@ private:
         std::make_shared<std::unordered_set<uint32_t>>();
     std::atomic<bool> isDoNotDisturbStatus_{false};
     bool appIndividualVolumeEnabled_ = false;
+    std::set<uint32_t> mutedSessionIdsForZone_ {};
 };
 
 class StreamVolume {
