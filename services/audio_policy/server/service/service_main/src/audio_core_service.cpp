@@ -808,11 +808,11 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
         streamDesc->GetMainNewDeviceDesc()) && streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_NEARLINK &&
         audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) &&
         !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
-            streamDesc->isNearLinkCollaborationEnable = true;
-            JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable true");
+            streamDesc->isNearLinkCollaborationEnable_ = true;
+            JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable_ true");
             return true;
     }
-    streamDesc->isNearLinkCollaborationEnable = false;
+    streamDesc->isNearLinkCollaborationEnable_ = false;
 
     if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
         pipeManager_->PreferMultiChannelPipe(streamDesc)) {

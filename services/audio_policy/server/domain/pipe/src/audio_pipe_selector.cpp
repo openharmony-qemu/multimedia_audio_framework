@@ -287,8 +287,8 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
     
-    if (streamDesc->isNearLinkCollaborationEnable && (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
-        streamDesc->isNearLinkCollaborationEnable = false;
+    if (streamDesc->isNearLinkCollaborationEnable_ && (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
+        streamDesc->isNearLinkCollaborationEnable_ = false;
     }
 
     std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList {};
@@ -369,9 +369,9 @@ void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
     int32_t fastOutputNum = 0;
     int32_t fastInputNum = 0;
     for (auto &streamDesc : streamDescs) {
-        if (streamDesc->isNearLinkCollaborationEnable &&
+        if (streamDesc->isNearLinkCollaborationEnable_ &&
             (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
-            streamDesc->isNearLinkCollaborationEnable = false;
+            streamDesc->isNearLinkCollaborationEnable_ = false;
         }
         if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_FAST && ++fastOutputNum > MAX_FAST_STREAM_COUNT) {
             AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
@@ -1225,7 +1225,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.adapterName_ = adapterInfoPtr->adapterName;
     info.pipeRole_ = pipeInfoPtr->role_;
     info.name_ = pipeInfoPtr->name_;
-    info.isCollaborationEnable = streamPropInfo->isCollaborationEnable;
+    info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     info.InitAudioStreamInfo();
 }
 
@@ -1512,12 +1512,12 @@ bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(
 void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
     std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    if (streamPropInfo->isCollaborationEnable == pipeInfo->isCollaborationEnable) {
+    if (streamPropInfo->isCollaborationEnable_ == pipeInfo->isCollaborationEnable_) {
         return;
     }
 
-    AUDIO_INFO_LOG("MatchCollaborativePipe isCollaborationEnable old:%{public}d, new:%{public}d",
-        pipeInfo->isCollaborationEnable, streamPropInfo->isCollaborationEnable);
+    AUDIO_INFO_LOG("MatchCollaborativePipe isCollaborationEnable_ old:%{public}d, new:%{public}d",
+        pipeInfo->isCollaborationEnable_, streamPropInfo->isCollaborationEnable_);
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, *pipeInfo);
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
