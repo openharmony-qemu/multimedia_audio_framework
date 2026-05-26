@@ -58,6 +58,22 @@ static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t REFETCH_DEVICE = 4;
 const int32_t DEFAULT_UID = -1;
 
+// Supported audio parameters for fast audio stream
+const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
+    SAMPLE_RATE_48000,
+};
+
+const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+};
+
+const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
+    SAMPLE_S16LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
+};
+
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
@@ -819,6 +835,34 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
     } else {
         return false;
     }
+}
+
+
+bool AudioCoreService::IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    const auto &streamInfo = streamDesc->streamInfo_;
+    // check audio sample rate
+    const AudioSamplingRate samplingRate = streamInfo.samplingRate;
+    auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
+    CHECK_AND_RETURN_RET_LOG(rateItem != AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), false,
+        "Sampling rate %{public}d does not meet the requirements", samplingRate);
+
+    // check audio channel
+    const AudioChannel channels = streamInfo.channels;
+    auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
+    CHECK_AND_RETURN_RET_LOG(channelItem != AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), false,
+        "Audio channel %{public}d does not meet the requirements", channels);
+
+    // check audio sample format
+    const AudioSampleFormat format = streamInfo.format;
+    auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
+    CHECK_AND_RETURN_RET_LOG(formatItem != AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), false,
+        "Audio sample format %{public}u does not meet the requirements", format);
+
+    return true;
 }
 
 int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)
