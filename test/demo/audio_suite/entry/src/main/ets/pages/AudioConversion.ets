@@ -22,17 +22,14 @@ interface NativeAudioFormat {
   sampleFormat: number;
 }
 
-// Audio conversion parameters interface
-interface AudioConversionParams {
-  inputFormat: NativeAudioFormat;
-  outputFormat: NativeAudioFormat;
-  fd: number;
-}
-
 // Concurrent function for background audio conversion
 @Concurrent
-function convertAudioInBackground(params: AudioConversionParams): string {
-  return audioNapi.audioFormatConverter(params.inputFormat, params.outputFormat, params.fd);
+function convertAudioInBackground(
+  inputFormat: NativeAudioFormat,
+  outputFormat: NativeAudioFormat,
+  fd: number
+): string {
+  return audioNapi.audioFormatConverter(inputFormat, outputFormat, fd);
 }
 
 // Sample format enum
@@ -160,15 +157,12 @@ export { AudioConversionBuilder };
 @Component
 export struct AudioConversion {
   pageInfos: NavPathStack = new NavPathStack();
-  @State outputFilePath: string = '';
-  @State message: string = '音频格式转换';
+  private readonly MESSAGE: string = '音频格式转换'; // Static title, never changes
   @State createResult: string = '';
   @State processResult: string = '';
   @State selectedFileUri: string = '';
   @State selectedFileName: string = '';
   @State fileInfo: AudioFileInfo | null = null;
-  @State outputFileName: string = '';
-  @State wavHeaderSize: number = 0; // WAV file header size, only valid for WAV input
   @State inputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
     samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
@@ -183,11 +177,16 @@ export struct AudioConversion {
   };
   @State isConverting: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
+  
+  // Internal variables (not used in UI, no need for @State)
+  private outputFileName: string = '';
+  private wavHeaderSize: number = 0; // WAV file header size, only valid for WAV input
+  private outputFilePath: string = '';
 
   @Builder
   buildHeaderSection() {
     Column() {
-      Text(this.message)
+      Text(this.MESSAGE)
         .fontSize(24)
         .fontWeight(FontWeight.Bold)
         .margin({ top: 10, bottom: 10 })
@@ -871,22 +870,19 @@ export struct AudioConversion {
 
     try {
       // Execute conversion in background thread using taskpool
-      const conversionParams: AudioConversionParams = {
-        inputFormat: {
-          encodingType: this.inputFormat.encodingType,
-          samplingRate: this.inputFormat.samplingRate,
-          channelLayout: this.inputFormat.channelLayout,
-          sampleFormat: this.inputFormat.sampleFormat
-        },
-        outputFormat: {
-          encodingType: this.outputFormat.encodingType,
-          samplingRate: this.outputFormat.samplingRate,
-          channelLayout: this.outputFormat.channelLayout,
-          sampleFormat: this.outputFormat.sampleFormat
-        },
-        fd: file.fd
+      const inputFormat: NativeAudioFormat = {
+        encodingType: this.inputFormat.encodingType,
+        samplingRate: this.inputFormat.samplingRate,
+        channelLayout: this.inputFormat.channelLayout,
+        sampleFormat: this.inputFormat.sampleFormat
       };
-      const result = await taskpool.execute(convertAudioInBackground, conversionParams);
+      const outputFormat: NativeAudioFormat = {
+        encodingType: this.outputFormat.encodingType,
+        samplingRate: this.outputFormat.samplingRate,
+        channelLayout: this.outputFormat.channelLayout,
+        sampleFormat: this.outputFormat.sampleFormat
+      };
+      const result = await taskpool.execute(convertAudioInBackground, inputFormat, outputFormat, file.fd);
 
       if (!result) {
         this.createResult = 'Conversion failed';
@@ -926,9 +922,7 @@ export struct AudioConversion {
       const tempFile = await fs.open(tempFilePath, fs.OpenMode.READ_ONLY);
       const tempFileStat = await fs.stat(tempFile.fd);
       const tempFileSize = tempFileStat.size;
-
       const dataSize = tempFileSize;
-      const totalSize = dataSize + WAV_HEADER_SIZE; // WAV header is 44 bytes
 
       // Create WAV header
       const header = this.createWavHeader(
