@@ -409,6 +409,7 @@ int32_t HpaeSinkOutputNode::RenderSinkResume(void)
 int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERROR, "audioRendererSink_ not init");
     renderFrameTimes_ = 0;
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM

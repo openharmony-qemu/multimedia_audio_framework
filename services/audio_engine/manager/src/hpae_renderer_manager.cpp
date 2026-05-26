@@ -1127,7 +1127,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
     if (isNeedCallBack == true) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     }
-    return SUCCESS;
+    return ret;
 }
 
 void HpaeRendererManager::InitDefaultNodeInfo()
