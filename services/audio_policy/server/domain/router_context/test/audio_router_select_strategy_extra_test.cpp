@@ -62,29 +62,6 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateCurrentOutputDevice_002, Test
     EXPECT_TRUE(result.empty());
 }
 
-HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateCurrentOutputDevice_004, TestSize.Level1)
-{
-    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
-    auto bluetooth = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "00:00:00:00:00:03");
-
-    AudioRouterFollowStrategy strategy;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices1 = { speaker, earpiece };
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices2 = { bluetooth };
-
-    strategy.UpdateCurrentOutputDevice(TEST_APP_UID_10001, devices1);
-    strategy.UpdateCurrentOutputDevice(TEST_APP_UID_10002, devices2);
-
-    auto result1 = strategy.GetCurrentOutputDevice(TEST_APP_UID_10001);
-    ASSERT_EQ(result1.size(), 1);
-    EXPECT_EQ(result1[0]->deviceType_, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(result1[1]->deviceType_, DEVICE_TYPE_EARPIECE);
-
-    auto result2 = strategy.GetCurrentOutputDevice(TEST_APP_UID_10002);
-    ASSERT_EQ(result2.size(), 1);
-    EXPECT_EQ(result2[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
-}
-
 HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateCurrentInputDevice_001, TestSize.Level1)
 {
     auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");

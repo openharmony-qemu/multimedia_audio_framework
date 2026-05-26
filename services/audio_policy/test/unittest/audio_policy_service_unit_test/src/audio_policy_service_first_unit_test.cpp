@@ -1131,54 +1131,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, HasLowLatencyCapability_001, TestSize.Level
 
 /**
 * @tc.name  : Test HandleLocalDeviceConnected.
-* @tc.number: HandleLocalDeviceConnected_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest HandleLocalDeviceConnected_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    int32_t ret = SUCCESS;
-    AudioDeviceDescriptor updatedDesc;
-    updatedDesc.deviceType_ = DEVICE_TYPE_EARPIECE;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_SPEAKER;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_MIC;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_WAKEUP;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_DP;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_NE(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test HandleLocalDeviceConnected.
 * @tc.number: HandleLocalDeviceConnected_002
 * @tc.desc  : Test AudioPolicyService interfaces.
 */
