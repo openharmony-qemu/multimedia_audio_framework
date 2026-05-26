@@ -794,7 +794,7 @@ bool AudioCoreService::IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor
     auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
         AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
     CHECK_AND_RETURN_RET_LOG(formatItem != AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), false,
-        "Audio sample format %{public}u does not meet the requirements", format)
+        "Audio sample format %{public}u does not meet the requirements", format);
 
     return true;
 }
