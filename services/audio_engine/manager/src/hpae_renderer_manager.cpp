@@ -939,7 +939,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
-        if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandy)) {
+        if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
             if (HasSessionEffect(sessionId)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
             }
