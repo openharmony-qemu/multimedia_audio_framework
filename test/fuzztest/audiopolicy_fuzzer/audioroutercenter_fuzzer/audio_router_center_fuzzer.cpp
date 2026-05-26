@@ -50,6 +50,9 @@ using namespace std;
 const size_t THRESHOLD = 10;
 static const uint8_t* RAW_DATA = nullptr;
 static int32_t NUM_2 = 2;
+static constexpr size_t MAX_STRING_SIZE = 64;
+static constexpr size_t MAX_STREAM_DEVICE_COUNT = 5;
+static const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
 static size_t g_dataSize = 0;
 static size_t g_pos;
 
@@ -80,6 +83,8 @@ vector<StreamUsage> StreamUsageVec = {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
     STREAM_USAGE_VOICE_RINGTONE,
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
+    STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION,
+    STREAM_USAGE_VOICE_TRANSFER_RINGTONE,
     STREAM_USAGE_MAX,
 };
 
@@ -109,6 +114,7 @@ vector<RouterType> RouterTypeVec = {
     RouterType::ROUTER_TYPE_USER_SELECT,
     RouterType::ROUTER_TYPE_PRIVACY_PRIORITY,
     RouterType::ROUTER_TYPE_PUBLIC_PRIORITY,
+    RouterType::ROUTER_TYPE_APP_SELECT,
     RouterType::ROUTER_TYPE_PACKAGE_FILTER,
     RouterType::ROUTER_TYPE_STREAM_FILTER,
     RouterType::ROUTER_TYPE_COCKPIT_PHONE,
@@ -119,6 +125,64 @@ vector<RouterType> RouterTypeVec = {
 vector<AudioPrivacyType> PrivacyTypeVec = {
     PRIVACY_TYPE_PUBLIC,
     PRIVACY_TYPE_PRIVATE,
+};
+
+vector<AudioScene> AudioSceneVec = {
+    AUDIO_SCENE_INVALID,
+    AUDIO_SCENE_DEFAULT,
+    AUDIO_SCENE_RINGING,
+    AUDIO_SCENE_PHONE_CALL,
+    AUDIO_SCENE_PHONE_CHAT,
+    AUDIO_SCENE_CALL_START,
+    AUDIO_SCENE_CALL_END,
+    AUDIO_SCENE_VOICE_RINGING,
+    AUDIO_SCENE_MAX,
+};
+
+vector<AudioPipeType> AudioPipeTypeVec = {
+    PIPE_TYPE_UNKNOWN,
+    PIPE_TYPE_OUT_NORMAL,
+    PIPE_TYPE_IN_NORMAL,
+    PIPE_TYPE_OUT_LOWLATENCY,
+    PIPE_TYPE_IN_LOWLATENCY,
+    PIPE_TYPE_OUT_CELLULAR_CALL,
+    PIPE_TYPE_IN_CELLULAR_CALL,
+    PIPE_TYPE_OUT_DIRECT_NORMAL,
+};
+
+vector<DeviceType> WirelessDeviceTypeVec = {
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_NEARLINK_IN,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_NONE,
+};
+
+vector<DeviceType> RouterDeviceTypeVec = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_NEARLINK_IN,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_WIRED_HEADSET,
+};
+
+vector<DeviceCategory> DeviceCategoryVec = {
+    CATEGORY_DEFAULT,
+    BT_HEADPHONE,
+    BT_SOUNDBOX,
+    BT_CAR,
+    BT_GLASSES,
+    BT_WATCH,
+    BT_HEARAID,
+    BT_UNWEAR_HEADPHONE,
 };
 
 template<class T>
@@ -145,6 +209,62 @@ uint32_t GetArrLength(T& arr)
         return 0;
     }
     return sizeof(arr) / sizeof(arr[0]);
+}
+
+std::string ConsumeString(FuzzedDataProvider& fdp, const std::string& defaultValue)
+{
+    std::string value = fdp.ConsumeRandomLengthString(MAX_STRING_SIZE);
+    return value.empty() ? defaultValue : value;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> MakeRouterDevice(FuzzedDataProvider& fdp)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = RouterDeviceTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterDeviceTypeVec.size() - 1)];
+    device->deviceCategory_ = DeviceCategoryVec[fdp.ConsumeIntegralInRange<size_t>(0, DeviceCategoryVec.size() - 1)];
+    device->deviceRole_ = fdp.ConsumeBool() ? OUTPUT_DEVICE : INPUT_DEVICE;
+    device->macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    device->networkId_ = fdp.ConsumeBool() ? LOCAL_NETWORK_ID : REMOTE_NETWORK_ID;
+    return device;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> MakeWirelessDevice(FuzzedDataProvider& fdp)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = WirelessDeviceTypeVec[fdp.ConsumeIntegralInRange<size_t>(
+        0, WirelessDeviceTypeVec.size() - 1)];
+    device->macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    return device;
+}
+
+StreamDeviceInfo MakeStreamDeviceInfo(FuzzedDataProvider& fdp, bool isOutput)
+{
+    StreamDeviceInfo info;
+    info.uid = fdp.ConsumeIntegral<int32_t>();
+    info.sessionId = fdp.ConsumeIntegral<uint32_t>();
+    info.streamUsage = StreamUsageVec[fdp.ConsumeIntegralInRange<size_t>(0, StreamUsageVec.size() - 1)];
+    info.sourceType = SourceTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, SourceTypeVec.size() - 1)];
+    info.device = MakeWirelessDevice(fdp);
+    info.device->deviceRole_ = isOutput ? OUTPUT_DEVICE : INPUT_DEVICE;
+    info.routerType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    info.isRunning = fdp.ConsumeBool();
+    return info;
+}
+
+FetchDeviceInfo MakeFetchDeviceInfo(FuzzedDataProvider& fdp)
+{
+    FetchDeviceInfo info;
+    info.streamUsage = StreamUsageVec[fdp.ConsumeIntegralInRange<size_t>(0, StreamUsageVec.size() - 1)];
+    info.preStreamUsage = StreamUsageVec[fdp.ConsumeIntegralInRange<size_t>(0, StreamUsageVec.size() - 1)];
+    info.clientUID = fdp.ConsumeIntegral<int32_t>();
+    info.routerType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    info.audioPipeType = AudioPipeTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, AudioPipeTypeVec.size() - 1)];
+    info.privacyType = PrivacyTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, PrivacyTypeVec.size() - 1)];
+    info.caller = "fuzzer_test";
+    info.bundleName = ConsumeString(fdp, "fuzzer_bundle");
+    info.bypassType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    info.streamId = fdp.ConsumeIntegral<uint32_t>();
+    return info;
 }
 
 void FetchOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
@@ -237,6 +357,74 @@ void RegisterConflictHandlersFuzzTest(FuzzedDataProvider& fdp)
     AudioRouterCenter::GetAudioRouterCenter().RegisterConflictHandlers(handler);
 }
 
+void WirelessConflictHandlerBasicFuzzTest(FuzzedDataProvider& fdp)
+{
+    WirelessConflictHandler handler;
+    StreamUsage streamUsage = StreamUsageVec[fdp.ConsumeIntegralInRange<size_t>(0, StreamUsageVec.size() - 1)];
+    SourceType sourceType = SourceTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, SourceTypeVec.size() - 1)];
+    RouterType routerType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    bool isOutput = fdp.ConsumeBool();
+    auto device = fdp.ConsumeBool() ? MakeWirelessDevice(fdp) : nullptr;
+
+    handler.IsCallStreamUsage(streamUsage);
+    handler.IsForcedRouterType(routerType);
+    handler.GetPriority(streamUsage, sourceType, routerType, isOutput);
+    handler.IsScoDevice(device);
+    handler.IsNearlinkDevice(device);
+    handler.IsWirelessDevice(device);
+}
+
+void WirelessConflictHandlerDetectFuzzTest(FuzzedDataProvider& fdp)
+{
+    WirelessConflictHandler handler;
+    std::vector<StreamDeviceInfo> outputDevices;
+    std::vector<StreamDeviceInfo> inputDevices;
+    size_t outputCount = fdp.ConsumeIntegralInRange<size_t>(0, MAX_STREAM_DEVICE_COUNT);
+    size_t inputCount = fdp.ConsumeIntegralInRange<size_t>(0, MAX_STREAM_DEVICE_COUNT);
+
+    for (size_t i = 0; i < outputCount; ++i) {
+        outputDevices.push_back(MakeStreamDeviceInfo(fdp, true));
+    }
+    for (size_t i = 0; i < inputCount; ++i) {
+        inputDevices.push_back(MakeStreamDeviceInfo(fdp, false));
+    }
+
+    handler.SetSelectedDevices(outputDevices, inputDevices);
+    auto device = MakeWirelessDevice(fdp);
+    if (fdp.ConsumeBool()) {
+        device->macAddress_.clear();
+    }
+    RouterType routerType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    handler.Detect(device, routerType);
+    handler.AllScoPairSelected();
+    handler.FindHighestPriorityDevice();
+    handler.ClearSelectedDevices();
+    handler.Detect(device, routerType);
+}
+
+void WirelessConflictHandlerScoPairFuzzTest(FuzzedDataProvider& fdp)
+{
+    WirelessConflictHandler handler;
+    std::string macAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+
+    StreamDeviceInfo outputInfo = MakeStreamDeviceInfo(fdp, true);
+    outputInfo.device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    outputInfo.device->macAddress_ = macAddress;
+    outputInfo.routerType = fdp.ConsumeBool() ? ROUTER_TYPE_PAIR_DEVICE : ROUTER_TYPE_USER_SELECT;
+
+    StreamDeviceInfo inputInfo = MakeStreamDeviceInfo(fdp, false);
+    inputInfo.device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    inputInfo.device->macAddress_ = macAddress;
+    inputInfo.routerType = fdp.ConsumeBool() ? ROUTER_TYPE_PAIR_DEVICE : ROUTER_TYPE_APP_SELECT;
+
+    handler.SetSelectedDevices({ outputInfo }, { inputInfo });
+    auto device = MakeWirelessDevice(fdp);
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    device->macAddress_ = macAddress;
+    handler.AllScoPairSelected();
+    handler.Detect(device, ROUTER_TYPE_PAIR_DEVICE);
+}
+
 void ClearConflictHandlersFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioRouterCenter::GetAudioRouterCenter().ClearConflictHandlers();
@@ -253,6 +441,71 @@ void UpdateVehiclePriorityFuzzTest(FuzzedDataProvider& fdp)
     AudioRouterCenter::GetAudioRouterCenter().UpdateVehiclePriority(enable);
 }
 
+void AudioRouterCenterStrategyFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &center = AudioRouterCenter::GetAudioRouterCenter();
+    AudioScene scene = AudioSceneVec[fdp.ConsumeIntegralInRange<size_t>(0, AudioSceneVec.size() - 1)];
+    StreamUsage streamUsage = StreamUsageVec[fdp.ConsumeIntegralInRange<size_t>(0, StreamUsageVec.size() - 1)];
+    auto device = MakeRouterDevice(fdp);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    size_t descCount = fdp.ConsumeIntegralInRange<size_t>(0, MAX_STREAM_DEVICE_COUNT);
+
+    for (size_t i = 0; i < descCount; ++i) {
+        descs.push_back(MakeRouterDevice(fdp));
+    }
+    center.NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs);
+    center.GetBypassWithSco(scene);
+    center.IsMediaFollowCallStrategy(scene);
+    center.IsAlarmFollowRingStrategy(scene, streamUsage);
+    center.IsWirelessPrivacyDevice(device);
+    center.IsVehicleDevice(device);
+    center.IsBlockedDeviceForTransferCall(device);
+}
+
+void AudioRouterCenterFetchRenderFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &center = AudioRouterCenter::GetAudioRouterCenter();
+    FetchDeviceInfo info = MakeFetchDeviceInfo(fdp);
+    RouterType routerType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    RouterType bypassType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    RouterType bypassWithSco = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+    uint32_t streamId = fdp.ConsumeIntegral<uint32_t>();
+    StreamUsage ringUsage = fdp.ConsumeBool() ? STREAM_USAGE_RINGTONE : STREAM_USAGE_VOICE_RINGTONE;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+
+    center.FetchMediaRenderDevice(info.streamUsage, info.clientUID, routerType, { bypassType }, streamId);
+    center.FetchMediaRenderDevice(info, routerType, bypassType, streamId);
+    center.FetchCallRenderDevice(info.streamUsage, info.clientUID, routerType, bypassType, bypassWithSco);
+    center.FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
+    center.DealRingRenderRouters(descs, info, routerType);
+    center.MediaFollowRingStrategy(info, ringUsage, routerType, bypassType, streamId);
+    center.FetchOutputDevicesInner(info);
+}
+
+void AudioRouterCenterFetchCapturerFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &center = AudioRouterCenter::GetAudioRouterCenter();
+    SourceType sourceType = SourceTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, SourceTypeVec.size() - 1)];
+    int32_t clientUID = fdp.ConsumeIntegral<int32_t>();
+    uint32_t sessionID = fdp.ConsumeIntegral<uint32_t>();
+    RouterType routerType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
+
+    center.FetchCapturerInputDevice(sourceType, clientUID, routerType, sessionID);
+    center.FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+    center.FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
+    center.FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+}
+
+void AudioRouterCenterArbiterFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &center = AudioRouterCenter::GetAudioRouterCenter();
+    center.StartArbiterContext();
+    if (fdp.ConsumeBool()) {
+        center.RegisterConflictHandlers(std::make_shared<WirelessConflictHandler>());
+    }
+    center.StopArbiterContext();
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -266,9 +519,16 @@ void Test(FuzzedDataProvider& fdp)
     NotifyDistributedOutputChangeFuzzTest,
     IsConfigRouterStrategyFuzzTest,
     RegisterConflictHandlersFuzzTest,
+    WirelessConflictHandlerBasicFuzzTest,
+    WirelessConflictHandlerDetectFuzzTest,
+    WirelessConflictHandlerScoPairFuzzTest,
     ClearConflictHandlersFuzzTest,
     SetSplitModeReadyFuzzTest,
     UpdateVehiclePriorityFuzzTest,
+    AudioRouterCenterStrategyFuzzTest,
+    AudioRouterCenterFetchRenderFuzzTest,
+    AudioRouterCenterFetchCapturerFuzzTest,
+    AudioRouterCenterArbiterFuzzTest,
     });
     func(fdp);
 }
