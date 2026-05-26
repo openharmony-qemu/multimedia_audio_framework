@@ -2878,8 +2878,9 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToHdi(const int32_t &f
         "copy length failed");
 
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_,
-        DEVICE_TYPE_BLUETOOTH_A2DP) == SUCCESS, ERR_SAVE_HRTF_FAIL, "set hdi personalizedSpatializationEnabled failed");
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS || ret == ERR_DEVICE_UNAVAILABLE, ERR_SAVE_HRTF_FAIL,
+        "set hdi personalizedSpatializationEnabled failed");
     return SUCCESS;
 }
 
