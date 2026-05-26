@@ -2834,9 +2834,9 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
 
     int32_t outFd = open(outPath, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_OPEN_MODE);
     CHECK_AND_RETURN_RET_LOG(outFd >= 0, ERR_SAVE_HRTF_FAIL, "outFd < 0");
-    size_t remaining = length;
+    ssize_t remaining = length;
     std::vector<char> buffer(length);
-    size_t n;
+    ssize_t n;
 
     while (remaining > 0) {
         size_t toRead = (remaining < sizeof(buffer)) ? remaining : sizeof(buffer);
@@ -2851,7 +2851,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
             return ERR_SAVE_HRTF_FAIL;
         }
 
-        size_t written = write(outFd, buffer.data(), n);
+        ssize_t written = write(outFd, buffer.data(), n);
         if (written != n) {
             close(outFd);
             unlink(outPath);
