@@ -272,9 +272,6 @@ void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<Audio
 void AudioCoreService::DecidedAudioFlagForStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu input streams", streamDescs.size());
-    if (streamDescs.size() == 0) {
-        return;
-    }
     bool needSetAllFastStreamNormal = false;
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         UpdatePlaybackStreamFlag(streamDesc, false);
@@ -297,6 +294,9 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
+    if (streamDescs.size() == 0) {
+        return SUCCESS;
+    }
     DecidedAudioFlagForStreams(streamDescs);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
