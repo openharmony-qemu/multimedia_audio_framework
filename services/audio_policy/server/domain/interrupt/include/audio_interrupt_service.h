@@ -122,6 +122,8 @@ public:
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
         const AudioFocusList &interrupts);
+    int32_t PauseAudioFocusForExtAudioZone();
+    int32_t ResumeAudioFocusForExtAudioZone();
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
         AudioFocusList &focusInfoList);

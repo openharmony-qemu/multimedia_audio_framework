@@ -100,6 +100,8 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
+    int32_t PauseAudioFocusForExtAudioZone();
+    int32_t ResumeAudioFocusForExtAudioZone();
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
         StreamUsage streamUsage, int32_t clientUid, RouterType bypassType);

@@ -438,6 +438,146 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_010, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: PauseAudioFocusForExtAudioZone_001
+* @tc.desc  : Test PauseAudioFocusForExtAudioZone skips empty map, default zone, null zone and empty external zone.
+*/
+HWTEST_F(AudioInterruptUnitTest, PauseAudioFocusForExtAudioZone_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->handler_ = GetServerHandlerTest();
+    interruptServiceTest->zonesMap_.clear();
+
+    EXPECT_EQ(interruptServiceTest->PauseAudioFocusForExtAudioZone(), SUCCESS);
+    EXPECT_TRUE(interruptServiceTest->zonesMap_.empty());
+
+    AudioInterrupt mainInterrupt;
+    mainInterrupt.streamId = 1001;
+    auto mainZone = std::make_shared<AudioInterruptZone>();
+    mainZone->audioFocusInfoList.emplace_back(mainInterrupt, AudioFocuState::ACTIVE);
+    interruptServiceTest->zonesMap_[0] = mainZone;
+    interruptServiceTest->zonesMap_[1] = nullptr;
+    interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
+
+    EXPECT_EQ(interruptServiceTest->PauseAudioFocusForExtAudioZone(), SUCCESS);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.front().second, AudioFocuState::ACTIVE);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[1], nullptr);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[2]->audioFocusInfoList.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
+* @tc.number: PauseAudioFocusForExtAudioZone_002
+* @tc.desc  : Test PauseAudioFocusForExtAudioZone pauses only active focus in external zones.
+*/
+HWTEST_F(AudioInterruptUnitTest, PauseAudioFocusForExtAudioZone_002, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->handler_ = GetServerHandlerTest();
+    interruptServiceTest->zonesMap_.clear();
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.streamId = 1002;
+    AudioInterrupt duckInterrupt;
+    duckInterrupt.streamId = 1003;
+    AudioInterrupt pauseInterrupt;
+    pauseInterrupt.streamId = 1004;
+    AudioInterrupt standbyInterrupt;
+    standbyInterrupt.streamId = 1005;
+    AudioInterrupt stopInterrupt;
+    stopInterrupt.streamId = 1006;
+    auto extZone = std::make_shared<AudioInterruptZone>();
+    extZone->audioFocusInfoList.emplace_back(activeInterrupt, AudioFocuState::ACTIVE);
+    extZone->audioFocusInfoList.emplace_back(duckInterrupt, AudioFocuState::DUCK);
+    extZone->audioFocusInfoList.emplace_back(pauseInterrupt, AudioFocuState::PAUSE);
+    extZone->audioFocusInfoList.emplace_back(standbyInterrupt, AudioFocuState::STANDBY);
+    extZone->audioFocusInfoList.emplace_back(stopInterrupt, AudioFocuState::STOP);
+    interruptServiceTest->zonesMap_[1] = extZone;
+
+    AudioInterrupt secondExtActiveInterrupt;
+    secondExtActiveInterrupt.streamId = 1007;
+    auto secondExtZone = std::make_shared<AudioInterruptZone>();
+    secondExtZone->audioFocusInfoList.emplace_back(secondExtActiveInterrupt, AudioFocuState::ACTIVE);
+    interruptServiceTest->zonesMap_[2] = secondExtZone;
+
+    EXPECT_EQ(interruptServiceTest->PauseAudioFocusForExtAudioZone(), SUCCESS);
+    auto iter = interruptServiceTest->zonesMap_[1]->audioFocusInfoList.begin();
+    EXPECT_EQ(iter->second, AudioFocuState::PAUSE);
+    ++iter;
+    EXPECT_EQ(iter->second, AudioFocuState::PAUSE);
+    ++iter;
+    EXPECT_EQ(iter->second, AudioFocuState::PAUSE);
+    ++iter;
+    EXPECT_EQ(iter->second, AudioFocuState::STANDBY);
+    ++iter;
+    EXPECT_EQ(iter->second, AudioFocuState::STOP);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[2]->audioFocusInfoList.front().second, AudioFocuState::PAUSE);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
+* @tc.number: ResumeAudioFocusForExtAudioZone_001
+* @tc.desc  : Test ResumeAudioFocusForExtAudioZone skips empty map, default zone, null zone and empty external zone.
+*/
+HWTEST_F(AudioInterruptUnitTest, ResumeAudioFocusForExtAudioZone_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->handler_ = GetServerHandlerTest();
+    interruptServiceTest->zonesMap_.clear();
+
+    EXPECT_EQ(interruptServiceTest->ResumeAudioFocusForExtAudioZone(), SUCCESS);
+    EXPECT_TRUE(interruptServiceTest->zonesMap_.empty());
+
+    AudioInterrupt mainInterrupt;
+    mainInterrupt.streamId = 1010;
+    auto mainZone = std::make_shared<AudioInterruptZone>();
+    mainZone->audioFocusInfoList.emplace_back(mainInterrupt, AudioFocuState::PAUSE);
+    interruptServiceTest->zonesMap_[0] = mainZone;
+    interruptServiceTest->zonesMap_[1] = nullptr;
+    interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
+
+    EXPECT_EQ(interruptServiceTest->ResumeAudioFocusForExtAudioZone(), SUCCESS);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.front().second, AudioFocuState::PAUSE);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[1], nullptr);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[2]->audioFocusInfoList.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
+* @tc.number: ResumeAudioFocusForExtAudioZone_002
+* @tc.desc  : Test ResumeAudioFocusForExtAudioZone resumes local and remote external focus lists.
+*/
+HWTEST_F(AudioInterruptUnitTest, ResumeAudioFocusForExtAudioZone_002, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->handler_ = GetServerHandlerTest();
+    interruptServiceTest->zonesMap_.clear();
+
+    AudioInterrupt extInterrupt;
+    extInterrupt.streamId = 1011;
+    auto extZone = std::make_shared<AudioInterruptZone>();
+    extZone->audioFocusInfoList.emplace_back(extInterrupt, AudioFocuState::PAUSE);
+    interruptServiceTest->zonesMap_[1] = extZone;
+
+    AudioInterrupt taggedInterrupt;
+    taggedInterrupt.streamId = 1012;
+    taggedInterrupt.deviceTag = "Remote Device";
+    auto taggedExtZone = std::make_shared<AudioInterruptZone>();
+    taggedExtZone->audioFocusInfoList.emplace_back(taggedInterrupt, AudioFocuState::PAUSE);
+    interruptServiceTest->zonesMap_[2] = taggedExtZone;
+
+    EXPECT_EQ(interruptServiceTest->ResumeAudioFocusForExtAudioZone(), SUCCESS);
+    EXPECT_TRUE(interruptServiceTest->zonesMap_[1]->audioFocusInfoList.empty());
+    ASSERT_EQ(interruptServiceTest->zonesMap_[2]->audioFocusInfoList.size(), 1);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[2]->audioFocusInfoList.front().second, AudioFocuState::ACTIVE);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[2]->audioFocusInfoList.front().first.deviceTag, "Remote Device");
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_012
 * @tc.desc  : Test ResumeAudioFocusList and SimulateFocusEntry.
 */
