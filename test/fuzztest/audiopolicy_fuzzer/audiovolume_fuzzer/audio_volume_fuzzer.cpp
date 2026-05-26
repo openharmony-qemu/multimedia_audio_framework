@@ -292,7 +292,7 @@ void MonitorFuzzTest(FuzzedDataProvider& fdp)
     int32_t pid = GetData<int32_t>();
     bool isSystemApp = GetData<int32_t>() % NUM_2;
     int32_t mode = GetData<int32_t>();
-    bool isVKB = GetData<int32_t>() % NUM_2;
+    VkbMode isVKB = static_cast<VkbMode>(GetData<uint8_t>() % NUM_2);
     audioVolume->streamVolume_.insert({sessionId,
         std::make_shared<StreamVolume>(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB)});
     audioVolume->Monitor(sessionId, GetData<int32_t>() % NUM_2);

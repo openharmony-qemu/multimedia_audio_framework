@@ -1674,7 +1674,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(rendererInfo.effectMode);
         parcel.WriteBool(rendererInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
-        parcel.WriteBool(rendererInfo.isVirtualKeyboard);
+        parcel.WriteInt32(static_cast<int32_t>(rendererInfo.isVirtualKeyboard));
         parcel.WriteBool(rendererInfo.keepRunning);
         parcel.WriteBool(rendererInfo.voipNoPrivacyFlag);
         parcel.WriteBool(rendererInfo.isStatic);
