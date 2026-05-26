@@ -1031,8 +1031,8 @@ int32_t AudioRenderSink::CreateRender(void)
     InitDeviceDesc(deviceDesc);
 
     HILOG_COMM_INFO("[CreateRender]create render, halName: %{public}s, rate: %{public}u, "
-        "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
-        param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
+        "channel: %{public}u, format: %{public}u, devicePin: %{public}u", halName_.c_str(),
+        param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
@@ -1041,7 +1041,7 @@ int32_t AudioRenderSink::CreateRender(void)
     CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
     SetAudioRouteInfoForEnhanceChain();
 
-    AUDIO_INFO_LOG("create render success, hdiRenderId_: %{public}u, desc: %{public}s", hdiRenderId_, deviceDesc.desc);
+    AUDIO_INFO_LOG("create render success, hdiRenderId_: %{public}u", hdiRenderId_);
     return SUCCESS;
 }
 

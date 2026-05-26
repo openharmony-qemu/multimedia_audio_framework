@@ -180,7 +180,7 @@ void *BluetoothDeviceManager::CreateRender(const std::string &adapterName, void 
         UnloadAdapter(adapterName);
         return nullptr;
     }
-    AUDIO_INFO_LOG("create render success, desc: %{public}s", bluetoothDeviceDesc->desc);
+    AUDIO_INFO_LOG("create render success");
 
     hdiRenderId = GetHdiRenderId(wrapper);
     wrapper->renders_[hdiRenderId] = render;
@@ -227,7 +227,7 @@ void *BluetoothDeviceManager::CreateCapture(const std::string &adapterName, void
         UnloadAdapter(adapterName);
         return nullptr;
     }
-    AUDIO_INFO_LOG("create capture success, desc: %{public}s", bluetoothDeviceDesc->desc);
+    AUDIO_INFO_LOG("create capture success");
 
     hdiCaptureId = GetHdiCaptureId(wrapper);
     wrapper->captures_[hdiCaptureId] = capture;
