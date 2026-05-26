@@ -135,10 +135,10 @@ static const unordered_map<AudioStreamType, int32_t> DEFAULT_STREAM_PRIORITY = {
     {STREAM_MOVIE, 7},
     {STREAM_SPEECH, 7},
     {STREAM_GAME, 7},
-    {STREAM_DTMF, 8},
-    {STREAM_SYSTEM, 8},
-    {STREAM_SYSTEM_ENFORCED, 9},
     // Notification volume is not expected to be adjusted by volume keys.
+    {STREAM_DTMF, STREAM_DEFAULT_PRIORITY},
+    {STREAM_SYSTEM, STREAM_DEFAULT_PRIORITY},
+    {STREAM_SYSTEM_ENFORCED, STREAM_DEFAULT_PRIORITY},
     {STREAM_NOTIFICATION, STREAM_DEFAULT_PRIORITY},
 };
 
