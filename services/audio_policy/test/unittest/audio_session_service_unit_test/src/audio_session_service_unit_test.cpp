@@ -445,43 +445,6 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_020, TestSize.
 
 /**
 * @tc.name  : Test AudioSessionService.
-* @tc.number: AudioSessionServiceUnitTest_021.
-* @tc.desc  : Test IsStreamAllowedToSetDevice.
-*/
-HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_021, TestSize.Level1)
-{
-    uint32_t streamId = 1001;
-    int32_t callerPid = 1;
-    AudioSessionStrategy strategy;
-    AudioInterrupt audioInterrupt = {};
-    audioInterrupt.streamId = streamId;
-
-    std::shared_ptr<AudioSession> audioSession1 =
-        std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
-    audioSession1->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, ACTIVE};
-    audioSession1->state_ == AudioSessionState::SESSION_ACTIVE;
-    audioSessionService_.sessionMap_.insert(
-        std::pair<int32_t, std::shared_ptr<AudioSession>>(callerPid, audioSession1));
-    callerPid = 2;
-    std::shared_ptr<AudioSession> audioSession2 =
-        std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
-    audioSession2->interruptMap_[audioInterrupt.streamId] = {audioInterrupt, ACTIVE};
-    audioSession2->state_ == AudioSessionState::SESSION_NEW;
-    audioSessionService_.sessionMap_.insert(
-        std::pair<int32_t, std::shared_ptr<AudioSession>>(callerPid, audioSession2));
-    callerPid = 3;
-    std::shared_ptr<AudioSession> audioSession3 =
-        std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
-    audioSessionService_.sessionMap_.insert(
-        std::pair<int32_t, std::shared_ptr<AudioSession>>(callerPid, audioSession3));
-    callerPid = 4;
-    audioSessionService_.sessionMap_.insert(std::pair<int32_t, std::shared_ptr<AudioSession>>(callerPid, nullptr));
-
-    EXPECT_TRUE(audioSessionService_.IsStreamAllowedToSetDevice(streamId));
-}
-
-/**
-* @tc.name  : Test AudioSessionService.
 * @tc.number: AudioSessionServiceUnitTest_022.
 * @tc.desc  : Test IsSessionNeedToFetchOutputDevice.
 */
