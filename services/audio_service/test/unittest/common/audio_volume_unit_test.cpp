@@ -706,7 +706,7 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_001, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
     
     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
     std::map<std::string, std::string> obj;
@@ -739,7 +739,7 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_002, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
 
     uint32_t ret = audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
     EXPECT_EQ(ret, 1);
@@ -766,7 +766,7 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_003, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
     
     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
     std::map<std::string, std::string> obj;
@@ -799,7 +799,7 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_004, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
     
     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
     std::map<std::string, std::string> obj;
@@ -832,7 +832,7 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_005, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
     
     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
     std::map<std::string, std::string> obj;
@@ -1051,7 +1051,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_003, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1080,7 +1080,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_004, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1114,7 +1114,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_005, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1147,7 +1147,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_006, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 1;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1209,7 +1209,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_003, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 1;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1242,7 +1242,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_004, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 1;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1280,7 +1280,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_005, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = 0;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1317,7 +1317,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppVolume_006, TestSize.Level1)
     bool isSystemApp = false;
     int32_t mode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
     audioVolumeTest->streamVolume_.insert({sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, false)});
+        sessionId, streamType, streamUsage, appUid, pid, isSystemApp, mode, VKB_INVALID)});
 
     audioVolumeTest->SetAppVolume(appVolume);
     EXPECT_EQ(audioVolumeTest->appVolume_.empty(), false);
@@ -1443,7 +1443,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_001, TestSize.Level1)
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
     audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
 
@@ -1468,7 +1468,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_002, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
 
     audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
 
@@ -1496,7 +1496,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_003, TestSize.Level1)
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
     audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
 
@@ -1525,7 +1525,7 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_004, TestSize.Level1)
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
     audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     bool result = audioVolumeTest->SetAppRingMuted(anotherAppUid, isMuted);
 
@@ -1897,7 +1897,7 @@ HWTEST_F(AudioVolumeUnitTest, SetNonInterruptMute_001, TestSize.Level1)
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
 
     audioVolumeTest->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     AudioVolume::GetInstance()->SetNonInterruptMute(sessionId, isMuted);
     float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
