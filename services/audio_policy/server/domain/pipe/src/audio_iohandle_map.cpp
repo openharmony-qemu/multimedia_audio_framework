@@ -227,6 +227,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     if (pipeInfoInput != nullptr && pipeInfoInput->softLinkFlag_) {
         pipeManager->ClearPipeStreams(pipeInfoInput);
         pipeManager->UpdateAudioPipeInfo(pipeInfoInput);
+        return SUCCESS;
     }
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
