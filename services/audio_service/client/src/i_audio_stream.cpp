@@ -369,7 +369,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
         int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
 
         if (enableNewRoute == 1) {
             HILOG_COMM_INFO("[GetPlaybackStream]Create renderer in client for fast playback stream with new route");
@@ -399,7 +399,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
         int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
 
         if (enableNewRoute == 1) {
             HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for fast record stream with new route");

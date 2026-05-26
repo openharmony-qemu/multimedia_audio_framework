@@ -2572,7 +2572,7 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
     int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
     if (enableNewRoute == 1) {
         return true;
     }
