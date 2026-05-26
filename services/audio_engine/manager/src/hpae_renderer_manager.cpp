@@ -1653,7 +1653,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     }
     if (sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPED ||
         sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_PAUSED ||
-        sessionGainNode == nullptr || !IsRunning()) {
+        sessionGainNode == nullptr || !IsRunning( || isStandby) {
         AUDIO_WARNING_LOG("session %{public}d do not have gain node or sink is not running!", sessionId);
         if (operation != OPERATION_STARTED) {
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
