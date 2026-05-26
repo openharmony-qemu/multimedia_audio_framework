@@ -123,6 +123,7 @@ private:
     void ConstructEnforcedToneVolumeValues(VolumeValues *volumes);
     // MUST be called with volumeMutex_ held
     void GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, uint32_t pipeId, VolumeValues *volumes);
+    void UpdateVkbVolume(VkbMode mode, bool isMuted, float &sysVolume);
     bool ShouldApplySystemAppVolume(AudioStreamType streamType);
     float GetSystemAppVolumeEffective(StreamVolume &stream);
 private:

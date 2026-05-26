@@ -120,12 +120,7 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
     auto volumeLevel = pipeVolume->GetNoMuteVolumeLevel();
 
     float sysVolume = volumes->volumePipe;
-    VkbMode vkbMode = streamVolume->GetVirtualKeyboardMode();
-    if (vkbMode == VKB_ONLY_RING) {
-        sysVolume = pipeVolume->GetIsMuted() ? 0.0f : 1.0f;
-    } else if (vkbMode == VKB_ALL_RING) {
-        sysVolume = 1.0f;
-    }
+    UpdateVkbVolume(streamVolume->GetVirtualKeyboardMode(), pipeVolume->GetIsMuted(), sysVolume);
 
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(
         GetDoNotDisturbStatusVolumeFromStream(*streamVolume, streamVolume->GetStreamType(), appUid));
@@ -179,6 +174,15 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamTypeIn, uint32_t 
     return volumes->volume;
 }
 
+void AudioVolume::UpdateVkbVolume(VkbMode mode, bool isMuted, float &sysVolume)
+{
+    if (mode == VKB_ONLY_RING) {
+        sysVolume = isMuted ? 0.0f : 1.0f;
+    } else if (mode == VKB_ALL_RING) {
+        sysVolume = 1.0f;
+    }
+}
+
 void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, uint32_t pipeId,
     VolumeValues *volumes)
 {
@@ -213,12 +217,7 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     }
     float sysVolume = volumes->volumePipe;
     if (it != streamVolume_.end() && itSV != pipeVolume_.end()) {
-        VkbMode mode = it->second->GetVirtualKeyboardMode();
-        if (mode == VKB_ONLY_RING) {
-            sysVolume = itSV->second->GetIsMuted() ? 0.0f : 1.0f;
-        } else if (mode == VKB_ALL_RING) {
-            sysVolume = 1.0f;
-        }
+        UpdateVkbVolume(it->second->GetVirtualKeyboardMode(), itSV->second->GetIsMuted(), sysVolume);
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType,
         appUid, sessionId));
