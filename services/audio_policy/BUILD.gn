@@ -208,6 +208,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
     "server/common/src/audio_group_handle.cpp",
+    "server/common/src/multi_condition_waiter.cpp",
     "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
     "server/service/service_main/src/audio_loopback_manager.cpp",
@@ -242,7 +243,6 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/volume/src/audio_adapter_manager_handler.cpp",
     "server/domain/volume/src/volume_data_maintainer.cpp",
     "server/domain/volume/src/audio_volume_utils.cpp",
-    "server/domain/router/app_select_router.cpp",
     "server/domain/router/audio_router_center.cpp",
     "server/domain/router/cockpit_phone_router.cpp",
     "server/domain/router/default_router.cpp",
@@ -363,6 +363,16 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   if (audio_framework_feature_input_independent_routing_rule) {
     defines += [ "INPUT_FEATURE_INDEPENDENT_MODE" ]
   }
@@ -413,7 +423,7 @@ audio_ohos_library("audio_policy_service") {
     "cJSON:cjson",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_6.0",
+    "drivers_interface_audio:libaudio_proxy_6.1",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",

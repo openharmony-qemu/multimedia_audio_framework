@@ -82,7 +82,9 @@ int32_t AudioInjectorPolicy::DeInit()
             VIRTUAL_INJECTOR, AUDIO_OUTPUT_FLAG_NORMAL);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(VIRTUAL_INJECTOR);
-        audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
+        if (pipeInfo != nullptr) {
+            audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
+        }
         isOpened_ = false;
         renderPortIdx_ = HDI_INVALID_ID;
     }
@@ -266,7 +268,7 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
     if (!isConnected_) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
         if (voipType_ == NORMAL_VOIP || enableNewRoute == 1) {
             audioPolicyManager_.AddCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
@@ -293,7 +295,7 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
     if (isConnected_ && flag) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
         if (voipType_ == NORMAL_VOIP || enableNewRoute == 1) {
             audioPolicyManager_.RemoveCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);

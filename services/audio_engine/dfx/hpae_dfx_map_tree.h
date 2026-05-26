@@ -62,7 +62,7 @@ public:
     void UpdateNodeInfo(uint32_t nodeId, const HpaeDfxNodeInfo &nodeInfo);
 
     bool ConnectNodes(uint32_t parentId, uint32_t childId);
-    bool DisConnectNodes(uint32_t parentId, uint32_t childId);
+    bool DisconnectNodes(uint32_t parentId, uint32_t childId);
 
     void PrintTree(std::string &outStr) const;
 private:

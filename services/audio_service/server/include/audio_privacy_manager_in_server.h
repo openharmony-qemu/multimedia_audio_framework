@@ -17,6 +17,8 @@
 #define AUDIO_PRIVACY_MANAGER_IN_SERVER_H
 
 #include <cstdint>
+#include <string>
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,12 +28,20 @@ public:
 
     bool StartUsingMicrophone(uint32_t targetTokenId);
     bool StopUsingMicrophone(uint32_t targetTokenId);
+    bool StartUsingMicrophone(const std::string &ancoPkgName);
+    bool StopUsingMicrophone(const std::string &ancoPkgName);
+    bool UpdateActiveAncoCapturer(const std::vector<std::string> &bundleNameList);
+    bool GetStartMicResult() const {return startUsingMicFlag_;};
 
 private:
     AudioPrivacyManagerInServer() = default;
     ~AudioPrivacyManagerInServer() = default;
     AudioPrivacyManagerInServer(const AudioPrivacyManagerInServer &) = delete;
     AudioPrivacyManagerInServer &operator=(const AudioPrivacyManagerInServer &) = delete;
+
+    std::mutex activeCaptureMutex_;
+    std::set<std::string> lastAncoBundlenameList_;
+    bool startUsingMicFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

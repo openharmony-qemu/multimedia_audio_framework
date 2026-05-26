@@ -157,17 +157,25 @@ private:
     std::weak_ptr<AudioRenderer> audioRenderer_;
 };
 
-static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRenderer> &audioRenderer)
+static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRendererPrivate> &audioRenderer)
 {
-    if (audioRenderer == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "AudioRenderer is nullptr");
     auto debugCallback = std::make_shared<AudioRendererDebugCallbackImpl>(std::weak_ptr<AudioRenderer>(audioRenderer));
-    if (debugCallback == nullptr) {
-        return;
-    }
-    (void)AudioDebugManager::GetInstance().RegisterAudioRenderer(
-        reinterpret_cast<uintptr_t>(audioRenderer.get()), debugCallback);
+    CHECK_AND_RETURN_LOG(debugCallback != nullptr, "Create renderer debug callback failed");
+    uint32_t debugKey = 0;
+    int32_t ret = AudioDebugManager::GetInstance().RegisterAudioRenderer(debugKey, debugCallback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != INVALID_DEBUGKEY,
+        "Register renderer debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
+    audioRenderer->debugKey_ = debugKey;
+    AUDIO_INFO_LOG("Register renderer debug manager success, debugKey:%{public}u", debugKey);
+}
+
+static void UnregisterAudioRendererDebugManager(uint32_t &debugKey)
+{
+    CHECK_AND_RETURN_LOG(debugKey != INVALID_DEBUGKEY, "Unregister renderer debug manager: debugKey is invalid");
+    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(debugKey);
+    AUDIO_INFO_LOG("Unregister renderer debug manager, debugKey:%{public}u", debugKey);
+    debugKey = INVALID_DEBUGKEY;
 }
 
 std::mutex AudioRenderer::createRendererMutex_;
@@ -185,7 +193,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioRendererDebugManager(debugKey_);
 
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
@@ -569,7 +577,8 @@ bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate>
     const AppInfo &appInfo)
 {
     audioRenderer->rendererInfo_.isStatic = true;
-    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
+    audioRenderer->staticSharedMemory_ = sharedMemory;
+    audioRenderer->staticBufferInfo_.bufferSize_ = sharedMemory ? sharedMemory->GetSize() : 0;
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
     bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
@@ -774,7 +783,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     audioStream_->SetStreamTrackerState(false);
 
     if (rendererInfo_.isStatic) {
-        audioStream_->SetStaticBufferInfo(staticBufferInfo_);
+        audioStream_->SetStaticBufferInfo(staticBufferInfo_, staticSharedMemory_);
     }
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
@@ -1814,7 +1823,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
+    UnregisterAudioRendererDebugManager(debugKey_);
     SetReleaseFlagNoLock(false);
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback(audioStream_);
@@ -1917,7 +1926,6 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
         ERROR_INVALID_PARAM, "loudnessGain set invalid");
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
@@ -1934,7 +1942,6 @@ float AudioRendererPrivate::GetLoudnessGain() const
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         0.0f, "low latency mode not supported");
 
@@ -3710,7 +3717,7 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
     if (info.rendererInfo.isStatic) {
-        audioStream->SetStaticBufferInfo(info.staticBufferInfo);
+        audioStream->SetStaticBufferInfo(info.staticBufferInfo, info.staticSharedMemory);
         audioStream->SetRenderRate(info.renderRate);
     }
     if (info.backMute) {
@@ -3810,7 +3817,10 @@ int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
         }
         AUDIO_INFO_LOG("Renderer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
     }
-    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
+        audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Renderer id: %{public}d activated PAUSE_WHEN_INTERRUPTED success", sessionID_);
+    } else if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
         audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Renderer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
     }

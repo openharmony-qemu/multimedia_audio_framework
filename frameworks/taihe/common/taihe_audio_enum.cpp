@@ -931,6 +931,8 @@ StreamUsage TaiheAudioEnum::GetJsStreamUsageFir(OHOS::AudioStandard::StreamUsage
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_RANGING:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
             result = TaiheAudioEnum::ToTaiheStreamUsage(
                 OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
@@ -1113,6 +1115,8 @@ bool TaiheAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ULTRASONIC:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_EMERGENCY:
             result = true;

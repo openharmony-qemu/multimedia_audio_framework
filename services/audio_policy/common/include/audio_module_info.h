@@ -82,6 +82,9 @@ static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
 static const char* PRIMARY_INTERPHON_MIC = "Built_in_interphone";
 static const char* PRIMARY_CAMCORDER = "Built_in_camcorder";
 static const char* PRIMARY_SPEAKER_PIPENAME = "primary_output";
+static const char* PRIMARY_TYPEC_CLASS = "Built_in_typec";
+static const char* PRIMARY_WIRED_CLASS = "Built_in_wired";
+static const char* PRIMARY_BT_CLASS = "Built_in_bt";
 }
 
 enum NodeName {

@@ -23,7 +23,7 @@
 #include "hdf_device_class.h"
 
 namespace {
-    #include "v6_0/audio_types.h"
+    #include "v6_1/audio_types.h"
 }
 
 
@@ -118,8 +118,11 @@ static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
         std::list<std::string> supportDevices = { "Distributed_Output" };
         AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
             deviceStreamInfoList, supportDevices);
+        AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "multichannel_distributed_output",
+            deviceStreamInfoList, supportDevices);
     } else {
         AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
+        AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output");
     }
 }
 
@@ -189,6 +192,7 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
             statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
             &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS, "[DeviceStatusListener]: Failed to scan info string");
         AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
+        AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output");
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo, true);
         devListener->OnDistributedServiceStatusChanged(false);
         devListener->WriteDistributedDeviceChangedEvent(info, statusInfo, serviceStatus->status);

@@ -374,6 +374,7 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
         fakeAudioInterrupt.streamUsage = session->second->GetSessionStreamUsage();
         auto sessionBehaviors = session->second->GetSessionBehaviors();
         fakeAudioInterrupt.behaviorFlags_.muteWhenInterruptFlag = sessionBehaviors.muteWhenInterruptFlag;
+        fakeAudioInterrupt.behaviorFlags_.pauseWhenInterruptFlag = sessionBehaviors.pauseWhenInterruptFlag;
     } else {
         AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),

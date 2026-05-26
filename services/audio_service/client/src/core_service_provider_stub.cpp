@@ -173,5 +173,19 @@ int32_t CoreServiceProviderWrapper::NotifySessionStandbyStatus(uint32_t sessionI
     coreServiceWorker_->NotifySessionStandbyStatus(sessionId, standbyStatus);
     return SUCCESS;
 }
+
+int32_t CoreServiceProviderWrapper::NotifyStreamStandby(int32_t pid, uint32_t streamId, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    ret = coreServiceWorker_->NotifyStreamStandby(pid, streamId);
+    return SUCCESS;
+}
+
+int32_t CoreServiceProviderWrapper::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    ret = coreServiceWorker_->NotifyStreamStandbyResume(pid, streamId);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

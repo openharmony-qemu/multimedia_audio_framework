@@ -107,7 +107,8 @@ vector<shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::DecideRingRenderDevi
             needDefaultDevice = true;
             break;
         case STREAM_USAGE_VOICE_RINGTONE:
-        case  STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
             if (curRingerMode == RINGER_MODE_NORMAL) {
                 needDefaultDevice = true;
             }

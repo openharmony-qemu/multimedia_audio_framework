@@ -51,6 +51,9 @@ public:
 
     // add for new playback-capturer
     std::vector<StreamUsage> GetDefaultUsages();
+    AudioPlaybackCaptureConfig NormalizePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) const;
+    bool IsSamePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &lhs,
+        const AudioPlaybackCaptureConfig &rhs) const;
     bool RegisterCapturerFilterListener(ICapturerFilterListener *listener);
     int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config,
         int32_t innerCapId);

@@ -74,37 +74,37 @@ public:
         nodeInfo_.nodeName = nodeName;
     }
 
-    virtual AudioSamplingRate GetSampleRate()
+    virtual AudioSamplingRate GetSampleRate() const
     {
         return nodeInfo_.samplingRate;
     }
 
-    virtual AudioSampleFormat GetBitWidth()
+    virtual AudioSampleFormat GetBitWidth() const
     {
         return nodeInfo_.format;
     }
-    
-    virtual AudioChannel GetChannelCount()
+
+    virtual AudioChannel GetChannelCount() const
     {
         return nodeInfo_.channels;
     }
 
-    virtual AudioChannelLayout GetChannelLayout()
+    virtual AudioChannelLayout GetChannelLayout() const
     {
         return nodeInfo_.channelLayout;
     }
 
-    virtual size_t GetFrameLen()
+    virtual size_t GetFrameLen() const
     {
         return nodeInfo_.frameLen;
     }
 
-    virtual uint32_t GetNodeId()
+    virtual uint32_t GetNodeId() const
     {
         return nodeInfo_.nodeId;
     }
 
-    virtual uint32_t GetSessionId()
+    virtual uint32_t GetSessionId() const
     {
         return nodeInfo_.sessionId;
     }
@@ -119,37 +119,37 @@ public:
         return nodeInfo_.effectInfo.streamUsage;
     }
 
-    virtual HpaeProcessorType GetSceneType()
+    virtual HpaeProcessorType GetSceneType() const
     {
         return nodeInfo_.sceneType;
     }
 
-    virtual SourceType GetSourceType()
+    virtual SourceType GetSourceType() const
     {
         return nodeInfo_.sourceType;
     }
 
-    virtual std::string GetDeviceClass()
+    virtual std::string GetDeviceClass() const
     {
         return nodeInfo_.deviceClass;
     }
 
-    virtual std::string GetDeviceNetId()
+    virtual std::string GetDeviceNetId() const
     {
         return nodeInfo_.deviceNetId;
     }
 
-    virtual std::string GetDeviceName()
+    virtual std::string GetDeviceName() const
     {
         return nodeInfo_.deviceName;
     }
 
-    virtual std::string GetNodeName()
+    virtual std::string GetNodeName() const
     {
         return nodeInfo_.nodeName;
     }
-    
-    virtual std::weak_ptr<INodeCallback> GetNodeStatusCallback()
+
+    virtual std::weak_ptr<INodeCallback> GetNodeStatusCallback() const
     {
         return nodeInfo_.statusCallback;
     }

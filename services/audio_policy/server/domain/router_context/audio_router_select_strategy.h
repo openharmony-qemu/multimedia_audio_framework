@@ -91,6 +91,11 @@ public:
     std::set<std::shared_ptr<AudioDeviceDescriptor>> FindCurrentOutputDevice(std::set<DeviceType> &&types);
     std::set<std::shared_ptr<AudioDeviceDescriptor>> FindCurrentInputDevice(std::set<DeviceType> &&types);
 
+    void ClearSystemSelectDevice(PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &device);
+    void ClearAllSelectSelectDevice(PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &device = nullptr);
+
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &simpleDesc);

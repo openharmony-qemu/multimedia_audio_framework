@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../config.gni")
 
 ohos_shared_library("audio_engine_utils") {
   stack_protector_ret = true
@@ -29,6 +30,7 @@ ohos_shared_library("audio_engine_utils") {
     "dfx/hpae_dfx_map_tree.cpp",
     "simd/simd_utils.cpp",
     "utils/hpae_backoff_controller.cpp",
+    "utils/hpae_delayed_task_queue.cpp",
     "utils/hpae_format_convert.cpp",
     "utils/hpae_no_lock_queue.cpp",
     "utils/hpae_pcm_dumper.cpp",
@@ -111,6 +113,17 @@ ohos_shared_library("audio_engine_plugins") {
     "hilog:libhilog",
   ]
 
+  defines = []
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
@@ -169,6 +182,16 @@ ohos_shared_library("audio_engine_node") {
     defines += [ "IS_EMULATOR" ]
   }
 
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   configs = [ ":audio_engine_node_config" ]
 
   sources = [
@@ -188,6 +211,7 @@ ohos_shared_library("audio_engine_node") {
     "node/src/hpae_plugin_node.cpp",
     "node/src/hpae_process_cluster.cpp",
     "node/src/hpae_render_effect_node.cpp",
+    "node/src/hpae_session_effect_node.cpp",
     "node/src/hpae_sink_input_node.cpp",
     "node/src/hpae_sink_output_node.cpp",
     "node/src/hpae_sink_virtual_output_node.cpp",
@@ -252,11 +276,13 @@ ohos_shared_library("hpae_engine_manager") {
     "manager/src/hpae_fast_renderer_manager.cpp",
     "manager/src/hpae_direct_renderer_manager.cpp",
     "manager/src/hpae_inner_capturer_manager.cpp",
+    "manager/src/effect_instance.cpp",
     "manager/src/hpae_manager.cpp",
     "manager/src/hpae_manager_impl.cpp",
     "manager/src/hpae_offload_renderer_manager.cpp",
     "manager/src/hpae_policy_manager.cpp",
     "manager/src/hpae_renderer_manager.cpp",
+    "manager/src/session_effect_manager.cpp",
     "manager/src/hpae_signal_process_thread.cpp",
     "manager/src/hpae_soft_link.cpp",
     "manager/src/i_hpae_capturer_manager.cpp",

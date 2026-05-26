@@ -225,7 +225,7 @@ TEST(FakeAudioEffectLibEntry, GetOutput_has_data)
     lib.createEffect({"test", "test"}, &handle);
 
     // Feed enough data to reach process threshold (192000 floats for stereo)
-    std::vector<float> data(FAKE_PROCESS_THRESHOLD_FLOATS);
+    std::vector<float> data(fakeProcessThresholdFloats);
     for (size_t i = 0; i < data.size(); i += 2) {
         data[i] = 1.0f;     // L
         data[i + 1] = 2.0f; // R

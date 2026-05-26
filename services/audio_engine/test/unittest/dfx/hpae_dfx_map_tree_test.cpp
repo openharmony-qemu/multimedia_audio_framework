@@ -264,7 +264,7 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_010, TestSize.Level1)
     dfxTree_->AddNode(node2_);
     dfxTree_->ConnectNodes(node1_.nodeId, node2_.nodeId);
     
-    bool result = dfxTree_->DisConnectNodes(node1_.nodeId, node2_.nodeId);
+    bool result = dfxTree_->DisconnectNodes(node1_.nodeId, node2_.nodeId);
     EXPECT_TRUE(result);
     
     auto parentNode = dfxTree_->FindDfxNode(node1_.nodeId);
@@ -285,7 +285,7 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_011, TestSize.Level1)
     dfxTree_->AddNode(node1_);
     dfxTree_->AddNode(node2_);
     
-    bool result = dfxTree_->DisConnectNodes(node1_.nodeId, node2_.nodeId);
+    bool result = dfxTree_->DisconnectNodes(node1_.nodeId, node2_.nodeId);
     EXPECT_FALSE(result);
 }
 
@@ -299,8 +299,8 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_012, TestSize.Level1)
 {
     dfxTree_->AddNode(node1_);
     
-    bool result1 = dfxTree_->DisConnectNodes(node1_.nodeId, NOT_EXIT_ID_9999);
-    bool result2 = dfxTree_->DisConnectNodes(NOT_EXIT_ID_9999, node1_.nodeId);
+    bool result1 = dfxTree_->DisconnectNodes(node1_.nodeId, NOT_EXIT_ID_9999);
+    bool result2 = dfxTree_->DisconnectNodes(NOT_EXIT_ID_9999, node1_.nodeId);
     
     EXPECT_FALSE(result1);
     EXPECT_FALSE(result2);

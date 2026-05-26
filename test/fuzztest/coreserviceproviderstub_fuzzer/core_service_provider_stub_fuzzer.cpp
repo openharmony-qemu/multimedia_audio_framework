@@ -37,6 +37,13 @@ const size_t THRESHOLD = 10;
 
 typedef void (*TestFuncs)();
 
+static std::unique_ptr<AudioCoreService::EventEntry> CreateEventEntry(
+    const std::shared_ptr<AudioCoreService> &audioCoreService)
+{
+    return std::make_unique<AudioCoreService::EventEntry>(
+        audioCoreService, audioCoreService->readyConditionNotifier_);
+}
+
 template<class T>
 T GetData()
 {
@@ -69,14 +76,14 @@ uint32_t GetArrLength(T& arr)
 void CoreServiceProviderWrapperFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
 }
 
 void UpdateSessionOperationFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t operation = GetData<uint32_t>();
@@ -88,7 +95,7 @@ void UpdateSessionOperationFuzzTest()
 void ReloadCaptureSessionFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t operation = GetData<uint32_t>();
@@ -98,7 +105,7 @@ void ReloadCaptureSessionFuzzTest()
 void SetDefaultOutputDeviceFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     int32_t defaultOutputDevice = GetData<int32_t>();
     uint32_t sessionID = GetData<uint32_t>();
@@ -110,7 +117,7 @@ void SetDefaultOutputDeviceFuzzTest()
 void GetModuleNameBySessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionID = GetData<uint32_t>();
     std::string name = "abc";
@@ -120,7 +127,7 @@ void GetModuleNameBySessionIdFuzzTest()
 void GetProcessDeviceInfoBySessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     AudioDeviceDescriptor deviceInfo;
@@ -133,7 +140,7 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
 void GenerateSessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    auto coreServiceWorker = CreateEventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     coreServiceProviderWrapper.GenerateSessionId(sessionId);

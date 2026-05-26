@@ -28,15 +28,16 @@ bool WirelessConflictHandler::IsCallStreamUsage(StreamUsage streamUsage)
 {
     return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
            streamUsage == STREAM_USAGE_RINGTONE ||
-           streamUsage == STREAM_USAGE_VOICE_RINGTONE;
+           streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
 }
 
 bool WirelessConflictHandler::IsForcedRouterType(RouterType routerType)
 {
-    return routerType == ROUTER_TYPE_USER_SELECT ||
-           routerType == ROUTER_TYPE_APP_SELECT;
+    return routerType == ROUTER_TYPE_USER_SELECT;
 }
 
 int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sourceType,
@@ -127,8 +128,7 @@ void WirelessConflictHandler::FindHighestPriorityDevice()
     findPriority(inputStreamDevices_, false, false);
 }
 
-bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
-    StreamUsage streamUsage, SourceType sourceType, bool isOutput)
+bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType)
 {
     if (device == nullptr || device->macAddress_.empty() || !IsWirelessDevice(device)) {
         return false;

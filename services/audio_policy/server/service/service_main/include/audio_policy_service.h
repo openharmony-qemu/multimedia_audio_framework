@@ -243,6 +243,7 @@ public:
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     AudioScene GetAudioSceneFromAllZones();
     int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
+    bool IsValidNetworkIdForSendEffectParam(const std::string &networkId);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -318,14 +319,15 @@ private:
     int32_t HandleCaptureModeDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate);
     int32_t HandleVoipPlaybackDeviceInfo(const AudioProcessConfig &config,
-    AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
+        AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
     int32_t HandleVoipCaptureDeviceInfo(const AudioProcessConfig &config,
         AudioDeviceDescriptor &deviceInfo, AudioSamplingRate samplingRate,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
     bool IsVoipStreamUsage(StreamUsage streamUsage);
     void SetCommonDeviceInfo(AudioDeviceDescriptor &deviceInfo,
         const AudioDeviceDescriptor &sourceDesc, DeviceRole role);
+    bool IsMatchDeviceWithUsage(std::shared_ptr<AudioDeviceDescriptor> desc, AudioDeviceUsage usage);
 private:
 
     static bool isBtListenerRegistered;

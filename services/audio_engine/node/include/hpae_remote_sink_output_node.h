@@ -55,6 +55,8 @@ public:
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
+    uint32_t GetRenderId() const;
+    DeviceType GetCurrentOutputDevice() const;
 
 private:
     void HandleRemoteTiming();

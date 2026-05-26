@@ -108,7 +108,7 @@ PcmBufferFormat ConvertToPcmBufferFormat(const AudioFormatConfig* cfg)
 AudioFormat ConvertToAudioFormat(const AudioFormatConfig* cfg)
 {
     AudioFormat format;
-    AudioSamplingRate rate;
+    AudioSamplingRate rate = SAMPLE_RATE_48000;
     ValidateSampleRate(cfg->sampleRate, rate);
 
     format.rate = rate;

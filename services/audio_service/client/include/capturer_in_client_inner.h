@@ -26,6 +26,7 @@
 #include <string>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -59,6 +60,7 @@ public:
 
     // IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
+    int32_t OnMetaData(const std::vector<uint8_t> &metaData) override;
 
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
     void SetClientDeviceId(const std::string &deviceId) override;
@@ -113,6 +115,7 @@ public:
     void InitCallbackLoop();
     AudioCaptureMode GetCaptureMode() override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
     int32_t Clear() override;
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
@@ -240,7 +243,8 @@ public:
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
 
@@ -280,6 +284,9 @@ private:
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
     bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
+    void DumpMetadata(const std::vector<uint8_t> &metaData);
+    void ReleaseCallbackResources(bool releaseRunner);
+    void FinalizeRelease();
 
     void UpdateStreamState(State state);
     void FillCapturerClientOnlyInfo(AudioDebugInfo &debugInfo);
@@ -316,6 +323,8 @@ private:
     std::mutex readCbMutex_; // lock for change or use callback
     std::condition_variable cbThreadCv_;
     std::shared_ptr<AudioCapturerReadCallback> readCb_ = nullptr;
+    std::mutex metaDataCbMutex_;
+    std::shared_ptr<AudioCapturerMetaDataCallback> metaDataCb_ = nullptr;
     std::mutex cbBufferMutex_;
     std::unique_ptr<uint8_t[]> cbBuffer_ {nullptr};
     size_t cbBufferSize_ = 0;
@@ -335,6 +344,8 @@ private:
     std::mutex fastStatusChangeCallbackMutex_;
     std::function<void(FastStatus)> fastStatusChangeCallback_;
     std::atomic<FastStatus> fastStatus_ = FASTSTATUS_NORMAL;
+    FILE *dumpMetaDataFile_ = nullptr;
+    std::string dumpMetaDataFileName_ = "";
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;

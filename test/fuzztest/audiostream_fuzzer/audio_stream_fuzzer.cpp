@@ -106,6 +106,8 @@ public:
 
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
 
+    bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) override;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
 
@@ -200,6 +202,11 @@ int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
 int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return SUCCESS;
+}
+
+bool MockPolicyProvider::IsValidNetworkIdForSendEffectParam(const std::string &networkId)
+{
+    return false;
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -299,6 +306,7 @@ void InitAudioServer()
     wrapper->NotifyCapturerAdded(config.capturerInfo, config.streamInfo, 0);
     wrapper->NotifyWakeUpCapturerRemoved();
     wrapper->IsAbsVolumeSupported(ret);
+    wrapper->IsValidNetworkIdForSendEffectParam("", ret);
 }
 
 void ModifyStreamInfoFormat(AudioProcessConfig &config)

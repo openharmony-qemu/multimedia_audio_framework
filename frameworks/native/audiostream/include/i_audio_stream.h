@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <functional>
+#include <vector>
 #include "timestamp.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
@@ -25,6 +26,7 @@
 #include "audio_device_info.h"
 #include "audio_errors.h"
 #include "audio_debug_info.h"
+#include "audio_shared_memory.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +40,11 @@ public:
      * For details, refer InterruptEvent struct in audio_info.h
      */
     virtual void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+
+    virtual void OnMetaData(const std::vector<uint8_t> &metaData)
+    {
+        (void)metaData;
+    };
 };
 
 class RendererOrCapturerPolicyServiceDiedCallback {
@@ -118,6 +125,7 @@ public:
         RenderTarget target = NORMAL_PLAYBACK;
 
         StaticBufferInfo staticBufferInfo{};
+        std::shared_ptr<AudioSharedMemory> staticSharedMemory = nullptr;
         std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
         bool backMute = false;
     };
@@ -230,6 +238,11 @@ public:
     virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) = 0;
     virtual AudioCaptureMode GetCaptureMode() = 0;
     virtual int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) = 0;
+    virtual int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+    {
+        (void)callback;
+        return ERR_NOT_SUPPORTED;
+    }
 
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) = 0;
@@ -379,7 +392,8 @@ public:
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 
-    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;
+    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
+        std::shared_ptr<AudioSharedMemory> sharedMemory) = 0;
 
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 

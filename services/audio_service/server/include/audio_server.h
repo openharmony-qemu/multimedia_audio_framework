@@ -18,6 +18,7 @@
 
 
 #include <condition_variable>
+#include <map>
 #include <pthread.h>
 
 #include "accesstoken_kit.h"
@@ -120,9 +121,11 @@ public:
     int32_t SetActiveOutputDevice(int32_t deviceType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
-    int32_t OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId) override;
-    int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
+    int32_t OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId) override;
+    int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
     int32_t SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, bool scoExcludeFlag) override;
+    int32_t CreateCallTransferProxy() override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<StringPair>& kvpairs) override;
@@ -319,6 +322,7 @@ public:
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
     int32_t CheckInnerCapVoIP(uint32_t sessionId) override;
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo) override;
+    int32_t SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -488,7 +492,8 @@ private:
     bool UpdateAudioParameterInfo(const std::string &key, const std::string &value,
         AudioParamKey &parmKey, std::string &valueNew, std::string &halName);
     const std::string GetVAParameter(const std::string &key);
-    int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
+    int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
+        bool scoExcludeFlag, int32_t phoneCallSceneType = SCENE_TYPE_INVALID);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t GetExtraParametersInner(const std::string &mainKey,
@@ -505,6 +510,7 @@ private:
     void RegisterResSchedSys();
     void HapReportWakeupEvent(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t TrySetAudioEffectParameterToRemote(const std::vector<std::pair<std::string, std::string>> &newPair);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -582,8 +588,13 @@ public:
     void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
 private:
     void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);
+    void ReportStandbyEvent(const AudioRendererDataTransferStateChangeInfo &info, int32_t standbyDurationS);
+    bool IsNeedNotifyStandbyState(const AudioRendererDataTransferStateChangeInfo &info, bool isStandby);
+    void NotifyStreamStandbyState(const AudioRendererDataTransferStateChangeInfo &info, bool isStandby);
 
     DataTransferMonitorParam param_;
+    std::mutex standbyMutex_;
+    std::map<uint32_t, int64_t> standbyStartTimeMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

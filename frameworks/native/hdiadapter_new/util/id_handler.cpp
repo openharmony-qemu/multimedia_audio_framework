@@ -84,6 +84,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, info);
     } else if (deviceClass == "remote_offload") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_OFFLOAD, info);
+    } else if (deviceClass == "remote_multichannel") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_MULTICHANNEL, info);
 #endif
     }
     return GetRenderIdByDeviceClassSub(deviceClass, info, routeFlag);
@@ -159,6 +161,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
             return GetIdForSolePipeSource(sourceType, routeFlag);
         }
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "primary_extra_capturer") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
     } else if (deviceClass == "va") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
     } else if (deviceClass == "usb") {

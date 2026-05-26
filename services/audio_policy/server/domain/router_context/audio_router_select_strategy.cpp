@@ -230,7 +230,8 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
     } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
         streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
         streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-        streamUsage == STREAM_USAGE_INTERPHONE) {
+        streamUsage == STREAM_USAGE_INTERPHONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
         auto before = GetCallDefaultOutputDevice(uid, streamId);
         UpdateCallDefaultOutputDevice(uid, streamId, setDev);
         auto after = GetCallDefaultOutputDevice(uid, streamId);
@@ -517,6 +518,48 @@ set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentInp
         AUDIO_INFO_LOG("deviceId=%{public}d, deviceType=%{public}d", desc->deviceId_, desc->deviceType_);
     }
     return result;
+}
+
+void AudioRouterSelectStrategy::ClearSystemSelectDevice(PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto simpleDesc = ConvertDeviceToSimple(device);
+
+    static const std::unordered_map<PreferredType, SelectDeviceType> typeMap = {
+        { AUDIO_MEDIA_RENDER, SelectDeviceType::MEDIA_OUTPUT },
+        { AUDIO_CALL_RENDER, SelectDeviceType::CALL_OUTPUT },
+        { AUDIO_CALL_CAPTURE, SelectDeviceType::CALL_INPUT },
+        { AUDIO_RECORD_CAPTURE, SelectDeviceType::MEDIA_INPUT },
+    };
+
+    auto it = typeMap.find(preferredType);
+    if (it != typeMap.end()) {
+        routerInfra.ClearSystemSelectDevice(it->second, simpleDesc);
+    } else {
+        AUDIO_ERR_LOG("Invalid preferred type: %{public}d", preferredType);
+    }
+}
+
+void AudioRouterSelectStrategy::ClearAllSelectSelectDevice(PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto simpleDesc = ConvertDeviceToSimple(device);
+
+    static const std::unordered_map<PreferredType, SelectDeviceType> typeMap = {
+        { AUDIO_MEDIA_RENDER, SelectDeviceType::MEDIA_OUTPUT },
+        { AUDIO_CALL_RENDER, SelectDeviceType::CALL_OUTPUT },
+        { AUDIO_CALL_CAPTURE, SelectDeviceType::CALL_INPUT },
+        { AUDIO_RECORD_CAPTURE, SelectDeviceType::MEDIA_INPUT },
+    };
+
+    auto it = typeMap.find(preferredType);
+    if (it != typeMap.end()) {
+        routerInfra.ClearAllSelectSelectDevice(it->second, simpleDesc);
+    } else {
+        AUDIO_ERR_LOG("Invalid preferred type: %{public}d", preferredType);
+    }
 }
 
 }

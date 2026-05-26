@@ -157,5 +157,12 @@ int32_t PolicyProviderWrapper::ClearAudioFocusBySessionID(int32_t sessionID)
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->ClearAudioFocusBySessionID(sessionID);
 }
+
+int32_t PolicyProviderWrapper::IsValidNetworkIdForSendEffectParam(const std::string &networkId, bool &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    ret = policyWorker_->IsValidNetworkIdForSendEffectParam(networkId);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

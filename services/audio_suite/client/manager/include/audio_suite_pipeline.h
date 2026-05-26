@@ -122,10 +122,14 @@ private:
     void CheckRenderFrameTime(int32_t frameDurationMS, uint64_t processDurationUS);
     void CheckRenderFrameOverTimeCount();
     void SetMixerNodeSampleRate();
+    bool CheckHoaInputNodeConnection(uint32_t nodeId, const AudioFormat &format);
+    bool CheckHoaRenderPreNode(uint32_t nodeId);
 
 private:
     static std::mutex allocateIdLock;
     static uint32_t allocateId;
+    static const std::unordered_map<AudioNodeType,
+        std::function<std::shared_ptr<AudioNode>()>> effectNodeFactory_;
 
     uint32_t id_;
     int32_t workGroupId_ = -1;

@@ -151,14 +151,14 @@ HWTEST_F(HpaeSessionEffectNodeTest, createEffectWithInstance_nullptr_returnsErro
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_CREATE_FAILED));
 }
 
-// ReleaseEffect releases instance and clears internal reference
-HWTEST_F(HpaeSessionEffectNodeTest, releaseEffect_clearsInstance, TestSize.Level0)
+// DropEffect clears node's reference and resets to IDLE
+HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_clearsInstance, TestSize.Level0)
 {
     auto instance = std::make_shared<EffectInstance>();
     instance->Init("test_effect", config_);
     node_->CreateEffectWithInstance("test_effect", instance, config_);
 
-    int32_t ret = node_->ReleaseEffect();
+    int32_t ret = node_->DropEffect();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(node_->GetEffectInstance(), nullptr);
 }
@@ -181,10 +181,10 @@ HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_resetsWithoutRelease, TestSize.Le
     EXPECT_EQ(instance->GetState(), EffectInstance::EffectState::ACTIVE);
 }
 
-// ReleaseEffect when no instance is set
-HWTEST_F(HpaeSessionEffectNodeTest, releaseEffect_noInstance_noop, TestSize.Level0)
+// DropEffect when no instance is set
+HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_noInstance_noop, TestSize.Level0)
 {
-    int32_t ret = node_->ReleaseEffect();
+    int32_t ret = node_->DropEffect();
     EXPECT_EQ(ret, 0);
 }
 
@@ -1184,11 +1184,11 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_returns_input_minus_output, Test
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    uint64_t expectedLatencyUs = byteLen * 1000000ULL / (TEST_CHANNEL_COUNT * sizeof(float) * 48000);
+    uint64_t oneFrameLatencyUs = byteLen * 1000000ULL / (TEST_CHANNEL_COUNT * sizeof(float) * 48000);
 
-    // After EnterState: in == out → GetLatency = 0
-    EXPECT_EQ(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
-    EXPECT_EQ(node_->GetLatency(), 0u);
+    // Entering ACTIVE consumes one algorithm output frame, leaving one fed input frame pending.
+    EXPECT_EQ(node_->GetTotalBytesIn() - node_->GetTotalBytesOut(), byteLen);
+    EXPECT_EQ(node_->GetLatency(), oneFrameLatencyUs);
 
     // Feed input directly (simulating preheat/prebuf) without corresponding output
     PcmBufferInfo bufInfo;
@@ -1198,7 +1198,7 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_returns_input_minus_output, Test
     HpaePcmBuffer extraBuf(bufInfo);
     node_->FeedInputFromBuffer(&extraBuf);
     EXPECT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
-    EXPECT_EQ(node_->GetLatency(), expectedLatencyUs);
+    EXPECT_EQ(node_->GetLatency(), oneFrameLatencyUs * 2);
 }
 
 // SE-L2: WARMING_UP DoProcess outputs silence directly, not via SignalProcess
@@ -1216,6 +1216,31 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_includes_preheat_silence, TestSi
     EXPECT_EQ(node_->GetTotalBytesOut(), 0u);
     // Time-based skip: verify DoProcess stayed in WARMING_UP (prebuf not filled)
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+}
+
+// SE-L2-ext: INTERCEPTING silence progress follows time-based skip, not every silence frame
+HWTEST_F(SessionEffectNodeStateTest, GetLatency_interceptingSilenceProgressMatchesSkipFrames, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    node_->SetPrebufFilledForTest(true);
+
+    size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    uint32_t capturedSkipFrames = 0;
+    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::NotNull()))
+        .WillOnce(testing::DoAll(
+            testing::WithArg<2>(testing::Invoke([&capturedSkipFrames](uint32_t *skipCount) {
+                capturedSkipFrames = *skipCount;
+            })),
+            testing::Return(0)));
+
+    node_->DoProcess();
+
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
+    EXPECT_EQ(node_->GetTotalBytesOut(), static_cast<size_t>(capturedSkipFrames) * byteLen);
+    EXPECT_EQ(node_->GetStatsForTest().framesOutput, 0);
 }
 
 // SE-L3: GetLatency zero when bypass (no effect instance)
@@ -1413,8 +1438,8 @@ HWTEST_F(SessionEffectNodeAlgoTest, stats_accumulatesFrames, TestSize.Level0)
     EXPECT_GT(stats.framesProcessed, 0);
 }
 
-// SE-D2: Stats counter resets on ReleaseEffect
-HWTEST_F(SessionEffectNodeAlgoTest, stats_resetsOnRelease, TestSize.Level0)
+// SE-D2: Stats counter resets on DropEffect
+HWTEST_F(SessionEffectNodeAlgoTest, stats_resetsOnDrop, TestSize.Level0)
 {
     auto inst = CreateInstanceWithLib();
     node_->CreateEffectWithInstance("test_effect", inst, config_);
@@ -1432,7 +1457,7 @@ HWTEST_F(SessionEffectNodeAlgoTest, stats_resetsOnRelease, TestSize.Level0)
     node_->SignalProcess(inputs);
     EXPECT_GT(node_->GetStatsForTest().framesProcessed, 0);
 
-    node_->ReleaseEffect();
+    node_->DropEffect();
     EXPECT_EQ(node_->GetStatsForTest().framesProcessed, 0);
     EXPECT_EQ(node_->GetStatsForTest().framesOutput, 0);
 }

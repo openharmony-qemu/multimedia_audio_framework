@@ -23,14 +23,14 @@
 #include "audio_server_proxy.h"
 #include "audio_select_interface_service.h"
 
+#include <utility>
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 static constexpr int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 200; // 200ms
 static constexpr int32_t RETRY_TIMES = 25;
 static constexpr uint32_t TIMEOUT_CORE_ENTRY_S = 20;
-static constexpr int64_t SERVICE_READY_TIMEOUT_MS = 5000; // 5s
-static constexpr int32_t SERVICE_READY_WAIT_LIMIT = 5;
 }
 
 static const char *SessionOperationToString(SessionOperation operation)
@@ -61,7 +61,25 @@ static const char *SessionOperationMsgToString(SessionOperationMsg opMsg)
     }
 }
 
-AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService) : coreService_(coreService),
+static int32_t WaitResultToAudioError(MultiConditionWaiter::WaitResult result)
+{
+    switch (result) {
+        case MultiConditionWaiter::WaitResult::SUCCESS:
+            return SUCCESS;
+        case MultiConditionWaiter::WaitResult::WAIT_LIMIT_EXCEEDED:
+            return ERR_RETRY_IN_CLIENT;
+        case MultiConditionWaiter::WaitResult::INVALID_STATE:
+            return ERR_OPERATION_FAILED;
+        case MultiConditionWaiter::WaitResult::TIMEOUT:
+            return ERR_OPERATION_FAILED;
+        default:
+            return ERR_OPERATION_FAILED;
+    }
+}
+
+AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService,
+    const MultiConditionNotifier &readyConditionNotifier) : coreService_(coreService),
+    readyConditionWaiter_(readyConditionNotifier.CreateWaiter()),
     audioPolicyDump_(AudioPolicyDump::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
@@ -80,34 +98,23 @@ void AudioCoreService::EventEntry::RegistCoreService()
     AUDIO_INFO_LOG("Result:%{public}d", ret);
 }
 
-int32_t AudioCoreService::EventEntry::WaitForServiceReady()
+int32_t AudioCoreService::EventEntry::WaitForReadyConditions()
 {
-    CHECK_AND_RETURN_RET(!serviceReady_.load(), SUCCESS);
-    std::unique_lock<std::mutex> readyLock(serviceReadyMutex_);
-    CHECK_AND_RETURN_RET_LOG(serviceReadyWaitCount_ < SERVICE_READY_WAIT_LIMIT,
-        ERR_RETRY_IN_CLIENT, "let client retry");
-    serviceReadyWaitCount_++;
-    bool isReady = serviceReadyCV_.wait_for(readyLock,
-        std::chrono::milliseconds(SERVICE_READY_TIMEOUT_MS),
-        [this]() { return serviceReady_.load(); });
-    serviceReadyWaitCount_--;
-    CHECK_AND_RETURN_RET_LOG(isReady, ERR_OPERATION_FAILED, "timeout waiting for service connected");
-    return SUCCESS;
+    auto result = readyConditionWaiter_.WaitFor(
+        READY_CONDITION_MASK, std::chrono::milliseconds(READY_CONDITION_WAIT_TIMEOUT_MS),
+        READY_CONDITION_WAIT_LIMIT);
+    return WaitResultToAudioError(result);
 }
 
 void AudioCoreService::EventEntry::NotifyServiceReady()
 {
-    {
-        std::lock_guard<std::mutex> readyLock(serviceReadyMutex_);
-        serviceReady_.store(true);
-    }
-    serviceReadyCV_.notify_all();
+    coreService_->NotifyServiceReady();
 }
 
 int32_t AudioCoreService::EventEntry::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
-    int32_t waitRet = WaitForServiceReady();
+    int32_t waitRet = WaitForReadyConditions();
     RecordBootStateTime(static_cast<int32_t>(BootAnimationState::WAIT_FOR_SERVICE_READY), streamDesc->GetRealUid(),
         ClockTime::GetCurMilli());
     CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
@@ -119,7 +126,7 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
 int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
-    int32_t waitRet = WaitForServiceReady();
+    int32_t waitRet = WaitForReadyConditions();
     CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
@@ -777,6 +784,28 @@ void AudioCoreService::EventEntry::NotifySessionStandbyStatus(uint32_t sessionId
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     coreService_->NotifyStandbyStatus(sessionId, standbyStatus);
+}
+
+int32_t AudioCoreService::EventEntry::NotifyStreamStandby(int32_t pid, uint32_t streamId)
+{
+    std::shared_ptr<AudioCoreService> coreService = nullptr;
+    {
+        std::lock_guard<std::shared_mutex> lock(eventMutex_);
+        CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+        coreService = coreService_;
+    }
+    return coreService->NotifyStreamStandby(pid, streamId);
+}
+
+int32_t AudioCoreService::EventEntry::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
+{
+    std::shared_ptr<AudioCoreService> coreService = nullptr;
+    {
+        std::lock_guard<std::shared_mutex> lock(eventMutex_);
+        CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+        coreService = coreService_;
+    }
+    return coreService->NotifyStreamStandbyResume(pid, streamId);
 }
 
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)

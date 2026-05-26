@@ -21,10 +21,14 @@
 #include "stream_dfx_manager.h"
 #include "media_monitor_manager.h"
 #include "event_bean.h"
+#include "audio_stream_info.h"
+#include "audio_source_type.h"
 #include <cinttypes>
 
 namespace {
-constexpr uint32_t SESSION_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours
+constexpr uint32_t SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+constexpr uint32_t INTERPHONE_CAPTURE_TIMEOUT_MS = 10 * 60 * 1000;
+constexpr uint32_t INTERPHONE_RENDER_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 }
 
 namespace OHOS {
@@ -35,6 +39,15 @@ StreamDfxManager& StreamDfxManager::GetInstance()
     return instance;
 }
 
+bool StreamDfxManager::IsInterphoneStream(const AudioProcessConfig &processConfig)
+{
+    if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        return processConfig.rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE;
+    } else {
+        return processConfig.capturerInfo.sourceType == SOURCE_TYPE_INTERPHONE;
+    }
+}
+
 void StreamDfxManager::CheckStreamOccupancy(uint32_t sessionId, const AudioProcessConfig &processConfig, bool isStart)
 {
     int64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -43,9 +56,17 @@ void StreamDfxManager::CheckStreamOccupancy(uint32_t sessionId, const AudioProce
         sessionId, isStart, currentTime);
     std::lock_guard<std::mutex> lock(streamMutex_);
     for (auto item = streamRecordMap_.begin(); item != streamRecordMap_.end(); ++item) {
+        AudioProcessConfig &config = item->second.processConfig;
+        bool isInterphone = IsInterphoneStream(config);
         int64_t startTime = item->second.startTime;
         int64_t lastUploadTime = item->second.lastUploadTime;
-        if ((currentTime - startTime) > SESSION_TIMEOUT && (currentTime - lastUploadTime) > SESSION_TIMEOUT) {
+        bool isPlayback = (config.audioMode == AUDIO_MODE_PLAYBACK);
+        
+        uint32_t timeout = SESSION_TIMEOUT_MS;
+        if (isInterphone) {
+            timeout = isPlayback ? INTERPHONE_RENDER_TIMEOUT_MS : INTERPHONE_CAPTURE_TIMEOUT_MS;
+        }
+        if ((currentTime - startTime) > timeout && (currentTime - lastUploadTime) > timeout) {
             ReportStreamOccupancyTimeout(item->first, startTime, currentTime);
             item->second.lastUploadTime = currentTime;
         }
@@ -64,20 +85,22 @@ void StreamDfxManager::ReportStreamOccupancyTimeout(uint32_t sessionId, int64_t 
     auto streamInfo = streamRecordMap_.find(sessionId);
     CHECK_AND_RETURN_LOG(streamInfo != streamRecordMap_.end(), "sessionId not found");
     AudioProcessConfig &processConfig = streamInfo->second.processConfig;
+    bool isInterphone = IsInterphoneStream(processConfig);
+    bool isPlayback = (processConfig.audioMode == AUDIO_MODE_PLAYBACK);
     AUDIO_INFO_LOG("sessionId %{public}u timeout, start time %{public}" PRId64 ", "\
-        "current time %{public}" PRId64 ", streamUsage %{public}d, sourcetype %{public}d, uid %{private}d",
-        sessionId, startTime, currentTime, processConfig.rendererInfo.streamUsage,
-        processConfig.capturerInfo.sourceType, processConfig.appInfo.appUid);
+        "current time %{public}" PRId64 ", streamUsage %{public}d, sourcetype %{public}d, uid %{private}d, "\
+        "isInterphone %{public}d", sessionId, startTime, currentTime, processConfig.rendererInfo.streamUsage,
+        processConfig.capturerInfo.sourceType, processConfig.appInfo.appUid, isInterphone);
 
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
         Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
     CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
 
-    bean->Add("IS_PLAYBACK", processConfig.audioMode == AUDIO_MODE_PLAYBACK);
+    bean->Add("IS_PLAYBACK", isPlayback);
     bean->Add("SESSIONID", static_cast<int32_t>(sessionId));
     bean->Add("UID", processConfig.appInfo.appUid);
-    int32_t streamTypeInt = (processConfig.audioMode == AUDIO_MODE_PLAYBACK) ?
+    int32_t streamTypeInt = isPlayback ?
         static_cast<int32_t>(processConfig.rendererInfo.streamUsage) :
         static_cast<int32_t>(processConfig.capturerInfo.sourceType);
     bean->Add("STREAM_OR_SOURCE_TYPE", streamTypeInt);

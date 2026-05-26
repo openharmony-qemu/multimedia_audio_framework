@@ -121,7 +121,7 @@ int32_t AudioSpatializationManager::RegisterSpatializationEnabledEventListener(
     const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
-    return AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(callback, true);
+    return AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(callback);
 }
 
 int32_t AudioSpatializationManager::RegisterSpatializationEnabledForCurrentDeviceEventListener(
@@ -135,7 +135,7 @@ int32_t AudioSpatializationManager::RegisterHeadTrackingEnabledEventListener(
     const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
-    return AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(callback, true);
+    return AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(callback);
 }
 
 int32_t AudioSpatializationManager::RegisterAdaptiveSpatialRenderingEnabledEventListener(

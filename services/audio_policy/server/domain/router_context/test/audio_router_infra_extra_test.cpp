@@ -173,5 +173,334 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_AdjustOutputPriori
     routerInfra.AdjustOutputPriority(uid, true, false, false);
     EXPECT_EQ(uid, TEST_APP_UID_10001);
 }
+
+/**
+ * @tc.name  : Test UpdateExclusiveUidNoLock with deviceTokenId != 0 (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_UpdateExclusiveUidNoLock_001
+ * @tc.desc  : Test UpdateExclusiveUidNoLock adds uid to exclusiveUids_[type] when deviceTokenId != 0.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateExclusiveUidNoLock_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    uint32_t deviceTokenId = 12345;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto exclusiveDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    exclusiveDevice->deviceTokenId_ = deviceTokenId;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        exclusiveDevice->deviceType_, exclusiveDevice->deviceRole_,
+        exclusiveDevice->deviceId_, exclusiveDevice->networkId_, exclusiveDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc, deviceTokenId);
+
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    EXPECT_EQ(highestUid, INVALID_UID);
+}
+
+/**
+ * @tc.name  : Test UpdateExclusiveUidNoLock with deviceTokenId == 0 (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_UpdateExclusiveUidNoLock_002
+ * @tc.desc  : Test UpdateExclusiveUidNoLock removes uid from exclusiveUids_[type] when deviceTokenId == 0.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateExclusiveUidNoLock_002, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto normalDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    normalDevice->deviceTokenId_ = 0;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        normalDevice->deviceType_, normalDevice->deviceRole_,
+        normalDevice->deviceId_, normalDevice->networkId_, normalDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc, 0);
+
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    EXPECT_EQ(highestUid, uid);
+}
+
+/**
+ * @tc.name  : Test UpdateExclusiveUidNoLock with SYSTEM_UID (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_UpdateExclusiveUidNoLock_003
+ * @tc.desc  : Test UpdateExclusiveUidNoLock returns early for SYSTEM_UID.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateExclusiveUidNoLock_003, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto exclusiveDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    exclusiveDevice->deviceTokenId_ = 12345;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        exclusiveDevice->deviceType_, exclusiveDevice->deviceRole_,
+        exclusiveDevice->deviceId_, exclusiveDevice->networkId_, exclusiveDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, SYSTEM_UID, simpleDesc, 12345);
+
+    auto selectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
+    EXPECT_NE(selectInfo.device_, nullptr);
+}
+
+/**
+ * @tc.name  : Test RefreshSelectDevice default deviceTokenId parameter (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_RefreshSelectDevice_DefaultToken_001
+ * @tc.desc  : Test RefreshSelectDevice with default deviceTokenId=0 behaves correctly.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_RefreshSelectDevice_DefaultToken_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto normalDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    normalDevice->deviceTokenId_ = 0;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        normalDevice->deviceType_, normalDevice->deviceRole_,
+        normalDevice->deviceId_, normalDevice->networkId_, normalDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc);
+
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    EXPECT_EQ(highestUid, uid);
+}
+
+/**
+ * @tc.name  : Test GetHighestInputPriorityAppNoLock skips exclusive uids (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_GetHighestInputPriorityApp_001
+ * @tc.desc  : Test GetHighestInputPriorityApp skips exclusive uids and returns first non-exclusive.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_GetHighestInputPriorityApp_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
+        SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2,
+        SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto exclusiveDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    exclusiveDevice->deviceTokenId_ = 12345;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        exclusiveDevice->deviceType_, exclusiveDevice->deviceRole_,
+        exclusiveDevice->deviceId_, exclusiveDevice->networkId_, exclusiveDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, TEST_APP_UID_10001, simpleDesc, 12345);
+
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    EXPECT_EQ(highestUid, TEST_APP_UID_10002);
+}
+
+/**
+ * @tc.name  : Test GetHighestOutputPriorityAppNoLock skips exclusive uids (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_GetHighestOutputPriorityApp_001
+ * @tc.desc  : Test GetHighestOutputPriorityApp skips exclusive uids and returns first non-exclusive.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_GetHighestOutputPriorityApp_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2,
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+
+    auto exclusiveDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    exclusiveDevice->deviceTokenId_ = 12345;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        exclusiveDevice->deviceType_, exclusiveDevice->deviceRole_,
+        exclusiveDevice->deviceId_, exclusiveDevice->networkId_, exclusiveDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, TEST_APP_UID_10001, simpleDesc, 12345);
+
+    int32_t highestUid = routerInfra.GetHighestOutputPriorityApp();
+    EXPECT_EQ(highestUid, TEST_APP_UID_10002);
+}
+
+/**
+ * @tc.name  : Test OnAppDied clears all exclusiveUids_ entries (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_OnAppDied_001
+ * @tc.desc  : Test OnAppDied removes uid from all exclusiveUids_[type] array entries.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_OnAppDied_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    routerInfra.UpdateOutputStreamState(uid, TEST_STREAM_ID_2, STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    inputDevice->deviceTokenId_ = 12345;
+    auto inputSimpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        inputDevice->deviceType_, inputDevice->deviceRole_,
+        inputDevice->deviceId_, inputDevice->networkId_, inputDevice->macAddress_);
+
+    auto outputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    outputDevice->deviceTokenId_ = 12345;
+    auto outputSimpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        outputDevice->deviceType_, outputDevice->deviceRole_,
+        outputDevice->deviceId_, outputDevice->networkId_, outputDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, inputSimpleDesc, 12345);
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid, outputSimpleDesc, 12345);
+
+    EXPECT_EQ(routerInfra.GetHighestInputPriorityApp(), INVALID_UID);
+    EXPECT_EQ(routerInfra.GetHighestOutputPriorityApp(), INVALID_UID);
+
+    routerInfra.OnAppDied(uid);
+
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_3,
+        SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    EXPECT_EQ(highestUid, TEST_APP_UID_10002);
+}
+
+/**
+ * @tc.name  : Test ClearAllSelectSelectDevice clears exclusive uid (NEW BRANCH via UpdateExclusiveUidNoLock)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearAllSelectSelectDevice_001
+ * @tc.desc  : Test ClearAllSelectSelectDevice clears exclusive uid tracking.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearAllSelectSelectDevice_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto exclusiveDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    exclusiveDevice->deviceTokenId_ = 12345;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        exclusiveDevice->deviceType_, exclusiveDevice->deviceRole_,
+        exclusiveDevice->deviceId_, exclusiveDevice->networkId_, exclusiveDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc, 12345);
+    EXPECT_EQ(routerInfra.GetHighestInputPriorityApp(), INVALID_UID);
+
+    routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::MEDIA_INPUT);
+
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2,
+        SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    EXPECT_EQ(highestUid, TEST_APP_UID_10002);
+}
+
+/**
+ * @tc.name  : Test GetLatestStreamSelectDevice skips exclusive uids (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_GetLatestStreamSelectDevice_001
+ * @tc.desc  : Test GetLatestStreamSelectDevice skips exclusive uids correctly.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_GetLatestStreamSelectDevice_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto device1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    device1->deviceTokenId_ = 12345;
+    auto simpleDesc1 = std::make_shared<AudioDeviceSimpleDescriptor>(
+        device1->deviceType_, device1->deviceRole_,
+        device1->deviceId_, device1->networkId_, device1->macAddress_);
+
+    auto device2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    auto simpleDesc2 = std::make_shared<AudioDeviceSimpleDescriptor>(
+        device2->deviceType_, device2->deviceRole_,
+        device2->deviceId_, device2->networkId_, device2->macAddress_);
+
+    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+    routerInfra.UpdateStreamDefaultDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
+        SelectDeviceType::MEDIA_OUTPUT, simpleDesc1);
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, TEST_APP_UID_10001, simpleDesc1, 12345);
+
+    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2,
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+    routerInfra.UpdateStreamDefaultDevice(TEST_APP_UID_10002, TEST_STREAM_ID_2,
+        SelectDeviceType::MEDIA_OUTPUT, simpleDesc2);
+
+    auto result = routerInfra.GetLatestStreamSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+}
+
+/**
+ * @tc.name  : Test exclusive uid tracking for CALL_INPUT/CALL_OUTPUT (NEW BRANCH)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_CallExclusive_001
+ * @tc.desc  : Test exclusive uid tracking works correctly for CALL types.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_CallExclusive_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    routerInfra.UpdateOutputStreamState(uid, TEST_STREAM_ID_2, STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    inputDevice->deviceTokenId_ = 12345;
+    auto inputSimpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        inputDevice->deviceType_, inputDevice->deviceRole_,
+        inputDevice->deviceId_, inputDevice->networkId_, inputDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_INPUT, uid, inputSimpleDesc, 12345);
+
+    int32_t inputHighestUid = routerInfra.GetHighestInputPriorityApp();
+    EXPECT_EQ(inputHighestUid, INVALID_UID);
+
+    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_3,
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+    int32_t outputHighestUid = routerInfra.GetHighestOutputPriorityApp();
+    EXPECT_EQ(outputHighestUid, TEST_APP_UID_10002);
+}
+
+/**
+ * @tc.name  : Test RefreshSelectDevice with all SelectDeviceType values (NEW BRANCH coverage)
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_RefreshSelectDevice_001
+ * @tc.desc  : Test RefreshSelectDevice correctly updates exclusiveUids_ for each type.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_RefreshSelectDevice_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    uint32_t deviceTokenId = 12345;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    routerInfra.UpdateOutputStreamState(uid, TEST_STREAM_ID_2, STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    inputDevice->deviceTokenId_ = deviceTokenId;
+    auto inputSimpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        inputDevice->deviceType_, inputDevice->deviceRole_,
+        inputDevice->deviceId_, inputDevice->networkId_, inputDevice->macAddress_);
+
+    auto outputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    outputDevice->deviceTokenId_ = deviceTokenId;
+    auto outputSimpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        outputDevice->deviceType_, outputDevice->deviceRole_,
+        outputDevice->deviceId_, outputDevice->networkId_, outputDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, inputSimpleDesc, deviceTokenId);
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid, outputSimpleDesc, deviceTokenId);
+    routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_INPUT, uid, inputSimpleDesc, deviceTokenId);
+    routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, uid, outputSimpleDesc, deviceTokenId);
+
+    int32_t inputHighestUid = routerInfra.GetHighestInputPriorityApp();
+    int32_t outputHighestUid = routerInfra.GetHighestOutputPriorityApp();
+    EXPECT_EQ(inputHighestUid, INVALID_UID);
+    EXPECT_EQ(outputHighestUid, INVALID_UID);
+}
+
 }
 }

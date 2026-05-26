@@ -488,7 +488,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     bool scoExcludeFlag = false;
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag,
+        SCENE_TYPE_INVALID);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -528,12 +529,14 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
 
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     deviceTypes.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag,
+        SCENE_TYPE_INVALID);
 
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag);
+    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag,
+        SCENE_TYPE_INVALID);
     activeOutputDevices.clear();
     activeOutputDevices.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
     deviceTypes.clear();
@@ -1032,10 +1035,10 @@ HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_NewRoute_001, TestSize.Level1)
     AudioProcessConfig config;
     config.audioMode = AUDIO_MODE_PLAYBACK;
     config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    SetSysPara("persist.multimedia.enable_new_route", 1);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
     bool ret = audioServer->IsNormalIpcStream(config);
     EXPECT_TRUE(ret);
-    SetSysPara("persist.multimedia.enable_new_route", 0);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
 }
 
 /**
@@ -1358,7 +1361,8 @@ HWTEST_F(AudioServerUnitTest, SetVoiceVolume_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    int32_t ret = audioServer->OffloadSetVolume(0.5f, "offload", "default");
+    uint32_t renderId = 1314;
+    int32_t ret = audioServer->OffloadSetVolume(0.5f, renderId, "default");
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -1581,6 +1585,34 @@ HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_005, TestSiz
     info.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
     info.isBackground = true;
     callback->OnDataTransferStateChange(pid, info);
+}
+
+/**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_006
+ * @tc.desc  : Test foreground stream can resume standby but cannot enter standby.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_006, TestSize.Level1)
+{
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    ASSERT_NE(nullptr, callback);
+
+    int32_t callbackId = 0;
+    uint32_t sessionId = 100;
+    AudioRendererDataTransferStateChangeInfo info = {};
+    info.audioMode = AUDIO_MODE_PLAYBACK;
+    info.streamUsage = STREAM_USAGE_INTERPHONE;
+    info.isBackground = false;
+    info.stateChangeType = DATA_TRANS_RESUME;
+    info.sessionId = static_cast<int32_t>(sessionId);
+
+    EXPECT_FALSE(callback->IsNeedNotifyStandbyState(info, true));
+    EXPECT_TRUE(callback->IsNeedNotifyStandbyState(info, false));
+    callback->standbyStartTimeMap_[sessionId] = 1;
+    callback->OnDataTransferStateChange(callbackId, info);
+    EXPECT_EQ(callback->standbyStartTimeMap_.find(sessionId), callback->standbyStartTimeMap_.end());
 }
 
 /*
@@ -2582,7 +2614,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioSceneInner_005, TestSize.Level1
     AudioScene audioScene = AUDIO_SCENE_RINGING;
     BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
     bool scoExcludeFlag = true;
-    int32_t ret = audioServer->SetAudioSceneInner(audioScene, a2dpOffloadFlag, scoExcludeFlag);
+    int32_t phoneCallSceneType = SCENE_TYPE_INVALID;
+    int32_t ret = audioServer->SetAudioSceneInner(audioScene, a2dpOffloadFlag, scoExcludeFlag,
+        phoneCallSceneType);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -3381,5 +3415,6 @@ HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_003, TestSize.Level
     bool ret = audioServer->CheckRecorderFormat(config);
     EXPECT_EQ(ret, true);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

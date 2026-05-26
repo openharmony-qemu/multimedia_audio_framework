@@ -153,26 +153,25 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
     const std::string &paramType_, const std::string &paramValue)
 {
     using typeIterator = std::unordered_map<std::string, AudioVoiceMorphingType>::const_iterator;
-    typeIterator beautyType = voiceBeautifierTypeMap.end();
-    typeIterator generalType = generalVoiceChangeTypeMap.end();
+    typeIterator typeIt;
+    const std::unordered_map<std::string, AudioVoiceMorphingType>* typeMap = nullptr;
+
     if (paramType_ == voiceMorphingMode) {
-        beautyType = voiceBeautifierTypeMap.find(paramValue);
+        typeMap = &voiceBeautifierTypeMap;
+        typeIt = voiceBeautifierTypeMap.find(paramValue);
     } else if (paramType_ == generalVoiceChangeMode) {
-        generalType = generalVoiceChangeTypeMap.find(paramValue);
-    }
- 
-    if (beautyType == voiceBeautifierTypeMap.end() && generalType == generalVoiceChangeTypeMap.end()) {
+        typeMap = &generalVoiceChangeTypeMap;
+        typeIt = generalVoiceChangeTypeMap.find(paramValue);
+    } else {
         AUDIO_ERR_LOG("SetOptions UNKNOWN TYPE");
         return ERROR;
-    } else if (beautyType != voiceBeautifierTypeMap.end()) {
-        int32_t ret = vmAlgoApi_.setParam(handle_.data(), beautyType->second);
-        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VMP_EOK, ERROR, "Algo setParam failed with %{public}d", ret);
-        return SUCCESS;
-    } else {
-        int32_t ret = vmAlgoApi_.setParam(handle_.data(), generalType->second);
-        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VMP_EOK, ERROR, "Algo setParam failed with %{public}d", ret);
-        return SUCCESS;
     }
+
+    CHECK_AND_RETURN_RET_LOG(typeIt != typeMap->end(), ERROR, "SetOptions UNKNOWN TYPE");
+
+    int32_t ret = vmAlgoApi_.setParam(handle_.data(), typeIt->second);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VMP_EOK, ERROR, "Algo setParam failed with %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(

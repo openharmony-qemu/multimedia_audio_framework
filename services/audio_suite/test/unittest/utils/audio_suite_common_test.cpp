@@ -189,4 +189,34 @@ HWTEST_F(AudioSuiteCommonTest, GetSampleSizeTest, TestSize.Level0)
     size = AudioSuiteUtil::GetSampleSize(SAMPLE_F32LE);
     EXPECT_EQ(size, 4);
 }
+
+HWTEST_F(AudioSuiteCommonTest, GetAmbOrderTest, TestSize.Level0)
+{
+    int16_t order = AudioSuiteUtil::GetAmbOrder(CH_LAYOUT_HOA_ORDER1_ACN_N3D);
+    EXPECT_EQ(order, 1);
+
+    order = AudioSuiteUtil::GetAmbOrder(CH_LAYOUT_HOA_ORDER2_ACN_N3D);
+    EXPECT_EQ(order, 2);
+
+    order = AudioSuiteUtil::GetAmbOrder(CH_LAYOUT_HOA_ORDER3_ACN_N3D);
+    EXPECT_EQ(order, 3);
+
+    order = AudioSuiteUtil::GetAmbOrder(CH_LAYOUT_STEREO);
+    EXPECT_EQ(order, -1);
+}
+
+HWTEST_F(AudioSuiteCommonTest, GetHoaInputFormatTest, TestSize.Level0)
+{
+    int32_t format = AudioSuiteUtil::GetHoaInputFormat(CH_LAYOUT_HOA_ORDER1_ACN_SN3D);
+    EXPECT_EQ(format, 0);
+
+    format = AudioSuiteUtil::GetHoaInputFormat(CH_LAYOUT_HOA_ORDER1_ACN_N3D);
+    EXPECT_EQ(format, 1);
+
+    format = AudioSuiteUtil::GetHoaInputFormat(CH_LAYOUT_HOA_ORDER1_FUMA);
+    EXPECT_EQ(format, 2);
+
+    format = AudioSuiteUtil::GetHoaInputFormat(CH_LAYOUT_STEREO);
+    EXPECT_EQ(format, -1);
+}
 }

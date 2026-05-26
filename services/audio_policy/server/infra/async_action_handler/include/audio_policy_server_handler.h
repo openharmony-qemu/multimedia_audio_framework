@@ -93,7 +93,6 @@ public:
         PREFERRED_DEVICE_SET,
         DEVICE_CONFIG_CHANGED,
         ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE,
-        BYPASS_SPATIAL_FOR_STEREO_CHANGE_FOR_CURRENT_DEVICE,
         EFFECT_MODE_CHANGE_FOR_ANY_DEVICE,
         PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
         AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
@@ -250,8 +249,6 @@ public:
     bool SendDeviceConfigChangedEvent(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     bool SendAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
-    bool SendBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
-        bool spatialization, bool headtracking);
     bool SendSpatialAudioSourceTypeChangeEvent(SpatialAudioSourceType mode);
     bool SendAudioSeparationEffectEnabledChangeEvent(const bool &enabled);
     void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
@@ -306,7 +303,6 @@ private:
     void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleSpatializationEnabledChangeForBT(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatialAudioSourceTypeChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSeparationEffectEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -335,6 +331,8 @@ private:
         AudioSessionStateChangedEvent &stateChangedEvent);
     void ValidatePreferredOutputDeviceCallback(int32_t clientPid,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    bool CheckCallbackTokenId(
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, uint32_t callbackTokenId);
 
     // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
     void ProcessPreferredOutputDeviceForClient(int32_t clientPid,
@@ -343,9 +341,9 @@ private:
     const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
     bool IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType);
     bool ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid, StreamUsage streamUsage,
-        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
     bool ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid, SourceType sourceType,
-        const std::shared_ptr<AudioDeviceDescriptor> &currentDevice);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
@@ -369,15 +367,15 @@ private:
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
 
-    // clientPid -> uid -> streamUsage -> device
+    // clientPid -> uid -> streamUsage -> devices
     std::unordered_map<int32_t,
         std::unordered_map<int32_t,
-            std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>>>>
+            std::unordered_map<StreamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
         lastSentOutputDeviceMap_;
-    // clientPid -> uid -> sourceType -> device
+    // clientPid -> uid -> sourceType -> devices
     std::unordered_map<int32_t,
         std::unordered_map<int32_t,
-            std::unordered_map<SourceType, std::shared_ptr<AudioDeviceDescriptor>>>>
+            std::unordered_map<SourceType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
         lastSentInputDeviceMap_;
 
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;

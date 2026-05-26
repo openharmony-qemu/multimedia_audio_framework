@@ -35,7 +35,8 @@ static const std::map<std::string, AudioNodeType>
         {"PURE_CHANGE", NODE_TYPE_PURE_VOICE_CHANGE},
         {"GENERAL_CHANGE", NODE_TYPE_GENERAL_VOICE_CHANGE},
         {"TEMPO_PITCH", NODE_TYPE_TEMPO_PITCH},
-        {"SPACE_RENDER", NODE_TYPE_SPACE_RENDER}};
+        {"SPACE_RENDER", NODE_TYPE_SPACE_RENDER},
+        {"HOA_RENDER", NODE_TYPE_HOA_RENDER}};
 
 AudioSuiteCapabilitiesParser::AudioSuiteCapabilitiesParser()
 {

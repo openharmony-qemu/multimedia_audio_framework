@@ -61,7 +61,6 @@ public:
     bool IsAdaptiveSpatialRenderingEnabled(const std::string address);
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
-    int32_t SetBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool bypass);
     bool IsPersonalizedSpatializationEnabled(const std::string address);
     int32_t SetPersonalizedSpatializationEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
@@ -123,9 +122,9 @@ private:
     bool IsHeadTrackingDataRequestedForCurrentDevice();
     void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
+    bool SafeConvertToBool(const std::string token, const std::string paramName);
     void UpdateDeviceSpatialInfo(const std::string deviceSpatialInfo);
     void UpdateDeviceSpatialMapInfo(const std::string address, const std::string deviceSpatialInfo);
-    void UpdateSpatialStateToNewDevice(const AudioSpatialDeviceState audioSpatialDeviceState);
     bool IsSpatializationSupportedForDeviceInner(const std::string address);
     bool IsHeadTrackingSupportedForDeviceInner(const std::string address);
     std::string RemoveOldestDevice();

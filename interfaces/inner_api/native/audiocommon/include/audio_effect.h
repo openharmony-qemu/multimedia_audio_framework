@@ -487,8 +487,7 @@ enum AudioEnhanceScene {
     SCENE_ASR = 4,
     SCENE_VOICE_MESSAGE = 5,
     SCENE_RECOGNITION = 6,
-    SCENE_COLLABORATIVE_RECORD = 7,
-    SCENE_NONE = 8,
+    SCENE_NONE = 7,
 };
 
 /**
@@ -612,7 +611,8 @@ enum AudioEffectCommandCode {
     EFFECT_CMD_GET_CONFIG = 6,
     EFFECT_CMD_SET_IMU = 7,
     EFFECT_CMD_SET_PROPERTY = 8,
-    EFFECT_CMD_STOP_STREAM = 9
+    EFFECT_CMD_STOP_STREAM = 9,
+    EFFECT_CMD_FLUSH = 10,
 };
 
 enum AudioEffectParamSetCode {
@@ -675,6 +675,8 @@ struct AudioEffectInterface {
     int32_t (*process) (AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer);
     int32_t (*command) (AudioEffectHandle self, uint32_t cmdCode,
         AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo);
+    int32_t (*feedInput) (AudioEffectHandle self, AudioBuffer *inBuffer);
+    int32_t (*getOutput) (AudioEffectHandle self, AudioBuffer *outBuffer);
 };
 
 struct AlgoSupportConfig {

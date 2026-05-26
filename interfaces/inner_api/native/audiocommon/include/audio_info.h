@@ -962,6 +962,26 @@ enum AudioScene : int32_t {
     AUDIO_SCENE_MAX,
 };
 
+/**
+ * @brief Phone call scene type enum
+ * Used to distinguish normal cellular call and transfer call
+ * @since 26
+ */
+enum PhoneCallSceneType : int32_t {
+    /**
+     * Invalid type (default value)
+     */
+    SCENE_TYPE_INVALID = -1,
+    /**
+     * Normal cellular call (MODEM call)
+     */
+    SCENE_TYPE_MODEM = 0,
+    /**
+     * Transfer call (phone acts as Bluetooth device for another phone)
+     */
+    SCENE_TYPE_TRANSFER = 1,
+};
+
 enum AudioDeviceUsage : uint32_t {
     /**
      * Media output devices.
@@ -1056,6 +1076,7 @@ struct CaptureFilterOptions {
     FilterMode usageFilterMode {FilterMode::INCLUDE};
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
+    bool capturePrivatePrivacyStreams = false;
 
     CaptureFilterOptions() = default;
     CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
@@ -1074,7 +1095,8 @@ struct CaptureFilterOptions {
         std::sort(usages.begin(), usages.end());
         std::sort(pids.begin(), pids.end());
         return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
-            && filter.pids == pids && filter.pidFilterMode == pidFilterMode);
+            && filter.pids == pids && filter.pidFilterMode == pidFilterMode
+            && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams);
     }
 };
 
@@ -1120,6 +1142,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // filterOptions.pidFilterMode
         parcel.WriteUint32(filterOptions.pidFilterMode);
+        parcel.WriteBool(filterOptions.capturePrivatePrivacyStreams);
 
         // silentCapture
         parcel.WriteBool(silentCapture);
@@ -1127,6 +1150,17 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         return true;
     }
 
+private:
+    static AudioPlaybackCaptureConfig *ReadPlaybackCaptureFlags(Parcel &parcel, AudioPlaybackCaptureConfig *config)
+    {
+        config->filterOptions.capturePrivatePrivacyStreams = parcel.ReadBool();
+        // silentCapture
+        config->silentCapture = parcel.ReadBool();
+        config->isModernInnerCapturer = parcel.ReadBool();
+        return config;
+    }
+
+public:
     static AudioPlaybackCaptureConfig *Unmarshalling(Parcel &parcel)
     {
         auto config = new(std::nothrow) AudioPlaybackCaptureConfig();
@@ -1148,7 +1182,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             usages.push_back(static_cast<StreamUsage>(tmpUsage));
         }
         config->filterOptions.usages = usages;
-
         // filterOptions.usageFilterMode
         uint32_t tempMode = parcel.ReadUint32();
         if (tempMode >= FilterMode::MAX_FILTER_MODE) {
@@ -1156,7 +1189,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             return nullptr;
         }
         config->filterOptions.usageFilterMode = static_cast<FilterMode>(tempMode);
-
         // filterOptions.pids
         uint32_t pidSize = parcel.ReadUint32();
         if (pidSize > MAX_VALID_PIDS_SIZE) {
@@ -1173,7 +1205,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             pids.push_back(tmpPid);
         }
         config->filterOptions.pids = pids;
-
         // filterOptions.pidFilterMode
         tempMode = parcel.ReadUint32();
         if (tempMode >= FilterMode::MAX_FILTER_MODE) {
@@ -1181,13 +1212,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             return nullptr;
         }
         config->filterOptions.pidFilterMode = static_cast<FilterMode>(tempMode);
-
-        // silentCapture
-        config->silentCapture = parcel.ReadBool();
-
-        config->isModernInnerCapturer = parcel.ReadBool();
-
-        return config;
+        return ReadPlaybackCaptureFlags(parcel, config);
     }
 };
 
@@ -1460,14 +1485,15 @@ struct StaticBufferInfo : public Parcelable {
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
-    std::shared_ptr<AudioSharedMemory> sharedMemory_ = nullptr;
+    size_t bufferSize_ = 0;
 
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteInt64(totalLoopTimes_);
         parcel.WriteInt64(currentLoopTimes_);
         parcel.WriteUint64(curStaticDataPos_);
-        return (sharedMemory_ == nullptr ? false : sharedMemory_->Marshalling(parcel));
+        parcel.WriteUint64(bufferSize_);
+        return true;
     }
 
     static StaticBufferInfo *Unmarshalling(Parcel &parcel)
@@ -1479,7 +1505,7 @@ struct StaticBufferInfo : public Parcelable {
         info->totalLoopTimes_ = parcel.ReadInt64();
         info->currentLoopTimes_ = parcel.ReadInt64();
         info->curStaticDataPos_ = parcel.ReadUint64();
-        info->sharedMemory_ = std::shared_ptr<AudioSharedMemory>(AudioSharedMemory::Unmarshalling(parcel));
+        info->bufferSize_ = parcel.ReadUint64();
         return info;
     }
 };
@@ -2055,12 +2081,6 @@ enum RouterType {
      * @since 12
      */
     ROUTER_TYPE_USER_SELECT,
-
-    /**
-     * App select router.
-     * @since 12
-     */
-    ROUTER_TYPE_APP_SELECT,
 };
 
 enum RenderMode {

@@ -98,7 +98,7 @@ void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId
     if (isConnect) {
         dfxTree_.ConnectNodes(parentId, childId);
     } else {
-        dfxTree_.DisConnectNodes(parentId, childId);
+        dfxTree_.DisconnectNodes(parentId, childId);
     }
 #endif
 };
@@ -119,13 +119,8 @@ bool IHpaeRendererManager::AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNo
         AUDIO_ERR_LOG("AdjustFrameLen invalid rate: inRate=%{public}u outRate=%{public}u", inRate, outRate);
         return false;
     }
-    const std::size_t inFrameLenUs = static_cast<std::size_t>(inNodeInfo.frameLen) * AUDIO_US_PER_MS / inRate;
-    const std::size_t outFrameLenUs = static_cast<std::size_t>(outNodeInfo.frameLen) * AUDIO_US_PER_MS / outRate;
-    if (inFrameLenUs != outFrameLenUs) {
-        inNodeInfo.frameLen = static_cast<uint32_t>(outFrameLenUs * inRate / AUDIO_US_PER_MS);
-        return true;
-    }
-    return false;
+    inNodeInfo.frameLen = static_cast<uint32_t>(outNodeInfo.frameLen) * inRate / outRate;
+    return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

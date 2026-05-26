@@ -42,6 +42,16 @@ int32_t IpcStreamListenerImpl::OnOperationHandled(int32_t operation, int64_t res
     return listener->OnOperationHandled(static_cast<Operation>(operation), result);
 }
 
+int32_t IpcStreamListenerImpl::OnMetaData(const std::vector<uint8_t> &metaData)
+{
+    std::shared_ptr<IStreamListener> listener = innerListener_.lock();
+    if (listener == nullptr) {
+        AUDIO_WARNING_LOG("OnMetaData() find innerListener_ is null, metaData size:%{public}zu.", metaData.size());
+        return ERR_ILLEGAL_STATE;
+    }
+    return listener->OnMetaData(metaData);
+}
+
 int32_t IpcStreamListenerImpl::OnOperationHandledLazy(int32_t operation, int64_t result)
 {
     return OnOperationHandled(operation, result);

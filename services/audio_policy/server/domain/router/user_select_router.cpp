@@ -28,7 +28,8 @@ namespace AudioStandard {
 shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     const uint32_t sessionID)
 {
-    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+        streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         AUDIO_INFO_LOG("Ringtone skip user select");
         return make_shared<AudioDeviceDescriptor>();
     }
@@ -41,6 +42,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     CHECK_AND_RETURN_RET(!ret, make_shared<AudioDeviceDescriptor>());
     vector<shared_ptr<AudioDeviceDescriptor>> mediaDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
+    RouterBase::ClearConflictDevice(mediaDevices, GetRouterType());
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_OUTPUT_DEVICES, perDev_)) {
         AUDIO_DEBUG_LOG(" PreferredMediaRenderDevice is null or device is not available now");
         return make_shared<AudioDeviceDescriptor>();
@@ -61,6 +63,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
         make_shared<AudioDeviceDescriptor>());
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
+    RouterBase::ClearConflictDevice(callDevices, GetRouterType());
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(CALL_OUTPUT_DEVICES, perDev_)) {
         AUDIO_DEBUG_LOG(" PreferredCallRenderDevice is null or device is not available now");
         return make_shared<AudioDeviceDescriptor>();
@@ -79,6 +82,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_INPUT_DEVICES);
+    RouterBase::ClearConflictDevice(callDevices, GetRouterType());
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(CALL_INPUT_DEVICES, perDev_)) {
         AUDIO_DEBUG_LOG(" PreferredCallCaptureDevice is null or device is not available now");
         return make_shared<AudioDeviceDescriptor>();
@@ -95,7 +99,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
     shared_ptr<AudioDeviceDescriptor> selectedDesc =
-        (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) ?
+        (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
+         streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) ?
         GetCallRenderDevice(streamUsage, clientUID) : GetMediaRenderDevice(streamUsage, clientUID);
 
     if (!selectedDesc.get() || selectedDesc->getType() == DEVICE_TYPE_NONE) {
@@ -118,6 +123,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
                 break;
             case STREAM_USAGE_VOICE_RINGTONE:
             case STREAM_USAGE_RINGTONE:
+            case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
                 if (curRingerMode == RINGER_MODE_NORMAL) {
                     // Add default devices at same time only in ringer normal mode.
                     descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
@@ -149,12 +155,13 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
         perDev_ = perRecognitionDev_;
     }
     vector<shared_ptr<AudioDeviceDescriptor>> recordDevices =
-        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
+        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
     if (Util::IsScoSupportSource(sourceType)) {
         vector<shared_ptr<AudioDeviceDescriptor>> recognitionDescs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
         recordDevices.insert(recordDevices.end(), recognitionDescs.begin(), recognitionDescs.end());
     }
+    RouterBase::ClearConflictDevice(recordDevices, GetRouterType());
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_INPUT_DEVICES, perDev_)) {
         AUDIO_DEBUG_LOG(" PreferredRecordCaptureDevice is null or device is not available now");
         return make_shared<AudioDeviceDescriptor>();

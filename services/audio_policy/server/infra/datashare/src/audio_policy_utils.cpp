@@ -48,6 +48,9 @@ static const char* SETTINGS_DATA_BASE_URI =
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 static const std::string NEARLINK_LIST = "audio_nearlink_list";
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+static const bool ENHANCE_ROUTING_SUPPORTED =
+    OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 static const std::map<DeviceType, std::string> SUPPORTED_LIST = {
     {DEVICE_TYPE_NEARLINK, "nearlink_whitelist"},
     {DEVICE_TYPE_NEARLINK_IN, "nearlink_whitelist"},
@@ -80,6 +83,12 @@ std::set<DeviceType> AudioPolicyUtils::needDeclaredDevices = {
     DEVICE_TYPE_NEARLINK,
     DEVICE_TYPE_NEARLINK_IN,
     DEVICE_TYPE_HEARING_AID,
+};
+
+std::map<DeviceType, std::string> AudioPolicyUtils::deviceMsmd = {
+    {DEVICE_TYPE_USB_HEADSET, PRIMARY_TYPEC_CLASS},
+    {DEVICE_TYPE_NEARLINK_IN, PRIMARY_BT_CLASS},
+    {DEVICE_TYPE_BLUETOOTH_SCO, PRIMARY_BT_CLASS}
 };
 
 static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
@@ -164,7 +173,6 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     int32_t ret = SUCCESS;
     bool mediaControllerFlag = IsSelectedByMediaController();
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    ClearWirelessPreferredDevicesIfNeeded(preferredType, desc);
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
             strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
@@ -320,6 +328,8 @@ bool AudioPolicyUtils::IsVoiceStreamType(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             result = true;
             break;
@@ -478,8 +488,18 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
         case DeviceType::DEVICE_TYPE_NEARLINK_IN:
         case DeviceType::DEVICE_TYPE_WIRED_MICIN:
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            portName = ResolvePrimaryMicPort(routeFlag);
-            AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
+            if (ENHANCE_ROUTING_SUPPORTED) {
+                auto it = deviceMsmd.find(deviceType);
+                if (it != deviceMsmd.end()) {
+                    portName = it->second;
+                    AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
+                } else {
+                    portName = ResolvePrimaryMicPort(routeFlag);
+                }
+            } else {
+                portName = ResolvePrimaryMicPort(routeFlag);
+                AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
+            }
             break;
         case DeviceType::DEVICE_TYPE_BT_SPP:
             portName = VIRTUAL_AUDIO;
@@ -534,6 +554,9 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
 {
     std::map<std::string, std::string> sourcePortStrToClassStrMap_ = {
         {PRIMARY_MIC, PRIMARY_CLASS},
+        {PRIMARY_TYPEC_CLASS, PRIMARY_CLASS},
+        {PRIMARY_WIRED_CLASS, PRIMARY_CLASS},
+        {PRIMARY_BT_CLASS, PRIMARY_CLASS},
         {USB_MIC, USB_CLASS},
         {PRIMARY_WAKEUP, PRIMARY_CLASS},
         {FILE_SOURCE, FILE_CLASS},
@@ -861,6 +884,7 @@ AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage 
     switch (streamUsage) {
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return CALL_OUTPUT_DEVICES;
@@ -874,6 +898,7 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
     switch (streamUsage) {
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return AUDIO_CALL_RENDER;
@@ -971,80 +996,6 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
-bool AudioPolicyUtils::IsBluetoothOrNearlinkDevice(DeviceType deviceType)
-{
-    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
-           deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
-           deviceType == DEVICE_TYPE_NEARLINK ||
-           deviceType == DEVICE_TYPE_NEARLINK_IN;
-}
-
-void AudioPolicyUtils::ClearOutputWirelessPreferred(
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, PreferredType preferredType)
-{
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto emptyDesc = std::make_shared<AudioDeviceDescriptor>();
-    
-    auto callInputDev = strategy.GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
-    auto mediaInputDev = strategy.GetMediaInputDevice(INVALID_UID, INVALID_STREAM_ID, SOURCE_TYPE_INVALID);
-    auto mediaOutputDev = strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
-    auto callOutputDev = strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
-    
-    if (callInputDev != nullptr && IsBluetoothOrNearlinkDevice(callInputDev->deviceType_) &&
-        callInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (mediaInputDev != nullptr && IsBluetoothOrNearlinkDevice(mediaInputDev->deviceType_) &&
-        mediaInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (preferredType != AUDIO_MEDIA_RENDER && mediaOutputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(mediaOutputDev->deviceType_) &&
-        mediaOutputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (preferredType != AUDIO_CALL_RENDER && callOutputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(callOutputDev->deviceType_) &&
-        callOutputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc, "");
-    }
-}
-
-void AudioPolicyUtils::ClearInputWirelessPreferred(
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, PreferredType preferredType)
-{
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto emptyDesc = std::make_shared<AudioDeviceDescriptor>();
-    
-    auto callInputDev = strategy.GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
-    auto mediaInputDev = strategy.GetMediaInputDevice(INVALID_UID, INVALID_STREAM_ID, SOURCE_TYPE_INVALID);
-    
-    if (preferredType != AUDIO_CALL_CAPTURE && callInputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(callInputDev->deviceType_) &&
-        callInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-    if (preferredType != AUDIO_RECORD_CAPTURE && mediaInputDev != nullptr &&
-        IsBluetoothOrNearlinkDevice(mediaInputDev->deviceType_) &&
-        mediaInputDev->macAddress_ != desc->macAddress_) {
-        strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, emptyDesc);
-    }
-}
-
-void AudioPolicyUtils::ClearWirelessPreferredDevicesIfNeeded(PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
-{
-    if (desc == nullptr || !IsBluetoothOrNearlinkDevice(desc->deviceType_)) {
-        return;
-    }
-    
-    if (preferredType == AUDIO_MEDIA_RENDER || preferredType == AUDIO_CALL_RENDER) {
-        ClearOutputWirelessPreferred(desc, preferredType);
-    } else if (preferredType == AUDIO_CALL_CAPTURE || preferredType == AUDIO_RECORD_CAPTURE) {
-        ClearInputWirelessPreferred(desc, preferredType);
-    }
-}
-
 bool AudioPolicyUtils::CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (desc && usage == STREAM_USAGE_INTERPHONE) {
@@ -1084,6 +1035,22 @@ string AudioPolicyUtils::EncUsbAddr(const string &src)
     CHECK_AND_RETURN_RET_LOG(pos != string::npos, "", "Illegal usb address");
     auto num = src.substr(head.length(), pos - head.length());
     return string("c**") + num + "**";
+}
+
+void AudioPolicyUtils::FilterDevicesByTokenId(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    audioDeviceDescriptors.erase(
+        std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+            [callingTokenId](const auto &device) {
+                bool filter = device != nullptr && device->deviceTokenId_ != 0 &&
+                    device->deviceTokenId_ != callingTokenId;
+                JUDGE_AND_INFO_LOG(filter, "Filter device with tokenId %{public}u, callingTokenId %{public}u",
+                    device->deviceTokenId_, callingTokenId);
+                return filter;
+            }),
+        audioDeviceDescriptors.end());
 }
 } // namespace AudioStandard
 } // namespace OHOS

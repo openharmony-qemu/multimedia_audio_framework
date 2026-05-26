@@ -65,9 +65,9 @@ void AudioBundleManager::EraseBundleNameFromMap(int32_t uid)
     bundleNameMap_.erase(uid);
 }
 
-int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userId)
+int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int32_t userId, int32_t appIndex)
 {
-    return GetInstance().GetUidByBundleNameImpl(bundleName, userId);
+    return GetInstance().GetUidByBundleNameImpl(bundleName, userId, appIndex);
 }
 
 std::string AudioBundleManager::GetBundleName()
@@ -116,7 +116,12 @@ int32_t AudioBundleManager::IsBundleInstalled(
     return GetInstance().IsBundleInstalledImpl(bundleName, userId, appIndex, isInstalled);
 }
 
-int32_t AudioBundleManager::GetUidByBundleNameImpl(std::string bundleName, int userId)
+int32_t AudioBundleManager::GetNameAndIndexForUid(int32_t uid, std::string &bundleName, int32_t &appIndex)
+{
+    return GetInstance().GetNameAndIndexForUidImpl(uid, bundleName, appIndex);
+}
+
+int32_t AudioBundleManager::GetUidByBundleNameImpl(std::string bundleName, int32_t userId, int32_t appIndex)
 {
     AudioXCollie audioXCollie("AudioBundleManager::GetUidByBundleName",
         GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -132,7 +137,7 @@ int32_t AudioBundleManager::GetUidByBundleNameImpl(std::string bundleName, int u
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, ERR_INVALID_PARAM, "bundleMgrProxy is nullptr");
 
     WatchTimeout reguard("bundleMgrProxy->GetUidByBundleName:GetUidByBundleName");
-    int32_t iUid = bundleMgrProxy->GetUidByBundleName(bundleName, userId);
+    int32_t iUid = bundleMgrProxy->GetUidByBundleName(bundleName, userId, appIndex);
     reguard.CheckCurrTimeout();
 
     return iUid;
@@ -275,6 +280,40 @@ int32_t AudioBundleManager::IsBundleInstalledImpl(
     int32_t ret = bundleMgrProxy->IsBundleInstalled(bundleName, userId, appIndex, isInstalled);
     reguard.CheckCurrTimeout();
     return ret;
+}
+
+int32_t AudioBundleManager::GetNameAndIndexForUidImpl(int32_t uid, std::string &bundleName, int32_t &appIndex)
+{
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, ERR_NULL_POINTER, "systemAbilityManager is nullptr");
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, ERR_NULL_POINTER, "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, ERR_NULL_POINTER, "bundleMgrProxy is nullptr");
+
+    int32_t ret = bundleMgrProxy->GetNameAndIndexForUid(uid, bundleName, appIndex);
+    return ret;
+}
+
+void AudioBundleManager::ExtractBundleNameAndIndex(const std::string &bundleNameWithIndex,
+    std::string &bundleName, int32_t &appIndex)
+{
+    size_t pos = bundleNameWithIndex.rfind('#');
+    if (pos != std::string::npos) {
+        bundleName = bundleNameWithIndex.substr(0, pos);
+        std::string indexStr = bundleNameWithIndex.substr(pos + 1);
+        appIndex = std::atoi(indexStr.c_str());
+    } else {
+        bundleName = bundleNameWithIndex;
+        appIndex = 0;
+    }
+}
+
+std::string AudioBundleManager::ComposeBundleNameWithIndex(const std::string &bundleName, int32_t appIndex)
+{
+    return appIndex == 0 ? bundleName : bundleName + "#" + std::to_string(appIndex);
 }
 } // namespace AudioStandard
 } // namespace OHOS

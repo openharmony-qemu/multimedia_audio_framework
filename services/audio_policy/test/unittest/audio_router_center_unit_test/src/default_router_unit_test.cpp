@@ -18,7 +18,6 @@
 #include "audio_policy_log.h"
 #include "audio_zone_service.h"
 #include "default_router.h"
-#include "app_select_router.h"
 #include "pair_device_router.h"
 #include "cockpit_phone_router.h"
 
@@ -29,42 +28,6 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-
-/**
- * @tc.name  : Test AppSelectRouter.
- * @tc.number: APPSELECTROUTER_002
- * @tc.desc  : Test NeedSkipSelectAudioOutputDeviceRefined interface.
- */
-HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_002, TestSize.Level1)
-{
-    AppSelectRouter router;
-    SourceType sourceType = SOURCE_TYPE_INVALID;
-    int32_t clientUID = 0;
-    uint32_t sessionID = 0;
-
-    auto actualDevice = router.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(actualDevice, nullptr);
-}
-
-/**
- * @tc.name  : Test AppSelectRouter.
- * @tc.number: APPSELECTROUTER_003
- * @tc.desc  : Test NeedSkipSelectAudioOutputDeviceRefined interface.
- */
-HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_003, TestSize.Level4)
-{
-    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    int32_t clientUID = 1000;
-    uint32_t sessionID = 123;
-    AppSelectRouter appSelectRouter;
-    shared_ptr<AudioDeviceDescriptor> actualDevice =
-        appSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(actualDevice, nullptr);
-
-    sessionID = 0;
-    actualDevice = appSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(actualDevice, nullptr);
-}
 
 /**
  * @tc.name  : Test GetMediaRenderDevice.
@@ -93,56 +56,6 @@ HWTEST(AudioRouterCenterUnitTest, GetCallRenderDevice_001, TestSize.Level4)
     DefaultRouter defaultRouter;
     auto result = defaultRouter.GetCallRenderDevice(streamUsage, clientUID);
     EXPECT_EQ(result->deviceType_, DeviceType::DEVICE_TYPE_NONE);
-}
-
-/**
- * @tc.name  : Test GetCallCaptureDevice.
- * @tc.number: GetCallCaptureDevice_001
- * @tc.desc  : Test GetCallCaptureDevice interface.
- */
-HWTEST(AudioRouterCenterUnitTest, GetCallCaptureDevice_001, TestSize.Level4)
-{
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    int32_t clientUID = 1000;
-    uint32_t sessionID = 123;
-    AppSelectRouter appSelectRouter;
-    auto result = appSelectRouter.GetCallCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetCallCaptureDevice.
- * @tc.number: GetCallCaptureDevice_002
- * @tc.desc  : Test GetCallCaptureDevice interface.
- */
-HWTEST(AudioRouterCenterUnitTest, GetCallCaptureDevice_002, TestSize.Level4)
-{
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    int32_t clientUID = 1000;
-    uint32_t sessionID = 0;
-    AppSelectRouter appSelectRouter;
-    auto result = appSelectRouter.GetCallCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetRecordCaptureDevice.
- * @tc.number: APPSELECTROUTER_001
- * @tc.desc  : Test GetRecordCaptureDevice interface.
- */
-HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_001, TestSize.Level4)
-{
-    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    int32_t clientUID = 1000;
-    uint32_t sessionID = 123;
-    AppSelectRouter appSelectRouter;
-    shared_ptr<AudioDeviceDescriptor> actualDevice =
-        appSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(actualDevice, nullptr);
-
-    sessionID = 0;
-    actualDevice = appSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(actualDevice, nullptr);
 }
 
 /**

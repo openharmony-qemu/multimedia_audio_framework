@@ -977,7 +977,6 @@ void HpaeFastSinkOutputNode::UpdateAmplitudeIfNeeded(BufferDesc &writeBuf)
 
 void HpaeFastSinkOutputNode::ZeroVolumeCheck(int32_t vol)
 {
-    CHECK_AND_RETURN(needCheckZeroVolume_);
     if (currentOutputDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         return;
     }
@@ -986,6 +985,7 @@ void HpaeFastSinkOutputNode::ZeroVolumeCheck(int32_t vol)
             return;
         }
         if (zeroVolumeState_ == INACTIVE) {
+            CHECK_AND_RETURN(needCheckZeroVolume_);
             zeroVolumeStartTime_ = ClockTime::GetCurNano();
             zeroVolumeState_ = IN_TIMING;
             AUDIO_INFO_LOG("ZeroVolumeCheck enter timing, sessionId:%{public}u device:%{public}d", GetSessionId(),

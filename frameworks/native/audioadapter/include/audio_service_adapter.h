@@ -285,11 +285,6 @@ public:
      */
     virtual void LoadCollaborationConfig() = 0;
 
-    virtual void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType) = 0;
-    virtual void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
-        SourceType sourceType) = 0;
-
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <vector>
 #include <mutex>
-#include "v6_0/iaudio_manager.h"
+#include "v6_1/iaudio_manager.h"
 #include "hdf_remote_service.h"
 #include "adapter/i_device_manager.h"
 
@@ -78,6 +78,10 @@ public:
 
     void SetAudioScene(const AudioScene scene) override;
 
+    int32_t SetPhoneCallSceneType(const std::string &adapterName, int32_t type) override;
+
+    int32_t CreateCallTransfer(const std::string &adapterName) override;
+
     // only for auxiliarySink
     int32_t CreateCognitionStream(const std::string &adapterName, void *param, int32_t &sinkId, void *buffer) override;
     int32_t DestroyCognitionStream(const std::string &adapterName, const int32_t &sinkId) override;
@@ -111,6 +115,7 @@ private:
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::atomic<AudioScene> currentAudioScene_ = AUDIO_SCENE_DEFAULT;
+    std::atomic<int32_t> currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
     std::mutex voiceVolumeMtx_;
 };
 

@@ -1150,18 +1150,6 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_009, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: ConnectServiceAdapter_001
-* @tc.desc  : Test ConnectServiceAdapter - will return success.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, ConnectServiceAdapter_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest ConnectServiceAdapter_001 start");
-    auto result = GetServerPtr()->eventEntry_->ConnectServiceAdapter();
-    EXPECT_EQ(result, true);
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
 * @tc.number: SelectOutputDevice_001
 * @tc.desc  : Test SelectOutputDevice - will return success.
 */
@@ -1974,6 +1962,30 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_012, TestSize.Level1
     EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
 
     streamDesc->rendererInfo_.forceToNormal = false;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : UpdatePlaybackStreamFlag_013
+ * @tc.desc   : Test UpdatePlaybackStreamFlag interface - when remote device and stream usage is movie.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_013, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.forceToNormal = false;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->networkId_ = "RemoteDevice";
+    deviceDesc->isSupportRemoteMultichannel_ = false;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    
+    bool isCreateProcess = true;
     GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
     EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
 }
@@ -5890,19 +5902,32 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPipeInfoByDeviceTypeForEc_001, TestSize.Le
 */
 HWTEST_F(AudioCoreServiceUnitTest, GetEcType_001, TestSize.Level1)
 {
-    DeviceType inputDevice;
-    DeviceType outputDevice;
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EcType ecRet;
+    struct EcTypeTestCase {
+        DeviceType inputDevice;
+        DeviceType outputDevice;
+        EcType expectedEcType;
+    };
+    std::vector<EcTypeTestCase> testCases = {
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_SPEAKER, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_MIC, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET, EC_TYPE_DIFF_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_DP, EC_TYPE_DIFF_ADAPTER},
+        {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_ACCESSORY, DEVICE_TYPE_SPEAKER, EC_TYPE_DIFF_ADAPTER},
+        {DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_NEARLINK, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_NEARLINK, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_WIRED_MICIN, DEVICE_TYPE_SPEAKER, EC_TYPE_SAME_ADAPTER},
+        {DEVICE_TYPE_MIC, DEVICE_TYPE_HDMI, EC_TYPE_NONE},
+    };
 
-    inputDevice = DEVICE_TYPE_MIC;
-    outputDevice = DEVICE_TYPE_SPEAKER;
-    ecRet = audioCoreService->GetEcType(inputDevice, outputDevice);
-    EXPECT_EQ(ecRet, EC_TYPE_SAME_ADAPTER);
-
-    outputDevice = DEVICE_TYPE_MIC;
-    ecRet = audioCoreService->GetEcType(inputDevice, outputDevice);
-    EXPECT_EQ(ecRet, EC_TYPE_NONE);
+    for (const auto &testCase : testCases) {
+        EcType ecRet = audioCoreService->GetEcType(testCase.inputDevice, testCase.outputDevice);
+        EXPECT_EQ(ecRet, testCase.expectedEcType)
+            << "inputDevice: " << testCase.inputDevice << ", outputDevice: " << testCase.outputDevice;
+    }
 }
 
 /**
@@ -8258,27 +8283,6 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_004, TestSize
 }
 
 /**
- * @tc.name  : IsVoipPrivacyBypassedByBehavior_001
- * @tc.number: IsVoipPrivacyBypassedByBehavior_001
- * @tc.desc  : Test descriptor-based voipNoPrivacyFlag check.
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsVoipPrivacyBypassedByBehavior_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    auto streamDesc = CreateCapturerStreamDescriptorForVoipPrivacy(710101,
-        SOURCE_TYPE_VOICE_COMMUNICATION);
-    ASSERT_NE(streamDesc, nullptr);
-
-    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(nullptr));
-    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
-
-    streamDesc->voipNoPrivacyFlag_.store(true);
-    EXPECT_TRUE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
-}
-
-/**
  * @tc.name  : UpdateVoipNoPrivacyFlagBySessionId_001
  * @tc.number: UpdateVoipNoPrivacyFlagBySessionId_001
  * @tc.desc  : Test UpdateVoipNoPrivacyFlagBySessionId updates descriptor flag.
@@ -8331,34 +8335,34 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateVoipNoPrivacyFlagByPid_001, TestSize.Le
 }
 
 /**
- * @tc.name  : EvaluateActivePrivacyVoipPresence_001
- * @tc.number: EvaluateActivePrivacyVoipPresence_001
+ * @tc.name  : EvaluateActiveVoipPrivacyPresence_001
+ * @tc.number: EvaluateActiveVoipPrivacyPresence_001
  * @tc.desc  : Test active VOIP detection with muted and no-privacy exceptions.
  */
-HWTEST_F(AudioCoreServiceUnitTest, EvaluateActivePrivacyVoipPresence_001, TestSize.Level1)
+HWTEST_F(AudioCoreServiceUnitTest, EvaluateActiveVoipPrivacyPresence_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    bool hasActivePrivacyVoipCapturer = false;
+    bool hasActiveVoipPrivacyCapturer = false;
     auto activeVoip = CreateCapturerStreamDescriptorForVoipPrivacy(710105,
         SOURCE_TYPE_VOICE_COMMUNICATION);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_TRUE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_TRUE(hasActiveVoipPrivacyCapturer);
 
-    hasActivePrivacyVoipCapturer = true;
+    hasActiveVoipPrivacyCapturer = true;
     activeVoip->voipPriorityLowered_.store(true);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
 
-    hasActivePrivacyVoipCapturer = false;
+    hasActiveVoipPrivacyCapturer = false;
     activeVoip->voipPriorityLowered_.store(false);
     activeVoip->voipNoPrivacyFlag_.store(true);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
 }
 
 /**

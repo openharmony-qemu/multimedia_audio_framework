@@ -290,6 +290,7 @@ void AudioPolicyServer::Init()
 #endif
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
+    coreService_->SetInterruptService(interruptService_);
     coreService_->SetEcAndMicRefEnableState(GetEcEnableParam(), micRefEnableState_);
     coreService_->Init();
 
@@ -1701,6 +1702,9 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
     if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
     }
+    desc.deviceType_ =
+        (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?
+        DEVICE_TYPE_BLUETOOTH_A2DP_IN : desc.deviceType_;
 }
 
 // LCOV_EXCL_START
@@ -1793,6 +1797,10 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
 int32_t AudioPolicyServer::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    auto deviceTokenId = audioDeviceDescriptor ? audioDeviceDescriptor->deviceTokenId_ : 0;
+    CHECK_AND_RETURN_RET_LOG(deviceTokenId == 0 || deviceTokenId == callerTokenId, ERR_PERMISSION_DENIED,
+        "invalid tokenId");
     return eventEntry_->SelectInputDeviceByUid(audioDeviceDescriptor, callerUid);
 }
 

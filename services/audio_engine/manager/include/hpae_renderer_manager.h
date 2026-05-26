@@ -29,6 +29,8 @@
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
 #include "hpae_co_buffer_node.h"
+#include "effect_instance.h"
+#include "i_effect_instance.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,6 +90,7 @@ public:
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnFadeDone(uint32_t sessionId) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
+    void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
@@ -105,6 +108,20 @@ public:
     void OnCollborationFadeDone(uint32_t sessionId) override;
     void OnDisConnectCoBufferWaitFadeOutDone() override;
 
+    // Session Effect (synchronous — must be called from SignalProcessThread)
+    int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    int32_t DestroySessionEffect(uint32_t sessionId) override;
+    // Session Effect (async — dispatches to SignalProcessThread, safe to call from any thread)
+    void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    void PostDestroySessionEffect(uint32_t sessionId) override;
+    bool HasSessionEffect(uint32_t sessionId) const override;
+    bool IsValidSession(uint32_t sessionId) const override;
+    // Session Effect parameter routing
+    int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+    void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
@@ -112,7 +129,7 @@ private:
     bool IsRemoteDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
-    bool isSplitProcessorType(HpaeProcessorType sceneType);
+    bool isSplitProcessorType(HpaeProcessorType sceneType) const;
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
     void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
@@ -138,7 +155,7 @@ private:
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
-    HpaeProcessorType GetProcessorType(uint32_t sessionId);
+    HpaeProcessorType GetProcessorType(uint32_t sessionId) const;
     HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
@@ -147,6 +164,9 @@ private:
     int32_t DeleteProcessCluster(uint32_t sessionId, bool needInitEffect = true);
     int32_t DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
+    void SwitchBypassState(const std::shared_ptr<HpaeSinkInputNode> &node,
+        HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
+    void DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
     /**
      * @brief Refresh the usage and type of the cluster corresponding to the given scene type.
@@ -165,6 +185,9 @@ private:
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
     void StopInterphoneSinkIfNeeded();
+
+    DeviceType GetCurrentSinkDeviceType();
+    int32_t InitOutputCluster();
 
 private:
 
@@ -191,6 +214,7 @@ private:
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
     bool isReloadManagerFromCollStateChange_ = false;
+    uint32_t renderId_ = HDI_INVALID_ID;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

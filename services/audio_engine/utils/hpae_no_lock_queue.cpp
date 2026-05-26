@@ -57,11 +57,11 @@ void HpaeNoLockQueue::InitQueue(size_t maxRequestCount)
 void HpaeNoLockQueue::PushRequest(Request &&request)
 {
     uint64_t freeRequestIndex = GetRequestNode(&freeRequestHeadIndex_);
-    if (GetRequsetIndex(freeRequestIndex) == INVALID_REQUEST_ID) {
+    if (GetRequestIndex(freeRequestIndex) == INVALID_REQUEST_ID) {
         if (TryExpandQueue(true)) {
             freeRequestIndex = GetRequestNode(&freeRequestHeadIndex_);
         }
-        if (GetRequsetIndex(freeRequestIndex) == INVALID_REQUEST_ID) {
+        if (GetRequestIndex(freeRequestIndex) == INVALID_REQUEST_ID) {
             HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_NO_LOCK_QUEUE_TYPE, __func__,
                 "reached Queue Capacity");
             AUDIO_WARNING_LOG("reached Queue Capacity: drop this request");
@@ -83,14 +83,14 @@ void HpaeNoLockQueue::HandleRequests()
     uint64_t requestHeadindex;
     do {
         requestHeadindex = requestHeadIndex_.load();
-        oldRequestFlag = (GetRequsetFlag(requestHeadindex) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
+        oldRequestFlag = (GetRequestFlag(requestHeadindex) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
     } while (!std::atomic_compare_exchange_strong(&requestHeadIndex_, &requestHeadindex, oldRequestFlag));
     ProcessRequests(requestHeadindex, true);
 }
 
 void HpaeNoLockQueue::Reset()
 {
-    const uint64_t oldRequestFlag = (GetRequsetFlag(requestHeadIndex_.load()) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
+    const uint64_t oldRequestFlag = (GetRequestFlag(requestHeadIndex_.load()) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
     const uint64_t oldRequestHeadindex = requestHeadIndex_.exchange(oldRequestFlag);
     ProcessRequests(oldRequestHeadindex, false);
 }
@@ -115,7 +115,7 @@ bool HpaeNoLockQueue::TryExpandQueue(bool forceExpand)
     if (requestCount >= MAX_REQUEST_COUNT) {
         return false;
     }
-    if (forceExpand && GetRequsetIndex(freeRequestHeadIndex_.load()) != INVALID_REQUEST_ID) {
+    if (forceExpand && GetRequestIndex(freeRequestHeadIndex_.load()) != INVALID_REQUEST_ID) {
         return true;
     }
     if (!forceExpand && usedRequestCount_.load() < GetExpandThreshold(requestCount)) {
@@ -139,24 +139,24 @@ bool HpaeNoLockQueue::TryExpandQueue(bool forceExpand)
     return true;
 }
 
-uint64_t HpaeNoLockQueue::IncRequsetIndex(uint64_t requestIndex)
+uint64_t HpaeNoLockQueue::IncRequestIndex(uint64_t requestIndex)
 {
     return requestIndex + (static_cast<uint64_t>(1) << SHIFT_32_OFFSET);
 }
 
-uint64_t HpaeNoLockQueue::GetRequsetIndex(uint64_t requestIndex)
+uint64_t HpaeNoLockQueue::GetRequestIndex(uint64_t requestIndex)
 {
     return requestIndex & std::numeric_limits<uint32_t>::max();
 }
 
-uint64_t HpaeNoLockQueue::GetRequsetFlag(uint64_t requestFlag)
+uint64_t HpaeNoLockQueue::GetRequestFlag(uint64_t requestFlag)
 {
     return requestFlag >> SHIFT_32_OFFSET;
 }
 
 RequestNode *HpaeNoLockQueue::GetRequestNodePtr(uint64_t requestIndex)
 {
-    uint64_t index = GetRequsetIndex(requestIndex);
+    uint64_t index = GetRequestIndex(requestIndex);
     if (index == INVALID_REQUEST_ID || index >= requestCount_.load()) {
         return nullptr;
     }
@@ -212,7 +212,7 @@ uint64_t HpaeNoLockQueue::GetRequestNode(std::atomic<uint64_t> *pRequestHeadInde
     uint64_t nextRequestIndex;
     do {
         requestHeadIndex = pRequestHeadIndex->load();
-        if (GetRequsetIndex(requestHeadIndex) == INVALID_REQUEST_ID) {
+        if (GetRequestIndex(requestHeadIndex) == INVALID_REQUEST_ID) {
             return INVALID_REQUEST_ID;
         }
         RequestNode *requestNode = GetRequestNodePtr(requestHeadIndex);
@@ -221,7 +221,7 @@ uint64_t HpaeNoLockQueue::GetRequestNode(std::atomic<uint64_t> *pRequestHeadInde
         }
         nextRequestIndex = requestNode->nextRequestIndex;
     } while (!std::atomic_compare_exchange_strong(pRequestHeadIndex, &requestHeadIndex, nextRequestIndex));
-    return IncRequsetIndex(requestHeadIndex);
+    return IncRequestIndex(requestHeadIndex);
 }
 
 void HpaeNoLockQueue::ProcessRequests(uint64_t requestHeadIndex, bool isProcess)
@@ -231,7 +231,7 @@ void HpaeNoLockQueue::ProcessRequests(uint64_t requestHeadIndex, bool isProcess)
     }
     uint64_t tempIndex = requestHeadIndex;
     size_t requestCount = 0;
-    while (GetRequsetIndex(tempIndex) != INVALID_REQUEST_ID) {
+    while (GetRequestIndex(tempIndex) != INVALID_REQUEST_ID) {
         RequestNode *tempRequest = GetRequestNodePtr(tempIndex);
         CHECK_AND_BREAK_LOG(tempRequest != nullptr, "tempRequest is nullptr");
         uint64_t nextRequest = tempRequest->nextRequestIndex;
@@ -259,11 +259,7 @@ void HpaeNoLockQueue::ProcessRequests(uint64_t requestHeadIndex, bool isProcess)
 
 bool HpaeNoLockQueue::IsFinishProcess()
 {
-    if (GetRequsetIndex(requestHeadIndex_) == INVALID_REQUEST_ID) {
-        return true;
-    } else {
-        return false;
-    }
+    return GetRequestIndex(requestHeadIndex_) == INVALID_REQUEST_ID;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

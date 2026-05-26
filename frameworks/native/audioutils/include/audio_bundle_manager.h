@@ -24,7 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioBundleManager {
 public:
-    static int32_t GetUidByBundleName(std::string bundleName, int userId);
+    static int32_t GetUidByBundleName(std::string bundleName, int32_t userId, int32_t appIndex = 0);
     static std::string GetBundleName();
     static std::string GetBundleNameFromUid(int32_t callingUid);
     static std::string GetBundleNameFromUidCached(int32_t callingUid);
@@ -35,6 +35,10 @@ public:
     static std::string GetBundleNameByToken(const uint32_t tokenIdNum);
     static int32_t IsBundleInstalled(
         const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled);
+    static int32_t GetNameAndIndexForUid(int32_t uid, std::string &bundleName, int32_t &appIndex);
+    static void ExtractBundleNameAndIndex(const std::string &bundleNameWithIndex,
+        std::string &bundleName, int32_t &appIndex);
+    static std::string ComposeBundleNameWithIndex(const std::string &bundleName, int32_t appIndex);
 
 private:
     static AudioBundleManager& GetInstance();
@@ -46,7 +50,7 @@ private:
     AudioBundleManager(AudioBundleManager&&) = delete;
     AudioBundleManager& operator=(AudioBundleManager&&) = delete;
 
-    int32_t GetUidByBundleNameImpl(std::string bundleName, int userId);
+    int32_t GetUidByBundleNameImpl(std::string bundleName, int32_t userId, int32_t appIndex);
     std::string GetBundleNameImpl();
     std::string GetBundleNameFromUidImpl(int32_t callingUid);
     std::string GetBundleNameFromUidCachedImpl(int32_t callingUid);
@@ -57,6 +61,7 @@ private:
     std::string GetBundleNameByTokenImpl(const uint32_t tokenIdNum);
     int32_t IsBundleInstalledImpl(
         const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled);
+    int32_t GetNameAndIndexForUidImpl(int32_t uid, std::string &bundleName, int32_t &appIndex);
 
     std::shared_mutex mapMutex_;
     std::mutex processMutex_;

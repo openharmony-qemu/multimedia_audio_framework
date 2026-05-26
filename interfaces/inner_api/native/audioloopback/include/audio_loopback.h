@@ -106,6 +106,11 @@ public:
         return 0;
     }
 
+    virtual uint32_t GetDebugKey() const
+    {
+        return 0;
+    }
+
     virtual ~AudioLoopback();
 };
 } // namespace AudioStandard

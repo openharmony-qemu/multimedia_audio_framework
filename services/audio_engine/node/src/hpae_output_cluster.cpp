@@ -64,8 +64,16 @@ void HpaeOutputCluster::RegisterCurrentDeviceCallback()
         } else {
             timeoutThdFramesForDevice_ = timeoutThdFrames_;
         }
+        if (deviceChangeCallback_) {
+            deviceChangeCallback_();
+        }
     };
     hpaeSinkOutputNode_->RegisterCurrentDeviceCallback(callback);
+}
+
+void HpaeOutputCluster::SetDeviceChangeCallback(std::function<void()> callback)
+{
+    deviceChangeCallback_ = callback;
 }
 
 void HpaeOutputCluster::DoProcess()
@@ -279,6 +287,16 @@ void HpaeOutputCluster::SetCollaborationState(bool collaborationState)
 {
     CHECK_AND_RETURN_LOG(hpaeSinkOutputNode_ != nullptr, "sinkOutputNode is null");
     hpaeSinkOutputNode_->SetCollaborationState(collaborationState);
+}
+
+uint32_t HpaeOutputCluster::GetRenderId() const
+{
+    return hpaeSinkOutputNode_->GetRenderId();
+}
+
+DeviceType HpaeOutputCluster::GetCurrentOutputDevice() const
+{
+    return hpaeSinkOutputNode_->GetCurrentActiveDevice();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

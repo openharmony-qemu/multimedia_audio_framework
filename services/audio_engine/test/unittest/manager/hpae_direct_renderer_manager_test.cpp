@@ -3136,3 +3136,247 @@ HWTEST_F(HpaeDirectRendererManagerTest, priv_getDeviceHDFDumpInfo_001, TestSize.
     std::string dumpInfo = directManager_->GetDeviceHDFDumpInfo();
     EXPECT_FALSE(dumpInfo.empty());
 }
+
+// ==================== LoudnessGainNode tests ====================
+
+static HpaeStreamInfo MakeVoipStreamInfo(uint32_t sessionId)
+{
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = sessionId;
+    streamInfo.streamType = STREAM_VOICE_COMMUNICATION;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    return streamInfo;
+}
+
+/**
+* @tc.name  : loudnessGainNodeExistsForDirectMusic_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_145
+* @tc.desc  : Test loudnessGainNode_ is created for Direct Music pathway
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainNodeExistsForDirectMusic_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
+    EXPECT_NE(directManager_->gainNode_, nullptr);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+* @tc.name  : loudnessGainNodeNullForVoip_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_146
+* @tc.desc  : Test loudnessGainNode_ is nullptr for Direct VoIP pathway
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainNodeNullForVoip_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetVoipDirectSinkInfo();
+    auto voipManager = std::make_shared<HpaeDirectRendererManager>(sinkInfo);
+    EXPECT_EQ(voipManager->Init(), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+
+    EXPECT_EQ(voipManager->CreateStream(MakeVoipStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+
+    EXPECT_EQ(voipManager->loudnessGainNode_, nullptr);
+    EXPECT_NE(voipManager->volumeSyncNode_, nullptr);
+
+    EXPECT_EQ(voipManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+}
+
+/**
+* @tc.name  : setLoudnessGainInitialized_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_147
+* @tc.desc  : Test SetLoudnessGain propagates gain to loudnessGainNode_ for running Direct Music stream
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, setLoudnessGainInitialized_001, TestSize.Level1)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
+    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->SetLoudnessGain(TEST_STREAM_SESSION_ID, 5.0f), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
+    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 5.0f);
+    EXPECT_FLOAT_EQ(directManager_->curNode_->GetLoudnessGain(), 5.0f);
+
+    EXPECT_EQ(directManager_->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+* @tc.name  : setLoudnessGainNonCurrentSession_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_148
+* @tc.desc  : Test SetLoudnessGain for non-current session stores on SinkInputNode but does not propagate
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, setLoudnessGainNonCurrentSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(500001)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(500002)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->SetLoudnessGain(500002, 7.5f), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
+    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 0.0f);
+
+    auto node2 = directManager_->sinkInputNodeMap_[500002];
+    ASSERT_NE(node2, nullptr);
+    EXPECT_FLOAT_EQ(node2->GetLoudnessGain(), 7.5f);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+* @tc.name  : setLoudnessGainVoip_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_149
+* @tc.desc  : Test SetLoudnessGain on VoIP manager has no side effects (loudnessGainNode_ always null)
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, setLoudnessGainVoip_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetVoipDirectSinkInfo();
+    auto voipManager = std::make_shared<HpaeDirectRendererManager>(sinkInfo);
+    EXPECT_EQ(voipManager->Init(), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+
+    EXPECT_EQ(voipManager->CreateStream(MakeVoipStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(voipManager->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+
+    EXPECT_EQ(voipManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+
+    EXPECT_EQ(voipManager->SetLoudnessGain(TEST_STREAM_SESSION_ID, 10.0f), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+
+    EXPECT_EQ(voipManager->loudnessGainNode_, nullptr);
+
+    EXPECT_EQ(voipManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(voipManager);
+}
+
+/**
+* @tc.name  : loudnessGainPersistenceAfterStopStart_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_150
+* @tc.desc  : Test loudness gain value persists across stream Stop then Start cycle
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainPersistenceAfterStopStart_001, TestSize.Level1)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
+    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->SetLoudnessGain(TEST_STREAM_SESSION_ID, 8.0f), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
+    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 8.0f);
+
+    EXPECT_EQ(directManager_->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
+
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->loudnessGainNode_, nullptr);
+    EXPECT_FLOAT_EQ(directManager_->loudnessGainNode_->GetLoudnessGain(), 8.0f);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+* @tc.name  : loudnessGainNodeDestroyedOnDeInit_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_151
+* @tc.desc  : Test loudnessGainNode_ is null after stream destruction
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainNodeDestroyedOnDeInit_001, TestSize.Level1)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
+
+    EXPECT_EQ(directManager_->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
+
+    EXPECT_EQ(directManager_->loudnessGainNode_, nullptr);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+* @tc.name  : onRequestLatencyIncludesLoudnessGainNode_001
+* @tc.type  : FUNC
+* @tc.number: HpaeDirectRendererManagerTest_152
+* @tc.desc  : Test OnRequestLatency exercises loudnessGainNode_ branch without crash
+*/
+HWTEST_F(HpaeDirectRendererManagerTest, onRequestLatencyIncludesLoudnessGainNode_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    uint64_t latency = 0;
+    directManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
+
+    EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
+    EXPECT_EQ(latency, 0u);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}

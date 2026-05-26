@@ -69,19 +69,9 @@ void IHpaeCapturerManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId
     if (isConnect) {
         dfxTree_.ConnectNodes(parentId, childId);
     } else {
-        dfxTree_.DisConnectNodes(parentId, childId);
+        dfxTree_.DisconnectNodes(parentId, childId);
     }
 #endif
-}
-
-void IHpaeCapturerManager::EnableCaptureCollaboration(SourceType sourceType)
-{
-    AUDIO_ERR_LOG("Unsupported operation");
-}
-
-void IHpaeCapturerManager::DisableCaptureCollaboration(SourceType sourceType)
-{
-    AUDIO_ERR_LOG("Unsupported operation");
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -146,6 +146,54 @@ static bool CheckChannelInfoValid(int32_t channelCount, OH_AudioChannelLayout ch
     return true;
 }
 
+bool IsHoaFormat(OH_AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_AMB_ORDER1_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER1_FUMA:
+        case CH_LAYOUT_AMB_ORDER2_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER2_FUMA:
+        case CH_LAYOUT_AMB_ORDER3_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER3_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER3_FUMA:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool CheckHoaInputFormat(OH_AudioFormat audioFormat)
+{
+    CHECK_AND_RETURN_RET_LOG(audioFormat.samplingRate == OH_Audio_SampleRate::SAMPLE_RATE_16000 ||
+        audioFormat.samplingRate == OH_Audio_SampleRate::SAMPLE_RATE_48000,
+        false, "HOA input format requires 16k or 48k samplingRate, got %{public}d", audioFormat.samplingRate);
+    switch (audioFormat.channelLayout) {
+        case CH_LAYOUT_AMB_ORDER1_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER1_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER1_FUMA:
+            CHECK_AND_RETURN_RET_LOG(audioFormat.channelCount == AudioChannel::CHANNEL_4,
+                false, "HOA ORDER1 requires 4 channels, got %{public}d", audioFormat.channelCount);
+            break;
+        case CH_LAYOUT_AMB_ORDER2_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER2_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER2_FUMA:
+            CHECK_AND_RETURN_RET_LOG(audioFormat.channelCount == AudioChannel::CHANNEL_9,
+                false, "HOA ORDER2 requires 9 channels, got %{public}d", audioFormat.channelCount);
+            break;
+        case CH_LAYOUT_AMB_ORDER3_ACN_N3D:
+        case CH_LAYOUT_AMB_ORDER3_ACN_SN3D:
+        case CH_LAYOUT_AMB_ORDER3_FUMA:
+            CHECK_AND_RETURN_RET_LOG(audioFormat.channelCount == AudioChannel::CHANNEL_16,
+                false, "HOA ORDER3 requires 16 channels, got %{public}d", audioFormat.channelCount);
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
 bool CheckAudioFormat(OH_AudioFormat audioFormat)
 {
     return CheckChannelInfoValid(audioFormat.channelCount, audioFormat.channelLayout);
@@ -158,8 +206,13 @@ OHAudioSuiteNodeBuilder::~OHAudioSuiteNodeBuilder()
 
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioFormat)
 {
-    CHECK_AND_RETURN_RET_LOG(CheckAudioFormat(audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
-        "SetFormat failed AudioFormat invailed, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
+    if (nodeType_ == NODE_TYPE_INPUT && IsHoaFormat(audioFormat.channelLayout)) {
+        CHECK_AND_RETURN_RET_LOG(CheckHoaInputFormat(audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
+            "Set Hoa Format failed AudioFormat invalid, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
+    } else {
+        CHECK_AND_RETURN_RET_LOG(CheckAudioFormat(audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
+            "SetFormat failed AudioFormat invalid, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
+    }
 
     nodeFormat_.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(audioFormat.channelLayout);
     nodeFormat_.audioChannelInfo.numChannels = audioFormat.channelCount;

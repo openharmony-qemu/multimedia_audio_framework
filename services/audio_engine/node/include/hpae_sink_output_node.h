@@ -61,6 +61,8 @@ public:
     void NotifyStreamChangeToSink(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
     int32_t SetAuxiliarySinkEnable(bool isEnabled);
+    uint32_t GetRenderId() const;
+    DeviceType GetCurrentActiveDevice() const;
     void CheckAndSetCollDelayForRenderFrameFailed();
     void SetCollaborationState(bool collaborationState);
 

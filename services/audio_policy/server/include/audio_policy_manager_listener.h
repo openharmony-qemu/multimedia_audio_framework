@@ -38,6 +38,7 @@ public:
 public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
+    uint32_t tokenId_ = 0;
 
 private:
     sptr<IStandardAudioPolicyManagerListener> listener_ = nullptr;

@@ -32,8 +32,7 @@ constexpr int PRIORITY_NONE = 0;
 class WirelessConflictHandler : public ConflictHandler {
 public:
     ~WirelessConflictHandler() override = default;
-    bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType,
-        StreamUsage streamUsage, SourceType sourceType, bool isOutput) override;
+    bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType) override;
     void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
         const std::vector<StreamDeviceInfo> &inputDevices);
     void ClearSelectedDevices();
