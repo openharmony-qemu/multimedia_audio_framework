@@ -162,6 +162,66 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
+ * @tc.number: GetVolume_009
+ * @tc.desc  : Test GetVolume with VKB_ALL_RING mode, muted pipe should still return 1.0f.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_009, TestSize.Level1)
+{
+    uint32_t sessionId = 3;
+    int32_t volumeType = STREAM_MUSIC;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    VkbMode isVKB = VKB_ALL_RING;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, true);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
+    EXPECT_EQ(volume, 1.0f);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_010
+ * @tc.desc  : Test GetVolume with VKB_ALL_RING mode, unmuted pipe should return 1.0f.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_010, TestSize.Level1)
+{
+    uint32_t sessionId = 4;
+    int32_t volumeType = STREAM_MUSIC;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    VkbMode isVKB = VKB_ALL_RING;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
+    EXPECT_EQ(volume, 1.0f);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
  * @tc.number: GetHistoryVolume_001
  * @tc.desc  : Test AudioVolume interface.
  */
@@ -2542,6 +2602,81 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_005, TestSize.Level1)
     EXPECT_EQ(volume, 0.0f);
     
     audioVolumeTest->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetVirtualKeyboardMode API
+ * @tc.type  : FUNC
+ * @tc.number: GetVirtualKeyboardMode_001
+ * @tc.desc  : Test GetVirtualKeyboardMode returns VKB_INVALID for non-VKB stream.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVirtualKeyboardMode_001, TestSize.Level1)
+{
+    uint32_t sessionId = 100;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    VkbMode isVKB = VKB_INVALID;
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    auto it = AudioVolume::GetInstance()->streamVolume_.find(sessionId);
+    ASSERT_NE(it, AudioVolume::GetInstance()->streamVolume_.end());
+    EXPECT_EQ(it->second->GetVirtualKeyboardMode(), VKB_INVALID);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetVirtualKeyboardMode API
+ * @tc.type  : FUNC
+ * @tc.number: GetVirtualKeyboardMode_002
+ * @tc.desc  : Test GetVirtualKeyboardMode returns VKB_ONLY_RING for VKB stream.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVirtualKeyboardMode_002, TestSize.Level1)
+{
+    uint32_t sessionId = 101;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    VkbMode isVKB = VKB_ONLY_RING;
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    auto it = AudioVolume::GetInstance()->streamVolume_.find(sessionId);
+    ASSERT_NE(it, AudioVolume::GetInstance()->streamVolume_.end());
+    EXPECT_EQ(it->second->GetVirtualKeyboardMode(), VKB_ONLY_RING);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test GetVirtualKeyboardMode API
+ * @tc.type  : FUNC
+ * @tc.number: GetVirtualKeyboardMode_003
+ * @tc.desc  : Test GetVirtualKeyboardMode returns VKB_ALL_RING for VKB all ring stream.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVirtualKeyboardMode_003, TestSize.Level1)
+{
+    uint32_t sessionId = 102;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    VkbMode isVKB = VKB_ALL_RING;
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    auto it = AudioVolume::GetInstance()->streamVolume_.find(sessionId);
+    ASSERT_NE(it, AudioVolume::GetInstance()->streamVolume_.end());
+    EXPECT_EQ(it->second->GetVirtualKeyboardMode(), VKB_ALL_RING);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
