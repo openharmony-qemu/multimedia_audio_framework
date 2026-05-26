@@ -364,24 +364,6 @@ void AudioPolicyClientHolder::OnPersonalizedSpatializationEnabledChangeForAnyDev
     }
 }
 
-void AudioPolicyClientHolder::OnSpatializationEnabledChangeForBTDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled,
-    const bool &headTrackingEnabled)
-{
-    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
-    if (hasSystemPermission_) {
-        AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
-        deviceDescriptor->SetClientInfo(clientInfo);
-        AUDIO_INFO_LOG("OnSpatializationEnabledChangeForBTDevice %{public}d %{public}d", enabled, headTrackingEnabled);
-        audioPolicyClient_->OnSpatializationEnabledChangeForBTDevice(deviceDescriptor, enabled, headTrackingEnabled);
-    } else {
-        AUDIO_INFO_LOG("OnSpatializationEnabledChangeForBTDevice 0 0");
-        audioPolicyClient_->OnSpatializationEnabledChangeForBTDevice(deviceDescriptor, false, false);
-    }
-}
-
 void AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");

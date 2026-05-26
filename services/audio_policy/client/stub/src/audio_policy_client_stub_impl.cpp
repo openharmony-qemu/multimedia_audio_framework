@@ -1429,14 +1429,10 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unorder
 }
 
 int32_t AudioPolicyClientStubImpl::AddSpatializationEnabledChangeCallback(
-    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb, bool isFromBluetooth)
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     spatializationEnabledChangeCallbackList_.push_back(cb);
-    if (isFromBluetooth) {
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::AddSpatializationEnabledChangeCallback isFromBluetooth");
-        spatializationEnabledChangeCallbackList_ForBT.push_back(cb);
-    }
     return SUCCESS;
 }
 
@@ -1444,7 +1440,6 @@ int32_t AudioPolicyClientStubImpl::RemoveSpatializationEnabledChangeCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     spatializationEnabledChangeCallbackList_.clear();
-    spatializationEnabledChangeCallbackList_ForBT.clear();
     return SUCCESS;
 }
 
@@ -1507,13 +1502,10 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForCurrentDevice
 }
 
 int32_t AudioPolicyClientStubImpl::AddHeadTrackingEnabledChangeCallback(
-    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb, bool isFromNearlink)
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     headTrackingEnabledChangeCallbackList_.push_back(cb);
-    if (isFromNearlink) {
-        headTrackingEnabledChangeCallbackListFromNearlink_.push_back(cb);
-    }
     return SUCCESS;
 }
 
@@ -1521,7 +1513,6 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingEnabledChangeCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     headTrackingEnabledChangeCallbackList_.clear();
-    headTrackingEnabledChangeCallbackListFromNearlink_.clear();
     return SUCCESS;
 }
 
@@ -1559,30 +1550,6 @@ int32_t AudioPolicyClientStubImpl::OnAdaptiveSpatialRenderingEnabledChangeForAny
     for (const auto &callback : adaptiveSpatialRenderingEnabledChangeCallbackList_) {
         CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
-    }
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled, bool headTrackingEnabled)
-{
-    {
-        std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice %{public}d",
-            int(spatializationEnabledChangeCallbackList_ForBT.size()));
-        for (const auto &callback : spatializationEnabledChangeCallbackList_ForBT) {
-            CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
-            callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
-        }
-    }
-    {
-        std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForBTDevice %{public}d",
-            int(headTrackingEnabledChangeCallbackListFromNearlink_.size()));
-        for (const auto &callback : headTrackingEnabledChangeCallbackListFromNearlink_) {
-            CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
-            callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, headTrackingEnabled);
-        }
     }
     return SUCCESS;
 }

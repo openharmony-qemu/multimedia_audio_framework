@@ -1323,10 +1323,8 @@ void AudioCoreService::CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescripto
         sourceType = SPATIAL_AUDIO_SOURCE_TYPE_MULTI_CHANNEL;
     }
     AUDIO_INFO_LOG("need update spatializaitonenabled %{public}d", sourceType);
-    // 通知hpaemanager音效模式变化 最终通知给audioeffectchain
     HPAE::IHpaeManager::GetHpaeManager().HandleBypassSpatializationForStereo(
         sourceType == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
-    // AudioSpatializationService里面调用回调通知管家音效模式变化
     AudioSpatializationService::GetAudioSpatializationService().SetSpatialAudioSourceType(sourceType);
 
     if (!AudioSpatializationService::GetAudioSpatializationService().IsAdaptiveSpatialRenderingEnabled(
@@ -1334,12 +1332,6 @@ void AudioCoreService::CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescripto
         AUDIO_INFO_LOG("adaptiveSpatialRendering is not enabled");
         return;
     }
-    AUDIO_INFO_LOG("IsHeadTrackingEnabled: %{public}d",
-        AudioSpatializationService::GetAudioSpatializationService().IsHeadTrackingEnabled(
-            streamDesc->newDeviceDescs_[0]->macAddress_));
-    // 通知星闪、蓝牙空间音频、头动开关变化
-    AudioSpatializationService::GetAudioSpatializationService().SetBypassSpatialForStereo(
-        streamDesc->newDeviceDescs_[0], sourceType == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
 }
 
 void AudioCoreService::ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc)

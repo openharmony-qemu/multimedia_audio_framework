@@ -507,13 +507,13 @@ public:
     int32_t GetCurrentSpatialAudioSourceType();
 
     int32_t RegisterSpatializationEnabledEventListener(
-        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback, bool isFromBluetooth = false);
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
 
     int32_t RegisterSpatializationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &callback);
 
     int32_t RegisterHeadTrackingEnabledEventListener(
-        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback, bool isFromNearlink);
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
 
     int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
