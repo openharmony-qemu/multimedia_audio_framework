@@ -114,7 +114,6 @@ vector<RouterType> RouterTypeVec = {
     RouterType::ROUTER_TYPE_USER_SELECT,
     RouterType::ROUTER_TYPE_PRIVACY_PRIORITY,
     RouterType::ROUTER_TYPE_PUBLIC_PRIORITY,
-    RouterType::ROUTER_TYPE_APP_SELECT,
     RouterType::ROUTER_TYPE_PACKAGE_FILTER,
     RouterType::ROUTER_TYPE_STREAM_FILTER,
     RouterType::ROUTER_TYPE_COCKPIT_PHONE,
@@ -415,7 +414,7 @@ void WirelessConflictHandlerScoPairFuzzTest(FuzzedDataProvider& fdp)
     StreamDeviceInfo inputInfo = MakeStreamDeviceInfo(fdp, false);
     inputInfo.device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     inputInfo.device->macAddress_ = macAddress;
-    inputInfo.routerType = fdp.ConsumeBool() ? ROUTER_TYPE_PAIR_DEVICE : ROUTER_TYPE_APP_SELECT;
+    inputInfo.routerType = ROUTER_TYPE_PAIR_DEVICE;
 
     handler.SetSelectedDevices({ outputInfo }, { inputInfo });
     auto device = MakeWirelessDevice(fdp);
