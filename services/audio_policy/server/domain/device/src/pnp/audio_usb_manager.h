@@ -70,7 +70,7 @@ public:
     };
 
     static AudioUsbManager &GetInstance();
-    static map<UsbAddr, SoundCard> GetUsbSoundCardMap();
+    static map<UsbAddr, SoundCard> GetUsbSoundCardMap(bool &hdfAudioDeviceTag);
     static int32_t GetUsbAudioDevices(vector<UsbAudioDevice> &result);
 
     void Init(std::shared_ptr<IDeviceStatusObserver> observer);
@@ -97,6 +97,7 @@ private:
     map<UsbAddr, std::string> pendingMap_;
 
     bool initialized_{false};
+    bool isHdfAudioDriver_{false};
     mutex mutex_;
 };
 

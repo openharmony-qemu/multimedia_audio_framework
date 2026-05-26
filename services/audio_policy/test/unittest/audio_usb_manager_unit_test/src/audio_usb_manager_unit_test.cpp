@@ -256,7 +256,8 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_013, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
     audioUsbManager->initialized_ = true;
 
-    auto outMap = AudioUsbManager::GetInstance().GetUsbSoundCardMap();
+    bool hdfAudioDeviceTag = false;
+    auto outMap = AudioUsbManager::GetInstance().GetUsbSoundCardMap(hdfAudioDeviceTag);
     EXPECT_EQ(outMap.size(), 0);
 }
 

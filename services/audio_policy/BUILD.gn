@@ -455,6 +455,10 @@ audio_ohos_library("audio_policy_service") {
     sources += [ "server/domain/device/src/pnp/audio_usb_manager.cpp" ]
   }
 
+  if (audio_framework_feature_hdmi_detect_audio) {
+    defines += [ "HDMI_DETECT_ENABLE" ]
+  }
+
   if (target_platform != "watch" && target_platform != "glasses") {
     defines += [ "HAS_WINDOW_MANAGER" ]
     external_deps += [

@@ -39,6 +39,7 @@ declare_args() {
   audio_framework_feature_3da_direct = true
   audio_framework_feature_new_engine_flag = true
   audio_framework_feature_usb_audio = false
+  audio_framework_feature_hdmi_detect_audio = true
   audio_framework_feature_mutesink_enable = true
   audio_framework_feature_audiosuite_support = false
   audio_framework_feature_audiosuite_format_convert_support = false

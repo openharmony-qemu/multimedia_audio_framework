@@ -43,6 +43,7 @@ static constexpr uint32_t AUDIO_D2D = 12;
 const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
     {HDI_ID_INFO_USB, HDI_RENDER_OFFSET_USB},
     {HDI_ID_INFO_DP, HDI_RENDER_OFFSET_DP},
+    {HDI_ID_INFO_HDMI, HDI_RENDER_OFFSET_HDMI},
     {HDI_ID_INFO_VOIP, HDI_RENDER_OFFSET_VOIP},
     {HDI_ID_INFO_DIRECT, HDI_RENDER_OFFSET_DIRECT},
     {HDI_ID_INFO_INTERPHONE, HDI_RENDER_OFFSET_INTERPHONE},
@@ -980,6 +981,8 @@ void AudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_DP) {
         deviceDesc.pins = PIN_OUT_DP;
+    } else if (halName_ == HDI_ID_INFO_HDMI) {
+        deviceDesc.pins = PIN_OUT_HDMI;
     }
 }
 
@@ -997,6 +1000,11 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
         port = PIN_OUT_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_DP) {
         port = PIN_OUT_DP;
+    } else if (halName_ == HDI_ID_INFO_HDMI) {
+        port = PIN_OUT_HDMI;
+    }
+    if (currentActiveDevice_ == DEVICE_TYPE_WIRED_HEADSET || currentActiveDevice_ ==  DEVICE_TYPE_WIRED_HEADPHONES) {
+        port = PIN_OUT_HEADSET;
     }
     AUDIO_DEBUG_LOG("port: %{public}d", port);
     sceneDesc.desc.pins = port;
@@ -1014,6 +1022,8 @@ void AudioRenderSink::SetAudioRouteInfoForEnhanceChain(void)
             audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_USB_ARM_HEADSET);
         } else if (halName_ == HDI_ID_INFO_DP) {
             audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_DP);
+        } else if (halName_ == HDI_ID_INFO_HDMI) {
+            audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_HDMI);
         } else {
             audioEnhanceChainManager->SetOutputDevice(renderId_, currentActiveDevice_);
         }
@@ -1074,6 +1084,9 @@ int32_t AudioRenderSink::InitRender(void)
             ret = UpdateActiveDevice(outputDevices);
         } else if (halName_ == HDI_ID_INFO_DP) {
             outputDevices.push_back(DEVICE_TYPE_DP);
+            ret = UpdateActiveDevice(outputDevices);
+        } else if (halName_ == HDI_ID_INFO_HDMI) {
+            outputDevices.push_back(DEVICE_TYPE_HDMI);
             ret = UpdateActiveDevice(outputDevices);
         } else if (halName_ == HDI_ID_INFO_VOIP) {
             // voip hal do not need to SetOutputRoute when create render, will SetOutputRoute when start stream
@@ -1297,6 +1310,8 @@ std::string AudioRenderSink::GetRouting(void) const
             return "2";
         case DEVICE_TYPE_WIRED_HEADSET:
             return "4";
+        case DEVICE_TYPE_HDMI:
+            return "8";
         case DEVICE_TYPE_USB_ARM_HEADSET:
             return "67108864";
         case DEVICE_TYPE_USB_HEADSET:

@@ -38,6 +38,8 @@ namespace AudioStandard {
 using namespace USB;
 constexpr int32_t MAX_RETRY = 10;
 constexpr int32_t DELAY_MS = 10;
+constexpr int32_t MAX_RETRY_USB_DEVICE_NUM = 10;
+constexpr std::string_view DEV_DIRECTORY = "/dev";
 
 static string ReadTextFile(const string &file)
 {
@@ -76,7 +78,7 @@ static void FillSoundCard(const string &path, SoundCard &card)
 
 static string Trim(const string &str)
 {
-    static const set<char> WHITE_SPACE{' ', '\r', '\n', '\t'};
+    static const set<char> WHITE_SPACE {' ', '\r', '\n', '\t'};
     size_t pos = 0;
     size_t end = str.length();
     for (; pos < end; pos++) {
@@ -92,26 +94,109 @@ static string Trim(const string &str)
     return str.substr(pos, end - pos);
 }
 
-static vector<SoundCard> GetUsbSoundCards()
+static bool IsAllDigits(std::string_view sv) noexcept
 {
-    const string baseDir{"/proc/asound"};
-    const string card{"card"};
+    return !sv.empty() && std::all_of(sv.begin(), sv.end(), ::isdigit);
+}
+
+static std::optional<int> ExtractNumberSuffix(std::string_view nodeName, std::string_view baseName)
+{
+    if (!nodeName.starts_with(baseName)) {
+        return std::nullopt;
+    }
+    std::string_view suffix = nodeName.substr(baseName.size());
+    if (!IsAllDigits(suffix)) {
+        return std::nullopt;
+    }
+    int value = 0;
+    auto [ptr, ec] = std::from_chars(suffix.data(), suffix.data() + suffix.size(), value);
+    if (ec != std::errc() || value < 0) {
+        return std::nullopt;
+    }
+    return value;
+}
+
+void FindUsbDeviceNumber(const std::string &baseName, SoundCard &card)
+{
+    auto dirDeleter = [](DIR *dir) {
+        if (dir != nullptr) {
+            closedir(dir);
+        }
+    };
+    std::unique_ptr<DIR, decltype(dirDeleter)> dirPtr(opendir(DEV_DIRECTORY.data()), dirDeleter);
+    if (!dirPtr) {
+        AUDIO_ERR_LOG("Failed to open %s directory: %s", DEV_DIRECTORY.data(), strerror(errno));
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dirPtr.get())) != nullptr) {
+        if (entry->d_type != DT_CHR && entry->d_type != DT_BLK) {
+            continue;
+        }
+        const std::string nodeName(entry->d_name);
+        auto numberOpt = ExtractNumberSuffix(nodeName, baseName);
+        if (!numberOpt.has_value()) {
+            continue;
+        }
+        int number = numberOpt.value();
+        if (number < 0) {
+            continue;
+        }
+
+        std::string numberStr = std::to_string(number);
+        if (numberStr.length() > MAX_RETRY_USB_DEVICE_NUM) {
+            AUDIO_ERR_LOG("Device number too long: %s", nodeName.c_str());
+            continue;
+        }
+
+        card.cardNum_ = static_cast<uint32_t>(number);
+        card.usbBus_ = "001/00" + numberStr;
+        card.isCapturer_ = true;
+        card.isPlayer_ = true;
+        AUDIO_INFO_LOG("Found USB device: %s, card number: %u", nodeName.c_str(), card.cardNum_);
+        return;
+    }
+    AUDIO_ERR_LOG("No matching device node found for base name: %s", baseName.c_str());
+}
+
+static vector<SoundCard> GetUsbSoundCards(bool &hdfAudioDriverTag)
+{
+    const string baseDir {"/proc/asound"};
+    const string usbDeviceName {"hdf_audio_usb_codec_"};
+    const string card {"card"};
     vector<SoundCard> soundCards;
     DIR *dir = opendir(baseDir.c_str());
-    CHECK_AND_RETURN_RET(dir != nullptr, soundCards);
-    struct dirent *tmp;
-    int cardNum;
-    while ((tmp = readdir(dir)) != nullptr) {
-        string file(tmp->d_name);
-        if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {continue;}
-        string cardNumStr = file.substr(card.length());
-        if (!StrToInt(cardNumStr, cardNum)) {continue;}
-        SoundCard soundCard = {.cardNum_ = static_cast<uint32_t>(cardNum)};
-        FillSoundCard(baseDir + "/" + file, soundCard);
-        if (soundCard.usbBus_.empty()) {continue;}
-        soundCards.push_back(soundCard);
+    if (dir != nullptr) {
+        struct dirent *tmp;
+        int cardNum;
+        hdfAudioDriverTag = false;
+        while ((tmp = readdir(dir)) != nullptr) {
+            string file(tmp->d_name);
+            if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {
+                continue;
+            }
+            string cardNumStr = file.substr(card.length());
+            if (!StrToInt(cardNumStr, cardNum)) {
+                continue;
+            }
+            SoundCard soundCard = {.cardNum_ = static_cast<uint32_t>(cardNum)};
+            FillSoundCard(baseDir + "/" + file, soundCard);
+            if (soundCard.usbBus_.empty()) {
+                continue;
+            }
+            soundCards.push_back(soundCard);
+        }
+        closedir(dir);
+    } else {
+        hdfAudioDriverTag = true;
+        SoundCard cardInfo;
+        FindUsbDeviceNumber(usbDeviceName, cardInfo);
+        if (!cardInfo.usbBus_.empty()) {
+            AUDIO_INFO_LOG("card.usbBus_: %{public}s", cardInfo.usbBus_.c_str());
+            soundCards.push_back(cardInfo);
+        }
     }
-    closedir(dir);
     return soundCards;
 }
 
@@ -237,7 +322,7 @@ void AudioUsbManager::RefreshUsbAudioDevices()
         }
     }
     CHECK_AND_RETURN_RET(!toAdd.empty(),);
-    auto cardMap = GetUsbSoundCardMap();
+    auto cardMap = GetUsbSoundCardMap(isHdfAudioDriver_);
     for (auto &device : toAdd) {
         if (!FillUsbAudioDevice(cardMap, device)) { continue; }
         audioDevices_.push_back(device);
@@ -256,7 +341,7 @@ void AudioUsbManager::SubscribeEvent()
 
 void AudioUsbManager::NotifySoundCardChange(const std::string &cardNumStr, bool isAttach)
 {
-    int cardNum{0};
+    int cardNum {0};
     CHECK_AND_RETURN_LOG(StrToInt(cardNumStr, cardNum), "Invalid cardNum");
     AUDIO_INFO_LOG("cardNum=%{public}d, isAttach=%{public}d", cardNum, isAttach);
     if (isAttach) {
@@ -287,23 +372,23 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
 {
     DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
     string macAddress = GetDeviceAddr(device.cardNum_);
-    AudioStreamInfo streamInfo{};
+    AudioStreamInfo streamInfo {};
     string deviceName = device.name_.empty() ? "" : device.name_ + "-" + to_string(device.cardNum_);
     if (device.isPlayer_ && IsAvailableUsbDevice(device)) {
         AUDIO_INFO_LOG("Usb out, devType=%{public}d, isConnected=%{public}d, "
-            "addr=%{public}s, name=%{public}s, role=%{public}d", devType, isConnected,
-            EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
+            "addr=%{public}s, name=%{public}s, role=%{public}d",
+            devType, isConnected, EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
         CHECK_AND_RETURN_LOG(observer_ != nullptr, "observer is null");
-        observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
-            deviceName, streamInfo, OUTPUT_DEVICE, device.isCapturer_);
+        observer_->OnDeviceStatusUpdated(
+            devType, isConnected, macAddress, deviceName, streamInfo, OUTPUT_DEVICE, device.isCapturer_);
     }
     if (device.isCapturer_) {
         AUDIO_INFO_LOG("Usb in, devType=%{public}d, isConnected=%{public}d, "
-            "addr=%{public}s, name=%{public}s, role=%{public}d", devType, isConnected,
-            EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::INPUT_DEVICE);
+            "addr=%{public}s, name=%{public}s, role=%{public}d",
+            devType, isConnected, EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::INPUT_DEVICE);
         CHECK_AND_RETURN_LOG(observer_ != nullptr, "observer is null");
-        observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
-            deviceName, streamInfo, INPUT_DEVICE, device.isPlayer_);
+        observer_->OnDeviceStatusUpdated(
+            devType, isConnected, macAddress, deviceName, streamInfo, INPUT_DEVICE, device.isPlayer_);
     }
 }
 
@@ -344,10 +429,10 @@ bool AudioUsbManager::IsAvailableUsbDevice(const UsbAudioDevice &device)
     return itDisable == disableUsbDeviceSet.end();
 }
 
-map<UsbAddr, SoundCard> AudioUsbManager::GetUsbSoundCardMap()
+map<UsbAddr, SoundCard> AudioUsbManager::GetUsbSoundCardMap(bool &hdfAudioDeviceTag)
 {
     map<UsbAddr, SoundCard> cardMap;
-    auto cardList = GetUsbSoundCards();
+    auto cardList = GetUsbSoundCards(hdfAudioDeviceTag);
     for (auto &card : cardList) {
         cardMap[GetUsbAddr(card.usbBus_)] = card;
     }
@@ -358,8 +443,8 @@ int32_t AudioUsbManager::GetUsbAudioDevices(vector<UsbAudioDevice> &result)
 {
     vector<USB::UsbDevice> deviceList;
     auto ret = UsbSrvClient::GetInstance().GetDevices(deviceList);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "GetDevices failed. ret=%{public}d. size=%{public}zu", ret, deviceList.size());
+    CHECK_AND_RETURN_RET_LOG(
+        ret == SUCCESS, ret, "GetDevices failed. ret=%{public}d. size=%{public}zu", ret, deviceList.size());
     for (auto &usbDevice : deviceList) {
         if (IsAudioDevice(usbDevice)) {
             result.push_back({
@@ -375,7 +460,7 @@ void AudioUsbManager::EventSubscriber::OnReceiveEvent(const EventFwk::CommonEven
 {
     string action = data.GetWant().GetAction();
     AUDIO_INFO_LOG("OnReceiveEvent Entry. action=%{public}s", action.c_str());
-    bool isAttach{false};
+    bool isAttach {false};
     if (action == EventFwk::CommonEventSupport::COMMON_EVENT_USB_DEVICE_ATTACHED) {
         isAttach = true;
     } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_USB_DEVICE_DETACHED) {
@@ -407,7 +492,7 @@ void AudioUsbManager::HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p)
     auto it = find(audioDevices_.begin(), audioDevices_.end(), p.first);
     if (p.second) {
         CHECK_AND_RETURN_LOG(initialized_, "Not initialized");
-        auto cardMap = GetUsbSoundCardMap();
+        auto cardMap = GetUsbSoundCardMap(isHdfAudioDriver_);
         CHECK_AND_RETURN_LOG(FillUsbAudioDevice(cardMap, p.first), "FillUsbAudioDevice Failed");
         UpdateDevice(p.first, it);
         NotifyDevice(p.first, true);
@@ -421,19 +506,36 @@ void AudioUsbManager::HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p)
 
 bool AudioUsbManager::FillUsbAudioDevice(const map<UsbAddr, SoundCard> &cardMap, UsbAudioDevice &device)
 {
-    auto it = cardMap.find(device.usbAddr_);
-    if (it == cardMap.end()) {
-        pendingMap_[device.usbAddr_] = device.name_;
-        AUDIO_ERR_LOG("Error: No sound card matches usb device[%{public}s]", device.name_.c_str());
-        return false;
+    std::unique_ptr<SoundCard> card = nullptr;
+
+    if (!isHdfAudioDriver_) {
+        auto it = cardMap.find(device.usbAddr_);
+        if (it == cardMap.end()) {
+            pendingMap_[device.usbAddr_] = device.name_;
+            AUDIO_ERR_LOG("Error: No sound card matches usb device[%{public}s]", device.name_.c_str());
+            return false;
+        }
+        card = std::make_unique<SoundCard>(it->second);
+    } else {
+        if (cardMap.empty()) {
+            pendingMap_[device.usbAddr_] = device.name_;
+            AUDIO_ERR_LOG("Error:No sound card matches usb device");
+            return false;
+        }
+        auto it = cardMap.begin();
+        card = std::make_unique<SoundCard>(it->second);
     }
     pendingMap_.erase(device.usbAddr_);
-    auto &card = it->second;
-    CHECK_AND_RETURN_RET_LOG(card.isPlayer_ || card.isCapturer_, false,
-        "Error: Sound card[%{public}d] is not player and not capturer", card.cardNum_);
-    device.cardNum_ = card.cardNum_;
-    device.isCapturer_ = card.isCapturer_;
-    device.isPlayer_ = card.isPlayer_;
+    if (card == nullptr) {
+        AUDIO_ERR_LOG("Error:No sound card matches usb device");
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(card->isPlayer_ || card->isCapturer_, false,
+        "Error: Sound card[%{public}d] is not player and not capturer", card->cardNum_);
+    device.cardNum_ = card->cardNum_;
+    device.isCapturer_ = card->isCapturer_;
+    device.isPlayer_ = card->isPlayer_;
     return true;
 }
 
@@ -451,7 +553,7 @@ void AudioUsbManager::UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<U
 
 void AudioUsbManager::AddDeviceBySoundCard(uint32_t cardNum)
 {
-    auto path = string{"/proc/asound/card"} + to_string(cardNum);
+    auto path = string {"/proc/asound/card"} + to_string(cardNum);
     WaitFile(path + "/" + "usbbus");
     this_thread::sleep_for(chrono::milliseconds(DELAY_MS + DELAY_MS));
     SoundCard card{.cardNum_ = cardNum};
