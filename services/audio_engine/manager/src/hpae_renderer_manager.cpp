@@ -858,9 +858,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
-        if (isStandby) {
-            DisConnectInputSession(sessionId);
-        } else if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
+        if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandy)) {
             DisConnectInputSession(sessionId);
         }
         UpdateClusterStreamInfo(sceneType);
@@ -1511,7 +1509,7 @@ std::string HpaeRendererManager::GetThreadName()
     return sinkInfo_.deviceName;
 }
 
-bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operation)
+bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operation, bool isStandby)
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
         "can not get input node of session %{public}u", sessionId);

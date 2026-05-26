@@ -129,7 +129,7 @@ private:
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     void DereferenceInputCluster(uint32_t sessionId);
-    bool SetSessionFade(uint32_t sessionId, IOperation operation);
+    bool SetSessionFade(uint32_t sessionId, IOperation operation, bool isStandby = false);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
     int32_t InitManager(bool isReload = false, bool isNeedCallBack = true);
