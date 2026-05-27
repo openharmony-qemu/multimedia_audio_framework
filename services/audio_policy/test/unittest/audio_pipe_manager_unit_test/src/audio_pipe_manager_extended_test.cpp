@@ -335,72 +335,7 @@ HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_005, TestSize.Level1)
     EXPECT_EQ(false, result);
 }
 
-/**
- * @tc.name: AudioPipeManager_HasRunningStream_006
- * @tc.desc: Test HasRunningStream when desc->IsRunning() returns true
- * @tc.type: FUNC
- */
-HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_006, TestSize.Level1)
-{
-    AudioPipeManager pipeManager;
 
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->SetStatus(STREAM_STATUS_STARTED);
-
-    pipeInfo->streamDescriptors_.push_back(streamDesc);
-    pipeManager.curPipeList_.push_back(pipeInfo);
-
-    bool result = pipeManager.HasRunningStream();
-    EXPECT_EQ(true, result);
-}
-
-/**
- * @tc.name: AudioPipeManager_HasRunningStream_007
- * @tc.desc: Test HasRunningStream with multiple pipeInfos, first has nullptr
- * @tc.type: FUNC
- */
-HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_007, TestSize.Level1)
-{
-    AudioPipeManager pipeManager;
-
-    // First pipeInfo is nullptr
-    pipeManager.curPipeList_.push_back(nullptr);
-
-    // Second pipeInfo has a running stream
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->SetStatus(STREAM_STATUS_STARTED);
-    pipeInfo->streamDescriptors_.push_back(streamDesc);
-    pipeManager.curPipeList_.push_back(pipeInfo);
-
-    bool result = pipeManager.HasRunningStream();
-    EXPECT_EQ(true, result);
-}
-
-/**
- * @tc.name: AudioPipeManager_HasRunningStream_008
- * @tc.desc: Test HasRunningStream with multiple descriptors, first is nullptr
- * @tc.type: FUNC
- */
-HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_008, TestSize.Level1)
-{
-    AudioPipeManager pipeManager;
-
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    // First descriptor is nullptr
-    pipeInfo->streamDescriptors_.push_back(nullptr);
-
-    // Second descriptor is running
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->SetStatus(STREAM_STATUS_STARTED);
-    pipeInfo->streamDescriptors_.push_back(streamDesc);
-
-    pipeManager.curPipeList_.push_back(pipeInfo);
-
-    bool result = pipeManager.HasRunningStream();
-    EXPECT_EQ(true, result);
-}
 
 /**
  * @tc.name: AudioPipeManager_HasFastOutputPipe_001

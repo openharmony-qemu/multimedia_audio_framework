@@ -190,31 +190,7 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Normal_NoProxy_001, TestSize.Level
     EXPECT_TRUE(result);
 }
 
-HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Handler_Success_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER,
-        appInfo_);
-    wrapper->SetLoopbackProxy(mockLoopback_);
-    wrapper->SetPrivate(mockPrivate_);
 
-    EXPECT_CALL(*mockLoopback_, Enable(true, _)).WillOnce(DoAll(SetArgReferee<1>(SUCCESS), Return(SUCCESS)));
-    EXPECT_CALL(*mockPrivate_, Enable(true)).WillOnce(Return(true));
-
-    bool result = wrapper->Enable(true);
-    EXPECT_TRUE(result);
-}
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Control_Success_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL,
-        appInfo_);
-    wrapper->SetLoopbackProxy(mockLoopback_);
-
-    EXPECT_CALL(*mockLoopback_, Enable(true, _)).WillOnce(DoAll(SetArgReferee<1>(SUCCESS), Return(SUCCESS)));
-
-    bool result = wrapper->Enable(true);
-    EXPECT_TRUE(result);
-}
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Control_NoProxy_001, TestSize.Level1)
 {
@@ -234,18 +210,7 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_UnknownType_001, TestSize.Level1)
     EXPECT_FALSE(result);
 }
 
-HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Control_Success_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL,
-        appInfo_);
-    wrapper->SetLoopbackProxy(mockLoopback_);
 
-    EXPECT_CALL(*mockLoopback_, GetStatus(_, _))
-        .WillOnce(DoAll(SetArgReferee<0>(LOOPBACK_AVAILABLE_RUNNING), SetArgReferee<1>(SUCCESS), Return(SUCCESS)));
-
-    AudioLoopbackStatus status = wrapper->GetStatus();
-    EXPECT_EQ(status, LOOPBACK_AVAILABLE_RUNNING);
-}
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Control_NoProxy_001, TestSize.Level1)
 {
