@@ -335,8 +335,6 @@ HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_005, TestSize.Level1)
     EXPECT_EQ(false, result);
 }
 
-
-
 /**
  * @tc.name: AudioPipeManager_HasFastOutputPipe_001
  * @tc.desc: Test HasFastOutputPipe when curPipeList_ is empty

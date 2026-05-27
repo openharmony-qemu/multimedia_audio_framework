@@ -1518,8 +1518,6 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetMultiDeviceUniqueId_004, TestSize.Level1
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_WAKEUP * UNIQUE_ID_INTERVAL);
 }
 
-
-
 /**
  * @tc.name   : Test ConvertToAudioInputRouteFlag API
  * @tc.number : ConvertToAudioInputRouteFlag_002
