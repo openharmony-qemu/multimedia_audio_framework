@@ -158,6 +158,10 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_006, TestSize.Level1)
     
     // Clear selected devices
     handler.ClearSelectedDevices();
+    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
+    currentDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    currentDevice->macAddress_ = "00:11:22:33:44:57";
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -312,9 +316,9 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test WirelessConflictHandler no conflict with same wireless device pair.
+ * @tc.name  : Test WirelessConflictHandler detects A2DP and SCO conflict.
  * @tc.number: WirelessConflictHandler_015
- * @tc.desc  : Test Detect when output and input have same macAddress (same device pair).
+ * @tc.desc  : Test Detect returns conflict when current A2DP device meets selected SCO device.
  */
 HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
 {
@@ -336,7 +340,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:55";
     
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -396,6 +400,64 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_020, TestSize.Level1)
         SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_TRANSFER_RINGTONE,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler IsA2dpDevice.
+ * @tc.number: WirelessConflictHandler_021
+ * @tc.desc  : Test IsA2dpDevice with A2DP output/input and non-A2DP devices.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_021, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+
+    auto a2dpDevice = std::make_shared<AudioDeviceDescriptor>();
+    a2dpDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_TRUE(handler.IsA2dpDevice(a2dpDevice));
+
+    auto a2dpInDevice = std::make_shared<AudioDeviceDescriptor>();
+    a2dpInDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    EXPECT_TRUE(handler.IsA2dpDevice(a2dpInDevice));
+
+    auto scoDevice = std::make_shared<AudioDeviceDescriptor>();
+    scoDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_FALSE(handler.IsA2dpDevice(scoDevice));
+
+    auto nearlinkDevice = std::make_shared<AudioDeviceDescriptor>();
+    nearlinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
+    EXPECT_FALSE(handler.IsA2dpDevice(nearlinkDevice));
+
+    EXPECT_FALSE(handler.IsA2dpDevice(nullptr));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler Detect A2DP device conflict.
+ * @tc.number: WirelessConflictHandler_022
+ * @tc.desc  : Test Detect returns conflict for different A2DP pair and no conflict for same mac.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_022, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+
+    std::vector<StreamDeviceInfo> inputDevices;
+    StreamDeviceInfo inputInfo;
+    inputInfo.routerType = ROUTER_TYPE_USER_SELECT;
+    inputInfo.sourceType = SOURCE_TYPE_MIC;
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
+    inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    inputDevice->macAddress_ = "00:11:22:33:44:55";
+    inputInfo.device = inputDevice;
+    inputDevices.push_back(inputInfo);
+
+    handler.SetSelectedDevices({}, inputDevices);
+
+    auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
+    outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    outputDevice->macAddress_ = "00:11:22:33:44:66";
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+
+    outputDevice->macAddress_ = "00:11:22:33:44:55";
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 } // namespace AudioStandard
