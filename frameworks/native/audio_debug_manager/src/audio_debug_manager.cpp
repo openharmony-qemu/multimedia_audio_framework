@@ -557,10 +557,8 @@ void AppendErrorInfos(std::stringstream &ss, const std::vector<AudioFaultRecord>
 
 AudioDebugManager &AudioDebugManager::GetInstance()
 {
-    // Leaky Singleton: avoid use-after-free when Renderer/Capturer destruct after this during process exit.
-    // Memory is reclaimed by OS on process exit, no real leak.
-    static AudioDebugManagerPrivate *instance = new AudioDebugManagerPrivate();
-    return *instance;
+    static AudioDebugManagerPrivate instance;
+    return instance;
 }
 
 void AudioDebugManagerPrivate::LogAudioDebugInfo(const std::string &debugInfo)
