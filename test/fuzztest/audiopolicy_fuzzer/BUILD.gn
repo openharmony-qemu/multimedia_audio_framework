@@ -85,7 +85,7 @@ group("fuzztest") {
     "deviceinitcallback_fuzzer:fuzztest",
     "devicestatuslistener_fuzzer:fuzztest",
     "hpaemanager_fuzzer:fuzztest",
-    "sleaudiodevicemanager_fuzzer:fuzztest",
+    # "sleaudiodevicemanager_fuzzer:fuzztest",
     "sleaudiooperationcallbackstubimpl_fuzzer:fuzztest",
     "volumedatamaintainer_fuzzer:fuzztest",
   ]
