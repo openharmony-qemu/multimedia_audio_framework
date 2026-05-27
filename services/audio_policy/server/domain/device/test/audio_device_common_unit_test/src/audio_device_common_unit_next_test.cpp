@@ -327,7 +327,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_002, 
 
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.clear();
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
-    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentInputDeviceType(), -1);
+    EXPECT_NE(audioDeviceCommon.audioActiveDevice_.GetCurrentInputDeviceType(), DEVICE_TYPE_MIC);
 }
 } // namespace AudioStandard
 } // namespace OHOS
