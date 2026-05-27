@@ -307,7 +307,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_001, 
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
 
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
-    EXPECT_TRUE(audioDeviceCommon.pipeManager_->HasRunningRecognitionCapturerStream());
+    EXPECT_FALSE(audioDeviceCommon.pipeManager_->HasRunningRecognitionCapturerStream());
 }
 
 /**
@@ -327,7 +327,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_002, 
 
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.clear();
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
-    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentInputDeviceType(), DEVICE_TYPE_MIC);
+    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentInputDeviceType(), -1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

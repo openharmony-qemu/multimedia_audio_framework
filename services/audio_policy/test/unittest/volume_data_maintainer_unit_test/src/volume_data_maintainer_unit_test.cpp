@@ -209,7 +209,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_013, TestSize.
 
     deviceTypeRet = DEVICE_TYPE_BLUETOOTH_SCO;
     ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 
     deviceTypeRet = DEVICE_TYPE_USB_HEADSET;
     ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);

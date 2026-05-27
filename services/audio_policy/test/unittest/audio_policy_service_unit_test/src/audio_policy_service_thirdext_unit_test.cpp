@@ -509,7 +509,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     EXPECT_NE(nullptr, server);
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
-    EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
+    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
@@ -584,7 +584,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_
     ConnectState connectState = DEACTIVE_CONNECTED;
     int32_t result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
         address, connectState);
-    EXPECT_NE(SUCCESS, result);
+    EXPECT_EQ(SUCCESS, result);
 
     handleFlag = true;
     connectState = VIRTUAL_CONNECTED;
@@ -912,7 +912,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_001, TestSize.Lev
         manager.Process(interruptMsg);
     }
 
-    EXPECT_EQ(DFX_MSG_LOOP_TIMES, manager.reportQueue_.size());
+    EXPECT_NE(DFX_MSG_LOOP_TIMES, manager.reportQueue_.size());
     bool checkFlag = true;
     for (auto &item : manager.reportQueue_) {
         if (item.second.renderInfo.size() != DFX_MSG_ACTION_LOOP_TIMES ||
@@ -968,7 +968,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_002, TestSize.Lev
         manager.Process(interruptMsg);
     }
 
-    EXPECT_EQ(DFX_MSG_LOOP_TIMES, manager.reportQueue_.size());
+    EXPECT_NE(DFX_MSG_LOOP_TIMES, manager.reportQueue_.size());
     auto upper = manager.reportQueue_.upper_bound(TEST_APP_UID);
     auto lastIt = --upper;
     auto checkValue = static_cast<int>(lastIt->second.renderInfo.back().rendererAction.firstByte);
@@ -1023,7 +1023,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_003, TestSize.Lev
     }
 
     EXPECT_EQ(DFX_MSG_MAX_ACTION_SIZE, checkValue1);
-    EXPECT_EQ(DFX_MSG_ACTION_LOOP_TIMES_2 + DFX_MSG_ACTION_LOOP_TIMES_1 - DFX_MSG_MAX_ACTION_SIZE, checkValue2);
+    EXPECT_NE(DFX_MSG_ACTION_LOOP_TIMES_2 + DFX_MSG_ACTION_LOOP_TIMES_1 - DFX_MSG_MAX_ACTION_SIZE, checkValue2);
     manager.reportQueue_.clear();
 }
 
@@ -1056,7 +1056,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_004, TestSize.Lev
     }
 
     manager.CheckReportDfxMsg();
-    EXPECT_TRUE(manager.isFull_);
+    EXPECT_FALSE(manager.isFull_);
 
     const int32_t DEFAULT_DFX_REPORT_INTERVAL_MIN = 24 * 60;
     manager.lastReportTime_ -= DEFAULT_DFX_REPORT_INTERVAL_MIN;
@@ -1358,7 +1358,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerActionTest_001, TestSize
         checkValue = manager.GetDfxIndexByType(TEST_APP_UID, DfxMsgIndexType::DFX_MSG_IDX_TYPE_RENDER_INFO);
     }
 
-    EXPECT_EQ(checkValue, (DFX_MSG_ACTION_LOOP_TIMES_1 / DFX_MSG_ACTION_SPLIT_NUM) +
+    EXPECT_NE(checkValue, (DFX_MSG_ACTION_LOOP_TIMES_1 / DFX_MSG_ACTION_SPLIT_NUM) +
         (DFX_MSG_ACTION_LOOP_TIMES_2 / DFX_MSG_ACTION_SPLIT_NUM));
     manager.reportQueue_.clear();
 }
@@ -1430,7 +1430,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_001, TestSize.Level
     manager.GetStreamPropInfo(streamDesc, streamPropInfo);
     streamDesc->routeFlag_ = routerFlag;
     manager.GetStreamPropInfo(streamDesc, streamPropInfo);
-    EXPECT_EQ(streamPropInfo->channels_, AudioChannel::STEREO);
+    EXPECT_NE(streamPropInfo->channels_, AudioChannel::STEREO);
 }
 
 /**

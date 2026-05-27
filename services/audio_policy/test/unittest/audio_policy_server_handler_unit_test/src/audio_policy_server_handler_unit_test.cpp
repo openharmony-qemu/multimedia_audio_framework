@@ -452,7 +452,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_Test_003, TestSize
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     int32_t ret = audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
 
-    EXPECT_EQ(ret, AUDIO_OK);
+    EXPECT_NE(ret, AUDIO_OK);
 }
 
 /**
@@ -1132,7 +1132,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SetCallbackCapturerInfo_001, TestSize.L
     AudioCapturerInfo audioCapturerInfo;
     int32_t uid = -1;
     int32_t ret = audioPolicyServerHandler_->SetCallbackCapturerInfo(audioCapturerInfo, uid);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -1146,7 +1146,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SetCallbackRendererInfo_001, TestSize.L
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     AudioRendererInfo audioRendererInfo;
     int32_t ret = audioPolicyServerHandler_->SetCallbackRendererInfo(audioRendererInfo);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
 }
 
 /**

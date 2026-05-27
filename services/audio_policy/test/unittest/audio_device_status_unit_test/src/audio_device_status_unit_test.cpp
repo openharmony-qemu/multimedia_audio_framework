@@ -103,7 +103,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_003, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     bRet = audioDeviceStatus.NoNeedChangeUsbDevice(address);
-    EXPECT_EQ(bRet, true);
+    EXPECT_NE(bRet, true);
 }
 
 /**

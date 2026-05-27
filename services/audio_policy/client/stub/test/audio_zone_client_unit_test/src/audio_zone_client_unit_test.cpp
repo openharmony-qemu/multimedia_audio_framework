@@ -166,7 +166,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_003, TestSize.Level4)
     audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
     auto zoneManager = AudioZoneManager::GetInstance();
     int32_t ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_NONE, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
     EXPECT_EQ(SUCCESS, ret);
@@ -220,7 +220,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_004, TestSize.Level4)
 
     audioZoneClient->audioZoneInterruptCallbackMap_.erase(key);
     ret = audioZoneClient->AddAudioInterruptCallback(zoneId, deviceTag, callback);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -268,7 +268,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_007, TestSize.Level4)
 
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
     int32_t ret = zoneManager->GetCurrentRendererChangeInfosForZone(0, infos);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

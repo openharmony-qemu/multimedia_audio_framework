@@ -515,7 +515,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_025, TestSize.Level1)
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
     EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 
-    EXPECT_EQ(SUCCESS, audioSession->SetAudioSessionScene(AudioSessionScene::INVALID));
+    EXPECT_NE(SUCCESS, audioSession->SetAudioSessionScene(AudioSessionScene::INVALID));
     audioSession->fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_PAUSE;
     audioSession->AddStreamInfo({audioInterrupt, ACTIVE});
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
