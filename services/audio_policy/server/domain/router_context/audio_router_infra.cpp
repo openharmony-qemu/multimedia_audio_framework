@@ -1058,6 +1058,13 @@ bool AudioRouterInfra::IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSim
     return left->macAddress_ == right->macAddress_;
 }
 
+bool AudioRouterInfra::IsUidWithExclusiveDevice(int32_t uid, SelectDeviceType type)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    size_t typeIdx = static_cast<size_t>(type);
+    return exclusiveUids_[typeIdx].find(uid) != exclusiveUids_[typeIdx].end();
+}
+
 void AudioRouterInfra::UpdateExclusiveUidNoLock(int32_t uid, SelectDeviceType type, const uint32_t deviceTokenId)
 {
     CHECK_AND_RETURN(uid != SYSTEM_UID);

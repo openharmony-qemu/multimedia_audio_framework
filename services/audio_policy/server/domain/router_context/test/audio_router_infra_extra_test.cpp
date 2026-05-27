@@ -465,5 +465,31 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_RefreshSelectDevic
     EXPECT_EQ(outputHighestUid, INVALID_UID);
 }
 
+/**
+ * @tc.name  : Test IsUidWithExclusiveDevice
+ * @tc.type  : FUNC
+ * @tc.number: IsUidWithExclusiveDevice_001
+ * @tc.desc  : IsUidWithExclusiveDevice_001
+ */
+HWTEST_F(AudioRouterInfraExtraTest, IsUidWithExclusiveDevice_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    auto exclusiveDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    exclusiveDevice->deviceTokenId_ = 12345;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        exclusiveDevice->deviceType_, exclusiveDevice->deviceRole_,
+        exclusiveDevice->deviceId_, exclusiveDevice->networkId_, exclusiveDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc, 12345);
+    EXPECT_TRUE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+
+    EXPECT_FALSE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::CALL_INPUT));
+
+    routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::MEDIA_INPUT);
+    EXPECT_FALSE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+}
+
 }
 }

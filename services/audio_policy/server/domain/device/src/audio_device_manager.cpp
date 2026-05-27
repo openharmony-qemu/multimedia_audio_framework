@@ -1082,7 +1082,6 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     if (remoteInfoNetworkId_ != "" && remoteInfoDeviceType_ != DEVICE_TYPE_DEFAULT) {
         ReorderAudioDevices(audioDeviceDescriptors, remoteInfoNetworkId_, remoteInfoDeviceType_);
     }
-    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(audioDeviceDescriptors);
     return audioDeviceDescriptors;
 }
 

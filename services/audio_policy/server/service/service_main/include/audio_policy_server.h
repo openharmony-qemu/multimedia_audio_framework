@@ -940,6 +940,7 @@ private:
     bool IsScreenOnAdjustVolume();
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
+    void FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device);
 
     AudioEffectService &audioEffectService_;
     AudioStateManager &audioStateManager_;

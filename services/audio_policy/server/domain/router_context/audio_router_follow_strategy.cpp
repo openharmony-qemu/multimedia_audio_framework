@@ -118,7 +118,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
 
     if (simpleDesc == nullptr) {
         auto appSelectDevice = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid).device_;
-        auto device = ConvertSimpleToDevice(simpleDesc);
+        auto device = ConvertSimpleToDevice(appSelectDevice);
         simpleDesc = device && device->deviceTokenId_ != 0 ? appSelectDevice : nullptr;
     }
 
@@ -295,12 +295,29 @@ void AudioRouterFollowStrategy::UpdateCurrentInputDevice(int32_t uid,
 {
     AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
         !devices.empty() && devices[0] ? devices[0]->deviceId_ : 0);
+    if (AudioRouterInfra::GetInstance().IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT) ||
+        AudioRouterInfra::GetInstance().IsUidWithExclusiveDevice(uid, SelectDeviceType::CALL_INPUT)) {
+        std::lock_guard<std::mutex> lock(curExclusiveInputDevicesMutex_);
+        curExclusiveInputDevices_[uid] = devices;
+        return;
+    }
     auto simpleDevices = ConvertDeviceToSimple(devices);
     AudioRouterInfra::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, simpleDevices);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterFollowStrategy::GetCurrentInputDevice(int32_t uid)
 {
+    if (AudioRouterInfra::GetInstance().IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT) ||
+        AudioRouterInfra::GetInstance().IsUidWithExclusiveDevice(uid, SelectDeviceType::CALL_INPUT)) {
+        std::lock_guard<std::mutex> lock(curExclusiveInputDevicesMutex_);
+        if (curExclusiveInputDevices_.find(uid) != curExclusiveInputDevices_.end()) {
+            auto devices = curExclusiveInputDevices_[uid];
+            AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
+                !devices.empty() && devices[0] ? devices[0]->deviceId_ : 0);
+            return devices;
+        }
+        AUDIO_WARNING_LOG("uid=%{public}d, no exclusive input device", uid);
+    }
     auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(SYSTEM_UID);
     AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
         !simpleDescs.empty() && simpleDescs[0] ? simpleDescs[0]->deviceId_ : 0);
@@ -378,6 +395,15 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallDefault
 
     AudioRouterInfra::GetInstance().Unlock();
     return ConvertSimpleToDevice(simpleDesc);
+}
+
+void AudioRouterFollowStrategy::OnAppDied(int32_t uid)
+{
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
+    {
+        std::lock_guard<std::mutex> lock(curExclusiveInputDevicesMutex_);
+        curExclusiveInputDevices_.erase(uid);
+    }
 }
 }
 }

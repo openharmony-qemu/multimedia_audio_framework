@@ -1730,7 +1730,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         if (deviceList.empty()) {
             deviceList.push_back(make_shared<AudioDeviceDescriptor>());
         }
-        AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
         return deviceList;
     }
     if (networkId == LOCAL_NETWORK_ID) {
@@ -1760,7 +1759,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         }
     }
 
-    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
     return deviceList;
 }
 
@@ -1773,7 +1771,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         if (deviceList.empty()) {
             deviceList.push_back(make_shared<AudioDeviceDescriptor>());
         }
-        AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
         return deviceList;
     }
 
@@ -1804,8 +1801,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
             deviceList.push_back(devDesc);
         }
     }
-
-    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceList);
     return deviceList;
 }
 
@@ -2129,7 +2124,6 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
     int32_t curUid = static_cast<int32_t>(uid);
     int32_t curPid = static_cast<int32_t>(pid);
-    AudioRouterInfra::GetInstance().OnAppDied(curUid);
     UpdateDefaultOutputDeviceWhenStopping(curUid);
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(curUid);

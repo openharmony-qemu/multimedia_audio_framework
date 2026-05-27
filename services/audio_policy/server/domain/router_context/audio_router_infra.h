@@ -122,6 +122,8 @@ public:
     bool HasRunningInputStream(int32_t uid);
     bool HasRunningOutputStream(int32_t uid);
 
+    bool IsUidWithExclusiveDevice(int32_t uid, SelectDeviceType type);
+
     void Lock();
     void Unlock();
 
