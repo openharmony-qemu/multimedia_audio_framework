@@ -1624,6 +1624,7 @@ void AudioPipeManager::ProcessPipeForVolumeInfo(std::vector<PipeDeviceVolumeGrou
     
     for (auto &streamDesc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
+        CHECK_AND_CONTINUE(streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
         CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
 
         auto firstDevice = streamDesc->newDeviceDescs_.front();
@@ -1715,6 +1716,7 @@ std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForD
         for (auto &streamDesc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE(streamDesc != nullptr);
             AUDIO_INFO_LOG("sessionId:%{public}u", streamDesc->sessionId_);
+            CHECK_AND_CONTINUE(streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
             CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
 
             auto firstDevice = streamDesc->newDeviceDescs_.front();
