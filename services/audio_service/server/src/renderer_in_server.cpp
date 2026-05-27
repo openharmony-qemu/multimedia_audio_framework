@@ -85,7 +85,7 @@ namespace {
     constexpr int32_t MAX_CAHCED_COUNT = 6;
     static const int32_t THREE_DA_BYTES_PER_FRAME = 1;
     constexpr int32_t SILENT_TYPE_SILENT_SESSION = 0;
-    constexpr int32_t SILENT_TYPE_MUTE_SESSION = 0;
+    constexpr int32_t SILENT_TYPE_MUTE_SESSION = 1;
 }
 
 void NotifyStandbyAction::Exec()
