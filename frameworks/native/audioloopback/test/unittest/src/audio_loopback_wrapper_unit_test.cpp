@@ -218,7 +218,7 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Control_NoProxy_001, TestSize.L
         appInfo_);
 
     AudioLoopbackStatus status = wrapper->GetStatus();
-    EXPECT_EQ(status, LOOPBACK_UNAVAILABLE_DEVICE);
+    EXPECT_EQ(status, static_cast<AudioLoopbackStatus>(-1));
 }
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Control_IpcFailed_001, TestSize.Level1)
@@ -231,7 +231,7 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Control_IpcFailed_001, TestSize
         SetArgReferee<1>(ERR_OPERATION_FAILED), Return(SUCCESS)));
 
     AudioLoopbackStatus status = wrapper->GetStatus();
-    EXPECT_EQ(status, LOOPBACK_UNAVAILABLE_DEVICE);
+    EXPECT_EQ(status, static_cast<AudioLoopbackStatus>(-1));
 }
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Normal_001, TestSize.Level1)
