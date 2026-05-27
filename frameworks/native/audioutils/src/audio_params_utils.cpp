@@ -85,9 +85,14 @@ int32_t GetEngineFlag()
 
 bool GetHasEarpieceParam()
 {
+#ifndef IS_EMULATOR
     bool ret = system::GetBoolParameter(PARAM_HAS_EARPIECE, false);
     AUDIO_INFO_LOG("get params[%{public}s]: %{public}s", PARAM_HAS_EARPIECE, ret ? "true" : "false");
     return ret;
+#else
+    AUDIO_INFO_LOG("Emulator not support Earpiece_Out");
+    return false;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
