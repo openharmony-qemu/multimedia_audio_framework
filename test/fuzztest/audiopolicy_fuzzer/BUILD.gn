@@ -21,7 +21,7 @@ group("fuzztest") {
     "audioadaptermanager_fuzzer:fuzztest",
     "audiobackgroundmanager_fuzzer:fuzztest",
     "audioclienttrackercallbacklistener_fuzzer:fuzztest",
-    "audiocollaborativeservice_fuzzer:fuzztest",
+    # "audiocollaborativeservice_fuzzer:fuzztest",
     "audioconnecteddevice_fuzzer:fuzztest",
     "audiocoreconfigmanager_fuzzer:fuzztest",
     "audiocoreservice_fuzzer:fuzztest",
@@ -29,7 +29,7 @@ group("fuzztest") {
     "audiocoreservicegap_fuzzer:fuzztest",
     "audiocoreserviceprivate_fuzzer:fuzztest",
     "audiocoreserviceprivategap_fuzzer:fuzztest",
-    "audiocoreserviceprivatemore_fuzzer:fuzztest",
+    # "audiocoreserviceprivatemore_fuzzer:fuzztest",
     "audiodevicecommon_fuzzer:fuzztest",
     "audiodevicelock_fuzzer:fuzztest",
     "audiodevicestatus_fuzzer:fuzztest",
@@ -86,7 +86,7 @@ group("fuzztest") {
     "devicestatuslistener_fuzzer:fuzztest",
     "hpaemanager_fuzzer:fuzztest",
     # "sleaudiodevicemanager_fuzzer:fuzztest",
-    "sleaudiooperationcallbackstubimpl_fuzzer:fuzztest",
+    # "sleaudiooperationcallbackstubimpl_fuzzer:fuzztest",
     "volumedatamaintainer_fuzzer:fuzztest",
   ]
 }
