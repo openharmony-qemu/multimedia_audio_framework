@@ -216,7 +216,7 @@ napi_value NapiAudioLoopback::CreateGlobalAudioLoopbackWrapper(napi_env env, Aud
     }
     if (status != napi_ok) {
         AUDIO_ERR_LOG("Failed in CreateGlobalAudioLoopbackWrapper, %{public}d", status);
-        napi_get_undefined(env, &result);
+        napi_get_null(env, &result);
     }
     sLoopbackType_ = LOOPBACK_TYPE_NORMAL;
     return result;
@@ -288,7 +288,7 @@ napi_value NapiAudioLoopback::CreateGlobalAudioLoopback(napi_env env, napi_callb
         LoopbackType type = isController ? LOOPBACK_TYPE_GLOBAL_CONTROL : LOOPBACK_TYPE_GLOBAL_HANDLER;
         output = CreateGlobalAudioLoopbackWrapper(env, loopbackMode, type);
         if (isConstructSuccess_ != SUCCESS) {
-            context->SignError(isConstructSuccess_);
+            napi_get_null(env, &output);
             isConstructSuccess_ = SUCCESS;
         }
     };
