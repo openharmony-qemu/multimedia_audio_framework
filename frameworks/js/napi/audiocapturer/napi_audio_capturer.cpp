@@ -334,7 +334,7 @@ NapiAudioCapturer* NapiAudioCapturer::GetParamWithSync(const napi_env &env, napi
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "GetParamWithSync fail to napi_get_cb_info");
 
-    status = napi_unwrap(env, jsThis, (void **)&napiAudioCapturer);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioCapturer));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG((napiAudioCapturer != nullptr) && (napiAudioCapturer->audioCapturer_ != nullptr),
         napiAudioCapturer, "GetParamWithSync fail to napi_unwrap");
