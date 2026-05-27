@@ -443,5 +443,31 @@ HWTEST_F(RemoteMultichannelAudioRenderSinkUnitTest, CheckLatencySignal_SignalDet
     sink_->signalDetectAgent_ = nullptr;
 }
 
+HWTEST_F(RemoteMultichannelAudioRenderSinkUnitTest, SetSinkMuteForSwitchDevice_001, TestSize.Level1)
+{
+    auto remoteMchSink = std::make_shared<RemoteMultichannelAudioRenderSink>("test");
+    ASSERT_NE(remoteMchSink, nullptr);
+
+    int32_t ret = remoteMchSink->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteMchSink->muteCount_, 1);
+    EXPECT_TRUE(remoteMchSink->switchDeviceMute_.load());
+
+    ret = remoteMchSink->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteMchSink->muteCount_, 2);
+    EXPECT_TRUE(remoteMchSink->switchDeviceMute_.load());
+
+    ret = remoteMchSink->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteMchSink->muteCount_, 1);
+    EXPECT_TRUE(remoteMchSink->switchDeviceMute_.load());
+
+    ret = remoteMchSink->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteMchSink->muteCount_, 0);
+    EXPECT_FALSE(remoteMchSink->switchDeviceMute_.load());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

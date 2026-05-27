@@ -447,10 +447,10 @@ void UpdateEffectBtOffloadSupported(FuzzedDataProvider &provider)
 void SetSinkMuteForSwitchDevice(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    std::string devceClass = provider.ConsumeRandomLengthString();
+    std::string deviceClass = provider.ConsumeRandomLengthString();
     int32_t durationUs = provider.ConsumeIntegral<int32_t>();
     bool mute = provider.ConsumeBool();
-    audioServer->SetSinkMuteForSwitchDevice(devceClass, durationUs, mute);
+    audioServer->SetSinkMuteForSwitchDevice(deviceClass, durationUs, mute);
 }
 
 void SetRotationToEffect(FuzzedDataProvider &provider)

@@ -356,6 +356,31 @@ void RemoteMultichannelAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
+int32_t RemoteMultichannelAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
+{
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    AUDIO_INFO_LOG("set multichannel mute %{public}d", mute);
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("multichannel already muted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("multichannel not all unmuted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+    }
+
+    return SUCCESS;
+}
+
 int32_t RemoteMultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,
     int32_t phoneCallSceneType)
 {

@@ -160,10 +160,10 @@ void AudioServerProxyCheckHibernateStateProxyFuzzTest()
 void AudioServerProxySetSinkMuteForSwitchDeviceProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    std::string devceClass = "testDeviceClass";
+    std::string deviceClass = "testDeviceClass";
     int32_t durationUs = GetData<int32_t>();
     bool mute = GetData<bool>();
-    audioServerProxy.SetSinkMuteForSwitchDeviceProxy(devceClass, durationUs, mute);
+    audioServerProxy.SetSinkMuteForSwitchDeviceProxy(deviceClass, durationUs, mute);
 }
 
 void AudioServerProxySuspendRenderSinkProxyFuzzTest()

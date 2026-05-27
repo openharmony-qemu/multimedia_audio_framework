@@ -4634,5 +4634,56 @@ HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_004, TestSize.Lev
     ScoAudioSceneManager::GetInstance().ClearAllScoStreams();
 }
 
+/**
+ * @tc.name  : Test AudioIOHandleMap.
+ * @tc.number: MuteSinkPort_ClassNameNotEmpty_001
+ * @tc.desc  : Test MuteSinkPort with className not empty, proxy mute branch
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPort_ClassNameNotEmpty_001, TestSize.Level1)
+{
+    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
+        PRIMARY_SPEAKER, "LocalDevice");
+    EXPECT_FALSE(className.empty());
+    AudioIOHandleMap::GetInstance().MuteSinkPort(PRIMARY_SPEAKER, 1000, true, false);
+}
+
+/**
+ * @tc.name  : Test AudioIOHandleMap.
+ * @tc.number: MuteSinkPort_ClassNameEmpty_001
+ * @tc.desc  : Test MuteSinkPort with className empty, PA mute branch
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPort_ClassNameEmpty_001, TestSize.Level1)
+{
+    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
+        "unknown_port", "LocalDevice");
+    EXPECT_TRUE(className.empty());
+    AudioIOHandleMap::GetInstance().MuteSinkPort("unknown_port", 1000, true, false);
+}
+
+/**
+ * @tc.name  : Test AudioIOHandleMap.
+ * @tc.number: DoUnmutePort_ClassNameNotEmpty_001
+ * @tc.desc  : Test DoUnmutePort with className not empty, proxy unmute branch
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DoUnmutePort_ClassNameNotEmpty_001, TestSize.Level1)
+{
+    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
+        PRIMARY_SPEAKER, "LocalDevice");
+    EXPECT_FALSE(className.empty());
+    AudioIOHandleMap::GetInstance().DoUnmutePort(1000, PRIMARY_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test AudioIOHandleMap.
+ * @tc.number: DoUnmutePort_ClassNameEmpty_001
+ * @tc.desc  : Test DoUnmutePort with className empty, PA unmute branch
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DoUnmutePort_ClassNameEmpty_001, TestSize.Level1)
+{
+    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
+        "unknown_port", "LocalDevice");
+    EXPECT_TRUE(className.empty());
+    AudioIOHandleMap::GetInstance().DoUnmutePort(1000, "unknown_port");
+}
 } // namespace AudioStandard
 } // namespace OHOS

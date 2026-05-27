@@ -90,7 +90,7 @@ interface IStandardAudioService {
     void RestoreRenderSink([in] String sinkName);
     void LoadHdiEffectModel();
     void UpdateEffectBtOffloadSupported([in] boolean isSupported);
-    void SetSinkMuteForSwitchDevice([in] String devceClass, [in] int durationUs, [in] boolean mute);
+    void SetSinkMuteForSwitchDevice([in] String deviceClass, [in] int durationUs, [in] boolean mute, [in] String networkId);
     void SetRotationToEffect([in] unsigned int rotate);
     void UpdateSessionConnectionState([in] int sessionID, [in] int state);
     void SetNonInterruptMute([in] unsigned int sessionId, [in] boolean muteFlag);
