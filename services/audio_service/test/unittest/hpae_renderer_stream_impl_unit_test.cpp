@@ -101,7 +101,7 @@ static void AddStreamVolume()
     param.pid = CAPTURER_FLAG;
     param.isSystemApp = false;
     param.mode = AudioMode::AUDIO_MODE_PLAYBACK;
-    param.isVKB = false;
+    param.isVKB = VKB_INVALID;
     AudioVolume::GetInstance()->AddStreamVolume(param);
 }
 

@@ -180,7 +180,7 @@ public:
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     bool ResetStaticPlayPosition() override;
 
-    bool IsVirtualKeyboard(const int32_t flags);
+    VkbMode GetVirtualKeyboardMode(const int32_t flags);
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
     int32_t SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback);
     bool IsRendererFlagsSupportStatic(const int32_t rendererFlags);

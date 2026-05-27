@@ -2324,7 +2324,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_003, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2358,9 +2358,9 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_004, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
     audioVolume->streamVolume_.emplace(anotherSessionId, std::make_shared<StreamVolume>(
-        anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, false));
+        anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2391,7 +2391,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_005, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2422,7 +2422,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);

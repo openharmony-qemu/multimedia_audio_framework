@@ -457,7 +457,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_EQ(AUDIO_FLAG_NORMAL, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
@@ -489,7 +489,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
@@ -521,7 +521,34 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input for virtual keyboard ALL_RING mode
+ * @tc.number: Audio_Renderer_Create_019
+ * @tc.desc  : Test Create interface with AUDIO_FLAG_VKB_ALL_RING flag.
+ *             Since bundle name is not registered in VKB database, should return VKB_INVALID.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_019, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_ALL_RING;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    EXPECT_EQ(AUDIO_FLAG_MMAP, rendererInfo.rendererFlags);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
