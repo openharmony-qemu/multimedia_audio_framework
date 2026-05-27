@@ -291,7 +291,7 @@ void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDevic
 {
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     for (const auto& desc : descForCb) {
-        CHECK_AND_CONTINUE(desc == nullptr);
+        CHECK_AND_CONTINUE(desc != nullptr);
         std::vector<PreferredType> types = {
             AUDIO_MEDIA_RENDER,
             AUDIO_RECORD_CAPTURE,

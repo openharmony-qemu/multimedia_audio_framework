@@ -2472,7 +2472,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(nullptr);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(nullptr, 0);
 
     EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, false);
 
@@ -2500,7 +2500,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, true);
     EXPECT_EQ(audioCoreService->enableDualHalToneState_, false);
@@ -2529,7 +2529,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
 
@@ -2560,7 +2560,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
 
