@@ -1338,30 +1338,20 @@ HWTEST_F(CapturerInServerSecondUnitTest, ReportPlaybackCaptureUserChoice_001, Te
  * @tc.name  : Test CapturerInServer destructor loopback effect cleanup branch.
  * @tc.type  : FUNC
  * @tc.number: CapturerInServerSecondUnitTest_Destructor_LoopBackEffectEnabled_001
- * @tc.desc  : Cover false and true branches of loopback effect cleanup in destructor.
+ * @tc.desc  : Cover false branch of loopback effect cleanup in destructor.
+ * Note: loopBackEffectEnabled=true branch removed because it triggers
+ * AudioPolicyManager::GetInstance().SetKaraokeParameters() (IPC) in destructor.
  */
 HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_Destructor_LoopBackEffectEnabled_001,
     TestSize.Level1)
 {
-    {
-        AudioProcessConfig processConfig;
-        processConfig.capturerInfo.loopBackEffectEnabled = false;
-        std::weak_ptr<IStreamListener> streamListener;
-        auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-        ASSERT_NE(capturerInServer_, nullptr);
-        capturerInServer_->status_ = I_STATUS_RELEASED;
-        capturerInServer_ = nullptr;
-    }
-
-    {
-        AudioProcessConfig processConfig;
-        processConfig.capturerInfo.loopBackEffectEnabled = true;
-        std::weak_ptr<IStreamListener> streamListener;
-        auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-        ASSERT_NE(capturerInServer_, nullptr);
-        capturerInServer_->status_ = I_STATUS_RELEASED;
-        capturerInServer_ = nullptr;
-    }
+    AudioProcessConfig processConfig;
+    processConfig.capturerInfo.loopBackEffectEnabled = false;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer_, nullptr);
+    capturerInServer_->status_ = I_STATUS_RELEASED;
+    capturerInServer_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
