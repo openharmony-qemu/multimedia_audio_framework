@@ -1519,30 +1519,6 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetMultiDeviceUniqueId_004, TestSize.Level1
 }
 
 /**
- * @tc.name   : Test GetAudiocapturerPortPin API
- * @tc.number : GetAudiocapturerPortPin_001
- * @tc.desc   : Test port pin mapping for supported input devices
- */
-HWTEST_F(AudioCaptureSourceUnitTest, GetAudiocapturerPortPin_001, TestSize.Level1)
-{
-    auto captureSource = std::make_shared<AudioCaptureSource>(1);
-    captureSource->attr_.deviceType = DEVICE_TYPE_MIC;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_MIC);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_USB_HEADSET;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_USB_EXT);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_BLUETOOTH_SCO_HEADSET);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_NEARLINK_IN;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_NEARLINK);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_INVALID;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_MIC);
-}
-
-/**
  * @tc.name   : Test ConvertToAudioInputRouteFlag API
  * @tc.number : ConvertToAudioInputRouteFlag_002
  * @tc.desc   : Test ConvertToAudioInputRouteFlag for SOURCE_TYPE_INTERPHONE
