@@ -2605,6 +2605,25 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_005, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamVolumeMuteForZone_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetStreamVolumeMuteForZone_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
+    AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(sessionId, true);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, false);
+    AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(sessionId, true);
+    AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(sessionId, false);
+    AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(sessionId, false);
+    float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
+    EXPECT_EQ(retVolume, 0);
+}
+
+/**
  * @tc.name  : Test GetVirtualKeyboardMode API
  * @tc.type  : FUNC
  * @tc.number: GetVirtualKeyboardMode_001

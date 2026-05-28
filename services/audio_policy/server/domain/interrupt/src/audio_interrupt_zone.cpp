@@ -151,7 +151,7 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
         }
     }
 
-    AudioVolume::GetInstance()->SetStreamVolumeMute(interrupt.streamId, true);
+    AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(interrupt.streamId, true);
     service_->sessionService_.RemoveStreamInfo(interrupt.pid, interrupt.streamId);
 }
 

@@ -421,6 +421,7 @@ void AudioVolume::RemoveStreamVolume(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    mutedSessionIdsForZone_.erase(sessionId);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         streamVolume_.erase(sessionId);
@@ -549,6 +550,7 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
+        mutedSessionIdsForZone_.erase(sessionId);
         std::unique_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
         it->second->isMuted_ = isMuted;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
@@ -558,6 +560,38 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     }
+}
+
+void AudioVolume::SetStreamVolumeMuteForZone(uint32_t sessionId, bool isMuted)
+{
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, isMuted:%{public}d", sessionId, isMuted);
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    auto it = streamVolume_.find(sessionId);
+    CHECK_AND_RETURN_LOG(it != streamVolume_.end(), "stream volume not exist, sessionId:%{public}u", sessionId);
+    std::unique_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
+    if (isMuted && it->second->isMuted_) {
+        AUDIO_INFO_LOG("stream %{public}u has been muted, no need to mute again", sessionId);
+        return;
+    }
+    if (!isMuted && !mutedSessionIdsForZone_.contains(sessionId)) {
+        AUDIO_INFO_LOG("stream %{public}u is not muted by zone, no need to unmute", sessionId);
+        return;
+    }
+    if (isMuted) {
+        AUDIO_INFO_LOG("mute stream %{public}u by zone", sessionId);
+        mutedSessionIdsForZone_.insert(sessionId);
+    } else {
+        AUDIO_INFO_LOG("unmute stream %{public}u by zone", sessionId);
+        mutedSessionIdsForZone_.erase(sessionId);
+    }
+
+    it->second->isMuted_ = isMuted;
+    it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
+    float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
+        it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+        it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
+    factorsLock.unlock();
+    it->second->totalVolume_.store(newTotal, std::memory_order_release);
 }
 
 void AudioVolume::SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted)
