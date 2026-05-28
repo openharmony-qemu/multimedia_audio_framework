@@ -295,6 +295,7 @@ private:
     std::atomic<IStatus> status_ = I_STATUS_IDLE;
     std::atomic<bool> voipNoPrivacyFlag_ = false;
     bool offloadEnable_ = false;
+    std::atomic<bool> hasSessionEffect_ = false;
     std::atomic<bool> standByEnable_ = false;
     std::atomic<bool> muteFlag_ = false;
 

@@ -17,6 +17,7 @@
 #endif
 
 #include "renderer_in_server.h"
+#include <algorithm>
 #include <chrono>
 #include <cinttypes>
 #include "securec.h"
@@ -345,6 +346,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             HandleOperationPaused(stateListener);
             break;
         case OPERATION_STOPPED:
+            hasSessionEffect_.store(false);
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
             audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
@@ -429,8 +431,18 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
     int32_t engineFlag = GetEngineFlag();
     switch (operation) {
         case OPERATION_RELEASED:
+            hasSessionEffect_.store(false);
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
             status_ = I_STATUS_RELEASED;
+            break;
+        case OPERATION_SESSION_EFFECT_ENABLED:
+            hasSessionEffect_.store(true);
+            if (engineFlag == 1) {
+                ReConfigDupStreamCallback();
+            }
+            break;
+        case OPERATION_SESSION_EFFECT_DISABLED:
+            hasSessionEffect_.store(false);
             break;
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetWritableDataFrames(): %{public}d",
@@ -582,6 +594,8 @@ void RendererInServer::ReportExceptionForOffload()
 
 bool RendererInServer::ShouldEnableStandBy()
 {
+    constexpr uint32_t SESSION_EFFECT_STANDBY_COUNTER = 200;
+    constexpr int64_t SESSION_EFFECT_STANDBY_TIME_NS = 4 * AUDIO_NS_PER_SECOND;
     uint32_t offloadStanby_ = 20;
     int64_t timeCost = ClockTime::GetCurNano() - lastWriteTime_;
     uint32_t maxStandByCounter = 50; // for 20ms, 50 * 20 = 1000ms
@@ -589,6 +603,10 @@ bool RendererInServer::ShouldEnableStandBy()
     if (offloadEnable_) {
         maxStandByCounter = 400; // for 20ms, 50 * 400 = 8000ms
         timeLimit = 8 * AUDIO_NS_PER_SECOND; // for 20ms 8s
+    }
+    if (hasSessionEffect_.load()) {
+        maxStandByCounter = std::max(maxStandByCounter, SESSION_EFFECT_STANDBY_COUNTER);
+        timeLimit = std::max(timeLimit, SESSION_EFFECT_STANDBY_TIME_NS);
     }
     if (!isOffloadJankReport && offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING &&
         standByCounter_ >= offloadStanby_) {
@@ -1805,6 +1823,7 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::StopInner()
 {
+    hasSessionEffect_.store(false);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED,
@@ -1865,6 +1884,7 @@ int32_t RendererInServer::StopInner()
 
 void RendererInServer::ReleasePostProcess()
 {
+    hasSessionEffect_.store(false);
     RemoveIdForInjector();
     if (status_ != I_STATUS_STOPPING && status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);

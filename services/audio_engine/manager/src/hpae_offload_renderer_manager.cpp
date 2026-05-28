@@ -337,27 +337,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     }
     loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
 
-    // Session Effect: check if curNode_ has pending SE
-    auto pendingIt = pendingSessionEffects_.find(curSessionId);
-    if (pendingIt != pendingSessionEffects_.end()) {
-        uint32_t previousSessionEffectSessionId = sessionEffectSessionId_;
-        bool hadSessionEffectNode = sessionEffectNode_ != nullptr;
-        sessionEffectSessionId_ = curSessionId;
-        int32_t ret = InsertSessionEffectNode(pendingIt->second.effectName,
-            pendingIt->second.instance, pendingIt->second.config);
-        if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
-            if (!hadSessionEffectNode && sessionEffectNode_ != nullptr) {
-                sessionEffectNode_->DropEffect();
-                sessionEffectNode_.reset();
-            }
-            sessionEffectSessionId_ = previousSessionEffectSessionId;
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, curSessionId, curNode_->GetState(),
-                OPERATION_SESSION_EFFECT_DISABLED);
-            AUDIO_WARNING_LOG("ConnectInputSession: rollback pending SE for session %{public}u, ret=%{public}d",
-                curSessionId, ret);
-        }
-        pendingSessionEffects_.erase(pendingIt);
-    }
+    HandlePendingSessionEffect(curSessionId);
 
     converterForLoudness_->Connect(curNode_);
     converterForLoudness_->RegisterCallback(this);
@@ -367,6 +347,32 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         sinkOutputNode_->RenderSinkStart();
     }
     return SUCCESS;
+}
+
+void HpaeOffloadRendererManager::HandlePendingSessionEffect(uint32_t sessionId)
+{
+    auto pendingIt = pendingSessionEffects_.find(sessionId);
+    if (pendingIt == pendingSessionEffects_.end()) {
+        return;
+    }
+
+    uint32_t previousSessionEffectSessionId = sessionEffectSessionId_;
+    bool hadSessionEffectNode = sessionEffectNode_ != nullptr;
+    sessionEffectSessionId_ = sessionId;
+    int32_t ret = InsertSessionEffectNode(pendingIt->second.effectName,
+        pendingIt->second.instance, pendingIt->second.config);
+    if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        if (!hadSessionEffectNode && sessionEffectNode_ != nullptr) {
+            sessionEffectNode_->DropEffect();
+            sessionEffectNode_.reset();
+        }
+        sessionEffectSessionId_ = previousSessionEffectSessionId;
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+            OPERATION_SESSION_EFFECT_DISABLED);
+        AUDIO_WARNING_LOG("ConnectInputSession: rollback pending SE for session %{public}u, ret=%{public}d",
+            sessionId, ret);
+    }
+    pendingSessionEffects_.erase(pendingIt);
 }
 
 int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
