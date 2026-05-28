@@ -254,6 +254,17 @@ uint32_t HpaeGainNode::CalcRemainDurationMs(uint32_t duration, uint32_t frameLen
     return remainDurationMs;
 }
 
+void HpaeGainNode::EnsureVolumeAvailable()
+{
+    if (!streamVolume_ || (!isInnerCapturerOrInjector_ && !pipeVolume_)) {
+        AudioVolume *audioVolume = AudioVolume::GetInstance();
+        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+        audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
+            streamVolume_, pipeVolume_);
+        AUDIO_INFO_LOG("streamVolume_ or pipeVolume_ is null, retry get, sessionId:%{public}d", GetSessionId());
+    }
+}
+
 void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount)
 {
     struct VolumeValues volumes;
@@ -263,6 +274,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     float preSystemGain = 1.0f;
     uint32_t durationMs = 0;
     uint32_t remainDurationMs = 0;
+    EnsureVolumeAvailable();
     if (isInnerCapturerOrInjector_) {
         if (streamVolume_) {
             curSystemGain = streamVolume_->GetTotalVolume();

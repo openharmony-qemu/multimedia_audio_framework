@@ -604,4 +604,148 @@ HWTEST_F(HpaeGainNodeTest, DoGain_Normal_PipeVolumeNull, TestSize.Level0)
 
     AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
 }
+
+// --- Tests for EnsureVolumeAvailable ---
+
+HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_NormalBothNull_Retrieved, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 12;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, false);
+
+    // Both null initially
+    EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_EQ(hpaeGainNode->pipeVolume_, nullptr);
+
+    SetupStreamAndPipeVolume(sessionId, UT_HALF_GAIN, 0.8f);
+    hpaeGainNode->EnsureVolumeAvailable();
+
+    EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_NE(hpaeGainNode->pipeVolume_, nullptr);
+
+    CleanupStreamAndPipeVolume(sessionId);
+}
+
+HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_InnerCapturerStreamNull_Retrieved, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 13;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
+
+    // streamVolume_ is null for inner capturer
+    EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
+
+    SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);
+    hpaeGainNode->EnsureVolumeAvailable();
+
+    EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
+
+    AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_StreamExistsPipeNull_Retrieved, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 14;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // Set up stream only first, then call ResetVolume to cache streamVolume_ only
+    SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);
+    hpaeGainNode->ResetVolume();
+    ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
+    ASSERT_EQ(hpaeGainNode->pipeVolume_, nullptr);
+
+    // Now add pipe volume and call EnsureVolumeAvailable to retry pipeVolume_
+    PipeVolume pipeVolume(UT_PIPE_ID, STREAM_MUSIC, 0.8f, UT_VOLUME_LEVEL, false);
+    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
+    hpaeGainNode->EnsureVolumeAvailable();
+
+    EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_NE(hpaeGainNode->pipeVolume_, nullptr);
+
+    CleanupStreamAndPipeVolume(sessionId);
+}
+
+HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_BothCached_NoRetry, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 15;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    SetupStreamAndPipeVolume(sessionId, UT_UNIT_GAIN, UT_UNIT_GAIN);
+    hpaeGainNode->ResetVolume();
+    ASSERT_NE(hpaeGainNode->streamVolume_, nullptr);
+    ASSERT_NE(hpaeGainNode->pipeVolume_, nullptr);
+
+    // Save pointers before retry to verify they are unchanged
+    auto savedStream = hpaeGainNode->streamVolume_;
+    auto savedPipe = hpaeGainNode->pipeVolume_;
+
+    hpaeGainNode->EnsureVolumeAvailable();
+
+    // Both already cached, no retry should happen, pointers unchanged
+    EXPECT_EQ(hpaeGainNode->streamVolume_, savedStream);
+    EXPECT_EQ(hpaeGainNode->pipeVolume_, savedPipe);
+
+    CleanupStreamAndPipeVolume(sessionId);
+}
+
+HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_RetryFails_StillNull, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 16;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // No volume registered at all
+    EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_EQ(hpaeGainNode->pipeVolume_, nullptr);
+
+    hpaeGainNode->EnsureVolumeAvailable();
+
+    // Retry failed, still null
+    EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_EQ(hpaeGainNode->pipeVolume_, nullptr);
+}
 }  // namespace
