@@ -2604,6 +2604,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_005, TestSize.Level1)
     audioVolumeTest->RemoveStreamVolume(sessionId);
 }
 
+/**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
  * @tc.number: SetStreamVolumeMuteForZone_001
@@ -2622,6 +2623,7 @@ HWTEST_F(AudioVolumeUnitTest, SetStreamVolumeMuteForZone_001, TestSize.Level1)
     EXPECT_EQ(retVolume, 0);
 }
 
+/**
  * @tc.name  : Test GetVirtualKeyboardMode API
  * @tc.type  : FUNC
  * @tc.number: GetVirtualKeyboardMode_001
