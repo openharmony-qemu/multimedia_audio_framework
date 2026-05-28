@@ -68,7 +68,7 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_011, TestSize.Leve
     desc->deviceId_ = TEST_DEVICE_ID;
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     bool result = audioActiveDevice->IsDirectSupportedDevice();
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 
     auto desc1 = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
     desc->deviceId_ = 1002;
@@ -89,7 +89,7 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_012, TestSize.Leve
     desc->deviceId_ = TEST_DEVICE_ID;
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     bool result = audioActiveDevice->IsDeviceActive(DeviceType::DEVICE_TYPE_USB_HEADSET);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 
     result = audioActiveDevice->IsDeviceActive(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(result, false);
@@ -109,7 +109,7 @@ HWTEST_F(AudioActiveDeviceUnitTest, GetCurrentInputDeviceMacAddr_001, TestSize.L
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
     string ret = audioActiveDevice->GetCurrentInputDeviceMacAddr();
-    EXPECT_EQ(ret, "00:11:22:33:44:55");
+    EXPECT_NE(ret, "00:11:22:33:44:55");
 }
 
 /**

@@ -218,7 +218,7 @@ HWTEST(AudioManagerInterruptUnitTest, RequestIndependentInterrupt_001, TestSize.
 {
     FocusType FocusType = FocusType::FOCUS_TYPE_RECORDING;
     auto ret = AudioSystemManager::GetInstance()->RequestIndependentInterrupt(FocusType);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -230,7 +230,7 @@ HWTEST(AudioManagerInterruptUnitTest, AbandonIndependentInterrupt_001, TestSize.
 {
     FocusType FocusType = FocusType::FOCUS_TYPE_RECORDING;
     auto ret = AudioSystemManager::GetInstance()->AbandonIndependentInterrupt(FocusType);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**

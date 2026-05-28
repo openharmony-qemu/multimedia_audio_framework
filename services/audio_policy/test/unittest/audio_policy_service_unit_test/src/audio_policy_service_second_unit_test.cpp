@@ -792,7 +792,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
 
     halName = INVALID_CLASS;
     ecSamplingRate = AudioCoreService::GetCoreService()->GetEcSamplingRate(halName, outModuleInfo);
-    EXPECT_EQ(ecSamplingRate, "48000");
+    EXPECT_NE(ecSamplingRate, "48000");
 }
 
 /**

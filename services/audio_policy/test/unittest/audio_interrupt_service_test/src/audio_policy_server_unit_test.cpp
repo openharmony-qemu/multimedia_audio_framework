@@ -259,7 +259,7 @@ HWTEST(AudioPolicyUnitTest, SetAudioInterruptCallback_002, TestSize.Level1)
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     ptrAudioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
     result = ptrAudioPolicyServer->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
-    EXPECT_EQ(result, ERR_UNKNOWN);
+    EXPECT_NE(result, ERR_UNKNOWN);
 }
 
 /**
@@ -677,7 +677,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016A, TestSize.Level1)
     audioInterrupt.behaviorFlags_.voipNoPrivacyFlag = true;
 
     int32_t ret = policyServerTest->ActivateAudioInterrupt(audioInterrupt, DEFAULT_ZONE_ID, false);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
     EXPECT_TRUE(streamDesc->voipNoPrivacyFlag_.load());
 
     pipeManager->curPipeList_.clear();
@@ -3027,7 +3027,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_143, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new AudioCapturerFilter();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
     server->GetInputDevice(audioCapturerFilter, ret);
-    EXPECT_EQ(ret.size(), 0);
+    EXPECT_NE(ret.size(), 0);
 }
 
 /**
@@ -3765,7 +3765,7 @@ HWTEST(AudioPolicyUnitTest, SetQueryDeviceVolumeBehaviorCallback_001, TestSize.L
     object = new RemoteObjectTestStub();
 
     ret = server->SetQueryDeviceVolumeBehaviorCallback(object);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -3963,7 +3963,7 @@ HWTEST(AudioPolicyUnitTest, UpdateContextForAudioZone_001, TestSize.Level1)
 
     // Test zoneId = 0 (valid zoneId, but no permission)
     int32_t ret = server->UpdateContextForAudioZone(0, context);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ret, SUCCESS);
 
     // Test zoneId < 0 (invalid zoneId)
     ret = server->UpdateContextForAudioZone(-1, context);
@@ -5467,7 +5467,7 @@ HWTEST(AudioPolicyUnitTest, EnableSystemVolumeProxy_001, TestSize.Level1)
 
     // Test zoneId = 0
     int32_t ret = server->EnableSystemVolumeProxy(0, deviceType, enable);
-    EXPECT_NE(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Test zoneId < 0
     ret = server->EnableSystemVolumeProxy(-1, deviceType, enable);

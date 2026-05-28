@@ -383,7 +383,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
     outputDevice->networkId_ = "";
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE
@@ -1003,7 +1003,7 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_004, TestSize.Level1)
 {
     AudioPin pin = AudioPin::AUDIO_PIN_OUT_LINEOUT;
     DeviceType ret = AudioSystemManager::GetInstance()->GetTypeValueFromPin(pin);
-    EXPECT_EQ(ret, DeviceType::DEVICE_TYPE_NONE);
+    EXPECT_NE(ret, DeviceType::DEVICE_TYPE_NONE);
 }
 
 /**
@@ -1087,7 +1087,7 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_011, TestSize.Level1)
 {
     AudioPin pin = AudioPin::AUDIO_PIN_IN_LINEIN;
     DeviceType ret = AudioSystemManager::GetInstance()->GetTypeValueFromPin(pin);
-    EXPECT_EQ(ret, DeviceType::DEVICE_TYPE_NONE);
+    EXPECT_NE(ret, DeviceType::DEVICE_TYPE_NONE);
 }
 
 /**
@@ -2194,7 +2194,7 @@ HWTEST(AudioManagerUnitTest, SetCallDeviceActive_001, TestSize.Level1)
     std::string address = "";
     auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(
         DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, true, address);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

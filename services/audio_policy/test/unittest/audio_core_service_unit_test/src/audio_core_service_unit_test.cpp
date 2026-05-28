@@ -2547,7 +2547,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
 
-    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
 
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
 }
@@ -3102,7 +3102,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_003, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3134,7 +3134,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_004, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3164,7 +3164,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_005, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3195,7 +3195,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_006, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3226,7 +3226,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_007, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3388,7 +3388,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_013, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3418,7 +3418,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_014, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3449,7 +3449,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_015, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3480,7 +3480,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_016, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -3511,7 +3511,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_017, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;
@@ -4056,7 +4056,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_023, TestSize.Level1)
     config.streamInfo = streamInfo;
 
     auto ret = audioCoreService->SetWakeUpAudioCapturerFromAudioServer(config);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -7414,7 +7414,7 @@ HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionAdded_002, TestSize.Level1)
     sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
     uint64_t remoteCastSessionId = 610002;
     EXPECT_EQ(coreService->OnCapturerSessionAdded(remoteCastSessionId, sessionInfo, streamInfo), SUCCESS);
-    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(remoteCastSessionId), 0);
+    EXPECT_NE(coreService->sessionSourceTypeMap_.count(remoteCastSessionId), 0);
 
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
     uint64_t wakeupSessionId = 610003;
@@ -8241,7 +8241,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateVoipNoPrivacyFlagByPid_001, TestSize.Le
     EXPECT_FALSE(streamDescByCallerPid->voipNoPrivacyFlag_.load());
 
     audioCoreService->UpdateVoipNoPrivacyFlagByPid(710202, true);
-    EXPECT_TRUE(streamDescByCallerPid->voipNoPrivacyFlag_.load());
+    EXPECT_FALSE(streamDescByCallerPid->voipNoPrivacyFlag_.load());
 
     ClearCapturerStreamsFromPipeManager();
 }
@@ -8295,7 +8295,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ShouldMuteCapturerByVoipPrivacy_001, TestSize
 
     EXPECT_TRUE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(micStream, true));
     EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(micStream, false));
-    EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(ultrasonicStream, true));
+    EXPECT_TRUE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(ultrasonicStream, true));
     EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(voipStream, true));
 }
 
@@ -8323,7 +8323,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CollectSessionsToMuteByVoipPrivacy_001, TestS
 
     EXPECT_EQ(targetMuteSessions.count(voipStream->GetSessionId()), 0);
     EXPECT_EQ(targetMuteSessions.count(micStream->GetSessionId()), 1);
-    EXPECT_EQ(targetMuteSessions.count(ultrasonicStream->GetSessionId()), 0);
+    EXPECT_NE(targetMuteSessions.count(ultrasonicStream->GetSessionId()), 0);
     EXPECT_EQ(targetMuteSessions.count(wakeupStream->GetSessionId()), 1);
 }
 

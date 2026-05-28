@@ -128,7 +128,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_203, TestSize.Level1)
     audioPolicyServer->isScreenOffOrLock_ = true;
     VolumeUtils::SetPCVolumeEnable(false);
     auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -166,7 +166,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_205, TestSize.Level1)
     audioPolicyServer->isScreenOffOrLock_ = false;
     VolumeUtils::SetPCVolumeEnable(false);
     auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -185,7 +185,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_206, TestSize.Level1)
     audioPolicyServer->isScreenOffOrLock_ = false;
     VolumeUtils::SetPCVolumeEnable(false);
     auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

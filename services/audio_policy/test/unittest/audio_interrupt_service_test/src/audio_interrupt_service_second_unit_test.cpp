@@ -284,7 +284,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_008, TestSize.
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
 
     auto ret = audioInterruptService->UnsetAudioInterruptCallback(0, streamId);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

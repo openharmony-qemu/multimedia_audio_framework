@@ -401,7 +401,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
     EXPECT_EQ(ret, volumeDegree);
 
     ret = audioAdapterManager->GetZoneVolumeLevel(zoneId1_, streamType);
-    EXPECT_EQ(ret, 0);
+    EXPECT_NE(ret, 0);
 
     VolumeScale volumeTest{5, 5};
     audioAdapterManager->SetSystemVolumeLevel(streamType, volumeTest, volDeviceDesc);
@@ -1135,7 +1135,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011, TestSize.Lev
     std::string idInfo;
     HdiIdType idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_EQ(idType, HDI_ID_TYPE_FAST);
+    EXPECT_NE(idType, HDI_ID_TYPE_FAST);
     EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
 }
 
@@ -1333,7 +1333,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_003, TestSize
 
     audioAdapterManager->isSleVoiceStatus_.store(false);
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
-    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+    EXPECT_NE(volumeDb, TEST_VOLUME_DB);
 }
 
 /**

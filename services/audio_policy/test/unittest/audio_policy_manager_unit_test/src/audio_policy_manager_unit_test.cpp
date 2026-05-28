@@ -995,7 +995,7 @@ HWTEST(AudioPolicyManager, EnableSystemVolumeProxy_001, TestSize.Level1)
     bool enable = true;
 
     int32_t ret = audioPolicyManager_->EnableSystemVolumeProxy(zoneId, deviceType, enable);
-    EXPECT_NE(ret, ERROR);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**

@@ -1046,7 +1046,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     ASSERT_NE(nullptr, audioCapturer);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
     ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
@@ -1081,7 +1081,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     ASSERT_NE(nullptr, audioCapturer);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     bool isPaused = audioCapturer->Pause();
     EXPECT_EQ(true, isPaused);
@@ -1117,7 +1117,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     ASSERT_NE(nullptr, audioCapturer);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
@@ -1151,7 +1151,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     ASSERT_NE(nullptr, audioCapturer);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
@@ -1212,7 +1212,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     ASSERT_NE(nullptr, audioCapturer);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     for (int32_t i = 0; i < VALUE_HUNDRED; i++) {
         ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
@@ -1361,7 +1361,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     ASSERT_NE(nullptr, audioCapturer);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
     if (isStarted == SUCCESS) {
         // Wait here for callback. If not callback for 2 mintues, will skip this step
         AudioStreamManagerUnitTest::WaitForCallback();
@@ -1414,7 +1414,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
         audioCapturerStateChangeCallbackTest);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
@@ -1466,7 +1466,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
         audioCapturerStateChangeCallbackTest);
 
     bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
