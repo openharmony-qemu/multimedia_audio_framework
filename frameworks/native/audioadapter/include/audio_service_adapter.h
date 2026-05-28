@@ -272,13 +272,6 @@ public:
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
 
     /**
-     * @brief isCollaboration supported for streamUsage
-     *
-     * @return {@link true} if support, {@link false} otherwise
-     */
-    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) NOT_SUPPORT_RET
-
-    /**
      * @brief update Update PersonalizedHRTFBin
      *
      * @return {@link true} if support, {@link false} otherwise

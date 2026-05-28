@@ -275,7 +275,7 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevic
             NAPI_ERR_INPUT_INVALID,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
             "invalid parameter");
-        if ((selectedAudioDevice->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        if (!IsCollaborativePlaybackSupportedDeviceType(selectedAudioDevice->deviceType_) ||
             (selectedAudioDevice->connectState_ != CONNECTED)) {
             NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
                 "invalid arguments, device is not A2DP or device is connected");

@@ -2536,9 +2536,7 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
     offloadCloseCondition_[type].wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_SEC), [this, type] () {
         return isOffloadOpened_[type].load();
     });
-    if (!isMultiChannelOpened_.load()) {
-        UpdateNearLinkCollaborativeState(false);
-    }
+
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleaseOffloadPipe(id, paIndex, type);
 }
@@ -2564,6 +2562,9 @@ int32_t AudioCoreService::ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paI
         return isMultiChannelOpened_.load();
     });
 
+    if (!isMultiChannelOpened_.load()) {
+        UpdateNearLinkCollaborativeState(false);
+    }
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleaseMultiChannelPipe(id, paIndex);
 }

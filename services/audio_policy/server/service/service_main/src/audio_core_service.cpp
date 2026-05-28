@@ -867,14 +867,17 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     }
     auto ret = AudioSpatializationService::GetAudioSpatializationService().IsSpatializationEnabled(
         streamDesc->newDeviceDescs_[0]->macAddress_)  &&
-        AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
-        streamDesc->GetMainNewDeviceDesc()) &&
         !(AudioSpatializationService::GetAudioSpatializationService().IsAdaptiveSpatialRenderingEnabled(
             streamDesc->newDeviceDescs_[0]->macAddress_) &&
         streamDesc->streamInfo_.channels <= STEREO &&
         streamDesc->streamInfo_.encoding != ENCODING_AUDIOVIVID);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Spatialization enabled"));
+    ret = AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->GetMainNewDeviceDesc()) &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage());
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
+        HILOG_COMM_ERROR("[IsStreamSupportDirect]Collaborative enabled"));
     return true;
 }
 
