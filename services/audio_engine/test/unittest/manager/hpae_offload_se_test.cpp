@@ -14,11 +14,15 @@
  */
 
 #include "gtest/gtest.h"
+#include <algorithm>
+#include <any>
 #include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <thread>
+#include <tuple>
+#include <vector>
 
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_audio_format_converter_node.h"
@@ -35,14 +39,14 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-static constexpr uint32_t CUR_SESSION_ID = 42;
-static constexpr uint32_t OTHER_SESSION_ID = 43;
-static constexpr uint32_t INVALID_SESSION_ID = 99;
-static constexpr uint32_t TEST_FRAME_LEN = 960;
-static constexpr uint32_t CUR_NODE_ID = 100;
-static constexpr uint32_t OTHER_NODE_ID = 101;
-static constexpr uint32_t OUTPUT_NODE_ID = 200;
-static constexpr uint32_t PROBE_NODE_ID = 300;
+static constexpr uint32_t curSessionId = 42;
+static constexpr uint32_t otherSessionId = 43;
+static constexpr uint32_t invalidSessionId = 99;
+static constexpr uint32_t testFrameLen = 960;
+static constexpr uint32_t curNodeId = 100;
+static constexpr uint32_t otherNodeId = 101;
+static constexpr uint32_t outputNodeId = 200;
+static constexpr uint32_t probeNodeId = 300;
 
 static AudioEffectConfig MakeTestConfig()
 {
@@ -61,7 +65,7 @@ static HpaeSinkInfo GetTestSinkInfo()
     sinkInfo.deviceClass = "file_io";
     sinkInfo.adapterName = "file_io";
     sinkInfo.filePath = "/data/test_offload_se.pcm";
-    sinkInfo.frameLen = TEST_FRAME_LEN;
+    sinkInfo.frameLen = testFrameLen;
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     sinkInfo.format = SAMPLE_F32LE;
     sinkInfo.channels = STEREO;
@@ -72,9 +76,9 @@ static HpaeSinkInfo GetTestSinkInfo()
 static HpaeNodeInfo MakeCurNodeInfo()
 {
     HpaeNodeInfo info;
-    info.nodeId = CUR_NODE_ID;
-    info.sessionId = CUR_SESSION_ID;
-    info.frameLen = TEST_FRAME_LEN;
+    info.nodeId = curNodeId;
+    info.sessionId = curSessionId;
+    info.frameLen = testFrameLen;
     info.samplingRate = SAMPLE_RATE_48000;
     info.channels = STEREO;
     info.format = SAMPLE_F32LE;
@@ -85,9 +89,9 @@ static HpaeNodeInfo MakeCurNodeInfo()
 static HpaeNodeInfo MakeOtherNodeInfo()
 {
     HpaeNodeInfo info;
-    info.nodeId = OTHER_NODE_ID;
-    info.sessionId = OTHER_SESSION_ID;
-    info.frameLen = TEST_FRAME_LEN;
+    info.nodeId = otherNodeId;
+    info.sessionId = otherSessionId;
+    info.frameLen = testFrameLen;
     info.samplingRate = SAMPLE_RATE_48000;
     info.channels = STEREO;
     info.format = SAMPLE_F32LE;
@@ -98,9 +102,9 @@ static HpaeNodeInfo MakeOtherNodeInfo()
 static HpaeNodeInfo MakeOutputNodeInfo()
 {
     HpaeNodeInfo info;
-    info.nodeId = OUTPUT_NODE_ID;
-    info.sessionId = CUR_SESSION_ID;
-    info.frameLen = TEST_FRAME_LEN;
+    info.nodeId = outputNodeId;
+    info.sessionId = curSessionId;
+    info.frameLen = testFrameLen;
     info.samplingRate = SAMPLE_RATE_48000;
     info.channels = STEREO;
     info.format = SAMPLE_F32LE;
@@ -116,6 +120,51 @@ static std::shared_ptr<EffectInstance> MakeTestEffectInstance()
     return instance;
 }
 
+struct StatusEvent {
+    HpaeStreamClassType streamClassType;
+    uint32_t sessionId;
+    HpaeSessionState state;
+    IOperation operation;
+};
+
+class StatusCallbackRecorder final : public ISendMsgCallback {
+public:
+    void Invoke(HpaeMsgCode cmdID, const std::any &args) override
+    {
+        Record(cmdID, args);
+    }
+
+    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override
+    {
+        Record(cmdID, args);
+    }
+
+    size_t Count(uint32_t sessionId, IOperation operation) const
+    {
+        return static_cast<size_t>(std::count_if(events_.begin(), events_.end(),
+            [sessionId, operation](const StatusEvent &event) {
+                return event.sessionId == sessionId && event.operation == operation;
+            }));
+    }
+
+    std::vector<StatusEvent> events_;
+
+private:
+    void Record(HpaeMsgCode cmdID, const std::any &args)
+    {
+        if (cmdID != UPDATE_STATUS) {
+            return;
+        }
+        auto statusArgs = std::any_cast<std::tuple<HpaeStreamClassType, uint32_t,
+            HpaeSessionState, IOperation>>(&args);
+        if (statusArgs == nullptr) {
+            return;
+        }
+        events_.push_back({std::get<0>(*statusArgs), std::get<1>(*statusArgs),
+            std::get<2>(*statusArgs), std::get<3>(*statusArgs)});
+    }
+};
+
 // Test fixture: sets up HpaeOffloadRendererManager with real node chain,
 // following the same pattern as hpae_render_manager_test.cpp.
 // Uses -fno-access-control build flag to set private members directly.
@@ -125,6 +174,8 @@ protected:
     {
         HpaeSinkInfo sinkInfo = GetTestSinkInfo();
         manager_ = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+        callback_ = std::make_shared<StatusCallbackRecorder>();
+        manager_->RegisterSendMsgCallback(callback_);
         config_ = MakeTestConfig();
 
         // Set up SignalProcessThread (needed for SendRequest infrastructure)
@@ -135,28 +186,31 @@ protected:
         curNode_ = std::make_shared<HpaeSinkInputNode>(curInfo);
         curNode_->SetState(HPAE_SESSION_RUNNING);
         manager_->curNode_ = curNode_;
-        manager_->sinkInputNodeMap_[CUR_SESSION_ID] = curNode_;
+        manager_->sinkInputNodeMap_[curSessionId] = curNode_;
 
         // Set up non-curNode_ (exists in map but not active chain)
         HpaeNodeInfo otherInfo = MakeOtherNodeInfo();
         otherNode_ = std::make_shared<HpaeSinkInputNode>(otherInfo);
         otherNode_->SetState(HPAE_SESSION_RUNNING);
-        manager_->sinkInputNodeMap_[OTHER_SESSION_ID] = otherNode_;
+        manager_->sinkInputNodeMap_[otherSessionId] = otherNode_;
 
         // Set up offload processing node chain (normally done by CreateOffloadNodes)
         HpaeNodeInfo outputInfo = MakeOutputNodeInfo();
+        manager_->converterForOutput_ =
+            std::make_shared<HpaeAudioFormatConverterNode>(outputInfo, outputInfo);
+        manager_->converterForOutput_->SetDownmixNormalization(false);
         manager_->converterForLoudness_ =
             std::make_shared<HpaeAudioFormatConverterNode>(curInfo, outputInfo);
         manager_->converterForLoudness_->SetDownmixNormalization(false);
         manager_->loudnessGainNode_ =
             std::make_shared<HpaeLoudnessGainNode>(outputInfo);
 
-        // Connect chain: loudnessGainNode_ -> converterForLoudness_ -> curNode_
+        // Connect chain: converterForOutput_ -> loudnessGainNode_ -> converterForLoudness_ -> curNode_
         // (Connect = downstream reads from upstream)
+        manager_->converterForOutput_->Connect(manager_->loudnessGainNode_);
         manager_->loudnessGainNode_->Connect(manager_->converterForLoudness_);
         manager_->converterForLoudness_->Connect(curNode_);
 
-        // Set up sinkOutputNode_ (needed for flush tests)
         HpaeNodeInfo outputNodeInfo = MakeOutputNodeInfo();
         manager_->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(outputNodeInfo);
     }
@@ -176,6 +230,7 @@ protected:
     std::shared_ptr<HpaeOffloadRendererManager> manager_;
     std::shared_ptr<HpaeSinkInputNode> curNode_;
     std::shared_ptr<HpaeSinkInputNode> otherNode_;
+    std::shared_ptr<StatusCallbackRecorder> callback_;
     AudioEffectConfig config_;
 };
 
@@ -183,19 +238,34 @@ protected:
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_curNode_immediate, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance",
         instance, config_);
     EXPECT_EQ(ret, 0);
     EXPECT_NE(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectSessionId_, CUR_SESSION_ID);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, curSessionId);
     EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_EQ(callback_->Count(curSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    ASSERT_FALSE(callback_->events_.empty());
+    EXPECT_EQ(callback_->events_.back().state, HPAE_SESSION_RUNNING);
+}
+
+// OSE-1a: CreateSessionEffect creation failure clears active SE state without disabled rollback
+HWTEST_F(HpaeOffloadSeTest, createSessionEffect_createFailure_clearsStateWithoutDisabled, TestSize.Level0)
+{
+    int32_t ret = manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", nullptr, config_);
+
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_CREATE_FAILED));
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(curSessionId, OPERATION_SESSION_EFFECT_ENABLED), 0u);
+    EXPECT_EQ(callback_->Count(curSessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
 }
 
 // OSE-2: CreateSessionEffect for non-curNode_ → deferred to pending
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_notCurNode_deferred, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance",
         instance, config_);
     EXPECT_EQ(ret, 0);
     // SE not created yet (session is not curNode_)
@@ -203,31 +273,35 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_notCurNode_deferred, TestSize.Le
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     // Stored in pending map
     EXPECT_EQ(manager_->pendingSessionEffects_.size(), 1u);
-    EXPECT_NE(manager_->pendingSessionEffects_.find(OTHER_SESSION_ID),
+    EXPECT_NE(manager_->pendingSessionEffects_.find(otherSessionId),
         manager_->pendingSessionEffects_.end());
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    ASSERT_FALSE(callback_->events_.empty());
+    EXPECT_EQ(callback_->events_.back().state, HPAE_SESSION_RUNNING);
 }
 
 // OSE-3: DestroySessionEffect for active SE → disconnect + restore chain
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
+    int32_t ret = manager_->DestroySessionEffect(curSessionId);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(curSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
 // OSE-3-enhanced: DestroySessionEffect for active SE → chain restored (direct connection)
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active_restoresChain, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
+    int32_t ret = manager_->DestroySessionEffect(curSessionId);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
@@ -244,50 +318,150 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active_restoresChain, TestSize.
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_pending, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
 
-    int32_t ret = manager_->DestroySessionEffect(OTHER_SESSION_ID);
+    int32_t ret = manager_->DestroySessionEffect(otherSessionId);
     EXPECT_EQ(ret, 0);
     EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-4a: RemoveSessionEffectNode for active SE sends disabled directly
+HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_active_sendsDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance, config_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback_->Count(curSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    int32_t ret = manager_->RemoveSessionEffectNode();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(curSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-4b: DeleteInputSession drops active SE and sends disabled
+HWTEST_F(HpaeOffloadSeTest, deleteInputSession_activeSessionEffect_sendsDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance, config_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    manager_->DeleteInputSession();
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(curSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-4c: DestroyStream erases pending SE and sends disabled
+HWTEST_F(HpaeOffloadSeTest, destroyStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance", instance, config_);
+    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    manager_->isInit_.store(true);
+    int32_t ret = manager_->DestroyStream(otherSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+
+    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-4d: MoveStream for non-current pending SE rolls back enabled status
+HWTEST_F(HpaeOffloadSeTest, moveStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance", instance, config_);
+    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    manager_->isInit_.store(true);
+    int32_t ret = manager_->MoveStream(otherSessionId, "new_sink");
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+
+    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-4e: MoveAllStreamToNewSink for non-current pending SE rolls back enabled status
+HWTEST_F(HpaeOffloadSeTest, moveAllStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance", instance, config_);
+    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    std::vector<uint32_t> moveIds = { otherSessionId };
+    manager_->MoveAllStreamToNewSink("new_sink", moveIds, MOVE_SINGLE);
+
+    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-4f: Pending activation failure rolls back previously sent enabled status
+HWTEST_F(HpaeOffloadSeTest, connectInputSession_pendingInsertFailure_rollsBackEnabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance", instance, config_);
+    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    manager_->curNode_ = otherNode_;
+    HpaeNodeInfo outputInfo = MakeOutputNodeInfo();
+    manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(outputInfo);
+    manager_->sessionEffectSessionId_ = 0;
+
+    int32_t ret = manager_->ConnectInputSession();
+    EXPECT_EQ(ret, SUCCESS);
+
+    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
 // OSE-5: HasSessionEffect returns true for both active and pending
 HWTEST_F(HpaeOffloadSeTest, hasSessionEffect_activeAndPending, TestSize.Level0)
 {
     // No SE initially
-    EXPECT_FALSE(manager_->HasSessionEffect(CUR_SESSION_ID));
-    EXPECT_FALSE(manager_->HasSessionEffect(OTHER_SESSION_ID));
-    EXPECT_FALSE(manager_->HasSessionEffect(INVALID_SESSION_ID));
+    EXPECT_FALSE(manager_->HasSessionEffect(curSessionId));
+    EXPECT_FALSE(manager_->HasSessionEffect(otherSessionId));
+    EXPECT_FALSE(manager_->HasSessionEffect(invalidSessionId));
 
     // Create active SE for curNode_
     auto instance1 = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance1, config_);
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance1, config_);
 
     // Create pending SE for otherNode_
     auto instance2 = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance2, config_);
+    manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance", instance2, config_);
 
-    EXPECT_TRUE(manager_->HasSessionEffect(CUR_SESSION_ID));
-    EXPECT_TRUE(manager_->HasSessionEffect(OTHER_SESSION_ID));
-    EXPECT_FALSE(manager_->HasSessionEffect(INVALID_SESSION_ID));
+    EXPECT_TRUE(manager_->HasSessionEffect(curSessionId));
+    EXPECT_TRUE(manager_->HasSessionEffect(otherSessionId));
+    EXPECT_FALSE(manager_->HasSessionEffect(invalidSessionId));
 }
 
 // OSE-6: IsValidSession checks sinkInputNodeMap_
 HWTEST_F(HpaeOffloadSeTest, isValidSession, TestSize.Level0)
 {
-    EXPECT_TRUE(manager_->IsValidSession(CUR_SESSION_ID));
-    EXPECT_TRUE(manager_->IsValidSession(OTHER_SESSION_ID));
-    EXPECT_FALSE(manager_->IsValidSession(INVALID_SESSION_ID));
+    EXPECT_TRUE(manager_->IsValidSession(curSessionId));
+    EXPECT_TRUE(manager_->IsValidSession(otherSessionId));
+    EXPECT_FALSE(manager_->IsValidSession(invalidSessionId));
 }
 
 // OSE-7: SetSessionEffectParameter on active SE → delegates to node
 HWTEST_F(HpaeOffloadSeTest, setSessionEffectParameter_active, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance, config_);
 
-    int32_t ret = manager_->SetSessionEffectParameter(CUR_SESSION_ID,
+    int32_t ret = manager_->SetSessionEffectParameter(curSessionId,
         static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.7f);
     EXPECT_EQ(ret, 0);
 }
@@ -295,7 +469,7 @@ HWTEST_F(HpaeOffloadSeTest, setSessionEffectParameter_active, TestSize.Level0)
 // OSE-8: SetSessionEffectParameter with no active SE → ERR_EFFECT_NOT_BOUND
 HWTEST_F(HpaeOffloadSeTest, setSessionEffectParameter_notActive, TestSize.Level0)
 {
-    int32_t ret = manager_->SetSessionEffectParameter(CUR_SESSION_ID,
+    int32_t ret = manager_->SetSessionEffectParameter(curSessionId,
         static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.5f);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
 }
@@ -304,13 +478,13 @@ HWTEST_F(HpaeOffloadSeTest, setSessionEffectParameter_notActive, TestSize.Level0
 // Simulates what ConnectInputSession does: checks pending map for curNode_'s session
 HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
 {
-    // 1. Create pending SE for OTHER_SESSION_ID (not curNode_)
+    // 1. Create pending SE for otherSessionId (not curNode_)
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(otherSessionId, "ai_audio_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
     ASSERT_EQ(manager_->sessionEffectNode_, nullptr);
 
-    // 2. Simulate curNode_ switch: OTHER_SESSION_ID becomes curNode_
+    // 2. Simulate curNode_ switch: otherSessionId becomes curNode_
     //    (normally done by SetCurrentNode → CreateOffloadNodes → ConnectInputSession)
     manager_->curNode_ = otherNode_;
 
@@ -332,18 +506,19 @@ HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
 
     // SE now active for the new curNode_
     EXPECT_NE(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectSessionId_, OTHER_SESSION_ID);
-    EXPECT_TRUE(manager_->HasSessionEffect(OTHER_SESSION_ID));
+    EXPECT_EQ(manager_->sessionEffectSessionId_, otherSessionId);
+    EXPECT_TRUE(manager_->HasSessionEffect(otherSessionId));
+    EXPECT_EQ(callback_->Count(otherSessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 }
 
 // OSE-EXTRA: Double create for same session returns ERR_SESSION_ALREADY_BOUND
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_doubleCreate, TestSize.Level0)
 {
     auto instance1 = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance1, config_);
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance1, config_);
 
     auto instance2 = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance",
         instance2, config_);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND));
 }
@@ -351,7 +526,7 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_doubleCreate, TestSize.Level0)
 // OSE-EXTRA: DestroySessionEffect for unknown session returns ERR_EFFECT_NOT_BOUND
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_unknownSession, TestSize.Level0)
 {
-    int32_t ret = manager_->DestroySessionEffect(INVALID_SESSION_ID);
+    int32_t ret = manager_->DestroySessionEffect(invalidSessionId);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
 }
 
@@ -429,11 +604,11 @@ protected:
 
         // Probe after loudnessGainNode_
         HpaeNodeInfo probeInfo = outputInfo;
-        probeInfo.nodeId = PROBE_NODE_ID;
+        probeInfo.nodeId = probeNodeId;
         probe_ = std::make_shared<OffloadProbeNode>(probeInfo);
         probe_->Connect(manager_->loudnessGainNode_);
 
-        manager_->sessionEffectSessionId_ = CUR_SESSION_ID;
+        manager_->sessionEffectSessionId_ = curSessionId;
     }
 
     void TearDown() override
@@ -677,16 +852,14 @@ HWTEST_F(HpaeOffloadSeDataflowTest, pauseFlushStart_stateTransitions, TestSize.L
 // OSE-FLUSH-1: InsertSessionEffectNode flushes sinkOutputNode_ internal buffer
 HWTEST_F(HpaeOffloadSeTest, insert_flushesSinkOutput, TestSize.Level0)
 {
-    // Pre-fill sinkOutputNode_ internal buffer with fake data
     manager_->sinkOutputNode_->renderFrameData_.resize(1024, 0xAB);
     ASSERT_GT(manager_->sinkOutputNode_->GetLatency(), 0u);
 
     auto instance = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance",
         instance, config_);
     EXPECT_EQ(ret, 0);
 
-    // After insert, internal buffer should be cleared by FlushStream()
     EXPECT_TRUE(manager_->sinkOutputNode_->renderFrameData_.empty());
     EXPECT_EQ(manager_->sinkOutputNode_->GetLatency(), 0u);
 }
@@ -695,17 +868,15 @@ HWTEST_F(HpaeOffloadSeTest, insert_flushesSinkOutput, TestSize.Level0)
 HWTEST_F(HpaeOffloadSeTest, remove_flushesSinkOutput, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(curSessionId, "ai_audio_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Pre-fill sinkOutputNode_ internal buffer with fake data
     manager_->sinkOutputNode_->renderFrameData_.resize(1024, 0xCD);
     ASSERT_GT(manager_->sinkOutputNode_->GetLatency(), 0u);
 
-    int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
+    int32_t ret = manager_->DestroySessionEffect(curSessionId);
     EXPECT_EQ(ret, 0);
 
-    // After remove, internal buffer should be cleared by FlushStream()
     EXPECT_TRUE(manager_->sinkOutputNode_->renderFrameData_.empty());
     EXPECT_EQ(manager_->sinkOutputNode_->GetLatency(), 0u);
 }
