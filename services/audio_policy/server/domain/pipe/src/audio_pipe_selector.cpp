@@ -1481,6 +1481,24 @@ static bool IsMultiStreamCaptureInfo(const std::string &pipeName)
         pipeName == "primary_bt_nearlink_in";
 }
 
+static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (pipeInfoPtr->name_ == "fast_usb_arm_output") {
+        info.moduleInfo_.className = info.GetUltraFastFlag() ? "usb_arm_ultra_fast" : "usb_arm_fast";
+        info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "usb_arm_ultra_fast_dump_file" : "usb_arm_fast_dump_file";
+        info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastUsbArmRendererSink" : "FastUsbArmRendererSink";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "dp_fast_output") {
+        info.moduleInfo_.className = "dp_fast";
+        info.moduleInfo_.fileName = "dp_fast_dump_file";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.name = "FastDpRendererSink";
+        info.moduleInfo_.role = "sink";
+    }
+}
+
 static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
     std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
 {
@@ -1506,21 +1524,17 @@ static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterP
     } else if (pipeInfoPtr->name_ == "direct_output") {
         info.moduleInfo_.className = "primary_direct";
         info.moduleInfo_.fileName = "direct_dump_file";
-        info.moduleInfo_.lib = "libmodule-hdi=-sink.z.so";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.name = "direct";
         info.moduleInfo_.role = "sink";
     } else if (pipeInfoPtr->name_ == "voip_direct_output") {
         info.moduleInfo_.className = "primary_direct_voip";
         info.moduleInfo_.fileName = "direct_dump_file";
-        info.moduleInfo_.lib = "libmodule-hdi=-sink.z.so";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.name = "voip";
         info.moduleInfo_.role = "sink";
-    } else if (pipeInfoPtr->name_ == "fast_usb_arm_output") {
-        info.moduleInfo_.className = info.GetUltraFastFlag() ? "usb_arm_ultra_fast" : "usb_arm_fast";
-        info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "usb_arm_ultra_fast_dump_file" : "usb_arm_fast_dump_file";
-        info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastUsbArmRendererSink" : "FastUsbArmRendererSink";
-        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
-        info.moduleInfo_.role = "sink";
+    } else {
+        FillSpecialPipeInfoExtOther(info, pipeInfoPtr, streamDesc, streamPropInfo);
     }
 
     if (IsMultiStreamPrimary(pipeInfoPtr->name_)) {

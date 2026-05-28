@@ -292,7 +292,8 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
         preBufSizeInBytes = DUAL_STREAM_PREBUF_TIME_MS * sampleRate * byteSizePerFrame / AUDIO_MS_PER_S;
     }
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
-        std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode, preBufSizeInBytes);
+        std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, deviceName, isCallbackMode,
+        preBufSizeInBytes);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
         HILOG_COMM_ERROR("[CreateRendererStream]Create rendererStream Failed");
         return nullptr;

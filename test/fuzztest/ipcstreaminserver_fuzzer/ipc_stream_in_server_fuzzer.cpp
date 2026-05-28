@@ -41,7 +41,9 @@ static shared_ptr<IpcStreamInServer> CreateIpcStreamInServer()
         return ipcStreamInServerRet;
     }
     bool isMoveAble = g_fuzzUtils.GetData<bool>();
-    ipcStreamInServerRet->rendererInServer_->stream_ = std::make_shared<HpaeRendererStreamImpl>(configRet, isMoveAble);
+    std::string deviceName = "temp";
+    ipcStreamInServerRet->rendererInServer_->stream_ =
+        std::make_shared<HpaeRendererStreamImpl>(configRet, isMoveAble, deviceName);
     ipcStreamInServerRet->ConfigCapturer();
     return ipcStreamInServerRet;
 }
