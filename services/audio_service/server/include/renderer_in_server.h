@@ -207,6 +207,8 @@ public:
 private:
     void OnStatusUpdateSub(IOperation operation);
     void OnStatusUpdateSubs(IOperation operation);
+    void HandleOperationUnderrun();
+    void HandleOperationUnderflow();
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(BufferDesc &bufferDesc);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
@@ -223,6 +225,7 @@ private:
     int32_t ValidateAndSetupBufferForStart();
     void UpdateStartTimeInfo();
     int32_t StopInner();
+    int32_t HandleStopDuringStandby();
     int32_t Standby(bool isStandbyOn);
     int64_t GetLastAudioDuration();
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);

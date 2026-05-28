@@ -445,26 +445,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             hasSessionEffect_.store(false);
             break;
         case OPERATION_UNDERRUN:
-            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetWritableDataFrames(): %{public}d",
-                audioServerBuffer_->GetWritableDataFrames());
-            if (audioServerBuffer_->GetWritableDataFrames() ==
-                static_cast<int32_t>(DEFAULT_SPAN_SIZE * spanSizeInFrame_)) {
-                AUDIO_INFO_LOG("Buffer is empty");
-                needForceWrite_ = 0;
-            } else {
-                AUDIO_INFO_LOG("Buffer is not empty");
-                std::unique_lock lock(writeLock_, std::try_to_lock);
-                if (lock.owns_lock()) {
-                    WriteData();
-                }
-            }
+            HandleOperationUnderrun();
             break;
         case OPERATION_UNDERFLOW:
-            if (ClockTime::GetCurNano() - startedTime_ > START_MIN_COST) {
-                underrunCount_++;
-                audioServerBuffer_->SetUnderrunCount(underrunCount_);
-            }
-            StandByCheck(); // if stand by is enbaled here, stream will be paused and not recv UNDERFLOW any more.
+            HandleOperationUnderflow();
             break;
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
@@ -477,6 +461,31 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         default:
             OnStatusUpdateSubs(operation);
     }
+}
+
+void RendererInServer::HandleOperationUnderrun()
+{
+    AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetWritableDataFrames(): %{public}d",
+        audioServerBuffer_->GetWritableDataFrames());
+    if (audioServerBuffer_->GetWritableDataFrames() == static_cast<int32_t>(DEFAULT_SPAN_SIZE * spanSizeInFrame_)) {
+        AUDIO_INFO_LOG("Buffer is empty");
+        needForceWrite_ = 0;
+    } else {
+        AUDIO_INFO_LOG("Buffer is not empty");
+        std::unique_lock lock(writeLock_, std::try_to_lock);
+        if (lock.owns_lock()) {
+            WriteData();
+        }
+    }
+}
+
+void RendererInServer::HandleOperationUnderflow()
+{
+    if (ClockTime::GetCurNano() - startedTime_ > START_MIN_COST) {
+        underrunCount_++;
+        audioServerBuffer_->SetUnderrunCount(underrunCount_);
+    }
+    StandByCheck(); // if stand by is enbaled here, stream will be paused and not recv UNDERFLOW any more.
 }
 
 void RendererInServer::OnStatusUpdateSubs(IOperation operation)
@@ -1824,18 +1833,7 @@ int32_t RendererInServer::Stop()
 int32_t RendererInServer::StopInner()
 {
     hasSessionEffect_.store(false);
-    if (standByEnable_) {
-        AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
-                PLAY_STOP_NULL_POINTER, "stream status is nullptr", false), "stream status is nullptr");
-        standByEnable_ = false;
-        enterStandbyTime_ = 0;
-        audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
-        if (playerDfx_) {
-            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
-        }
-    }
+    CHECK_AND_RETURN_RET(HandleStopDuringStandby() == SUCCESS, ERR_OPERATION_FAILED);
     {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
@@ -1879,6 +1877,22 @@ int32_t RendererInServer::StopInner()
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
+    return SUCCESS;
+}
+
+int32_t RendererInServer::HandleStopDuringStandby()
+{
+    CHECK_AND_RETURN_RET(standByEnable_, SUCCESS);
+    AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
+            PLAY_STOP_NULL_POINTER, "stream status is nullptr", false), "stream status is nullptr");
+    standByEnable_ = false;
+    enterStandbyTime_ = 0;
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
+    if (playerDfx_) {
+        playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
+    }
     return SUCCESS;
 }
 
