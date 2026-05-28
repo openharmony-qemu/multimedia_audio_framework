@@ -1511,7 +1511,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_115, TestSize.Leve
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
     std::vector<SourceOutput> sourceOutputs = audioCoreService->GetSourceOutputs();
 
-    audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs, pipeInfo);
 }
 
 /**
@@ -1534,7 +1535,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_116, TestSize.Leve
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor2);
     std::vector<SourceOutput> sourceOutputs = audioCoreService->GetSourceOutputs();
 
-    audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs, pipeInfo);
 }
 
 /**

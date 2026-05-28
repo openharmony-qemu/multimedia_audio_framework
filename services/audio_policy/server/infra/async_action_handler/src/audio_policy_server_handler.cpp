@@ -1626,14 +1626,12 @@ void AudioPolicyServerHandler::ClearPreferredDeviceDedupCache(int32_t clientId, 
             std::lock_guard<std::mutex> rendererLock(clientCbRendererInfoMapMutex_);
             clientCbRendererInfoMap_.erase(clientId);
         }
-        AUDIO_INFO_LOG("Cleared output dedup cache and renderer info for clientId:%{public}d", clientId);
     } else if (callbackchange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
         lastSentInputDeviceMap_.erase(clientId);
         {
             std::lock_guard<std::mutex> capturerLock(clientCbCapturerFilterMapMutex_);
             clientCbCapturerFilterMap_.erase(clientId);
         }
-        AUDIO_INFO_LOG("Cleared input dedup cache and capturer filter for clientId:%{public}d", clientId);
     }
 }
 

@@ -606,7 +606,8 @@ private:
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::vector<SourceOutput>& sourceOutputs);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        const std::vector<SourceOutput>& sourceOutputs);
+        const std::vector<SourceOutput>& sourceOutputs,
+        std::shared_ptr<AudioPipeInfo> pipeInfo);
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
@@ -615,7 +616,7 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     bool GetRingerOrAlarmerDualDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices);
-    bool SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
     void UpdateDualToneState(const bool &enable, const int32_t &sessionId, const std::string &dupSinkName = "Speaker");
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         std::shared_ptr<AudioPipeInfo> pipeInfo, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
@@ -652,7 +653,8 @@ private:
         const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
-    void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const uint32_t pipeId);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
@@ -752,7 +754,7 @@ private:
     bool WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     // for collaboration
-    void UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t sessionId);
+    void UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t pipeId);
     void CheckAndUpdateHearingAidCall(const DeviceType deviceType);
     int32_t CheckModuleForHearingAid(uint32_t &paIndex);
     void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);
