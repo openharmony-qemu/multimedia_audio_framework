@@ -357,8 +357,10 @@ std::string AudioSessionSceneToString(AudioSessionScene scene)
 
 AudioDebugManager &AudioDebugManager::GetInstance()
 {
-    static AudioDebugManagerPrivate instance;
-    return instance;
+    // Leaky Singleton: avoid use-after-free when Renderer/Capturer destruct after this during process exit.
+    // Memory is reclaimed by OS on process exit, no real leak.
+    static AudioDebugManagerPrivate *instance = new AudioDebugManagerPrivate();
+    return *instance;
 }
 
 void AudioDebugManagerPrivate::LogAudioDebugInfo(const std::string &debugInfo)
