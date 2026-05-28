@@ -234,7 +234,7 @@ int32_t AudioGeneralManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;

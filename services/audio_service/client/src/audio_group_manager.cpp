@@ -65,7 +65,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_ASSISTANT:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -114,7 +114,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType, int32_t uid)
         case STREAM_ALARM:
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -221,7 +221,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const 
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_ULTRASONIC:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
         case STREAM_ALL:
@@ -257,7 +257,7 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         case STREAM_ALARM:
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;

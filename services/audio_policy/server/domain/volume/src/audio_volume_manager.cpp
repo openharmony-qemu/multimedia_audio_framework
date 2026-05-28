@@ -100,7 +100,7 @@ static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
     STREAM_ACCESSIBILITY,
     STREAM_ULTRASONIC,
     STREAM_WAKEUP,
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     STREAM_NAVIGATION,
 #endif
 };
@@ -233,7 +233,7 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     if (deviceType == DEVICE_TYPE_NEARLINK && streamType == STREAM_VOICE_CALL) {
         vol.volumeFloat = 1.0f;
     }
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, deviceType)) {
         vol.volumeFloat = 1.0f;
     }
@@ -295,7 +295,7 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLev
 
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId)
 {
-#ifndef FEATURE_AUDIO_ZONE
+#ifndef FEATURE_AUDIO_ZONE_VOLUME
     if (zoneId > 0) {
         return audioPolicyManager_.GetZoneVolumeLevel(zoneId, streamType);
     }
@@ -1364,7 +1364,7 @@ int32_t AudioVolumeManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
     const DeviceType &deviceType, int32_t zoneId)
 {
-#ifndef FEATURE_AUDIO_ZONE
+#ifndef FEATURE_AUDIO_ZONE_VOLUME
     if (zoneId > 0) {
         return audioPolicyManager_.SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
     }
@@ -1436,7 +1436,7 @@ int32_t AudioVolumeManager::HandleStreamMute(AudioStreamType streamType, bool mu
 
 bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneId) const
 {
-#ifndef FEATURE_AUDIO_ZONE
+#ifndef FEATURE_AUDIO_ZONE_VOLUME
     if (zoneId > 0) {
         return audioPolicyManager_.GetZoneMute(zoneId, streamType);
     }

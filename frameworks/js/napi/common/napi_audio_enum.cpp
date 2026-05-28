@@ -34,10 +34,10 @@ using OHOS::HiviewDFX::HiLogLabel;
 
 namespace OHOS {
 namespace AudioStandard {
-#ifdef FEATURE_AUDIO_ZONE
-static constexpr bool K_FEATURE_AUDIO_ZONE = true;
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+static constexpr bool K_FEATURE_AUDIO_ZONE_VOLUME = true;
 #else
-static constexpr bool K_FEATURE_AUDIO_ZONE = false;
+static constexpr bool K_FEATURE_AUDIO_ZONE_VOLUME = false;
 #endif
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 napi_ref NapiAudioEnum::sConstructor_ = nullptr;
@@ -1445,7 +1445,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             result = NapiAudioEnum::MEDIA;
             break;
         case AudioStreamType::STREAM_NAVIGATION:
-            result = (K_FEATURE_AUDIO_ZONE ? NapiAudioEnum::NAVIGATION : NapiAudioEnum::MEDIA);
+            result = (K_FEATURE_AUDIO_ZONE_VOLUME ? NapiAudioEnum::NAVIGATION : NapiAudioEnum::MEDIA);
             break;
         case AudioStreamType::STREAM_ALARM:
             result = NapiAudioEnum::ALARM;
@@ -1812,7 +1812,7 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             result = STREAM_NOTIFICATION;
             break;
         case NapiAudioEnum::NAVIGATION:
-            result = (K_FEATURE_AUDIO_ZONE ? STREAM_NAVIGATION : STREAM_MUSIC);
+            result = (K_FEATURE_AUDIO_ZONE_VOLUME ? STREAM_NAVIGATION : STREAM_MUSIC);
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;

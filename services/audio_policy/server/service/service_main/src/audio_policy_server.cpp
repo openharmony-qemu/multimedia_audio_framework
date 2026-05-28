@@ -1279,7 +1279,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     int32_t zoneId = 0;
-#ifndef FEATURE_AUDIO_ZONE
+#ifndef FEATURE_AUDIO_ZONE_VOLUME
     if (uid != 0) {
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
         VolumeUpdateOption info = { flag };
@@ -1357,7 +1357,7 @@ int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid,
 {
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(
         uid != 0 ? uid : IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
 #else
@@ -4756,7 +4756,7 @@ int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
 
 int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, int32_t deviceType, bool enable)
 {
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
 #else
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");

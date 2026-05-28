@@ -60,8 +60,8 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
 
   defines = []
 
-  if (audio_framework_feature_multi_zone) {
-    defines += [ "FEATURE_AUDIO_ZONE" ]
+  if (audio_framework_feature_multi_zone_volume) {
+    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
   deps = [

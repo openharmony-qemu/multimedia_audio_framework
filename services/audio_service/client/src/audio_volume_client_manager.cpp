@@ -61,7 +61,7 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_VOICE_RING:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -113,7 +113,7 @@ int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_VOICE_RING:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -150,7 +150,7 @@ int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t 
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -272,7 +272,7 @@ int32_t AudioVolumeClientManager::SetMute(AudioVolumeType volumeType, bool mute,
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -320,7 +320,7 @@ bool AudioVolumeClientManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -358,7 +358,7 @@ bool AudioVolumeClientManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -535,7 +535,7 @@ int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, in
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_ASSISTANT:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
@@ -571,7 +571,7 @@ int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, in
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case STREAM_NAVIGATION:
 #endif
             break;
