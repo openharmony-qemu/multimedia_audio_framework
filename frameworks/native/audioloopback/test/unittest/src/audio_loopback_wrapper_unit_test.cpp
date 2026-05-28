@@ -190,8 +190,6 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Normal_NoProxy_001, TestSize.Level
     EXPECT_TRUE(result);
 }
 
-
-
 HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Control_NoProxy_001, TestSize.Level1)
 {
     auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL,
