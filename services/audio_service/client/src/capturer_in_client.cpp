@@ -2323,6 +2323,12 @@ void CapturerInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus CapturerInClientInner::CheckRestoreStatus()
 {
+    bool restoreFlag = (GetFastStatus() == FASTSTATUS_FAST) && (readCb_ == nullptr);
+    if (restoreFlag) {
+        AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
+        capturerMode_ = CAPTURE_MODE_NORMAL;
+        return NEED_RESTORE_TO_NORMAL;
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_QUERY_ILLEGAL_STATE, "Client OHAudioBuffer is nullptr", true), "Client OHAudioBuffer is nullptr");
@@ -2401,6 +2407,9 @@ int32_t CapturerInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag
 
 bool CapturerInClientInner::IsRestoreNeeded()
 {
+    if (readCb_ == nullptr) {
+        return true;
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_QUERY_ILLEGAL_STATE, "buffer null", true), "buffer null");

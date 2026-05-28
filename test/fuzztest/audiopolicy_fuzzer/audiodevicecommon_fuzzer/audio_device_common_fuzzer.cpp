@@ -476,7 +476,7 @@ void NeedClearPreferredMediaRendererFuzzTest()
     updated->networkId_ = LOCAL_NETWORK_ID;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched = {preferred, updated};
     DeviceUsage usage = GetData<DeviceUsage>();
-    audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, usage);
+    audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, {fetched, ROUTER_TYPE_NONE}, usage);
 }
 
 TestFuncs g_testFuncs[] = {

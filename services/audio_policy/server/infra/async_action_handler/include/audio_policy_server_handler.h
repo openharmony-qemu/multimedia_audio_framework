@@ -344,6 +344,7 @@ private:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
     bool ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid, SourceType sourceType,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
+    void ClearPreferredDeviceDedupCache(int32_t clientId, CallbackChange callbackchange);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;

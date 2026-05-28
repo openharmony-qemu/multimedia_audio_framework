@@ -207,7 +207,7 @@ void InitAudioRendererInfo(AudioRendererInfo &info)
     info.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
     info.isLoopback = true;
     info.loopbackMode = LOOPBACK_HARDWARE;
-    info.isVirtualKeyboard = true;
+    info.isVirtualKeyboard = VKB_ONLY_RING;
     info.audioFlag = TEST_VALUE_3;
 }
 

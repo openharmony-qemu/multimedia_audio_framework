@@ -65,7 +65,7 @@ using OHOS::AudioStandard::SourceType;
 
 static OHOS::AudioStandard::OHAudioStreamManager *convertManager(OH_AudioStreamManager *manager)
 {
-    return (OHAudioStreamManager*) manager;
+    return reinterpret_cast<OHAudioStreamManager*>(manager);
 }
 
 OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManager **streamManager)

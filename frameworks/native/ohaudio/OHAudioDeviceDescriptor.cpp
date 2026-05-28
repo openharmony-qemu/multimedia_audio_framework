@@ -18,7 +18,7 @@
 static OHOS::AudioStandard::OHAudioDeviceDescriptor *convertDeviceDescriptor(
     OH_AudioDeviceDescriptor* deviceDescriptor)
 {
-    return (OHOS::AudioStandard::OHAudioDeviceDescriptor*) deviceDescriptor;
+    return reinterpret_cast<OHOS::AudioStandard::OHAudioDeviceDescriptor*>(deviceDescriptor);
 }
 
 OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescriptor *audioDeviceDescriptor,

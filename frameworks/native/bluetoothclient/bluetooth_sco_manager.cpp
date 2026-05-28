@@ -141,7 +141,7 @@ void BluetoothScoManager::WriteScoStateFaultEvent(HfpScoConnectState scoState,
         HiviewDFX::HiSysEvent::EventType::FAULT,
         "SCO_STATE", static_cast<uint8_t>(currentScoState_),
         "REASON", static_cast<uint8_t>(reason),
-        "SCO_ADDRESS", device.GetDeviceAddr());
+        "SCO_ADDRESS", GetEncryptAddr(device.GetDeviceAddr()));
     if (ret) {
         AUDIO_ERR_LOG("write event fail: SCO_STATE_BT, ret = %{public}d", ret);
     }

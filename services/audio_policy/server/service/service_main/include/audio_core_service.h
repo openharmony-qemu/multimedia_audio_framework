@@ -542,6 +542,7 @@ private:
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
 
     bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource);
+    void HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t GetPipeBaseDebugInfo(const std::shared_ptr<AudioPipeInfo> &pipe, AudioDebugInfo &debugInfo);
     int32_t GetStreamDebugInfo(uint32_t sessionId, const std::shared_ptr<AudioPipeInfo> &pipe,
@@ -640,6 +641,7 @@ private:
     bool RecordIsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     AudioFlag SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag GetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);

@@ -799,8 +799,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetCaptureClientDevice(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId)
 {
     bool hasRunningStream = streamCollector_.HasRunningCapturerStreamByUid(INVALID_UID);
-    CHECK_AND_RETURN_RET(!audioRouterCenter_.IsConfigRouterStrategy(streamDesc->capturerInfo_.sourceType) ||
-        !hasRunningStream, std::make_shared<AudioDeviceDescriptor>(
+    CHECK_AND_RETURN_RET(!hasRunningStream, std::make_shared<AudioDeviceDescriptor>(
             audioRouterSelectStrategy_.Get1stCurrentInputDevice(GetRealUid(streamDesc))));
 
     RouterType routerType = ROUTER_TYPE_NONE;
@@ -1000,9 +999,16 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             sinkPortName.c_str(), streamDesc->audioFlag_);
         return;
     }
+    HandlePlaybackStreamByOriginalFlag(streamDesc, isCreateProcess);
+}
+
+void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
+{
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ = GetFlagForMmapStream(streamDesc);
+            streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ?
+                GetFlagForMmapStream(streamDesc) : AUDIO_OUTPUT_FLAG_NORMAL;
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ =
@@ -1126,7 +1132,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
     }
     switch (streamDesc->capturerInfo_.capturerFlags) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
+            streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ? AUDIO_INPUT_FLAG_FAST : AUDIO_INPUT_FLAG_NORMAL;
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
@@ -3031,7 +3037,8 @@ bool AudioCoreService::CheckStaticModeAndSelectFlag(std::shared_ptr<AudioStreamD
 {
     if (streamDesc->rendererInfo_.isStatic) {
         if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_MMAP) {
-            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ?
+                AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL;
         } else {
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         }

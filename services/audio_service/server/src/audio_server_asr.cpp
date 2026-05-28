@@ -153,8 +153,9 @@ static const std::map<bool, std::string> RES_MAP_VERSE = {
 std::vector<std::string> splitString(const std::string& str, const std::string& pattern)
 {
     std::vector<std::string> res;
-    if (str == "")
+    if (str == "") {
         return res;
+    }
     std::string strs = str + pattern;
     size_t pos = strs.find(pattern);
 

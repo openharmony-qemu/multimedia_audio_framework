@@ -14,6 +14,24 @@ import { taskpool } from '@kit.ArkTS';
 
 const TAG: string = 'AudioConversion';
 
+// Audio format interface for native layer interaction
+interface NativeAudioFormat {
+  encodingType: number;
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+}
+
+// Concurrent function for background audio conversion
+@Concurrent
+function convertAudioInBackground(
+  inputFormat: NativeAudioFormat,
+  outputFormat: NativeAudioFormat,
+  fd: number
+): string {
+  return audioNapi.audioFormatConverter(inputFormat, outputFormat, fd);
+}
+
 // Sample format enum
 enum AudioSampleFormat {
   AUDIO_SAMPLE_U8 = 0,
@@ -44,6 +62,16 @@ enum AudioSampleRate {
 // Encoding type enum
 enum AudioEncodingType {
   AUDIO_ENCODING_TYPE_RAW = 0
+}
+
+// Audio file info interface
+interface AudioFileInfo {
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+  numChannels: number;
+  fileSize: number;
+  headerSize: number;
 }
 
 // Channel layout enum
@@ -82,38 +110,34 @@ enum AudioChannelLayout {
   CH_LAYOUT_7POINT1_WIDE_BACK = 255
 }
 
-// Bits per sample constants
-const BITS_PER_SAMPLE_U8 = 8;
-const BITS_PER_SAMPLE_S16LE = 16;
-const BITS_PER_SAMPLE_S24LE = 24;
-const BITS_PER_SAMPLE_S32LE = 32;
-
-// WAV file format constants
+// WAV file constants
 const WAV_HEADER_SIZE = 44;
-const WAV_DATA_OFFSET = 36;
-const WAV_FORMAT_CHUNK_SIZE = 16;
+const WAV_CHUNK_SIZE = 1024 * 1024; // 1MB
+const BITS_PER_SAMPLE_8 = 8;
+const BITS_PER_SAMPLE_16 = 16;
+const BITS_PER_SAMPLE_24 = 24;
+const BITS_PER_SAMPLE_32 = 32;
 
 // WAV header offset constants
+const WAV_OFFSET_RIFF = 0;
 const WAV_OFFSET_FILE_SIZE = 4;
-const WAV_OFFSET_FORMAT_ID = 8;
-const WAV_OFFSET_FORMAT_CHUNK_ID = 12;
-const WAV_OFFSET_FORMAT_CHUNK_SIZE = 16;
+const WAV_OFFSET_WAVE = 8;
+const WAV_OFFSET_FMT = 12;
+const WAV_OFFSET_FMT_CHUNK_SIZE = 16;
 const WAV_OFFSET_AUDIO_FORMAT = 20;
 const WAV_OFFSET_NUM_CHANNELS = 22;
 const WAV_OFFSET_SAMPLE_RATE = 24;
 const WAV_OFFSET_BYTE_RATE = 28;
 const WAV_OFFSET_BLOCK_ALIGN = 32;
 const WAV_OFFSET_BITS_PER_SAMPLE = 34;
-const WAV_OFFSET_DATA_CHUNK_ID = 36;
+const WAV_OFFSET_DATA = 36;
 const WAV_OFFSET_DATA_SIZE = 40;
 
 // WAV audio format constants
 const WAV_AUDIO_FORMAT_PCM = 1;
 const WAV_AUDIO_FORMAT_IEEE_FLOAT = 3;
-
-// Channel count limits
-const MIN_CHANNELS = 1;
-const MAX_CHANNELS = 8;
+const WAV_FMT_CHUNK_SIZE = 16;
+const WAV_DATA_CHUNK_HEADER_SIZE = 36;
 
 // Audio converter format
 interface AudioConverterFormat {
@@ -130,24 +154,15 @@ function AudioConversionBuilder() {
 
 export { AudioConversionBuilder };
 
-@Concurrent
-export async function audioConverterProcess(converterHandle: number): Promise<ArrayBuffer> {
-  let result = audioNapi.audioConverterProcess(converterHandle);
-  return result;
-}
-
 @Component
 export struct AudioConversion {
   pageInfos: NavPathStack = new NavPathStack();
-  @State message: string = '音频格式转换';
-  @State converterHandle: number = 0;
+  private readonly MESSAGE: string = '音频格式转换'; // Static title, never changes
   @State createResult: string = '';
   @State processResult: string = '';
   @State selectedFileUri: string = '';
   @State selectedFileName: string = '';
-  @State fileInfo: audioNapi.AudioFileInfo | null = null;
-  @State fileFd: number = -1;
-  @State outputFileName: string = '';
+  @State fileInfo: AudioFileInfo | null = null;
   @State inputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
     samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
@@ -162,11 +177,16 @@ export struct AudioConversion {
   };
   @State isConverting: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
+  
+  // Internal variables (not used in UI, no need for @State)
+  private outputFileName: string = '';
+  private wavHeaderSize: number = 0; // WAV file header size, only valid for WAV input
+  private outputFilePath: string = '';
 
   @Builder
   buildHeaderSection() {
     Column() {
-      Text(this.message)
+      Text(this.MESSAGE)
         .fontSize(24)
         .fontWeight(FontWeight.Bold)
         .margin({ top: 10, bottom: 10 })
@@ -552,7 +572,40 @@ export struct AudioConversion {
     }
   }
 
-  
+  selectOutputFileAndSave(data: string, extension: string = '.wav'): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        let documentSaveOptions = new picker.DocumentSaveOptions();
+        documentSaveOptions.newFileNames = [`converted_audio_${Date.now()}${extension}`];
+
+        let context = getContext() as common.Context;
+        let documentPicker = new picker.DocumentViewPicker(context);
+
+        documentPicker.save(documentSaveOptions, async (err: BusinessError, documentSaveResult: Array<string>) => {
+          if (err) {
+            Logger.error(TAG, `DocumentViewPicker.save failed: ${err.code}, ${err.message}`);
+            this.processResult = 'Save dialog cancelled or failed';
+            resolve();
+            return;
+          }
+
+          if (documentSaveResult && documentSaveResult.length > 0) {
+            this.outputFilePath = documentSaveResult[0];
+            const uri = new fileUri.FileUri(this.outputFilePath);
+            this.outputFileName = uri.name || 'Output File';
+            Logger.info(TAG, `User selected save path: ${this.outputFilePath}`);
+
+            await this.saveToFileFromPath(data);
+          }
+          resolve();
+        });
+      } catch (err) {
+        Logger.error(TAG, `selectOutputFileAndSave error: ${JSON.stringify(err)}`);
+        this.processResult = 'Save dialog error';
+        reject(err);
+      }
+    });
+  }
 
   async parseAudioFileFormat(): Promise<void> {
     if (!this.selectedFileUri) {
@@ -561,23 +614,32 @@ export struct AudioConversion {
     }
 
     const file = fs.openSync(this.selectedFileUri, fs.OpenMode.READ_ONLY);
-    this.fileFd = file.fd;
 
     try {
-      const fileInfo = audioNapi.audioConverterGetFileInfo(this.fileFd);
+      const MAX_HEADER_SIZE = 16384; // 16KB to support WAV files with many chunks
+      const buffer = new ArrayBuffer(MAX_HEADER_SIZE);
+      const bytesRead = fs.readSync(file.fd, buffer);
+      fs.closeSync(file.fd);
+
+      if (bytesRead < WAV_HEADER_SIZE) {
+        Logger.error(TAG, 'Failed to read WAV header');
+        this.createResult = 'Failed to read WAV header';
+        return;
+      }
+
+      // Create a view of the actual bytes read
+      const actualBuffer = buffer.slice(0, bytesRead);
+      const fileInfo = this.parseWavHeader(actualBuffer);
 
       if (fileInfo) {
         this.fileInfo = fileInfo;
+        this.wavHeaderSize = fileInfo.headerSize; // Store WAV header size separately
         this.inputFormat = {
-          encodingType: fileInfo.encodingType,
+          encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
           samplingRate: fileInfo.samplingRate,
           channelLayout: fileInfo.channelLayout,
           sampleFormat: fileInfo.sampleFormat
         };
-
-        Logger.info(TAG, `Parsed input format: encodingType=${fileInfo.encodingType}, ` +
-          `samplingRate=${fileInfo.samplingRate}, channelLayout=${fileInfo.channelLayout}, ` +
-          `sampleFormat=${fileInfo.sampleFormat}, numChannels=${fileInfo.numChannels}`);
 
         this.createResult =
           `Auto parsed: ${fileInfo.samplingRate}Hz, ` +
@@ -590,8 +652,6 @@ export struct AudioConversion {
     } catch (e) {
       Logger.error(TAG, `parseAudioFileFormat error: ${JSON.stringify(e)}`);
       this.createResult = 'Error parsing audio file format';
-    } finally {
-      fs.closeSync(file.fd);
     }
   }
 
@@ -664,145 +724,254 @@ export struct AudioConversion {
     }
   }
 
+  private getSampleFormatFromBits(bitsPerSample: number, audioFormat: number): number {
+    switch (bitsPerSample) {
+      case 8:
+        return AudioSampleFormat.AUDIO_SAMPLE_U8;
+      case 16:
+        return AudioSampleFormat.AUDIO_SAMPLE_S16LE;
+      case 24:
+        return AudioSampleFormat.AUDIO_SAMPLE_S24LE;
+      case 32:
+        if (audioFormat === 3) {
+          return AudioSampleFormat.AUDIO_SAMPLE_F32LE;
+        } else {
+          return AudioSampleFormat.AUDIO_SAMPLE_S32LE;
+        }
+      default:
+        Logger.warn(TAG, `Unsupported bits per sample: ${bitsPerSample}, defaulting to F32LE`);
+        return AudioSampleFormat.AUDIO_SAMPLE_F32LE;
+    }
+  }
+
+  private getChannelLayoutFromChannels(numChannels: number): number {
+    switch (numChannels) {
+      case 1:
+        return AudioChannelLayout.CH_LAYOUT_MONO;
+      case 2:
+        return AudioChannelLayout.CH_LAYOUT_STEREO;
+      case 3:
+        return AudioChannelLayout.CH_LAYOUT_2POINT1;
+      case 4:
+        return AudioChannelLayout.CH_LAYOUT_QUAD;
+      case 5:
+        return AudioChannelLayout.CH_LAYOUT_5POINT0;
+      case 6:
+        return AudioChannelLayout.CH_LAYOUT_5POINT1;
+      case 7:
+        return AudioChannelLayout.CH_LAYOUT_6POINT1;
+      case 8:
+        return AudioChannelLayout.CH_LAYOUT_7POINT1;
+      default:
+        return AudioChannelLayout.CH_LAYOUT_STEREO;
+    }
+  }
+
+  private parseWavHeader(buffer: ArrayBuffer): AudioFileInfo | null {
+    if (buffer.byteLength < WAV_HEADER_SIZE) {
+      Logger.error(TAG, 'Buffer too small to be a valid WAV file');
+      return null;
+    }
+    const dv = new DataView(buffer);
+
+    // Verify RIFF header
+    if (dv.getUint32(0, true) !== 0x46464952) { // "RIFF"
+      Logger.error(TAG, 'Invalid WAV file header: missing RIFF');
+      return null;
+    }
+
+    // Verify WAVE format
+    if (dv.getUint32(8, true) !== 0x45564157) { // "WAVE"
+      Logger.error(TAG, 'Invalid WAV file header: missing WAVE');
+      return null;
+    }
+
+    // Parse chunks to find fmt chunk and data chunk
+    let offset = 12; // Start after RIFF header
+    let audioFormat = 0;
+    let numChannels = 0;
+    let samplingRate = 0;
+    let bitsPerSample = 16;
+    let headerSize = 12; // Start with RIFF header size
+    let foundDataChunk = false;
+    let foundFmtChunk = false;
+    let dataChunkOffset = 0;
+    let chunkIdStr = '';
+
+    while (offset <= buffer.byteLength - 8) {
+      const chunkId = dv.getUint32(offset, true);
+      const chunkSize = dv.getUint32(offset + 4, true);
+
+      // Convert chunk ID to string for logging
+      chunkIdStr = String.fromCharCode(
+        (chunkId >> 24) & 0xFF,
+        (chunkId >> 16) & 0xFF,
+        (chunkId >> 8) & 0xFF,
+        chunkId & 0xFF
+      );
+      Logger.info(TAG, `Found chunk: ${chunkIdStr} at offset ${offset}, size: ${chunkSize}`);
+
+      if (chunkId === 0x20746d66) { // "fmt "
+        // Parse fmt chunk
+        audioFormat = dv.getUint16(offset + 8, true);
+        numChannels = dv.getUint16(offset + 10, true);
+        samplingRate = dv.getUint32(offset + 12, true);
+        bitsPerSample = dv.getUint16(offset + 22, true);
+        headerSize += 8 + chunkSize; // Add chunk header + chunk data
+        offset += 8 + chunkSize;
+        foundFmtChunk = true;
+        Logger.info(TAG, `Parsed fmt chunk: ${numChannels} channels, ${samplingRate}Hz, ${bitsPerSample} bits`);
+      } else if (chunkId === 0x61746164) { // "data"
+        // Found data chunk
+        dataChunkOffset = offset;
+        headerSize = offset + 8; // PCM data starts after data chunk header (8 bytes)
+        foundDataChunk = true;
+        Logger.info(TAG, `Found data chunk at offset ${offset}, headerSize set to ${headerSize}`);
+        break;
+      } else {
+        // Skip unknown chunk
+        Logger.info(TAG, `Skipping unknown chunk: ${chunkIdStr}, size: ${chunkSize}`);
+        headerSize += 8 + chunkSize;
+        offset += 8 + chunkSize;
+      }
+    }
+
+    // If we didn't find a data chunk in the read buffer, we need to handle this case
+    if (!foundDataChunk) {
+      if (foundFmtChunk) {
+        Logger.warn(TAG, `Data chunk not found in buffer, using offset ${offset} as header size estimate`);
+        headerSize = offset + 8; // Add 8 bytes for data chunk header
+        foundDataChunk = true;
+        Logger.info(TAG, `Data chunk estimated to start at headerSize: ${headerSize}`);
+      } else {
+        Logger.error(TAG, 'Invalid WAV file header: missing data chunk and fmt chunk');
+        return null;
+      }
+    }
+
+    const sampleFormat = this.getSampleFormatFromBits(bitsPerSample, audioFormat);
+    const channelLayout = this.getChannelLayoutFromChannels(numChannels);
+    return {
+      samplingRate: samplingRate,
+      channelLayout: channelLayout,
+      sampleFormat: sampleFormat,
+      numChannels: numChannels,
+      fileSize: buffer.byteLength,
+      headerSize: headerSize
+    };
+  }
+
   private async createConverter(): Promise<boolean> {
     let path: string = new fileUri.FileUri(this.selectedFileUri).path;
     let file = fs.openSync(path, fs.OpenMode.READ_ONLY);
 
-    try {
-      const result = audioNapi.audioConverterCreate(
-        this.inputFormat, this.outputFormat, file.fd);
+    // Move file position to PCM data start position (skip WAV header)
+    fs.lseek(file.fd, this.wavHeaderSize, 0);
 
-      if (result <= 0) {
-        this.createResult = `Create converter failed, error code: ${result}`;
+    try {
+      // Execute conversion in background thread using taskpool
+      const inputFormat: NativeAudioFormat = {
+        encodingType: this.inputFormat.encodingType,
+        samplingRate: this.inputFormat.samplingRate,
+        channelLayout: this.inputFormat.channelLayout,
+        sampleFormat: this.inputFormat.sampleFormat
+      };
+      const outputFormat: NativeAudioFormat = {
+        encodingType: this.outputFormat.encodingType,
+        samplingRate: this.outputFormat.samplingRate,
+        channelLayout: this.outputFormat.channelLayout,
+        sampleFormat: this.outputFormat.sampleFormat
+      };
+      const result = await taskpool.execute(convertAudioInBackground, inputFormat, outputFormat, file.fd);
+
+      if (!result) {
+        this.createResult = 'Conversion failed';
         this.isConverting = false;
-        Logger.error(TAG, `AudioConverterCreate failed: ${result}`);
+        Logger.error(TAG, 'AudioConverterCreate failed: returned null');
         return false;
       }
+      await this.selectOutputFileAndSave(result as string, '.wav');
 
-      this.converterHandle = result;
       return true;
     } finally {
       fs.closeSync(file.fd);
     }
   }
 
-  private async processConversion(): Promise<void> {
-    this.processResult = 'Converting...';
-    const convertedData = await taskpool.execute(
-      audioConverterProcess, this.converterHandle);
-
-    if (convertedData) {
-      const data = convertedData as ArrayBuffer;
-      this.processResult = `Conversion complete, output size: ${data.byteLength} bytes`;
-      await this.saveToOutputPath(data);
-    } else {
-      this.processResult = 'Conversion failed';
-      Logger.error(TAG, 'AudioConverterProcess failed');
-    }
-  }
-
-  private async saveToOutputPath(data: ArrayBuffer): Promise<void> {
+  private async saveToFileFromPath(tempFilePath: string): Promise<void> {
     try {
-      if (!data || data.byteLength === 0) {
-        Logger.error(TAG, 'No converted data to save');
-        this.processResult = '保存失败: 没有转换数据';
+      Logger.info(TAG, `saveToFileFromPath: ${tempFilePath}`);
+
+      let outputPath: string;
+      let fileName: string;
+
+      if (this.outputFilePath) {
+        outputPath = this.outputFilePath;
+        fileName = this.outputFileName;
+      } else {
+        Logger.error(TAG, 'No output path selected');
+        this.processResult = 'Save failed: No output path selected';
         return;
       }
-
-      Logger.info(TAG, `Converted data size: ${data.byteLength} bytes`);
 
       const channels = this.getChannelCount(this.outputFormat.channelLayout);
       const bitsPerSample = this.getBitsPerSample(this.outputFormat.sampleFormat);
       const sampleRate = this.outputFormat.samplingRate;
 
-      Logger.info(TAG, `WAV params: sampleRate=${sampleRate}, channels=${channels}, bitsPerSample=${bitsPerSample}`);
+      // Get temp file size
+      const tempFile = await fs.open(tempFilePath, fs.OpenMode.READ_ONLY);
+      const tempFileStat = await fs.stat(tempFile.fd);
+      const tempFileSize = tempFileStat.size;
+      const dataSize = tempFileSize;
 
-      const wavFileData = this.writeWavFileHeaderCorrected(
-        data, sampleRate, channels, bitsPerSample, this.outputFormat.sampleFormat
+      // Create WAV header
+      const header = this.createWavHeader(
+        dataSize, sampleRate, channels, bitsPerSample, this.outputFormat.sampleFormat
       );
 
-      Logger.info(TAG, `WAV file size: ${wavFileData.byteLength} bytes`);
+      // Open output file
+      const outputFile = await fs.open(outputPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
 
-      // 使用 DocumentViewPicker 让用户选择保存位置
-      const fileName = `converted_audio_${Date.now()}.wav`;
-      let documentSaveOptions = new picker.DocumentSaveOptions();
-      documentSaveOptions.newFileNames = [fileName];
+      // Write header
+      await fs.write(outputFile.fd, header);
 
-      let context = getContext() as common.Context;
-      let documentPicker = new picker.DocumentViewPicker(context);
+      // Copy PCM data in chunks to avoid blocking UI
+      const buffer = new ArrayBuffer(WAV_CHUNK_SIZE);
+      let totalRead = 0;
 
-      documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
-        if (err) {
-          Logger.error(TAG, `DocumentViewPicker.save failed: ${err.code}, ${err.message}`);
-          this.processResult = `保存失败: ${err.message}`;
-          return;
-        }
+      while (totalRead < tempFileSize) {
+        const readSize = Math.min(WAV_CHUNK_SIZE, tempFileSize - totalRead);
+        const bytesRead = await fs.read(tempFile.fd, buffer, { length: readSize });
+        if (bytesRead === 0) break;
 
-        if (documentSaveResult && documentSaveResult.length > 0) {
-          const outputPath = documentSaveResult[0];
-          Logger.info(TAG, `Output path: ${outputPath}`);
+        await fs.write(outputFile.fd, buffer, { length: bytesRead });
+        totalRead += bytesRead;
 
-          try {
-            let file = fs.openSync(outputPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-            const writeLen = fs.writeSync(file.fd, wavFileData);
+        // Yield to UI thread after each chunk to prevent blocking
+        await new Promise<void>(resolve => setTimeout(resolve, 0))
+      }
 
-            // 验证写入的字节数是否正确
-            if (writeLen !== wavFileData.byteLength) {
-              Logger.error(TAG, `Write incomplete: expected ${wavFileData.byteLength} bytes, wrote ${writeLen} bytes`);
-              fs.closeSync(file.fd);
-              this.processResult = `保存失败: 写入不完整 (${writeLen}/${wavFileData.byteLength} 字节)`;
-              return;
-            }
+      await fs.close(tempFile.fd);
+      await fs.close(outputFile.fd);
 
-            // 同步数据到磁盘
-            fs.fsyncSync(file.fd);
-            fs.closeSync(file.fd);
+      // Delete temp file
+      try {
+        await fs.unlink(tempFilePath);
+      } catch (e) {
+        Logger.warn(TAG, `Failed to delete temp file: ${e}`);
+      }
 
-            // 验证文件是否真的被创建
-            try {
-              const stat = fs.statSync(outputPath);
-              Logger.info(TAG, `File verified: size=${stat.size} bytes at ${outputPath}`);
-            } catch (statError) {
-              Logger.error(TAG, `File verification failed: ${JSON.stringify(statError)}`);
-              this.processResult = `保存失败: 文件验证失败`;
-              return;
-            }
-
-            Logger.info(TAG, `Save file success: ${writeLen} bytes to ${outputPath}`);
-
-            // 显示完整保存路径
-            this.outputFileName = fileName;
-            this.processResult = `转换成功！\n文件已保存到:\n${outputPath}`;
-          } catch (error) {
-            Logger.error(TAG, `Save file failed: ${JSON.stringify(error)}`);
-            this.processResult = `保存文件失败: ${error}`;
-          }
-        }
-      });
+      this.processResult = `Conversion complete and saved to: ${fileName}`;
     } catch (error) {
-      Logger.error(TAG, `saveToOutputPath failed: ${JSON.stringify(error)}`);
-      this.processResult = `保存文件失败: ${error}`;
+      Logger.error(TAG, `saveToFileFromPath failed: ${JSON.stringify(error)}`);
+      this.processResult = 'Save file error';
     }
-  }
-
-  private destroyConverter(): void {
-    audioNapi.audioConverterDestroy(this.converterHandle);
-    this.converterHandle = 0;
   }
 
   private cleanupOnError(): void {
     this.createResult = `Conversion failed`;
     this.processResult = `Conversion failed`;
     this.isConverting = false;
-
-    if (this.converterHandle !== 0) {
-      try {
-        audioNapi.audioConverterDestroy(this.converterHandle);
-        this.converterHandle = 0;
-      } catch (destroyError) {
-        Logger.error(TAG, `Failed to destroy converter: ${JSON.stringify(destroyError)}`);
-      }
-    }
   }
 
   async startConversion(): Promise<void> {
@@ -816,16 +985,12 @@ export struct AudioConversion {
         return;
       }
 
-      if (!await this.createConverter()) {
-        return;
+      const result = await this.createConverter();
+
+      if (result) {
+        this.createResult = 'Conversion completed';
       }
 
-      audioNapi.audioConverterSetInputCallback(this.converterHandle);
-
-      await this.processConversion();
-      this.destroyConverter();
-
-      this.createResult = 'Conversion completed';
       this.isConverting = false;
 
     } catch (e) {
@@ -838,38 +1003,20 @@ export struct AudioConversion {
   private getBitsPerSample(sampleFormat: number): number {
     switch (sampleFormat) {
       case AudioSampleFormat.AUDIO_SAMPLE_U8:
-        return BITS_PER_SAMPLE_U8;
+        return BITS_PER_SAMPLE_8;
       case AudioSampleFormat.AUDIO_SAMPLE_S16LE:
-        return BITS_PER_SAMPLE_S16LE;
+        return BITS_PER_SAMPLE_16;
       case AudioSampleFormat.AUDIO_SAMPLE_S24LE:
-        return BITS_PER_SAMPLE_S24LE;
+        return BITS_PER_SAMPLE_24;
       case AudioSampleFormat.AUDIO_SAMPLE_S32LE:
       case AudioSampleFormat.AUDIO_SAMPLE_F32LE:
-        return BITS_PER_SAMPLE_S32LE;
+        return BITS_PER_SAMPLE_32;
       default:
-        return BITS_PER_SAMPLE_S16LE;
+        return BITS_PER_SAMPLE_16;
     }
   }
 
-  private validateWavParameters(channels: number, sampleRate: number, bitsPerSample: number): void {
-    if (channels < MIN_CHANNELS || channels > MAX_CHANNELS) {
-      Logger.error(TAG, `unknown channel: ${channels}, WAV Supports ${MIN_CHANNELS}~${MAX_CHANNELS} channels.`);
-      throw new Error(`Invalid channel count: ${channels}`);
-    }
-
-    if (sampleRate <= 0) {
-      Logger.error(TAG, `unknown sampleRate: ${sampleRate}`);
-      throw new Error(`Invalid sample rate: ${sampleRate}`);
-    }
-
-    if (bitsPerSample !== BITS_PER_SAMPLE_U8 && bitsPerSample !== BITS_PER_SAMPLE_S16LE &&
-        bitsPerSample !== BITS_PER_SAMPLE_S24LE && bitsPerSample !== BITS_PER_SAMPLE_S32LE) {
-      Logger.error(TAG, `unknown bitsPerSample: ${bitsPerSample}, Supports 8,16,24,32-bit.`);
-      throw new Error(`Unsupported bits per sample: ${bitsPerSample}`);
-    }
-  }
-
-  private createWavHeader(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
+  private createWavHeader(dataSize: number, sampleRate: number, channels: number,
     bitsPerSample: number, sampleFormat: number): ArrayBuffer {
     const header = new ArrayBuffer(WAV_HEADER_SIZE);
     const dv = new DataView(header);
@@ -880,15 +1027,15 @@ export struct AudioConversion {
       }
     };
 
-    writeString(dv, 0, 'RIFF');
-    const totalDataLen = pcmBuffer.byteLength + WAV_DATA_OFFSET;
+    writeString(dv, WAV_OFFSET_RIFF, 'RIFF');
+    const totalDataLen = dataSize + WAV_DATA_CHUNK_HEADER_SIZE;
     dv.setUint32(WAV_OFFSET_FILE_SIZE, totalDataLen, true);
-    writeString(dv, WAV_OFFSET_FORMAT_ID, 'WAVE');
+    writeString(dv, WAV_OFFSET_WAVE, 'WAVE');
 
-    writeString(dv, WAV_OFFSET_FORMAT_CHUNK_ID, 'fmt ');
-    dv.setUint32(WAV_OFFSET_FORMAT_CHUNK_SIZE, WAV_FORMAT_CHUNK_SIZE, true);
+    writeString(dv, WAV_OFFSET_FMT, 'fmt ');
+    dv.setUint32(WAV_OFFSET_FMT_CHUNK_SIZE, WAV_FMT_CHUNK_SIZE, true);
 
-    if (bitsPerSample === BITS_PER_SAMPLE_S32LE && sampleFormat === AudioSampleFormat.AUDIO_SAMPLE_F32LE) {
+    if (bitsPerSample === BITS_PER_SAMPLE_32 && sampleFormat === AudioSampleFormat.AUDIO_SAMPLE_F32LE) {
       dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_IEEE_FLOAT, true);
     } else {
       dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_PCM, true);
@@ -897,33 +1044,16 @@ export struct AudioConversion {
     dv.setUint16(WAV_OFFSET_NUM_CHANNELS, channels, true);
     dv.setUint32(WAV_OFFSET_SAMPLE_RATE, sampleRate, true);
 
-    const byteRate = sampleRate * channels * (bitsPerSample / BITS_PER_SAMPLE_S16LE);
+    const byteRate = sampleRate * channels * (bitsPerSample / 8);
     dv.setUint32(WAV_OFFSET_BYTE_RATE, byteRate, true);
 
-    const blockAlign = channels * (bitsPerSample / BITS_PER_SAMPLE_S16LE);
+    const blockAlign = channels * (bitsPerSample / 8);
     dv.setUint16(WAV_OFFSET_BLOCK_ALIGN, blockAlign, true);
     dv.setUint16(WAV_OFFSET_BITS_PER_SAMPLE, bitsPerSample, true);
 
-    writeString(dv, WAV_OFFSET_DATA_CHUNK_ID, 'data');
-    dv.setUint32(WAV_OFFSET_DATA_SIZE, pcmBuffer.byteLength, true);
+    writeString(dv, WAV_OFFSET_DATA, 'data');
+    dv.setUint32(WAV_OFFSET_DATA_SIZE, dataSize, true);
 
     return header;
-  }
-
-  private mergeHeaderAndData(header: ArrayBuffer, pcmBuffer: ArrayBuffer): ArrayBuffer {
-    const viewWavHeader = new Uint8Array(header);
-    const viewPcm = new Uint8Array(pcmBuffer);
-    const resultBuffer = new ArrayBuffer(viewWavHeader.byteLength + viewPcm.byteLength);
-    const resultView = new Uint8Array(resultBuffer);
-    resultView.set(viewWavHeader);
-    resultView.set(viewPcm, viewWavHeader.length);
-    return resultBuffer;
-  }
-
-  private writeWavFileHeaderCorrected(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
-    bitsPerSample: number, sampleFormat: number): ArrayBuffer {
-    this.validateWavParameters(channels, sampleRate, bitsPerSample);
-    const header = this.createWavHeader(pcmBuffer, sampleRate, channels, bitsPerSample, sampleFormat);
-    return this.mergeHeaderAndData(header, pcmBuffer);
   }
 }

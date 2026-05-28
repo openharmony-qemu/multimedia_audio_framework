@@ -32,13 +32,13 @@ using namespace std;
 
 static OHOS::AudioStandard::OHAudioSessionManager *convertManager(OH_AudioSessionManager* manager)
 {
-    return (OHAudioSessionManager*) manager;
+    return reinterpret_cast<OHAudioSessionManager*>(manager);
 }
 
 static OHOS::AudioStandard::OHAudioDeviceDescriptor *convertDeviceDescriptor(
     OH_AudioDeviceDescriptor* deviceDescriptor)
 {
-    return (OHOS::AudioStandard::OHAudioDeviceDescriptor*) deviceDescriptor;
+    return reinterpret_cast<OHOS::AudioStandard::OHAudioDeviceDescriptor*>(deviceDescriptor);
 }
 
 const size_t MAX_VALID_SIZE = 128; // MAX AudioDevice size.
@@ -327,7 +327,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_ReleaseDevices(
     }
     for (uint32_t index = 0; index < audioDeviceDescriptorArray->size; index++) {
         OHAudioDeviceDescriptor *ohAudioDeviceDescriptor =
-            (OHAudioDeviceDescriptor*)audioDeviceDescriptorArray->descriptors[index];
+            reinterpret_cast<OHAudioDeviceDescriptor*>(audioDeviceDescriptorArray->descriptors[index]);
         if (ohAudioDeviceDescriptor != nullptr) {
             delete ohAudioDeviceDescriptor;
         }
@@ -351,7 +351,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_ReleaseDevice(
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptor is nullptr");
 
     OHAudioDeviceDescriptor *ohAudioDeviceDescriptor =
-            (OHAudioDeviceDescriptor*)audioDeviceDescriptor;
+            reinterpret_cast<OHAudioDeviceDescriptor*>(audioDeviceDescriptor);
     if (ohAudioDeviceDescriptor != nullptr) {
         delete ohAudioDeviceDescriptor;
     }
@@ -495,7 +495,8 @@ static void DestroyAudioDeviceDescriptor(OH_AudioDeviceDescriptorArray *array)
 {
     if (array) {
         for (uint32_t index = 0; index < array->size; index++) {
-            OHAudioDeviceDescriptor* ohAudioDeviceDescriptor = (OHAudioDeviceDescriptor*)array->descriptors[index];
+            OHAudioDeviceDescriptor* ohAudioDeviceDescriptor =
+                reinterpret_cast<OHAudioDeviceDescriptor*>(array->descriptors[index]);
             delete ohAudioDeviceDescriptor;
             array->descriptors[index] = nullptr;
         }
