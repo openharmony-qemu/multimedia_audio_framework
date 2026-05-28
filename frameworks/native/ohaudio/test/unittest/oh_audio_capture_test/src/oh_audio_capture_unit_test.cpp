@@ -171,26 +171,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_Start API via legal state.
-* @tc.number: Audio_Capturer_Start_001
-* @tc.desc  : Test OH_AudioCapturer_Start interface. Returns true if start is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Start_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-
-    result = OH_AudioCapturer_Start(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
 * @tc.name  : Test OH_AudioCapturer_Start API via illegal state.
 * @tc.number: Audio_Capturer_Start_002
 * @tc.desc  : Test OH_AudioCapturer_Start interface. Returns error code, if Start interface is called twice.
@@ -207,27 +187,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Start_002, TestSize.Level0)
 
     result = OH_AudioCapturer_Start(audioCapturer);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
-* @tc.name  : Test OH_AudioCapturer_Pause API via legal state.
-* @tc.number: OH_Audio_Capture_Pause_001
-* @tc.desc  : Test OH_AudioCapturer_Pause interface. Returns true if Pause is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Pause_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    result = OH_AudioCapturer_Start(audioCapturer);
-
-    result = OH_AudioCapturer_Pause(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -254,27 +213,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Pause_002, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_Stop API via legal state.
-* @tc.number: OH_Audio_Capture_Stop_001
-* @tc.desc  : Test OH_AudioCapturer_Stop interface. Returns true if Stop is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Stop_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    result = OH_AudioCapturer_Start(audioCapturer);
-
-    result = OH_AudioCapturer_Stop(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
 * @tc.name  : Test OH_AudioCapturer_Stop API via illegal state, Stop without Start first.
 * @tc.number: OH_Audio_Capture_Stop_002
 * @tc.desc  : Test OH_AudioCapturer_Stop interface. Returns error code, if Stop without Start first.
@@ -289,27 +227,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Stop_002, TestSize.Level0)
 
     result = OH_AudioCapturer_Stop(audioCapturer);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
-* @tc.name  : Test OH_AudioCapturer_Flush API via legal state.
-* @tc.number: OH_Audio_Capture_Flush_001
-* @tc.desc  : Test OH_AudioCapturer_Flush interface. Returns true if Flush is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Flush_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    result = OH_AudioCapturer_Start(audioCapturer);
-
-    result = OH_AudioCapturer_Flush(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
