@@ -1699,7 +1699,10 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
         desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     }
     if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
-        desc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
+        auto item = audioDeviceManager_.FindConnectedDeviceById(desc.deviceId_);
+        if (item) {
+            desc.deviceType_ = item->deviceType_;
+        }
     }
     desc.deviceType_ =
         (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?

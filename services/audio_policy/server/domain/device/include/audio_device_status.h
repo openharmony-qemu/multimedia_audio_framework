@@ -137,7 +137,8 @@ private:
     void OnPreferredDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor, DeviceType activeInputDevice);
     void ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor &desc);
     bool NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
-        const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred);
+        const std::pair<std::vector<std::shared_ptr<AudioDeviceDescriptor>>, RouterType> &fetched,
+        const AudioDeviceDescriptor &preferred);
     void UpdateDeviceList(AudioDeviceDescriptor &updatedDesc, bool isConnected,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);

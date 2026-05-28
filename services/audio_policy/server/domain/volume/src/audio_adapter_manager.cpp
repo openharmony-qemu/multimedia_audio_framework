@@ -2198,6 +2198,11 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         attr.hdPlayBackMode = static_cast<int32_t>(std::stoul(audioModuleInfo.hdPlayBackMode));
     }
 
+    if (attr.adapterName == "dp") {
+        AUDIO_INFO_LOG("DP adapter can only use dp pin");
+        attr.pin = AUDIO_PIN_OUT_DP;
+    }
+
     // Calculate period for ultra_fast to achieve 2.5ms low latency
     if (audioModuleInfo.className == "ultra_fast" || audioModuleInfo.className == "usb_arm_ultra_fast") {
         uint32_t formatByteSize = GetFormatByteSize(attr.format);

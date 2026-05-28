@@ -382,7 +382,8 @@ void MoveToNewInputDeviceFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(streamDesc != nullptr);
     FillMoveDevices(fdp, streamDesc);
     std::vector<SourceOutput> sourceOutputs = audioCoreService->GetSourceOutputs();
-    audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs, pipeInfo);
 }
 
 void AudioCoreServicePrivatePrepareMoveAttrsFuzzTest(FuzzedDataProvider& fdp)
@@ -797,8 +798,8 @@ void AudioCoreServicePrivateUpdateRouteForCollaborationFuzzTest(FuzzedDataProvid
     }
     InternalDeviceType deviceType = PickValue(fdp, DeviceTypeVec);
     AudioCollaborativeService::GetAudioCollaborativeService().isCollaborativeStateEnabled_ = fdp.ConsumeBool();
-    uint32_t sessionID = fdp.ConsumeIntegral<uint32_t>();
-    audioCoreService->UpdateRouteForCollaboration(deviceType, sessionID);
+    uint32_t pipeId = fdp.ConsumeIntegral<uint32_t>();
+    audioCoreService->UpdateRouteForCollaboration(deviceType, pipeId);
 }
 
 void Test(FuzzedDataProvider& fdp)

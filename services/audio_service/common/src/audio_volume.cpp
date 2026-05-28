@@ -120,9 +120,7 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
     auto volumeLevel = pipeVolume->GetNoMuteVolumeLevel();
 
     float sysVolume = volumes->volumePipe;
-    if (streamVolume->IsVirtualKeyboard()) {
-        sysVolume = pipeVolume->GetIsMuted() ? 0.0f : 1.0f;
-    }
+    UpdateVkbVolume(streamVolume->GetVirtualKeyboardMode(), pipeVolume->GetIsMuted(), sysVolume);
 
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(
         GetDoNotDisturbStatusVolumeFromStream(*streamVolume, streamVolume->GetStreamType(), appUid));
@@ -137,10 +135,10 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
     if (!IsSameVolume(streamVolume->GetMonitorVolume(), volumes->volume)) {
         streamVolume->SetMonitorVolumeAtomic(volumes->volume, volumeLevel);
         HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,pipeId:%{public}d,"
-            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
+            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,vkbMode:%{public}d,isMuted:%{public}s,"
             "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", streamVolume->GetSessionId(),
             volumes->volume, pipeVolume->GetPipeId(), volumes->volumePipe, volumes->volumeStream, volumes->volumeApp,
-            streamVolume->IsVirtualKeyboard(), pipeVolume->GetIsMuted() ? "T" : "F",
+            streamVolume->GetVirtualKeyboardMode(), pipeVolume->GetIsMuted() ? "T" : "F",
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
     return volumes->volume;
@@ -176,6 +174,15 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamTypeIn, uint32_t 
     return volumes->volume;
 }
 
+void AudioVolume::UpdateVkbVolume(VkbMode mode, bool isMuted, float &sysVolume)
+{
+    if (mode == VKB_ONLY_RING) {
+        sysVolume = isMuted ? 0.0f : 1.0f;
+    } else if (mode == VKB_ALL_RING) {
+        sysVolume = 1.0f;
+    }
+}
+
 void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, uint32_t pipeId,
     VolumeValues *volumes)
 {
@@ -209,8 +216,8 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
         AUDIO_ERR_LOG("no pipe volume, volumeType:%{public}d pipeId:%{public}d", volumeType, pipeId);
     }
     float sysVolume = volumes->volumePipe;
-    if (it != streamVolume_.end() && it->second->IsVirtualKeyboard() && itSV != pipeVolume_.end()) {
-        sysVolume = itSV->second->GetIsMuted() ? 0.0f : 1.0f;
+    if (it != streamVolume_.end() && itSV != pipeVolume_.end()) {
+        UpdateVkbVolume(it->second->GetVirtualKeyboardMode(), itSV->second->GetIsMuted(), sysVolume);
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType,
         appUid, sessionId));
@@ -219,10 +226,10 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     if (it != streamVolume_.end() && !IsSameVolume(it->second->GetMonitorVolume(), volumes->volume)) {
         it->second->SetMonitorVolumeAtomic(volumes->volume, volumeLevel);
         HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,pipeId:%{public}d,"
-            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
+            "volumePipe:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,vkbMode:%{public}d,isMuted:%{public}s,"
             "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", sessionId, volumes->volume, volumeType,
             pipeId, volumes->volumePipe, volumes->volumeStream, volumes->volumeApp,
-            it->second->IsVirtualKeyboard(),
+            it->second->GetVirtualKeyboardMode(),
             itSV != pipeVolume_.end() ? (itSV->second->GetIsMuted() ? "T" : "F") : "null",
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
@@ -414,6 +421,7 @@ void AudioVolume::RemoveStreamVolume(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    mutedSessionIdsForZone_.erase(sessionId);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         streamVolume_.erase(sessionId);
@@ -542,6 +550,7 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
+        mutedSessionIdsForZone_.erase(sessionId);
         std::unique_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
         it->second->isMuted_ = isMuted;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
@@ -551,6 +560,38 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
     }
+}
+
+void AudioVolume::SetStreamVolumeMuteForZone(uint32_t sessionId, bool isMuted)
+{
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, isMuted:%{public}d", sessionId, isMuted);
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    auto it = streamVolume_.find(sessionId);
+    CHECK_AND_RETURN_LOG(it != streamVolume_.end(), "stream volume not exist, sessionId:%{public}u", sessionId);
+    std::unique_lock<std::shared_mutex> factorsLock(it->second->volumeFactorsMutex_);
+    if (isMuted && it->second->isMuted_) {
+        AUDIO_INFO_LOG("stream %{public}u has been muted, no need to mute again", sessionId);
+        return;
+    }
+    if (!isMuted && !mutedSessionIdsForZone_.contains(sessionId)) {
+        AUDIO_INFO_LOG("stream %{public}u is not muted by zone, no need to unmute", sessionId);
+        return;
+    }
+    if (isMuted) {
+        AUDIO_INFO_LOG("mute stream %{public}u by zone", sessionId);
+        mutedSessionIdsForZone_.insert(sessionId);
+    } else {
+        AUDIO_INFO_LOG("unmute stream %{public}u by zone", sessionId);
+        mutedSessionIdsForZone_.erase(sessionId);
+    }
+
+    it->second->isMuted_ = isMuted;
+    it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
+    float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
+        it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+        it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
+    factorsLock.unlock();
+    it->second->totalVolume_.store(newTotal, std::memory_order_release);
 }
 
 void AudioVolume::SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted)

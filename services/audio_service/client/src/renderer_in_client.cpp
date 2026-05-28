@@ -644,6 +644,9 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 
 bool RendererInClientInner::IsRestoreNeeded()
 {
+    if (writeCb_ == nullptr) {
+        return true;
+    }
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
 
     RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();

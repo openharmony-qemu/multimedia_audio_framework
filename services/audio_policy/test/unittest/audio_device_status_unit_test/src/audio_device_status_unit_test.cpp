@@ -1830,21 +1830,28 @@ HWTEST_F(AudioDeviceStatusUnitTest, NeedClearPreferredWhenCategoryUpdated_001, T
     AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     AudioDeviceDescriptor updated{DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE};
-    AudioDeviceDescriptor fetched{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched = {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE)};
     AudioDeviceDescriptor preferred{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
 
-    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_USER_SELECT}, preferred));
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 
-    fetched.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    fetched.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     updated.glassesWearCount_ = 2;
-    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 
     updated.glassesWearCount_ = 0;
-    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 
     updated.glassesWearCount_ = 2;
     preferred.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 }
 } // namespace AudioStandard
 } // namespace OHOS

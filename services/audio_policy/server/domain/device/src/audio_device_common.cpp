@@ -291,7 +291,7 @@ void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDevic
 {
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     for (const auto& desc : descForCb) {
-        CHECK_AND_CONTINUE(desc == nullptr);
+        CHECK_AND_CONTINUE(desc != nullptr);
         std::vector<PreferredType> types = {
             AUDIO_MEDIA_RENDER,
             AUDIO_RECORD_CAPTURE,
@@ -381,9 +381,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "updateConnectedDescWhenCon_1", ROUTER_TYPE_USER_SELECT };
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info, routerType);
     if (NeedClearPreferredMediaRenderer(
         strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID),
-        audioDescriptor, audioRouterCenter_.FetchOutputDevices(info), usage)) {
+        audioDescriptor, {mediaFetched, routerType}, usage)) {
         strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, nullptr);
     }
     info = { STREAM_USAGE_VOICE_COMMUNICATION, "updateConnectedDescWhenCon_2", ROUTER_TYPE_USER_SELECT };
@@ -397,7 +399,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
 
 bool AudioDeviceCommon::NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
     const std::shared_ptr<AudioDeviceDescriptor> &updated,
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const
+    const std::pair<std::vector<std::shared_ptr<AudioDeviceDescriptor>>, RouterType> &fetched,
+    const DeviceUsage usage) const
 {
     CHECK_AND_RETURN_RET(preferred != nullptr, false);
     if (preferred->deviceType_ == DEVICE_TYPE_NONE) {
@@ -413,11 +416,12 @@ bool AudioDeviceCommon::NeedClearPreferredMediaRenderer(const std::shared_ptr<Au
         return false;
     }
 
-    CHECK_AND_RETURN_RET(!fetched.empty(), false);
-    const auto &frontDesc = fetched.front();
+    CHECK_AND_RETURN_RET(fetched.second != ROUTER_TYPE_USER_SELECT, false);
+    CHECK_AND_RETURN_RET(!fetched.first.empty(), false);
+    const auto &frontDesc = fetched.first.front();
 
     CHECK_AND_RETURN_RET(frontDesc != nullptr, false);
-    return updated->IsSameDeviceDescPtr(frontDesc);
+    return updated->IsSameDeviceDescPtr(frontDesc) || updated->IsSameBtDeviceDescPtr(frontDesc);
 }
 
 bool AudioDeviceCommon::NeedUpdatePreferredDevice(const AudioDeviceDescriptor &desc)

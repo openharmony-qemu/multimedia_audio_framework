@@ -20,12 +20,12 @@ using OHOS::AudioStandard::OHAudioWorkgroup;
 
 static OHOS::AudioStandard::OHAudioResourceManager *convertResourceManager(OH_AudioResourceManager *resourceManager)
 {
-    return (OHAudioResourceManager*) resourceManager;
+    return reinterpret_cast<OHAudioResourceManager*>(resourceManager);
 }
 
 static OHOS::AudioStandard::OHAudioWorkgroup *convertWorkgroup(OH_AudioWorkgroup *group)
 {
-    return (OHAudioWorkgroup*) group;
+    return reinterpret_cast<OHAudioWorkgroup*>(group);
 }
 
 OH_AudioCommon_Result OH_AudioManager_GetAudioResourceManager(OH_AudioResourceManager **resourceManager)
@@ -59,7 +59,7 @@ OH_AudioCommon_Result OH_AudioResourceManager_ReleaseWorkgroup(OH_AudioResourceM
         AUDIO_ERR_LOG("invalid OH_AudioResourceManager or OH_AudioWorkgroup");
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
-    if (convertResourceManager(resourceManager)->ReleaseWorkgroup((OHAudioWorkgroup *)group)) {
+    if (convertResourceManager(resourceManager)->ReleaseWorkgroup(reinterpret_cast<OHAudioWorkgroup *>(group))) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;

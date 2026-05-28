@@ -64,6 +64,7 @@ namespace {
     static const int32_t ONE_MINUTE = 60;
     const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
+    constexpr int32_t SILENT_TYPE_SILENT_SESSION = 0;
     static std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
 }
 
@@ -1458,7 +1459,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
 
     AudioProcessConfig clientConfig = processList_[i]->GetAudioProcessConfig();
-    bool isVirtualKeyboard = clientConfig.rendererInfo.isVirtualKeyboard;
+    VkbMode vkbMode = clientConfig.rendererInfo.isVirtualKeyboard;
     int32_t appUid = clientConfig.appInfo.appUid;
     AudioVolumeMode volumeMode = clientConfig.rendererInfo.volumeMode;
 
@@ -1476,7 +1477,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
         && volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || !getVolumeRet ||
         IsNearlinkAbsVolSupportStream(deviceType, volumeType)) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
-    } else if (isVirtualKeyboard) {
+    } else if (vkbMode == VKB_ONLY_RING) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
     } else if (volumeType == STREAM_VOICE_CALL) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
@@ -2336,6 +2337,7 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(tempProcess->GetAppInfo().appUid);
             payload["sessionId"] = std::to_string(tempProcess->GetAudioSessionId());
+            payload["silentType"] = std::to_string(SILENT_TYPE_SILENT_SESSION);
             payload["isSilent"] = std::to_string(true);
 #ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
@@ -2352,6 +2354,7 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(tempProcess->GetAppInfo().appUid);
             payload["sessionId"] = std::to_string(tempProcess->GetAudioSessionId());
+            payload["silentType"] = std::to_string(SILENT_TYPE_SILENT_SESSION);
             payload["isSilent"] = std::to_string(false);
 #ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);

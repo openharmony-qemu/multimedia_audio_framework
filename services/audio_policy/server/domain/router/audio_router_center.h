@@ -58,6 +58,8 @@ public:
     void ClearConflictHandlers();
     int32_t SetSplitModeReady();
     bool UpdateVehiclePriority(bool enable);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchMediaOutputDevices(FetchDeviceInfo &info,
+        RouterType &routerType);
 private:
     AudioRouterCenter()
     {
@@ -168,6 +170,8 @@ private:
     bool IsWirelessPrivacyDevice(shared_ptr<AudioDeviceDescriptor> desc);
     bool IsVehicleDevice(shared_ptr<AudioDeviceDescriptor> desc);
     bool IsBlockedDeviceForTransferCall(shared_ptr<AudioDeviceDescriptor> desc);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> PreFetchOutputDevices(
+        const FetchDeviceInfo &info);
 
     void StartArbiterContext();
     void StopArbiterContext();

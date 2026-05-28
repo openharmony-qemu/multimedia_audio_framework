@@ -1562,11 +1562,10 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     FetchDeviceInfo info = {
         STREAM_USAGE_MEDIA, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT
     };
-    auto mediaFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(info)
-        .front();
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info, routerType);
     if ((usage & MEDIA) == MEDIA &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, mediaFetched,
+        NeedClearPreferredWhenCategoryUpdated(*existed, {mediaFetched, routerType},
             *strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
         strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, nullptr);
     }
@@ -1574,11 +1573,9 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     info = {
         STREAM_USAGE_VOICE_COMMUNICATION, "ClearPreferredWhenCategoryUpdated_2", ROUTER_TYPE_USER_SELECT
     };
-    auto callFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(info)
-        .front();
+    auto callFetched = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     if ((usage & VOICE) == VOICE &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, callFetched,
+        NeedClearPreferredWhenCategoryUpdated(*existed, {callFetched, ROUTER_TYPE_NONE},
             *strategy.GetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
@@ -1604,9 +1601,13 @@ void AudioDeviceStatus::ClearPreferredDevices(AudioDeviceDescriptor &desc)
 }
 
 bool AudioDeviceStatus::NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
-    const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred)
+    const std::pair<std::vector<std::shared_ptr<AudioDeviceDescriptor>>, RouterType> &fetched,
+    const AudioDeviceDescriptor &preferred)
 {
-    if (!updated.IsSameDeviceDesc(fetched)) {
+    CHECK_AND_RETURN_RET(fetched.second != ROUTER_TYPE_USER_SELECT, false);
+    CHECK_AND_RETURN_RET(!fetched.first.empty(), false);
+    auto &frontDesc = fetched.first.front();
+    if (!updated.IsSameDeviceDescPtr(frontDesc) && !updated.IsSameBtDeviceDescPtr(frontDesc)) {
         return false;
     }
 

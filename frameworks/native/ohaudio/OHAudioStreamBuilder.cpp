@@ -42,7 +42,7 @@ constexpr int32_t UNDEFINED_SIZE = -1;
 
 static OHOS::AudioStandard::OHAudioStreamBuilder *convertBuilder(OH_AudioStreamBuilder *builder)
 {
-    return (OHOS::AudioStandard::OHAudioStreamBuilder*) builder;
+    return reinterpret_cast<OHOS::AudioStandard::OHAudioStreamBuilder*>(builder);
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_SetSamplingRate(OH_AudioStreamBuilder *builder, int32_t rate)
@@ -107,7 +107,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
-    int32_t innerLatencyMode = (int32_t)latencyMode;
+    int32_t innerLatencyMode = static_cast<int32_t>(latencyMode);
     return audioStreamBuilder->SetLatencyMode(innerLatencyMode);
 }
 
@@ -557,7 +557,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
     if (audioRenderer != nullptr && audioRenderer->Initialize(options)) {
         ConfigureRenderer(audioRenderer);
-        if (nullptr == renderer) {
+        if (renderer == nullptr) {
             delete audioRenderer;
             audioRenderer = nullptr;
             CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "renderer is nullptr");
@@ -652,7 +652,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
     OHAudioCapturer *audioCapturer = new OHAudioCapturer();
     if (audioCapturer != nullptr && audioCapturer->Initialize(options)) {
         ConfigureCapturer(audioCapturer);
-        if (nullptr == capturer) {
+        if (capturer == nullptr) {
             AUDIO_ERR_LOG("capturer is nullptr");
             delete audioCapturer;
             audioCapturer = nullptr;
