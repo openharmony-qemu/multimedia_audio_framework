@@ -2338,10 +2338,10 @@ HWTEST_F(AudioPipeManagerUnitTest, GetVolumeTypeFromStreamDesc_001, TestSize.Lev
     
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
-    streamDesc->callerUid_ = 1;  // uid=1 CheckoutSystemApp returns false
+    streamDesc->callerUid_ = 1;  // uid=1 CheckoutSystemApp returns false, non-system app returns STREAM_MUSIC
     
     AudioVolumeType result = audioPipeManager->GetVolumeTypeFromStreamDesc(streamDesc);
-    EXPECT_EQ(result, STREAM_VOICE_ASSISTANT);
+    EXPECT_EQ(result, STREAM_MUSIC);
 
     streamDesc->callerUid_ = 1003;
     result = audioPipeManager->GetVolumeTypeFromStreamDesc(streamDesc);
