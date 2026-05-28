@@ -343,6 +343,10 @@ IAudioSinkAttr HpaeFastRendererManager::CreateSinkAttr()
     attr.audioStreamFlag = sinkInfo_.deviceClass == "primary_mmap_voip" ?
         AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     attr.isLoopback = sinkInfo_.isLoopback;
+    if (attr.adapterName == "dp") {
+        AUDIO_INFO_LOG("DP adapter can only use dp pin");
+        attr.pin = AUDIO_PIN_OUT_DP;
+    }
     if (sinkInfo_.isUltraFast) {
         attr.period = static_cast<int32_t>(
             static_cast<float>(sinkInfo_.samplingRate) * ULTRA_FAST_PERIOD_TIME_IN_MS /
