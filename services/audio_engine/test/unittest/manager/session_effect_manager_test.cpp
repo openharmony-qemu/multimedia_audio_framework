@@ -23,6 +23,7 @@
 
 #include "session_effect_manager.h"
 #include "hpae_manager.h"
+#include "fake_audio_effect_lib_entry.h"
 
 using namespace testing::ext;
 
@@ -381,6 +382,34 @@ HWTEST_F(SessionEffectManagerTest, getPendingEffectInstance, TestSize.Level0)
     ASSERT_NE(pending, nullptr);
     EXPECT_EQ(pending->GetState(), EffectInstance::EffectState::PENDING_RELEASE);
     EXPECT_EQ(pending, instance);  // same shared_ptr
+}
+
+HWTEST_F(SessionEffectManagerTest, setEffectParameter_activeInstance_sendsSetParam, TestSize.Level0)
+{
+    FakeAudioEffectLibEntry fake;
+    AudioEffectLibrary lib = fake.GetLibrary();
+    auto libEntry = std::make_shared<AudioEffectLibEntry>();
+    libEntry->libraryName = "ai_audio_enhance";
+    libEntry->audioEffectLibHandle = &lib;
+    sem_->InitEffectLibraries({libEntry});
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    fake.Reset();
+
+    int32_t ret = sem_->SetEffectParameter("ai_audio_enhance",
+        static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.7f);
+
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    bool hasSetParam = false;
+    for (const auto &entry : fake.GetCallLog()) {
+        if (entry.cmdCode == EFFECT_CMD_SET_PARAM) {
+            hasSetParam = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(hasSetParam);
 }
 
 }  // namespace HPAE

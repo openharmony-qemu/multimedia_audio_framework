@@ -498,7 +498,6 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
 {
     AUDIO_INFO_LOG("PreheatThread running, actively pulling upstream data");
     uint32_t backoffMs = 0;
-    static constexpr uint32_t MAX_BACKOFF_MS = 20;
     bool noDataTimerActive = false;
     std::chrono::steady_clock::time_point noDataStartTime;
 
@@ -517,20 +516,10 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
                 noDataTimerActive = false;
                 backoffMs = 0;
             } else {
-                if (!noDataTimerActive) {
-                    noDataTimerActive = true;
-                    noDataStartTime = std::chrono::steady_clock::now();
-                }
-                backoffMs = backoffMs == 0 ? 1 : std::min(backoffMs * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
-                std::this_thread::sleep_for(std::chrono::milliseconds(backoffMs));
+                OnNoDataReceived(noDataTimerActive, noDataStartTime, backoffMs);
             }
         } else {
-            if (!noDataTimerActive) {
-                noDataTimerActive = true;
-                noDataStartTime = std::chrono::steady_clock::now();
-            }
-            backoffMs = backoffMs == 0 ? 1 : std::min(backoffMs * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
-            std::this_thread::sleep_for(std::chrono::milliseconds(backoffMs));
+            OnNoDataReceived(noDataTimerActive, noDataStartTime, backoffMs);
         }
 
         if (stopRequested_) {
@@ -543,25 +532,45 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
                 inputLevel, prebufTargetBytes_);
             break;
         }
-        if (noDataTimerActive) {
-            auto noDataDuration = std::chrono::steady_clock::now() - noDataStartTime;
-            if (noDataDuration >= std::chrono::milliseconds(PREHEAT_NO_DATA_TIMEOUT_MS)) {
-                if (stopRequested_) {
-                    break;
-                }
-                size_t paddingBytes = prebufTargetBytes_ - inputLevel;
-                int32_t ret = FeedPaddingInput(paddingBytes);
-                if (ret != 0) {
-                    AUDIO_WARNING_LOG("PreheatThread FeedPaddingInput failed: %{public}d", ret);
-                }
-                AUDIO_INFO_LOG("PreheatThread no-data timeout, padding=%{public}zu", paddingBytes);
-                break;
-            }
+        if (noDataTimerActive && HandleNoDataTimeout(inputLevel)) {
+            break;
         }
     }
 
     prebufFilled_.store(true);
     AUDIO_INFO_LOG("PreheatThread exiting, stopRequested=%{public}d", stopRequested_.load());
+}
+
+void HpaeSessionEffectNode::OnNoDataReceived(bool &noDataTimerActive,
+    std::chrono::steady_clock::time_point &noDataStartTime, uint32_t &backoffMs)
+{
+    static constexpr uint32_t MAX_BACKOFF_MS = 20;
+
+    if (!noDataTimerActive) {
+        noDataTimerActive = true;
+        noDataStartTime = std::chrono::steady_clock::now();
+        preheatNoDataStartTime_ = noDataStartTime;
+    }
+    backoffMs = backoffMs == 0 ? 1 : std::min(backoffMs * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(backoffMs));
+}
+
+bool HpaeSessionEffectNode::HandleNoDataTimeout(size_t inputLevel)
+{
+    auto noDataDuration = std::chrono::steady_clock::now() - preheatNoDataStartTime_;
+    if (noDataDuration < std::chrono::milliseconds(PREHEAT_NO_DATA_TIMEOUT_MS)) {
+        return false;
+    }
+    if (stopRequested_) {
+        return true;
+    }
+    size_t paddingBytes = prebufTargetBytes_ - inputLevel;
+    int32_t ret = FeedPaddingInput(paddingBytes);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("PreheatThread FeedPaddingInput failed: %{public}d", ret);
+    }
+    AUDIO_INFO_LOG("PreheatThread no-data timeout, padding=%{public}zu", paddingBytes);
+    return true;
 }
 
 void HpaeSessionEffectNode::StopPreheatThread()

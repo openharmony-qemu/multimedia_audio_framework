@@ -3230,18 +3230,8 @@ int32_t HpaeManager::SetVocalRatio(float ratio)
             static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
             "SetVocalRatio: sessionEffectManager is null");
 
-        uint32_t sessionId = sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
-        CHECK_AND_RETURN_RET_LOG(sessionId != 0,
-            static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
-            "SetVocalRatio: no session bound to AISS");
-
-        auto rendererManager = GetRendererManagerById(sessionId);
-        CHECK_AND_RETURN_RET_LOG(rendererManager != nullptr, ERR_OPERATION_FAILED,
-            "SetVocalRatio: cannot find rendererManager for session %{public}u", sessionId);
-
-        rendererManager->PostSetSessionEffectParameter(sessionId,
+        return sessionEffectManager_->SetEffectParameter("ai_audio_enhance",
             static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), ratio);
-        return SUCCESS;
     };
     return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }

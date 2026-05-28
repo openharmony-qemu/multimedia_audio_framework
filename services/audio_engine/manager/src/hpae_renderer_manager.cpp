@@ -445,14 +445,23 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
 int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
-    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr, SUCCESS);
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_RET(sinkInputNode != nullptr, SUCCESS);
+    auto sessionIt = sessionNodeMap_.find(sessionId);
+    HpaeSessionState sessionState = sinkInputNode->GetState();
+    if (sessionIt != sessionNodeMap_.end()) {
+        sessionState = sessionIt->second.state;
+    }
+    if (HasSessionEffect(sessionId)) {
+        AUDIO_INFO_LOG("[SE::RendererManager] DeleteInputSession sessionId=%{public}u", sessionId);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
+            OPERATION_SESSION_EFFECT_DISABLED);
+    }
     DeleteProcessCluster(sessionId);
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId)) {
-        OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
-    }
+    OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
 #endif
-    HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
+    HpaeSessionState inputState = sinkInputNode->GetState();
     RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     sinkInputNodeMap_.erase(sessionId);
@@ -2013,6 +2022,8 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         }
         AUDIO_INFO_LOG("[SE::RendererManager] CreateSessionEffect sessionId=%{public}u",
             sessionId);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, it->second.state,
+            OPERATION_SESSION_EFFECT_ENABLED);
     }
     return ret;
 }
@@ -2051,13 +2062,22 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
     }
     AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect sessionId=%{public}u",
         sessionId);
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, it->second.state,
+        OPERATION_SESSION_EFFECT_DISABLED);
     return ret;
 }
 
 bool HpaeRendererManager::HasSessionEffect(uint32_t sessionId) const
 {
-    auto cluster = SafeGetMap(sceneClusterMap_, GetProcessorType(sessionId));
-    return cluster && cluster->HasSessionEffectNode(sessionId);
+    auto it = sessionNodeMap_.find(sessionId);
+    if (it == sessionNodeMap_.end()) {
+        return false;
+    }
+    auto clusterIt = sceneClusterMap_.find(it->second.sceneType);
+    if (clusterIt == sceneClusterMap_.end()) {
+        return false;
+    }
+    return clusterIt->second->HasSessionEffectNode(sessionId);
 }
 
 bool HpaeRendererManager::IsValidSession(uint32_t sessionId) const
