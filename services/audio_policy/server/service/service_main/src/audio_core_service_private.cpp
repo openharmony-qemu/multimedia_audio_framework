@@ -2411,7 +2411,6 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) &&
         audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
-        JUDGE_AND_INFO_LOG(isCreateProcess_, "collaborative playback effect in arm, Skipped.");
         return false;
     }
 
