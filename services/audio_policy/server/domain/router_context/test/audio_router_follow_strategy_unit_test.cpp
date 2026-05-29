@@ -899,22 +899,27 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
 
     AudioRouterFollowStrategy strategy;
 
-    auto appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+    auto appResult = strategy.GetMediaInputDeviceByPriority(
+        TEST_APP_UID_10001, BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, true);
 
     strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, mic);
-    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, false);
-    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+    appResult = strategy.GetMediaInputDeviceByPriority(
+        TEST_APP_UID_10001, BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, false);
+    appResult = strategy.GetMediaInputDeviceByPriority(
+        TEST_APP_UID_10001, BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, true);
     ASSERT_NE(appResult, nullptr);
     EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_MIC);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, INVALID_STREAM_ID, headset);
-    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+    appResult = strategy.GetMediaInputDeviceByPriority(
+        TEST_APP_UID_10001, BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, true);
     ASSERT_NE(appResult, nullptr);
     EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_USB_HEADSET);
 
     strategy.SetMediaInputDevice(
         SYSTEM_UID, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
-    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+    appResult = strategy.GetMediaInputDeviceByPriority(
+        TEST_APP_UID_10001, BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, true);
     EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_USB_HEADSET);
     strategy.SetMediaInputDevice(
         TEST_APP_UID_10001, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
