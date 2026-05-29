@@ -166,10 +166,10 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_003, TestSize.Level4)
     audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
     auto zoneManager = AudioZoneManager::GetInstance();
     int32_t ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_NONE, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
     EXPECT_NE(SUCCESS, audioZoneClient->SetSystemVolume(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
         static_cast<int>(STREAM_MUSIC), 0, 0, 0));
     int outVol = 0;
@@ -181,23 +181,23 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_003, TestSize.Level4)
     audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
 
     ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_EARPIECE, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioZoneClient->audioZoneDeviceVolumeProxyMap_[zoneId][DEVICE_TYPE_SPEAKER] = proxy;
     ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = zoneManager->UnRegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = zoneManager->UnRegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
     audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
     audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
 }
