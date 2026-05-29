@@ -58,6 +58,7 @@ ohos_cli_executable("ohos-audioManager") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "json:nlohmann_json_static",
   ]
 
   subsystem_name = "multimedia"
