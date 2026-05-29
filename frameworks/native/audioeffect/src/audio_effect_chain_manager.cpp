@@ -2398,7 +2398,13 @@ void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
     CHECK_AND_RETURN(spatializationEnabled_ && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || deviceType_ == DEVICE_TYPE_NEARLINK));
     AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
+    bool previousOffloadState = btOffloadEnabled_;
     UpdateSpatializationEnabled(spatializationState);
+    if (headTrackingEnabled_ && !bypassSpatializationForStereo_ && previousOffloadState != btOffloadEnabled_) {
+        AUDIO_INFO_LOG("btOffloadEnabled change from %{public}d to %{public}d, UpdateSensorState",
+            previousOffloadState, btOffloadEnabled_);
+        UpdateSensorState();
+    }
 }
 
 int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels,
