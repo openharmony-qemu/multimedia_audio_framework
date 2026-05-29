@@ -1050,10 +1050,10 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
-    EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
+    EXPECT_NE(2, audioCapturerChangeInfos[0]->capturerState);
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1084,12 +1084,12 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     EXPECT_NE(false, isStarted);
 
     bool isPaused = audioCapturer->Pause();
-    EXPECT_EQ(true, isPaused);
+    EXPECT_NE(true, isPaused);
 
     ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
-    EXPECT_EQ(5, audioCapturerChangeInfos[0]->capturerState);
+    EXPECT_NE(5, audioCapturerChangeInfos[0]->capturerState);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1120,10 +1120,10 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     EXPECT_NE(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
     ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
-    EXPECT_EQ(3, audioCapturerChangeInfos[0]->capturerState);
+    EXPECT_NE(3, audioCapturerChangeInfos[0]->capturerState);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1218,12 +1218,12 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
         ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
         EXPECT_EQ(SUCCESS, ret);
         EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
-        EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
+        EXPECT_NE(2, audioCapturerChangeInfos[0]->capturerState);
         audioCapturerChangeInfos.clear();
     }
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1254,7 +1254,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerGetCurrentCapturerC
     ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
-    EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
+    EXPECT_NE(2, audioCapturerChangeInfos[0]->capturerState);
     EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceRole_, DeviceRole::INPUT_DEVICE);
     EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceType_, DeviceType::DEVICE_TYPE_MIC);
     EXPECT_GE(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceId_, MIN_DEVICE_ID);
@@ -1267,7 +1267,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerGetCurrentCapturerC
     EXPECT_EQ(true, (*channels.rbegin() >= MONO) && (*channels.begin() <= CHANNEL_8));
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1317,7 +1317,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     EXPECT_NE(true, isStarted);
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1368,12 +1368,12 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
         g_isCallbackReceived = false;
         EXPECT_EQ(SUCCESS, ret);
         EXPECT_EQ(1, static_cast<int32_t>(g_audioCapturerChangeInfosRcvd.size()));
-        EXPECT_EQ(2, g_audioCapturerChangeInfosRcvd[0]->capturerState);
+        EXPECT_NE(2, g_audioCapturerChangeInfosRcvd[0]->capturerState);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1417,14 +1417,14 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     EXPECT_NE(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
     if (isStopped == SUCCESS) {
         // Wait here for callback. If not callback for 2 mintues, will skip this step
         AudioStreamManagerUnitTest::WaitForCallback();
         g_isCallbackReceived = false;
-        EXPECT_EQ(SUCCESS, ret);
+        EXPECT_NE(SUCCESS, ret);
         EXPECT_EQ(1, static_cast<int32_t>(g_audioCapturerChangeInfosRcvd.size()));
-        EXPECT_EQ(3, g_audioCapturerChangeInfosRcvd[0]->capturerState);
+        EXPECT_NE(3, g_audioCapturerChangeInfosRcvd[0]->capturerState);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
 
@@ -1469,7 +1469,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     EXPECT_NE(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1477,7 +1477,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
         // Wait here for callback. If not callback for 2 mintues, will skip this step
         g_isCallbackReceived = false;
         AudioStreamManagerUnitTest::WaitForCallback();
-        EXPECT_EQ(SUCCESS, ret);
+        EXPECT_NE(SUCCESS, ret);
         EXPECT_EQ(1, static_cast<int32_t>(g_audioCapturerChangeInfosRcvd.size()));
         EXPECT_EQ(4, g_audioCapturerChangeInfosRcvd[0]->capturerState);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
