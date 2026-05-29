@@ -739,7 +739,6 @@ int32_t AudioCoreService::EventEntry::ReleaseMultiChannelPipe(AudioIOHandle id, 
     coreService_->pipeManager_->RemoveAudioPipeInfo(id);
     coreService_->audioIOHandleMap_.DelIOHandleInfo(MCH_PRIMARY_SPEAKER);
     coreService_->isMultiChannelInRelease_.store(false);
-    coreService_->audioPolicyManager_.RemoveAudioPipeVolume(id);
     return SUCCESS;
 }
 

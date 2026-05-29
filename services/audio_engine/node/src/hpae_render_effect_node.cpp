@@ -27,6 +27,7 @@
 #include "audio_effect_log.h"
 #include "stream_dfx_manager.h"
 #include "parameters.h"
+#include "audio_collaboration_manager.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
@@ -79,7 +80,8 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, Collaboration
         deviceType_ = static_cast<DeviceType>(nodeInfo.deviceType);
         renderId_ = nodeInfo.renderId;
     }
-    AUDIO_INFO_LOG("created, scene type: %{public}s, CollaborationEnabled: %{public}d", sceneType_.c_str(), isCollaborationEnabled_);
+    AUDIO_INFO_LOG("created, scene type: %{public}s, CollaborationEnabled: %{public}d",
+        sceneType_.c_str(), isCollaborationEnabled_);
 #ifdef ENABLE_HOOK_PCM
     if (sceneType_ == "SCENE_COLLABORATIVE" && isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN) {
         directPcmDumper_ = std::make_unique<HpaePcmDumper>(
@@ -619,6 +621,7 @@ void HpaeTempEffectBuffer::ChangeEffectDataForLatency(HpaePcmBuffer* buffer)
 {
     if (!DelayAlignmentForEffectNode(buffer)) {
         AUDIO_INFO_LOG("delay alignment for collabortive data is not ready");
+        SetSilenceData(buffer);
         return;
     }
     WriteDataEnqueueRingCache(buffer);
@@ -699,8 +702,10 @@ void HpaeTempEffectBuffer::SetSilenceData(HpaePcmBuffer* buffer, float *tempOutp
 {
     float *collOutPut = buffer->GetPcmDataBuffer();
     for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
-        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] = tempOutput[COLLABORATIVE_CHANNELS * i];
-        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] = tempOutput[COLLABORATIVE_CHANNELS * i + 1];
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] =
+            tempOutput[COLLABORATIVE_CHANNELS * i];
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] =
+            tempOutput[COLLABORATIVE_CHANNELS * i + 1];
     }
 }
 

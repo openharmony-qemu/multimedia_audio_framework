@@ -715,7 +715,8 @@ void AudioCoreServicePrivateUpdateRouteForCollaborationFuzzTest(FuzzedDataProvid
         return;
     }
     InternalDeviceType deviceType = PickValue(fdp, DeviceTypeVec);
-    AudioCollaborativeService::GetAudioCollaborativeService().isCollaborativeStateEnabled_ = true;
+    AudioCollaborativeService::GetAudioCollaborativeService().isCollaborativeStateEnabled_ =
+        static_cast<CollaborationState>(fdp.ConsumeIntegralInRange(0, 2));
     uint32_t sessionID = fdp.ConsumeIntegral<uint32_t>();
     audioCoreService->UpdateRouteForCollaboration(deviceType, sessionID);
 }

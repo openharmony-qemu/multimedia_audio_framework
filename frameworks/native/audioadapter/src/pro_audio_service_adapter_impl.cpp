@@ -660,6 +660,7 @@ void ProAudioServiceAdapterImpl::OnUpdatePersonalizedHRTFBinCb(int32_t result)
     personalizedHRTFBinUpdateResult_ = result;
     callbackCV_.notify_all();
 }
+
 bool ProAudioServiceAdapterImpl::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
 {
      lock_guard<mutex> lock(lock_);

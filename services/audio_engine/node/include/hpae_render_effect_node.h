@@ -21,7 +21,6 @@
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
-#include "audio_collaboration_manager.h"
 #include "audio_ring_cache.h"
 namespace OHOS {
 namespace AudioStandard {

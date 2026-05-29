@@ -1618,7 +1618,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_NearLink_001, Tes
     auto &manager = AudioAdapterManager::GetInstance();
     int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     // Result depends on adapter initialization, just verify no crash
-    EXPECT_TRUE(ret == SUCCESS || ret != SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS);
 }
 
 /**
@@ -1630,7 +1630,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Bluetooth_001, Te
 {
     auto &manager = AudioAdapterManager::GetInstance();
     int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_TRUE(ret == SUCCESS || ret != SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS);
 }
 
 /**
@@ -1642,7 +1642,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Close_001, TestSi
 {
     auto &manager = AudioAdapterManager::GetInstance();
     int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_CLOSE);
-    EXPECT_TRUE(ret == SUCCESS || ret != SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS);
 }
 
 /**
@@ -1653,9 +1653,10 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Close_001, TestSi
 HWTEST_F(AudioAdapterManagerUnitTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
 {
     auto &manager = AudioAdapterManager::GetInstance();
-    bool result = manager.IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE);
+    int32_t result = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    result += static_cast<int32_t>(manager.IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
     // Result depends on adapter state, just verify no crash
-    EXPECT_TRUE(result || !result);
+    EXPECT_TRUE(result != ERROR);
 }
 
 } // namespace AudioStandard

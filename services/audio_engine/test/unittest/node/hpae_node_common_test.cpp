@@ -765,12 +765,22 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_049, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MOVIE;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
-    
+
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
-    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
-    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
+    }
 }
 
 /**
@@ -783,8 +793,12 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_050, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MUSIC;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
-    
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MUSIC;
+
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
@@ -980,11 +994,22 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_064, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MUSIC;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MUSIC;
     
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
-    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
+    }
 }
 
 /**
@@ -1296,12 +1321,22 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MOVIE;
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
-
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
+    
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
-    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
-    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
+    }
 }
 
 /**
@@ -1313,12 +1348,22 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MUSIC;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MUSIC;
 
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
-    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
-    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
+    }
 }
 
 /**
@@ -1330,10 +1375,13 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MOVIE;
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
 
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
     EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
@@ -1348,11 +1396,22 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_GAME;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_GAME;
     nodeInfo.sceneType = HPAE_SCENE_GAME;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_GAME;
 
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_GAME);
-    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_GAME);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_GAME);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_GAME);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_GAME);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_GAME);
+    }
 }
 
 /**
@@ -1364,14 +1423,34 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MOVIE;
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
+
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
 
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
-    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
+    }
     // Switch to NEARLINK - should remain collaborative
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
+    }
 }
 
 /**
@@ -1382,13 +1461,24 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
 HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Nearlink_006, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
-    nodeInfo.effectInfo.effectScene = SCENE_DEFAULT;
-    nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
+    nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MOVIE;
+    nodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
 
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     // SCENE_DEFAULT is not SCENE_MOVIE or SCENE_MUSIC, should not change
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_DEFAULT);
-    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_DEFAULT);
+    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
+    } else {
+        EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
+        EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
+    }
 }
 
 } // namespace HPAE

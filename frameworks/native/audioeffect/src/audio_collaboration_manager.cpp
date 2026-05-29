@@ -14,7 +14,7 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "AudioCollaborationManager "
+#define LOG_TAG "AudioCollaborationManager"
 #endif
 
 #include "audio_collaboration_manager.h"
