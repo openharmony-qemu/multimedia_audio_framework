@@ -38,14 +38,23 @@ struct Command {
 };
 
 static std::unordered_map<std::string, Command> gCommands;
-static const char* gProgramName = "";
-static bool gHasSubCommand = false;
-static const char* gToolDescription = "Audio management tool for controlling volume, devices, and audio settings. "
+static const char* G_PROGRAM_NAME= "";
+static bool g_hasSubCommand= false;
+static const char* G_TOOL_DESCRIPTION = "Audio management tool for controlling volume, devices, and audio settings. "
     "Used for audio device management and volume control scenarios. "
     "Does not support advanced audio processing or routing configuration.";
 
-#define REGISTER_CMD(name, desc, usage, params, examples, handler) \
-    gCommands[name] = {name, desc, usage, params, examples, handler}
+static constexpr int32_t SUCCESS = 0;
+static constexpr int32_t FAILURE = 1;
+static constexpr int32_t MAX_VOLUME = 15;
+static constexpr int32_t MIN_VOLUME = 0;
+static constexpr int32_t INT_NUM1 = 1;
+static constexpr int32_t INT_NUM2 = 2;
+
+void RegisterCommand(const char* name, const char* desc, const char* usage,
+    const char* params, const char* examples, CommandHandler handler) {
+    gCommands[name] = {name, desc, usage, params, examples, handler};
+}
 
 static const std::unordered_map<std::string, AudioVolumeType> gVolumeTypeMap = {
     {"STREAM_MUSIC", AudioVolumeType::STREAM_MUSIC},
@@ -55,7 +64,6 @@ static const std::unordered_map<std::string, AudioVolumeType> gVolumeTypeMap = {
     {"STREAM_VOICE_ASSISTANT", AudioVolumeType::STREAM_VOICE_ASSISTANT},
     {"STREAM_ALARM", AudioVolumeType::STREAM_ALARM},
     {"STREAM_SYSTEM", AudioVolumeType::STREAM_SYSTEM},
-    {"STREAM_ACCESSIBILITY", AudioVolumeType::STREAM_ACCESSIBILITY},
     {"STREAM_VOICE_RING", AudioVolumeType::STREAM_VOICE_RING},
     {"STREAM_NAVIGATION", AudioVolumeType::STREAM_NAVIGATION},
     {"STREAM_NOTIFICATION", AudioVolumeType::STREAM_NOTIFICATION},
@@ -73,7 +81,6 @@ static const std::unordered_map<AudioVolumeType, std::string> gVolumeTypeToStrin
     {AudioVolumeType::STREAM_VOICE_ASSISTANT, "STREAM_VOICE_ASSISTANT"},
     {AudioVolumeType::STREAM_ALARM, "STREAM_ALARM"},
     {AudioVolumeType::STREAM_SYSTEM, "STREAM_SYSTEM"},
-    {AudioVolumeType::STREAM_ACCESSIBILITY, "STREAM_ACCESSIBILITY"},
     {AudioVolumeType::STREAM_VOICE_RING, "STREAM_VOICE_RING"},
     {AudioVolumeType::STREAM_NAVIGATION, "STREAM_NAVIGATION"},
     {AudioVolumeType::STREAM_NOTIFICATION, "STREAM_NOTIFICATION"},
@@ -135,7 +142,8 @@ static const std::unordered_map<std::string, DeviceFlag> gDeviceFlagMap = {
     {"ALL_DEVICES_FLAG", DeviceFlag::ALL_DEVICES_FLAG}
 };
 
-AudioVolumeType ParseVolumeType(const std::string& typeStr) {
+AudioVolumeType ParseVolumeType(const std::string& typeStr)
+{
     auto it = gVolumeTypeMap.find(typeStr);
     if (it != gVolumeTypeMap.end()) {
         return it->second;
@@ -143,7 +151,8 @@ AudioVolumeType ParseVolumeType(const std::string& typeStr) {
     return AudioVolumeType::STREAM_MUSIC;
 }
 
-DeviceType ParseDeviceType(const std::string& typeStr) {
+DeviceType ParseDeviceType(const std::string& typeStr)
+{
     auto it = gDeviceTypeMap.find(typeStr);
     if (it != gDeviceTypeMap.end()) {
         return it->second;
@@ -151,7 +160,8 @@ DeviceType ParseDeviceType(const std::string& typeStr) {
     return DeviceType::DEVICE_TYPE_NONE;
 }
 
-DeviceFlag ParseDeviceFlag(const std::string& flagStr) {
+DeviceFlag ParseDeviceFlag(const std::string& flagStr)
+{
     auto it = gDeviceFlagMap.find(flagStr);
     if (it != gDeviceFlagMap.end()) {
         return it->second;
@@ -159,7 +169,8 @@ DeviceFlag ParseDeviceFlag(const std::string& flagStr) {
     return DeviceFlag::OUTPUT_DEVICES_FLAG;
 }
 
-std::string VolumeTypeToString(AudioVolumeType type) {
+std::string VolumeTypeToString(AudioVolumeType type)
+{
     auto it = gVolumeTypeToStringMap.find(type);
     if (it != gVolumeTypeToStringMap.end()) {
         return it->second;
@@ -167,7 +178,8 @@ std::string VolumeTypeToString(AudioVolumeType type) {
     return "STREAM_MUSIC";
 }
 
-std::string DeviceTypeToString(DeviceType type) {
+std::string DeviceTypeToString(DeviceType type)
+{
     auto it = gDeviceTypeToStringMap.find(type);
     if (it != gDeviceTypeToStringMap.end()) {
         return it->second;
@@ -175,7 +187,8 @@ std::string DeviceTypeToString(DeviceType type) {
     return "DEVICE_TYPE_NONE";
 }
 
-int CmdGetVolume(int argc, char** argv) {
+int CmdGetVolume(int argc, char** argv)
+{
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
     std::string typeStr = "STREAM_MUSIC";
     bool hasTypeParam = false;
@@ -203,7 +216,7 @@ int CmdGetVolume(int argc, char** argv) {
     }
 
     int32_t volume = manager->GetVolume(volumeType);
-    if (volume < 0) {
+    if (volume < MIN_VOLUME) {
         return OutputError("ERR_INTERNAL_ERROR", "Failed to get volume",
             "Check if audio service is running and volume type is valid");
     }
@@ -214,14 +227,16 @@ int CmdGetVolume(int argc, char** argv) {
     return OutputSuccess(result);
 }
 
-bool IsAlarmOrCallVolumeType(AudioVolumeType volumeType) {
+bool IsAlarmOrCallVolumeType(AudioVolumeType volumeType)
+{
     return volumeType == AudioVolumeType::STREAM_ALARM ||
         volumeType == AudioVolumeType::STREAM_VOICE_CALL ||
         volumeType == AudioVolumeType::STREAM_VOICE_COMMUNICATION ||
         volumeType == AudioVolumeType::STREAM_ALL;
 }
 
-int ParseVolumeArgs(int argc, char** argv, AudioVolumeType& volumeType, int32_t& volume) {
+int ParseVolumeArgs(int argc, char** argv, AudioVolumeType& volumeType, int32_t& volume)
+{
     std::string typeStr = "STREAM_MUSIC";
     bool hasTypeParam = false;
     bool hasVolumeParam = false;
@@ -242,7 +257,7 @@ int ParseVolumeArgs(int argc, char** argv, AudioVolumeType& volumeType, int32_t&
             "Please provide volume value. Example: --volume 50");
     }
 
-    if (volume < 0 || volume > 15) {
+    if (volume < MIN_VOLUME || volume > MAX_VOLUME) {
         return OutputError("ERR_INVALID_ARG", "Volume must be between 0 and 15",
             "Please provide a volume value in the range 0-15");
     }
@@ -255,20 +270,21 @@ int ParseVolumeArgs(int argc, char** argv, AudioVolumeType& volumeType, int32_t&
         volumeType = it->second;
     }
 
-    if (volume == 0 && IsAlarmOrCallVolumeType(volumeType)) {
+    if (volume == MIN_VOLUME && IsAlarmOrCallVolumeType(volumeType)) {
         return OutputError("ERR_INVALID_ARG", "Cannot set alarm or call volume to 0",
             "Alarm and call volumes must be at least 1");
     }
 
-    return 0;
+    return SUCCESS;
 }
 
-int CmdSetVolume(int argc, char** argv) {
+int CmdSetVolume(int argc, char** argv)
+{
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
     int32_t volume = -1;
 
     int parseResult = ParseVolumeArgs(argc, argv, volumeType, volume);
-    if (parseResult != 0) {
+    if (parseResult != SUCCESS) {
         return parseResult;
     }
 
@@ -279,7 +295,7 @@ int CmdSetVolume(int argc, char** argv) {
     }
 
     int32_t result = manager->SetVolume(volumeType, volume);
-    if (result != 0) {
+    if (result != SUCCESS) {
         return OutputError("ERR_PERMISSION_DENIED",
             "Failed to set volume. System permission may be required",
             "Check if the process has system permission or volume value is valid");
@@ -291,7 +307,8 @@ int CmdSetVolume(int argc, char** argv) {
     return OutputSuccess(resultJson);
 }
 
-int CmdGetMaxVolume(int argc, char** argv) {
+int CmdGetMaxVolume(int argc, char** argv)
+{
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
     std::string typeStr = "STREAM_MUSIC";
     bool hasTypeParam = false;
@@ -319,7 +336,7 @@ int CmdGetMaxVolume(int argc, char** argv) {
     }
 
     int32_t maxVolume = manager->GetMaxVolume(volumeType);
-    if (maxVolume < 0) {
+    if (maxVolume < MIN_VOLUME) {
         return OutputError("ERR_INTERNAL_ERROR", "Failed to get max volume",
             "Check if audio service is running and volume type is valid");
     }
@@ -330,7 +347,8 @@ int CmdGetMaxVolume(int argc, char** argv) {
     return OutputSuccess(result);
 }
 
-int CmdIsMute(int argc, char** argv) {
+int CmdIsMute(int argc, char** argv)
+{
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
     std::string typeStr = "STREAM_MUSIC";
     bool hasTypeParam = false;
@@ -365,7 +383,8 @@ int CmdIsMute(int argc, char** argv) {
     return OutputSuccess(result);
 }
 
-int ParseMuteArgs(int argc, char** argv, AudioVolumeType& volumeType, bool& mute) {
+int ParseMuteArgs(int argc, char** argv, AudioVolumeType& volumeType, bool& mute)
+{
     std::string typeStr = "STREAM_MUSIC";
     bool hasTypeParam = false;
     const char* validTypes = "Check if volume type is valid";
@@ -396,15 +415,16 @@ int ParseMuteArgs(int argc, char** argv, AudioVolumeType& volumeType, bool& mute
             "Alarm and call volumes cannot be muted");
     }
 
-    return 0;
+    return SUCCESS;
 }
 
-int CmdSetMute(int argc, char** argv) {
+int CmdSetMute(int argc, char** argv)
+{
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
     bool mute = false;
 
     int parseResult = ParseMuteArgs(argc, argv, volumeType, mute);
-    if (parseResult != 0) {
+    if (parseResult != SUCCESS) {
         return parseResult;
     }
 
@@ -415,7 +435,7 @@ int CmdSetMute(int argc, char** argv) {
     }
 
     int32_t result = manager->SetMute(volumeType, mute);
-    if (result != 0) {
+    if (result != SUCCESS) {
         return OutputError("ERR_PERMISSION_DENIED",
             "Failed to set mute. Permission may be required for STREAM_RING or STREAM_VOICE_RING type",
             "Check if the process has required permissions. STREAM_RING and STREAM_VOICE_RING types "
@@ -428,7 +448,8 @@ int CmdSetMute(int argc, char** argv) {
     return OutputSuccess(resultJson);
 }
 
-int CmdGetDevices(int argc, char** argv) {
+int CmdGetDevices(int argc, char** argv)
+{
     DeviceFlag deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
     std::string flagStr = "OUTPUT_DEVICES_FLAG";
     bool hasFlagParam = false;
@@ -470,7 +491,8 @@ int CmdGetDevices(int argc, char** argv) {
     return OutputSuccess(result);
 }
 
-int CmdSelectOutputDevice(int argc, char** argv) {
+int CmdSelectOutputDevice(int argc, char** argv)
+{
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     for (int i = 0; i < argc; i++) {
@@ -494,7 +516,7 @@ int CmdSelectOutputDevice(int argc, char** argv) {
     }
 
     int32_t result = manager->SelectOutputDevice(audioDeviceDescriptors);
-    if (result != 0) {
+    if (result != SUCCESS) {
         return OutputError("ERR_PERMISSION_DENIED", "Failed to select output device. "
             "System permission is required",
             "Check if the process has system permission and device type is valid");
@@ -508,11 +530,12 @@ int CmdSelectOutputDevice(int argc, char** argv) {
     return OutputSuccess(resultJson);
 }
 
-void ShowGeneralHelp() {
-    CLI_LOG("%s - %s", gProgramName, gToolDescription);
+void ShowGeneralHelp()
+{
+    CLI_LOG("%s - %s", G_PROGRAM_NAME, G_TOOL_DESCRIPTION);
     CLI_LOG("");
     CLI_LOG("Usage:");
-    CLI_LOG("  %s [command] [options]", gProgramName);
+    CLI_LOG("  %s [command] [options]", G_PROGRAM_NAME);
     CLI_LOG("");
     CLI_LOG("Parameters:");
     CLI_LOG("  --help                  Display this help message");
@@ -523,17 +546,18 @@ void ShowGeneralHelp() {
     }
     CLI_LOG("");
     CLI_LOG("Examples:");
-    CLI_LOG("  %s --help", gProgramName);
+    CLI_LOG("  %s --help", G_PROGRAM_NAME);
     for (const auto& pair : gCommands) {
         if (strcmp(pair.first.c_str(), "help") != 0) {
-            CLI_LOG("  %s %s --help", gProgramName, pair.first.c_str());
+            CLI_LOG("  %s %s --help", G_PROGRAM_NAME, pair.first.c_str());
             break;
         }
     }
 }
 
-void ShowCommandHelp(const Command& cmd) {
-    CLI_LOG("%s %s - %s", gProgramName, cmd.name, cmd.description ? cmd.description : "N/A");
+void ShowCommandHelp(const Command& cmd)
+{
+    CLI_LOG("%s %s - %s", G_PROGRAM_NAME, cmd.name, cmd.description ? cmd.description : "N/A");
 
     if (cmd.usage) {
         CLI_LOG("");
@@ -555,9 +579,10 @@ void ShowCommandHelp(const Command& cmd) {
     }
 }
 
-int CmdHelp(int argc, char** argv) {
+int CmdHelp(int argc, char** argv)
+{
     std::string targetCmd;
-    for (int i = 1; i < argc; i++) {
+    for (int i = INT_NUM1; i < argc; i++) {
         if (argv[i][0] != '-') {
             targetCmd = argv[i];
             break;
@@ -566,7 +591,7 @@ int CmdHelp(int argc, char** argv) {
 
     if (targetCmd.empty()) {
         ShowGeneralHelp();
-        return 0;
+        return SUCCESS;
     }
 
     auto it = gCommands.find(targetCmd);
@@ -576,15 +601,16 @@ int CmdHelp(int argc, char** argv) {
         response["errCode"] = "ERR_INVALID_COMMAND";
         response["errMsg"] = "Unknown command: " + targetCmd;
         std::cout << response.dump() << std::endl;
-        return 1;
+        return FAILURE;
     }
 
     ShowCommandHelp(it->second);
-    return 0;
+    return SUCCESS;
 }
 
-void RegisterHelpCommand() {
-    REGISTER_CMD("help", "Show help information",
+void RegisterHelpCommand()
+{
+    RegisterCommand("help", "Show help information",
         "ohos-audioManager help [command]",
         "    command                Optional. Show detailed help for a specific command.",
         "    ohos-audioManager help\n"
@@ -592,12 +618,13 @@ void RegisterHelpCommand() {
         CmdHelp);
 }
 
-void RegisterGetVolumeCommand() {
-    REGISTER_CMD("get-volume", "Get the current volume for a specific volume type",
+void RegisterGetVolumeCommand()
+{
+    RegisterCommand("get-volume", "Get the current volume for a specific volume type",
         "ohos-audioManager get-volume [--type <type>]",
         "    --type <type>           Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
-        "STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, "
+        "STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, "
         "STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, "
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager get-volume\n"
@@ -606,13 +633,14 @@ void RegisterGetVolumeCommand() {
         CmdGetVolume);
 }
 
-void RegisterSetVolumeCommand() {
-    REGISTER_CMD("set-volume", "Set the volume for a specific volume type",
+void RegisterSetVolumeCommand()
+{
+    RegisterCommand("set-volume", "Set the volume for a specific volume type",
         "ohos-audioManager set-volume --volume <value> [--type <type>]",
         "    --volume <value>       Required. Volume value to set (typically 0-100 or 0-15)\n"
         "    --type <type>          Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
-        "STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, "
+        "STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, "
         "STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, "
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager set-volume --volume 50\n"
@@ -621,12 +649,13 @@ void RegisterSetVolumeCommand() {
         CmdSetVolume);
 }
 
-void RegisterGetMaxVolumeCommand() {
-    REGISTER_CMD("get-max-volume", "Get the maximum volume for a specific volume type",
+void RegisterGetMaxVolumeCommand()
+{
+    RegisterCommand("get-max-volume", "Get the maximum volume for a specific volume type",
         "ohos-audioManager get-max-volume [--type <type>]",
         "    --type <type>           Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
-        "STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, "
+        "STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, "
         "STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, "
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager get-max-volume\n"
@@ -635,12 +664,13 @@ void RegisterGetMaxVolumeCommand() {
         CmdGetMaxVolume);
 }
 
-void RegisterIsMuteCommand() {
-    REGISTER_CMD("is-mute", "Check if a specific volume type is muted",
+void RegisterIsMuteCommand()
+{
+    RegisterCommand("is-mute", "Check if a specific volume type is muted",
         "ohos-audioManager is-mute [--type <type>]",
         "    --type <type>           Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
-        "STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, "
+        "STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, "
         "STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, "
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager is-mute\n"
@@ -649,13 +679,14 @@ void RegisterIsMuteCommand() {
         CmdIsMute);
 }
 
-void RegisterSetMuteCommand() {
-    REGISTER_CMD("set-mute", "Set the mute state for a specific volume type",
+void RegisterSetMuteCommand()
+{
+    RegisterCommand("set-mute", "Set the mute state for a specific volume type",
         "ohos-audioManager set-mute --mute <true|false> [--type <type>]",
         "    --mute <true|false>    Required. Mute state: true to mute, false to unmute\n"
         "    --type <type>          Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
-        "STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, "
+        "STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, "
         "STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, "
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager set-mute --mute true\n"
@@ -664,8 +695,9 @@ void RegisterSetMuteCommand() {
         CmdSetMute);
 }
 
-void RegisterGetDevicesCommand() {
-    REGISTER_CMD("get-devices", "Get the list of audio devices",
+void RegisterGetDevicesCommand()
+{
+    RegisterCommand("get-devices", "Get the list of audio devices",
         "ohos-audioManager get-devices [--flag <flag>]",
         "    --flag <flag>          Optional. Device flag. Values: [OUTPUT_DEVICES_FLAG, "
         "INPUT_DEVICES_FLAG, ALL_DEVICES_FLAG]. Default: OUTPUT_DEVICES_FLAG",
@@ -675,8 +707,9 @@ void RegisterGetDevicesCommand() {
         CmdGetDevices);
 }
 
-void RegisterSelectOutputDeviceCommand() {
-    REGISTER_CMD("select-output-device", "Select the output audio device",
+void RegisterSelectOutputDeviceCommand()
+{
+    RegisterCommand("select-output-device", "Select the output audio device",
         "ohos-audioManager select-output-device --type <deviceType>",
         "    --type <deviceType>    Required. Device type. Values: [DEVICE_TYPE_INVALID, "
         "DEVICE_TYPE_EARPIECE, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET, "
@@ -691,7 +724,8 @@ void RegisterSelectOutputDeviceCommand() {
         CmdSelectOutputDevice);
 }
 
-void InitCommands() {
+void InitCommands()
+{
     RegisterHelpCommand();
     RegisterGetVolumeCommand();
     RegisterSetVolumeCommand();
@@ -700,38 +734,40 @@ void InitCommands() {
     RegisterSetMuteCommand();
     RegisterGetDevicesCommand();
     RegisterSelectOutputDeviceCommand();
-    gHasSubCommand = (gCommands.size() > 1);
+    g_hasSubCommand= (gCommands.size() > INT_NUM1);
 }
 
-void PrintUsage(const char* prog) {
+void PrintUsage(const char* prog)
+{
     CLI_ERROR("Usage: %s <command> [options...]", prog);
     CLI_ERROR("Run '%s help' for more information", prog);
 }
 
-int main(int argc, char** argv) {
-    gProgramName = argv[0];
+int main(int argc, char** argv)
+{
+    G_PROGRAM_NAME= argv[0];
 
-    if (argc >= 2 && strcmp(argv[1], "--help") == 0) {
+    if (argc >= INT_NUM2 && strcmp(argv[1], "--help") == 0) {
         InitCommands();
         char* helpArgv[2] = {argv[0], nullptr};
-        CmdHelp(1, helpArgv);
-        return 0;
+        CmdHelp(INT_NUM1, helpArgv);
+        return SUCCESS;
     }
 
-    if (argc < 2) {
+    if (argc < INT_NUM2) {
         PrintUsage(argv[0]);
-        return 1;
+        return FAILURE;
     }
 
     InitCommands();
 
     std::string cmdName = argv[1];
 
-    for (int i = 2; i < argc; i++) {
+    for (int i = INT_NUM2; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0) {
             char* helpArgv[2] = {argv[0], const_cast<char*>(cmdName.c_str())};
-            CmdHelp(2, helpArgv);
-            return 0;
+            CmdHelp(INT_NUM2, helpArgv);
+            return SUCCESS;
         }
     }
 
@@ -739,8 +775,8 @@ int main(int argc, char** argv) {
     if (it == gCommands.end()) {
         OutputError("ERR_INVALID_COMMAND", "Unknown command: " + cmdName,
                     "Use --help to see available commands");
-        return 1;
+        return FAILURE;
     }
 
-    return it->second.handler(argc - 2, argv + 2);
+    return it->second.handler(argc - INT_NUM2, argv + INT_NUM2);
 }
