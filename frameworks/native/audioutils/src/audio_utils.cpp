@@ -254,6 +254,19 @@ size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds durati
     return sampleCount * bytesPerSample;
 }
 
+std::vector<std::string> Util::SplitString(const std::string& str, char delimiter)
+{
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream iss(str);
+    
+    while (std::getline(iss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}
+
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
 {
     startTimeNs_ = ClockTime::GetCurNano();

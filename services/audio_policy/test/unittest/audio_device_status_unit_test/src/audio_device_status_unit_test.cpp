@@ -1853,5 +1853,60 @@ HWTEST_F(AudioDeviceStatusUnitTest, NeedClearPreferredWhenCategoryUpdated_001, T
     EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
         updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 }
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_001
+* @tc.desc  : Test UpdateDeviceInfoByAudioParameters with device_name parameter.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_001, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    std::string audioParameters = "device_name:TestArmUsb;";
+    audioParameters += "sink_chans:2;sink_format:AUDIO_FORMAT_TYPE_PCM_16_BIT;sink_rate:96000;sink_mmap:1;";
+    audioParameters += "source_chans:4;source_format:AUDIO_FORMAT_PCM_24_BIT;source_rate:48000;source_mmap:1";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    EXPECT_EQ(deviceDesc->deviceName_, "TestArmUsb");
+    EXPECT_EQ(deviceDesc->deviceSupportMmap_, 1);
+
+    EXPECT_FALSE(deviceDesc->audioStreamInfo_.empty());
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_TRUE(streamInfo.samplingRate.find(AudioSamplingRate::SAMPLE_RATE_48000) != streamInfo.samplingRate.end());
+
+    EXPECT_EQ(streamInfo.format, SAMPLE_S24LE);
+
+    EXPECT_TRUE(streamInfo.channelLayout.find(AudioChannelLayout::CH_LAYOUT_4POINT0) !=
+        streamInfo.channelLayout.end());
+}
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_002
+* @tc.desc  : Test UpdateDeviceInfoByAudioParameters with device_name parameter.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_002, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    std::string audioParameters = "";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    EXPECT_EQ(deviceDesc->deviceName_, "");
+    EXPECT_EQ(deviceDesc->deviceSupportMmap_, 0);
+
+    EXPECT_FALSE(deviceDesc->audioStreamInfo_.empty());
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_TRUE(streamInfo.samplingRate.empty());
+
+    EXPECT_EQ(streamInfo.format, INVALID_WIDTH);
+
+    EXPECT_TRUE(streamInfo.channelLayout.empty());
+}
 } // namespace AudioStandard
 } // namespace OHOS

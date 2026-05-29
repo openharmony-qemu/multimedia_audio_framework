@@ -92,6 +92,8 @@ public:
 
     static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
         uint32_t sampleRate, uint32_t bytesPerSample);
+    
+    static std::vector<std::string> SplitString(const std::string& str, char delimiter);
 };
 
 class AudioTypeUtils {
@@ -285,7 +287,7 @@ class DumpFileUtil {
 public:
     static constexpr char DUMP_SERVER_PARA[] = "sys.audio.dump.writeserver.enable";
     static constexpr char DUMP_CLIENT_PARA[] = "sys.audio.dump.writeclient.enable";
-    static constexpr uint32_t PARAM_VALUE_LENTH = 150;
+    static constexpr uint32_t PARAM_VALUE_LENTH = 256;
     static constexpr char BETA_VERSION[] = "beta";
     static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);
