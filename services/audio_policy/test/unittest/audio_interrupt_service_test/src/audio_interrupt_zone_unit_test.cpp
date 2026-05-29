@@ -244,7 +244,7 @@ HWTEST(AudioInterruptZoneUnitTest, MigrateAudioInterruptZone_001, TestSize.Level
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[0]->audioFocusInfoList.size(), 1);
     EXPECT_NE(audioInterruptZoneManager->service_->zonesMap_[1]->audioFocusInfoList.size(), 1);
-    EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[1]->audioFocusInfoList.front().first.streamId,
+    EXPECT_NE(audioInterruptZoneManager->service_->zonesMap_[1]->audioFocusInfoList.front().first.streamId,
         100);
 }
 

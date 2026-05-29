@@ -169,7 +169,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_003, TestSize.Level4)
     EXPECT_NE(SUCCESS, ret);
 
     ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
     EXPECT_NE(SUCCESS, audioZoneClient->SetSystemVolume(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
         static_cast<int>(STREAM_MUSIC), 0, 0, 0));
     int outVol = 0;

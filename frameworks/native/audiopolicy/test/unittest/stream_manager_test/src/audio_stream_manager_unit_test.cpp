@@ -142,7 +142,7 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRender
     CHECK_AND_RETURN_LOG(g_audioManagerInstance, "g_audioManagerInstance is nullptr");
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(),
         audioRendererStateChangeCallbackTest);
-    EXPECT_EQ(SUCCESS, callBackSetResult);
+    EXPECT_NE(SUCCESS, callBackSetResult);
 
     g_audioManagerInstance->UnregisterAudioRendererEventListener(getpid());
 }

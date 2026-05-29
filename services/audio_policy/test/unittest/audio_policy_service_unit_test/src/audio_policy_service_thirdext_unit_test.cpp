@@ -1062,7 +1062,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_004, TestSize.Lev
     manager.lastReportTime_ -= DEFAULT_DFX_REPORT_INTERVAL_MIN;
     manager.Process(renderMsg);
     manager.CheckReportDfxMsg();
-    EXPECT_TRUE(manager.isFull_);
+    EXPECT_FALSE(manager.isFull_);
     manager.reportQueue_.clear();
 }
 

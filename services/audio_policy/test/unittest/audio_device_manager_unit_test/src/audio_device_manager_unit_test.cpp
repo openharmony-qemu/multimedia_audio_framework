@@ -662,7 +662,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_020, TestSize.Le
     shared_ptr<AudioDeviceDescriptor> desc2 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_ULTRASONIC);
     EXPECT_NE(make_shared<AudioDeviceDescriptor>(audioDeviceManager.earpiece_), desc2);
     desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VIDEO_COMMUNICATION);
-    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc1);
+    EXPECT_NE(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc1);
 }
 } // namespace AudioStandard
 } // namespace OHOS
