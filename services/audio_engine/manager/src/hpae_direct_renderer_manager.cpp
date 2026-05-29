@@ -1107,6 +1107,7 @@ void HpaeDirectRendererManager::StopDirectOutputNodeSync(bool isStandby)
 
 void HpaeDirectRendererManager::StopDirectOutputNode(bool isStandby)
 {
+    CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sinkoutput is null");
     bool needSleep = !isStandby && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING;
     if (needSleep) {
         ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
