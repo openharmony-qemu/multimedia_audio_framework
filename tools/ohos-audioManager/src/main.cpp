@@ -28,18 +28,22 @@ using namespace OHOS::AudioStandard;
 
 typedef std::function<int(int, char**)> CommandHandler;
 
-struct Command {
-    const char* name;
+struct CommandDetails {
     const char* description;
     const char* usage;
     const char* parameters;
     const char* examples;
+};
+
+struct Command {
+    const char* name;
+    CommandDetails details;
     CommandHandler handler;
 };
 
 static std::unordered_map<std::string, Command> gCommands;
-static const char* G_PROGRAM_NAME= "";
-static bool g_hasSubCommand= false;
+static const char* G_PROGRAM_NAME = "";
+static bool g_hasSubCommand = false;
 static const char* G_TOOL_DESCRIPTION = "Audio management tool for controlling volume, devices, and audio settings. "
     "Used for audio device management and volume control scenarios. "
     "Does not support advanced audio processing or routing configuration.";
@@ -51,9 +55,9 @@ static constexpr int32_t MIN_VOLUME = 0;
 static constexpr int32_t INT_NUM1 = 1;
 static constexpr int32_t INT_NUM2 = 2;
 
-void RegisterCommand(const char* name, const char* desc, const char* usage,
-    const char* params, const char* examples, CommandHandler handler) {
-    gCommands[name] = {name, desc, usage, params, examples, handler};
+void RegisterCommand(const char* name, const CommandDetails& details, CommandHandler handler)
+{
+    gCommands[name] = {name, details, handler};
 }
 
 static const std::unordered_map<std::string, AudioVolumeType> gVolumeTypeMap = {
@@ -542,7 +546,8 @@ void ShowGeneralHelp()
     CLI_LOG("");
     CLI_LOG("SubCommands:");
     for (const auto& pair : gCommands) {
-        CLI_LOG("  %-22s %s", pair.first.c_str(), pair.second.description ? pair.second.description : "");
+        CLI_LOG("  %-22s %s", pair.first.c_str(),
+            pair.second.details.description ? pair.second.details.description : "");
     }
     CLI_LOG("");
     CLI_LOG("Examples:");
@@ -557,25 +562,26 @@ void ShowGeneralHelp()
 
 void ShowCommandHelp(const Command& cmd)
 {
-    CLI_LOG("%s %s - %s", G_PROGRAM_NAME, cmd.name, cmd.description ? cmd.description : "N/A");
+    CLI_LOG("%s %s - %s", G_PROGRAM_NAME, cmd.name,
+        cmd.details.description ? cmd.details.description : "N/A");
 
-    if (cmd.usage) {
+    if (cmd.details.usage) {
         CLI_LOG("");
         CLI_LOG("Usage:");
-        CLI_LOG("  %s", cmd.usage);
+        CLI_LOG("  %s", cmd.details.usage);
     }
 
-    if (cmd.parameters) {
+    if (cmd.details.parameters) {
         CLI_LOG("");
         CLI_LOG("Parameters:");
-        CLI_LOG("%s", cmd.parameters);
+        CLI_LOG("%s", cmd.details.parameters);
     }
     CLI_LOG("    --help                 Display this help message");
 
-    if (cmd.examples) {
+    if (cmd.details.examples) {
         CLI_LOG("");
         CLI_LOG("Examples:");
-        CLI_LOG("%s", cmd.examples);
+        CLI_LOG("%s", cmd.details.examples);
     }
 }
 
@@ -610,17 +616,20 @@ int CmdHelp(int argc, char** argv)
 
 void RegisterHelpCommand()
 {
-    RegisterCommand("help", "Show help information",
+    CommandDetails details = {
+        "Show help information",
         "ohos-audioManager help [command]",
         "    command                Optional. Show detailed help for a specific command.",
         "    ohos-audioManager help\n"
-        "    ohos-audioManager help get-volume",
-        CmdHelp);
+        "    ohos-audioManager help get-volume"
+    };
+    RegisterCommand("help", details, CmdHelp);
 }
 
 void RegisterGetVolumeCommand()
 {
-    RegisterCommand("get-volume", "Get the current volume for a specific volume type",
+    CommandDetails details = {
+        "Get the current volume for a specific volume type",
         "ohos-audioManager get-volume [--type <type>]",
         "    --type <type>           Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
@@ -629,13 +638,15 @@ void RegisterGetVolumeCommand()
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager get-volume\n"
         "    ohos-audioManager get-volume --type STREAM_RING\n"
-        "    ohos-audioManager get-volume --type STREAM_MUSIC",
-        CmdGetVolume);
+        "    ohos-audioManager get-volume --type STREAM_MUSIC"
+    };
+    RegisterCommand("get-volume", details, CmdGetVolume);
 }
 
 void RegisterSetVolumeCommand()
 {
-    RegisterCommand("set-volume", "Set the volume for a specific volume type",
+    CommandDetails details = {
+        "Set the volume for a specific volume type",
         "ohos-audioManager set-volume --volume <value> [--type <type>]",
         "    --volume <value>       Required. Volume value to set (typically 0-100 or 0-15)\n"
         "    --type <type>          Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
@@ -645,13 +656,15 @@ void RegisterSetVolumeCommand()
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager set-volume --volume 50\n"
         "    ohos-audioManager set-volume --volume 10 --type STREAM_RING\n"
-        "    ohos-audioManager set-volume --volume 80 --type STREAM_MUSIC",
-        CmdSetVolume);
+        "    ohos-audioManager set-volume --volume 80 --type STREAM_MUSIC"
+    };
+    RegisterCommand("set-volume", details, CmdSetVolume);
 }
 
 void RegisterGetMaxVolumeCommand()
 {
-    RegisterCommand("get-max-volume", "Get the maximum volume for a specific volume type",
+    CommandDetails details = {
+        "Get the maximum volume for a specific volume type",
         "ohos-audioManager get-max-volume [--type <type>]",
         "    --type <type>           Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
@@ -660,13 +673,15 @@ void RegisterGetMaxVolumeCommand()
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager get-max-volume\n"
         "    ohos-audioManager get-max-volume --type STREAM_RING\n"
-        "    ohos-audioManager get-max-volume --type STREAM_MUSIC",
-        CmdGetMaxVolume);
+        "    ohos-audioManager get-max-volume --type STREAM_MUSIC"
+    };
+    RegisterCommand("get-max-volume", details, CmdGetMaxVolume);
 }
 
 void RegisterIsMuteCommand()
 {
-    RegisterCommand("is-mute", "Check if a specific volume type is muted",
+    CommandDetails details = {
+        "Check if a specific volume type is muted",
         "ohos-audioManager is-mute [--type <type>]",
         "    --type <type>           Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
         "STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, "
@@ -675,13 +690,15 @@ void RegisterIsMuteCommand()
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager is-mute\n"
         "    ohos-audioManager is-mute --type STREAM_RING\n"
-        "    ohos-audioManager is-mute --type STREAM_MUSIC",
-        CmdIsMute);
+        "    ohos-audioManager is-mute --type STREAM_MUSIC"
+    };
+    RegisterCommand("is-mute", details, CmdIsMute);
 }
 
 void RegisterSetMuteCommand()
 {
-    RegisterCommand("set-mute", "Set the mute state for a specific volume type",
+    CommandDetails details = {
+        "Set the mute state for a specific volume type",
         "ohos-audioManager set-mute --mute <true|false> [--type <type>]",
         "    --mute <true|false>    Required. Mute state: true to mute, false to unmute\n"
         "    --type <type>          Optional. Volume type. Values: [STREAM_MUSIC, STREAM_RING, "
@@ -691,25 +708,29 @@ void RegisterSetMuteCommand()
         "STREAM_ALL]. Default: STREAM_MUSIC",
         "    ohos-audioManager set-mute --mute true\n"
         "    ohos-audioManager set-mute --mute false --type STREAM_RING\n"
-        "    ohos-audioManager set-mute --mute true --type STREAM_MUSIC",
-        CmdSetMute);
+        "    ohos-audioManager set-mute --mute true --type STREAM_MUSIC"
+    };
+    RegisterCommand("set-mute", details, CmdSetMute);
 }
 
 void RegisterGetDevicesCommand()
 {
-    RegisterCommand("get-devices", "Get the list of audio devices",
+    CommandDetails details = {
+        "Get the list of audio devices",
         "ohos-audioManager get-devices [--flag <flag>]",
         "    --flag <flag>          Optional. Device flag. Values: [OUTPUT_DEVICES_FLAG, "
         "INPUT_DEVICES_FLAG, ALL_DEVICES_FLAG]. Default: OUTPUT_DEVICES_FLAG",
         "    ohos-audioManager get-devices\n"
         "    ohos-audioManager get-devices --flag OUTPUT_DEVICES_FLAG\n"
-        "    ohos-audioManager get-devices --flag INPUT_DEVICES_FLAG",
-        CmdGetDevices);
+        "    ohos-audioManager get-devices --flag INPUT_DEVICES_FLAG"
+    };
+    RegisterCommand("get-devices", details, CmdGetDevices);
 }
 
 void RegisterSelectOutputDeviceCommand()
 {
-    RegisterCommand("select-output-device", "Select the output audio device",
+    CommandDetails details = {
+        "Select the output audio device",
         "ohos-audioManager select-output-device --type <deviceType>",
         "    --type <deviceType>    Required. Device type. Values: [DEVICE_TYPE_INVALID, "
         "DEVICE_TYPE_EARPIECE, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET, "
@@ -720,8 +741,9 @@ void RegisterSelectOutputDeviceCommand()
         "DEVICE_TYPE_SYSTEM_PRIVATE, DEFAULT]. Can be specified multiple times",
         "    ohos-audioManager select-output-device --type DEVICE_TYPE_SPEAKER\n"
         "    ohos-audioManager select-output-device --type DEVICE_TYPE_BLUETOOTH_A2DP\n"
-        "    ohos-audioManager select-output-device --type DEFAULT",
-        CmdSelectOutputDevice);
+        "    ohos-audioManager select-output-device --type DEFAULT"
+    };
+    RegisterCommand("select-output-device", details, CmdSelectOutputDevice);
 }
 
 void InitCommands()
@@ -734,7 +756,7 @@ void InitCommands()
     RegisterSetMuteCommand();
     RegisterGetDevicesCommand();
     RegisterSelectOutputDeviceCommand();
-    g_hasSubCommand= (gCommands.size() > INT_NUM1);
+    g_hasSubCommand = (gCommands.size() > INT_NUM1);
 }
 
 void PrintUsage(const char* prog)
@@ -745,7 +767,7 @@ void PrintUsage(const char* prog)
 
 int main(int argc, char** argv)
 {
-    G_PROGRAM_NAME= argv[0];
+    G_PROGRAM_NAME = argv[0];
 
     if (argc >= INT_NUM2 && strcmp(argv[1], "--help") == 0) {
         InitCommands();
