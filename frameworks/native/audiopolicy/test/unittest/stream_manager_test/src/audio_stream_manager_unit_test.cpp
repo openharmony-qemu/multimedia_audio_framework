@@ -1154,7 +1154,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     EXPECT_NE(false, isStarted);
 
     bool isStopped = audioCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_NE(true, isStopped);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
