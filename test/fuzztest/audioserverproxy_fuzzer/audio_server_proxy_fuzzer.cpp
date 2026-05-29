@@ -130,8 +130,7 @@ void AudioServerProxyOffloadSetVolumeProxyFuzzTest()
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
     float volume = GetData<float>();
     uint32_t renderId = GetData<uint32_t>();
-    std::string networkId = "testNetworkId";
-    audioServerProxy.OffloadSetVolumeProxy(volume, renderId, networkId);
+    audioServerProxy.OffloadSetVolumeProxy(volume, renderId);
 }
 
 void AudioServerProxyUnsetOffloadModeProxyFuzzTest()

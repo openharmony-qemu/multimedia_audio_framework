@@ -64,6 +64,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_TRANSFER_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
     streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
     streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
@@ -94,6 +96,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_INTERPHONE)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_TRANSFER_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MESSAGE)] = STREAM_VOICE_MESSAGE;
@@ -477,7 +481,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
             RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
             StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
-            if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+            if (Util::IsRingerStreamUsage(streamUsage)) {
                 ResetRingerModeMute(rendererState, streamUsage);
             }
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
@@ -1495,6 +1499,16 @@ AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType 
     return VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 }
 
+AudioStreamType AudioStreamCollector::GetStreamTypeFromUsageContent(StreamUsage streamUsage, ContentType contentType)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
+    if (pos != streamTypeMap_.end()) {
+        streamType = pos->second;
+    }
+    return streamType;
+}
+
 AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sourceType)
 {
     switch (sourceType) {
@@ -1775,7 +1789,8 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
 bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
 {
     if (usage == STREAM_USAGE_VOICE_COMMUNICATION || usage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-        usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION || usage == STREAM_USAGE_INTERPHONE) {
+        usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION || usage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
+        usage == STREAM_USAGE_INTERPHONE) {
         return true;
     }
     return false;
@@ -1876,7 +1891,9 @@ bool AudioStreamCollector::HasRunningCapturerStreamByUid(int32_t uid)
     // judge stream state is running
     bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
         [uid](const auto &changeInfo) {
-            if (changeInfo->capturerState == CAPTURER_RUNNING) {
+            bool needSelectDevice = AudioRouterCenter::GetAudioRouterCenter().
+                IsConfigRouterStrategy(changeInfo->capturerInfo.sourceType);
+            if (changeInfo->capturerState == CAPTURER_RUNNING && needSelectDevice) {
                 AUDIO_INFO_LOG("Running Capturer stream : %{public}d with uid %{public}d",
                     changeInfo->sessionId, uid);
                 if (uid == INVALID_UID) {

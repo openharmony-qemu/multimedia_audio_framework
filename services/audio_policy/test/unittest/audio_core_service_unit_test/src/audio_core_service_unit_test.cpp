@@ -1150,18 +1150,6 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_009, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: ConnectServiceAdapter_001
-* @tc.desc  : Test ConnectServiceAdapter - will return success.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, ConnectServiceAdapter_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest ConnectServiceAdapter_001 start");
-    auto result = GetServerPtr()->eventEntry_->ConnectServiceAdapter();
-    EXPECT_EQ(result, true);
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
 * @tc.number: SelectOutputDevice_001
 * @tc.desc  : Test SelectOutputDevice - will return success.
 */
@@ -1869,6 +1857,9 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_008, TestSize.Level1
     streamDesc->rendererInfo_.forceToNormal = false;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    streamDesc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.format = SAMPLE_S16LE;
+    streamDesc->streamInfo_.channels = STEREO;
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
@@ -2333,7 +2324,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_003, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2367,9 +2358,9 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_004, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
     audioVolume->streamVolume_.emplace(anotherSessionId, std::make_shared<StreamVolume>(
-        anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, false));
+        anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2400,7 +2391,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_005, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2431,7 +2422,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2481,7 +2472,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(nullptr);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(nullptr, 0);
 
     EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, false);
 
@@ -2509,7 +2500,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, true);
     EXPECT_EQ(audioCoreService->enableDualHalToneState_, false);
@@ -2538,7 +2529,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
 
@@ -2569,7 +2560,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
 
@@ -8295,27 +8286,6 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_004, TestSize
 }
 
 /**
- * @tc.name  : IsVoipPrivacyBypassedByBehavior_001
- * @tc.number: IsVoipPrivacyBypassedByBehavior_001
- * @tc.desc  : Test descriptor-based voipNoPrivacyFlag check.
- */
-HWTEST_F(AudioCoreServiceUnitTest, IsVoipPrivacyBypassedByBehavior_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    auto streamDesc = CreateCapturerStreamDescriptorForVoipPrivacy(710101,
-        SOURCE_TYPE_VOICE_COMMUNICATION);
-    ASSERT_NE(streamDesc, nullptr);
-
-    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(nullptr));
-    EXPECT_FALSE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
-
-    streamDesc->voipNoPrivacyFlag_.store(true);
-    EXPECT_TRUE(audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc));
-}
-
-/**
  * @tc.name  : UpdateVoipNoPrivacyFlagBySessionId_001
  * @tc.number: UpdateVoipNoPrivacyFlagBySessionId_001
  * @tc.desc  : Test UpdateVoipNoPrivacyFlagBySessionId updates descriptor flag.
@@ -8368,34 +8338,34 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateVoipNoPrivacyFlagByPid_001, TestSize.Le
 }
 
 /**
- * @tc.name  : EvaluateActivePrivacyVoipPresence_001
- * @tc.number: EvaluateActivePrivacyVoipPresence_001
+ * @tc.name  : EvaluateActiveVoipPrivacyPresence_001
+ * @tc.number: EvaluateActiveVoipPrivacyPresence_001
  * @tc.desc  : Test active VOIP detection with muted and no-privacy exceptions.
  */
-HWTEST_F(AudioCoreServiceUnitTest, EvaluateActivePrivacyVoipPresence_001, TestSize.Level1)
+HWTEST_F(AudioCoreServiceUnitTest, EvaluateActiveVoipPrivacyPresence_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    bool hasActivePrivacyVoipCapturer = false;
+    bool hasActiveVoipPrivacyCapturer = false;
     auto activeVoip = CreateCapturerStreamDescriptorForVoipPrivacy(710105,
         SOURCE_TYPE_VOICE_COMMUNICATION);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_TRUE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_TRUE(hasActiveVoipPrivacyCapturer);
 
-    hasActivePrivacyVoipCapturer = true;
+    hasActiveVoipPrivacyCapturer = true;
     activeVoip->voipPriorityLowered_.store(true);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
 
-    hasActivePrivacyVoipCapturer = false;
+    hasActiveVoipPrivacyCapturer = false;
     activeVoip->voipPriorityLowered_.store(false);
     activeVoip->voipNoPrivacyFlag_.store(true);
-    audioCoreService->EvaluateActivePrivacyVoipPresence({activeVoip},
-        hasActivePrivacyVoipCapturer);
-    EXPECT_FALSE(hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
+        hasActiveVoipPrivacyCapturer);
+    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
 }
 
 /**

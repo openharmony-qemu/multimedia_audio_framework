@@ -89,7 +89,7 @@ public:
     ~HpaePcmBuffer()
     {
     }
-    HpaePcmBuffer &operator=(HpaePcmBuffer &other);
+    HpaePcmBuffer &operator=(const HpaePcmBuffer &other);
     HpaePcmBuffer &operator=(HpaePcmBuffer &&other) = delete;
 
     PcmBufferInfo GetPcmBufferInfo() const
@@ -223,6 +223,11 @@ public:
     }
 
     float *GetPcmDataBuffer()
+    {
+        return pcmDataBuffer_.data();
+    }
+
+    const float *GetPcmDataBuffer() const
     {
         return pcmDataBuffer_.data();
     }

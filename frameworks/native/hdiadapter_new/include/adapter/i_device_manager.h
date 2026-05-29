@@ -83,6 +83,10 @@ public:
 
     virtual void SetAudioScene(const AudioScene scene) = 0;
 
+    virtual int32_t SetPhoneCallSceneType(const std::string &adapterName, int32_t type) { return ERR_NOT_SUPPORTED; }
+
+    virtual int32_t CreateCallTransfer(const std::string &adapterName) { return ERR_NOT_SUPPORTED; }
+
     // only for auxiliarySink
     virtual int32_t CreateCognitionStream(const std::string &adapterName, void *param,
         int32_t &sinkId, void *buffer) { return ERR_NOT_SUPPORTED; }

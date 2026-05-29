@@ -166,30 +166,31 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_005, TestSize.Level1)
 */
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_006, TestSize.Level1)
 {
-    DeviceType deviceType = DEVICE_TYPE_NONE;
     bool bRet;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_NONE;
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceDesc);
     EXPECT_EQ(bRet, false);
 
-    CurrentActiveDevice().deviceCategory_ = BT_CAR;
-    deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
+    deviceDesc->deviceCategory_ = BT_CAR;
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceDesc);
     EXPECT_EQ(bRet, false);
 
-    CurrentActiveDevice().deviceCategory_ = BT_SOUNDBOX;
-    deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
+    deviceDesc->deviceCategory_ = BT_SOUNDBOX;
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceDesc);
     EXPECT_EQ(bRet, false);
 
-    CurrentActiveDevice().deviceCategory_ = CATEGORY_DEFAULT;
-    deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
+    deviceDesc->deviceCategory_ = CATEGORY_DEFAULT;
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceDesc);
     EXPECT_EQ(bRet, true);
 
-    deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceDesc);
     EXPECT_EQ(bRet, true);
 }
 

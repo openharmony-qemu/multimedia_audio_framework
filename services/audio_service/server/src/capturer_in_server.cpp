@@ -329,6 +329,14 @@ int32_t CapturerInServer::SetInMainThreadState(bool isInMainThread)
     return SUCCESS;
 }
 
+int32_t CapturerInServer::OnMetaData(const std::vector<uint8_t> &metaData)
+{
+    CHECK_AND_RETURN_RET_LOG(!metaData.empty(), ERR_INVALID_PARAM, "metaData is empty");
+    std::shared_ptr<IStreamListener> listener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
+    return listener->OnMetaData(metaData);
+}
+
 bool CapturerInServer::IsAppStateBackground(int32_t appPid)
 {
     AppExecFwk::AppMgrClient appManager;
@@ -1131,6 +1139,11 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
             AUDIO_ERR_LOG("downlink capturer permission check failed");
             return ERR_PERMISSION_DENIED;
         }
+    }
+    if (config.filterOptions.capturePrivatePrivacyStreams) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyCapturePrivatePlayback(processConfig_.appInfo.appTokenId),
+            ERR_PERMISSION_DENIED,
+            "capture private playback permission check failed");
     }
     filterConfig_ = config;
     if (filterConfig_.isModernInnerCapturer) {

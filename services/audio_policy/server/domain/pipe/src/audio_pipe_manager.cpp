@@ -923,6 +923,29 @@ void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<Audio
     }
 }
 
+bool AudioPipeManager::IsTransferCallOrRingtoneScene()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &entry : modemCommunicationIdMap_) {
+        if (entry.second != nullptr &&
+            entry.second->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION &&
+            entry.second->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            if (desc != nullptr &&
+                desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE &&
+                desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void AudioPipeManager::UpdateRingAndVoipStreamStatus(const AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
@@ -1439,7 +1462,8 @@ bool AudioPipeManager::IsVoipOrCellularStreamActive()
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         if ((desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) &&
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) &&
             desc->streamStatus_ == STREAM_STATUS_STARTED) {
             return true;
         }
@@ -1600,6 +1624,7 @@ void AudioPipeManager::ProcessPipeForVolumeInfo(std::vector<PipeDeviceVolumeGrou
     
     for (auto &streamDesc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
+        CHECK_AND_CONTINUE(streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
         CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
 
         auto firstDevice = streamDesc->newDeviceDescs_.front();
@@ -1660,6 +1685,19 @@ std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForP
     return pipeDeviceVolumeGroups;
 }
 
+std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForPipe(
+    std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, {}, "pipeInfo is null");
+    CHECK_AND_RETURN_RET_LOG(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT, {}, "pipe is not output role");
+
+    std::vector<PipeDeviceVolumeGroup> pipeDeviceVolumeGroups;
+
+    ProcessPipeForVolumeInfo(pipeDeviceVolumeGroups, pipeInfo);
+    
+    return pipeDeviceVolumeGroups;
+}
+
 std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForDevice(
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
 {
@@ -1678,6 +1716,7 @@ std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForD
         for (auto &streamDesc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE(streamDesc != nullptr);
             AUDIO_INFO_LOG("sessionId:%{public}u", streamDesc->sessionId_);
+            CHECK_AND_CONTINUE(streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
             CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
 
             auto firstDevice = streamDesc->newDeviceDescs_.front();

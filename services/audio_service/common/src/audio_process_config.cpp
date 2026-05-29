@@ -100,7 +100,8 @@ std::string ProcessConfig::DumpInnerCapConfig(const AudioPlaybackCaptureConfig &
     for (size_t j = 0; j < config.filterOptions.pids.size(); j++) {
         temp << config.filterOptions.pids[j] << " ";
     }
-    temp << "}";
+    temp << "} capturePrivatePrivacyStreams("
+        << (config.filterOptions.capturePrivatePrivacyStreams ? "true" : "false") << ")";
     // silentCapture will not be dumped.
 
     return temp.str();

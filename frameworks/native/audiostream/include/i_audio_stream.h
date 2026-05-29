@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <functional>
+#include <vector>
 #include "timestamp.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
@@ -39,6 +40,11 @@ public:
      * For details, refer InterruptEvent struct in audio_info.h
      */
     virtual void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+
+    virtual void OnMetaData(const std::vector<uint8_t> &metaData)
+    {
+        (void)metaData;
+    };
 };
 
 class RendererOrCapturerPolicyServiceDiedCallback {
@@ -130,7 +136,6 @@ public:
     static int32_t GetByteSizePerFrameWithEc(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithMicInEc(const AudioStreamParams &params, size_t &result);
     static int32_t GetByteSizePerFrameWithMicIn(const AudioStreamParams &params, size_t &result);
-    static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
     static std::shared_ptr<IAudioStream> GetRecordStream(StreamClass streamClass, AudioStreamParams params,
@@ -232,6 +237,11 @@ public:
     virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) = 0;
     virtual AudioCaptureMode GetCaptureMode() = 0;
     virtual int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) = 0;
+    virtual int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+    {
+        (void)callback;
+        return ERR_NOT_SUPPORTED;
+    }
 
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) = 0;

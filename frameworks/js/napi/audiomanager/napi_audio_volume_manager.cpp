@@ -186,6 +186,8 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getMinSystemVolumePercentage", GetMinSystemVolumePercentage),
         DECLARE_NAPI_FUNCTION("onVolumePercentageChange", OnVolumePercentageChange),
         DECLARE_NAPI_FUNCTION("offVolumePercentageChange", OffVolumePercentageChange),
+        DECLARE_NAPI_FUNCTION("onSystemVolumeChangeByFilter", OnSystemVolumeChangeByFilter),
+        DECLARE_NAPI_FUNCTION("offSystemVolumeChangeByFilter", OffSystemVolumeChangeByFilter),
     };
 
     status = napi_define_class(env, AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -2108,6 +2110,172 @@ napi_value NapiAudioVolumeManager::GetActiveStreamsVolumeInfo(napi_env env, napi
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "Convert activeStreamsVolumeInfo failed"),
         "Convert activeStreamsVolumeInfo failed");
     return result;
+}
+
+napi_value NapiAudioVolumeManager::OnSystemVolumeChangeByFilter(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Not system app."),
+        "No system permission");
+    size_t argCount = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argCount == ARGS_TWO,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"),
+        "OnSystemVolumeChangeByFilter fail to napi_get_cb_info/Requires 2 parameters");
+    
+    napi_valuetype filterType = napi_undefined;
+    CHECK_AND_RETURN_RET(napi_typeof(env, args[PARAM0], &filterType) == napi_ok && filterType == napi_object,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "incorrect parameter types: The type of filter must be object"));
+
+    napi_valuetype handler = napi_undefined;
+    CHECK_AND_RETURN_RET(napi_typeof(env, args[argCount -1], &handler) == napi_ok && handler == napi_function,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "incorrect parameter types: The type of callback must be function"));
+
+    NapiAudioVolumeManager *napiVolumeManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiVolumeManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiVolumeManager != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "status error");
+
+    std::string cbName = AUDIO_SYSTEM_VOLUME_CHANGE_BY_FILTER_CALLBACK_NAME;
+    return RegisterSystemVolumeChangeByFilterCallback(env, args, cbName, napiVolumeManager);
+}
+
+napi_value NapiAudioVolumeManager::OffSystemVolumeChangeByFilter(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Not system app."),
+        "No system permission");
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    size_t argCount = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && (argCount == ARGS_ZERO || argCount == ARGS_ONE),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"),
+        "OffSystemVolumeChangeByFilter fail to napi_get_cb_info/Requires 0 or 1 parameters");
+
+    if (argCount == ARGS_ONE) {
+        napi_valuetype handler = napi_undefined;
+        status = napi_typeof(env, args[argCount - 1], &handler);
+        CHECK_AND_RETURN_RET(status == napi_ok && handler == napi_function,
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+                "incorrect parameter types: The type of callback must be function"));
+    }
+
+    NapiAudioVolumeManager *napiVolumeManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiVolumeManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiVolumeManager != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "status error");
+
+    UnregisterSystemVolumeChangeByFilterCallback(env, args, argCount, napiVolumeManager);
+    return undefinedResult;
+}
+
+napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeByFilterCallback(napi_env env, napi_value *args,
+    const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+
+    SystemVolumeFilter filter;
+    int32_t uid = -1;
+    napi_value uidValue = nullptr;
+    napi_status status = napi_get_named_property(env, args[PARAM0], "uid", &uidValue);
+    CHECK_AND_RETURN_RET(status == napi_ok && uidValue != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Parameter verification failed"));
+    napi_valuetype type = napi_undefined;
+    napi_typeof(env, uidValue, &type);
+    CHECK_AND_RETURN_RET(type == napi_number,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Parameter verification failed"));
+    napi_get_value_int32(env, uidValue, &uid);
+    filter.uid = uid;
+
+    for (const auto &existingCb :
+        napiAudioVolumeManager->systemVolumeChangeByFilterCallbackNapiList_) {
+        if (existingCb->GetFilter().uid == filter.uid && existingCb->ContainSameJsCallback(args[PARAM1])) {
+            AUDIO_INFO_LOG("RegisterSystemVolumeChangeByFilterCallback: duplication filter and callback");
+            return result;
+        }
+    }
+
+    std::shared_ptr<NapiAudioSystemVolumeChangeByFilterCallback> cb = std::make_shared<
+        NapiAudioSystemVolumeChangeByFilterCallback>(env);
+    cb->SetFilter(filter);
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->audioSystemMngr_ != nullptr, result,
+        "audioSystemMngr_ is nullptr");
+    int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterSystemVolumeChangeByFilterCallback(
+        napiAudioVolumeManager->cachedClientId_, filter, cb);
+    if (ret != SUCCESS) {
+        if (ret == ERR_SYSTEM_PERMISSION_DENIED) {
+            return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Not system app.");
+        } else if (ret == ERR_INVALID_PARAM) {
+            return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+                "Parameter verification failed.");
+        }
+        return result;
+    }
+    cb->SaveCallbackReference(cbName, args[PARAM1], filter);
+    if (!cb->GetVolumeTsfnFlag()) {
+        cb->CreateSystemVolumeChangeByFilterTsfn(env);
+    }
+    napiAudioVolumeManager->systemVolumeChangeByFilterCallbackNapiList_.push_back(cb);
+    return result;
+}
+
+void NapiAudioVolumeManager::UnregisterSystemVolumeChangeByFilterCallback(napi_env env, napi_value *args,
+    size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    CHECK_AND_RETURN_LOG(napiAudioVolumeManager != nullptr, "napiAudioVolumeManager is nullptr");
+    CHECK_AND_RETURN_LOG(napiAudioVolumeManager->audioSystemMngr_ != nullptr, "audioSystemMngr_ is nullptr");
+    auto &cbList = napiAudioVolumeManager->systemVolumeChangeByFilterCallbackNapiList_;
+    CHECK_AND_CALL_FUNC_RETURN_LOG(!cbList.empty(),
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM, "no callback registered"),
+        "systemVolumeChangeByFilterCallbackNapiList_ is empty");
+
+    if (argc == ARGS_ZERO || args[PARAM0] == nullptr) {
+        for (auto &cb : cbList) {
+            cb->RemoveAllCallbackReference();
+            int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterSystemVolumeChangeByFilterCallback(
+                napiAudioVolumeManager->cachedClientId_, cb);
+            CHECK_AND_CALL_FUNC_RETURN(ret != ERR_SYSTEM_PERMISSION_DENIED,
+                NapiAudioError::ThrowError(env, NAPI_ERR_PERMISSION_DENIED, "Not system app."));
+            CHECK_AND_CALL_FUNC_RETURN(ret != ERR_INVALID_PARAM,
+                NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM));
+            CHECK_AND_RETURN(ret == SUCCESS);
+        }
+        cbList.clear();
+        return;
+    }
+
+    napi_value callback = args[PARAM0];
+    CHECK_AND_CALL_FUNC_RETURN_LOG(callback != nullptr,
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM, "callback is nullptr"),
+        "callback is nullptr");
+    for (auto it = cbList.begin(); it != cbList.end(); ++it) {
+        auto &cb = *it;
+        if (cb == nullptr || !cb->ContainSameJsCallback(callback)) {
+            continue;
+        }
+        cb->RemoveCallbackReference(env, callback);
+        if (cb->GetSystemVolumeByFilterCbListSize() == 0) {
+            int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterSystemVolumeChangeByFilterCallback(
+                napiAudioVolumeManager->cachedClientId_, cb);
+            CHECK_AND_CALL_FUNC_RETURN(ret != ERR_SYSTEM_PERMISSION_DENIED,
+                NapiAudioError::ThrowError(env, NAPI_ERR_PERMISSION_DENIED, "Not system app."));
+            CHECK_AND_CALL_FUNC_RETURN(ret != ERR_INVALID_PARAM,
+                NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM));
+            CHECK_AND_RETURN(ret == SUCCESS);
+            cbList.erase(it);
+        }
+        return;
+    }
+    NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM, "callback not found");
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

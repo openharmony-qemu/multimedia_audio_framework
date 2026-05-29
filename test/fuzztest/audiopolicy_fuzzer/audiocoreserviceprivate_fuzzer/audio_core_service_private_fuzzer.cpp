@@ -597,7 +597,7 @@ void AudioCoreServicePrivateSelectRingerOrAlarmDevicesFuzzTest()
 
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioCoreService->SelectRingerOrAlarmDevices(streamDesc);
+    audioCoreService->SelectRingerOrAlarmDevices(streamDesc, 0);
 }
 
 void AudioCoreServicePrivateUpdateDualToneStateFuzzTest()
@@ -1010,7 +1010,7 @@ void HandleA2dpSuspendWhenFetchFuzzTest()
     uint32_t flag = GetData<uint32_t>();
     audioCoreService->ProcessOutputPipeReload(pipeInfo, flag, reason);
     audioCoreService->MoveToNewOutputDevice(audioStreamDescriptor, pipeInfo, reason);
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(audioStreamDescriptor);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(audioStreamDescriptor, 0);
 }
 
 void GetVoiceCallMuteDurationFuzzTest()

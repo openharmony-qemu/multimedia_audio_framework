@@ -643,6 +643,15 @@ int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapt
     return SUCCESS;
 }
 
+int32_t FastAudioStream::SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+{
+    AUDIO_INFO_LOG("SetCapturerMetaDataCallback enter.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    std::lock_guard<std::mutex> lock(metaDataCbMutex_);
+    metaDataCb_ = callback;
+    return SUCCESS;
+}
+
 int32_t FastAudioStream::GetBufferDesc(BufferDesc &bufDesc)
 {
     AUDIO_DEBUG_LOG("%{public}s in.", logTag_.c_str());

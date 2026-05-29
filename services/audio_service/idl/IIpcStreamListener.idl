@@ -20,7 +20,8 @@ interface IIpcStreamListener {
     [ipccode 0, oneway] void OnOperationHandled(
         [in] int operation, /* Operation */
         [in] long operationResult);
-    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    [ipccode 1, oneway] void OnMetaData([in] List<unsigned char> metaData);
+    [ipccode 2, customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
         void OnOperationHandledLazy(
             [in] int operation, /* Operation */
             [in] long operationResult);

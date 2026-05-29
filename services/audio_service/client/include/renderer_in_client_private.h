@@ -113,6 +113,7 @@ public:
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
     AudioCaptureMode GetCaptureMode() override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;

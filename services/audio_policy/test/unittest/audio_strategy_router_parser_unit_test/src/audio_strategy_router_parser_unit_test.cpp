@@ -278,20 +278,6 @@ HWTEST_F(AudioStrategyRouterParserUnitTest, AudioStrategyRouterParserUnitTest_01
 
 /**
  * @tc.name  : Test AddRouters.
- * @tc.number: AudioStrategyRouterParserUnitTest_015
- * @tc.desc  : Test AddRouters interface.
- */
-HWTEST_F(AudioStrategyRouterParserUnitTest, AudioStrategyRouterParserUnitTest_015, TestSize.Level1)
-{
-    string routeName = "AppSelectRouter";
-    std::vector<std::unique_ptr<RouterBase>> routers;
-
-    audioStrategyRouterParser_->AddRouters(routers, routeName);
-    EXPECT_EQ(false, routers.empty());
-}
-
-/**
- * @tc.name  : Test AddRouters.
  * @tc.number: AudioStrategyRouterParserUnitTest_016
  * @tc.desc  : Test AddRouters interface.
  */

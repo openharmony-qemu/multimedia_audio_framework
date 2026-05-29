@@ -73,36 +73,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_002, TestSize.Level1)
 }
 
 /**
- * @tc.name: HandleStreamMuteStatus_001
- * @tc.desc: Test HandleStreamMuteStatus when deviceType is not DEVICE_TYPE_NONE.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_001, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_MUSIC;
-    bool mute = true;
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
-    EXPECT_TRUE(mute);
-}
-
-/**
- * @tc.name: HandleStreamMuteStatus_002
- * @tc.desc: Test HandleStreamMuteStatus when deviceType is DEVICE_TYPE_NONE.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_002, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_MUSIC;
-    bool mute = true;
-    DeviceType deviceType = DEVICE_TYPE_NONE;
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
-    EXPECT_TRUE(mute);
-}
-
-/**
  * @tc.name: IsHandleStreamMute_001
  * @tc.desc: Test IsHandleStreamMute when streamType is STREAM_VOICE_CALL.
  * @tc.type: FUNC
@@ -353,12 +323,12 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeDegree_001, TestSize.Level4
     ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_RING, volume, volDeviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioAdapterManager->GetSystemVolumeDegree(streamType);
+    ret = audioAdapterManager->GetSystemVolumeDegree(desc, streamType);
     EXPECT_EQ(ret, volumeDegree);
 
     EXPECT_EQ(audioAdapterManager->GetStreamVolumeDegreeInternal(desc, streamType), volumeDegree);
 
-    ret = audioAdapterManager->GetMinVolumeDegree(streamType);
+    ret = audioAdapterManager->GetMinVolumeDegree(streamType, desc->deviceType_);
     EXPECT_EQ(ret, 0);
 }
 
@@ -405,12 +375,12 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
 
     VolumeScale volumeTest{5, 5};
     audioAdapterManager->SetSystemVolumeLevel(streamType, volumeTest, volDeviceDesc);
-    int32_t volumeLevel = audioAdapterManager->GetSystemVolumeLevel(streamType, zoneId1_);
+    int32_t volumeLevel = audioAdapterManager->GetSystemVolumeLevel(device1, streamType);
     EXPECT_EQ(volumeLevel, 5);
 
-    audioAdapterManager->SetStreamMuteInternal(device1, streamType, true);
+    audioAdapterManager->SetStreamMute(device1, streamType, true);
     volumeLevel = audioAdapterManager->GetSystemVolumeLevel(device1, streamType);
-    int mute = audioAdapterManager->GetStreamMute(streamType, zoneId1_);
+    bool mute = audioAdapterManager->GetStreamMute(streamType, device1);
     EXPECT_EQ(volumeLevel, 0);
     EXPECT_EQ(mute, true);
 }
@@ -661,9 +631,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_New, TestSize.Level1)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_APP, desc);
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_APP, desc->deviceType_);
     EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.maxVolume);
-    ret = audioAdapterManager->GetMinVolumeLevel(STREAM_APP, desc);
+    ret = audioAdapterManager->GetMinVolumeLevel(STREAM_APP, desc->deviceType_);
     EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.minVolume);
 }
 
@@ -679,8 +649,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceVolume_001, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 5;
     DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
-    int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType);
-    int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType);
+    int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType, deviceType);
+    int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType, deviceType);
     ASSERT_TRUE(volumeLevel >= minVolume && volumeLevel <= maxVolume);
     int32_t result = audioAdapterManager_->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
     ASSERT_EQ(result, 0);
@@ -709,7 +679,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_001, TestSize.Level1)
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
-    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
+    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid, defaultOutputDevice_->deviceType_);
     EXPECT_EQ(res, SUCCESS);
 }
 
@@ -734,7 +704,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_002, TestSize.Level1)
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
-    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
+    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid, defaultOutputDevice_->deviceType_);
     EXPECT_EQ(res, SUCCESS);
 }
 
@@ -968,6 +938,75 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_009, TestSize.Lev
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
     EXPECT_EQ(idInfo, HDI_ID_INFO_CAMCORDER);
+}
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_010
+ * @tc.type: FUNC
+ * @tc.desc: primary_extra_capturer should use module name as id info
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_010, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::string idInfo;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary_extra_capturer";
+    pipeInfo->moduleInfo_.name = "Built_in_typec";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, "Built_in_typec");
+}
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_011_Ext01
+ * @tc.type: FUNC
+ * @tc.desc: primary_extra_capturer should support wired and bt names
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011_Ext01, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary_extra_capturer";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
+    std::string idInfo;
+
+    pipeInfo->moduleInfo_.name = "Built_in_wired";
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, "Built_in_wired");
+
+    idType = HDI_ID_TYPE_FAST;
+    pipeInfo->moduleInfo_.name = "Built_in_bt";
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, "Built_in_bt");
+}
+
+/**
+ * @tc.name: Test GetHdiSourceIdInfo
+ * @tc.number: GetHdiSourceIdInfo_001
+ * @tc.type: FUNC
+ * @tc.desc: primary_extra_capturer should use module name as hdi source id info
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetHdiSourceIdInfo_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "primary_extra_capturer";
+    audioModuleInfo.name = "Built_in_typec";
+    EXPECT_EQ(audioAdapterManager->GetHdiSourceIdInfo(audioModuleInfo), "Built_in_typec");
+
+    audioModuleInfo.name = "Built_in_wired";
+    EXPECT_EQ(audioAdapterManager->GetHdiSourceIdInfo(audioModuleInfo), "Built_in_wired");
+
+    audioModuleInfo.name = "Built_in_bt";
+    EXPECT_EQ(audioAdapterManager->GetHdiSourceIdInfo(audioModuleInfo), "Built_in_bt");
 }
 
 /**

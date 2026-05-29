@@ -35,21 +35,6 @@
 namespace OHOS {
 namespace AudioStandard {
 const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_ = IAudioStream::CreateStreamMap();
-// Supported audio parameters for fast audio stream
-const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
-    SAMPLE_RATE_48000,
-};
-
-const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
-    MONO,
-    STEREO,
-};
-
-const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
-    SAMPLE_S16LE,
-    SAMPLE_S32LE,
-    SAMPLE_F32LE
-};
 
 const std::map<AudioChannel, AudioChannelLayout> AUDIO_DEFAULT_CHANNEL_LAYOUT_MAP = {
     {MONO, CH_LAYOUT_MONO},
@@ -76,6 +61,8 @@ std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::Cre
     streamMap[std::make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[std::make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_INTERPHONE)] = STREAM_VOICE_COMMUNICATION;
     streamMap[std::make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[std::make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_TRANSFER_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[std::make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
     streamMap[std::make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
     streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
@@ -119,6 +106,8 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_TRANSFER_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MESSAGE)] = STREAM_VOICE_MESSAGE;
@@ -320,44 +309,6 @@ int32_t IAudioStream::GetByteSizePerFrameWithMicIn(const AudioStreamParams &para
     return SUCCESS;
 }
 
-bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params)
-{
-    // 0 for normal stream
-    if (streamFlags == 0) {
-        return true;
-    }
-    // 1 for fast stream
-    if (streamFlags == STREAM_FLAG_FAST) {
-        // check audio sample rate
-        AudioSamplingRate samplingRate = static_cast<AudioSamplingRate>(params.samplingRate);
-        auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
-            AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
-        if (rateItem == AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end()) {
-            AUDIO_WARNING_LOG("Sampling rate %{public}d does not meet the requirements", samplingRate);
-            return false;
-        }
-
-        // check audio channel
-        AudioChannel channels = static_cast<AudioChannel>(params.channels);
-        auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
-            AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
-        if (channelItem == AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end()) {
-            AUDIO_WARNING_LOG("Audio channel %{public}d does not meet the requirements", channels);
-            return false;
-        }
-
-        // check audio sample format
-        AudioSampleFormat format = static_cast<AudioSampleFormat>(params.format);
-        auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
-            AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
-        if (formatItem == AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end()) {
-            AUDIO_WARNING_LOG("Audio sample format %{public}d does not meet the requirements", format);
-            return false;
-        }
-    }
-    return true;
-}
-
 std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
     AudioStreamType eStreamType, int32_t appUid)
 {
@@ -365,7 +316,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
         int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
 
         if (enableNewRoute == 1) {
             HILOG_COMM_INFO("[GetPlaybackStream]Create renderer in client for fast playback stream with new route");
@@ -395,7 +346,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
         int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
 
         if (enableNewRoute == 1) {
             HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for fast record stream with new route");

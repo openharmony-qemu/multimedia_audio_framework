@@ -1308,7 +1308,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Lev
     streamDescToOldPipeInfo[100001] = pipe1;
     streamDescToOldPipeInfo[100002] = pipe2;
 
-    audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo);
+    std::vector<std::shared_ptr<AudioPipeInfo>> oldPipeInfoList{};
+    oldPipeInfoList.push_back(pipe1);
+    oldPipeInfoList.push_back(pipe2);
+
+    audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo, oldPipeInfoList);
     EXPECT_TRUE(newPipeInfoList[0]->streamDescriptors_[0]->streamAction_ == AUDIO_STREAM_ACTION_DEFAULT);
 }
 
@@ -1360,7 +1364,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_002, TestSize.Lev
     streamDescToOldPipeInfo[100001] = pipe1;
     streamDescToOldPipeInfo[100002] = pipe2;
  
-    audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo);
+    std::vector<std::shared_ptr<AudioPipeInfo>> oldPipeInfoList{};
+    oldPipeInfoList.push_back(pipe1);
+    oldPipeInfoList.push_back(pipe2);
+
+    audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo, oldPipeInfoList);
     EXPECT_TRUE(newPipeInfoList[0]->streamDescriptors_[0]->streamAction_ == AUDIO_STREAM_ACTION_DEFAULT);
 }
 

@@ -805,6 +805,28 @@ void AudioCoreService::EventEntry::NotifySessionStandbyStatus(uint32_t sessionId
     coreService_->NotifyStandbyStatus(sessionId, standbyStatus);
 }
 
+int32_t AudioCoreService::EventEntry::NotifyStreamStandby(int32_t pid, uint32_t streamId)
+{
+    std::shared_ptr<AudioCoreService> coreService = nullptr;
+    {
+        std::lock_guard<std::shared_mutex> lock(eventMutex_);
+        CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+        coreService = coreService_;
+    }
+    return coreService->NotifyStreamStandby(pid, streamId);
+}
+
+int32_t AudioCoreService::EventEntry::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
+{
+    std::shared_ptr<AudioCoreService> coreService = nullptr;
+    {
+        std::lock_guard<std::shared_mutex> lock(eventMutex_);
+        CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+        coreService = coreService_;
+    }
+    return coreService->NotifyStreamStandbyResume(pid, streamId);
+}
+
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -879,5 +901,12 @@ void AudioCoreService::EventEntry::TriggerVoipPriorityReload(uint32_t sessionId,
     coreService_->NotifyVoipPriorityLoweredByMute(sessionId, lowered);
 }
 
+int32_t AudioCoreService::EventEntry::GetHighestPriorityVolumeTypeForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    return coreService_->GetHighestPriorityVolumeTypeForDevice(deviceDesc, volumeType);
+}
 }
 }

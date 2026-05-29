@@ -131,6 +131,7 @@ int32_t AudioRenderSink::Start(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Start");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     struct AudioSampleAttributes attrInfo = {};
     audioRender_->GetSampleAttributes(audioRender_, &attrInfo);
 #ifdef FEATURE_POWER_MANAGER
@@ -530,7 +531,8 @@ int32_t AudioRenderSink::SetDeviceConnectedFlag(bool flag)
     return SUCCESS;
 }
 
-int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
+int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,
+    int32_t phoneCallSceneType)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
@@ -538,16 +540,18 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         return SUCCESS;
     }
 
-    if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
-        forceSetRouteFlag_ = currentScoExcludeFlag_;
-        struct AudioSceneDescriptor sceneDesc;
-        InitSceneDesc(sceneDesc, audioScene);
+    bool isConnect = (audioScene == AUDIO_SCENE_PHONE_CALL && currentAudioScene_ != AUDIO_SCENE_PHONE_CALL);
+    bool isDisconnect = (audioScene == AUDIO_SCENE_DEFAULT && currentAudioScene_ == AUDIO_SCENE_PHONE_CALL);
 
-        CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-        int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
-        CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
+    int32_t ret = SUCCESS;
+
+    if (isConnect && phoneCallSceneType != SCENE_TYPE_INVALID) {
+        ret = SetPhoneCallSceneType(phoneCallSceneType);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     }
-    currentScoExcludeFlag_ = scoExcludeFlag;
+
+    ret = SelectSceneToHdi(audioScene, scoExcludeFlag);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     bool isRingingToDefaultScene = false;
     bool isChangeScene = false;
     if (audioScene != currentAudioScene_) {
@@ -572,10 +576,30 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         UpdateNearlinkOutputRoute();
     }
 
+    if (isDisconnect) {
+        ret = SetPhoneCallSceneType(SCENE_TYPE_MODEM);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
     if (isRingingToDefaultScene) {
         AUDIO_INFO_LOG("ringing scene to default scene");
         return SUCCESS;
     }
+    return SUCCESS;
+}
+
+int32_t AudioRenderSink::SelectSceneToHdi(AudioScene audioScene, bool scoExcludeFlag)
+{
+    if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
+        forceSetRouteFlag_ = currentScoExcludeFlag_;
+        struct AudioSceneDescriptor sceneDesc;
+        InitSceneDesc(sceneDesc, audioScene);
+
+        CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+        int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
+        CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
+    }
+    currentScoExcludeFlag_ = scoExcludeFlag;
     return SUCCESS;
 }
 
@@ -591,6 +615,30 @@ void AudioRenderSink::UpdateNearlinkOutputRoute(void)
 int32_t AudioRenderSink::GetAudioScene(void)
 {
     return currentAudioScene_;
+}
+
+int32_t AudioRenderSink::SetPhoneCallSceneType(int32_t type)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is nullptr");
+
+    int32_t ret = deviceManager->SetPhoneCallSceneType(adapterNameCase_, type);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "SetPhoneCallSceneType failed, ret=%{public}d", ret);
+    return SUCCESS;
+}
+
+int32_t AudioRenderSink::CreateCallTransfer()
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is nullptr");
+
+    int32_t ret = deviceManager->CreateCallTransfer(adapterNameCase_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "CreateCallTransfer failed, ret=%{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
@@ -984,8 +1032,8 @@ int32_t AudioRenderSink::CreateRender(void)
     InitDeviceDesc(deviceDesc);
 
     HILOG_COMM_INFO("[CreateRender]create render, halName: %{public}s, rate: %{public}u, "
-        "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
-        param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
+        "channel: %{public}u, format: %{public}u, devicePin: %{public}u", halName_.c_str(),
+        param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
@@ -994,7 +1042,7 @@ int32_t AudioRenderSink::CreateRender(void)
     CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
     SetAudioRouteInfoForEnhanceChain();
 
-    AUDIO_INFO_LOG("create render success, hdiRenderId_: %{public}u, desc: %{public}s", hdiRenderId_, deviceDesc.desc);
+    AUDIO_INFO_LOG("create render success, hdiRenderId_: %{public}u", hdiRenderId_);
     return SUCCESS;
 }
 

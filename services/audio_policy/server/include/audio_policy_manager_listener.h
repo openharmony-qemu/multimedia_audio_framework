@@ -34,10 +34,12 @@ public:
     void OnBackgroundMute(const int32_t uid);
     bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType);
     bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName);
+    bool OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName);
 
 public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
+    uint32_t tokenId_ = 0;
 
 private:
     sptr<IStandardAudioPolicyManagerListener> listener_ = nullptr;

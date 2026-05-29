@@ -276,7 +276,8 @@ bool AudioSession::IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &st
     return (streamUsage == STREAM_USAGE_VOICE_MESSAGE) ||
         (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
         (streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
-        (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+        (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) ||
+        (streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION);
 }
 
 bool AudioSession::CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt)
@@ -547,7 +548,10 @@ int32_t AudioSession::SetAudioSessionBehavior(const uint32_t behavior)
         behaviorFlags_.voipNoPrivacyFlag = true;
         AUDIO_INFO_LOG("Session pid: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", callerPid_);
     }
-    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
+        behaviorFlags_.pauseWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Session pid: %{public}d activated PAUSE_WHEN_INTERRUPTED success", callerPid_);
+    } else if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
         behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Session pid: %{public}d activated MUTE_WHEN_INTERRUPT success", callerPid_);
     }

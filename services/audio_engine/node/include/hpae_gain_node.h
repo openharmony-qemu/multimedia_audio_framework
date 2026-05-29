@@ -55,6 +55,7 @@ private:
     FadeOutState fadeOutState_ = FadeOutState::NO_FADEOUT;
     IOperation operation_ = OPERATION_INVALID;
     void DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount);
+    void EnsureVolumeAvailable();
     uint32_t CalcRemainDurationMs(uint32_t duration, uint32_t frameLen, float *curSysGain, float *preSysGain);
     void DoFading(HpaePcmBuffer *input);
     void SilenceData(HpaePcmBuffer *pcmBuffer);

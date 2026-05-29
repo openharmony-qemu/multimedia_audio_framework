@@ -172,6 +172,11 @@ public:
         return sharedAudioCapturer_->SetCapturerReadCallback(callback);
     }
 
+    int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback) override
+    {
+        return sharedAudioCapturer_->SetCapturerMetaDataCallback(callback);
+    }
+
     int32_t GetBufferDesc(BufferDesc &bufDesc) override
     {
         return sharedAudioCapturer_->GetBufferDesc(bufDesc);

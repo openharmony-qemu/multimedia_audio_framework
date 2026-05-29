@@ -833,6 +833,29 @@ int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<
     return rate;
 }
 
+bool AudioPolicyService::IsMatchDeviceWithUsage(std::shared_ptr<AudioDeviceDescriptor> desc, AudioDeviceUsage usage)
+{
+    CHECK_AND_RETURN_RET(desc != nullptr, true);
+
+    bool ret = true;
+    switch (usage) {
+        case MEDIA_OUTPUT_DEVICES:
+        case CALL_OUTPUT_DEVICES:
+        case ALL_OUTPUT_DEVICES:
+            ret = desc->deviceRole_ == OUTPUT_DEVICE;
+            break;
+        case MEDIA_INPUT_DEVICES:
+        case CALL_INPUT_DEVICES:
+        case ALL_INPUT_DEVICES:
+            ret = desc->deviceRole_ == INPUT_DEVICE;
+            break;
+        default:
+            break;
+    }
+    AUDIO_INFO_LOG("deviceRole: %{public}d, usage: %{public}d, ret: %{public}d", desc->deviceRole_, usage, ret);
+    return ret;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsageInner(AudioDeviceUsage usage,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs)
 {
@@ -843,6 +866,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFi
     for (const auto &dev : descs) {
         CHECK_AND_CONTINUE_LOG(dev != nullptr, "dev is nullptr");
         if (dev->IsRemoteDevice()) {
+            CHECK_AND_CONTINUE(IsMatchDeviceWithUsage(dev, usage));
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             continue;
         }
@@ -1224,6 +1248,17 @@ bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
 AudioScene AudioPolicyService::GetAudioSceneFromAllZones()
 {
     return AudioZoneService::GetInstance().GetAudioSceneFromAllZones();
+}
+
+bool AudioPolicyService::IsValidNetworkIdForSendEffectParam(const std::string &networkId)
+{
+    auto connectedDevices = audioDeviceManager_.GetConnectedDevices();
+    for (const auto &device : connectedDevices) {
+        CHECK_AND_CONTINUE(device != nullptr && device->deviceRole_ == INPUT_DEVICE &&
+            device->networkId_ == networkId);
+        return true;
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

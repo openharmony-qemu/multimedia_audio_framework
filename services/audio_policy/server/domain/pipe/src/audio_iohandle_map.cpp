@@ -198,9 +198,13 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     pipeInfo->id_ = ioHandle;
     pipeInfo->paIndex_ = paIndex;
     pipeInfo->name_ = moduleName;
-    if (pipeInfo->name_ == PRIMARY_SPEAKER) {
-        pipeInfo->name_ = PRIMARY_SPEAKER_PIPENAME;
+
+    // As the AudioPolicyConfigParser only provides ClassType to ModuleInfo mappings without pipeName information,
+    // a temporary mapping solution is used to obtain the corresponding pipeName.
+    if (MODULENAME_TO_PIPENAME.find(moduleName) != MODULENAME_TO_PIPENAME.end()) {
+        pipeInfo->name_ = MODULENAME_TO_PIPENAME[moduleName];
     }
+
     if (moduleInfo.role == "sink") {
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
         pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
@@ -227,6 +231,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     if (pipeInfoInput != nullptr && pipeInfoInput->softLinkFlag_) {
         pipeManager->ClearPipeStreams(pipeInfoInput);
         pipeManager->UpdateAudioPipeInfo(pipeInfoInput);
+        return SUCCESS;
     }
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,

@@ -56,6 +56,8 @@ public:
     MOCK_METHOD(AudioCaptureMode, GetCaptureMode, (), (const, override));
     MOCK_METHOD(int32_t, SetCapturerReadCallback,
         (const std::shared_ptr<AudioCapturerReadCallback> &callback), (override));
+    MOCK_METHOD(int32_t, SetCapturerMetaDataCallback,
+        (const std::shared_ptr<AudioCapturerMetaDataCallback> &callback), (override));
     MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (override));
     MOCK_METHOD(int32_t, GetMicInBufferSize, (BufferDesc &bufDesc, size_t &processBufSize,
         size_t &micInBufSize, size_t &ecBufSize), (override));

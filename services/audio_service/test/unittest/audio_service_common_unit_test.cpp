@@ -1145,6 +1145,21 @@ HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_002, TestSize.Level1)
     std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
     EXPECT_NE(dumpStr, "");
 }
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: DumpInnerCapConfig_003
+* @tc.desc  : Test capturePrivatePrivacyStreams is dumped.
+*/
+HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_003, TestSize.Level1)
+{
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {1}, FilterMode::EXCLUDE};
+    filterOptions.capturePrivatePrivacyStreams = true;
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
+    std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
+    EXPECT_NE(dumpStr.find("capturePrivatePrivacyStreams(true)"), std::string::npos);
+}
 /**
 * @tc.name  : Test AudioRingCache API
 * @tc.type  : FUNC
@@ -1237,6 +1252,26 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Le
     int ret = 0;
     ret = config.Marshalling(parcel);
     EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_006
+* @tc.desc  : Test capturePrivatePrivacyStreams marshalling and unmarshalling.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_006, TestSize.Level1)
+{
+    MessageParcel parcel;
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {1}, FilterMode::EXCLUDE};
+    filterOptions.capturePrivatePrivacyStreams = true;
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
+    config.isModernInnerCapturer = true;
+
+    EXPECT_TRUE(config.Marshalling(parcel));
+    std::unique_ptr<AudioPlaybackCaptureConfig> unmarshalled(AudioPlaybackCaptureConfig::Unmarshalling(parcel));
+    ASSERT_NE(unmarshalled, nullptr);
+    EXPECT_TRUE(unmarshalled->filterOptions.capturePrivatePrivacyStreams);
 }
 
 /**

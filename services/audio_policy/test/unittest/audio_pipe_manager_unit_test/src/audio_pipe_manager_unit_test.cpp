@@ -3143,5 +3143,80 @@ HWTEST_F(AudioPipeManagerUnitTest, QueryPipeIdBySessionId_004, TestSize.Level1)
     EXPECT_EQ(audioPipeManager->QueryPipeIdBySessionId(sessionId1), pipeId1);
     EXPECT_EQ(audioPipeManager->QueryPipeIdBySessionId(sessionId2), pipeId2);
 }
+
+/**
+ * @tc.name: IsTransferCallOrRingtoneScene_001
+ * @tc.desc: Test IsTransferCallOrRingtoneScene when no transfer stream is active.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsTransferCallOrRingtoneScene_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    EXPECT_FALSE(audioPipeManager->IsTransferCallOrRingtoneScene());
+}
+
+/**
+ * @tc.name: IsTransferCallOrRingtoneScene_002
+ * @tc.desc: Test IsTransferCallOrRingtoneScene with transfer communication in modem map.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsTransferCallOrRingtoneScene_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+
+    auto streamDesc = MakeCallStreamDesc(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION,
+        STREAM_STATUS_STARTED);
+    audioPipeManager->modemCommunicationIdMap_[1] = streamDesc;
+
+    EXPECT_TRUE(audioPipeManager->IsTransferCallOrRingtoneScene());
+    audioPipeManager->modemCommunicationIdMap_.clear();
+}
+
+/**
+ * @tc.name: IsTransferCallOrRingtoneScene_003
+ * @tc.desc: Test IsTransferCallOrRingtoneScene with transfer ringtone in pipe list.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsTransferCallOrRingtoneScene_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    EXPECT_TRUE(audioPipeManager->IsTransferCallOrRingtoneScene());
+    audioPipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name: IsVoipOrCellularStreamActive_002
+ * @tc.desc: Test IsVoipOrCellularStreamActive includes VOICE_TRANSFER_COMMUNICATION.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsVoipOrCellularStreamActive_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    EXPECT_TRUE(audioPipeManager->IsVoipOrCellularStreamActive());
+    audioPipeManager->curPipeList_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS

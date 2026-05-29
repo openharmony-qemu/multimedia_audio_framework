@@ -1830,21 +1830,83 @@ HWTEST_F(AudioDeviceStatusUnitTest, NeedClearPreferredWhenCategoryUpdated_001, T
     AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     AudioDeviceDescriptor updated{DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE};
-    AudioDeviceDescriptor fetched{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched = {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE)};
     AudioDeviceDescriptor preferred{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
 
-    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_USER_SELECT}, preferred));
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 
-    fetched.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    fetched.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     updated.glassesWearCount_ = 2;
-    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 
     updated.glassesWearCount_ = 0;
-    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
 
     updated.glassesWearCount_ = 2;
     preferred.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(
+        updated, {fetched, ROUTER_TYPE_NONE}, preferred));
+}
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_001
+* @tc.desc  : Test UpdateDeviceInfoByAudioParameters with device_name parameter.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_001, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    std::string audioParameters = "device_name:TestArmUsb;";
+    audioParameters += "sink_chans:2;sink_format:AUDIO_FORMAT_TYPE_PCM_16_BIT;sink_rate:96000;sink_mmap:1;";
+    audioParameters += "source_chans:4;source_format:AUDIO_FORMAT_PCM_24_BIT;source_rate:48000;source_mmap:1";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    EXPECT_EQ(deviceDesc->deviceName_, "TestArmUsb");
+    EXPECT_EQ(deviceDesc->deviceSupportMmap_, 1);
+
+    EXPECT_FALSE(deviceDesc->audioStreamInfo_.empty());
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_TRUE(streamInfo.samplingRate.find(AudioSamplingRate::SAMPLE_RATE_48000) != streamInfo.samplingRate.end());
+
+    EXPECT_EQ(streamInfo.format, SAMPLE_S24LE);
+
+    EXPECT_TRUE(streamInfo.channelLayout.find(AudioChannelLayout::CH_LAYOUT_4POINT0) !=
+        streamInfo.channelLayout.end());
+}
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_002
+* @tc.desc  : Test UpdateDeviceInfoByAudioParameters with device_name parameter.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_002, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    std::string audioParameters = "";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    EXPECT_EQ(deviceDesc->deviceName_, "");
+    EXPECT_EQ(deviceDesc->deviceSupportMmap_, 0);
+
+    EXPECT_FALSE(deviceDesc->audioStreamInfo_.empty());
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_TRUE(streamInfo.samplingRate.empty());
+
+    EXPECT_EQ(streamInfo.format, INVALID_WIDTH);
+
+    EXPECT_TRUE(streamInfo.channelLayout.empty());
 }
 } // namespace AudioStandard
 } // namespace OHOS

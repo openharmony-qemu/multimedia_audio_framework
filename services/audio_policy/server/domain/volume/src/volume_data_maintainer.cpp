@@ -938,8 +938,9 @@ void VolumeDataMaintainer::CheckNotificationVolumeState(std::shared_ptr<AudioDev
 IntValueInfo VolumeDataMaintainer::GetVolumeLevelInfo(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType, int32_t zoneId)
 {
+    DeviceType deviceType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_SPEAKER;
     int32_t dftVolume = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(device, streamType, zoneId);
-    int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(device, streamType, zoneId);
+    int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(deviceType, streamType, zoneId);
     IntValueInfo info {
 #ifdef FEATURE_AUDIO_ZONE
         .key = GetVolumeKey(device, streamType) + GetZoneKey(zoneId),
@@ -1379,10 +1380,13 @@ int32_t VolumeDataMaintainer::SaveSystemAppVolumeLevelToDb()
         localSystemAppVolumeLevelMap = systemAppVolumeLevelMap_;
     }
     for (const auto &[uid, level] : localSystemAppVolumeLevelMap) {
-        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
-        CHECK_AND_CONTINUE_LOG(!bundleName.empty(), "bundleName is empty");
+        std::string bundleName;
+        int32_t appIndex = 0;
+        AudioBundleManager::GetNameAndIndexForUid(uid, bundleName, appIndex);
+        std::string bundleNameWithIndex = AudioBundleManager::ComposeBundleNameWithIndex(bundleName, appIndex);
+        CHECK_AND_CONTINUE_LOG(!bundleNameWithIndex.empty(), "bundleNameWithIndex is empty");
         CHECK_AND_CONTINUE(level != MAX_VOLUME_DEGREE);
-        tempMap[bundleName] = level;
+        tempMap[bundleNameWithIndex] = level;
     }
     nlohmann::json j = tempMap;
     std::string jsonStr = j.dump();
@@ -1429,9 +1433,12 @@ int32_t VolumeDataMaintainer::SaveSystemAppVolumeMuteStatusToDb()
         localSystemAppVolumeMuteStatusMap = systemAppVolumeMuteStatusMap_;
     }
     for (const auto &[uid, muteStatus] : localSystemAppVolumeMuteStatusMap) {
-        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
-        CHECK_AND_CONTINUE_LOG(!bundleName.empty(), "bundleName is empty");
-        tempMap[bundleName] = muteStatus;
+        std::string bundleName;
+        int32_t appIndex = 0;
+        AudioBundleManager::GetNameAndIndexForUid(uid, bundleName, appIndex);
+        std::string bundleNameWithIndex = AudioBundleManager::ComposeBundleNameWithIndex(bundleName, appIndex);
+        CHECK_AND_CONTINUE_LOG(!bundleNameWithIndex.empty(), "bundleNameWithIndex is empty");
+        tempMap[bundleNameWithIndex] = muteStatus;
     }
     nlohmann::json j = tempMap;
     std::string jsonStr = j.dump();

@@ -1027,6 +1027,13 @@ int32_t RendererInClientInner::SetCapturerReadCallback(const std::shared_ptr<Aud
     return ERROR;
 }
 
+int32_t RendererInClientInner::SetCapturerMetaDataCallback(
+    const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
+{
+    AUDIO_ERR_LOG("SetCapturerMetaDataCallback is not supported");
+    return ERROR;
+}
+
 int32_t RendererInClientInner::GetRawBuffer(BufferDesc &bufDesc)
 {
     Trace trace("RendererInClientInner::GetRawBuffer");
@@ -2264,6 +2271,12 @@ void RendererInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus RendererInClientInner::CheckRestoreStatus()
 {
+    bool restoreFlag = IsFastStream() && (writeCb_ == nullptr) && !rendererInfo_.isStatic;
+    if (restoreFlag) {
+        AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
+        renderMode_ = RENDER_MODE_NORMAL;
+        return NEED_RESTORE_TO_NORMAL;
+    }
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->CheckRestoreStatus();
 }

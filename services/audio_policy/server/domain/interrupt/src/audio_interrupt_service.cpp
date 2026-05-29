@@ -81,8 +81,10 @@ AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt)
         return AUDIO_SCENE_PHONE_CALL;
     } else if (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
                audioInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) {
-        return audioInterrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ?
+        AudioScene scene = (audioInterrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+                audioInterrupt.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) ?
             AUDIO_SCENE_PHONE_CALL : AUDIO_SCENE_PHONE_CHAT;
+        return scene;
     } else if (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_RING) {
         return AUDIO_SCENE_VOICE_RINGING;
     }
@@ -1493,6 +1495,7 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
         while (it != audioInterruptZone->audioFocusInfoList.end()) {
             if ((*it).first.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
                 (*it).first.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
                 (*it).first.streamUsage == STREAM_USAGE_INTERPHONE ||
                 (*it).first.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
                 interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
@@ -1502,7 +1505,9 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
             }
             if (!isPreemptMode_ &&
                 ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE)) {
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE)) {
                 AUDIO_INFO_LOG("usage is voice modem communication or voice ring, skip");
                 ++it;
             } else {

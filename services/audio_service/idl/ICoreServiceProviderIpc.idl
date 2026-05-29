@@ -67,4 +67,6 @@ interface ICoreServiceProviderIpc {
     void SetCapturerMuteHint([in] unsigned int sessionId, [in] boolean mute);
     [oneway] void RecordBootStateTime([in] int state, [in] int uid, [in] long curTime);
     [oneway] void NotifySessionStandbyStatus([in] unsigned int sessionId, [in] boolean standbyStatus);
+    void NotifyStreamStandby([in] int pid, [in] unsigned int streamId, [out] int ret);
+    void NotifyStreamStandbyResume([in] int pid, [in] unsigned int streamId, [out] int ret);
 }

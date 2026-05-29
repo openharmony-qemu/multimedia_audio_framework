@@ -229,7 +229,14 @@ bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 
 bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
 {
-    return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
+    return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE ||
+        usage == STREAM_USAGE_RINGTONE || usage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+}
+
+bool Util::IsRingerStreamUsage(const StreamUsage &usage)
+{
+    return usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE ||
+        usage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
 }
 
 bool Util::IsRingerAudioScene(const AudioScene &audioScene)
@@ -245,6 +252,19 @@ size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds durati
         sampleCount++;
     }
     return sampleCount * bytesPerSample;
+}
+
+std::vector<std::string> Util::SplitString(const std::string& str, char delimiter)
+{
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream iss(str);
+    
+    while (std::getline(iss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
 }
 
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
@@ -666,6 +686,12 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
         HILOG_COMM_ERROR("[VerifyBackgroundCapture]failed: not allowed!");
     }
     return ret;
+}
+
+bool PermissionUtil::VerifyCapturePrivatePlayback(uint32_t tokenId)
+{
+    static const std::string CAPTURE_PLAYBACK_PRIVATE_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK_PRIVATE";
+    return VerifyPermission(CAPTURE_PLAYBACK_PRIVATE_PERMISSION, tokenId);
 }
 
 bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowedUids)
@@ -1428,6 +1454,44 @@ void DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::s
     OpenDumpFile(para, filePath, dumpFile);
 }
 
+void DumpFileUtil::ChangeDumpFileState(const std::string &para, FILE **dumpFile, const std::string &filePath,
+    AudioDumpFileType fileType)
+{
+    CHECK_AND_RETURN_LOG(*dumpFile != nullptr, "Invalid file para");
+    CHECK_AND_RETURN_LOG(g_lastPara[para] == "w" || g_lastPara[para] == "a", "Invalid input para");
+    std::string dumpPara;
+    bool res = GetSysPara(para.c_str(), dumpPara);
+    if (!res || dumpPara.empty()) {
+        AUDIO_WARNING_LOG("get %{public}s fail", para.c_str());
+    }
+    if (g_lastPara[para] == "w" && dumpPara == "w") {
+        return;
+    }
+    CloseDumpFile(dumpFile);
+    OpenDumpFile(para, filePath, dumpFile, fileType);
+}
+
+void DumpFileUtil::OpenDumpFile(const std::string &para, const std::string &fileName, FILE **file,
+    AudioDumpFileType fileType)
+{
+    if (*file != nullptr) {
+        DumpFileUtil::ChangeDumpFileState(para, file, fileName, fileType);
+        return;
+    }
+    *file = DumpFileUtil::OpenDumpFileInner(para, fileName, fileType);
+}
+
+std::string DumpFileUtil::GetMetadataServerDumpFileName(const std::string &halName, int32_t sourceType,
+    int64_t timestamp)
+{
+    return halName + "_metadata_" + std::to_string(sourceType) + "_" + std::to_string(timestamp) + ".bin";
+}
+
+std::string DumpFileUtil::GetMetadataClientDumpFileName(uint32_t sessionId)
+{
+    return std::to_string(sessionId) + "_cap_client_metadata.bin";
+}
+
 void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **file)
 {
     if (*file != nullptr) {
@@ -1990,12 +2054,14 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_VOICE_COMMUNICATION,
         STREAM_USAGE_VIDEO_COMMUNICATION,
         STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
-        STREAM_USAGE_INTERPHONE}},
+        STREAM_USAGE_INTERPHONE,
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION}},
     {STREAM_VOICE_CALL_ASSISTANT, {
         STREAM_USAGE_VOICE_CALL_ASSISTANT}},
     {STREAM_RING, {
         STREAM_USAGE_RINGTONE,
-        STREAM_USAGE_VOICE_RINGTONE}},
+        STREAM_USAGE_VOICE_RINGTONE,
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE}},
     {STREAM_NOTIFICATION, {
         STREAM_USAGE_SYSTEM,
         STREAM_USAGE_NOTIFICATION,
@@ -2092,7 +2158,9 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_ENFORCED_TONE, STREAM_SYSTEM_ENFORCED},
     {STREAM_USAGE_DTMF, STREAM_DTMF},
     {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_VOICE_CALL},
-    {STREAM_USAGE_VOICE_RINGTONE, STREAM_RING},
+    {STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION, STREAM_VOICE_CALL},
+    {STREAM_USAGE_VOICE_RINGTONE, STREAM_VOICE_RING},
+    {STREAM_USAGE_VOICE_TRANSFER_RINGTONE, STREAM_VOICE_RING},
     {STREAM_USAGE_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
     {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC},
 #ifdef MULTI_ALARM_LEVEL
@@ -2205,10 +2273,10 @@ AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamUsage(StreamUsage streamUsag
 }
 
 std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamUsageMap_ = {
-    {STREAM_RING, {STREAM_USAGE_VOICE_RINGTONE}},
+    {STREAM_RING, {STREAM_USAGE_VOICE_RINGTONE, STREAM_USAGE_VOICE_TRANSFER_RINGTONE}},
     {STREAM_NOTIFICATION, {STREAM_USAGE_NOTIFICATION}},
     {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION,
-        STREAM_USAGE_INTERPHONE}},
+        STREAM_USAGE_INTERPHONE, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION}},
     {STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
     {STREAM_ALARM, {STREAM_USAGE_ALARM}},
     {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
@@ -2590,6 +2658,19 @@ std::string GenerateAppsUidStr(std::unordered_set<int32_t> appsUid)
         first = false;
     }
     return uidStream.str();
+}
+
+std::string GenerateAppsTokenIdStr(std::unordered_set<uint32_t> appsTokenId)
+{
+    std::ostringstream tokenIdStream;
+    tokenIdStream << "TokenIds=";
+    bool first = true;
+    for (const auto &tokenId : appsTokenId) {
+        tokenIdStream << (first ? "" : ";");
+        tokenIdStream << tokenId;
+        first = false;
+    }
+    return tokenIdStream.str();
 }
 
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate)

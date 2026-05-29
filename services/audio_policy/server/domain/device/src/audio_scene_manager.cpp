@@ -89,7 +89,8 @@ bool AudioSceneManager::IsStreamActive(AudioStreamType streamType) const
 
 bool AudioSceneManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) const
 {
-    CHECK_AND_RETURN_RET(streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+    CHECK_AND_RETURN_RET(streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        streamUsage != STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
         GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
     return streamCollector_.IsStreamActiveByStreamUsage(streamUsage);
 }
@@ -99,9 +100,15 @@ bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const
     return streamCollector_.CheckVoiceCallActive(sessionId);
 }
 
-int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state)
+int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state,
+    int32_t phoneCallSceneType)
 {
-    return AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, state);
+    return AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, state, phoneCallSceneType);
+}
+
+int32_t AudioSceneManager::CreateCallTransferAfter()
+{
+    return AudioServerProxy::GetInstance().CreateCallTransferProxy();
 }
 
 AudioScene AudioSceneManager::GetAudioScene(bool hasSystemPermission) const

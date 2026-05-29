@@ -33,7 +33,7 @@
 #define BYTE_SIZE_SAMPLE_S16 2
 #define BYTE_SIZE_SAMPLE_S24 3
 #define BYTE_SIZE_SAMPLE_S32 4
-#define FRAME_DURATION_DEFAULT 20
+#define FRAME_DURATION_DEFAULT (20 * SOURCE_PERIOD_SIZE)
 #define MILLISECOND_PER_SECOND 1000
 
 namespace OHOS {
@@ -511,14 +511,10 @@ int32_t HpaeSourceInputNode::CapturerSourceDeInit()
                 BusinessScenario::RELEASE, ERR_NULL_POINTER),
             "invalid audioCapturerSource", false),
         "invalid audioCapturerSource");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::RELEASE, ERR_ILLEGAL_STATE),
-            "invalid source state", false),
-        "invalid source state");
     Trace trace("HpaeSourceInputNode::CapturerSourceDeInit");
-    audioCapturerSource_->DeInit();
+    if (audioCapturerSource_->IsInited()) {
+        audioCapturerSource_->DeInit();
+    }
     audioCapturerSource_ = nullptr;
     HdiAdapterManager::GetInstance().ReleaseId(captureId_);
     return SUCCESS;
@@ -717,6 +713,15 @@ void HpaeSourceInputNode::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUi
     if (clock != nullptr) {
         clock->UpdateSessionId(sessionsId);
     }
+}
+
+void HpaeSourceInputNode::UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId)
+{
+    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        "audioCapturerSource_ is nullptr");
+
+    CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "invalid source state");
+    audioCapturerSource_->UpdateAppsTokenId(appsTokenId);
 }
 
 uint32_t HpaeSourceInputNode::GetCaptureId() const

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "securec.h"
+#include <algorithm>
 #include "hpae_format_convert.h"
 
 namespace OHOS {
@@ -40,7 +41,7 @@ static void Write24Bit(uint8_t *p, uint32_t u)
 static void ConvertFromU8ToFloat(unsigned n, const uint8_t *a, float *b)
 {
     for (; n > 0; n--, a++, b++) {
-        *b = (float)(*a - (uint8_t)0x80U) * (1.0 / 0x80U);
+        *b = static_cast<float>(*a - static_cast<uint8_t>(0x80U)) * (1.0 / 0x80U);
     }
 }
 
@@ -70,20 +71,15 @@ static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 
 static float CapMax(float v)
 {
-    float value = v;
-    if (v >= 1.0f) {
-        value = 1.0f - FLOAT_EPS;
-    } else if (v <= -1.0f) {
-        value = -1.0f + FLOAT_EPS;
-    }
-    return value;
+    return std::clamp(v, -1.0f + FLOAT_EPS, 1.0f - FLOAT_EPS);
 }
 
 static void ConvertFromFloatToU8(unsigned n, const float *a, uint8_t *b)
 {
     for (; n > 0; n--) {
         float v = *(a++);
-        *(b++) = (uint8_t)(CapMax(v) * 127.0f + 128.0f);
+        // 127.0f: amplitude range of unsigned 8-bit, 128.0f: zero-point offset (0x80 = silence)
+        *(b++) = static_cast<uint8_t>(CapMax(v) * 127.0f + 128.0f);
     }
 }
 
@@ -92,7 +88,7 @@ static void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1 << (BIT_16 - 1));
-        *(b++) = (int16_t)v;
+        *(b++) = static_cast<int16_t>(v);
     }
 }
 
@@ -111,7 +107,7 @@ static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        *(b++) = (int32_t)v;
+        *(b++) = static_cast<int32_t>(v);
     }
 }
 

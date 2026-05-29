@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_unittest_tools.h"
+#include "audio_suite_base.h"
 #include "audio_suite_voice_morphing_algo_interface_impl.h"
 
 using namespace OHOS;
@@ -183,6 +184,86 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_005, TestSize.Le
     std::string name = "VoiceBeautifierType";
     EXPECT_EQ(vbAlgo.SetParameter(name, value), ERROR);
 
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_VoiceBeautifierValid_001, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "VoiceBeautifierType";
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR));
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_VoiceBeautifierValid_002, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "VoiceBeautifierType";
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_THEATRE));
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_VoiceBeautifierValid_003, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "VoiceBeautifierType";
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_STUDIO));
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_VoiceBeautifierInvalid_001, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "VoiceBeautifierType";
+    std::string value = std::to_string(99);
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), ERROR);
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_GeneralVoiceChangeValid_001, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "AudioGeneralVoiceChangeType";
+    std::string value = std::to_string(static_cast<int32_t>(GENERAL_VOICE_CHANGE_TYPE_CUTE));
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_GeneralVoiceChangeValid_002, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "AudioGeneralVoiceChangeType";
+    std::string value = std::to_string(static_cast<int32_t>(GENERAL_VOICE_CHANGE_TYPE_WAR));
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_GeneralVoiceChangeInvalid_001, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "AudioGeneralVoiceChangeType";
+    std::string value = std::to_string(99);
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), ERROR);
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestSetParameter_UnknownType_001, TestSize.Level0)
+{
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl vbAlgo(nc);
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string name = "UnknownType";
+    std::string value = std::to_string(1);
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), ERROR);
     EXPECT_EQ(vbAlgo.Deinit(), 0);
 }
 

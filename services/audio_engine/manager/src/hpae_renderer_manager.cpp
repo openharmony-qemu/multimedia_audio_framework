@@ -32,6 +32,7 @@
 #include "hpae_stream_move_monitor.h"
 #include "parameters.h"
 #include "util/id_handler.h"
+#include "audio_pipe_types.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
@@ -953,12 +954,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
-        if (isStandby) {
-            if (HasSessionEffect(sessionId)) {
-                sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
-            }
-            DisConnectInputSession(sessionId);
-        } else if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
+        if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
             if (HasSessionEffect(sessionId)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
             }
@@ -976,7 +972,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
 
 void HpaeRendererManager::StopInterphoneSinkIfNeeded()
 {
-    if (sinkInfo_.deviceName.find("Interphone") != std::string::npos) {
+    if (sinkInfo_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
         AUDIO_INFO_LOG("Interphone stream paused, stopping output cluster immediately");
         if (outputCluster_ != nullptr) {
             outputCluster_->Stop();
@@ -1292,13 +1288,20 @@ void HpaeRendererManager::CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo)
 
 int32_t HpaeRendererManager::Init(bool isReload)
 {
-    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, isReload] {
         Trace trace("HpaeRendererManager::Init");
         AUDIO_INFO_LOG("init devicename:%{public}s,channel:%{public}u,rate:%{public}u",
             GetEncryptStr(sinkInfo_.deviceName).c_str(), sinkInfo_.channels, sinkInfo_.samplingRate);
         InitManager(isReload, true);
     };
+    
+    if (sinkInfo_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+        hpaeNoLockQueue_.PushRequest(std::move(request));
+        hpaeNoLockQueue_.HandleRequests();
+        return SUCCESS;
+    }
+    
+    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     SendRequest(request, __func__, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
@@ -1429,10 +1432,8 @@ void HpaeRendererManager::Process()
     Trace trace("HpaeRendererManager::Process");
     if (outputCluster_ != nullptr && IsRunning()) {
         UpdateAppsUid();
-        // no stream running need stop
         if (appsUid_.empty() && !coBufferNodeIsConnected_) {
-            // For interphone stream, stop immediately without waiting 3s timeout
-            if (sinkInfo_.deviceName.find("Interphone") != std::string::npos) {
+            if (sinkInfo_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
                 outputCluster_->Stop();
                 return;
             }
@@ -1551,9 +1552,13 @@ void HpaeRendererManager::SendRequest(Request &&request, const std::string &func
     }
     hpaeNoLockQueue_.PushRequest(std::move(request));
     if (hpaeSignalProcessThread_ == nullptr) {
-        AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName,
-            "thread is nullptr");
+        if (sinkInfo_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+            hpaeNoLockQueue_.HandleRequests();
+        } else {
+            AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
+            HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName,
+                "thread is nullptr");
+        }
         return;
     }
     hpaeSignalProcessThread_->Notify();
@@ -1653,7 +1658,7 @@ std::string HpaeRendererManager::GetThreadName()
     return sinkInfo_.deviceName;
 }
 
-bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operation)
+bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operation, bool isStandby)
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
         "can not get input node of session %{public}u", sessionId);
@@ -1666,7 +1671,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     }
     if (sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPED ||
         sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_PAUSED ||
-        sessionGainNode == nullptr || !IsRunning()) {
+        sessionGainNode == nullptr || !IsRunning() || isStandby) {
         AUDIO_WARNING_LOG("session %{public}d do not have gain node or sink is not running!", sessionId);
         if (operation != OPERATION_STARTED) {
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;

@@ -2280,5 +2280,332 @@ HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_012, T
     bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
     EXPECT_TRUE(result);
 }
+
+/**
+ * @tc.name  : Test ClearPreferredDeviceDedupCache API
+ * @tc.type  : FUNC
+ * @tc.number: ClearPreferredDeviceDedupCache_Output_001
+ * @tc.desc  : Test ClearPreferredDeviceDedupCache clears output dedup cache and renderer info map.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ClearPreferredDeviceDedupCache_Output_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    auto devices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Populate lastSentOutputDeviceMap_
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = devices;
+    // Populate clientCbRendererInfoMap_
+    AudioRendererFilter filter;
+    filter.uid = uid;
+    filter.rendererInfo.streamUsage = streamUsage;
+    handler->clientCbRendererInfoMap_[clientPid] = {filter};
+
+    handler->ClearPreferredDeviceDedupCache(clientPid, CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE);
+
+    EXPECT_EQ(handler->lastSentOutputDeviceMap_.count(clientPid), 0);
+    EXPECT_EQ(handler->clientCbRendererInfoMap_.count(clientPid), 0);
+}
+
+/**
+ * @tc.name  : Test ClearPreferredDeviceDedupCache API
+ * @tc.type  : FUNC
+ * @tc.number: ClearPreferredDeviceDedupCache_Input_001
+ * @tc.desc  : Test ClearPreferredDeviceDedupCache clears input dedup cache and capturer filter map.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ClearPreferredDeviceDedupCache_Input_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto devices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    // Populate lastSentInputDeviceMap_
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = devices;
+    // Populate clientCbCapturerFilterMap_
+    AudioCapturerFilter capturerFilter;
+    capturerFilter.uid = uid;
+    capturerFilter.capturerInfo.sourceType = sourceType;
+    handler->clientCbCapturerFilterMap_[clientPid] = {capturerFilter};
+
+    handler->ClearPreferredDeviceDedupCache(clientPid, CallbackChange::CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE);
+
+    EXPECT_EQ(handler->lastSentInputDeviceMap_.count(clientPid), 0);
+    EXPECT_EQ(handler->clientCbCapturerFilterMap_.count(clientPid), 0);
+}
+
+/**
+ * @tc.name  : Test ClearPreferredDeviceDedupCache API
+ * @tc.type  : FUNC
+ * @tc.number: ClearPreferredDeviceDedupCache_NoEffectOnOtherClient_001
+ * @tc.desc  : Test ClearPreferredDeviceDedupCache only clears the target client, not other clients.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ClearPreferredDeviceDedupCache_NoEffectOnOtherClient_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t targetPid = TEST_CLIENT_PID;
+    int32_t otherPid = TEST_CLIENT_PID + 1;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    auto devices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Populate for both clients
+    handler->lastSentOutputDeviceMap_[targetPid][uid][streamUsage] = devices;
+    handler->lastSentOutputDeviceMap_[otherPid][uid][streamUsage] = devices;
+    AudioRendererFilter filter;
+    filter.uid = uid;
+    filter.rendererInfo.streamUsage = streamUsage;
+    handler->clientCbRendererInfoMap_[targetPid] = {filter};
+    handler->clientCbRendererInfoMap_[otherPid] = {filter};
+
+    handler->ClearPreferredDeviceDedupCache(targetPid, CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE);
+
+    // Target client's cache should be cleared
+    EXPECT_EQ(handler->lastSentOutputDeviceMap_.count(targetPid), 0);
+    EXPECT_EQ(handler->clientCbRendererInfoMap_.count(targetPid), 0);
+    // Other client's cache should remain
+    EXPECT_EQ(handler->lastSentOutputDeviceMap_.count(otherPid), 1);
+    EXPECT_EQ(handler->clientCbRendererInfoMap_.count(otherPid), 1);
+}
+
+/**
+ * @tc.name  : Test ClearPreferredDeviceDedupCache API
+ * @tc.type  : FUNC
+ * @tc.number: ClearPreferredDeviceDedupCache_NonPreferredCallback_001
+ * @tc.desc  : Test ClearPreferredDeviceDedupCache has no effect for non-preferred callback types.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, ClearPreferredDeviceDedupCache_NonPreferredCallback_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto devices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Populate dedup caches
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = devices;
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = devices;
+
+    // Call with non-preferred callback type
+    handler->ClearPreferredDeviceDedupCache(clientPid, CallbackChange::CALLBACK_FOCUS_INFO_CHANGE);
+
+    // Both dedup caches should remain intact
+    EXPECT_EQ(handler->lastSentOutputDeviceMap_.count(clientPid), 1);
+    EXPECT_EQ(handler->lastSentInputDeviceMap_.count(clientPid), 1);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable with dedup cache clearing
+ * @tc.type  : FUNC
+ * @tc.number: SetClientCallbacksEnable_ClearDedupCache_Output_001
+ * @tc.desc  : Test SetClientCallbacksEnable(false) clears output dedup cache and renderer info.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetClientCallbacksEnable_ClearDedupCache_Output_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    auto devices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Enable callback and populate dedup cache
+    handler->clientCallbacksMap_[clientPid][CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE] = true;
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = devices;
+    AudioRendererFilter filter;
+    filter.uid = uid;
+    filter.rendererInfo.streamUsage = streamUsage;
+    handler->clientCbRendererInfoMap_[clientPid] = {filter};
+
+    // Disable callback - should clear dedup cache and renderer info
+    int32_t ret = handler->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, false);
+
+    EXPECT_EQ(ret, AUDIO_OK);
+    EXPECT_EQ(handler->lastSentOutputDeviceMap_.count(clientPid), 0);
+    EXPECT_EQ(handler->clientCbRendererInfoMap_.count(clientPid), 0);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable with dedup cache clearing
+ * @tc.type  : FUNC
+ * @tc.number: SetClientCallbacksEnable_ClearDedupCache_Input_001
+ * @tc.desc  : Test SetClientCallbacksEnable(false) clears input dedup cache and capturer filter.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetClientCallbacksEnable_ClearDedupCache_Input_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto devices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});
+
+    // Enable callback and populate dedup cache
+    handler->clientCallbacksMap_[clientPid][CallbackChange::CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE] = true;
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = devices;
+    AudioCapturerFilter capturerFilter;
+    capturerFilter.uid = uid;
+    capturerFilter.capturerInfo.sourceType = sourceType;
+    handler->clientCbCapturerFilterMap_[clientPid] = {capturerFilter};
+
+    // Disable callback - should clear dedup cache and capturer filter
+    int32_t ret = handler->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, false);
+
+    EXPECT_EQ(ret, AUDIO_OK);
+    EXPECT_EQ(handler->lastSentInputDeviceMap_.count(clientPid), 0);
+    EXPECT_EQ(handler->clientCbCapturerFilterMap_.count(clientPid), 0);
+}
+
+/**
+ * @tc.name  : Test SetClientCallbacksEnable with dedup cache clearing
+ * @tc.type  : FUNC
+ * @tc.number: SetClientCallbacksEnable_EnableTrueNoClear_001
+ * @tc.desc  : Test SetClientCallbacksEnable(true) does NOT clear dedup cache.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetClientCallbacksEnable_EnableTrueNoClear_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(handler, nullptr);
+
+    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t uid = TEST_UID;
+    StreamUsage streamUsage = TEST_STREAM_USAGE;
+    SourceType sourceType = TEST_SOURCE_TYPE;
+    auto devices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
+
+    // Populate dedup caches
+    handler->lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = devices;
+    handler->lastSentInputDeviceMap_[clientPid][uid][sourceType] = devices;
+    AudioRendererFilter filter;
+    filter.uid = uid;
+    filter.rendererInfo.streamUsage = streamUsage;
+    handler->clientCbRendererInfoMap_[clientPid] = {filter};
+    AudioCapturerFilter capturerFilter;
+    capturerFilter.uid = uid;
+    capturerFilter.capturerInfo.sourceType = sourceType;
+    handler->clientCbCapturerFilterMap_[clientPid] = {capturerFilter};
+
+    // Enable callback - should NOT clear dedup cache
+    int32_t ret = handler->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
+
+    EXPECT_EQ(ret, AUDIO_OK);
+    EXPECT_EQ(handler->lastSentOutputDeviceMap_.count(clientPid), 1);
+    EXPECT_EQ(handler->clientCbRendererInfoMap_.count(clientPid), 1);
+
+    ret = handler->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, true);
+
+    EXPECT_EQ(ret, AUDIO_OK);
+    EXPECT_EQ(handler->lastSentInputDeviceMap_.count(clientPid), 1);
+    EXPECT_EQ(handler->clientCbCapturerFilterMap_.count(clientPid), 1);
+}
+
+/**
+ * @tc.name  : SetSystemVolumeChangeCallbackInfo_NewUid
+ * @tc.number: SetSystemVolumeChangeCallbackInfo_001
+ * @tc.desc  : Test if branch true when uid not found in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetSystemVolumeChangeCallbackInfo_NewUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter;
+    filter.uid = 1001;
+
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+    EXPECT_EQ(filterList[0].uid, 1001);
+}
+
+/**
+ * @tc.name  : SetSystemVolumeChangeCallbackInfo_DuplicateUid
+ * @tc.number: SetSystemVolumeChangeCallbackInfo_002
+ * @tc.desc  : Test if branch false when uid already exists in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetSystemVolumeChangeCallbackInfo_DuplicateUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter;
+    filter.uid = 1001;
+
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+}
+
+/**
+ * @tc.name  : RemoveSystemVolumeChangeCallbackInfo_ExistingUid
+ * @tc.number: RemoveSystemVolumeChangeCallbackInfo_001
+ * @tc.desc  : Test if branch true when uid found in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, RemoveSystemVolumeChangeCallbackInfo_ExistingUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter;
+    filter.uid = 1001;
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+
+    handler->RemoveSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    EXPECT_TRUE(handler->clientSystemVolumeFilterMap_.find(CLIENT_ID) ==
+        handler->clientSystemVolumeFilterMap_.end());
+}
+
+/**
+ * @tc.name  : RemoveSystemVolumeChangeCallbackInfo_NonExistingUid
+ * @tc.number: RemoveSystemVolumeChangeCallbackInfo_002
+ * @tc.desc  : Test if branch false when uid not found in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, RemoveSystemVolumeChangeCallbackInfo_NonExistingUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter1;
+    filter1.uid = 1001;
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter1);
+
+    SystemVolumeFilter filter2;
+    filter2.uid = 2002;
+    handler->RemoveSystemVolumeChangeCallbackInfo(CLIENT_ID, filter2);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+    EXPECT_EQ(filterList[0].uid, 1001);
+}
+
+/**
+ * @tc.name  : RemoveSystemVolumeChangeCallbackInfo_ListNotEmpty
+ * @tc.number: RemoveSystemVolumeChangeCallbackInfo_003
+ * @tc.desc  : Test if branch false when filter list is not empty after removal
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, RemoveSystemVolumeChangeCallbackInfo_ListNotEmpty, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter1;
+    filter1.uid = 1001;
+    SystemVolumeFilter filter2;
+    filter2.uid = 2002;
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter1);
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter2);
+
+    handler->RemoveSystemVolumeChangeCallbackInfo(CLIENT_ID, filter1);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

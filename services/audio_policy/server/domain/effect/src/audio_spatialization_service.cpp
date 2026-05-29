@@ -296,34 +296,12 @@ int32_t AudioSpatializationService::SetAdaptiveSpatialRenderingEnabled(
     HandleAdaptiveSpatialRenderingEnabledChange(selectedAudioDevice, enable);
     if (address == currentDeviceAddress_) {
         HandleDeviceConfigChanged(selectedAudioDevice);
-        bool bypass = addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled &&
-            (!addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled ||
-            spatialAudioSourceType_ == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
-        SetBypassSpatialForStereo(selectedAudioDevice, bypass);
     }
     std::string deviceSpatialInfo = EncapsulateDeviceInfo(address);
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
     int32_t ret = UpdateSpatializationStateReal(false);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
     WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
-    return SPATIALIZATION_SERVICE_OK;
-}
-
-int32_t AudioSpatializationService::SetBypassSpatialForStereo(
-    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool bypass)
-{
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->macAddress_ = selectedAudioDevice->macAddress_;
-    if (audioPolicyServerHandler_ != nullptr) {
-        std::string currEncryptedAddress = GetSha256EncryptAddress(deviceDesc->macAddress_);
-        AUDIO_INFO_LOG("bypass %{public}d", bypass);
-        AUDIO_INFO_LOG("spatializationEnabled %{public}d, headTrackingEnabled %{public}d",
-            addressToSpatialEnabledMap_[currEncryptedAddress].spatializationEnabled,
-            addressToSpatialEnabledMap_[currEncryptedAddress].headTrackingEnabled);
-        audioPolicyServerHandler_->SendBypassSpatialForStereo(deviceDesc,
-            addressToSpatialEnabledMap_[currEncryptedAddress].spatializationEnabled,
-            addressToSpatialEnabledMap_[currEncryptedAddress].headTrackingEnabled);
-    }
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -336,6 +314,10 @@ int32_t AudioSpatializationService::GetCurrentSpatialAudioSourceType()
 void AudioSpatializationService::SetSpatialAudioSourceType(SpatialAudioSourceType mode)
 {
     AUDIO_INFO_LOG("set sourceType: %{public}d", mode);
+    if (spatialAudioSourceType_ == mode) {
+        AUDIO_INFO_LOG("set same sourceType: %{public}d", mode);
+        return;
+    }
     spatialAudioSourceType_ = mode;
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendSpatialAudioSourceTypeChangeEvent(mode);
@@ -711,7 +693,9 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
 
 int32_t AudioSpatializationService::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
 {
-    return audioPolicyManager_.UpdatePersonalizedHRTFBin(fd, length);
+    int32_t ret = audioPolicyManager_.UpdatePersonalizedHRTFBin(fd, length);
+    close(fd);
+    return ret;
 }
 
 int32_t AudioSpatializationService::UpdateSpatializationSceneType()

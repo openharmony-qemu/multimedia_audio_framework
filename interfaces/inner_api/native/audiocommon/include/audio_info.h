@@ -62,6 +62,7 @@ constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
 constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
+constexpr int32_t AUDIO_FLAG_VKB_ALL_RING = 1026;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
@@ -372,6 +373,7 @@ enum CallbackChange : int32_t {
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_AUDIO_SESSION_INPUT_DEVICE,
@@ -399,6 +401,12 @@ enum UnderrunInfoType : uint32_t {
     UNDERRUN_TYPE_MAX = 1 << 2,
 };
 
+enum VkbMode {
+    VKB_INVALID = 0,
+    VKB_ONLY_RING = 1,
+    VKB_ALL_RING = 2
+};
+
 struct AdjustStreamVolumeInfo {
     float volume;
     uint32_t sessionId;
@@ -413,7 +421,7 @@ struct StreamVolumeParams {
     int32_t pid;
     bool isSystemApp;
     int32_t mode;
-    bool isVKB;
+    VkbMode isVKB;
 };
 
 constexpr CallbackChange CALLBACK_ENUMS[] = {
@@ -444,6 +452,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_AUDIO_SESSION_INPUT_DEVICE,
@@ -513,6 +522,32 @@ struct VolumeEvent : public Parcelable {
         }
         event->UnmarshallingSelf(parcel);
         return event;
+    }
+};
+
+struct SystemVolumeFilter : public Parcelable {
+    int32_t uid = -1;
+
+    SystemVolumeFilter() = default;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(uid);
+    }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        uid = parcel.ReadInt32();
+    }
+
+    static SystemVolumeFilter *Unmarshalling(Parcel &parcel)
+    {
+        auto filter = new(std::nothrow) SystemVolumeFilter();
+        if (filter == nullptr) {
+            return nullptr;
+        }
+        filter->UnmarshallingSelf(parcel);
+        return filter;
     }
 };
 
@@ -731,7 +766,7 @@ struct AudioRendererInfo : public Parcelable {
     int32_t effectMode = 1;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
-    bool isVirtualKeyboard = false;
+    VkbMode isVirtualKeyboard = VKB_INVALID;
     // store the finally select routeflag after concurrency
     uint32_t audioFlag = 0x0;
     bool forceToNormal = false;
@@ -774,7 +809,7 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(isLoopback)
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
-            && parcel.WriteBool(isVirtualKeyboard)
+            && parcel.WriteInt32(static_cast<int32_t>(isVirtualKeyboard))
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
@@ -805,7 +840,7 @@ struct AudioRendererInfo : public Parcelable {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
-        isVirtualKeyboard = parcel.ReadBool();
+        isVirtualKeyboard = static_cast<VkbMode>(parcel.ReadInt32());
         audioFlag = parcel.ReadUint32();
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
@@ -962,6 +997,26 @@ enum AudioScene : int32_t {
     AUDIO_SCENE_MAX,
 };
 
+/**
+ * @brief Phone call scene type enum
+ * Used to distinguish normal cellular call and transfer call
+ * @since 26
+ */
+enum PhoneCallSceneType : int32_t {
+    /**
+     * Invalid type (default value)
+     */
+    SCENE_TYPE_INVALID = -1,
+    /**
+     * Normal cellular call (MODEM call)
+     */
+    SCENE_TYPE_MODEM = 0,
+    /**
+     * Transfer call (phone acts as Bluetooth device for another phone)
+     */
+    SCENE_TYPE_TRANSFER = 1,
+};
+
 enum AudioDeviceUsage : uint32_t {
     /**
      * Media output devices.
@@ -1056,6 +1111,7 @@ struct CaptureFilterOptions {
     FilterMode usageFilterMode {FilterMode::INCLUDE};
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
+    bool capturePrivatePrivacyStreams = false;
 
     CaptureFilterOptions() = default;
     CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
@@ -1074,7 +1130,8 @@ struct CaptureFilterOptions {
         std::sort(usages.begin(), usages.end());
         std::sort(pids.begin(), pids.end());
         return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
-            && filter.pids == pids && filter.pidFilterMode == pidFilterMode);
+            && filter.pids == pids && filter.pidFilterMode == pidFilterMode
+            && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams);
     }
 };
 
@@ -1120,6 +1177,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // filterOptions.pidFilterMode
         parcel.WriteUint32(filterOptions.pidFilterMode);
+        parcel.WriteBool(filterOptions.capturePrivatePrivacyStreams);
 
         // silentCapture
         parcel.WriteBool(silentCapture);
@@ -1127,6 +1185,17 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         return true;
     }
 
+private:
+    static AudioPlaybackCaptureConfig *ReadPlaybackCaptureFlags(Parcel &parcel, AudioPlaybackCaptureConfig *config)
+    {
+        config->filterOptions.capturePrivatePrivacyStreams = parcel.ReadBool();
+        // silentCapture
+        config->silentCapture = parcel.ReadBool();
+        config->isModernInnerCapturer = parcel.ReadBool();
+        return config;
+    }
+
+public:
     static AudioPlaybackCaptureConfig *Unmarshalling(Parcel &parcel)
     {
         auto config = new(std::nothrow) AudioPlaybackCaptureConfig();
@@ -1148,7 +1217,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             usages.push_back(static_cast<StreamUsage>(tmpUsage));
         }
         config->filterOptions.usages = usages;
-
         // filterOptions.usageFilterMode
         uint32_t tempMode = parcel.ReadUint32();
         if (tempMode >= FilterMode::MAX_FILTER_MODE) {
@@ -1156,7 +1224,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             return nullptr;
         }
         config->filterOptions.usageFilterMode = static_cast<FilterMode>(tempMode);
-
         // filterOptions.pids
         uint32_t pidSize = parcel.ReadUint32();
         if (pidSize > MAX_VALID_PIDS_SIZE) {
@@ -1173,7 +1240,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             pids.push_back(tmpPid);
         }
         config->filterOptions.pids = pids;
-
         // filterOptions.pidFilterMode
         tempMode = parcel.ReadUint32();
         if (tempMode >= FilterMode::MAX_FILTER_MODE) {
@@ -1181,13 +1247,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
             return nullptr;
         }
         config->filterOptions.pidFilterMode = static_cast<FilterMode>(tempMode);
-
-        // silentCapture
-        config->silentCapture = parcel.ReadBool();
-
-        config->isModernInnerCapturer = parcel.ReadBool();
-
-        return config;
+        return ReadPlaybackCaptureFlags(parcel, config);
     }
 };
 
@@ -1668,7 +1728,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(rendererInfo.effectMode);
         parcel.WriteBool(rendererInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
-        parcel.WriteBool(rendererInfo.isVirtualKeyboard);
+        parcel.WriteInt32(static_cast<int32_t>(rendererInfo.isVirtualKeyboard));
         parcel.WriteBool(rendererInfo.keepRunning);
         parcel.WriteBool(rendererInfo.voipNoPrivacyFlag);
         parcel.WriteBool(rendererInfo.isStatic);
@@ -1691,7 +1751,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.effectMode = parcel.ReadInt32();
         config->rendererInfo.isLoopback = parcel.ReadBool();
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
-        config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
+        config->rendererInfo.isVirtualKeyboard = static_cast<VkbMode>(parcel.ReadInt32());
         config->rendererInfo.keepRunning = parcel.ReadBool();
         config->rendererInfo.voipNoPrivacyFlag = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();
@@ -2056,12 +2116,6 @@ enum RouterType {
      * @since 12
      */
     ROUTER_TYPE_USER_SELECT,
-
-    /**
-     * App select router.
-     * @since 12
-     */
-    ROUTER_TYPE_APP_SELECT,
 };
 
 enum RenderMode {

@@ -103,6 +103,8 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
         ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
     CHECK_AND_RETURN_RET_LOG(zoneId != AudioInterruptService::ZONEID_DEFAULT,
         ERR_INVALID_PARAM, "zone %{public}d is default zone", zoneId);
+    AUDIO_INFO_LOG("[RemoteFocus]handle focus size %{public}zu when release zone %{public}d strategy %{public}d",
+        tempMap[zoneId]->audioFocusInfoList.size(), zoneId, tempMap[zoneId]->context.backStrategy_);
 
     bool updateScene = false;
     auto &releaseZone = tempMap[zoneId];
@@ -136,16 +138,20 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
 
 void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const AudioInterrupt &interrupt)
 {
-    AUDIO_DEBUG_LOG("force stop interrupt %{public}d,%{public}d,%{public}d of zone %{public}d",
-        interrupt.uid, interrupt.pid, interrupt.streamId, zoneId);
+    AUDIO_INFO_LOG("[RemoteFocus]force stop focus: %{public}d uid: %{public}d zone: %{public}d",
+        interrupt.streamId, interrupt.uid, zoneId);
     CHECK_AND_RETURN_LOG(service_ != nullptr, "interrupt service is nullptr");
 
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     if (service_->handler_ != nullptr) {
-        service_->handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, interrupt.streamId);
+        if (interrupt.isAudioSessionInterrupt) {
+            service_->SendAudioSessionInterruptEventCallback(interruptEvent, interrupt);
+        } else {
+            service_->handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, interrupt.streamId);
+        }
     }
 
-    AudioVolume::GetInstance()->SetStreamVolumeMute(interrupt.streamId, true);
+    AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(interrupt.streamId, true);
     service_->sessionService_.RemoveStreamInfo(interrupt.pid, interrupt.streamId);
 }
 
@@ -178,7 +184,8 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
         ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
 
     auto &focusInfoList = tempMap[zoneId]->audioFocusInfoList;
-    AUDIO_INFO_LOG("migrate interrupt size %{public}zu from zone %{public}d", focusInfoList.size(), zoneId);
+    AUDIO_INFO_LOG("[RemoteFocus]migrate interrupt size %{public}zu from zone %{public}d strategy %{public}d",
+        focusInfoList.size(), zoneId, tempMap[zoneId]->context.backStrategy_);
     bool isMigrate = false;
     bool updateScene = false;
     for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
@@ -197,6 +204,8 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
             if (tempMap[zoneId]->context.backStrategy_ == MediaBackStrategy::STOP) {
                 ForceStopAudioFocusInZone(zoneId, itFocus->first);
             } else {
+                AUDIO_INFO_LOG("[RemoteFocus]active focus: %{public}d uid: %{public}d zone: %{public}d",
+                    itFocus->first.streamId, itFocus->first.uid, zoneId);
                 service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
                 SendInterruptEventForMigration(*itFocus, toZoneId);
             }
@@ -240,7 +249,8 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
     CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
         ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
 
-    AUDIO_INFO_LOG("inject interrupt size %{public}zu to zone %{public}d", interrupts.size(), zoneId);
+    AUDIO_INFO_LOG("[RemoteFocus]inject to source, size: %{public}zu targetZone: %{public}d",
+        interrupts.size(), zoneId);
     auto oldFocusList = tempMap[zoneId]->audioFocusInfoList;
     AudioFocusList newFocusList = interrupts;
     for (auto itOld = oldFocusList.begin(); itOld != oldFocusList.end(); itOld++) {
@@ -251,10 +261,9 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
         if (itNew == newFocusList.end()) {
             ForceStopAudioFocusInZone(zoneId, itOld->first);
         } else {
-            AUDIO_INFO_LOG("try to refresh interrupt %{public}d,%{public}d,%{public}d"
+            AUDIO_INFO_LOG("[RemoteFocus]refresh focus: %{public}d uid: %{public}d, "
                 "state from %{public}d to %{public}d",
-                itOld->first.uid, itOld->first.pid, itOld->first.streamId,
-                itOld->second, itNew->second);
+                itOld->first.streamId, itOld->first.uid, itOld->second, itNew->second);
             if (itNew->second != itOld->second) {
                 bool removeFocusInfo = false;
                 service_->SendInterruptEvent(itOld->second, itNew->second, itOld, removeFocusInfo);
@@ -313,7 +322,7 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
     CHECK_AND_RETURN_RET_LOG(!deviceTag.empty(), ERR_INVALID_PARAM,
         "device tag is invalid for zone %{public}d", zoneId);
 
-    AUDIO_INFO_LOG("inject interrupt size %{public}zu with device tag %{public}s to zone %{public}d",
+    AUDIO_INFO_LOG("[RemoteFocus]inject to sink, size: %{public}zu deviceTag: %{public}s targetZone: %{public}d",
         interrupts.size(), deviceTag.c_str(), zoneId);
     AudioFocusList newFocusList = interrupts;
     AudioFocusList activeFocusList;
@@ -325,7 +334,7 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
     RemoveAudioZoneInterrupts(zoneId, oldDeviceList);
     TryActiveAudioFocusForZone(zoneId, activeFocusList);
     if (oldDeviceList.size() > 0) {
-        AUDIO_INFO_LOG("exist inject focus removed, try resume focus");
+        AUDIO_INFO_LOG("[RemoteFocus]resume when focus removed");
         TryResumeAudioFocusForZone(zoneId);
     }
     return SUCCESS;
@@ -351,8 +360,8 @@ void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const 
     CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     for (auto &it : focus) {
         service_->sessionService_.RemoveStreamInfo(it->first.pid, it->first.streamId);
-        AUDIO_DEBUG_LOG("remove interrupt %{public}d from zone %{public}d",
-            it->first.streamId, zoneId);
+        AUDIO_INFO_LOG("[RemoteFocus]remove focus: %{public}d deviceTag: %{public}s from zone %{public}d",
+            it->first.streamId, it->first.deviceTag.c_str(), zoneId);
         CHECK_AND_CONTINUE(service_->zonesMap_.find(zoneId) != service_->zonesMap_.end() &&
             service_->zonesMap_[zoneId] != nullptr);
         service_->zonesMap_[zoneId]->audioFocusInfoList.erase(it);
@@ -368,7 +377,8 @@ void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, Audio
         service_->zonesMap_[zoneId]->audioFocusInfoList.size(), zoneId);
     if (activeFocusList.size() > 0) {
         for (auto itActive : activeFocusList) {
-            AUDIO_DEBUG_LOG("active new interrupt %{public}d", itActive.first.streamId);
+            AUDIO_INFO_LOG("[RemoteFocus]active focus: %{public}d deviceTag: %{public}s for zone %{public}d",
+                itActive.first.streamId, itActive.first.deviceTag.c_str(), zoneId);
             bool updateScene = false;
             service_->ActivateAudioInterruptInternal(zoneId, itActive.first, false, updateScene);
         }
@@ -449,6 +459,8 @@ void AudioInterruptZoneManager::MoveAudioInterruptToZone(const AudioInterrupt &i
 
     auto &focusInfoList = tempMap[zoneId]->audioFocusInfoList;
     focusInfoList.emplace_back(std::make_pair(interrupt, state));
+    AUDIO_INFO_LOG("[RemoteFocus]move focus: %{public}d uid: %{public}d state: %{public}d toZone: %{public}d",
+        interrupt.streamId, interrupt.uid, state, zoneId);
 }
 
 } // namespace AudioStandard

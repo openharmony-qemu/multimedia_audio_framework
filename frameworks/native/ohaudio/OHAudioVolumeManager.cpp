@@ -69,7 +69,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_GetMaxVolumeByUsage(OH_AudioVolumeMa
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     StreamUsage streamUsage = static_cast<StreamUsage>(usage);
     int32_t volumeLevel = ohAudioVolumeManager->GetMaxVolumeByUsage(streamUsage);
     if (volumeLevel < 0) {
@@ -88,7 +88,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_GetMinVolumeByUsage(OH_AudioVolumeMa
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     StreamUsage streamUsage = static_cast<StreamUsage>(usage);
     int32_t volumeLevel = ohAudioVolumeManager->GetMinVolumeByUsage(streamUsage);
     if (volumeLevel < 0) {
@@ -107,7 +107,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_GetVolumeByUsage(OH_AudioVolumeManag
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     StreamUsage streamUsage = static_cast<StreamUsage>(usage);
     int32_t volume = ohAudioVolumeManager->GetVolumeByUsage(streamUsage);
     if (volume < 0) {
@@ -126,7 +126,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_IsMuteByUsage(OH_AudioVolumeManager 
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     StreamUsage streamUsage = static_cast<StreamUsage>(usage);
     int32_t result = ohAudioVolumeManager->IsMuteByUsage(streamUsage, *muted);
     if (result < 0) {
@@ -145,7 +145,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_RegisterStreamVolumeChangeCallback(
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     StreamUsage streamUsage = static_cast<StreamUsage>(usage);
     int32_t result = ohAudioVolumeManager->SetStreamVolumeChangeCallback(callback, streamUsage, userData);
     return static_cast<OH_AudioCommon_Result>(result);
@@ -160,7 +160,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_UnregisterStreamVolumeChangeCallback
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     int32_t result = ohAudioVolumeManager->UnsetStreamVolumeChangeCallback(callback);
     return static_cast<OH_AudioCommon_Result>(result);
 }
@@ -173,7 +173,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_GetRingerMode(OH_AudioVolumeManager 
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     int32_t result = ohAudioVolumeManager->GetRingerMode();
     if (result < 0 || VALID_OH_RINGER_MODES.count(static_cast<OH_AudioRingerMode>(result)) == 0) {
         AUDIO_ERR_LOG("IsMuteByUsage failed");
@@ -192,7 +192,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_RegisterRingerModeChangeCallback(
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     int32_t result = ohAudioVolumeManager->SetAudioRingerModeChangeCallback(callback, userData);
     return static_cast<OH_AudioCommon_Result>(result);
 }
@@ -206,7 +206,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_UnregisterRingerModeChangeCallback(
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
-    OHAudioVolumeManager *ohAudioVolumeManager = (OHAudioVolumeManager*)volumeManager;
+    OHAudioVolumeManager *ohAudioVolumeManager = reinterpret_cast<OHAudioVolumeManager*>(volumeManager);
     int32_t result = ohAudioVolumeManager->UnsetAudioRingerModeChangeCallback(callback);
     return static_cast<OH_AudioCommon_Result>(result);
 }

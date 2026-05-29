@@ -968,5 +968,473 @@ HWTEST(AudioRouterCenterUnitTest, IsVehicleDevice_001, TestSize.Level1)
     desc5->deviceCategory_ = BT_CAR;
     EXPECT_FALSE(audioRouterCenter.IsVehicleDevice(desc5));
 }
+
+/**
+ * @tc.name  : Test IsBlockedDeviceForTransferCall.
+ * @tc.number: IsBlockedDeviceForTransferCall_001
+ * @tc.desc  : Verify that IsBlockedDeviceForTransferCall blocks BT SCO, A2DP, Nearlink, remote devices.
+ */
+HWTEST(AudioRouterCenterUnitTest, IsBlockedDeviceForTransferCall_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(nullptr));
+
+    auto scoDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(scoDesc));
+
+    auto a2dpDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(a2dpDesc));
+
+    auto nearlinkDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(nearlinkDesc));
+
+    auto remoteCastDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(remoteCastDesc));
+
+    auto remoteDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    remoteDesc->networkId_ = "remote_network_id";
+    EXPECT_TRUE(audioRouterCenter.IsBlockedDeviceForTransferCall(remoteDesc));
+
+    auto localSpeakerDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    localSpeakerDesc->networkId_ = LOCAL_NETWORK_ID;
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(localSpeakerDesc));
+
+    auto wiredDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    wiredDesc->networkId_ = LOCAL_NETWORK_ID;
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(wiredDesc));
+
+    auto usbDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, OUTPUT_DEVICE);
+    usbDesc->networkId_ = LOCAL_NETWORK_ID;
+    EXPECT_FALSE(audioRouterCenter.IsBlockedDeviceForTransferCall(usbDesc));
+}
+
+/**
+ * @tc.name  : Test FetchMediaOutputDevices.
+ * @tc.number: FetchMediaOutputDevices_001
+ * @tc.desc  : Test FetchMediaOutputDevices interface with valid device.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_001, TestSize.Level1)
+{
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    validDesc->deviceId_ = 100;
+
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, validDesc));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result[0]->deviceId_, 100);
+    EXPECT_EQ(routerType, ROUTER_TYPE_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test FetchMediaOutputDevices.
+ * @tc.number: FetchMediaOutputDevices_002
+ * @tc.desc  : Test FetchMediaOutputDevices interface with empty result.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_002, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(routerType, ROUTER_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test FetchMediaOutputDevices.
+ * @tc.number: FetchMediaOutputDevices_003
+ * @tc.desc  : Test FetchMediaOutputDevices interface with ultrasonic stream usage.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_003, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_ULTRASONIC;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+}
+
+/**
+ * @tc.name  : Test FetchMediaOutputDevices.
+ * @tc.number: FetchMediaOutputDevices_004
+ * @tc.desc  : Test FetchMediaOutputDevices interface with zone service.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_004, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    AudioZoneService::GetInstance().Init(handler, interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("test_zone", context, 0);
+    EXPECT_NE(zoneId, 0);
+
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 2000);
+
+    auto zoneDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    zoneDevice->deviceId_ = 200;
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, {zoneDevice});
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 2000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+}
+
+/**
+ * @tc.name  : Test FetchMediaOutputDevices.
+ * @tc.number: FetchMediaOutputDevices_005
+ * @tc.desc  : Test FetchMediaOutputDevices interface with bypass type.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_005, TestSize.Level1)
+{
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    validDesc->deviceId_ = 100;
+
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_STREAM_FILTER, validDesc));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_STREAM_FILTER;
+    info.caller = "test_caller";
+
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(routerType, ROUTER_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevices.
+ * @tc.number: FetchOutputDevices_001
+ * @tc.desc  : Test FetchOutputDevices with zone service returning devices (early result path).
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevices_001, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    AudioZoneService::GetInstance().Init(handler, interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("test_zone_fetch", context, 0);
+    EXPECT_NE(zoneId, 0);
+
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 3000);
+
+    auto zoneDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    zoneDevice->deviceId_ = 300;
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, {zoneDevice});
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 3000;
+    info.streamId = 0;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevices(info);
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevices.
+ * @tc.number: FetchOutputDevices_002
+ * @tc.desc  : Test FetchOutputDevices with no zone match, falls to FetchOutputDevicesInner.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevices_002, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    validDesc->deviceId_ = 100;
+
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, validDesc));
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 9999;
+    info.streamId = 0;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevices(info);
+
+    EXPECT_GE(result.size(), 1);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevices.
+ * @tc.number: FetchOutputDevices_003
+ * @tc.desc  : Test FetchOutputDevices with ultrasonic stream usage (PreFetch returns default device).
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevices_003, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_ULTRASONIC;
+    info.clientUID = 4000;
+    info.streamId = 0;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevices(info);
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevices.
+ * @tc.number: FetchOutputDevices_004
+ * @tc.desc  : Test FetchOutputDevices with zone found but zone has no devices, falls to inner.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevices_004, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    validDesc->deviceId_ = 100;
+
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, validDesc));
+
+    std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    AudioZoneService::GetInstance().Init(handler, interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("test_zone_empty_dev", context, 0);
+    EXPECT_NE(zoneId, 0);
+
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 5000);
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 5000;
+    info.streamId = 0;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevices(info);
+
+    EXPECT_GE(result.size(), 1);
+}
+
+/**
+ * @tc.name  : Test PreFetchOutputDevices.
+ * @tc.number: PreFetchOutputDevices_001
+ * @tc.desc  : Test PreFetchOutputDevices with zone service returning devices.
+ */
+HWTEST(AudioRouterCenterUnitTest, PreFetchOutputDevices_001, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+
+    std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    AudioZoneService::GetInstance().Init(handler, interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("test_zone_prefetch", context, 0);
+    EXPECT_NE(zoneId, 0);
+
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 6000);
+
+    auto zoneDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    zoneDevice->deviceId_ = 600;
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, {zoneDevice});
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 6000;
+    info.streamId = 0;
+
+    auto result = audioRouterCenter.PreFetchOutputDevices(info);
+
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test PreFetchOutputDevices.
+ * @tc.number: PreFetchOutputDevices_002
+ * @tc.desc  : Test PreFetchOutputDevices with zone found but zone returns empty devices.
+ */
+HWTEST(AudioRouterCenterUnitTest, PreFetchOutputDevices_002, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+
+    std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    AudioZoneService::GetInstance().Init(handler, interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("test_zone_no_dev", context, 0);
+    EXPECT_NE(zoneId, 0);
+
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 7000);
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 7000;
+    info.streamId = 0;
+
+    auto result = audioRouterCenter.PreFetchOutputDevices(info);
+
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test PreFetchOutputDevices.
+ * @tc.number: PreFetchOutputDevices_003
+ * @tc.desc  : Test PreFetchOutputDevices with no zone, ultrasonic stream usage.
+ */
+HWTEST(AudioRouterCenterUnitTest, PreFetchOutputDevices_003, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_ULTRASONIC;
+    info.clientUID = 8000;
+    info.streamId = 0;
+
+    auto result = audioRouterCenter.PreFetchOutputDevices(info);
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+}
+
+/**
+ * @tc.name  : Test PreFetchOutputDevices.
+ * @tc.number: PreFetchOutputDevices_004
+ * @tc.desc  : Test PreFetchOutputDevices with no zone and non-ultrasonic stream usage, returns empty.
+ */
+HWTEST(AudioRouterCenterUnitTest, PreFetchOutputDevices_004, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 9000;
+    info.streamId = 0;
+
+    auto result = audioRouterCenter.PreFetchOutputDevices(info);
+
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test PreFetchOutputDevices.
+ * @tc.number: PreFetchOutputDevices_005
+ * @tc.desc  : Test PreFetchOutputDevices with zone returning devices for different stream usage.
+ */
+HWTEST(AudioRouterCenterUnitTest, PreFetchOutputDevices_005, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+
+    std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    AudioZoneService::GetInstance().Init(handler, interruptService);
+
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("test_zone_multi_usage", context, 0);
+    EXPECT_NE(zoneId, 0);
+
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 10000);
+
+    auto zoneDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    zoneDevice->deviceId_ = 1000;
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, {zoneDevice});
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MUSIC;
+    info.clientUID = 10000;
+    info.streamId = 0;
+
+    auto result = audioRouterCenter.PreFetchOutputDevices(info);
+
+    EXPECT_EQ(result.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

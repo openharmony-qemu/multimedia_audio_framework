@@ -581,12 +581,23 @@ bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
     return (mode == FilterMode::INCLUDE && isFound) || (mode == FilterMode::EXCLUDE && !isFound);
 }
 
+bool AudioService::CanCapturePrivateStream(const AudioPlaybackCaptureConfig &config) const
+{
+    return config.filterOptions.capturePrivatePrivacyStreams;
+}
+
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
-    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     std::lock_guard<std::mutex> lock(workingConfigsMutex_);
-    if (!canBeCaptured || innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
-        AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
+    if (innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
+        return false;
+    }
+    const auto &config = workingConfigs_[innerCapId];
+    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC ||
+        (rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PRIVATE && CanCapturePrivateStream(config));
+    if (!canBeCaptured) {
+        AUDIO_INFO_LOG("%{public}d privacyType %{public}d can not be captured by innerCapId %{public}d",
+            rendererConfig.appInfo.appPid, rendererConfig.privacyType, innerCapId);
         return false;
     }
     return CheckShouldCap(rendererConfig, innerCapId);
@@ -594,14 +605,15 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, in
 
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds)
 {
-    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
-    if (!canBeCaptured) {
-        AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
-        return false;
-    }
     bool ret = false;
     std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     for (auto& filter : workingConfigs_) {
+        bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC ||
+            (rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PRIVATE &&
+            CanCapturePrivateStream(filter.second));
+        if (!canBeCaptured) {
+            continue;
+        }
         if (CheckShouldCap(rendererConfig, filter.first)) {
             ret = true;
             beCapIds.insert(filter.first);
@@ -1604,7 +1616,7 @@ void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
     IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
     int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
     CHECK_AND_RETURN(enableNewRoute == 1);
     std::vector<SinkInput> directSinkInputs;
     IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetAllSinkInputs(directSinkInputs);

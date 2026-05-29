@@ -22,6 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t API_VERSION_18 = 18;
+constexpr size_t KV_SIZE = 2;
 
 const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_INVALID, "INVALID"},
@@ -69,7 +70,7 @@ static const char *DeviceTypeToString(DeviceType type)
     return "UNKNOWN";
 }
 
-static bool ConverteToUint32(const std::string &str, uint32_t &result)
+static bool ConvertToUint32(const std::string &str, uint32_t &result)
 {
     if (str == "-0") {
         result = 0;
@@ -217,6 +218,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
     isSupportRemoteMultichannel_ = true;
+    deviceTokenId_ = 0;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -255,6 +257,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
     isSupportRemoteMultichannel_ = true;
+    deviceTokenId_ = 0;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -300,6 +303,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     glassesWearCount_ = deviceDescriptor.glassesWearCount_;
     hdPlaybackMode_ = deviceDescriptor.hdPlaybackMode_;
     isSupportRemoteMultichannel_ = deviceDescriptor.isSupportRemoteMultichannel_;
+    deviceTokenId_ = deviceDescriptor.deviceTokenId_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -346,6 +350,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     glassesWearCount_ = deviceDescriptor->glassesWearCount_;
     hdPlaybackMode_ = deviceDescriptor->hdPlaybackMode_;
     isSupportRemoteMultichannel_ = deviceDescriptor->isSupportRemoteMultichannel_;
+    deviceTokenId_ = deviceDescriptor->deviceTokenId_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -378,68 +383,65 @@ uint32_t AudioDeviceDescriptor::GetDeviceSupportMmap() const
     return deviceSupportMmap_;
 }
 
-uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &audioParameters, AudioParametersKey key)
+std::unordered_map<std::string, std::string> AudioDeviceDescriptor::ParseAudioParameters(
+    const std::string &audioParameters)
 {
-    CHECK_AND_RETURN_RET_LOG(!audioParameters.empty(), 0, "audioParameters is empty, can not parse");
-    std::string keyStr = "";
-    DeviceRole role = getRole();
-    switch (role) {
-        case DeviceRole::OUTPUT_DEVICE:
-            keyStr = "sink_";
-            break;
-        case DeviceRole::INPUT_DEVICE:
-            keyStr = "source_";
-            break;
-        default:
-            return 0;
+    std::unordered_map<std::string, std::string> ret;
+    CHECK_AND_RETURN_RET_LOG(!audioParameters.empty(), ret, "audioParameters is empty, can not parse");
+    std::vector<std::string> parameters = Util::SplitString(audioParameters, ';');
+    for (const auto &parameter : parameters) {
+        std::vector<std::string> kv = Util::SplitString(parameter, ':');
+        CHECK_AND_CONTINUE_LOG(kv.size() == KV_SIZE, "error parameter: %{public}s", parameter.c_str());
+        const auto &key = kv.front();
+        const auto &value = kv.back();
+        AUDIO_INFO_LOG("parse key: %{public}s, value: %{public}s", key.c_str(), value.c_str());
+        ret[key] = value;
     }
-    switch (key) {
-        case AudioParametersKey::SAMPLE_RATE:
-            keyStr += "rate:";
-            break;
-        case AudioParametersKey::FORMAT:
-            keyStr += "format:";
-            break;
-        case AudioParametersKey::SUPPORT_MMAP:
-            keyStr += "mmap:";
-            break;
-        default:
-            return 0;
-    }
-
-    const std::string sep = ";";
-    auto itBegin = audioParameters.find(keyStr);
-    auto itEnd = audioParameters.find_first_of(sep, itBegin);
-    CHECK_AND_RETURN_RET(itBegin != itEnd, 0);
-    std::string parseRet = audioParameters.substr(itBegin + keyStr.size(), itEnd - itBegin - keyStr.size());
-    uint32_t ret = 0;
-    AUDIO_INFO_LOG("parseRet:%{public}s", parseRet.c_str());
-    if (key == AudioParametersKey::FORMAT) {
-        parseRet = ParseAudioFormat(parseRet);
-        AUDIO_INFO_LOG("parseRet:%{public}s, format: %{public}u", parseRet.c_str(),
-            static_cast<uint32_t>(g_formatStrToEnum[parseRet]));
-        return static_cast<uint32_t>(g_formatStrToEnum[parseRet]);
-    }
-    CHECK_AND_RETURN_RET_LOG(!parseRet.empty(), ret, "convert invalid parseRet");
-    CHECK_AND_RETURN_RET_LOG(ConverteToUint32(parseRet, ret), ret,
-        "convert invalid parseRet: %{public}s", parseRet.c_str());
     return ret;
 }
 
-void AudioDeviceDescriptor::ParseAudioParameters(const std::string &audioParameters)
+void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string &audioParameters)
 {
-    if (getType() == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET) {
-        DeviceStreamInfo streamInfo = {};
-        streamInfo.samplingRate.insert(
-            static_cast<AudioSamplingRate>(ParseArmUsbAudioParameters(audioParameters,
-            AudioParametersKey::SAMPLE_RATE)));
-        streamInfo.format =
-            static_cast<AudioSampleFormat>(ParseArmUsbAudioParameters(audioParameters, AudioParametersKey::FORMAT));
-        audioStreamInfo_.push_back(streamInfo);
-
-        deviceSupportMmap_ = AudioDeviceDescriptor::ParseArmUsbAudioParameters(audioParameters,
-            AudioParametersKey::SUPPORT_MMAP);
+    auto parameters = ParseAudioParameters(audioParameters);
+    std::string key = "device_name";
+    auto it = parameters.find(key);
+    if (it != parameters.end()) {
+        deviceName_ = it->second;
     }
+
+    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_mmap" : "source_mmap";
+    it = parameters.find(key);
+    if (it != parameters.end()) {
+        ConvertToUint32(it->second, deviceSupportMmap_);
+    }
+
+    DeviceStreamInfo streamInfo = {};
+    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_rate" : "source_rate";
+    it = parameters.find(key);
+    if (it != parameters.end()) {
+        uint32_t samplingRate = 0;
+        ConvertToUint32(it->second, samplingRate);
+        streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(samplingRate));
+    }
+
+    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_format" : "source_format";
+    it = parameters.find(key);
+    if (it != parameters.end()) {
+        streamInfo.format = g_formatStrToEnum[ParseAudioFormat(it->second)];
+    }
+
+    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_chans" : "source_chans";
+    it = parameters.find(key);
+    if (it != parameters.end()) {
+        uint32_t channels = 0;
+        ConvertToUint32(it->second, channels);
+        AudioChannelLayout channelLayout = static_cast<AudioChannel>(channels) == CHANNEL_4 ?
+            CH_LAYOUT_4POINT0 : CH_LAYOUT_UNKNOWN;
+        streamInfo.channelLayout.insert(channelLayout);
+    }
+    audioStreamInfo_.clear();
+    audioStreamInfo_.push_back(streamInfo);
+    BuildCapabilitiesFromDeviceStreamInfo();
 }
 
 DeviceRole AudioDeviceDescriptor::getRole() const
@@ -516,11 +518,11 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteBool(descriptorType_) &&
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
-        parcel.WriteInt32(routerType_) &&
-        parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteInt32(routerType_) && parcel.WriteInt32(isVrSupported_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) && parcel.WriteBool(modemCallSupported_) &&
         parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteString(dmDeviceInfo_) &&
-        parcel.WriteInt32(hdPlaybackMode_) && parcel.WriteBool(isSupportRemoteMultichannel_);
+        parcel.WriteInt32(hdPlaybackMode_) && parcel.WriteBool(isSupportRemoteMultichannel_) &&
+        parcel.WriteUint32(deviceTokenId_);
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -590,7 +592,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(highQualityRecordingSupported_) &&
         parcel.WriteString(dmDeviceInfo_) &&
         parcel.WriteInt32(hdPlaybackMode_) &&
-        parcel.WriteBool(isSupportRemoteMultichannel_);
+        parcel.WriteBool(isSupportRemoteMultichannel_) &&
+        parcel.WriteUint32(deviceTokenId_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -631,6 +634,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     dmDeviceInfo_ = parcel.ReadString();
     hdPlaybackMode_ = static_cast<HdPlaybackMode>(parcel.ReadInt32());
     isSupportRemoteMultichannel_ = parcel.ReadBool();
+    deviceTokenId_ = parcel.ReadUint32();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -855,7 +859,8 @@ DeviceStreamInfo AudioDeviceDescriptor::GetDeviceStreamInfo(void) const
 
 void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
 {
-    if (deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != LOCAL_NETWORK_ID) {
+    if ((deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != LOCAL_NETWORK_ID) ||
+        deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         capabilities_.clear();
         for (const auto &deviceStreamInfo : audioStreamInfo_) {
             AudioStreamInfo cap;
@@ -871,11 +876,10 @@ void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
             cap.encoding = encodingType;
             cap.format = sampleFormat;
             cap.channels = ConvertLayoutToAudioChannel(channelLayout);
-            cap.channelLayout = channelLayout;
+            cap.channelLayout = deviceType_ != DEVICE_TYPE_USB_ARM_HEADSET ? channelLayout : CH_LAYOUT_UNKNOWN;
             capabilities_.push_back(cap);
-            AUDIO_INFO_LOG("capability: channelLayout[%{public}" PRIu64 "], channels[%{public}d], "
-                "samplingRate[%{public}d], format[%{public}d]", cap.channelLayout, cap.channels, cap.samplingRate,
-                cap.format);
+            AUDIO_INFO_LOG("add capability: samplingRate: %{public}d, format: %{public}u, channels: %{public}u "
+                "channelLayout: %{public}" PRIu64, cap.samplingRate, cap.format, cap.channels, cap.channelLayout);
         }
     } else if (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         capabilities_.clear();

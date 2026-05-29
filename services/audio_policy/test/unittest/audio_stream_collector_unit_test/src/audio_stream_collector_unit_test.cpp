@@ -2324,5 +2324,76 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_NonRunningState, TestSiz
     EXPECT_EQ(1, result.size());
     EXPECT_EQ(1001, result[0].first);
 }
+
+/**
+ * @tc.name  : Test IsCallStreamUsage with transfer stream usages.
+ * @tc.number: IsCallStreamUsage_Transfer_001
+ * @tc.desc  : Test IsCallStreamUsage includes VOICE_TRANSFER_COMMUNICATION.
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, IsCallStreamUsage_Transfer_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    EXPECT_TRUE(collector.IsCallStreamUsage(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_TRUE(collector.IsCallStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
+    EXPECT_TRUE(collector.IsCallStreamUsage(STREAM_USAGE_VOICE_MODEM_COMMUNICATION));
+    EXPECT_FALSE(collector.IsCallStreamUsage(STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(collector.IsCallStreamUsage(STREAM_USAGE_MEDIA));
+}
+
+/**
+ * @tc.name  : Test CreateStreamMap with transfer stream usages.
+ * @tc.number: CreateStreamMap_Transfer_001
+ * @tc.desc  : Test stream map maps VOICE_TRANSFER_COMMUNICATION to STREAM_VOICE_CALL.
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, CreateStreamMap_Transfer_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto streamMap = collector.CreateStreamMap();
+    auto it = streamMap.find(std::make_pair(CONTENT_TYPE_SPEECH,
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_CALL);
+
+    it = streamMap.find(std::make_pair(CONTENT_TYPE_MUSIC,
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_RING);
+
+    it = streamMap.find(std::make_pair(CONTENT_TYPE_UNKNOWN,
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_CALL);
+
+    it = streamMap.find(std::make_pair(CONTENT_TYPE_UNKNOWN,
+        STREAM_USAGE_VOICE_TRANSFER_RINGTONE));
+    EXPECT_NE(it, streamMap.end());
+    EXPECT_EQ(it->second, STREAM_VOICE_RING);
+}
+
+/**
+ * @tc.name  : GetStreamTypeFromUsageContent_FoundInMap
+ * @tc.number: GetStreamTypeFromUsageContent_001
+ * @tc.desc  : Test if branch true when (contentType, streamUsage) found in streamTypeMap_
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_FoundInMap, TestSize.Level1)
+{
+    AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_VOICE_COMMUNICATION,
+        CONTENT_TYPE_SPEECH);
+    EXPECT_EQ(result, STREAM_VOICE_COMMUNICATION);
+}
+
+/**
+ * @tc.name  : GetStreamTypeFromUsageContent_NotFoundInMap
+ * @tc.number: GetStreamTypeFromUsageContent_002
+ * @tc.desc  : Test if branch false when (contentType, streamUsage) not found in streamTypeMap_
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_NotFoundInMap, TestSize.Level1)
+{
+    AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_MEDIA,
+        CONTENT_TYPE_SPEECH);
+    EXPECT_EQ(result, STREAM_MUSIC);
+}
 } // namespace AudioStandard
 } // namespace OHOS

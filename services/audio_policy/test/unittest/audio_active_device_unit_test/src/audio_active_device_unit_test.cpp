@@ -144,5 +144,28 @@ HWTEST_F(AudioActiveDeviceUnitTest, WriteOutputRouteChangeEvent_001, TestSize.Le
     audioActiveDevice->WriteOutputRouteChangeEvent(deviceDescriptor, reason);
     EXPECT_EQ(deviceDescriptor->deviceId_, 0);
 }
+/**
+ * @tc.name  : GetDeviceForVolumeEnhanced_InvalidUid
+ * @tc.number: GetDeviceForVolumeEnhanced_001
+ * @tc.desc  : Test if(appUid==INVALID_UID) true branch, appUid replaced by callingUid
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetDeviceForVolumeEnhanced_InvalidUid, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    auto result = audioActiveDevice.GetDeviceForVolumeEnhanced(INVALID_UID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : GetDeviceForVolumeEnhanced_ValidUid
+ * @tc.number: GetDeviceForVolumeEnhanced_002
+ * @tc.desc  : Test if(appUid==INVALID_UID) false branch, appUid stays as passed value
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetDeviceForVolumeEnhanced_ValidUid, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    auto result = audioActiveDevice.GetDeviceForVolumeEnhanced(SYSTEM_UID);
+    EXPECT_NE(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

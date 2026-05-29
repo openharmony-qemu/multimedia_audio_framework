@@ -144,7 +144,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForDPsDevice(std::shared_ptr<AudioDe
         GetDefaultVolumeLevelFromConfig(tmp, streamType, volumeLevel);
         return;
     }
-    int32_t maxVolumeLevel = GetMaxVolumeLevel(desc, volumeType);
+    int32_t maxVolumeLevel = GetMaxVolumeLevel(desc->deviceType_, volumeType);
     volumeLevel = maxVolumeLevel >= DP_DEFAULT_VOLUME_LEVEL ? DP_DEFAULT_VOLUME_LEVEL : maxVolumeLevel;
 }
 
@@ -158,7 +158,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForDistributedDevice(std::shared_ptr
         GetDefaultVolumeLevelFromConfig(tmp, streamType, volumeLevel);
         return;
     }
-    volumeLevel = GetMaxVolumeLevel(desc, streamType);
+    volumeLevel = GetMaxVolumeLevel(desc->deviceType_, streamType);
 }
 
 void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
@@ -171,22 +171,20 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(std::shared_ptr<
         GetDefaultVolumeLevelFromConfig(tmp, streamType, volumeLevel);
         return;
     }
-    int32_t maxVolumeLevel = GetMaxVolumeLevel(desc, volumeType);
+    int32_t maxVolumeLevel = GetMaxVolumeLevel(desc->deviceType_, volumeType);
     volumeLevel = static_cast<int32_t>(std::ceil(maxVolumeLevel * HEARING_AID_MAX_VOLUME_PROP));
 }
 
-int32_t AudioVolumeUtils::GetMaxVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType, int32_t zoneId)
+int32_t AudioVolumeUtils::GetMaxVolumeLevel(DeviceType deviceType, AudioStreamType streamType, int32_t zoneId)
 {
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, MAX_VOLUME_LEVEL, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t maxVolumeLevel = MAX_VOLUME_LEVEL;
-    GetMaxVolumeLevelFromConfig(desc, volumeType, maxVolumeLevel, zoneId);
+    GetMaxVolumeLevelFromConfig(deviceType, volumeType, maxVolumeLevel, zoneId);
     return maxVolumeLevel;
 }
 
 #ifdef FEATURE_AUDIO_ZONE
-void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(zoneVolumeConfigMapMutex_);
@@ -199,7 +197,7 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     volumeLevel = zoneConfigIt[internalVolumeType].maxVolume;
 }
 #else
-void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
@@ -207,13 +205,12 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
         bool ret = LoadConfig();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
     }
-    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (internalVolumeType == STREAM_NOTIFICATION) {
         // Use the volume config of ringtone instead of notification.
         internalVolumeType = STREAM_RING;
     }
-    if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
+    if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(deviceType)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
             streamVolumeInfos_[internalVolumeType] != nullptr);
         volumeLevel = streamVolumeInfos_[internalVolumeType]->maxLevel;
@@ -226,7 +223,7 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     volumeLevel = streamVolumeInfos_[internalVolumeType]->maxLevel;
 
     std::shared_ptr<StreamVolumeInfo> streamVolumeInfo = streamVolumeInfos_[internalVolumeType];
-    DeviceVolumeType deviceVolumeType = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(desc->deviceType_)->second;
+    DeviceVolumeType deviceVolumeType = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(deviceType)->second;
     CHECK_AND_RETURN_LOG(streamVolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
         "deviceVolumeInfos not contain device volume type");
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];
@@ -237,18 +234,16 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
 }
 #endif
 
-int32_t AudioVolumeUtils::GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType, int32_t zoneId)
+int32_t AudioVolumeUtils::GetMinVolumeLevel(DeviceType deviceType, AudioStreamType streamType, int32_t zoneId)
 {
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, MIN_VOLUME_LEVEL, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t minVolumeLevel = MIN_VOLUME_LEVEL;
-    GetMinVolumeLevelFromConfig(desc, volumeType, minVolumeLevel, zoneId);
+    GetMinVolumeLevelFromConfig(deviceType, volumeType, minVolumeLevel, zoneId);
     return minVolumeLevel;
 }
 
 #ifdef FEATURE_AUDIO_ZONE
-void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+void AudioVolumeUtils::GetMinVolumeLevelFromConfig(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(zoneVolumeConfigMapMutex_);
@@ -265,7 +260,7 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     volumeLevel = zoneConfigIt[internalVolumeType].minVolume;
 }
 #else
-void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+void AudioVolumeUtils::GetMinVolumeLevelFromConfig(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
@@ -274,13 +269,12 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
     }
 
-    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (internalVolumeType == STREAM_NOTIFICATION) {
         // Use the volume config of ringtone instead of notification.
         internalVolumeType = STREAM_RING;
     }
-    if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
+    if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(deviceType)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
             streamVolumeInfos_[internalVolumeType] != nullptr);
         volumeLevel = streamVolumeInfos_[internalVolumeType]->minLevel;
@@ -293,7 +287,7 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     volumeLevel = streamVolumeInfos_[internalVolumeType]->minLevel;
 
     std::shared_ptr<StreamVolumeInfo> streamVolumeInfo = streamVolumeInfos_[internalVolumeType];
-    DeviceVolumeType deviceVolumeType = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(desc->deviceType_)->second;
+    DeviceVolumeType deviceVolumeType = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(deviceType)->second;
     CHECK_AND_RETURN_LOG(streamVolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
         "deviceVolumeInfos not contain device volume type");
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];

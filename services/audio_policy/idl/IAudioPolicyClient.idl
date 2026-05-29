@@ -31,6 +31,7 @@ sequenceable audio_session_device_info..OHOS.AudioStandard.CurrentOutputDeviceCh
 sequenceable audio_session_device_info..OHOS.AudioStandard.CurrentInputDeviceChangedEvent;
 sequenceable audio_stream_types..OHOS.AudioStandard.AudioCapturerFilter;
 sequenceable audio_route_select_info..OHOS.AudioStandard.AudioRouteSelectInfo;
+sequenceable audio_info..OHOS.AudioStandard.SystemVolumeFilter;
 
 interface IAudioPolicyClient {
     [ipccode 0, customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
@@ -103,10 +104,9 @@ interface IAudioPolicyClient {
         [in] boolean enabled);
     void OnPersonalizedSpatializationEnabledChangeForAnyDevice([in] sharedptr<AudioDeviceDescriptor> deviceDescriptor,
         [in] boolean enabled);
-    void OnSpatializationEnabledChangeForBTDevice([in] sharedptr<AudioDeviceDescriptor> deviceDescriptor,
-        [in] boolean enabled, [in] boolean headTrackingEnabled);
     void OnSpatialAudioSourceTypeChange([in] int mode);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnAudioSeparationEffectEnabledChange([in] boolean enabled);
     void OnAudioRouteSelectRefined([in] sharedptr<AudioRouteSelectInfo> routeSelectInfo, [out] int selectResult);
+    [oneway] void OnSystemVolumeChangeByFilter([in] SystemVolumeFilter filter, [in] VolumeEvent volumeEvent);
 }

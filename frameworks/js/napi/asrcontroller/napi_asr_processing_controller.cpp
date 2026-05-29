@@ -115,7 +115,7 @@ NapiAsrProcessingController* NapiAsrProcessingController::GetParamWithSync(const
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "GetParamWithSync fail to napi_get_cb_info");
 
-    status = napi_unwrap(env, jsThis, (void**)&napiAsrProcessingController);
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void**>(&napiAsrProcessingController));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiAsrProcessingController != nullptr &&
         napiAsrProcessingController->audioMngr_ != nullptr, napiAsrProcessingController,

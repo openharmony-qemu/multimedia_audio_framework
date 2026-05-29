@@ -46,8 +46,8 @@ class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererS
                                public IStreamCallback,
                                public IRendererStream {
 public:
-    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode = true,
-        size_t preBufSizeInBytes = 0);
+    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, const std::string &deviceName,
+        bool isCallbackMode = true, size_t preBufSizeInBytes = 0);
     ~HpaeRendererStreamImpl();
     int32_t InitParams(const std::string &deviceName = "");
     int32_t Start() override;

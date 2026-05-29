@@ -226,12 +226,13 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, IsWiredHeadSet_001, TestSize.Level1)
 HWTEST_F(AudioPolicyServiceExtUnitTest, IsBlueTooth_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    bool ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsBlueTooth(deviceType);
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    bool ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsBlueTooth(deviceDesc);
     EXPECT_EQ(ret, false);
 
-    deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsBlueTooth(deviceType);
+    deviceDesc->deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    ret = server->audioPolicyService_.audioVolumeManager_.safeVolumeManager_.IsBlueTooth(deviceDesc);
     EXPECT_EQ(ret, true);
 }
 

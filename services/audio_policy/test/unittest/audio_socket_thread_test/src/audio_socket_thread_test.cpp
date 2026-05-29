@@ -635,6 +635,21 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_016, TestSize.Level1)
  */
 HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_017, TestSize.Level4)
 {
+    AudioPnpUevent initUevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "MICROPHONE=0",
+        .devType = "extcon3",
+        .subSystem = UEVENT_SUBSYSTEM_SWITCH,
+        .switchName = "h2w",
+        .switchState = "2",
+        .hidName = "hid",
+        .devName = "TestDevName0",
+        .anahsName = "anahs"
+    };
+    AudioEvent event;
+    int32_t initResult = AudioSocketThread::SetAudioPnpServerEventValue(&event, &initUevent);
+
     AudioPnpUevent uevent = {
         .action = "change",
         .name = "headset",
@@ -648,11 +663,10 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_017, TestSize.Level4)
         .anahsName = "anahs"
     };
 
-    AudioEvent event;
     int32_t result = AudioSocketThread::SetAudioPnpServerEventValue(&event, &uevent);
 
     EXPECT_EQ(event.eventType, PNP_EVENT_DEVICE_REMOVE);
-    EXPECT_EQ(event.deviceType, PNP_DEVICE_HEADSET);
+    EXPECT_EQ(event.deviceType, PNP_DEVICE_HEADPHONE);
     EXPECT_EQ(result, SUCCESS);
 }
 

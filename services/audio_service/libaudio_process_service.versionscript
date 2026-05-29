@@ -64,6 +64,8 @@
     *UnloadModernOffloadCapSource*;
     *ConfigCoreServiceProvider*;
     *UpdateSessionOperation*;
+    *NotifyStreamStandby*;
+    *NotifyStreamStandbyResume*;
     *SetLatestMuteState*;
     *ForceStopAudioStream*;
     *ClearAudioFocusBySessionID*;
@@ -90,6 +92,8 @@
     *CheckInnerCapVoIP*;
     *ReportWakeupEvent*;
     *SetAncoRecordingConfigChanged*;
+    *OnMetaData*;
+    *IsValidNetworkIdForSendEffectParam*;
   local:
     *;
 };

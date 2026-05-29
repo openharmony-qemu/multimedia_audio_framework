@@ -30,7 +30,8 @@ namespace AudioStandard {
 shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     const uint32_t sessionID)
 {
-    if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+    bool support = AudioRouterSelectStrategy::GetInstance().GetEnhancedRoutingSupported();
+    if (AudioDeviceManager::GetAudioDeviceManager().GetScoState() && !support) {
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
         shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::OUTPUT_DEVICE);
@@ -107,7 +108,8 @@ vector<shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::DecideRingRenderDevi
             needDefaultDevice = true;
             break;
         case STREAM_USAGE_VOICE_RINGTONE:
-        case  STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_VOICE_TRANSFER_RINGTONE:
             if (curRingerMode == RINGER_MODE_NORMAL) {
                 needDefaultDevice = true;
             }

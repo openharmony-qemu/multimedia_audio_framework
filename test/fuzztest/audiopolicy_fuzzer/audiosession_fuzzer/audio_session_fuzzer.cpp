@@ -79,6 +79,7 @@ void RemoveStreamInfoFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(audioSession != nullptr);
     uint32_t streamId = fdp.ConsumeIntegral<int32_t>();
     audioSession->RemoveStreamInfo(streamId);
+
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = streamId;
     audioSession->AddStreamInfo({audioInterrupt, ACTIVE});

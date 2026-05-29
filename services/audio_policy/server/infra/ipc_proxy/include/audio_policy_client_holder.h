@@ -67,6 +67,7 @@ public:
     void OnFormatUnsupportedError(const AudioErrors &errorCode);
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent);
     void OnSystemVolumeChange(VolumeEvent volumeEvent);
+    void OnSystemVolumeChangeByFilter(const SystemVolumeFilter &filter, const VolumeEvent &volumeEvent);
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
     void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent);
     void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent);
@@ -78,8 +79,6 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled);
     void OnPersonalizedSpatializationEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled);
-    void OnSpatializationEnabledChangeForBTDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled, const bool &headTrackingEnabled);
     void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode);
     void OnAudioSeparationEffectEnabledChange(const bool &enabled);
     int32_t OnAudioRouteSelectRefined(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
@@ -90,6 +89,7 @@ public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
     int32_t apiVersion_ = API_VERSION_MAX;
+    uint32_t tokenId_ = 0;
     std::set<DeviceType> needDeclaredDevices_;
     std::set<DeviceType> alreadyDeclaredDevicesByApp_;
 private:

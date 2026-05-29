@@ -414,6 +414,10 @@ public:
 
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID) override;
 
+    int32_t SetSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter) override;
+    int32_t RemoveSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter) override;
+    int32_t RemoveAllSystemVolumeChangeCallbackInfo() override;
+
     int32_t GetAudioFocusInfoList(std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList,
         int32_t zoneId) override;
 

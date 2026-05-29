@@ -2018,6 +2018,34 @@ HWTEST(AudioServiceUnitTest, ShouldBeInnerCap_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test ShouldBeInnerCap API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeInnerCap_004
+ * @tc.desc  : Test private stream can be captured only when capturePrivatePrivacyStreams is enabled.
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeInnerCap_004, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    ASSERT_NE(audioService, nullptr);
+
+    audioService->workingConfigs_.clear();
+    AudioPlaybackCaptureConfig config;
+    config.filterOptions.usages.push_back(STREAM_USAGE_MUSIC);
+    audioService->workingConfigs_.insert(std::make_pair(1, config));
+
+    AudioProcessConfig rendererConfig;
+    rendererConfig.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
+    rendererConfig.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+
+    EXPECT_FALSE(audioService->ShouldBeInnerCap(rendererConfig, 1));
+
+    audioService->workingConfigs_[1].filterOptions.capturePrivatePrivacyStreams = true;
+    EXPECT_TRUE(audioService->ShouldBeInnerCap(rendererConfig, 1));
+
+    audioService->workingConfigs_.clear();
+}
+
+/**
  * @tc.name  : Test CheckShouldCap API
  * @tc.type  : FUNC
  * @tc.number: CheckShouldCap_001

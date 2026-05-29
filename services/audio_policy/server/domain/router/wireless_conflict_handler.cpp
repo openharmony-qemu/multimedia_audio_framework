@@ -28,15 +28,16 @@ bool WirelessConflictHandler::IsCallStreamUsage(StreamUsage streamUsage)
 {
     return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
            streamUsage == STREAM_USAGE_RINGTONE ||
-           streamUsage == STREAM_USAGE_VOICE_RINGTONE;
+           streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
 }
 
 bool WirelessConflictHandler::IsForcedRouterType(RouterType routerType)
 {
-    return routerType == ROUTER_TYPE_USER_SELECT ||
-           routerType == ROUTER_TYPE_APP_SELECT;
+    return routerType == ROUTER_TYPE_USER_SELECT;
 }
 
 int WirelessConflictHandler::GetPriority(StreamUsage streamUsage, SourceType sourceType,
@@ -66,6 +67,13 @@ bool WirelessConflictHandler::IsScoDevice(const std::shared_ptr<AudioDeviceDescr
     return device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
 }
 
+bool WirelessConflictHandler::IsA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    CHECK_AND_RETURN_RET(device != nullptr, false);
+    return device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+           device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+}
+
 bool WirelessConflictHandler::IsNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     CHECK_AND_RETURN_RET(device != nullptr, false);
@@ -75,9 +83,7 @@ bool WirelessConflictHandler::IsNearlinkDevice(const std::shared_ptr<AudioDevice
 bool WirelessConflictHandler::IsWirelessDevice(const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     CHECK_AND_RETURN_RET(device != nullptr, false);
-    return IsScoDevice(device) || IsNearlinkDevice(device) ||
-           device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-           device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    return IsScoDevice(device) || IsA2dpDevice(device) || IsNearlinkDevice(device);
 }
 
 bool WirelessConflictHandler::AllScoPairSelected()
@@ -99,7 +105,7 @@ bool WirelessConflictHandler::AllScoPairSelected()
 void WirelessConflictHandler::FindHighestPriorityDevice()
 {
     cachedHighestPriority_ = 0;
-    cachedHighestPriorityMac_.clear();
+    cachedHighestPriorityDevice_ = nullptr;
     
     auto findPriority = [this](const std::vector<StreamDeviceInfo>& devices, bool isOutput, bool requireRunning) {
         for (auto &info : devices) {
@@ -111,7 +117,7 @@ void WirelessConflictHandler::FindHighestPriorityDevice()
                 info.routerType, isOutput);
             if (priority > cachedHighestPriority_) {
                 cachedHighestPriority_ = priority;
-                cachedHighestPriorityMac_ = info.device->macAddress_;
+                cachedHighestPriorityDevice_ = info.device;
             }
         }
     };
@@ -136,8 +142,12 @@ bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor
     if (IsScoDevice(device) && routerType == ROUTER_TYPE_PAIR_DEVICE && AllScoPairSelected()) {
         return true;
     }
+    CHECK_AND_RETURN_RET(cachedHighestPriorityDevice_ != nullptr, false);
+    if (IsA2dpDevice(device) && IsScoDevice(cachedHighestPriorityDevice_)) {
+        return true;
+    }
     
-    return cachedHighestPriority_ > 0 && cachedHighestPriorityMac_ != device->macAddress_;
+    return cachedHighestPriority_ > 0 && cachedHighestPriorityDevice_->macAddress_ != device->macAddress_;
 }
 
 void WirelessConflictHandler::SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
@@ -153,7 +163,7 @@ void WirelessConflictHandler::ClearSelectedDevices()
     outputStreamDevices_.clear();
     inputStreamDevices_.clear();
     cachedHighestPriority_ = 0;
-    cachedHighestPriorityMac_.clear();
+    cachedHighestPriorityDevice_ = nullptr;
 }
 
 } // namespace AudioStandard

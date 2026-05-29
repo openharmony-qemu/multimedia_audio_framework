@@ -142,6 +142,26 @@ std::vector<StreamUsage> PlaybackCapturerManager::GetDefaultUsages()
     return defaultUsages_;
 }
 
+AudioPlaybackCaptureConfig PlaybackCapturerManager::NormalizePlaybackCaptureConfig(
+    const AudioPlaybackCaptureConfig &config) const
+{
+    AudioPlaybackCaptureConfig normalizedConfig = config;
+    if (normalizedConfig.filterOptions.usages.empty()) {
+        for (size_t i = 0; i < defaultUsages_.size(); i++) {
+            normalizedConfig.filterOptions.usages.push_back(defaultUsages_[i]);
+        }
+    }
+    return normalizedConfig;
+}
+
+bool PlaybackCapturerManager::IsSamePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &lhs,
+    const AudioPlaybackCaptureConfig &rhs) const
+{
+    AudioPlaybackCaptureConfig normalizedLhs = NormalizePlaybackCaptureConfig(lhs);
+    AudioPlaybackCaptureConfig normalizedRhs = NormalizePlaybackCaptureConfig(rhs);
+    return normalizedLhs == normalizedRhs;
+}
+
 bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterListener *listener)
 {
     if (listener == nullptr || listener_ != nullptr) {
@@ -170,16 +190,10 @@ int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessi
 int32_t PlaybackCapturerManager::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
     bool isSame = false;
-    AudioPlaybackCaptureConfig newConfig = config;
-    if (newConfig.filterOptions.usages.size() == 0) {
-        std::vector<StreamUsage> defalutUsages = GetDefaultUsages();
-        for (size_t i = 0; i < defalutUsages.size(); i++) {
-            newConfig.filterOptions.usages.push_back(defalutUsages[i]);
-        }
-    }
+    AudioPlaybackCaptureConfig newConfig = NormalizePlaybackCaptureConfig(config);
     std::lock_guard<std::mutex> lock(filterMapMutex_);
     for (auto &filter : filters_) {
-        if (filter.second.filterConfig == newConfig) {
+        if (IsSamePlaybackCaptureConfig(filter.second.filterConfig, newConfig)) {
             AUDIO_INFO_LOG("Capture num reuse innerId:%{public}d", filter.first);
             innerCapId = filter.first;
             filter.second.ref += 1;

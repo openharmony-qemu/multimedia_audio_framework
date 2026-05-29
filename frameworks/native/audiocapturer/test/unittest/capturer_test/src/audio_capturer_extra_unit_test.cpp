@@ -1663,6 +1663,40 @@ HWTEST(AudioCapturerUnitTest, SetIndependentAudioSessionStrategy_001, TestSize.L
 }
 
 /**
+ * @tc.name  : AudioCapturer_SetIndependentAudioSessionStrategy_002
+ * @tc.number: SetIndependentAudioSessionStrategy_002
+ * @tc.desc  : Test SetIndependentAudioSessionStrategy with PAUSE_WHEN_INTERRUPTED flag
+ */
+HWTEST(AudioCapturerUnitTest, SetIndependentAudioSessionStrategy_002, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+
+    AudioSessionStrategy strategy = {};
+    uint32_t behavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED);
+    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
+    bool res = testCapturerInner->audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag;
+    EXPECT_TRUE(res);
+}
+
+/**
+ * @tc.name  : AudioCapturer_SetIndependentAudioSessionStrategy_003
+ * @tc.number: SetIndependentAudioSessionStrategy_003
+ * @tc.desc  : Test SetIndependentAudioSessionStrategy without PAUSE_WHEN_INTERRUPTED flag
+ */
+HWTEST(AudioCapturerUnitTest, SetIndependentAudioSessionStrategy_003, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+
+    AudioSessionStrategy strategy = {};
+    uint32_t behavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED);
+    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
+    bool res = testCapturerInner->audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag;
+    EXPECT_FALSE(res);
+}
+
+/**
  * @tc.name  : AudioCapturer_SetInMainThreadState_001
  * @tc.number: SetInMainThreadState_001
  * @tc.desc  : Test SetInMainThreadState() for different cases

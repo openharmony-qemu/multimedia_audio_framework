@@ -70,6 +70,7 @@ public:
 
     virtual int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+    virtual int32_t UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId) NOT_SUPPORT_RET
 
     virtual void SetAddress(const std::string &address) {}
     virtual void SetInvalidState(void) {}
@@ -92,6 +93,7 @@ public:
     virtual void NotifyStreamChangeToSource(StreamChangeType change, uint32_t streamId, SourceType source,
         CapturerState state, uint32_t appUid = INVALID_UID, bool mute = false, bool mixWithWakeUp = false);
     virtual std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo();
+    virtual bool GetLastCamcorderMetadata(std::vector<uint8_t> &metadata) const { return false; }
     // Implement by self (end)
 
 protected:

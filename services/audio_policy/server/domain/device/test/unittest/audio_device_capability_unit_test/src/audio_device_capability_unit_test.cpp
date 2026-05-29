@@ -37,6 +37,7 @@ HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString, TestSize.Level4)
         "test": 2
     })";
     EXPECT_EQ(capability.protocol_, -1);
+    EXPECT_EQ(capability.deviceTokenId_, 0);
     json = R"({
         "stream_info": "[{\"type\":1, \"id\":\"123\"}]",
         "support_remote_volume": true,
@@ -44,11 +45,13 @@ HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString, TestSize.Level4)
         "init_mute_status": true,
         "support_hilink_control": 0,
         "device_name": "Smart Speaker",
-        "protocol": 2
+        "protocol": 2,
+        "tokenId": 12345678
     })";
     capability.FromJsonString(json);
     EXPECT_EQ(capability.protocol_, 2);
     EXPECT_EQ(capability.isSupportHiLinkControl_, false);
+    EXPECT_EQ(capability.deviceTokenId_, 12345678);
 
     json = R"({
         "stream_info": 1,
@@ -57,11 +60,13 @@ HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString, TestSize.Level4)
         "init_mute_status": "1",
         "support_hilink_control": 1,
         "device_name": 1,
-        "protocol": "1"
+        "protocol": "1",
+        "tokenId": "invalid"
     })";
     capability.FromJsonString(json);
     EXPECT_EQ(capability.protocol_, 2);
     EXPECT_EQ(capability.isSupportHiLinkControl_, true);
+    EXPECT_EQ(capability.deviceTokenId_, 12345678);
 }
 
 /**

@@ -70,6 +70,7 @@ private:
         uint32_t overflowCount;
         bool muteWhenInterrupted;
         bool muteHint;
+        PlaybackCaptureStartState playbackCaptureStartState = START_STATE_FAILED;
     };
 
     static napi_status InitAudioCapturer(napi_env env, napi_value &constructor);
@@ -109,6 +110,10 @@ private:
     static napi_value GetOverflowCountSync(napi_env env, napi_callback_info info);
     static napi_value SetWillMuteWhenInterrupted(napi_env env, napi_callback_info info);
     static napi_value SetMuteHint(napi_env env, napi_callback_info info);
+    static napi_value RequestPlaybackCaptureStart(napi_env env, napi_callback_info info);
+    static void SignPlaybackCaptureStartError(std::shared_ptr<AudioCapturerAsyncContext> context, int32_t ret);
+    static void HandlePlaybackCaptureStartResult(AudioCapturer *audioCapturer,
+        std::shared_ptr<AudioCapturerAsyncContext> context, PlaybackCaptureStartState state);
     static napi_value SetIndependentAudioSessionStrategy(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *argv, const std::string &cbName);
@@ -160,6 +165,7 @@ private:
     std::shared_ptr<AudioCapturerReadCallback> capturerReadDataCallbackNapi_ = nullptr;
 
     SourceType sourceType_;
+    bool isModernInnerCapturer_ = false;
     napi_env env_;
 };
 } // namespace AudioStandard

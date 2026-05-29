@@ -258,6 +258,10 @@ struct AudioCapturerFilter {
   capturerInfo: Optional<AudioCapturerInfo>;
 }
 
+struct SystemVolumeFilter {
+  uid: i32;
+}
+
 struct AppIdInfo {
   appUid: i32;
   appPid: i32;
@@ -604,6 +608,7 @@ interface AudioVolumeManager {
   OnAppVolumeChangeForUid(uid: i32, callback: (data: VolumeEvent) => void): void;
   OnStreamVolumeChange(streamUsage: StreamUsage, callback: (data: StreamVolumeEvent) => void): void;
   OnVolumePercentageChange(callback: (data: VolumeEvent) => void): void;
+  OnSystemVolumeChangeByFilter(filter: SystemVolumeFilter, callback: (data: VolumeEvent) => void): void;
 
   OffVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffAppVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
@@ -612,6 +617,7 @@ interface AudioVolumeManager {
   OffSystemVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffStreamVolumeChange(callback: Optional<(data: StreamVolumeEvent)=> void>): void;
   OffVolumePercentageChange(callback: Optional<(data: VolumeEvent)=> void>): void;
+  OffSystemVolumeChangeByFilter(callback: Optional<(data: VolumeEvent)=> void>): void;
 }
 
 interface AudioVolumeGroupManager {
@@ -879,6 +885,7 @@ enum AudioSessionBehaviorFlags: i32 {
   DEFAULT_BEHAVIOR = 0x00000000,
   VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
   MUTE_WHEN_INTERRUPTED = 0x00000002,
+  PAUSE_WHEN_INTERRUPTED = 0x00000004,
 }
 
 enum OutputDeviceChangeRecommendedAction: i32 {
@@ -1008,10 +1015,23 @@ struct AudioCapturerInfo {
   capturerFlags: i32;
 }
 
+enum PlaybackCaptureMode: i32 {
+  DEFAULT = 0,
+  MEDIA = 1,
+  EXCLUDING_SELF = 32768,
+}
+
 struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  playbackCaptureMode: Optional<PlaybackCaptureMode>;
+}
+
+enum PlayCaptureStartState: i32 {
+  SUCCESS = 0,
+  FAILED = 1,
+  NOT_AUTHORIZED = 2,
 }
 
 interface AudioCapturer {
@@ -1062,6 +1082,9 @@ interface AudioCapturer {
 
   @gen_promise("setMuteHint")
   SetMuteHintSync(mute: bool): void;
+
+  @gen_promise("requestPlaybackCaptureStart")
+  RequestPlaybackCaptureStartSync(): PlayCaptureStartState;
 
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 

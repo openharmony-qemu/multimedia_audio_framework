@@ -17,20 +17,29 @@
 #define AUDIO_CAPTURE_SOURCE_H
 
 #include "source/i_audio_capture_source.h"
+#include <functional>
 #include <iostream>
 #include <cstring>
 #include <mutex>
 #include <thread>
-#include "v6_0/iaudio_manager.h"
+#include <vector>
+#include "v6_1/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
 #include "audio_primary_source_clock.h"
 #include "audio_stream_enum.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct CamcorderMetadataHdiCallback {
+    struct IAudioCaptureCallback callback_;
+    std::function<void(const CaptureCallbackType type, const std::vector<uint8_t> &data)> serviceCallback_;
+    void *source_ = nullptr;
+};
 
 class AudioCaptureSource : public IAudioCaptureSource {
 public:
@@ -88,8 +97,10 @@ private:
     static int32_t GetByteSizeByFormat(AudioSampleFormat format);
     static bool IsFormalSourceType(int32_t sourceType);
     uint32_t GetUniqueId(void) const;
+    uint32_t GetMultiDeviceUniqueId(void) const;
     uint32_t GetUniqueIdBySourceType(void) const;
     void InitEcOrMicRefAttr(const IAudioSourceAttr &attr);
+    AudioPortPin GetAudiocapturerPortPin(void) const noexcept;
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
     void InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene);
@@ -124,6 +135,13 @@ private:
     uint32_t GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const;
     void UpdateRawSampleAttr(struct AudioSampleAttributes &param);
     void UpdateEcSampleAttr(struct AudioSampleAttributes &param);
+    int32_t RegisterCamcorderMetadataCallback();
+    static int32_t CamcorderMetadataCallbackEntry(struct IAudioCaptureCallback *self,
+        enum AudioCaptureCallbackType type, const uint8_t *data, uint32_t dataLen);
+    void HandleCamcorderMetadataCallback(enum CaptureCallbackType type, const std::vector<uint8_t> &data);
+    bool GetLastCamcorderMetadata(std::vector<uint8_t> &metaData) const override;
+    void ResetCamcorderMetadataCallbackState();
+    void DumpCamcorderMetadata(const uint8_t *data, uint32_t dataLen);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -194,6 +212,9 @@ private:
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
     static const std::unordered_map<std::string, AudioInputType> audioInputTypeMap_;
+    CamcorderMetadataHdiCallback camcorderMetadataHdiCb_ = {};
+    mutable std::mutex camcorderMetadataMutex_;
+    std::vector<uint8_t> camcorderMetadata_;
 };
 
 } // namespace AudioStandard

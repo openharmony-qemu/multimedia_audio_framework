@@ -333,6 +333,23 @@ int32_t RemoteAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &apps
     return SUCCESS;
 }
 
+int32_t RemoteAudioCaptureSource::UpdateAppsTokenId(const std::vector<uint32_t> &appsTokenId)
+{
+    Trace trace("RemoteAudioCaptureSource::UpdateAppsTokenId");
+    std::unordered_set<uint32_t> lastAppsTokenId = appsTokenId_;
+    std::unordered_set<uint32_t> appsTokenIdSet(appsTokenId.cbegin(), appsTokenId.cend());
+    appsTokenId_ = std::move(appsTokenIdSet);
+    if (appsTokenId_ != lastAppsTokenId) {
+        CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "audioCapture_ is null");
+        CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
+        std::string appInfoStr = GenerateAppsTokenIdStr(appsTokenId_);
+        int32_t ret = audioCapture_->SetExtraParams(appInfoStr.c_str());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
+        AUDIO_INFO_LOG("set tokenId parameter: %{public}s", appInfoStr.c_str());
+    }
+    return SUCCESS;
+}
+
 void RemoteAudioCaptureSource::SetInvalidState(void)
 {
     AUDIO_INFO_LOG("update validState:false, adapterName: %{public}s", GetEncryptStr(deviceNetworkId_).c_str());
@@ -455,6 +472,8 @@ int32_t RemoteAudioCaptureSource::CreateCapture(void)
     deviceManager->RegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_, shared_from_this());
     int32_t ret = audioCapture_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
     AUDIO_INFO_LOG("set app info params, ret: %{public}d", ret);
+    ret = audioCapture_->SetExtraParams(GenerateAppsTokenIdStr(appsTokenId_).c_str());
+    AUDIO_INFO_LOG("set tokenId params, ret: %{public}d", ret);
     return SUCCESS;
 }
 

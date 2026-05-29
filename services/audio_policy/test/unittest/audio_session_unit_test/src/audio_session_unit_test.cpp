@@ -527,5 +527,30 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_025, TestSize.Level1)
     EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 }
 
+/**
+* @tc.name  : Test AudioSession IsOutputDeviceConfigurableByStreamUsage with transfer stream usage.
+* @tc.number: AudioSessionUnitTest_026.
+* @tc.desc  : Test IsOutputDeviceConfigurableByStreamUsage for VOICE_TRANSFER_COMMUNICATION.
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_026, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+
+    EXPECT_TRUE(audioSession->IsOutputDeviceConfigurableByStreamUsage(
+        STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION));
+    EXPECT_TRUE(audioSession->IsOutputDeviceConfigurableByStreamUsage(
+        STREAM_USAGE_VOICE_COMMUNICATION));
+    EXPECT_TRUE(audioSession->IsOutputDeviceConfigurableByStreamUsage(
+        STREAM_USAGE_VIDEO_COMMUNICATION));
+    EXPECT_TRUE(audioSession->IsOutputDeviceConfigurableByStreamUsage(
+        STREAM_USAGE_VOICE_MESSAGE));
+    EXPECT_FALSE(audioSession->IsOutputDeviceConfigurableByStreamUsage(
+        STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(audioSession->IsOutputDeviceConfigurableByStreamUsage(
+        STREAM_USAGE_MEDIA));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

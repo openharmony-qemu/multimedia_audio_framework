@@ -427,19 +427,19 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRe
             return ret;
         }
     }
-
+    int32_t targetUid = (uid == INVALID_UID) ? static_cast<int32_t>(getuid()) : uid;
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(rendererInfo, uid, callback);
+        audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(rendererInfo, targetUid, callback);
         // Check if (rendererInfo, uid) pair already exists before adding
         auto it = std::find_if(rendererInfosWithUid_.begin(), rendererInfosWithUid_.end(),
-            [&rendererInfo, uid](const std::pair<AudioRendererInfo, int32_t> &item) {
-                return item.first.streamUsage == rendererInfo.streamUsage && item.second == uid;
+            [&rendererInfo, targetUid](const std::pair<AudioRendererInfo, int32_t> &item) {
+                return item.first.streamUsage == rendererInfo.streamUsage && item.second == targetUid;
             });
         if (it == rendererInfosWithUid_.end()) {
-            rendererInfosWithUid_.push_back({rendererInfo, uid});
+            rendererInfosWithUid_.push_back({rendererInfo, targetUid});
         }
-        SetCallbackRendererInfo(rendererInfo, uid);
+        SetCallbackRendererInfo(rendererInfo, targetUid);
         size_t callbackSize = audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = true;
@@ -463,19 +463,19 @@ int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(const AudioCap
             return ret;
         }
     }
-
+    int32_t targetUid = (uid == INVALID_UID) ? static_cast<int32_t>(getuid()) : uid;
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddPreferredInputDeviceChangeCallback(capturerInfo, uid, callback);
-        // Check if (capturerInfo, uid) pair already exists before adding
+        audioPolicyClientStubCB_->AddPreferredInputDeviceChangeCallback(capturerInfo, targetUid, callback);
+        // Check if (capturerInfo, targetUid) pair already exists before adding
         auto it = std::find_if(capturerInfosWithUid_.begin(), capturerInfosWithUid_.end(),
-            [&capturerInfo, uid](const std::pair<AudioCapturerInfo, int32_t> &item) {
-                return item.first.sourceType == capturerInfo.sourceType && item.second == uid;
+            [&capturerInfo, targetUid](const std::pair<AudioCapturerInfo, int32_t> &item) {
+                return item.first.sourceType == capturerInfo.sourceType && item.second == targetUid;
             });
         if (it == capturerInfosWithUid_.end()) {
-            capturerInfosWithUid_.push_back({capturerInfo, uid});
+            capturerInfosWithUid_.push_back({capturerInfo, targetUid});
         }
-        SetCallbackCapturerInfo(capturerInfo, uid);
+        SetCallbackCapturerInfo(capturerInfo, targetUid);
         size_t callbackSize = audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].isEnable = true;

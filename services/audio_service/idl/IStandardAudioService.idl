@@ -41,7 +41,7 @@ interface IStandardAudioService {
     void GetExtraParameters([in] String mainKey, [in] List<String> subKyes, [out] List<StringPair> parameters);
     void SetExtraParameters([in] String key, [in] List<StringPair> kvpairs);
     void SetMicrophoneMute([in] boolean isMute);
-    void SetAudioScene([in] int audioScene, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag);
+    void SetAudioScene([in] int audioScene, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag, [in] int phoneCallSceneType);
     void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] unsigned int pipeId, [in] String networkId);
     void UpdateDualToneState([in] boolean enable, [in] int sessionId, [in] String dupSinkName);
     void SetParameterCallback([in] IRemoteObject object);
@@ -64,7 +64,7 @@ interface IStandardAudioService {
     void SetWakeupSourceCallback([in] IRemoteObject object);
     void UpdateSpatializationState([in] AudioSpatializationState spatializationState);
     void UpdateSpatialDeviceType([in] int spatialDeviceType);
-    void OffloadSetVolume([in] float volume, [in] unsigned int renderId, [in] String networkId);
+    void OffloadSetVolume([in] float volume, [in] unsigned int renderId);
     void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
     void SetSpatializationSceneType([in] int spatializationSceneType);
     void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);
@@ -158,4 +158,5 @@ interface IStandardAudioService {
     [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
     void CheckInnerCapVoIP([in] unsigned int sessionId);
     void SetAudioSceneForPipe([in] unsigned int pipeId, [in] int audioScene, [in] boolean scoExcludeFlag);
+    void CreateCallTransferProxy();
 }

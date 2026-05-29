@@ -43,6 +43,11 @@ public:
     int32_t AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
     int32_t RemoveSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
     size_t GetSystemVolumeChangeCallbackSize() const;
+    int32_t AddSystemVolumeChangeByFilterCallback(const SystemVolumeFilter &filter,
+        const std::shared_ptr<SystemVolumeChangeByFilterCallback> &cb);
+    SystemVolumeFilter RemoveSystemVolumeChangeByFilterCallback(
+        const std::shared_ptr<SystemVolumeChangeByFilterCallback> &cb);
+    size_t GetSystemVolumeChangeByFilterCallbackSize() const;
     size_t GetStreamVolumeChangeCallbackSize() const;
     std::set<StreamUsage> GetStreamVolumeChangeCallbackStreamUsages() const;
     int32_t AddStreamVolumeChangeCallback(const std::set<StreamUsage> &streamUsages,
@@ -114,7 +119,7 @@ public:
     int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
     size_t GetHeadTrackingDataRequestedChangeCallbackSize() const;
     int32_t AddSpatializationEnabledChangeCallback(
-        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb, bool isFromBlueTooth = false);
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
     int32_t RemoveSpatializationEnabledChangeCallback();
     size_t GetSpatializationEnabledChangeCallbackSize() const;
     int32_t AddSpatializationEnabledChangeForCurrentDeviceCallback(
@@ -122,7 +127,7 @@ public:
     int32_t RemoveSpatializationEnabledChangeForCurrentDeviceCallback();
     size_t GetSpatializationEnabledChangeForCurrentDeviceCallbackSize() const;
     int32_t AddHeadTrackingEnabledChangeCallback(
-        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb, bool isFromNearlink);
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
     size_t GetHeadTrackingEnabledChangeCallbacSize() const;
     int32_t AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb);
@@ -225,6 +230,7 @@ public:
     int32_t OnFormatUnsupportedError(int32_t errorCode) override;
     int32_t OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent) override;
     int32_t OnSystemVolumeChange(const VolumeEvent &volumeEvent) override;
+    int32_t OnSystemVolumeChangeByFilter(const SystemVolumeFilter &filter, const VolumeEvent &volumeEvent) override;
     int32_t OnCollaborationEnabledChangeForCurrentDevice(bool enabled) override;
     int32_t OnPreferredDeviceSet(int32_t preferredType, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         int32_t uid, const std::string &caller) override;
@@ -234,10 +240,6 @@ public:
     int32_t OnPersonalizedSpatializationEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         bool enabled) override;
-    int32_t OnSpatializationEnabledChangeForBTDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        bool enabled,
-        bool headTrackingEnabled) override;
     int32_t OnSpatialAudioSourceTypeChange(int32_t mode) override;
     int32_t OnAudioSeparationEffectEnabledChange(bool enabled) override;
     int32_t OnAudioRouteSelectRefined(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
@@ -251,6 +253,8 @@ private:
     std::vector<std::pair<std::set<StreamUsage>,
         std::weak_ptr<StreamVolumeChangeCallback>>> streamVolumeChangeCallbackList_;
     std::vector<std::weak_ptr<SystemVolumeChangeCallback>> systemVolumeChangeCallbackList_;
+    std::vector<std::pair<SystemVolumeFilter,
+        std::weak_ptr<SystemVolumeChangeByFilterCallback>>> systemVolumeChangeByFilterCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioManagerDeviceInfoUpdateCallback>> deviceInfoUpdateCallbackList_;
@@ -265,13 +269,9 @@ private:
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
-    std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>>
-        spatializationEnabledChangeCallbackList_ForBT;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback>>
         spatializationEnabledChangeForCurrentDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
-    std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>>
-        headTrackingEnabledChangeCallbackListFromNearlink_;
     std::vector<std::shared_ptr<AudioNnStateChangeCallback>> nnStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::weak_ptr<AudioSessionStateChangedCallback>> audioSessionStateCallbackList_;
@@ -333,6 +333,7 @@ private:
     mutable std::mutex formatUnsupportedErrorMutex_;
     mutable std::mutex streamVolumeChangeMutex_;
     mutable std::mutex systemVolumeChangeMutex_;
+    mutable std::mutex systemVolumeChangeByFilterMutex_;
     mutable std::mutex collaborationEnabledChangeForCurrentDeviceMutex_;
     mutable std::mutex preferredDeviceSetMutex_;
     mutable std::mutex adaptiveSpatialRenderingEnabledChangeMutex_;

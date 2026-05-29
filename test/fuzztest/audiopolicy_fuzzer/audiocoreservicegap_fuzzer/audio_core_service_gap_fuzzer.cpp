@@ -274,17 +274,16 @@ void AudioCoreServiceVoipPrivacyGapFuzzTest(FuzzedDataProvider &fdp)
         return;
     }
 
-    bool hasActivePrivacyVoipCapturer = fdp.ConsumeBool();
+    bool hasActiveVoipPrivacyCapturer = fdp.ConsumeBool();
     audioCoreService->IsVoipPrivacyMuteCandidateSource(streamDesc->capturerInfo_.sourceType);
-    audioCoreService->IsVoipPrivacyBypassedByBehavior(streamDesc);
     audioCoreService->IsVoipPrivacyMuteBypassedForUltrasonic(streamDesc->capturerInfo_.sourceType);
-    audioCoreService->ShouldMuteCapturerByVoipPrivacy(streamDesc, hasActivePrivacyVoipCapturer);
+    audioCoreService->ShouldMuteCapturerByVoipPrivacy(streamDesc, hasActiveVoipPrivacyCapturer);
     audioCoreService->WriteVoipMutedCaptureStats(streamDesc, fdp.ConsumeBool());
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = { nullptr, streamDesc };
-    audioCoreService->EvaluateActivePrivacyVoipPresence(streamDescs, hasActivePrivacyVoipCapturer);
+    audioCoreService->EvaluateActiveVoipPrivacyPresence(streamDescs, hasActiveVoipPrivacyCapturer);
     std::unordered_set<uint32_t> targetMuteSessions;
-    audioCoreService->CollectSessionsToMuteByVoipPrivacy(streamDescs, hasActivePrivacyVoipCapturer,
+    audioCoreService->CollectSessionsToMuteByVoipPrivacy(streamDescs, hasActiveVoipPrivacyCapturer,
         targetMuteSessions);
     targetMuteSessions.clear();
     audioCoreService->SyncVoipPrivacyMuteState(streamDescs, targetMuteSessions);

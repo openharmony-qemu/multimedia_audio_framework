@@ -58,6 +58,9 @@ typedef enum {
 
     /** @brief When the audio stream is interrupted by the system, it will be muted. */
     MUTE_WHEN_INTERRUPTED = 0x00000002,
+
+    /** @brief When the audio stream is interrupted by the system, it will be paused. */
+    PAUSE_WHEN_INTERRUPTED = 0x00000004,
 } OH_AudioSession_BehaviorFlags;
 
 /**

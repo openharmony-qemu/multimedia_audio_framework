@@ -50,6 +50,8 @@ public:
     virtual int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) = 0;
     virtual int32_t RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime) = 0;
     virtual void NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) = 0;
+    virtual int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId) = 0;
+    virtual int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -147,13 +147,19 @@ void AudioArmDeviceBehavior::UpdateArmModuleInfo(const std::shared_ptr<AudioDevi
     CHECK_AND_RETURN_LOG(!deviceStreamInfo.samplingRate.empty(), "samplingRate is empty");
     std::string halRate = std::to_string(*deviceStreamInfo.samplingRate.begin());
     std::string halFormat = formatEnumToStr[deviceStreamInfo.format];
-    AUDIO_INFO_LOG("RATE from hal is: %{public}s, format from hal is: %{public}s, format ori: %{public}u",
-        halRate.c_str(), halFormat.c_str(), deviceStreamInfo.format);
+    AudioChannelLayout halChannelLayout = deviceStreamInfo.GetMainChannelLayout();
+    std::string halChannels = std::to_string(ConvertLayoutToAudioChannel(halChannelLayout));
+    AUDIO_INFO_LOG("RATE from hal is: %{public}s, format from hal is: %{public}s, channel from hal is %{public}s, "
+        "format ori: %{public}u", halRate.c_str(), halFormat.c_str(), halChannels.c_str(), deviceStreamInfo.format);
     if (!halRate.empty()) {
         moduleInfo.rate = halRate;
     }
     if (!halFormat.empty()) {
         moduleInfo.format = halFormat;
+    }
+    if (halChannelLayout != CH_LAYOUT_UNKNOWN) {
+        moduleInfo.channels = halChannels;
+        moduleInfo.channelLayout = std::to_string(halChannelLayout);
     }
 
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {

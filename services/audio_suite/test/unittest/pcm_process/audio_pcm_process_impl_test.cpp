@@ -16,6 +16,7 @@
 #include "audio_pcm_process.h"
 #include "audio_stream_info.h"
 #include "audio_suite_log.h"
+#include "audio_suite_unittest_tools.h"
 #include <gtest/gtest.h>
 #include <vector>
 #include <cstring>
@@ -35,7 +36,12 @@ public:
 
 void AudioPcmProcessImplTest::SetUpTestCase(void) {}
 void AudioPcmProcessImplTest::TearDownTestCase(void) {}
-void AudioPcmProcessImplTest::SetUp(void) {}
+void AudioPcmProcessImplTest::SetUp(void)
+{
+    if (!AudioSuite::AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 void AudioPcmProcessImplTest::TearDown(void) {}
 
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_001, TestSize.Level1)

@@ -773,7 +773,7 @@ void AudioHfpManager::WriteScoOprFaultEvent()
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SCO_STATE_AUDIO",
         HiviewDFX::HiSysEvent::EventType::FAULT,
         "PKG_NAME", "",
-        "SCO_ADDRESS", BluetoothScoManager::GetInstance().GetAudioScoDevice().GetDeviceAddr(),
+        "SCO_ADDRESS", GetEncryptAddr(BluetoothScoManager::GetInstance().GetAudioScoDevice().GetDeviceAddr()),
         "SCENE", static_cast<uint8_t>(scene_.load()),
         "SCO_MODE", static_cast<uint8_t>(BluetoothScoManager::GetInstance().GetAudioScoCategory()),
         "AUDIO_SCO_STATE", static_cast<uint8_t>(BluetoothScoManager::GetInstance().GetAudioScoState()),

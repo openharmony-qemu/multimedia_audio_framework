@@ -61,7 +61,6 @@ public:
     bool IsAdaptiveSpatialRenderingEnabled(const std::string address);
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
-    int32_t SetBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool bypass);
     bool IsPersonalizedSpatializationEnabled(const std::string address);
     int32_t SetPersonalizedSpatializationEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);

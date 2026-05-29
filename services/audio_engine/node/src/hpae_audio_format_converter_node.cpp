@@ -41,7 +41,7 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     converterOutput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tmpOutBuf_(pcmBufferInfo_)
 {
     int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
     frameLenInMs_ = enableNewRoute == 1 ?
         static_cast<float>(nodeInfo.frameLen * MILLISECOND_PER_SECOND) / static_cast<float>(nodeInfo.samplingRate) :
         static_cast<float>(FRAME_LEN_20MS);
@@ -100,23 +100,44 @@ void HpaeAudioFormatConverterNode::RegisterCallback(INodeFormatInfoCallback *cal
 
 void HpaeAudioFormatConverterNode::DoProcess()
 {
+    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
+    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
+    auto len = "len[" + std::to_string(GetFrameLen()) + "]";
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeAudioFormatConverterNode::DoProcess "
+        + rate + ch + len);
     std::vector<HpaePcmBuffer *> &preOutputs = inputStream_.ReadPreOutputData();
-    bool hasValidInput = !preOutputs.empty() && preOutputs[0] != nullptr && preOutputs[0]->IsValid();
+    bool hasPreOutput = !preOutputs.empty() && preOutputs[0] != nullptr;
+    bool hasValidInput = hasPreOutput && preOutputs[0]->IsValid();
     AUDIO_DEBUG_LOG("NodeId %{public}d: hasValidInput=%{public}d, enableProcess=%{public}d, "
         "processedFrames=%{public}u, outputFrameLen20ms=%{public}u, unprocessedFrames=%{public}u, "
         "credit=%{public}u/%{public}u, threshold=%{public}u",
         GetNodeId(), hasValidInput, enableProcess_, processedFrames_, outputFrameLen20ms_,
         unprocessedFrames_, pullAheadCredit_, pullAheadMaxCredit_, resamplerInputThreshold_);
-
+    if (resampler_ == nullptr) {
+        AUDIO_ERR_LOG("NodeId %{public}d resampler_ is nullptr", GetNodeId());
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false);
+        outputStream_.WriteDataToOutput(&silenceData_);
+        return;
+    }
+    if (hasPreOutput) {
+        // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
+        CheckAndUpdateInfo(preOutputs[0]);
+    }
     if (hasValidInput && enableProcess_) {
         HpaePcmBuffer *tempOut = SignalProcess(preOutputs);
         outputStream_.WriteDataToOutput(tempOut);
         return;
     }
-    // No valid input or process disabled -- still try to drain processedBuffer_
+    // drain processedBuffer_ with buffer state propagation
     if (processedFrames_ >= outputFrameLen20ms_ && enableProcess_) {
         converterOutput_.Reset();
         if (ExtractOutputFromProcessedBuffer()) {
+            if (hasPreOutput) {
+                converterOutput_.SetBufferState(preOutputs[0]->GetBufferState());
+                converterOutput_.SetBufferValid(true);
+            }
             AUDIO_DEBUG_LOG("NodeId %{public}d: drain processedBuffer_, "
                 "remaining %{public}u frames", GetNodeId(), processedFrames_);
             outputStream_.WriteDataToOutput(&converterOutput_);
@@ -192,27 +213,9 @@ HpaePcmBuffer* HpaeAudioFormatConverterNode::ProcessAndExtractOutput(HpaePcmBuff
 
 HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]";
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeAudioFormatConverterNode::SignalProcess "
-     + rate + ch + len);
-    if (inputs.empty() || inputs[0] == nullptr) {
-        AUDIO_WARNING_LOG("HpaeConverterNode inputs size is empty, SessionId:%{public}d", GetSessionId());
-        return &silenceData_;
-    }
     if (inputs.size() != 1) {
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(resampler_, &silenceData_,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-                BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false),
-        "NodeId %{public}d resampler_ is nullptr", GetNodeId());
-
-    // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
-    CheckAndUpdateInfo(inputs[0]);
-
 #ifdef ENABLE_HOOK_PCM
     if (!outputPcmDumper_) {
         outputPcmDumper_ = std::make_unique<HpaePcmDumper>(

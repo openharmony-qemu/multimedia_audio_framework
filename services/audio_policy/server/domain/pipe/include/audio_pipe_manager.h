@@ -131,6 +131,8 @@ public:
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
     void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    
+    bool IsTransferCallOrRingtoneScene();
     void UpdateRingAndVoipStreamStatus(const AudioScene audioScene);
     void UpdateRingAndVoipStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &ringDeviceDescs,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &voipDeviceDescs);
@@ -183,6 +185,7 @@ public:
 
     std::vector<PipeDeviceVolumeGroup> GetAllPipeDeviceVolumeInfo();
     std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForPipe(AudioIOHandle id);
+    std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<PipeDeviceVolumeGroup> GetPipeDeviceVolumeInfoForDevice(
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
     

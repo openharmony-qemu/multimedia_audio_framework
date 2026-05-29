@@ -1499,11 +1499,35 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     desc.deviceRole_ = INPUT_DEVICE;
-    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    desc.deviceId_ = 1;
+    AudioDeviceDescriptor connectedDesc;
+    connectedDesc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
+    connectedDesc.deviceRole_ = INPUT_DEVICE;
+    connectedDesc.deviceId_ = 1;
+    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(connectedDesc);
     EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
     ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
     ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
     EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_WIRED_MICIN);
+}
+
+/**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_004
+* @tc.desc  : Test AudioPolicyServer::MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_004, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    desc.deviceRole_ = INPUT_DEVICE;
+    desc.deviceId_ = 999;
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_WIRED_HEADSET);
 }
 
 /**
@@ -3444,25 +3468,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_164, TestSize.Level1)
 
     server->accountObserver_ = nullptr;
     server->SubscribeOsAccountChangeEvents();
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_165
-* @tc.desc  : Test AddAudioServiceOnStart.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_165, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    server->isFirstAudioServiceStart_.store(true);
-    server->AddAudioServiceOnStart();
-
-    server->coreService_ = AudioCoreService::GetCoreService();
-    server->eventEntry_ = CreateEventEntry(server->coreService_);
-    server->isFirstAudioServiceStart_.store(false);
-    server->AddAudioServiceOnStart();
 }
 
 /**

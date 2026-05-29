@@ -45,6 +45,8 @@ public:
     HpaeSessionState GetState();
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
+    void SetTokenId(uint32_t tokenId);
+    uint32_t GetTokenId();
     void SetMute(bool isMute);
     bool GetMute();
     static int32_t GetPcEnableState();
@@ -62,6 +64,7 @@ private:
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     uint64_t totalFrames_;
     int32_t appUid_ = -1;
+    uint32_t tokenId_ = 0;
     bool isMute_;
     std::unique_ptr<AudioHighPassFilter> highpassFilter_;
     int32_t filterChannelCount_;

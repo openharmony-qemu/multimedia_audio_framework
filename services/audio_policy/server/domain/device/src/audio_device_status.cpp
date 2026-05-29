@@ -444,7 +444,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
             string("address=") + updatedDesc.GetMacAddress() + " role=" + to_string(updatedDesc.getRole());
         std::string audioParameter =
             AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
-        updatedDesc.ParseAudioParameters(audioParameter);
+        updatedDesc.UpdateDeviceInfoByAudioParameters(audioParameter);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         int32_t result = HandleAccessoryDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS,
@@ -1562,11 +1562,10 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     FetchDeviceInfo info = {
         STREAM_USAGE_MEDIA, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT
     };
-    auto mediaFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(info)
-        .front();
+    RouterType routerType = ROUTER_TYPE_NONE;
+    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info, routerType);
     if ((usage & MEDIA) == MEDIA &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, mediaFetched,
+        NeedClearPreferredWhenCategoryUpdated(*existed, {mediaFetched, routerType},
             *strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
         strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, nullptr);
     }
@@ -1574,11 +1573,9 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     info = {
         STREAM_USAGE_VOICE_COMMUNICATION, "ClearPreferredWhenCategoryUpdated_2", ROUTER_TYPE_USER_SELECT
     };
-    auto callFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(info)
-        .front();
+    auto callFetched = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     if ((usage & VOICE) == VOICE &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, callFetched,
+        NeedClearPreferredWhenCategoryUpdated(*existed, {callFetched, ROUTER_TYPE_NONE},
             *strategy.GetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
@@ -1604,9 +1601,13 @@ void AudioDeviceStatus::ClearPreferredDevices(AudioDeviceDescriptor &desc)
 }
 
 bool AudioDeviceStatus::NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
-    const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred)
+    const std::pair<std::vector<std::shared_ptr<AudioDeviceDescriptor>>, RouterType> &fetched,
+    const AudioDeviceDescriptor &preferred)
 {
-    if (!updated.IsSameDeviceDesc(fetched)) {
+    CHECK_AND_RETURN_RET(fetched.second != ROUTER_TYPE_USER_SELECT, false);
+    CHECK_AND_RETURN_RET(!fetched.first.empty(), false);
+    auto &frontDesc = fetched.first.front();
+    if (!updated.IsSameDeviceDescPtr(frontDesc) && !updated.IsSameBtDeviceDescPtr(frontDesc)) {
         return false;
     }
 
@@ -1712,6 +1713,8 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     pipeInfo->InitAudioStreamInfo();
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+    auto pipeDeviceVolumeGroup = AudioPipeManager::GetPipeManager()->GetPipeDeviceVolumeInfoForPipe(pipeInfo);
+    AudioAdapterManager::GetInstance().UpdateAudioPipeVolume(pipeDeviceVolumeGroup);
 
     CHECK_AND_RETURN_RET(CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort), ERROR);
     return SUCCESS;
@@ -1771,6 +1774,11 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
 
     device.hdPlaybackMode_ = static_cast<HdPlaybackMode>(capability.hdPlaybackMode_);
     AUDIO_INFO_LOG("Update hdPlaybackMode success, mode: %{public}d", device.hdPlaybackMode_);
+
+    if (capability.deviceTokenId_ != 0) {
+        device.deviceTokenId_ = capability.deviceTokenId_;
+        AUDIO_INFO_LOG("Update tokenId: %{public}u", device.deviceTokenId_);
+    }
 }
 
 bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
