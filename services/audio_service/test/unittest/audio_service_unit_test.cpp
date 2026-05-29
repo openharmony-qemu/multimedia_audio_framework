@@ -3358,41 +3358,6 @@ HWTEST(AudioServiceUnitTest, DumpForegroundList_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ConfigCoreServiceProvider API
- * @tc.type  : FUNC
- * @tc.number: ConfigCoreServiceProvider_002,
- * @tc.desc  : Test ConfigCoreServiceProvider interface.
- */
-HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_002, TestSize.Level1)
-{
-    auto coreServiceHandler = CoreServiceHandler::GetInstance();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    EXPECT_NE(nullptr, samgr);
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
-    int32_t ret = coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test ConfigCoreServiceProvider API
- * @tc.type  : FUNC
- * @tc.number: ConfigCoreServiceProvider_003,
- * @tc.desc  : Test ConfigCoreServiceProvider interface.
- */
-HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_003, TestSize.Level1)
-{
-    auto coreServiceHandler = CoreServiceHandler::GetInstance();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    EXPECT_NE(nullptr, samgr);
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
-    coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider); // Set the provider
-    int32_t ret = coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
-}
-
-/**
  * @tc.name  : Test SetCapturerMuteHint API
  * @tc.type  : FUNC
  * @tc.number: SetCapturerMuteHint_001

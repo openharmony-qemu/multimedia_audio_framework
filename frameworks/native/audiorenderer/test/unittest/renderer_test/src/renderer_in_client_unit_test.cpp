@@ -4018,11 +4018,8 @@ HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NoPending_001
 HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_VoipFlag_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    uint32_t totalSizeInFrame = 100;
-    uint32_t byteSizePerFrame = 4;
     rendererInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+        OHAudioBufferBase::CreateFromLocal(100, 4);
     rendererInClientInner->sizePerFrameInByte_ = 4;
     
     uint32_t validSpanSize = 960;
@@ -4311,6 +4308,7 @@ HWTEST(RendererInClientPublicNewUnitTest, GetSpeed_FastStream_001, TestSize.Leve
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     
     float speed = rendererInClientInner->GetSpeed();
     EXPECT_EQ(static_cast<int32_t>(speed), static_cast<int32_t>(ERROR));

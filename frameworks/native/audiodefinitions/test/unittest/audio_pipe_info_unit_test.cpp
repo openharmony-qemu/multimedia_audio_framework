@@ -292,7 +292,7 @@ HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_FastTrue_001, TestSize.Level2)
     testOutputPipe_->SetUltraFastFlag(true);
     dumpStr.clear();
     testOutputPipe_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastPipe: 1"));
+    EXPECT_NE(std::string::npos, dumpStr.find("UltraFastPipe: 1"));
 }
 
 /**
@@ -307,7 +307,7 @@ HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_FastFalse_001, TestSize.Level2)
     testOutputPipe_->SetUltraFastFlag(false);
     dumpStr.clear();
     testOutputPipe_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastPipe: 0"));
+    EXPECT_NE(std::string::npos, dumpStr.find("UltraFastPipe: 0"));
 }
 } // namespace AudioStandard
 } // namespace OHOS

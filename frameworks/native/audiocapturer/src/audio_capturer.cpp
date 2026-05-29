@@ -2249,12 +2249,15 @@ int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &pr
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_SEND_DATA_INVALID_PARAM, "CheckDegradeFallback fail", true),
         "CheckDegradeFallback fail");
-    size_t frameCount = validDataLength / processFrameSize;
-    processBufSize = frameCount * processFrameSize;
-    micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) *
-        static_cast<size_t>(sampleByteSize);
-    ecBufSize = frameCount * static_cast<size_t>(audioStreamParams.ecChannels) * static_cast<size_t>(sampleByteSize);
-    AUDIO_INFO_LOG("GetMicInBufferSize use degrade fallback, frameCount:%{public}zu", frameCount);
+    if (degradeFallback) {
+        size_t frameCount = validDataLength / processFrameSize;
+        processBufSize = frameCount * processFrameSize;
+        micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) *
+            static_cast<size_t>(sampleByteSize);
+        ecBufSize = frameCount * static_cast<size_t>(audioStreamParams.ecChannels) *
+            static_cast<size_t>(sampleByteSize);
+        AUDIO_INFO_LOG("GetMicInBufferSize use degrade fallback, frameCount:%{public}zu", frameCount);
+    }
     return SUCCESS;
 }
 

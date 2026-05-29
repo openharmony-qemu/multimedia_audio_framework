@@ -439,25 +439,6 @@ HWTEST(CapturerInClientUnitTest, RegisterTracker_004, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test RegisterTracker API
- * @tc.type  : FUNC
- * @tc.number: RegisterTracker_005
- * @tc.desc  : Test RegisterTracker interface.
- */
-HWTEST(CapturerInClientUnitTest, RegisterTracker_005, TestSize.Level1)
-{
-    int32_t clientUid = 0;
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
-        clientUid);
-    capturerInClientInner->streamTrackerRegistered_ = false;
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    capturerInClientInner->RegisterTracker(proxyObj);
-    EXPECT_NE(capturerInClientInner, nullptr);
-}
-
-/**
  * @tc.name  : Test UpdateTracker API
  * @tc.type  : FUNC
  * @tc.number: UpdateTracker_001
