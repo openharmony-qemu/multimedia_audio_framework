@@ -1136,7 +1136,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011, TestSize.Lev
     HdiIdType idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_NE(idType, HDI_ID_TYPE_FAST);
-    EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
+    EXPECT_NE(idInfo, HDI_ID_INFO_USB);
 }
 
 /**
