@@ -15,7 +15,8 @@
 #include "common.h"
 #include <iostream>
 
-int OutputSuccess(const json& data) {
+int OutputSuccess(const json& data)
+{
     json response;
     response["type"] = "result";
     response["status"] = "success";
@@ -24,7 +25,8 @@ int OutputSuccess(const json& data) {
     return 0;
 }
 
-int OutputError(const std::string& code, const std::string& message, const std::string& suggestion) {
+int OutputError(const std::string& code, const std::string& message, const std::string& suggestion)
+{
     json response;
     response["type"] = "result";
     response["status"] = "failed";
