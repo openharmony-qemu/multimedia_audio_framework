@@ -37,6 +37,10 @@
 namespace OHOS {
 namespace AudioStandard {
 
+namespace {
+    constexpr uint32_t MS_PER_S = 1000;
+}
+
 static constexpr int32_t MAX_FAST_STREAM_COUNT = 6;
 constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 static const bool ENHANCE_ROUTING_SUPPORTED =
@@ -1617,7 +1621,7 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
     moduleInfo.hdPlayBackMode = std::to_string(static_cast<int32_t>(deviceDesc->hdPlaybackMode_));
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
-        const DeviceStreamInfo deviceAudioStreamInfo = deviceDesc->GetAudioStreamInfo().back();
+        DeviceStreamInfo deviceAudioStreamInfo = deviceDesc->GetAudioStreamInfo().back();
 
         CHECK_AND_RETURN_LOG(!deviceAudioStreamInfo.samplingRate.empty(), "samplingRate set empty");
         moduleInfo.rate = to_string(*(deviceAudioStreamInfo.samplingRate.begin()));
@@ -1626,6 +1630,25 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
         CHECK_AND_RETURN_LOG(it != AudioDefinitionPolicyUtils::enumToFormatStr.end(),
             "Not found %{public}u in enumToFormatStr", static_cast<uint32_t>(deviceAudioStreamInfo.format));
         moduleInfo.format = it->second;
+
+        AudioChannelLayout halChannelLayout = deviceAudioStreamInfo.GetMainChannelLayout();
+        std::string halChannels = std::to_string(ConvertLayoutToAudioChannel(halChannelLayout));
+        if (halChannelLayout != CH_LAYOUT_UNKNOWN) {
+            moduleInfo.channels = halChannels;
+            moduleInfo.channelLayout = std::to_string(halChannelLayout);
+        }
+
+        uint32_t buffCalcMs = 20;
+        uint32_t rateValue = 0;
+        uint32_t channelValue = 0;
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
+            "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
+            "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+
+        uint32_t bufferSize = rateValue * channelValue * AudioPolicyUtils::GetInstance().PcmFormatToBytes(
+            AudioDefinitionPolicyUtils::formatStrToEnum[moduleInfo.format]) * buffCalcMs / MS_PER_S;
+        moduleInfo.bufferSize = std::to_string(bufferSize);
     }
 }
 
@@ -1895,6 +1918,10 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
     info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
     info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
+
+    if (!streamDesc->newDeviceDescs_.empty()) {
+        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+    }
 
     AUDIO_INFO_LOG("Pipe name: %{public}s, channels: %{public}s, channelLayout: %{public}s",
         pipeInfoPtr->name_.c_str(), info.moduleInfo_.channels.c_str(), info.moduleInfo_.channelLayout.c_str());
