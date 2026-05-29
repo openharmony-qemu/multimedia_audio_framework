@@ -66,18 +66,19 @@ int32_t AppVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel
     return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-int32_t AppVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
+int32_t AppVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("enter AppVolumeManager::SetAppVolumeLevel");
     // audioPolicyManager_ : AudioAdapterManager
-    return audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
+    return audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel, deviceType);
 }
 
-int32_t AppVolumeManager::SetSelfAppVolumeLevelWithCallback(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
+int32_t AppVolumeManager::SetSelfAppVolumeLevelWithCallback(
+    int32_t appUid, int32_t volumeLevel, bool isUpdateUi, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
         appUid, volumeLevel, isUpdateUi);
-    int32_t ret = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
+    int32_t ret = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel, deviceType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
 
     VolumeEvent volumeEvent;
@@ -104,11 +105,11 @@ int32_t AppVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMu
     return audioPolicyManager_.IsAppVolumeMute(appUid, owned, isMute);
 }
 
-int32_t AppVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage)
+int32_t AppVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage, DeviceType deviceType)
 {
     // For system-controlled app volume, the volumeLevel range is 0-100.
     int32_t volumeLevel = volumePercentage;
-    int32_t ret = audioPolicyManager_.SetSystemAppVolumeLevel(appUid, volumeLevel);
+    int32_t ret = audioPolicyManager_.SetSystemAppVolumeLevel(appUid, volumeLevel, deviceType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set system app volume level fail");
     systemAppVolumeDirty_ = true;
     ScheduleSystemAppVolumePersist();
@@ -149,9 +150,9 @@ int32_t AppVolumeManager::GetSystemAppVolumePercentage(int32_t appUid, int32_t &
     return ret;
 }
 
-int32_t AppVolumeManager::SetSystemAppVolumeMuted(int32_t appUid, bool muted)
+int32_t AppVolumeManager::SetSystemAppVolumeMuted(int32_t appUid, bool muted, DeviceType deviceType)
 {
-    int32_t ret = audioPolicyManager_.SetSystemAppVolumeMuted(appUid, muted);
+    int32_t ret = audioPolicyManager_.SetSystemAppVolumeMuted(appUid, muted, deviceType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set system app mute status fail");
     audioPolicyManager_.SaveSystemAppVolumeMuteStatusToDb(true);
     return ret;
@@ -162,7 +163,7 @@ int32_t AppVolumeManager::IsSystemAppVolumeMuted(int32_t appUid, bool &isMute)
     return audioPolicyManager_.IsSystemAppVolumeMuted(appUid, isMute);
 }
 
-int32_t AppVolumeManager::SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted)
+int32_t AppVolumeManager::SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted, DeviceType deviceType)
 {
     bool appliedSystemAppMuteStatus = false;
     IsSystemAppVolumeMuted(appUid, appliedSystemAppMuteStatus);
@@ -171,7 +172,7 @@ int32_t AppVolumeManager::SetSystemAppVolumeMutedForUid(int32_t appUid, bool mut
     // Skip setting if mute status is already up-to-date
     CHECK_AND_RETURN_RET(appliedSystemAppMuteStatus != muted, SUCCESS);
 
-    int32_t ret = SetSystemAppVolumeMuted(appUid, muted);
+    int32_t ret = SetSystemAppVolumeMuted(appUid, muted, deviceType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set systemAppVolume mute");
 
     VolumeEvent volumeEvent;
@@ -189,7 +190,8 @@ int32_t AppVolumeManager::SetSystemAppVolumeMutedForUid(int32_t appUid, bool mut
     return ret;
 }
 
-int32_t AppVolumeManager::SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage)
+int32_t AppVolumeManager::SetSystemAppVolumePercentageWithCallback(
+    int32_t appUid, int32_t volumePercentage, DeviceType deviceType)
 {
     int32_t appliedVolumePercentage = VOLUME_PERCENTAGE_UNSET;
     GetSystemAppVolumePercentage(appUid, appliedVolumePercentage);
@@ -198,7 +200,7 @@ int32_t AppVolumeManager::SetSystemAppVolumePercentageWithCallback(int32_t appUi
     // Skip setting if volume percentage is already up-to-date
     CHECK_AND_RETURN_RET(appliedVolumePercentage != volumePercentage, SUCCESS);
 
-    int32_t ret = SetSystemAppVolumePercentage(appUid, volumePercentage);
+    int32_t ret = SetSystemAppVolumePercentage(appUid, volumePercentage, deviceType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system app volume percentage");
 
     VolumeEvent volumeEvent;

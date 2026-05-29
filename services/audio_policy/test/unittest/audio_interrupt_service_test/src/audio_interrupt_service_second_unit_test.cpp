@@ -107,6 +107,11 @@ public:
     {
         return SUCCESS;
     }
+
+    ErrCode OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName, bool &ret) override
+    {
+        return SUCCESS;
+    }
 };
 
 class AudioInterruptCallbackTest : public AudioInterruptCallback {

@@ -330,7 +330,13 @@ public:
     int32_t SetSystemVolumeChangeCallback(const int32_t clientPid,
         const std::shared_ptr<SystemVolumeChangeCallback> &callback);
 
+    int32_t SetSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+        const SystemVolumeFilter &filter, const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback);
+
     int32_t UnsetSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &callback);
+
+    int32_t UnsetSystemVolumeChangeByFilterCallback(
+        const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback);
 
     int32_t CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         uint32_t &flag, uint32_t &sessionId, std::string &networkId);
@@ -828,6 +834,9 @@ private:
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID);
+    int32_t SetSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter);
+    int32_t RemoveSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter);
+    int32_t RemoveAllSystemVolumeChangeCallbackInfo();
     int32_t CheckAudioPolicyClientRegisted();
 
     std::mutex listenerStubMutex_;

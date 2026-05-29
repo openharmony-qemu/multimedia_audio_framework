@@ -258,6 +258,10 @@ struct AudioCapturerFilter {
   capturerInfo: Optional<AudioCapturerInfo>;
 }
 
+struct SystemVolumeFilter {
+  uid: i32;
+}
+
 struct AppIdInfo {
   appUid: i32;
   appPid: i32;
@@ -604,6 +608,7 @@ interface AudioVolumeManager {
   OnAppVolumeChangeForUid(uid: i32, callback: (data: VolumeEvent) => void): void;
   OnStreamVolumeChange(streamUsage: StreamUsage, callback: (data: StreamVolumeEvent) => void): void;
   OnVolumePercentageChange(callback: (data: VolumeEvent) => void): void;
+  OnSystemVolumeChangeByFilter(filter: SystemVolumeFilter, callback: (data: VolumeEvent) => void): void;
 
   OffVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffAppVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
@@ -612,6 +617,7 @@ interface AudioVolumeManager {
   OffSystemVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffStreamVolumeChange(callback: Optional<(data: StreamVolumeEvent)=> void>): void;
   OffVolumePercentageChange(callback: Optional<(data: VolumeEvent)=> void>): void;
+  OffSystemVolumeChangeByFilter(callback: Optional<(data: VolumeEvent)=> void>): void;
 }
 
 interface AudioVolumeGroupManager {

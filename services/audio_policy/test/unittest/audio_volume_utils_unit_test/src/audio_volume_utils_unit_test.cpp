@@ -77,15 +77,15 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetMaxVolumeLevelFromConfig, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t volume = MAX_VOLUME_LEVEL;
     AudioStreamType type = STREAM_MUSIC;
-    utils.GetMaxVolumeLevelFromConfig(desc, type, volume);
+    utils.GetMaxVolumeLevelFromConfig(desc->deviceType_, type, volume);
     EXPECT_NE(volume, -1);
-    utils.GetMaxVolumeLevelFromConfig(desc, type, volume);
+    utils.GetMaxVolumeLevelFromConfig(desc->deviceType_, type, volume);
     EXPECT_NE(volume, -1);
 
-    utils.GetMaxVolumeLevelFromConfig(desc, STREAM_APP, volume);
+    utils.GetMaxVolumeLevelFromConfig(desc->deviceType_, STREAM_APP, volume);
     EXPECT_NE(volume, -1);
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    utils.GetMaxVolumeLevelFromConfig(desc, type, volume);
+    utils.GetMaxVolumeLevelFromConfig(desc->deviceType_, type, volume);
     EXPECT_NE(volume, -1);
 }
 
@@ -100,15 +100,15 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetMinVolumeLevelFromConfig, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t volume = MIN_VOLUME_LEVEL;
     AudioStreamType type = STREAM_MUSIC;
-    utils.GetMinVolumeLevelFromConfig(desc, type, volume);
+    utils.GetMinVolumeLevelFromConfig(desc->deviceType_, type, volume);
     EXPECT_NE(volume, -1);
-    utils.GetMinVolumeLevelFromConfig(desc, type, volume);
+    utils.GetMinVolumeLevelFromConfig(desc->deviceType_, type, volume);
     EXPECT_NE(volume, -1);
 
-    utils.GetMinVolumeLevelFromConfig(desc, STREAM_APP, volume);
+    utils.GetMinVolumeLevelFromConfig(desc->deviceType_, STREAM_APP, volume);
     EXPECT_NE(volume, -1);
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    utils.GetMinVolumeLevelFromConfig(desc, type, volume);
+    utils.GetMinVolumeLevelFromConfig(desc->deviceType_, type, volume);
     EXPECT_NE(volume, -1);
 }
 

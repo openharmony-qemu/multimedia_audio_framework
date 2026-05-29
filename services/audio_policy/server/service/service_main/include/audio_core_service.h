@@ -251,6 +251,8 @@ public:
         void OnVehiclePriorityChanged(bool enable);
         // Trigger reload for VoIP priority change due to mute callback
         void TriggerVoipPriorityReload(uint32_t sessionId, bool lowered);
+        int32_t GetHighestPriorityVolumeTypeForDevice(
+            const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType);
 
     private:
         int32_t HandleSetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
@@ -514,6 +516,8 @@ public:
         const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    int32_t GetHighestPriorityVolumeTypeForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);
@@ -835,6 +839,7 @@ private:
     void OnVehiclePriorityChanged(bool enable);
     void NotifyServiceReady();
     void NotifyRequiredPipesReady();
+    int32_t GetStreamTypePriority(AudioStreamType streamType);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

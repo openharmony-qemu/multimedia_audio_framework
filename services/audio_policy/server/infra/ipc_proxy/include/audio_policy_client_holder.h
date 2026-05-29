@@ -67,6 +67,7 @@ public:
     void OnFormatUnsupportedError(const AudioErrors &errorCode);
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent);
     void OnSystemVolumeChange(VolumeEvent volumeEvent);
+    void OnSystemVolumeChangeByFilter(const SystemVolumeFilter &filter, const VolumeEvent &volumeEvent);
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
     void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent);
     void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent);

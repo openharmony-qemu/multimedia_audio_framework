@@ -562,10 +562,23 @@ int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t cli
     return AudioVolumeClientManager::GetInstance().RegisterSystemVolumeChangeCallback(clientPid, callback);
 }
 
+int32_t AudioSystemManager::RegisterSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+    const SystemVolumeFilter &filter, const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback)
+{
+    return AudioVolumeClientManager::GetInstance().RegisterSystemVolumeChangeByFilterCallback(
+        clientPid, filter, callback);
+}
+
 int32_t AudioSystemManager::UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
     const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
     return AudioVolumeClientManager::GetInstance().UnregisterSystemVolumeChangeCallback(clientPid, callback);
+}
+
+int32_t AudioSystemManager::UnregisterSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+    const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback)
+{
+    return AudioVolumeClientManager::GetInstance().UnregisterSystemVolumeChangeByFilterCallback(clientPid, callback);
 }
 
 void AudioSystemManager::SetAudioMonoState(bool monoState)

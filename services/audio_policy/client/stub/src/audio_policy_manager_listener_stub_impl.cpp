@@ -166,6 +166,17 @@ int32_t AudioPolicyManagerListenerStubImpl::OnQueryIsForceGetDevByVolumeType(con
     return SUCCESS;
 }
 
+int32_t AudioPolicyManagerListenerStubImpl::OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName, bool &ret)
+{
+    ret = false;
+    std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, ERR_NULL_POINTER,
+        "audioClientInfoMgrCallback is nullptr");
+    ret = audioClientInfoMgrCallback->OnQueryIsPcSettingsOrSceneBoard(bundleName);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManagerListenerStubImpl::OnRouteUpdate(uint32_t routeFlag, const std::string &networkId)
 {
     std::shared_ptr<AudioRouteCallback> cb = audioRouteCallback_.lock();

@@ -1314,4 +1314,110 @@ void AudioVolumeManagerImpl::UnregisterVolumeDegreeChangeCallback(std::shared_pt
         cb->RemoveAllCallbackReference();
     }
 }
+
+void AudioVolumeManagerImpl::OnSystemVolumeChangeByFilter(SystemVolumeFilter const &filter,
+    callback_view<void(VolumeEvent const&)> callback)
+{
+    OHOS::AudioStandard::SystemVolumeFilter audioFilter;
+    audioFilter.uid = filter.uid;
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    RegisterSystemVolumeChangeByFilterCallback(audioFilter, cacheCallback,
+        AUDIO_SYSTEM_VOLUME_CHANGE_BY_FILTER_CALLBACK_NAME, this);
+}
+
+void AudioVolumeManagerImpl::RegisterSystemVolumeChangeByFilterCallback(
+    const OHOS::AudioStandard::SystemVolumeFilter &filter,
+    std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl)
+{
+    CHECK_AND_RETURN_LOG(audioVolMngrImpl != nullptr, "audioVolMngrImpl is nullptr");
+    std::lock_guard<std::mutex> lock(audioVolMngrImpl->mutex_);
+    CHECK_AND_RETURN_LOG(audioVolMngrImpl->audioSystemMngr_ != nullptr, "audioSystemMngr_ is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN(OHOS::AudioStandard::PermissionUtil::VerifySelfPermission(),
+        TaiheAudioError::ThrowError(TAIHE_ERR_PERMISSION_DENIED, "Not system app."));
+
+    for (const auto &existingCb :
+        audioVolMngrImpl->systemVolumeChangeByFilterCallbackTaiheList_) {
+        if (existingCb->GetFilter().uid == filter.uid && existingCb->ContainSameJsCallback(callback)) {
+            AUDIO_INFO_LOG(
+                "RegisterSystemVolumeChangeByFilterCallback: duplication filter and callback, uid: %{public}d",
+                filter.uid);
+            return;
+        }
+    }
+
+    auto cb = std::make_shared<TaiheAudioSystemVolumeChangeByFilterCallback>();
+    cb->SetFilter(filter);
+    int32_t ret = audioVolMngrImpl->audioSystemMngr_->RegisterSystemVolumeChangeByFilterCallback(
+        audioVolMngrImpl->cachedClientId_, filter, cb);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        if (ret == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+            TaiheAudioError::ThrowError(TAIHE_ERR_PERMISSION_DENIED, "Not system app.");
+            return;
+        } else if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+            TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed.");
+            return;
+        }
+        AUDIO_ERR_LOG("RegisterSystemVolumeChangeByFilterCallback failed, ret: %{public}d", ret);
+        return;
+    }
+    cb->SaveCallbackReference(cbName, callback, filter);
+    audioVolMngrImpl->systemVolumeChangeByFilterCallbackTaiheList_.push_back(cb);
+}
+
+void AudioVolumeManagerImpl::OffSystemVolumeChangeByFilter(
+    optional_view<callback<void(VolumeEvent const&)>> callback)
+{
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
+    if (callback.has_value()) {
+        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+    }
+    UnregisterSystemVolumeChangeByFilterCallback(cacheCallback, this);
+}
+
+void AudioVolumeManagerImpl::UnregisterSystemVolumeChangeByFilterCallback(std::shared_ptr<uintptr_t> &callback,
+    AudioVolumeManagerImpl *audioVolMngrImpl)
+{
+    CHECK_AND_RETURN_LOG(audioVolMngrImpl != nullptr, "audioVolMngrImpl is nullptr");
+    std::lock_guard<std::mutex> lock(audioVolMngrImpl->mutex_);
+    CHECK_AND_RETURN_LOG(audioVolMngrImpl->audioSystemMngr_ != nullptr, "audioSystemMngr_ is nullptr");
+    auto &cbList = audioVolMngrImpl->systemVolumeChangeByFilterCallbackTaiheList_;
+    CHECK_AND_CALL_FUNC_RETURN_LOG(!cbList.empty(),
+        TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM, "no callback registered"),
+        "systemVolumeChangeByFilterCallbackTaiheList_ is empty");
+
+    if (callback == nullptr) {
+        for (auto &cb : cbList) {
+            cb->RemoveAllCallbackReference();
+            int32_t ret = audioVolMngrImpl->audioSystemMngr_->UnregisterSystemVolumeChangeByFilterCallback(
+                audioVolMngrImpl->cachedClientId_, cb);
+            CHECK_AND_CALL_FUNC_RETURN(ret != OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED,
+                TaiheAudioError::ThrowError(TAIHE_ERR_PERMISSION_DENIED, "Not system app."));
+            CHECK_AND_CALL_FUNC_RETURN(ret != OHOS::AudioStandard::ERR_INVALID_PARAM,
+                TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM));
+            CHECK_AND_RETURN(ret == OHOS::AudioStandard::SUCCESS);
+        }
+        cbList.clear();
+        return;
+    }
+
+    for (auto it = cbList.begin(); it != cbList.end(); ++it) {
+        auto &cb = *it;
+        if (cb == nullptr || !cb->ContainSameJsCallback(callback)) {
+            continue;
+        }
+        cb->RemoveCallbackReference(callback);
+        if (cb->GetSystemVolumeByFilterCbListSize() == 0) {
+            int32_t ret = audioVolMngrImpl->audioSystemMngr_->UnregisterSystemVolumeChangeByFilterCallback(
+                audioVolMngrImpl->cachedClientId_, cb);
+            CHECK_AND_CALL_FUNC_RETURN(ret != OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED,
+                TaiheAudioError::ThrowError(TAIHE_ERR_PERMISSION_DENIED, "Not system app."));
+            CHECK_AND_CALL_FUNC_RETURN(ret != OHOS::AudioStandard::ERR_INVALID_PARAM,
+                TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM));
+            CHECK_AND_RETURN(ret == OHOS::AudioStandard::SUCCESS);
+            cbList.erase(it);
+        }
+        return;
+    }
+    TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM, "callback not found");
+}
 } // namespace ANI::Audio

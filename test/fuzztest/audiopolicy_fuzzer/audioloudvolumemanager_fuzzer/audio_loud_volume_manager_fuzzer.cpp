@@ -95,9 +95,10 @@ void FuzzReloadLoudVolumeMode(FuzzedDataProvider& fdp)
 {
     AudioStreamType streamType = Pick(fdp, STREAM_TYPES);
     SetLoudVolMode setVolMode = Pick(fdp, SET_LOUD_VOL_MODES);
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
 
     LoudVolumeManager loudVolumeManager;
-    loudVolumeManager.ReloadLoudVolumeMode(streamType, setVolMode);
+    loudVolumeManager.ReloadLoudVolumeMode(streamType, setVolMode, deviceDesc);
 }
 
 void FuzzReloadLoudVolumeModeSwitch(FuzzedDataProvider& fdp)
@@ -122,15 +123,17 @@ void FuzzCheckLoudVolumeMode(FuzzedDataProvider& fdp)
     int32_t volLevel = fdp.ConsumeIntegralInRange<int32_t>(MIN_VOLUME_LEVEL, MAX_VOLUME_LEVEL);
     int32_t keyType = fdp.ConsumeIntegral<int32_t>();
     AudioStreamType streamType = Pick(fdp, STREAM_TYPES);
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
 
     LoudVolumeManager loudVolumeManager;
-    loudVolumeManager.CheckLoudVolumeMode(volLevel, keyType, streamType);
+    loudVolumeManager.CheckLoudVolumeMode(volLevel, keyType, streamType, deviceDesc);
 }
 
 void FuzzCheckLoudVolumeModeWithKeyEvent(FuzzedDataProvider& fdp)
 {
     int32_t volLevel = fdp.ConsumeIntegralInRange<int32_t>(MIN_VOLUME_LEVEL, MAX_VOLUME_LEVEL);
     AudioStreamType streamType = Pick(fdp, STREAM_TYPES);
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
 
     const std::array<int32_t, 3> KEY_TYPES = {
         MMI::KeyEvent::KEYCODE_VOLUME_UP,
@@ -140,7 +143,7 @@ void FuzzCheckLoudVolumeModeWithKeyEvent(FuzzedDataProvider& fdp)
     int32_t keyType = Pick(fdp, KEY_TYPES);
 
     LoudVolumeManager loudVolumeManager;
-    loudVolumeManager.CheckLoudVolumeMode(volLevel, keyType, streamType);
+    loudVolumeManager.CheckLoudVolumeMode(volLevel, keyType, streamType, deviceDesc);
 }
 
 void FuzzTest(FuzzedDataProvider& fdp)

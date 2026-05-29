@@ -35,4 +35,5 @@ interface IStandardAudioPolicyManagerListener {
     void OnQueryBundleNameIsInList([in] String bundleName, [in] String listType, [out] boolean ret);
     void OnQueryDeviceVolumeBehavior([out] VolumeBehavior volumeBehavior);
     void OnQueryIsForceGetDevByVolumeType([in] String bundleName, [out] boolean ret);
+    void OnQueryIsPcSettingsOrSceneBoard([in] String bundleName, [out] boolean ret);
 }

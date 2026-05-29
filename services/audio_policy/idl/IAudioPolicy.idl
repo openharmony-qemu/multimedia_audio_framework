@@ -46,6 +46,7 @@ sequenceable audio_system_manager..OHOS.AudioStandard.ActiveStreamVolumeInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneVolumeConfig;
 sequenceable audio_debug_info..OHOS.AudioStandard.AudioDebugInfo;
 sequenceable audio_debug_info..OHOS.AudioStandard.AudioSessionDebugInfo;
+sequenceable audio_info..OHOS.AudioStandard.SystemVolumeFilter;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -357,4 +358,7 @@ interface IAudioPolicy {
     void IsAudioSeparationEffectSupported([out] boolean ret);
     void SetAudioSeparationEffectEnabled([in] boolean enabled, [in] int uid, [in] long streamId);
     void SetAudioSeparationEffectVolume([in] int type, [in] double volume);
+    void SetSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
+    void RemoveSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
+    void RemoveAllSystemVolumeChangeCallbackInfo();
 }

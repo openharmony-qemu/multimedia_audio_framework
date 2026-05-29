@@ -26,9 +26,12 @@
 #include "audio_bundle_manager.h"
 #include "audio_active_device.h"
 #include "audio_zone_service.h"
+#include "audio_info.h"
 #include "stream_dfx_manager.h"
 #include <unistd.h>
 #include "ipc_skeleton.h"
+#include "parameter.h"
+#include "parameters.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -36,6 +39,8 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
 static const int32_t FOCUS_REQUESTED_TIMEOUT_SECONDS = 60;
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 
 static std::string GeneratePidsStrForPrinting(
     const std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> &unorderedMap)
@@ -90,6 +95,7 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
     clientCallbacksMap_.erase(clientPid);
+    clientSystemVolumeFilterMap_.erase(clientPid);
     lastSentOutputDeviceMap_.erase(clientPid);
     lastSentInputDeviceMap_.erase(clientPid);
     pidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
@@ -992,6 +998,15 @@ bool AudioPolicyServerHandler::IsForceGetDevByVolumeType(int32_t uid)
     return ret;
 }
 
+bool AudioPolicyServerHandler::IsPcSettingsOrSceneBoard(int32_t uid)
+{
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
+    bool ret = false;
+    audioClientInfoMgrCallback_->OnQueryIsPcSettingsOrSceneBoard(bundleName, ret);
+    return ret;
+}
+
 bool AudioPolicyServerHandler::IsForceGetZoneDevice(int32_t uid)
 {
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
@@ -1025,6 +1040,9 @@ bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, cons
     int32_t uid = pidUidMap_.count(pid) > 0 ? pidUidMap_[pid] : -1;
     bool isForceVerify = IsForceGetDevByVolumeType(uid);
     CHECK_AND_RETURN_RET(!isForceVerify, true);
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        uid = SYSTEM_UID;
+    }
     auto deviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(uid);
     CHECK_AND_RETURN_RET(deviceDesc != nullptr, true);
     bool ret = volumeEvent.deviceType == deviceDesc->deviceType_ && volumeEvent.networkId == deviceDesc->networkId_;
@@ -1072,6 +1090,11 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
             eventContextObj->volumeEvent.previousVolume,
             static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER]) {
+            NotifySystemVolumeChangeByFilter(it->first, volumeChangeCb, eventContextObj->volumeEvent);
+        }
 #ifdef FEATURE_AUDIO_ZONE
         CHECK_AND_CONTINUE(IsTargetZoneForVolumeKeyEvent(it->first, eventContextObj->zoneId));
 #endif
@@ -1087,6 +1110,25 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             volumeChangeCb->OnSystemVolumeChange(eventContextObj->volumeEvent);
         }
         HandleVolumeChangeCallback(it->first, volumeChangeCb, eventContextObj->volumeEvent);
+    }
+}
+
+void AudioPolicyServerHandler::NotifySystemVolumeChangeByFilter(int32_t clientId,
+    std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient, const VolumeEvent &volumeEvent)
+{
+    std::lock_guard<std::mutex> filterLock(clientSystemVolumeFilterMapMutex_);
+    auto filterIt = clientSystemVolumeFilterMap_.find(clientId);
+    if (filterIt != clientSystemVolumeFilterMap_.end()) {
+        auto systemPreferDeviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(SYSTEM_UID);
+        CHECK_AND_RETURN_LOG(systemPreferDeviceDesc != nullptr, "systemPreferDeviceDesc is nullptr");
+        for (const auto &filter : filterIt->second) {
+            auto appPreferDeviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(filter.uid);
+            CHECK_AND_CONTINUE_LOG(appPreferDeviceDesc != nullptr, "appPreferDeviceDesc is nullptr");
+            bool isSameDevice = systemPreferDeviceDesc->deviceType_ == appPreferDeviceDesc->deviceType_ &&
+                systemPreferDeviceDesc->networkId_ == appPreferDeviceDesc->networkId_;
+            CHECK_AND_CONTINUE(isSameDevice);
+            audioPolicyClient->OnSystemVolumeChangeByFilter(filter, volumeEvent);
+        }
     }
 }
 
@@ -2429,6 +2471,51 @@ std::vector<AudioCapturerFilter> AudioPolicyServerHandler::GetCallbackCapturerIn
         return {};
     }
     return it->second;
+}
+
+int32_t AudioPolicyServerHandler::SetSystemVolumeChangeCallbackInfo(
+    int32_t clientPid, const SystemVolumeFilter &filter)
+{
+    lock_guard<mutex> lock(clientSystemVolumeFilterMapMutex_);
+    auto &filterList = clientSystemVolumeFilterMap_[clientPid];
+    auto it = std::find_if(filterList.begin(), filterList.end(),
+        [&filter](const SystemVolumeFilter &existingFilter) {
+            return existingFilter.uid == filter.uid;
+        });
+    if (it == filterList.end()) {
+        filterList.push_back(filter);
+        AUDIO_INFO_LOG("SetSystemVolumeChangeCallbackInfo: clientPid=%{public}d, uid=%{public}d",
+            clientPid, filter.uid);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServerHandler::RemoveSystemVolumeChangeCallbackInfo(
+    int32_t clientPid, const SystemVolumeFilter &filter)
+{
+    lock_guard<mutex> lock(clientSystemVolumeFilterMapMutex_);
+    auto &filterList = clientSystemVolumeFilterMap_[clientPid];
+    auto it = std::find_if(filterList.begin(), filterList.end(),
+        [&filter](const SystemVolumeFilter &existingFilter) {
+            return existingFilter.uid == filter.uid;
+        });
+    if (it != filterList.end()) {
+        filterList.erase(it);
+        AUDIO_INFO_LOG("RemoveSystemVolumeChangeCallbackInfo: clientPid=%{public}d, uid=%{public}d",
+            clientPid, filter.uid);
+    }
+    if (filterList.empty()) {
+        clientSystemVolumeFilterMap_.erase(clientPid);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServerHandler::RemoveAllSystemVolumeChangeCallbackInfo(int32_t clientPid)
+{
+    lock_guard<mutex> lock(clientSystemVolumeFilterMapMutex_);
+    clientSystemVolumeFilterMap_.erase(clientPid);
+    AUDIO_INFO_LOG("RemoveAllSystemVolumeChangeCallbackInfo: clientPid=%{public}d", clientPid);
+    return SUCCESS;
 }
 
 void AudioPolicyServerHandler::SetAudioZoneEventDispatcher(const std::shared_ptr<IAudioZoneEventDispatcher> dispatcher)

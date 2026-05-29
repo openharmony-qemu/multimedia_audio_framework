@@ -173,7 +173,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_106, TestSize.Level1)
     int32_t volumeLevel = -1;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_MAX;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
-    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(), false);
+    auto curDevice = audioVolumeManager->audioActiveDevice_.GetDeviceForVolume(streamType);
+    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(curDevice), false);
 
     audioVolumeManager->CheckToCloseNotification(streamType, volumeLevel);
 }
@@ -192,7 +193,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_107, TestSize.Level1)
     int32_t volumeLevel = 1;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_MAX;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
-    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(), false);
+    auto curDevice = audioVolumeManager->audioActiveDevice_.GetDeviceForVolume(streamType);
+    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(curDevice), false);
 
     audioVolumeManager->CheckToCloseNotification(streamType, volumeLevel);
 }
@@ -210,7 +212,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_108, TestSize.Level1)
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = CATEGORY_DEFAULT;
 
-    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
+    auto curDevice = audioVolumeManager->audioActiveDevice_.GetDeviceForVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(curDevice);
     EXPECT_EQ(ret, true);
 }
 
@@ -227,7 +230,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_109, TestSize.Level1)
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_CAR;
 
-    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
+    auto curDevice = audioVolumeManager->audioActiveDevice_.GetDeviceForVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(curDevice);
     EXPECT_EQ(ret, true);
 }
 
@@ -244,7 +248,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_110, TestSize.Level1)
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_SOUNDBOX;
 
-    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
+    auto curDevice = audioVolumeManager->audioActiveDevice_.GetDeviceForVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(curDevice);
     EXPECT_EQ(ret, true);
 }
 
@@ -260,7 +265,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_111, TestSize.Level1)
 
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
 
-    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
+    auto curDevice = audioVolumeManager->audioActiveDevice_.GetDeviceForVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(curDevice);
     EXPECT_EQ(ret, true);
 }
 
@@ -330,19 +336,17 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_114, TestSize.Level1)
     int32_t volumeLevel2 = 2;
     int32_t volumeDegree2 = 8;
     volume = {volumeLevel2, volumeDegree2};
-    audioVolumeManager->curOutputDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
     EXPECT_NE(ret, SUCCESS);
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
     EXPECT_NE(ret, SUCCESS);
 
     int32_t retDegree = audioVolumeManager->GetSystemVolumeDegree(streamType);
     EXPECT_NE(volumeDegree2, retDegree);
 
-    audioVolumeManager->curOutputDeviceType_ = DEVICE_TYPE_NEARLINK;
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_NEARLINK);
     EXPECT_NE(ret, SUCCESS);
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_NEARLINK);
     EXPECT_NE(ret, SUCCESS);
 
     retDegree = audioVolumeManager->GetSystemVolumeDegree(streamType);

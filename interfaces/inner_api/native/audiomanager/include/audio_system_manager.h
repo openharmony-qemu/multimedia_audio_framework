@@ -761,6 +761,9 @@ public:
     int32_t RegisterSystemVolumeChangeCallback(const int32_t clientPid,
         const std::shared_ptr<SystemVolumeChangeCallback> &callback);
 
+    int32_t RegisterSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+        const SystemVolumeFilter &filter, const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback);
+
     /**
      * @brief Unregisters the systemVolumeChange callback listener
      *
@@ -770,6 +773,9 @@ public:
      */
     int32_t UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
         const std::shared_ptr<SystemVolumeChangeCallback> &callback = nullptr);
+
+    int32_t UnregisterSystemVolumeChangeByFilterCallback(const int32_t clientPid,
+        const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback = nullptr);
 
     /**
      * @brief registers the renderer data transfer callback listener

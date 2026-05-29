@@ -124,7 +124,6 @@ public:
     int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
     int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
     int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage);
-    int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute);
     int32_t SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
@@ -219,6 +218,9 @@ public:
     bool IsRingerModeValid(AudioRingerMode ringMode);
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
+    bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus, SetLoudVolMode setVolMode);
+    int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
+    bool CheckLoudVolumeMode(int32_t volLevel, int32_t keyType, AudioStreamType streamInFocus);
 
 private:
     AudioVolumeManager();
@@ -255,11 +257,11 @@ private:
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
     void HandleLegacyHighVolumeEvent();
-    int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume);
+    int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume, DeviceType deviceType);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, const VolumeScale &volume,
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
-        const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t zoneId);
+        DeviceType deviceType, int32_t zoneId);
 
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -320,7 +322,6 @@ private:
 
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
-    DeviceType curOutputDeviceType_ = DEVICE_TYPE_NONE;
 
     AppVolumeManager appVolumeManager_;
 

@@ -19,6 +19,7 @@
 #include "audio_system_manager.h"
 #include "taihe_audio_volume_group_manager.h"
 #include "taihe_audio_system_volume_change_callback.h"
+#include "taihe_audio_system_volume_change_by_filter_callback.h"
 #include "taihe_audio_stream_volume_change_callback.h"
 #include "taihe_audio_volume_key_event.h"
 
@@ -76,6 +77,9 @@ public:
     array<ActiveStreamVolumeInfo> GetActiveStreamsVolumeInfo();
     void OnVolumePercentageChange(callback_view<void(VolumeEvent const& data)> callback);
     void OffVolumePercentageChange(optional_view<callback<void(VolumeEvent const& data)>> callback);
+    void OnSystemVolumeChangeByFilter(SystemVolumeFilter const &filter,
+        callback_view<void(VolumeEvent const&)> callback);
+    void OffSystemVolumeChangeByFilter(optional_view<callback<void(VolumeEvent const&)>> callback);
 
 private:
     static void RegisterCallback(std::shared_ptr<uintptr_t> &callback,
@@ -92,6 +96,8 @@ private:
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void RegisterVolumeDegreeChangeCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void RegisterSystemVolumeChangeByFilterCallback(const OHOS::AudioStandard::SystemVolumeFilter &filter,
+        std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterAppVolumeChangeForUidCallback(std::shared_ptr<uintptr_t> &callback,
@@ -105,6 +111,8 @@ private:
     static void UnregisterStreamVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterVolumeDegreeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void UnregisterSystemVolumeChangeByFilterCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
 
     static std::shared_ptr<TaiheAudioVolumeKeyEvent> GetVolumeEventTaiheCallback(std::shared_ptr<uintptr_t> callback,
@@ -129,6 +137,8 @@ private:
     std::list<std::shared_ptr<TaiheAudioVolumeKeyEvent>> volumeKeyEventCallbackTaiheList_;
     std::list<std::shared_ptr<TaiheAudioStreamVolumeChangeCallback>> streamVolumeChangeCallbackTaiheList_;
     std::list<std::shared_ptr<TaiheAudioSystemVolumeChangeCallback>> systemVolumeChangeCallbackTaiheList_;
+    std::vector<std::shared_ptr<TaiheAudioSystemVolumeChangeByFilterCallback>>
+        systemVolumeChangeByFilterCallbackTaiheList_;
     std::mutex mutex_;
 };
 } // namespace ANI::Audio

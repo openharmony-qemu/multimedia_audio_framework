@@ -292,6 +292,13 @@ void AudioPolicyClientHolder::OnSystemVolumeChange(VolumeEvent volumeEvent)
     audioPolicyClient_->OnSystemVolumeChange(volumeEvent);
 }
 
+void AudioPolicyClientHolder::OnSystemVolumeChangeByFilter(
+    const SystemVolumeFilter &filter, const VolumeEvent &volumeEvent)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnSystemVolumeChangeByFilter(filter, volumeEvent);
+}
+
 void AudioPolicyClientHolder::OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");

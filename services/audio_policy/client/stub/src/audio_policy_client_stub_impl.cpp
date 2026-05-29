@@ -152,6 +152,42 @@ size_t AudioPolicyClientStubImpl::GetSystemVolumeChangeCallbackSize() const
     return systemVolumeChangeCallbackList_.size();
 }
 
+int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeByFilterCallback(
+    const SystemVolumeFilter &filter, const std::shared_ptr<SystemVolumeChangeByFilterCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    systemVolumeChangeByFilterCallbackList_.push_back({filter, cb});
+    return SUCCESS;
+}
+
+SystemVolumeFilter AudioPolicyClientStubImpl::RemoveSystemVolumeChangeByFilterCallback(
+    const std::shared_ptr<SystemVolumeChangeByFilterCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    SystemVolumeFilter removedFilter;
+    removedFilter.uid = -1;
+    if (cb == nullptr) {
+        systemVolumeChangeByFilterCallbackList_.clear();
+        return removedFilter;
+    }
+    auto it = systemVolumeChangeByFilterCallbackList_.begin();
+    while (it != systemVolumeChangeByFilterCallbackList_.end()) {
+        if (it->second.lock() != cb) {
+            it++;
+            continue;
+        }
+        removedFilter = it->first;
+        it = systemVolumeChangeByFilterCallbackList_.erase(it);
+    }
+    return removedFilter;
+}
+
+size_t AudioPolicyClientStubImpl::GetSystemVolumeChangeByFilterCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    return systemVolumeChangeByFilterCallbackList_.size();
+}
+
 int32_t AudioPolicyClientStubImpl::OnSystemVolumeChange(const VolumeEvent &volumeEvent)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);
@@ -159,6 +195,23 @@ int32_t AudioPolicyClientStubImpl::OnSystemVolumeChange(const VolumeEvent &volum
         std::shared_ptr<SystemVolumeChangeCallback> systemVolumeChangeCallback = (*it).lock();
         if (systemVolumeChangeCallback != nullptr) {
             systemVolumeChangeCallback->OnSystemVolumeChange(volumeEvent);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::OnSystemVolumeChangeByFilter(
+    const SystemVolumeFilter &filter, const VolumeEvent &volumeEvent)
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    for (auto it = systemVolumeChangeByFilterCallbackList_.begin();
+        it != systemVolumeChangeByFilterCallbackList_.end(); ++it) {
+        if (it->first.uid != filter.uid) {
+            continue;
+        }
+        std::shared_ptr<SystemVolumeChangeByFilterCallback> systemVolumeChangeByFilterCallback = it->second.lock();
+        if (systemVolumeChangeByFilterCallback != nullptr) {
+            systemVolumeChangeByFilterCallback->OnSystemVolumeChangeByFilter(volumeEvent);
         }
     }
     return SUCCESS;

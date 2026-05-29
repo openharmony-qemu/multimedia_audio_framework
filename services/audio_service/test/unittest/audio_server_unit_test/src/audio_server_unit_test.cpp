@@ -1362,7 +1362,7 @@ HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t renderId = 1314;
-    int32_t ret = audioServer->OffloadSetVolume(0.5f, renderId, "default");
+    int32_t ret = audioServer->OffloadSetVolume(0.5f, renderId);
     EXPECT_EQ(ret, ERROR);
 }
 

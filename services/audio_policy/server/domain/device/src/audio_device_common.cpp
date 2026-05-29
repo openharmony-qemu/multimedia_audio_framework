@@ -565,7 +565,9 @@ void AudioDeviceCommon::ClearRingMuteWhenCallStart(bool pre, bool after)
         AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
-    audioPolicyManager_.SetStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    audioPolicyManager_.SetStreamMute(desc, STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
 }
 
 void AudioDeviceCommon::WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -807,12 +809,12 @@ void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
 
 int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &deviceType)
 {
-    int32_t curVoiceCallLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
+    int32_t curVoiceCallLevel = audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
     float curVoiceCallDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL, curVoiceCallLevel, deviceType);
-    int32_t curRingToneLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING);
+    int32_t curRingToneLevel = audioVolumeManager_.GetSystemVolumeLevel(STREAM_RING);
     float curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
-    int32_t maxVoiceCall = audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL);
-    int32_t maxRingTone = audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING);
+    int32_t maxVoiceCall = audioVolumeManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL);
+    int32_t maxRingTone = audioVolumeManager_.GetMaxVolumeLevel(STREAM_RING);
     float curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
     float minMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
         maxVoiceCall * VOLUME_LEVEL_MIN_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *

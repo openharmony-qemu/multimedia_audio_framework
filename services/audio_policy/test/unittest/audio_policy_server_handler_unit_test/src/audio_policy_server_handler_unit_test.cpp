@@ -2516,5 +2516,96 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SetClientCallbacksEnable_EnableTrueNoCl
     EXPECT_EQ(handler->lastSentInputDeviceMap_.count(clientPid), 1);
     EXPECT_EQ(handler->clientCbCapturerFilterMap_.count(clientPid), 1);
 }
+
+/**
+ * @tc.name  : SetSystemVolumeChangeCallbackInfo_NewUid
+ * @tc.number: SetSystemVolumeChangeCallbackInfo_001
+ * @tc.desc  : Test if branch true when uid not found in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetSystemVolumeChangeCallbackInfo_NewUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter;
+    filter.uid = 1001;
+
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+    EXPECT_EQ(filterList[0].uid, 1001);
+}
+
+/**
+ * @tc.name  : SetSystemVolumeChangeCallbackInfo_DuplicateUid
+ * @tc.number: SetSystemVolumeChangeCallbackInfo_002
+ * @tc.desc  : Test if branch false when uid already exists in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetSystemVolumeChangeCallbackInfo_DuplicateUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter;
+    filter.uid = 1001;
+
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+}
+
+/**
+ * @tc.name  : RemoveSystemVolumeChangeCallbackInfo_ExistingUid
+ * @tc.number: RemoveSystemVolumeChangeCallbackInfo_001
+ * @tc.desc  : Test if branch true when uid found in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, RemoveSystemVolumeChangeCallbackInfo_ExistingUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter;
+    filter.uid = 1001;
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+
+    handler->RemoveSystemVolumeChangeCallbackInfo(CLIENT_ID, filter);
+    EXPECT_TRUE(handler->clientSystemVolumeFilterMap_.find(CLIENT_ID) ==
+        handler->clientSystemVolumeFilterMap_.end());
+}
+
+/**
+ * @tc.name  : RemoveSystemVolumeChangeCallbackInfo_NonExistingUid
+ * @tc.number: RemoveSystemVolumeChangeCallbackInfo_002
+ * @tc.desc  : Test if branch false when uid not found in filter list
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, RemoveSystemVolumeChangeCallbackInfo_NonExistingUid, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter1;
+    filter1.uid = 1001;
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter1);
+
+    SystemVolumeFilter filter2;
+    filter2.uid = 2002;
+    handler->RemoveSystemVolumeChangeCallbackInfo(CLIENT_ID, filter2);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+    EXPECT_EQ(filterList[0].uid, 1001);
+}
+
+/**
+ * @tc.name  : RemoveSystemVolumeChangeCallbackInfo_ListNotEmpty
+ * @tc.number: RemoveSystemVolumeChangeCallbackInfo_003
+ * @tc.desc  : Test if branch false when filter list is not empty after removal
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, RemoveSystemVolumeChangeCallbackInfo_ListNotEmpty, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemVolumeFilter filter1;
+    filter1.uid = 1001;
+    SystemVolumeFilter filter2;
+    filter2.uid = 2002;
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter1);
+    handler->SetSystemVolumeChangeCallbackInfo(CLIENT_ID, filter2);
+
+    handler->RemoveSystemVolumeChangeCallbackInfo(CLIENT_ID, filter1);
+    auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
+    EXPECT_EQ(filterList.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
