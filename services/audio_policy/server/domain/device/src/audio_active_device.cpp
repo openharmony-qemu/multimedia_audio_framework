@@ -539,6 +539,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int
     if (IS_DEVICE_ENHANCED_SUPPORTED) {
         return GetDeviceForVolumeEnhanced(appUid);
     }
+    if (appUid == SYSTEM_UID) {
+        return GetDeviceForVolume();
+    }
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
@@ -591,6 +594,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolu
 {
     if (IS_DEVICE_ENHANCED_SUPPORTED) {
         return GetDeviceForVolumeEnhanced(appUid);
+    }
+    if (appUid == SYSTEM_UID) {
+        return GetDeviceForVolume();
     }
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
