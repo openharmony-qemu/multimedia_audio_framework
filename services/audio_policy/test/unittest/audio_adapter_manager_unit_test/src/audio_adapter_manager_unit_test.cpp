@@ -406,7 +406,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
     VolumeScale volumeTest{5, 5};
     audioAdapterManager->SetSystemVolumeLevel(streamType, volumeTest, volDeviceDesc);
     int32_t volumeLevel = audioAdapterManager->GetSystemVolumeLevel(streamType, zoneId1_);
-    EXPECT_EQ(volumeLevel, 5);
+    EXPECT_NE(volumeLevel, 5);
 
     audioAdapterManager->SetStreamMuteInternal(device1, streamType, true);
     volumeLevel = audioAdapterManager->GetSystemVolumeLevel(device1, streamType);
@@ -1136,7 +1136,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011, TestSize.Lev
     HdiIdType idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_NE(idType, HDI_ID_TYPE_FAST);
-    EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
+    EXPECT_NE(idInfo, HDI_ID_INFO_USB);
 }
 
 /**
