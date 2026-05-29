@@ -615,7 +615,7 @@ int32_t AudioSocketThread::AudioHDMIDetectDevice(const struct AudioPnpUevent *au
         audioPnpUevent->action == nullptr ||
         audioPnpUevent->state == nullptr ||
         audioPnpUevent->switchState == nullptr) {
-            return HDF_ERR_INVALID_PARAM;
+        return HDF_ERR_INVALID_PARAM;
     }
     bool isHdmiSwitch = (strcmp(audioPnpUevent->subSystem, "switch") == 0) &&
                        (strstr(audioPnpUevent->switchName, "hdmi_mipi_audio") != NULL) &&
