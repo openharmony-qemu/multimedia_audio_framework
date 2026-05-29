@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cinttypes>
+#include <limits>
 #include "securec.h"
 #include <format>
 #include "audio_errors.h"
@@ -73,6 +74,7 @@ namespace {
     const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
+    constexpr int32_t PRO_AUDIO_ENGINE_FLAG = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
@@ -437,7 +439,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             break;
         case OPERATION_SESSION_EFFECT_ENABLED:
             hasSessionEffect_.store(true);
-            if (engineFlag == 1) {
+            if (engineFlag == PRO_AUDIO_ENGINE_FLAG) {
                 ReConfigDupStreamCallback();
             }
             break;
@@ -453,7 +455,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
-            if (engineFlag == 1) {
+            if (engineFlag == PRO_AUDIO_ENGINE_FLAG) {
                 ReConfigDupStreamCallback();
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
@@ -467,7 +469,10 @@ void RendererInServer::HandleOperationUnderrun()
 {
     AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetWritableDataFrames(): %{public}d",
         audioServerBuffer_->GetWritableDataFrames());
-    if (audioServerBuffer_->GetWritableDataFrames() == static_cast<int32_t>(DEFAULT_SPAN_SIZE * spanSizeInFrame_)) {
+    bool canCalculateFrames = spanSizeInFrame_ <= std::numeric_limits<size_t>::max() / DEFAULT_SPAN_SIZE;
+    size_t expectedFrames = canCalculateFrames ? DEFAULT_SPAN_SIZE * spanSizeInFrame_ : 0;
+    if (canCalculateFrames && expectedFrames <= static_cast<size_t>(std::numeric_limits<int32_t>::max()) &&
+        audioServerBuffer_->GetWritableDataFrames() == static_cast<int32_t>(expectedFrames)) {
         AUDIO_INFO_LOG("Buffer is empty");
         needForceWrite_ = 0;
     } else {
@@ -1883,7 +1888,7 @@ int32_t RendererInServer::StopInner()
 int32_t RendererInServer::HandleStopDuringStandby()
 {
     CHECK_AND_RETURN_RET(standByEnable_, SUCCESS);
-    AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
+    AUDIO_INFO_LOG("sessionId: %{private}u call Stop while stand by", streamIndex_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
             PLAY_STOP_NULL_POINTER, "stream status is nullptr", false), "stream status is nullptr");

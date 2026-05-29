@@ -625,6 +625,18 @@ HWTEST_F(SessionEffectNodeStateTest, activeWithInput_doesNotRunNoInputTailDrain,
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
 }
 
+HWTEST_F(SessionEffectNodeStateTest, disabledWithInput_bypassesWithoutSignalProcess, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    node_->EnableProcess(false);
+
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_, testing::_)).Times(0);
+
+    node_->DoProcess();
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+}
+
 // SE-A2: ACTIVE returns silence when output buffer empty
 HWTEST_F(SessionEffectNodeStateTest, active_outputEmpty_returnsSilence, TestSize.Level0)
 {

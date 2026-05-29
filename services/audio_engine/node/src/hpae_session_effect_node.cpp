@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cinttypes>
+#include <limits>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,29 @@ static constexpr uint32_t FLUSH_PREHEAT_RATIO_DENOMINATOR = 30; // 3.0s denomina
 static constexpr uint32_t BACKOFF_MULTIPLIER = 2;
 static constexpr uint32_t PREHEAT_NO_DATA_TIMEOUT_MS = 100;
 static constexpr int32_t HALF_DIVISOR = 2;
+
+bool GetBytesPerFrame(size_t channels, size_t &bytesPerFrame)
+{
+    if (channels == 0 || channels > std::numeric_limits<size_t>::max() / sizeof(float)) {
+        return false;
+    }
+    bytesPerFrame = channels * sizeof(float);
+    return true;
+}
+
+bool GetPcmByteLen(size_t frameLen, size_t channels, size_t &byteLen)
+{
+    size_t sampleCount = 0;
+    if (channels == 0 || frameLen > std::numeric_limits<size_t>::max() / channels) {
+        return false;
+    }
+    sampleCount = frameLen * channels;
+    if (sampleCount > std::numeric_limits<size_t>::max() / sizeof(float)) {
+        return false;
+    }
+    byteLen = sampleCount * sizeof(float);
+    return true;
+}
 } // namespace
 
 uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
@@ -192,10 +216,11 @@ uint64_t HpaeSessionEffectNode::BytesToLatencyUs(size_t bytes) const
 {
     uint32_t channels = audioConfig_.inputCfg.channels;
     uint32_t sampleRate = audioConfig_.inputCfg.samplingRate;
-    if (channels == 0 || sampleRate == 0) {
+    size_t bytesPerFrame = 0;
+    if (sampleRate == 0 || !GetBytesPerFrame(channels, bytesPerFrame)) {
         return 0;
     }
-    uint64_t frames = bytes / (channels * sizeof(float));
+    uint64_t frames = bytes / bytesPerFrame;
     return frames * 1000000ULL / sampleRate;
 }
 
@@ -501,13 +526,8 @@ void HpaeSessionEffectNode::DoProcess()
     std::vector<HpaePcmBuffer *> &preOutputs = inputStream_.ReadPreOutputData();
     bool hasInput = !preOutputs.empty() && preOutputs[0] != nullptr;
     if (hasInput) {
-        if (enableProcess_) {
-            tempOut = SignalProcess(preOutputs);
-        } else {
-            outputStream_.WriteDataToOutput(preOutputs[0]);
-        }
-    }
-    if (!enableProcess_) {
+        tempOut = enableProcess_ ? SignalProcess(preOutputs) : preOutputs[0];
+    } else if (!enableProcess_) {
         tempOut = SignalProcess(preOutputs);
     } else if (!hasInput && status_ == STATUS::ACTIVE) {
         tempOut = ProcessActiveNoInput();
@@ -608,7 +628,11 @@ bool HpaeSessionEffectNode::HandleNoDataTimeout(size_t inputLevel)
     if (stopRequested_) {
         return true;
     }
-    size_t paddingBytes = prebufTargetBytes_ - inputLevel;
+    if (inputLevel >= prebufTargetBytes_) {
+        return true;
+    }
+    size_t paddingBytes = prebufTargetBytes_;
+    paddingBytes -= inputLevel;
     int32_t ret = FeedPaddingInput(paddingBytes);
     if (ret != 0) {
         AUDIO_WARNING_LOG("PreheatThread FeedPaddingInput failed: %{public}d", ret);
@@ -679,8 +703,8 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
             audioConfig_.inputCfg.channels, channels);
         return &silenceData_;
     }
-    size_t byteLen = tailOutputData_.GetFrameLen() * channels * sizeof(float);
-    if (byteLen == 0) {
+    size_t byteLen = 0;
+    if (!GetPcmByteLen(tailOutputData_.GetFrameLen(), channels, byteLen)) {
         return &silenceData_;
     }
 
@@ -710,7 +734,10 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
 size_t HpaeSessionEffectNode::FeedInputFromBuffer(HpaePcmBuffer *buf)
 {
     size_t channels = audioConfig_.inputCfg.channels;
-    size_t byteLen = buf->GetFrameLen() * channels * sizeof(float);
+    size_t byteLen = 0;
+    if (!GetPcmByteLen(buf->GetFrameLen(), channels, byteLen)) {
+        return 0;
+    }
     if (byteLen > 0) {
         int32_t ret = effectInstance_->FeedInput(
             reinterpret_cast<const uint8_t *>(buf->GetPcmDataBuffer()), byteLen);
@@ -720,8 +747,9 @@ size_t HpaeSessionEffectNode::FeedInputFromBuffer(HpaePcmBuffer *buf)
             return 0;
         }
         totalBytesIn_ += byteLen;
-        if (audioConfig_.inputCfg.channels > 0) {
-            stats_.framesProcessed += static_cast<int64_t>(byteLen / (audioConfig_.inputCfg.channels * sizeof(float)));
+        size_t bytesPerFrame = 0;
+        if (GetBytesPerFrame(audioConfig_.inputCfg.channels, bytesPerFrame)) {
+            stats_.framesProcessed += static_cast<int64_t>(byteLen / bytesPerFrame);
         }
         return byteLen;
     }
@@ -748,8 +776,9 @@ int32_t HpaeSessionEffectNode::FeedPaddingInput(size_t byteLen)
 void HpaeSessionEffectNode::AccountOutput(size_t byteLen)
 {
     totalBytesOut_ += byteLen;
-    if (audioConfig_.inputCfg.channels > 0) {
-        stats_.framesOutput += static_cast<int64_t>(byteLen / (audioConfig_.inputCfg.channels * sizeof(float)));
+    size_t bytesPerFrame = 0;
+    if (GetBytesPerFrame(audioConfig_.inputCfg.channels, bytesPerFrame)) {
+        stats_.framesOutput += static_cast<int64_t>(byteLen / bytesPerFrame);
     }
 }
 
