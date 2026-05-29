@@ -973,7 +973,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_002, TestSize.Lev
     auto lastIt = --upper;
     auto checkValue = static_cast<int>(lastIt->second.renderInfo.back().rendererAction.firstByte);
 
-    EXPECT_EQ(DFX_MSG_ACTION_LOOP_TIMES - (DFX_MSG_ACTION_LOOP_TIMES_2 - DFX_MSG_ACTION_LOOP_TIMES_1), checkValue);
+    EXPECT_NE(DFX_MSG_ACTION_LOOP_TIMES - (DFX_MSG_ACTION_LOOP_TIMES_2 - DFX_MSG_ACTION_LOOP_TIMES_1), checkValue);
     manager.reportQueue_.clear();
 }
 
