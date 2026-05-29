@@ -96,7 +96,6 @@ ohos-audioManager select-output-device --type DEFAULT
 | STREAM_VOICE_ASSISTANT | 语音助手流 |
 | STREAM_ALARM | 闹钟流 |
 | STREAM_SYSTEM | 系统音流 |
-| STREAM_ACCESSIBILITY | 辅助功能流 |
 | STREAM_VOICE_RING | 语音铃声流 |
 | STREAM_NAVIGATION | 导航流 |
 | STREAM_NOTIFICATION | 通知流 |
