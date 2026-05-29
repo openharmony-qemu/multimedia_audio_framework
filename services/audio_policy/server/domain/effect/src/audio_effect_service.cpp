@@ -938,11 +938,8 @@ int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_
         enabled, uid, streamId);
     CHECK_AND_RETURN_RET_LOG(uid > 0, ERR_INVALID_PARAM, "SetAudioSeparationEffectEnabled: invalid uid");
 
-    if (streamId != -1) {
-        return HPAE::IHpaeManager::GetHpaeManager().SetAissEnabled(streamId, enabled);
-    } else {
-        return HPAE::IHpaeManager::GetHpaeManager().SetAissEnabledByUid(uid, enabled);
-    }
+    CHECK_AND_RETURN_RET(streamId == -1, HPAE::IHpaeManager::GetHpaeManager().SetAissEnabled(streamId, enabled));
+    return HPAE::IHpaeManager::GetHpaeManager().SetAissEnabledByUid(uid, enabled);
 }
 
 int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
