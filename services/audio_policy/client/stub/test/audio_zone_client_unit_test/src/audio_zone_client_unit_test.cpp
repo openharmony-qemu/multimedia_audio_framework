@@ -128,7 +128,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_001, TestSize.Level4)
 
     audioZoneClient->audioZoneCallback_ = nullptr;
     ret = audioZoneClient->AddAudioZoneCallback(callback);
-    EXPECT_NE(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
