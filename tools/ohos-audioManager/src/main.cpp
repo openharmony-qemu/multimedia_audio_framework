@@ -47,289 +47,153 @@ static const char* gToolDescription = "Audio management tool for controlling vol
 #define REGISTER_CMD(name, desc, usage, params, examples, handler) \
     gCommands[name] = {name, desc, usage, params, examples, handler}
 
-AudioVolumeType ParseBasicVolumeType(const std::string& typeStr) {
-    if (typeStr == "STREAM_MUSIC" || typeStr == "music") {
-        return AudioVolumeType::STREAM_MUSIC;
-    }
-    if (typeStr == "STREAM_RING" || typeStr == "ring") {
-        return AudioVolumeType::STREAM_RING;
-    }
-    if (typeStr == "STREAM_VOICE_CALL" || typeStr == "voice_call") {
-        return AudioVolumeType::STREAM_VOICE_CALL;
-    }
-    if (typeStr == "STREAM_VOICE_COMMUNICATION" || typeStr == "voice_communication") {
-        return AudioVolumeType::STREAM_VOICE_COMMUNICATION;
-    }
-    if (typeStr == "STREAM_VOICE_ASSISTANT" || typeStr == "voice_assistant") {
-        return AudioVolumeType::STREAM_VOICE_ASSISTANT;
-    }
-    if (typeStr == "STREAM_ALARM" || typeStr == "alarm") {
-        return AudioVolumeType::STREAM_ALARM;
-    }
-    if (typeStr == "STREAM_SYSTEM" || typeStr == "system") {
-        return AudioVolumeType::STREAM_SYSTEM;
-    }
-    if (typeStr == "STREAM_ACCESSIBILITY" || typeStr == "accessibility") {
-        return AudioVolumeType::STREAM_ACCESSIBILITY;
-    }
-    return AudioVolumeType::STREAM_MUSIC;
-}
+static const std::unordered_map<std::string, AudioVolumeType> gVolumeTypeMap = {
+    {"STREAM_MUSIC", AudioVolumeType::STREAM_MUSIC},
+    {"STREAM_RING", AudioVolumeType::STREAM_RING},
+    {"STREAM_VOICE_CALL", AudioVolumeType::STREAM_VOICE_CALL},
+    {"STREAM_VOICE_COMMUNICATION", AudioVolumeType::STREAM_VOICE_COMMUNICATION},
+    {"STREAM_VOICE_ASSISTANT", AudioVolumeType::STREAM_VOICE_ASSISTANT},
+    {"STREAM_ALARM", AudioVolumeType::STREAM_ALARM},
+    {"STREAM_SYSTEM", AudioVolumeType::STREAM_SYSTEM},
+    {"STREAM_ACCESSIBILITY", AudioVolumeType::STREAM_ACCESSIBILITY},
+    {"STREAM_VOICE_RING", AudioVolumeType::STREAM_VOICE_RING},
+    {"STREAM_NAVIGATION", AudioVolumeType::STREAM_NAVIGATION},
+    {"STREAM_NOTIFICATION", AudioVolumeType::STREAM_NOTIFICATION},
+    {"STREAM_ULTRASONIC", AudioVolumeType::STREAM_ULTRASONIC},
+    {"STREAM_ANNOUNCEMENT", AudioVolumeType::STREAM_ANNOUNCEMENT},
+    {"STREAM_EMERGENCY", AudioVolumeType::STREAM_EMERGENCY},
+    {"STREAM_ALL", AudioVolumeType::STREAM_ALL}
+};
 
-AudioVolumeType ParseExtendedVolumeType(const std::string& typeStr) {
-    if (typeStr == "STREAM_VOICE_RING" || typeStr == "voice_ring") {
-        return AudioVolumeType::STREAM_VOICE_RING;
-    }
-    if (typeStr == "STREAM_NAVIGATION" || typeStr == "navigation") {
-        return AudioVolumeType::STREAM_NAVIGATION;
-    }
-    if (typeStr == "STREAM_NOTIFICATION" || typeStr == "notification") {
-        return AudioVolumeType::STREAM_NOTIFICATION;
-    }
-    if (typeStr == "STREAM_ULTRASONIC" || typeStr == "ultrasonic") {
-        return AudioVolumeType::STREAM_ULTRASONIC;
-    }
-    if (typeStr == "STREAM_ANNOUNCEMENT" || typeStr == "announcement") {
-        return AudioVolumeType::STREAM_ANNOUNCEMENT;
-    }
-    if (typeStr == "STREAM_EMERGENCY" || typeStr == "emergency") {
-        return AudioVolumeType::STREAM_EMERGENCY;
-    }
-    if (typeStr == "STREAM_ALL" || typeStr == "all") {
-        return AudioVolumeType::STREAM_ALL;
-    }
-    return AudioVolumeType::STREAM_MUSIC;
-}
+static const std::unordered_map<AudioVolumeType, std::string> gVolumeTypeToStringMap = {
+    {AudioVolumeType::STREAM_MUSIC, "STREAM_MUSIC"},
+    {AudioVolumeType::STREAM_RING, "STREAM_RING"},
+    {AudioVolumeType::STREAM_VOICE_CALL, "STREAM_VOICE_CALL"},
+    {AudioVolumeType::STREAM_VOICE_COMMUNICATION, "STREAM_VOICE_COMMUNICATION"},
+    {AudioVolumeType::STREAM_VOICE_ASSISTANT, "STREAM_VOICE_ASSISTANT"},
+    {AudioVolumeType::STREAM_ALARM, "STREAM_ALARM"},
+    {AudioVolumeType::STREAM_SYSTEM, "STREAM_SYSTEM"},
+    {AudioVolumeType::STREAM_ACCESSIBILITY, "STREAM_ACCESSIBILITY"},
+    {AudioVolumeType::STREAM_VOICE_RING, "STREAM_VOICE_RING"},
+    {AudioVolumeType::STREAM_NAVIGATION, "STREAM_NAVIGATION"},
+    {AudioVolumeType::STREAM_NOTIFICATION, "STREAM_NOTIFICATION"},
+    {AudioVolumeType::STREAM_ULTRASONIC, "STREAM_ULTRASONIC"},
+    {AudioVolumeType::STREAM_ANNOUNCEMENT, "STREAM_ANNOUNCEMENT"},
+    {AudioVolumeType::STREAM_EMERGENCY, "STREAM_EMERGENCY"},
+    {AudioVolumeType::STREAM_ALL, "STREAM_ALL"}
+};
+
+static const std::unordered_map<std::string, DeviceType> gDeviceTypeMap = {
+    {"DEVICE_TYPE_INVALID", DeviceType::DEVICE_TYPE_INVALID},
+    {"DEVICE_TYPE_EARPIECE", DeviceType::DEVICE_TYPE_EARPIECE},
+    {"DEVICE_TYPE_SPEAKER", DeviceType::DEVICE_TYPE_SPEAKER},
+    {"DEVICE_TYPE_WIRED_HEADSET", DeviceType::DEVICE_TYPE_WIRED_HEADSET},
+    {"DEVICE_TYPE_WIRED_HEADPHONES", DeviceType::DEVICE_TYPE_WIRED_HEADPHONES},
+    {"DEVICE_TYPE_BLUETOOTH_SCO", DeviceType::DEVICE_TYPE_BLUETOOTH_SCO},
+    {"DEVICE_TYPE_BLUETOOTH_A2DP", DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP},
+    {"DEVICE_TYPE_MIC", DeviceType::DEVICE_TYPE_MIC},
+    {"DEVICE_TYPE_USB_HEADSET", DeviceType::DEVICE_TYPE_USB_HEADSET},
+    {"DEVICE_TYPE_DP", DeviceType::DEVICE_TYPE_DP},
+    {"DEVICE_TYPE_REMOTE_CAST", DeviceType::DEVICE_TYPE_REMOTE_CAST},
+    {"DEVICE_TYPE_USB_DEVICE", DeviceType::DEVICE_TYPE_USB_DEVICE},
+    {"DEVICE_TYPE_HDMI", DeviceType::DEVICE_TYPE_HDMI},
+    {"DEVICE_TYPE_LINE_DIGITAL", DeviceType::DEVICE_TYPE_LINE_DIGITAL},
+    {"DEVICE_TYPE_REMOTE_DAUDIO", DeviceType::DEVICE_TYPE_REMOTE_DAUDIO},
+    {"DEVICE_TYPE_HEARING_AID", DeviceType::DEVICE_TYPE_HEARING_AID},
+    {"DEVICE_TYPE_NEARLINK", DeviceType::DEVICE_TYPE_NEARLINK},
+    {"DEVICE_TYPE_SYSTEM_PRIVATE", DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE},
+    {"DEVICE_TYPE_DEFAULT", DeviceType::DEVICE_TYPE_DEFAULT},
+    {"DEVICE_TYPE_NONE", DeviceType::DEVICE_TYPE_NONE}
+};
+
+static const std::unordered_map<DeviceType, std::string> gDeviceTypeToStringMap = {
+    {DeviceType::DEVICE_TYPE_INVALID, "DEVICE_TYPE_INVALID"},
+    {DeviceType::DEVICE_TYPE_EARPIECE, "DEVICE_TYPE_EARPIECE"},
+    {DeviceType::DEVICE_TYPE_SPEAKER, "DEVICE_TYPE_SPEAKER"},
+    {DeviceType::DEVICE_TYPE_WIRED_HEADSET, "DEVICE_TYPE_WIRED_HEADSET"},
+    {DeviceType::DEVICE_TYPE_WIRED_HEADPHONES, "DEVICE_TYPE_WIRED_HEADPHONES"},
+    {DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, "DEVICE_TYPE_BLUETOOTH_SCO"},
+    {DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, "DEVICE_TYPE_BLUETOOTH_A2DP"},
+    {DeviceType::DEVICE_TYPE_MIC, "DEVICE_TYPE_MIC"},
+    {DeviceType::DEVICE_TYPE_USB_HEADSET, "DEVICE_TYPE_USB_HEADSET"},
+    {DeviceType::DEVICE_TYPE_DP, "DEVICE_TYPE_DP"},
+    {DeviceType::DEVICE_TYPE_REMOTE_CAST, "DEVICE_TYPE_REMOTE_CAST"},
+    {DeviceType::DEVICE_TYPE_USB_DEVICE, "DEVICE_TYPE_USB_DEVICE"},
+    {DeviceType::DEVICE_TYPE_HDMI, "DEVICE_TYPE_HDMI"},
+    {DeviceType::DEVICE_TYPE_LINE_DIGITAL, "DEVICE_TYPE_LINE_DIGITAL"},
+    {DeviceType::DEVICE_TYPE_REMOTE_DAUDIO, "DEVICE_TYPE_REMOTE_DAUDIO"},
+    {DeviceType::DEVICE_TYPE_HEARING_AID, "DEVICE_TYPE_HEARING_AID"},
+    {DeviceType::DEVICE_TYPE_NEARLINK, "DEVICE_TYPE_NEARLINK"},
+    {DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE, "DEVICE_TYPE_SYSTEM_PRIVATE"},
+    {DeviceType::DEVICE_TYPE_DEFAULT, "DEVICE_TYPE_DEFAULT"},
+    {DeviceType::DEVICE_TYPE_NONE, "DEVICE_TYPE_NONE"}
+};
+
+static const std::unordered_map<std::string, DeviceFlag> gDeviceFlagMap = {
+    {"OUTPUT_DEVICES_FLAG", DeviceFlag::OUTPUT_DEVICES_FLAG},
+    {"INPUT_DEVICES_FLAG", DeviceFlag::INPUT_DEVICES_FLAG},
+    {"ALL_DEVICES_FLAG", DeviceFlag::ALL_DEVICES_FLAG}
+};
 
 AudioVolumeType ParseVolumeType(const std::string& typeStr) {
-    AudioVolumeType basicType = ParseBasicVolumeType(typeStr);
-    if (basicType != AudioVolumeType::STREAM_MUSIC || typeStr == "STREAM_MUSIC" || typeStr == "music") {
-        return basicType;
+    auto it = gVolumeTypeMap.find(typeStr);
+    if (it != gVolumeTypeMap.end()) {
+        return it->second;
     }
-    return ParseExtendedVolumeType(typeStr);
-}
-
-DeviceType ParseBasicDeviceTypePart1(const std::string& typeStr) {
-    if (typeStr == "DEVICE_TYPE_INVALID" || typeStr == "invalid") {
-        return DeviceType::DEVICE_TYPE_INVALID;
-    }
-    if (typeStr == "DEVICE_TYPE_EARPIECE" || typeStr == "earpiece") {
-        return DeviceType::DEVICE_TYPE_EARPIECE;
-    }
-    if (typeStr == "DEVICE_TYPE_SPEAKER" || typeStr == "speaker") {
-        return DeviceType::DEVICE_TYPE_SPEAKER;
-    }
-    if (typeStr == "DEVICE_TYPE_WIRED_HEADSET" || typeStr == "wired_headset") {
-        return DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    }
-    if (typeStr == "DEVICE_TYPE_WIRED_HEADPHONES" || typeStr == "wired_headphones") {
-        return DeviceType::DEVICE_TYPE_WIRED_HEADPHONES;
-    }
-    if (typeStr == "DEVICE_TYPE_BLUETOOTH_SCO" || typeStr == "bluetooth_sco") {
-        return DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    }
-    if (typeStr == "DEVICE_TYPE_BLUETOOTH_A2DP" || typeStr == "bluetooth_a2dp") {
-        return DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    }
-    return DeviceType::DEVICE_TYPE_NONE;
-}
-
-DeviceType ParseBasicDeviceTypePart2(const std::string& typeStr) {
-    if (typeStr == "DEVICE_TYPE_MIC" || typeStr == "mic") {
-        return DeviceType::DEVICE_TYPE_MIC;
-    }
-    if (typeStr == "DEVICE_TYPE_USB_HEADSET" || typeStr == "usb_headset") {
-        return DeviceType::DEVICE_TYPE_USB_HEADSET;
-    }
-    if (typeStr == "DEVICE_TYPE_DP" || typeStr == "dp") {
-        return DeviceType::DEVICE_TYPE_DP;
-    }
-    if (typeStr == "DEVICE_TYPE_REMOTE_CAST" || typeStr == "remote_cast") {
-        return DeviceType::DEVICE_TYPE_REMOTE_CAST;
-    }
-    if (typeStr == "DEVICE_TYPE_USB_DEVICE" || typeStr == "usb_device") {
-        return DeviceType::DEVICE_TYPE_USB_DEVICE;
-    }
-    return DeviceType::DEVICE_TYPE_NONE;
-}
-
-DeviceType ParseBasicDeviceType(const std::string& typeStr) {
-    DeviceType part1Result = ParseBasicDeviceTypePart1(typeStr);
-    if (part1Result != DeviceType::DEVICE_TYPE_NONE) {
-        return part1Result;
-    }
-    return ParseBasicDeviceTypePart2(typeStr);
-}
-
-DeviceType ParseExtendedDeviceType(const std::string& typeStr) {
-    if (typeStr == "DEVICE_TYPE_HDMI" || typeStr == "hdmi") {
-        return DeviceType::DEVICE_TYPE_HDMI;
-    }
-    if (typeStr == "DEVICE_TYPE_LINE_DIGITAL" || typeStr == "line_digital") {
-        return DeviceType::DEVICE_TYPE_LINE_DIGITAL;
-    }
-    if (typeStr == "DEVICE_TYPE_REMOTE_DAUDIO" || typeStr == "remote_daudio") {
-        return DeviceType::DEVICE_TYPE_REMOTE_DAUDIO;
-    }
-    if (typeStr == "DEVICE_TYPE_HEARING_AID" || typeStr == "hearing_aid") {
-        return DeviceType::DEVICE_TYPE_HEARING_AID;
-    }
-    if (typeStr == "DEVICE_TYPE_NEARLINK" || typeStr == "nearlink") {
-        return DeviceType::DEVICE_TYPE_NEARLINK;
-    }
-    if (typeStr == "DEVICE_TYPE_SYSTEM_PRIVATE" || typeStr == "system_private") {
-        return DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE;
-    }
-    if (typeStr == "DEVICE_TYPE_DEFAULT" || typeStr == "default") {
-        return DeviceType::DEVICE_TYPE_DEFAULT;
-    }
-    if (typeStr == "DEVICE_TYPE_NONE" || typeStr == "none") {
-        return DeviceType::DEVICE_TYPE_NONE;
-    }
-    return DeviceType::DEVICE_TYPE_NONE;
+    return AudioVolumeType::STREAM_MUSIC;
 }
 
 DeviceType ParseDeviceType(const std::string& typeStr) {
-    DeviceType basicType = ParseBasicDeviceType(typeStr);
-    if (basicType != DeviceType::DEVICE_TYPE_NONE) {
-        return basicType;
+    auto it = gDeviceTypeMap.find(typeStr);
+    if (it != gDeviceTypeMap.end()) {
+        return it->second;
     }
-    return ParseExtendedDeviceType(typeStr);
+    return DeviceType::DEVICE_TYPE_NONE;
 }
 
 DeviceFlag ParseDeviceFlag(const std::string& flagStr) {
-    if (flagStr == "OUTPUT_DEVICES_FLAG" || flagStr == "output") {
-        return DeviceFlag::OUTPUT_DEVICES_FLAG;
-    }
-    if (flagStr == "INPUT_DEVICES_FLAG" || flagStr == "input") {
-        return DeviceFlag::INPUT_DEVICES_FLAG;
-    }
-    if (flagStr == "ALL_DEVICES_FLAG" || flagStr == "all") {
-        return DeviceFlag::ALL_DEVICES_FLAG;
+    auto it = gDeviceFlagMap.find(flagStr);
+    if (it != gDeviceFlagMap.end()) {
+        return it->second;
     }
     return DeviceFlag::OUTPUT_DEVICES_FLAG;
 }
 
-std::string BasicVolumeTypeToString(AudioVolumeType type) {
-    switch (type) {
-        case AudioVolumeType::STREAM_MUSIC:
-            return "STREAM_MUSIC";
-        case AudioVolumeType::STREAM_RING:
-            return "STREAM_RING";
-        case AudioVolumeType::STREAM_VOICE_CALL:
-            return "STREAM_VOICE_CALL";
-        case AudioVolumeType::STREAM_VOICE_COMMUNICATION:
-            return "STREAM_VOICE_COMMUNICATION";
-        case AudioVolumeType::STREAM_VOICE_ASSISTANT:
-            return "STREAM_VOICE_ASSISTANT";
-        case AudioVolumeType::STREAM_ALARM:
-            return "STREAM_ALARM";
-        case AudioVolumeType::STREAM_SYSTEM:
-            return "STREAM_SYSTEM";
-        case AudioVolumeType::STREAM_ACCESSIBILITY:
-            return "STREAM_ACCESSIBILITY";
-        default:
-            return "STREAM_MUSIC";
-    }
-}
-
-std::string ExtendedVolumeTypeToString(AudioVolumeType type) {
-    switch (type) {
-        case AudioVolumeType::STREAM_VOICE_RING:
-            return "STREAM_VOICE_RING";
-        case AudioVolumeType::STREAM_NAVIGATION:
-            return "STREAM_NAVIGATION";
-        case AudioVolumeType::STREAM_NOTIFICATION:
-            return "STREAM_NOTIFICATION";
-        case AudioVolumeType::STREAM_ULTRASONIC:
-            return "STREAM_ULTRASONIC";
-        case AudioVolumeType::STREAM_ANNOUNCEMENT:
-            return "STREAM_ANNOUNCEMENT";
-        case AudioVolumeType::STREAM_EMERGENCY:
-            return "STREAM_EMERGENCY";
-        case AudioVolumeType::STREAM_ALL:
-            return "STREAM_ALL";
-        default:
-            return "STREAM_MUSIC";
-    }
-}
-
 std::string VolumeTypeToString(AudioVolumeType type) {
-    std::string basicResult = BasicVolumeTypeToString(type);
-    if (basicResult != "STREAM_MUSIC" || type == AudioVolumeType::STREAM_MUSIC) {
-        return basicResult;
+    auto it = gVolumeTypeToStringMap.find(type);
+    if (it != gVolumeTypeToStringMap.end()) {
+        return it->second;
     }
-    return ExtendedVolumeTypeToString(type);
-}
-
-std::string BasicDeviceTypeToString(DeviceType type) {
-    switch (type) {
-        case DeviceType::DEVICE_TYPE_INVALID:
-            return "DEVICE_TYPE_INVALID";
-        case DeviceType::DEVICE_TYPE_EARPIECE:
-            return "DEVICE_TYPE_EARPIECE";
-        case DeviceType::DEVICE_TYPE_SPEAKER:
-            return "DEVICE_TYPE_SPEAKER";
-        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
-            return "DEVICE_TYPE_WIRED_HEADSET";
-        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
-            return "DEVICE_TYPE_WIRED_HEADPHONES";
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-            return "DEVICE_TYPE_BLUETOOTH_SCO";
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-            return "DEVICE_TYPE_BLUETOOTH_A2DP";
-        case DeviceType::DEVICE_TYPE_MIC:
-            return "DEVICE_TYPE_MIC";
-        case DeviceType::DEVICE_TYPE_USB_HEADSET:
-            return "DEVICE_TYPE_USB_HEADSET";
-        case DeviceType::DEVICE_TYPE_DP:
-            return "DEVICE_TYPE_DP";
-        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
-            return "DEVICE_TYPE_REMOTE_CAST";
-        case DeviceType::DEVICE_TYPE_USB_DEVICE:
-            return "DEVICE_TYPE_USB_DEVICE";
-        default:
-            return "DEVICE_TYPE_NONE";
-    }
-}
-
-std::string ExtendedDeviceTypeToString(DeviceType type) {
-    switch (type) {
-        case DeviceType::DEVICE_TYPE_HDMI:
-            return "DEVICE_TYPE_HDMI";
-        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            return "DEVICE_TYPE_LINE_DIGITAL";
-        case DeviceType::DEVICE_TYPE_REMOTE_DAUDIO:
-            return "DEVICE_TYPE_REMOTE_DAUDIO";
-        case DeviceType::DEVICE_TYPE_HEARING_AID:
-            return "DEVICE_TYPE_HEARING_AID";
-        case DeviceType::DEVICE_TYPE_NEARLINK:
-            return "DEVICE_TYPE_NEARLINK";
-        case DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE:
-            return "DEVICE_TYPE_SYSTEM_PRIVATE";
-        case DeviceType::DEVICE_TYPE_DEFAULT:
-            return "DEVICE_TYPE_DEFAULT";
-        case DeviceType::DEVICE_TYPE_NONE:
-            return "DEVICE_TYPE_NONE";
-        default:
-            return "DEVICE_TYPE_NONE";
-    }
+    return "STREAM_MUSIC";
 }
 
 std::string DeviceTypeToString(DeviceType type) {
-    std::string basicResult = BasicDeviceTypeToString(type);
-    if (basicResult != "DEVICE_TYPE_NONE" || type == DeviceType::DEVICE_TYPE_NONE) {
-        return basicResult;
+    auto it = gDeviceTypeToStringMap.find(type);
+    if (it != gDeviceTypeToStringMap.end()) {
+        return it->second;
     }
-    return ExtendedDeviceTypeToString(type);
+    return "DEVICE_TYPE_NONE";
 }
 
 int CmdGetVolume(int argc, char** argv) {
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    std::string typeStr = "STREAM_MUSIC";
+    bool hasTypeParam = false;
+    const char* validTypes = "Check if volume type is valid";
 
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
-            volumeType = ParseVolumeType(argv[i + 1]);
+            typeStr = argv[i + 1];
+            hasTypeParam = true;
         }
+    }
+
+    if (hasTypeParam) {
+        auto it = gVolumeTypeMap.find(typeStr);
+        if (it == gVolumeTypeMap.end()) {
+            return OutputError("ERR_INVALID_ARG", "Invalid volume type: " + typeStr, validTypes);
+        }
+        volumeType = it->second;
     }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
@@ -350,21 +214,62 @@ int CmdGetVolume(int argc, char** argv) {
     return OutputSuccess(result);
 }
 
+bool IsAlarmOrCallVolumeType(AudioVolumeType volumeType) {
+    return volumeType == AudioVolumeType::STREAM_ALARM ||
+        volumeType == AudioVolumeType::STREAM_VOICE_CALL ||
+        volumeType == AudioVolumeType::STREAM_VOICE_COMMUNICATION ||
+        volumeType == AudioVolumeType::STREAM_ALL;
+}
+
+int ParseVolumeArgs(int argc, char** argv, AudioVolumeType& volumeType, int32_t& volume) {
+    std::string typeStr = "STREAM_MUSIC";
+    bool hasTypeParam = false;
+    bool hasVolumeParam = false;
+    const char* validTypes = "Check if volume type is valid";
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
+            typeStr = argv[i + 1];
+            hasTypeParam = true;
+        } else if (strcmp(argv[i], "--volume") == 0 && i + 1 < argc) {
+            volume = atoi(argv[i + 1]);
+            hasVolumeParam = true;
+        }
+    }
+
+    if (!hasVolumeParam) {
+        return OutputError("ERR_ARG_MISSING", "Missing required parameter: --volume",
+            "Please provide volume value. Example: --volume 50");
+    }
+
+    if (volume < 0 || volume > 15) {
+        return OutputError("ERR_INVALID_ARG", "Volume must be between 0 and 15",
+            "Please provide a volume value in the range 0-15");
+    }
+
+    if (hasTypeParam) {
+        auto it = gVolumeTypeMap.find(typeStr);
+        if (it == gVolumeTypeMap.end()) {
+            return OutputError("ERR_INVALID_ARG", "Invalid volume type: " + typeStr, validTypes);
+        }
+        volumeType = it->second;
+    }
+
+    if (volume == 0 && IsAlarmOrCallVolumeType(volumeType)) {
+        return OutputError("ERR_INVALID_ARG", "Cannot set alarm or call volume to 0",
+            "Alarm and call volumes must be at least 1");
+    }
+
+    return 0;
+}
+
 int CmdSetVolume(int argc, char** argv) {
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
     int32_t volume = -1;
 
-    for (int i = 0; i < argc; i++) {
-        if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
-            volumeType = ParseVolumeType(argv[i + 1]);
-        } else if (strcmp(argv[i], "--volume") == 0 && i + 1 < argc) {
-            volume = atoi(argv[i + 1]);
-        }
-    }
-
-    if (volume < 0) {
-        return OutputError("ERR_ARG_MISSING", "Missing required parameter: --volume",
-            "Please provide volume value. Example: --volume 50");
+    int parseResult = ParseVolumeArgs(argc, argv, volumeType, volume);
+    if (parseResult != 0) {
+        return parseResult;
     }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
@@ -388,11 +293,23 @@ int CmdSetVolume(int argc, char** argv) {
 
 int CmdGetMaxVolume(int argc, char** argv) {
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    std::string typeStr = "STREAM_MUSIC";
+    bool hasTypeParam = false;
+    const char* validTypes = "Check if volume type is valid";
 
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
-            volumeType = ParseVolumeType(argv[i + 1]);
+            typeStr = argv[i + 1];
+            hasTypeParam = true;
         }
+    }
+
+    if (hasTypeParam) {
+        auto it = gVolumeTypeMap.find(typeStr);
+        if (it == gVolumeTypeMap.end()) {
+            return OutputError("ERR_INVALID_ARG", "Invalid volume type: " + typeStr, validTypes);
+        }
+        volumeType = it->second;
     }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
@@ -415,11 +332,23 @@ int CmdGetMaxVolume(int argc, char** argv) {
 
 int CmdIsMute(int argc, char** argv) {
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    std::string typeStr = "STREAM_MUSIC";
+    bool hasTypeParam = false;
+    const char* validTypes = "Check if volume type is valid";
 
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
-            volumeType = ParseVolumeType(argv[i + 1]);
+            typeStr = argv[i + 1];
+            hasTypeParam = true;
         }
+    }
+
+    if (hasTypeParam) {
+        auto it = gVolumeTypeMap.find(typeStr);
+        if (it == gVolumeTypeMap.end()) {
+            return OutputError("ERR_INVALID_ARG", "Invalid volume type: " + typeStr, validTypes);
+        }
+        volumeType = it->second;
     }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
@@ -436,13 +365,15 @@ int CmdIsMute(int argc, char** argv) {
     return OutputSuccess(result);
 }
 
-int CmdSetMute(int argc, char** argv) {
-    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
-    bool mute = false;
+int ParseMuteArgs(int argc, char** argv, AudioVolumeType& volumeType, bool& mute) {
+    std::string typeStr = "STREAM_MUSIC";
+    bool hasTypeParam = false;
+    const char* validTypes = "Check if volume type is valid";
 
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
-            volumeType = ParseVolumeType(argv[i + 1]);
+            typeStr = argv[i + 1];
+            hasTypeParam = true;
         } else if (strcmp(argv[i], "--mute") == 0) {
             if (i + 1 < argc && argv[i + 1][0] != '-') {
                 mute = (strcmp(argv[i + 1], "true") == 0 || strcmp(argv[i + 1], "1") == 0);
@@ -450,6 +381,31 @@ int CmdSetMute(int argc, char** argv) {
                 mute = true;
             }
         }
+    }
+
+    if (hasTypeParam) {
+        auto it = gVolumeTypeMap.find(typeStr);
+        if (it == gVolumeTypeMap.end()) {
+            return OutputError("ERR_INVALID_ARG", "Invalid volume type: " + typeStr, validTypes);
+        }
+        volumeType = it->second;
+    }
+
+    if (mute && IsAlarmOrCallVolumeType(volumeType)) {
+        return OutputError("ERR_INVALID_ARG", "Cannot mute alarm or call volume",
+            "Alarm and call volumes cannot be muted");
+    }
+
+    return 0;
+}
+
+int CmdSetMute(int argc, char** argv) {
+    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    bool mute = false;
+
+    int parseResult = ParseMuteArgs(argc, argv, volumeType, mute);
+    if (parseResult != 0) {
+        return parseResult;
     }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
@@ -474,11 +430,23 @@ int CmdSetMute(int argc, char** argv) {
 
 int CmdGetDevices(int argc, char** argv) {
     DeviceFlag deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
+    std::string flagStr = "OUTPUT_DEVICES_FLAG";
+    bool hasFlagParam = false;
 
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--flag") == 0 && i + 1 < argc) {
-            deviceFlag = ParseDeviceFlag(argv[i + 1]);
+            flagStr = argv[i + 1];
+            hasFlagParam = true;
         }
+    }
+
+    if (hasFlagParam) {
+        auto it = gDeviceFlagMap.find(flagStr);
+        if (it == gDeviceFlagMap.end()) {
+            return OutputError("ERR_INVALID_ARG", "Invalid device flag: " + flagStr,
+                "Valid: OUTPUT_DEVICES_FLAG, INPUT_DEVICES_FLAG, ALL_DEVICES_FLAG");
+        }
+        deviceFlag = it->second;
     }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
