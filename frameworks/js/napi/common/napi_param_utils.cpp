@@ -1254,16 +1254,10 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     }
 
     selectedAudioDevice->macAddress_ = GetPropertyString(env, in, "address");
-
-    status = GetValueInt32(env, "id", intValue, in);
-    if (status == napi_ok) {
-        selectedAudioDevice->deviceId_ = intValue;
-    }
-
-    status = GetValueBoolean(env, "highQualityRecordingSupported", boolValue, in);
-    if (status == napi_ok) {
-        selectedAudioDevice->highQualityRecordingSupported_ = boolValue;
-    }
+    selectedAudioDevice->deviceId_ =
+        GetValueInt32(env, "id", intValue, in) == napi_ok ? intValue : 0;
+    selectedAudioDevice->highQualityRecordingSupported_ =
+        GetValueBoolean(env, "highQualityRecordingSupported", boolValue, in) == napi_ok ? true : false;
 
     return napi_ok;
 }
