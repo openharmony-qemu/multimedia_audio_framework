@@ -888,6 +888,36 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_St
     EXPECT_EQ(stream1Result->deviceType_, DEVICE_TYPE_NONE);
 }
 
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_018, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE,
+        "00:00:00:00:00:01");
+    auto headset = AddDeviceDescriptor(DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE,
+        "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    auto appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+
+    strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, mic);
+    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, false);
+    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+    ASSERT_NE(appResult, nullptr);
+    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_MIC);
+
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, INVALID_STREAM_ID, headset);
+    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+    ASSERT_NE(appResult, nullptr);
+    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_USB_HEADSET);
+
+    strategy.SetMediaInputDevice(
+        SYSTEM_UID, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
+    appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, INVALID_STREAM_ID, true);
+    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_USB_HEADSET);
+    strategy.SetMediaInputDevice(
+        TEST_APP_UID_10001, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
+}
 }
 }
