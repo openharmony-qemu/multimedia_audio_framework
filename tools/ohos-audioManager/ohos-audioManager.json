@@ -1,265 +1,265 @@
 {
-    "name": "ohos-audioManager",
-    "version": "1.0.0",
-    "description": "Audio management tool for controlling volume, devices, and audio settings. Used for audio device management and volume control scenarios. Does not support advanced audio processing or routing configuration.",
-    "executablePath": "/system/bin/cli_tool/executable/ohos-audioManager",
-    "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY", "ohos.permission.USE_BLUETOOTH"],
-    "inputSchema": {
-      "type": "object",
-      "properties": {}
-    },
-    "outputSchema": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
+  "name": "ohos-audioManager",
+  "version": "1.0.0",
+  "description": "Audio management tool for controlling volume, devices, and audio settings. Used for audio device management and volume control scenarios. Does not support advanced audio processing or routing configuration.",
+  "executablePath": "/system/bin/cli_tool/executable/ohos-audioManager",
+  "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY", "ohos.permission.USE_BLUETOOTH"],
+  "inputSchema": {
+    "type": "object",
+    "properties": {}
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      }
+    }
+  },
+  "hasSubCommand": true,
+  "subcommands": {
+    "get-volume": {
+      "description": "Get the current volume for a specific volume type. Used for querying audio volume levels. Does not support volume change notifications.",
+      "requirePermissions": [],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
+            "default": "STREAM_MUSIC"
+          }
         }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "volumeType": {
+            "type": "string",
+            "description": "Volume type name"
+          },
+          "volume": {
+            "type": "integer",
+            "description": "Current volume value"
+          }
+        },
+        "required": ["volumeType", "volume"]
       }
     },
-    "hasSubCommand": true,
-    "subcommands": {
-      "get-volume": {
-        "description": "Get the current volume for a specific volume type. Used for querying audio volume levels. Does not support volume change notifications.",
-        "requirePermissions": [],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
-              "default": "STREAM_MUSIC"
-            }
+    "set-volume": {
+      "description": "Set the volume for a specific volume type. Used for adjusting audio volume levels. Does not support volume ramping or fade effects.",
+      "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "volume": {
+            "type": "integer",
+            "description": "Volume value to set (typically 0-100 or 0-15)",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "type": {
+            "type": "string",
+            "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
+            "default": "STREAM_MUSIC"
           }
         },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "volumeType": {
-              "type": "string",
-              "description": "Volume type name"
-            },
-            "volume": {
-              "type": "integer",
-              "description": "Current volume value"
-            }
-          },
-          "required": ["volumeType", "volume"]
-        }
+        "required": ["volume"]
       },
-      "set-volume": {
-        "description": "Set the volume for a specific volume type. Used for adjusting audio volume levels. Does not support volume ramping or fade effects.",
-        "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY"],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "volume": {
-              "type": "integer",
-              "description": "Volume value to set (typically 0-100 or 0-15)",
-              "minimum": 0,
-              "maximum": 100
-            },
-            "type": {
-              "type": "string",
-              "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
-              "default": "STREAM_MUSIC"
-            }
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "volumeType": {
+            "type": "string",
+            "description": "Volume type name"
           },
-          "required": ["volume"]
-        },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "volumeType": {
-              "type": "string",
-              "description": "Volume type name"
-            },
-            "volume": {
-              "type": "integer",
-              "description": "Set volume value"
-            }
-          },
-          "required": ["volumeType", "volume"]
-        }
-      },
-      "get-max-volume": {
-        "description": "Get the maximum volume for a specific volume type. Used for querying volume range limits. Does not support custom volume range configuration.",
-        "requirePermissions": [],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
-              "default": "STREAM_MUSIC"
-            }
+          "volume": {
+            "type": "integer",
+            "description": "Set volume value"
           }
         },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "volumeType": {
-              "type": "string",
-              "description": "Volume type name"
-            },
-            "maxVolume": {
-              "type": "integer",
-              "description": "Maximum volume value"
-            }
-          },
-          "required": ["volumeType", "maxVolume"]
+        "required": ["volumeType", "volume"]
+      }
+    },
+    "get-max-volume": {
+      "description": "Get the maximum volume for a specific volume type. Used for querying volume range limits. Does not support custom volume range configuration.",
+      "requirePermissions": [],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
+            "default": "STREAM_MUSIC"
+          }
         }
       },
-      "is-mute": {
-        "description": "Check if a specific volume type is muted. Used for querying mute state. Does not support mute state change notifications.",
-        "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY"],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
-              "default": "STREAM_MUSIC"
-            }
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "volumeType": {
+            "type": "string",
+            "description": "Volume type name"
+          },
+          "maxVolume": {
+            "type": "integer",
+            "description": "Maximum volume value"
           }
         },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "volumeType": {
-              "type": "string",
-              "description": "Volume type name"
-            },
-            "isMute": {
-              "type": "boolean",
-              "description": "Mute state"
-            }
-          },
-          "required": ["volumeType", "isMute"]
+        "required": ["volumeType", "maxVolume"]
+      }
+    },
+    "is-mute": {
+      "description": "Check if a specific volume type is muted. Used for querying mute state. Does not support mute state change notifications.",
+      "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
+            "default": "STREAM_MUSIC"
+          }
         }
       },
-      "set-mute": {
-        "description": "Set the mute state for a specific volume type. Used for muting or unmuting audio streams. Does not support per-device mute configuration.",
-        "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY"],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "mute": {
-              "type": "boolean",
-              "description": "Mute state: true to mute, false to unmute"
-            },
-            "type": {
-              "type": "string",
-              "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_ACCESSIBILITY, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
-              "default": "STREAM_MUSIC"
-            }
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "volumeType": {
+            "type": "string",
+            "description": "Volume type name"
           },
-          "required": ["mute"]
-        },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "volumeType": {
-              "type": "string",
-              "description": "Volume type name"
-            },
-            "mute": {
-              "type": "boolean",
-              "description": "Mute state"
-            }
-          },
-          "required": ["volumeType", "mute"]
-        }
-      },
-      "get-devices": {
-        "description": "Get the list of audio devices. Used for querying available audio devices. Does not support device capability details.",
-        "requirePermissions": ["ohos.permission.USE_BLUETOOTH"],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "flag": {
-              "type": "string",
-              "description": "Device flag. Values: [OUTPUT_DEVICES_FLAG, INPUT_DEVICES_FLAG, ALL_DEVICES_FLAG]",
-              "default": "OUTPUT_DEVICES_FLAG"
-            }
+          "isMute": {
+            "type": "boolean",
+            "description": "Mute state"
           }
         },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "deviceFlag": {
-              "type": "integer",
-              "description": "Device flag value"
-            },
-            "devices": {
-              "type": "array",
-              "description": "List of audio devices",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "deviceType": {
-                    "type": "integer",
-                    "description": "Device type value"
-                  }
+        "required": ["volumeType", "isMute"]
+      }
+    },
+    "set-mute": {
+      "description": "Set the mute state for a specific volume type. Used for muting or unmuting audio streams. Does not support per-device mute configuration.",
+      "requirePermissions": ["ohos.permission.ACCESS_NOTIFICATION_POLICY"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mute": {
+            "type": "boolean",
+            "description": "Mute state: true to mute, false to unmute"
+          },
+          "type": {
+            "type": "string",
+            "description": "Volume type. Values: [STREAM_MUSIC, STREAM_RING, STREAM_VOICE_CALL, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_SYSTEM, STREAM_VOICE_RING, STREAM_NAVIGATION, STREAM_NOTIFICATION, STREAM_ULTRASONIC, STREAM_ANNOUNCEMENT, STREAM_EMERGENCY, STREAM_ALL]",
+            "default": "STREAM_MUSIC"
+          }
+        },
+        "required": ["mute"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "volumeType": {
+            "type": "string",
+            "description": "Volume type name"
+          },
+          "mute": {
+            "type": "boolean",
+            "description": "Mute state"
+          }
+        },
+        "required": ["volumeType", "mute"]
+      }
+    },
+    "get-devices": {
+      "description": "Get the list of audio devices. Used for querying available audio devices. Does not support device capability details.",
+      "requirePermissions": ["ohos.permission.USE_BLUETOOTH"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flag": {
+            "type": "string",
+            "description": "Device flag. Values: [OUTPUT_DEVICES_FLAG, INPUT_DEVICES_FLAG, ALL_DEVICES_FLAG]",
+            "default": "OUTPUT_DEVICES_FLAG"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceFlag": {
+            "type": "integer",
+            "description": "Device flag value"
+          },
+          "devices": {
+            "type": "array",
+            "description": "List of audio devices",
+            "items": {
+              "type": "object",
+              "properties": {
+                "deviceType": {
+                  "type": "integer",
+                  "description": "Device type value"
                 }
               }
             }
-          },
-          "required": ["deviceFlag", "devices"]
-        }
-      },
-      "select-output-device": {
-        "description": "Select the output audio device. Used for switching audio output device. Does not support simultaneous output to multiple devices.",
-        "requirePermissions": [],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "description": "Device type. Values: [DEVICE_TYPE_INVALID, DEVICE_TYPE_EARPIECE, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP, DEVICE_TYPE_REMOTE_CAST, DEVICE_TYPE_USB_DEVICE, DEVICE_TYPE_HDMI, DEVICE_TYPE_LINE_DIGITAL, DEVICE_TYPE_REMOTE_DAUDIO, DEVICE_TYPE_HEARING_AID, DEVICE_TYPE_NEARLINK, DEVICE_TYPE_SYSTEM_PRIVATE, DEFAULT]. Can be specified multiple times"
-            }
-          },
-          "required": ["type"]
+          }
         },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "devices": {
-              "type": "array",
-              "description": "List of selected device types",
-              "items": {
-                "type": "integer"
-              }
-            }
-          },
-          "required": ["devices"]
-        }
+        "required": ["deviceFlag", "devices"]
+      }
+    },
+    "select-output-device": {
+      "description": "Select the output audio device. Used for switching audio output device. Does not support simultaneous output to multiple devices.",
+      "requirePermissions": [],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Device type. Values: [DEVICE_TYPE_INVALID, DEVICE_TYPE_EARPIECE, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP, DEVICE_TYPE_REMOTE_CAST, DEVICE_TYPE_USB_DEVICE, DEVICE_TYPE_HDMI, DEVICE_TYPE_LINE_DIGITAL, DEVICE_TYPE_REMOTE_DAUDIO, DEVICE_TYPE_HEARING_AID, DEVICE_TYPE_NEARLINK, DEVICE_TYPE_SYSTEM_PRIVATE, DEFAULT]. Can be specified multiple times"
+          }
+        },
+        "required": ["type"]
       },
-      "help": {
-        "description": "Show help information for commands. Used for displaying command usage and examples. Does not provide interactive tutorials.",
-        "requirePermissions": [],
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "command": {
-              "type": "string",
-              "description": "Optional command name to show detailed help"
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "devices": {
+            "type": "array",
+            "description": "List of selected device types",
+            "items": {
+              "type": "integer"
             }
           }
         },
-        "outputSchema": {
-          "type": "object",
-          "properties": {
-            "help": {
-              "type": "string",
-              "description": "Help information"
-            }
+        "required": ["devices"]
+      }
+    },
+    "help": {
+      "description": "Show help information for commands. Used for displaying command usage and examples. Does not provide interactive tutorials.",
+      "requirePermissions": [],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Optional command name to show detailed help"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "help": {
+            "type": "string",
+            "description": "Help information"
           }
         }
       }
-    },
-    "eventTypes": [],
-    "eventSchemas": {}
-  }
+    }
+  },
+  "eventTypes": [],
+  "eventSchemas": {}
+}
