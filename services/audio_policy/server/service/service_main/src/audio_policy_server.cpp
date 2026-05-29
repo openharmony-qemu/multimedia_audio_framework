@@ -1708,9 +1708,12 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
             desc.deviceType_ = item->deviceType_;
         }
     }
-    desc.deviceType_ =
-        (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?
-        DEVICE_TYPE_BLUETOOTH_A2DP_IN : desc.deviceType_;
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) {
+        auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
+        a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+        auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dpin);
+        desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ? (*descPtr) : desc;
+    }
 }
 
 // LCOV_EXCL_START
@@ -2042,6 +2045,17 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
 {
     AudioCapturerInfo captureInfo = captureInfoIn;
     deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
+    for (auto &desc : deviceDescs) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+            auto sco = std::make_shared<AudioDeviceDescriptor>(desc);
+            sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+            auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
+            desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ? descPtr : desc;
+            desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+            desc->highQualityRecordingSupported_ = true;
+        }
+    }
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);

@@ -299,7 +299,7 @@ AudioSelectDeviceInfo AudioRouterInfra::GetLatestAppSelectDevice(SelectDeviceTyp
                 return AudioSelectDeviceInfo();
         }
 
-        if (currentSelectInfo.device_ != nullptr &&
+        if (HasValidSelectDevice(currentSelectInfo) &&
             currentSelectInfo.selectTime_ >= latestSelectInfo.selectTime_) {
             latestSelectInfo = currentSelectInfo;
         }
