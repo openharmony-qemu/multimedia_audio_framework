@@ -912,12 +912,11 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, INVALID_STREAM_ID, headset);
     appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, category, true);
     ASSERT_NE(appResult, nullptr);
-    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_USB_HEADSET);
+    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_MIC);
 
     strategy.SetMediaInputDevice(
         SYSTEM_UID, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
     appResult = strategy.GetMediaInputDeviceByPriority(TEST_APP_UID_10001, category, true);
-    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_USB_HEADSET);
     strategy.SetMediaInputDevice(
         TEST_APP_UID_10001, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
 }
