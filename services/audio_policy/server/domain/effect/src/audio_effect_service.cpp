@@ -953,7 +953,6 @@ int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolume
     CHECK_AND_RETURN_RET_LOG(volume >= 0.0 && volume <= 1.0, ERR_INVALID_PARAM,
         "SetAudioSeparationEffectVolume: invalid volume");
     return HPAE::IHpaeManager::GetHpaeManager().SetVocalRatio(static_cast<float>(volume));
-
 }
 } // namespace AudioStandard
 } // namespace OHOS
