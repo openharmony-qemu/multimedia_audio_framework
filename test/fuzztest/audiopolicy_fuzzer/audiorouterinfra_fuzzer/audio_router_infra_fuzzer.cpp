@@ -215,8 +215,7 @@ void FuzzStreamSelectDevice(FuzzedDataProvider &fdp)
     infra.UpdateStreamDefaultDevice(uid, streamId, type, device);
     infra.GetStreamSelectDevice(uid, streamId);
     infra.GetStreamDefaultDevice(uid, streamId, type);
-    infra.GetFirstRunningStreamDefaultDevice(uid, type);
-    infra.GetLatestStreamSelectDevice(type);
+    infra.GetEffectiveDefaultOutputDevice(type);
     infra.ClearStreamSelectDevice(fdp.ConsumeBool() ? device : nullptr);
     infra.OnAppDied(uid);
 }
