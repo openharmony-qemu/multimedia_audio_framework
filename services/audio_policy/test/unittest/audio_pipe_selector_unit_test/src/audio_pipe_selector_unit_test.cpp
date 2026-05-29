@@ -1382,6 +1382,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_001, TestS
     std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_LOWPOWER);
     streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
     audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);

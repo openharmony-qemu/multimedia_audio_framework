@@ -480,6 +480,11 @@ public:
 
     int32_t GetRealUid() const;
 
+    bool NeedForcedNormal() const
+    {
+        return ((IsSelectFlagOffload() || IsSelectFlagHd()) && streamStatus_ != STREAM_STATUS_NEW) && IsRouteNormal();
+    }
+
 private:
     bool WriteDeviceDescVectorToParcel(
         Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;

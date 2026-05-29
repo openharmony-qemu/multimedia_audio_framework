@@ -1802,10 +1802,9 @@ void AudioPipeSelector::ProcessModemCommunicationConcurrency(
 void AudioPipeSelector::SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
-    if ((streamDesc->IsSelectFlagOffload() || streamDesc->IsSelectFlagHd()) && streamDesc->IsRouteNormal()) {
-        AUDIO_INFO_LOG("Session %{public}u has been conceded to FORCED_NORMAL", streamDesc->sessionId_);
-        streamDesc->SetOriginalFlagForcedNormal();
-    }
+    CHECK_AND_RETURN(streamDesc->NeedForcedNormal());
+    AUDIO_INFO_LOG("Session %{public}u has been conceded to FORCED_NORMAL", streamDesc->sessionId_);
+    streamDesc->SetOriginalFlagForcedNormal();
 }
 
 bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
