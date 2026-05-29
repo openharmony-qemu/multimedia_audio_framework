@@ -1530,6 +1530,31 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_004, TestSize.Level1
     EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_WIRED_HEADSET);
 }
 
+/**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_005
+* @tc.desc  : Test AudioPolicyServer::MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_005, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.highQualityRecordingSupported_ = false;
+    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+
+    desc.highQualityRecordingSupported_ = true;
+    ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
 
 /**
 * @tc.name  : Test UpdateDeviceInfo.
