@@ -71,7 +71,7 @@ public:
     int32_t AudioOffloadRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioOffloadRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioOffloadRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
-    void SetDelayCountToEffectNode(int32_t delayCount); 
+    void SetDelayCountToEffectNode(int32_t delayCount);
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:

@@ -304,7 +304,7 @@ void AudioCollaborationManager::LoadCollAbsSupportedStreamUsageInner(const std::
 
 bool AudioCollaborationManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
 {
-    switch(state_.load()) {
+    switch (state_.load()) {
         case COLLABORATION_BLUETOOTH_OPEN:
             return IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, streamUsage);
         case COLLABORATION_NEARLINK_OPEN:

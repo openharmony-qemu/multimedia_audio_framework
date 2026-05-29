@@ -32,6 +32,7 @@ static constexpr uint32_t WAIT_FRAMES_NUM = 5; // wait 5 * 20ms before disconnec
 static constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
 static constexpr uint32_t DEFAULT_FRAME_LEN = 960;
 static constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
+static constexpr uint32_t COLLAB_WAIT_FRAMES_NUM = 15;
     
 HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
@@ -246,7 +247,7 @@ void HpaeMixerNode::DrainProcess()
         waitFrames_++;
         uint32_t waitFramesTemp = WAIT_FRAMES_NUM;
         if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
-            waitFramesTemp = WAIT_FRAMES_NUM * 3;
+            waitFramesTemp = COLLAB_WAIT_FRAMES_NUM;
         }
         if (waitFrames_ >= waitFramesTemp) {
             waitFrames_ = 0;

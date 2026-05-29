@@ -51,10 +51,10 @@ namespace {
 constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
-HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled) :
-    HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
+HpaeRenderNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
+    : HpaeNode(nodeInfo),aePluginNode(nodeInfo),
     // DEFAUT effect out format
-    pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
+    pcmBufferInfo_(nodeInfo.channels, DEFAULT_FRAMELEN, DEFUALT_EFFECT, nodeInfo.channelLayout),
     effectOutput_(pcmBufferInfo_)
 {
     isCollaborationEnabled_ = isCollaborationEnabled;

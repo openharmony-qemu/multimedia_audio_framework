@@ -866,7 +866,7 @@ void HpaeRendererManager::DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeP
         TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
     } else {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
-        "sceneCluster is nullptr, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+            "sceneCluster is nullptr, sceneType: %{public}d", static_cast<int32_t>(sceneType));
         sceneClusterMap_[sceneType]->SetDelayCountToEffectNode(COLL_ALING_COUNT);
     }
 }

@@ -3538,7 +3538,8 @@ bool AudioCoreService::CheckCollaborativeStreamRunning()
     return false;
 }
 
-void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState) {
+void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState)
+{
     AudioServerProxy::GetInstance().SetAudioParameterProxy("nearLink_collaborative_state",
         std::to_string(static_cast<int32_t>(nearLinkCollaborativeState)));
     AUDIO_INFO_LOG("UpdateNearLinkCollaborativeState, value:%{public}d", nearLinkCollaborativeState);

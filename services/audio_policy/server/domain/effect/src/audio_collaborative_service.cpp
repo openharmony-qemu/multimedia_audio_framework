@@ -209,7 +209,8 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         return SUCCESS;
     }
 
-    bool isCurrentCollaborativeEnabledTemp = (addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED);
+    bool isCurrentCollaborativeEnabledTemp =
+        (addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED);
     CollaborationState isCurrentCollaborativeEnabledState;
     if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         isCurrentCollaborativeEnabledState = COLLABORATION_BLUETOOTH_OPEN;
@@ -224,7 +225,8 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current collaborative enabled state changed to %{public}d "
             "for Mac address %{public}s", isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
         UpdateCollaborativeStateToHdi(isCollaborativeStateEnabled_);
-        CollaborationState isCollaborationEnabled = isCollaborativeStateEnabled_ ? COLLABORATION_BLUETOOTH_OPEN : COLLABORATION_CLOSE;
+        CollaborationState isCollaborationEnabled = isCollaborativeStateEnabled_ ?
+            COLLABORATION_BLUETOOTH_OPEN : COLLABORATION_CLOSE;
         return audioPolicyManager_.UpdateCollaborativeState(isCollaborationEnabled);
     }
     AUDIO_INFO_LOG("No need to real collaborative state: %{public}d", isCollaborativeStateEnabled_);
@@ -290,7 +292,8 @@ void AudioCollaborativeService::UpdateCollaborativeStateToHdi(CollaborationState
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
-    std::string keyValue = std::string("collaborative_state=") + std::to_string(static_cast<int32_t>(collaborativeState));
+    std::string keyValue = std::string("collaborative_state=") +
+        std::to_string(static_cast<int32_t>(collaborativeState));
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
     AUDIO_INFO_LOG("UpdateCollaborativeStateToHdi, value: %{public}s", keyValue.c_str());
 }
