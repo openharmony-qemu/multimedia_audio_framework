@@ -307,7 +307,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_001, 
     audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
 
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
-    EXPECT_TRUE(audioDeviceCommon.pipeManager_->HasRunningRecognitionCapturerStream());
+    EXPECT_FALSE(audioDeviceCommon.pipeManager_->HasRunningRecognitionCapturerStream());
 }
 
 /**

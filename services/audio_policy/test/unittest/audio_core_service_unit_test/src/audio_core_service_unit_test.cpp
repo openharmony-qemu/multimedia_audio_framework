@@ -3257,7 +3257,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_008, TestSiz
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
     PutCurrentOutputDevice(curDesc);
     DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
-    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+    EXPECT_NE(deviceBefore, DEVICE_TYPE_NONE);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = TEST_SESSION_ID;

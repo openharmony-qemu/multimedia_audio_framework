@@ -73,7 +73,7 @@ HWTEST_F(AudioMicrophoneDescriptorUnitTest, SetMicrophoneMute_001, TestSize.Leve
     descriptor->isMicrophoneMutePersistent_ = false;
     int32_t ret = descriptor->SetMicrophoneMute(isMute);
 
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 

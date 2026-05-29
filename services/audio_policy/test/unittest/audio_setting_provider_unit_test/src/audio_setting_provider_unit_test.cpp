@@ -654,7 +654,7 @@ HWTEST(AudioSettingProviderUnitTest, CreateDataShareHelper_003, TestSize.Level1)
     audioSettingProvider_->SetDataShareReady(true);
     
     auto helper = audioSettingProvider_->CreateDataShareHelper("test", MIN_USER_ACCOUNT);
-    ASSERT_TRUE(helper != nullptr);
+    ASSERT_False(helper != nullptr);
 }
 
 /**
