@@ -1206,6 +1206,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
 {
     int32_t intValue = {0};
+    bool boolValue = false;
     argTransFlag = true;
     bool hasDeviceRole = true;
     bool hasNetworkId  = true;

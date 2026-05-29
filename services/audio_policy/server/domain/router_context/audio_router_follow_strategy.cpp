@@ -71,16 +71,17 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
 
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
 
-    if (appSelectInfo.device_ != nullptr && systemSelectInfo.device_ != nullptr) {
+    if (AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo) &&
+        AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo)) {
         if (appSelectInfo.selectTime_ > systemSelectInfo.selectTime_ || !isSystemSelectActive) {
             simpleDesc = appSelectInfo.device_;
         } else {
             simpleDesc = systemSelectInfo.device_;
             category = BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
         }
-    } else if (appSelectInfo.device_ != nullptr) {
+    } else if (AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo)) {
         simpleDesc = appSelectInfo.device_;
-    } else if (systemSelectInfo.device_ != nullptr && isSystemSelectActive) {
+    } else if (AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo) && isSystemSelectActive) {
         simpleDesc = systemSelectInfo.device_;
         category = BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
     } else {

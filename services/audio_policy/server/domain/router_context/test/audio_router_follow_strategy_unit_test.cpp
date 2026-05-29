@@ -887,5 +887,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_St
     ASSERT_NE(stream1Result, nullptr);
     EXPECT_EQ(stream1Result->deviceType_, DEVICE_TYPE_NONE);
 }
+
+
 }
 }

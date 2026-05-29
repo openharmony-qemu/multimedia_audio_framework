@@ -1530,6 +1530,7 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_004, TestSize.Level1
     EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_WIRED_HEADSET);
 }
 
+
 /**
 * @tc.name  : Test UpdateDeviceInfo.
 * @tc.number: UpdateDeviceInfo_001

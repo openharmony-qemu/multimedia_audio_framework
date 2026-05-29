@@ -1704,6 +1704,7 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
             desc.deviceType_ = item->deviceType_;
         }
     }
+    
     desc.deviceType_ =
         (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?
         DEVICE_TYPE_BLUETOOTH_A2DP_IN : desc.deviceType_;
