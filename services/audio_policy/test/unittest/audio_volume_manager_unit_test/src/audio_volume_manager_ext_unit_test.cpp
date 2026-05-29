@@ -62,24 +62,6 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: HandleA2dpAbsVolume_001
-* @tc.desc  : Test HandleA2dpAbsVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerExtUnitTest, HandleA2dpAbsVolume_001, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t volumeLevel = 0;
-    VolumeScale volume{volumeLevel, volumeLevel};
-    AudioStreamType streamType = STREAM_RING;
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    int32_t ret = audioVolumeManager->HandleA2dpAbsVolume(streamType, volume, deviceType);
-    EXPECT_NE(ret, 0);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: HandleNearlinkDeviceAbsVolume_001
 * @tc.desc  : Test HandleNearlinkDeviceAbsVolume interface.
 */

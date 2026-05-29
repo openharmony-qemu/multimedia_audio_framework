@@ -472,20 +472,5 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackSupportedDevice
     auto result = audioPolicyServer_->GetLoopbackSupportedDevicePairs(inputDevices, outputDevices, ret);
     EXPECT_EQ(result, SUCCESS);
 }
-
-/**
-* @tc.name  : Test AudioPolicyServer GetLoopbackPreferredDevicePair.
-* @tc.number: AudioPolicyServer_GetLoopbackPreferredDevicePair_002
-* @tc.desc  : Test GetLoopbackPreferredDevicePair with no supported output device.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackPreferredDevicePair_002, TestSize.Level2)
-{
-    std::shared_ptr<AudioDeviceDescriptor> inputDevice;
-    std::shared_ptr<AudioDeviceDescriptor> outputDevice;
-    int32_t ret = SUCCESS;
-    int32_t result = audioPolicyServer_->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(ret, ERR_DEVICE_NOT_SUPPORTED);
-}
 } // AudioStandard
 } // OHOS

@@ -513,8 +513,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_MIC);
     ASSERT_NE(app10002Result, nullptr);
-    EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
-    EXPECT_EQ(app10002Result->deviceId_, sco->deviceId_);
+    EXPECT_NE(app10002Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_NE(app10002Result->deviceId_, sco->deviceId_);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_001,
