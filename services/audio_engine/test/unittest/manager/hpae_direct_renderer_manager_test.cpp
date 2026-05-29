@@ -3380,3 +3380,204 @@ HWTEST_F(HpaeDirectRendererManagerTest, onRequestLatencyIncludesLoudnessGainNode
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
     WaitForMsgProcessing(directManager_);
 }
+
+// ==================== StopDirectOutputNode tests ====================
+
+/**
+ * @tc.name  : stopDirectOutputNode_standby_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_153
+ * @tc.desc  : Test StopDirectOutputNode with isStandby=true skips sleep and stops sink
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNode_standby_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
+    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    // isStandby=true: no sleep, direct stop
+    auto start = std::chrono::steady_clock::now();
+    directManager_->StopDirectOutputNode(true);
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - start).count();
+
+    // With standby, should complete quickly (no 160ms sleep)
+    EXPECT_LT(elapsed, TEST_SLEEP_TIME_160);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+ * @tc.name  : stopDirectOutputNode_notRunning_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_154
+ * @tc.desc  : Test StopDirectOutputNode with sink not running skips sleep but still stops
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNode_notRunning_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->sinkOutputNode_, nullptr);
+    // Sink not started yet, state should not be RUNNING
+    EXPECT_NE(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    // isStandby=false but sink not running: no sleep, still stop
+    auto start = std::chrono::steady_clock::now();
+    directManager_->StopDirectOutputNode(false);
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - start).count();
+
+    EXPECT_LT(elapsed, TEST_SLEEP_TIME_160);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+ * @tc.name  : stopDirectOutputNode_runningNotStandby_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_155
+ * @tc.desc  : Test StopDirectOutputNode with running sink and isStandby=false includes sleep
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNode_runningNotStandby_001, TestSize.Level1)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
+    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    // isStandby=false and sink RUNNING: should sleep ~160ms then stop
+    auto start = std::chrono::steady_clock::now();
+    directManager_->StopDirectOutputNode(false);
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - start).count();
+
+    EXPECT_GE(elapsed, TEST_SLEEP_TIME_160 - 10); // allow small timing tolerance
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+ * @tc.name  : stopDirectOutputNodeSync_viaMsgQueue_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_156
+ * @tc.desc  : Test StopDirectOutputNodeSync dispatches through message queue and stops sink
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNodeSync_viaMsgQueue_001, TestSize.Level1)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
+    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    // StopDirectOutputNodeSync sends via message queue, wait for completion
+    directManager_->StopDirectOutputNodeSync(false);
+    WaitForMsgProcessing(directManager_);
+    // Additional wait for the 160ms sleep inside StopDirectOutputNode
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
+
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+ * @tc.name  : stopDirectOutputNodeSync_standby_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_157
+ * @tc.desc  : Test StopDirectOutputNodeSync with isStandby=true completes without 160ms delay
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNodeSync_standby_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
+    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    // StopDirectOutputNodeSync with isStandby=true should skip sleep
+    directManager_->StopDirectOutputNodeSync(true);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}
+
+/**
+ * @tc.name  : stopDirectOutputNode_idempotent_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_158
+ * @tc.desc  : Test calling StopDirectOutputNode multiple times does not crash
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNode_idempotent_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    ASSERT_NE(directManager_->sinkOutputNode_, nullptr);
+
+    // Call StopDirectOutputNode multiple times
+    directManager_->StopDirectOutputNode(true);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    directManager_->StopDirectOutputNode(true);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    // Sink already SUSPENDED, isStandby=false won't sleep (not RUNNING)
+    directManager_->StopDirectOutputNode(false);
+    EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+}

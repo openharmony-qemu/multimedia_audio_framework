@@ -124,6 +124,8 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate, bool isVoip);
     AudioSampleFormat GetDirectFormat(AudioSampleFormat format, bool isVoip);
+    void StopDirectOutputNodeSync(bool isStandby);
+    void StopDirectOutputNode(bool isStandby);
 
 private:
     std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;

@@ -299,6 +299,7 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
         volumeSyncNode_ = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
         AUDIO_INFO_LOG("SessionId %{public}u, using HpaeVolumeSyncNode for VOIP device", sessionId);
     } else {
+        nodeInfo.fadeType = DEFAULT_FADE;
         gainNode_ = std::make_shared<HpaeGainNode>(nodeInfo);
         loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     }
@@ -436,10 +437,7 @@ int32_t HpaeDirectRendererManager::DisConnectInputSession(bool isStandby)
     }
     if (sinkOutputNode_ != nullptr) {
         sinkOutputNode_->DisConnect(converterForOutput_);
-        if (!isStandby && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
-            ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
-        }
-        sinkOutputNode_->RenderSinkStop();
+        StopDirectOutputNodeSync(isStandby);
     }
     return SUCCESS;
 }
@@ -1099,6 +1097,21 @@ void HpaeDirectRendererManager::NotifyStreamChangeToSink(
         usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
     }
     sinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+}
+
+void HpaeDirectRendererManager::StopDirectOutputNodeSync(bool isStandby)
+{
+    auto request = [this, isStandby]() { StopDirectOutputNode(isStandby); };
+    SendRequest(request, __func__);
+}
+
+void HpaeDirectRendererManager::StopDirectOutputNode(bool isStandby)
+{
+    bool needSleep = !isStandby && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING;
+    if (needSleep) {
+        ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
+    }
+    sinkOutputNode_->RenderSinkStop();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
