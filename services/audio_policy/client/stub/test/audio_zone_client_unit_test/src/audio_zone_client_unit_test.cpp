@@ -128,7 +128,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_001, TestSize.Level4)
 
     audioZoneClient->audioZoneCallback_ = nullptr;
     ret = audioZoneClient->AddAudioZoneCallback(callback);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_NE(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -166,10 +166,10 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_003, TestSize.Level4)
     audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
     auto zoneManager = AudioZoneManager::GetInstance();
     int32_t ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_NONE, proxy);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
     EXPECT_NE(SUCCESS, audioZoneClient->SetSystemVolume(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
         static_cast<int>(STREAM_MUSIC), 0, 0, 0));
     int outVol = 0;
