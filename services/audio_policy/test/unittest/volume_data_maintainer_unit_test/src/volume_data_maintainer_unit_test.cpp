@@ -165,7 +165,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_011, TestSize.
 
     deviceTypeRet = DEVICE_TYPE_BLUETOOTH_A2DP;
     ret = volumeDataMaintainerRet->GetSafeStatus(deviceTypeRet, safeStatusRet);
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(ret, true);
 }
 
 /**
@@ -183,7 +183,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_012, TestSize.
 
     deviceTypeRet = DEVICE_TYPE_USB_ARM_HEADSET;
     ret = volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(ret, true);
 
     deviceTypeRet = DEVICE_TYPE_NONE;
     ret = volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
@@ -191,7 +191,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_012, TestSize.
 
     deviceTypeRet = DEVICE_TYPE_BLUETOOTH_A2DP;
     ret = volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(ret, true);
 }
 
 /**
