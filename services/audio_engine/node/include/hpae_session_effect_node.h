@@ -120,6 +120,7 @@ private:
     uint64_t BytesToLatencyUs(size_t bytes) const;
     void ResetAccounting();
     void ResetTailPaddingState();
+    void ReconfigOutputBuffers(const AudioEffectConfig &config);
 
     HpaePcmBuffer *ProcessCloseCrossfade(const std::vector<HpaePcmBuffer *> &inputs);
 

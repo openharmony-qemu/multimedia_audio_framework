@@ -19,6 +19,7 @@
 
 #include "hpae_session_effect_node.h"
 #include "audio_engine_log.h"
+#include "hpae_node_common.h"
 #include <algorithm>
 #include <atomic>
 #include <cinttypes>
@@ -212,6 +213,48 @@ void HpaeSessionEffectNode::ResetTailPaddingState()
     activeTailPaddingFrames_ = 0;
 }
 
+void HpaeSessionEffectNode::ReconfigOutputBuffers(const AudioEffectConfig &config)
+{
+    uint32_t samplingRate = config.outputCfg.samplingRate != 0 ?
+        config.outputCfg.samplingRate : config.inputCfg.samplingRate;
+    uint32_t channels = config.outputCfg.channels != 0 ? config.outputCfg.channels : config.inputCfg.channels;
+    if (samplingRate == 0 || channels == 0) {
+        AUDIO_WARNING_LOG("ReconfigOutputBuffers skipped: samplingRate=%{public}u channels=%{public}u",
+            samplingRate, channels);
+        return;
+    }
+
+    uint32_t frameLen = static_cast<uint32_t>(CalculateFrameLenBySampleRate(samplingRate));
+    uint64_t channelLayout = config.outputCfg.channelLayout != 0 ?
+        config.outputCfg.channelLayout : config.inputCfg.channelLayout;
+    PcmBufferInfo pcmBufferInfo(channels, frameLen, samplingRate, channelLayout);
+
+    silenceData_.ReConfig(pcmBufferInfo);
+    silenceData_.Reset();
+    silenceData_.SetBufferValid(false);
+    silenceData_.SetBufferSilence(true);
+    silenceData_.SetSplitStreamType(GetNodeInfo().GetSplitStreamType());
+    silenceData_.SetAudioStreamType(GetNodeInfo().streamType);
+    silenceData_.SetAudioStreamUsage(GetNodeInfo().effectInfo.streamUsage);
+
+    tailOutputBufferInfo_ = pcmBufferInfo;
+    tailOutputData_.ReConfig(tailOutputBufferInfo_);
+
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(samplingRate);
+    nodeInfo.channels = static_cast<AudioChannel>(channels);
+    nodeInfo.frameLen = frameLen;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+    SetNodeInfo(nodeInfo);
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callBack = GetNodeStatusCallback().lock()) {
+        callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
+    }
+#endif
+    AUDIO_INFO_LOG("ReconfigOutputBuffers: samplingRate=%{public}u channels=%{public}u frameLen=%{public}u",
+        samplingRate, channels, frameLen);
+}
+
 int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effectName,
     std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
 {
@@ -221,6 +264,7 @@ int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effec
     effectInstance_ = std::move(instance);
     effectName_ = effectName;
     audioConfig_ = config;
+    ReconfigOutputBuffers(config);
     AUDIO_INFO_LOG("create effect with instance %{public}s", effectName.c_str());
     return 0;
 }

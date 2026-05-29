@@ -300,6 +300,10 @@ class TestableSessionEffectNode : public HpaeSessionEffectNode {
 public:
     explicit TestableSessionEffectNode(HpaeNodeInfo& nodeInfo)
         : HpaeNode(nodeInfo), HpaeSessionEffectNode(nodeInfo) {}
+    HpaePcmBuffer *GetSilenceDataForTest()
+    {
+        return &silenceData_;
+    }
     using HpaeSessionEffectNode::FeedInputFromBuffer;
     using HpaeSessionEffectNode::FeedPaddingInput;
     using HpaeSessionEffectNode::GetPrebufFilled;
@@ -352,6 +356,26 @@ protected:
     std::shared_ptr<TestableSessionEffectNode> node_;
     AudioEffectConfig config_ = MakeTestConfig();
 };
+
+HWTEST_F(SessionEffectNodeAlgoTest, createEffectWithInstance_reconfigsSilenceData, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = MakeTestNodeInfo();
+    nodeInfo.samplingRate = SAMPLE_RATE_96000;
+    nodeInfo.frameLen = TEST_FRAME_LEN * 2;
+    auto node = std::make_shared<TestableSessionEffectNode>(nodeInfo);
+    auto instance = std::make_shared<testing::NiceMock<MockEffectInstance>>();
+
+    int32_t ret = node->CreateEffectWithInstance("test_effect", instance, config_);
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(node->GetSampleRate(), SAMPLE_RATE_48000);
+    EXPECT_EQ(node->GetFrameLen(), TEST_FRAME_LEN);
+    EXPECT_EQ(node->GetChannelCount(), STEREO);
+    ASSERT_NE(node->GetSilenceDataForTest(), nullptr);
+    EXPECT_EQ(node->GetSilenceDataForTest()->GetSampleRate(), TEST_SAMPLE_RATE);
+    EXPECT_EQ(node->GetSilenceDataForTest()->GetFrameLen(), TEST_FRAME_LEN);
+    EXPECT_EQ(node->GetSilenceDataForTest()->GetChannelCount(), TEST_CHANNEL_COUNT);
+}
 
 // SE-P1: Process bypass when not created
 HWTEST_F(SessionEffectNodeAlgoTest, process_bypassWhenNotCreated, TestSize.Level0)
@@ -1053,7 +1077,7 @@ HWTEST_F(SessionEffectNodeStateTest, flush_whenPausedStopped, TestSize.Level0)
 
 // --- Phase 3B-2: Close SE tests ---
 
-// SE-OP10: Close SE during WARMING_UP — join + RewindBuffer + clear + bypass
+// SE-OP10: Close SE during WARMING_UP — join + RewindBuffer + flush + bypass
 HWTEST_F(SessionEffectNodeStateTest, closeSE_duringWarmingUp, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
@@ -1067,14 +1091,14 @@ HWTEST_F(SessionEffectNodeStateTest, closeSE_duringWarmingUp, TestSize.Level0)
     ASSERT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
 
     EXPECT_CALL(*mockCallback_, OnRewindBuffer(testing::_, testing::Gt(0u)));
-    EXPECT_CALL(*mockInst_, ClearBuffers());
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
 
     node_->CloseSessionEffectCore();
 
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
 }
 
-// SE-OP11: Close SE during INTERCEPTING — RewindBuffer + clear + bypass
+// SE-OP11: Close SE during INTERCEPTING — RewindBuffer + flush + bypass
 HWTEST_F(SessionEffectNodeStateTest, closeSE_duringIntercepting, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::INTERCEPTING);
@@ -1089,13 +1113,13 @@ HWTEST_F(SessionEffectNodeStateTest, closeSE_duringIntercepting, TestSize.Level0
     ASSERT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
 
     EXPECT_CALL(*mockCallback_, OnRewindBuffer(testing::_, testing::Gt(0u)));
-    EXPECT_CALL(*mockInst_, ClearBuffers());
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
 
     node_->CloseSessionEffectCore();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
 }
 
-// SE-OP12: Close SE during ACTIVE — RewindBuffer + clear + bypass
+// SE-OP12: Close SE during ACTIVE — RewindBuffer + flush + bypass
 HWTEST_F(SessionEffectNodeStateTest, closeSE_duringActive, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
@@ -1110,7 +1134,7 @@ HWTEST_F(SessionEffectNodeStateTest, closeSE_duringActive, TestSize.Level0)
     ASSERT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
 
     EXPECT_CALL(*mockCallback_, OnRewindBuffer(testing::_, testing::_));
-    EXPECT_CALL(*mockInst_, ClearBuffers());
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
 
     node_->CloseSessionEffectCore();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
@@ -1118,7 +1142,7 @@ HWTEST_F(SessionEffectNodeStateTest, closeSE_duringActive, TestSize.Level0)
 
 // --- Phase 3B-2: MoveStream tests ---
 
-// SE-OP13: MoveStream during WARMING_UP — join + RewindBuffer + clear
+// SE-OP13: MoveStream during WARMING_UP — join + RewindBuffer + flush
 HWTEST_F(SessionEffectNodeStateTest, moveStream_duringWarmingUp, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
@@ -1132,7 +1156,7 @@ HWTEST_F(SessionEffectNodeStateTest, moveStream_duringWarmingUp, TestSize.Level0
     ASSERT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
 
     EXPECT_CALL(*mockCallback_, OnRewindBuffer(testing::_, testing::Gt(0u)));
-    EXPECT_CALL(*mockInst_, ClearBuffers());
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
 
     node_->PrepareMoveStream();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
@@ -1153,7 +1177,7 @@ HWTEST_F(SessionEffectNodeStateTest, moveStream_duringIntercepting, TestSize.Lev
     ASSERT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
 
     EXPECT_CALL(*mockCallback_, OnRewindBuffer(testing::_, testing::Gt(0u)));
-    EXPECT_CALL(*mockInst_, ClearBuffers());
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
 
     node_->PrepareMoveStream();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
@@ -1174,7 +1198,7 @@ HWTEST_F(SessionEffectNodeStateTest, moveStream_duringActive, TestSize.Level0)
     ASSERT_GT(node_->GetTotalBytesIn(), node_->GetTotalBytesOut());
 
     EXPECT_CALL(*mockCallback_, OnRewindBuffer(testing::_, testing::_));
-    EXPECT_CALL(*mockInst_, ClearBuffers());
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
 
     node_->PrepareMoveStream();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
