@@ -4031,7 +4031,7 @@ HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_EnsureHistoryBufferForAiss
     auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
     ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(preheatFrames));
 
-    int32_t ret = hpaeRendererManager_->CreateSessionEffect(sessionId, "ai_audio_enhance", instance, config);
+    int32_t ret = hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_NE(sinkInputNode->historyBuffer_, nullptr);
     EXPECT_GE(sinkInputNode->historyBuffer_->GetFrames(), preheatFrames);
@@ -4055,7 +4055,7 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectStatusCallback, TestSize.Level0)
     auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
     ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
 
-    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "ai_audio_enhance", instance, config),
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
     ASSERT_FALSE(callback->events_.empty());
@@ -4084,7 +4084,7 @@ HWTEST_F(HpaeRendererManagerTest, DeleteInputSessionWithSessionEffectSendsDisabl
     auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
     ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
 
-    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "ai_audio_enhance", instance, config),
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     callback->events_.clear();
 

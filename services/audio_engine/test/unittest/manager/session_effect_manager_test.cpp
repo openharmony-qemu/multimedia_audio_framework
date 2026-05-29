@@ -74,22 +74,22 @@ protected:
 HWTEST_F(SessionEffectManagerTest, bind_newInstance_isActive, TestSize.Level0)
 {
     std::shared_ptr<EffectInstance> instance;
-    int32_t ret = sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance);
+    int32_t ret = sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_NE(instance, nullptr);
     EXPECT_EQ(instance->GetState(), EffectInstance::EffectState::ACTIVE);
     EXPECT_EQ(instance->GetBoundSessionId(), 1u);
-    EXPECT_EQ(instance->GetEffectName(), "ai_audio_enhance");
+    EXPECT_EQ(instance->GetEffectName(), "audio_aiss_enhance");
 }
 
 // Bind same session + same effect is idempotent — returns SUCCESS with existing instance
 HWTEST_F(SessionEffectManagerTest, bind_duplicateSession_alreadyBound, TestSize.Level0)
 {
     std::shared_ptr<EffectInstance> instance;
-    sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance);
+    sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance);
 
     std::shared_ptr<EffectInstance> instance2;
-    int32_t ret = sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance2);
+    int32_t ret = sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance2);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_EQ(instance2, instance);  // same instance returned
 }
@@ -98,7 +98,7 @@ HWTEST_F(SessionEffectManagerTest, bind_duplicateSession_alreadyBound, TestSize.
 HWTEST_F(SessionEffectManagerTest, unbind_setsPendingRelease, TestSize.Level0)
 {
     std::shared_ptr<EffectInstance> instance;
-    sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance);
+    sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance);
 
     int32_t ret = sem_->UnbindSessionEffect(1);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
@@ -117,11 +117,11 @@ HWTEST_F(SessionEffectManagerTest, unbind_noEffect_returnsNotBound, TestSize.Lev
 HWTEST_F(SessionEffectManagerTest, bind_reusesPendingReleaseInstance, TestSize.Level0)
 {
     std::shared_ptr<EffectInstance> instance1;
-    sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance1);
+    sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance1);
     sem_->UnbindSessionEffect(1);
 
     std::shared_ptr<EffectInstance> instance2;
-    int32_t ret = sem_->BindSessionEffect(2, "ai_audio_enhance", config_, instance2);
+    int32_t ret = sem_->BindSessionEffect(2, "audio_aiss_enhance", config_, instance2);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_EQ(instance2, instance1); // same instance reused
     EXPECT_EQ(instance2->GetState(), EffectInstance::EffectState::ACTIVE);
@@ -135,10 +135,10 @@ HWTEST_F(SessionEffectManagerTest, lazyReleaseExpired_destroysOnGenerationMatch,
     sem_->SetLazyReleaseTimeout(10);
 
     std::shared_ptr<EffectInstance> instance;
-    sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance);
+    sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance);
     sem_->UnbindSessionEffect(1);
 
-    EXPECT_TRUE(sem_->HasPendingEffectInstance("ai_audio_enhance"));
+    EXPECT_TRUE(sem_->HasPendingEffectInstance("audio_aiss_enhance"));
 
     // Wait for timeout to expire
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -146,18 +146,18 @@ HWTEST_F(SessionEffectManagerTest, lazyReleaseExpired_destroysOnGenerationMatch,
     // Trigger delayed task processing
     ProcessDelayedTasks();
 
-    EXPECT_FALSE(sem_->HasPendingEffectInstance("ai_audio_enhance"));
+    EXPECT_FALSE(sem_->HasPendingEffectInstance("audio_aiss_enhance"));
 }
 
 // LazyReleaseExpired is ignored when generation doesn't match
 HWTEST_F(SessionEffectManagerTest, lazyReleaseExpired_ignoredOnGenerationMismatch, TestSize.Level0)
 {
     std::shared_ptr<EffectInstance> instance;
-    sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance);
+    sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance);
     sem_->UnbindSessionEffect(1);
 
     // Manually re-bind (bumps generation)
-    sem_->BindSessionEffect(2, "ai_audio_enhance", config_, instance);
+    sem_->BindSessionEffect(2, "audio_aiss_enhance", config_, instance);
 
     // Old generation's lazy release should be ignored (gen doesn't match)
     // The old delayed task will fire but be ignored
@@ -389,16 +389,16 @@ HWTEST_F(SessionEffectManagerTest, setEffectParameter_activeInstance_sendsSetPar
     FakeAudioEffectLibEntry fake;
     AudioEffectLibrary lib = fake.GetLibrary();
     auto libEntry = std::make_shared<AudioEffectLibEntry>();
-    libEntry->libraryName = "ai_audio_enhance";
+    libEntry->libraryName = "audio_aiss_enhance";
     libEntry->audioEffectLibHandle = &lib;
     sem_->InitEffectLibraries({libEntry});
 
     std::shared_ptr<EffectInstance> instance;
-    ASSERT_EQ(sem_->BindSessionEffect(1, "ai_audio_enhance", config_, instance),
+    ASSERT_EQ(sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     fake.Reset();
 
-    int32_t ret = sem_->SetEffectParameter("ai_audio_enhance",
+    int32_t ret = sem_->SetEffectParameter("audio_aiss_enhance",
         static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.7f);
 
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));

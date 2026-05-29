@@ -116,7 +116,7 @@ static HpaeNodeInfo MakeOutputNodeInfo()
 static std::shared_ptr<EffectInstance> MakeTestEffectInstance()
 {
     auto instance = std::make_shared<EffectInstance>();
-    instance->Init("ai_audio_enhance", MakeTestConfig());
+    instance->Init("audio_aiss_enhance", MakeTestConfig());
     return instance;
 }
 
@@ -238,7 +238,7 @@ protected:
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_curNode_immediate, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance",
         instance, config_);
     EXPECT_EQ(ret, 0);
     EXPECT_NE(manager_->sessionEffectNode_, nullptr);
@@ -252,7 +252,7 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_curNode_immediate, TestSize.Leve
 // OSE-1a: CreateSessionEffect creation failure clears active SE state without disabled rollback
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_createFailure_clearsStateWithoutDisabled, TestSize.Level0)
 {
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", nullptr, config_);
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", nullptr, config_);
 
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_CREATE_FAILED));
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
@@ -265,7 +265,7 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_createFailure_clearsStateWithout
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_notCurNode_deferred, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance",
         instance, config_);
     EXPECT_EQ(ret, 0);
     // SE not created yet (session is not curNode_)
@@ -284,7 +284,7 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_notCurNode_deferred, TestSize.Le
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
@@ -298,7 +298,7 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active, TestSize.Level0)
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active_restoresChain, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
@@ -318,7 +318,7 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active_restoresChain, TestSize.
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_pending, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
 
     int32_t ret = manager_->DestroySessionEffect(OTHER_SESSION_ID);
@@ -332,7 +332,7 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_pending, TestSize.Level0)
 HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_active_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
@@ -347,7 +347,7 @@ HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_active_sendsDisabled, TestSi
 HWTEST_F(HpaeOffloadSeTest, deleteInputSession_activeSessionEffect_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     manager_->DeleteInputSession();
@@ -360,7 +360,7 @@ HWTEST_F(HpaeOffloadSeTest, deleteInputSession_activeSessionEffect_sendsDisabled
 HWTEST_F(HpaeOffloadSeTest, destroyStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
@@ -377,7 +377,7 @@ HWTEST_F(HpaeOffloadSeTest, destroyStream_pendingSessionEffect_sendsDisabled, Te
 HWTEST_F(HpaeOffloadSeTest, moveStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
@@ -394,7 +394,7 @@ HWTEST_F(HpaeOffloadSeTest, moveStream_pendingSessionEffect_sendsDisabled, TestS
 HWTEST_F(HpaeOffloadSeTest, moveAllStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
@@ -409,7 +409,7 @@ HWTEST_F(HpaeOffloadSeTest, moveAllStream_pendingSessionEffect_sendsDisabled, Te
 HWTEST_F(HpaeOffloadSeTest, connectInputSession_pendingInsertFailure_rollsBackEnabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
@@ -436,11 +436,11 @@ HWTEST_F(HpaeOffloadSeTest, hasSessionEffect_activeAndPending, TestSize.Level0)
 
     // Create active SE for curNode_
     auto instance1 = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance1, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance1, config_);
 
     // Create pending SE for otherNode_
     auto instance2 = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance2, config_);
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance2, config_);
 
     EXPECT_TRUE(manager_->HasSessionEffect(CUR_SESSION_ID));
     EXPECT_TRUE(manager_->HasSessionEffect(OTHER_SESSION_ID));
@@ -459,7 +459,7 @@ HWTEST_F(HpaeOffloadSeTest, isValidSession, TestSize.Level0)
 HWTEST_F(HpaeOffloadSeTest, setSessionEffectParameter_active, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
 
     int32_t ret = manager_->SetSessionEffectParameter(CUR_SESSION_ID,
         static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.7f);
@@ -480,7 +480,7 @@ HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
 {
     // 1. Create pending SE for OTHER_SESSION_ID (not curNode_)
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
     ASSERT_EQ(manager_->sessionEffectNode_, nullptr);
 
@@ -515,10 +515,10 @@ HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_doubleCreate, TestSize.Level0)
 {
     auto instance1 = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance1, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance1, config_);
 
     auto instance2 = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance",
         instance2, config_);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND));
 }
@@ -856,7 +856,7 @@ HWTEST_F(HpaeOffloadSeTest, insert_flushesSinkOutput, TestSize.Level0)
     ASSERT_GT(manager_->sinkOutputNode_->GetLatency(), 0u);
 
     auto instance = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance",
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance",
         instance, config_);
     EXPECT_EQ(ret, 0);
 
@@ -868,7 +868,7 @@ HWTEST_F(HpaeOffloadSeTest, insert_flushesSinkOutput, TestSize.Level0)
 HWTEST_F(HpaeOffloadSeTest, remove_flushesSinkOutput, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "ai_audio_enhance", instance, config_);
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     manager_->sinkOutputNode_->renderFrameData_.resize(1024, 0xCD);

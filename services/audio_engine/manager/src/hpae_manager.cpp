@@ -39,6 +39,7 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr uint32_t DEFAULT_PAUSE_STREAM_TIME_IN_MS = 60; // 60ms
+constexpr const char *AUDIO_AISS_ENHANCE_EFFECT_NAME = "audio_aiss_enhance";
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 
@@ -1165,13 +1166,13 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
     }
     rendererManager->AddNodeToSink(sinkInputNode);
     // MoveIn: recreate SE on new device if session has active SE binding
-    auto boundSessionId = sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    auto boundSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
     if (boundSessionId == sessionId) {
         AudioEffectConfig config = MakeAissAudioConfig();
         std::shared_ptr<EffectInstance> instance;
-        sessionEffectManager_->BindSessionEffect(sessionId, "ai_audio_enhance", config, instance);
+        sessionEffectManager_->BindSessionEffect(sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, config, instance);
         if (instance != nullptr) {
-            rendererManager->PostCreateSessionEffect(sessionId, "ai_audio_enhance", instance, config);
+            rendererManager->PostCreateSessionEffect(sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, config);
         }
     }
     rendererIdSinkNameMap_[sessionId] = sinkName;
@@ -3032,20 +3033,20 @@ int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
     AudioEffectConfig audioConfig = MakeAissAudioConfig();
     std::shared_ptr<EffectInstance> instance;
     int32_t ret = sessionEffectManager_->BindSessionEffect(
-        sessionId, "ai_audio_enhance", audioConfig, instance);
+        sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, audioConfig, instance);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "BindAndCreateAiss: BindSessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        rendererManager->PostCreateSessionEffect(sessionId, "ai_audio_enhance", instance, audioConfig);
+        rendererManager->PostCreateSessionEffect(sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, audioConfig);
     }
     return SUCCESS;
 }
 
 void HpaeManager::CleanupOldAissSession(uint32_t newSessionId)
 {
-    uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
     if (oldSessionId == 0 || oldSessionId == newSessionId) {
         return;
     }
@@ -3120,7 +3121,7 @@ int32_t HpaeManager::SetAissEnabled(uint32_t sessionId, bool enabled)
             static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
             "SetAissEnabled: cannot find rendererManager for session %{public}u", sessionId);
 
-        if (!enabled && sessionEffectManager_->GetBoundSessionId("ai_audio_enhance") != sessionId) {
+        if (!enabled && sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME) != sessionId) {
             AUDIO_ERR_LOG("SetAissEnabled: session %{public}u not bound to AISS", sessionId);
             return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
         }
@@ -3230,7 +3231,7 @@ int32_t HpaeManager::SetVocalRatio(float ratio)
             static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
             "SetVocalRatio: sessionEffectManager is null");
 
-        return sessionEffectManager_->SetEffectParameter("ai_audio_enhance",
+        return sessionEffectManager_->SetEffectParameter(AUDIO_AISS_ENHANCE_EFFECT_NAME,
             static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), ratio);
     };
     return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
