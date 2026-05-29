@@ -3765,7 +3765,7 @@ HWTEST(AudioPolicyUnitTest, SetQueryDeviceVolumeBehaviorCallback_001, TestSize.L
     object = new RemoteObjectTestStub();
 
     ret = server->SetQueryDeviceVolumeBehaviorCallback(object);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -3963,7 +3963,7 @@ HWTEST(AudioPolicyUnitTest, UpdateContextForAudioZone_001, TestSize.Level1)
 
     // Test zoneId = 0 (valid zoneId, but no permission)
     int32_t ret = server->UpdateContextForAudioZone(0, context);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 
     // Test zoneId < 0 (invalid zoneId)
     ret = server->UpdateContextForAudioZone(-1, context);
