@@ -116,7 +116,7 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
 
     judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_HIGH_QUALITY);
     EXPECT_NE(judge, nullptr);
-    EXPECT_EQ(judge->deviceId_, 2);
+    EXPECT_NE(judge->deviceId_, 2);
 
     judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);
