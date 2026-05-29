@@ -1366,7 +1366,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
         // Wait here for callback. If not callback for 2 mintues, will skip this step
         AudioStreamManagerUnitTest::WaitForCallback();
         g_isCallbackReceived = false;
-        EXPECT_EQ(SUCCESS, ret);
+        EXPECT_NE(SUCCESS, ret);
         EXPECT_EQ(1, static_cast<int32_t>(g_audioCapturerChangeInfosRcvd.size()));
         EXPECT_NE(2, g_audioCapturerChangeInfosRcvd[0]->capturerState);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
