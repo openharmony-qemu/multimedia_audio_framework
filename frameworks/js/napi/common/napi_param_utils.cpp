@@ -1260,6 +1260,11 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
         selectedAudioDevice->deviceId_ = intValue;
     }
 
+    status = GetValueBoolean(env, "highQualityRecordingSupported", boolValue, in);
+    if (status == napi_ok) {
+        selectedAudioDevice->highQualityRecordingSupported_ = boolValue;
+    }
+
     return napi_ok;
 }
 
