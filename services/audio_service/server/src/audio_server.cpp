@@ -3204,7 +3204,7 @@ int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId, const s
 }
 // LCOV_EXCL_STOP
 
-int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs)
+int32_t AudioServer::SetSinkRenderEmpty(const std::string &deviceClass, int32_t durationUs)
 {
     if (durationUs <= 0) {
         return SUCCESS;
@@ -3216,7 +3216,8 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
 }
 
 // LCOV_EXCL_START
-int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
+int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &deviceClass, int32_t durationUs, bool mute,
+    const std::string &networkId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
@@ -3226,12 +3227,13 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
         return SUCCESS;
     }
 
-    bool isMmap = devceClass == A2DP_FAST_CLASS || devceClass == MMAP_CLASS;
+    bool isMmap = deviceClass == A2DP_FAST_CLASS || deviceClass == MMAP_CLASS;
     if (isMmap) {
-        AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(devceClass, mute);
+        AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(deviceClass, mute);
     }
 
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(devceClass);
+    std::string info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
     return sink->SetSinkMuteForSwitchDevice(mute);

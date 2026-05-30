@@ -71,6 +71,7 @@ public:
     float GetMaxAmplitude(void) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
         int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
@@ -159,6 +160,10 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
+    // for device switch
+    std::mutex switchDeviceMutex_;
+    int32_t muteCount_ = 0;
+    std::atomic<bool> switchDeviceMute_ = false;
     // for dfx log
     std::string logUtilsTag_ = "RemoteSink";
     mutable int64_t volumeDataCount_ = 0;

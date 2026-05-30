@@ -20,8 +20,10 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/remote_audio_render_sink.h"
+#include "../include/sink/mock_remote_i_audio_render.h"
 
 using namespace testing::ext;
+using namespace OHOS::HDI::DistributedAudio::Audio::V2_0;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -367,6 +369,99 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_012, TestSize.Level1)
     sink->validState_.store(true);
     ret = sink->Start();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test RemoteSink API
+ * @tc.number : SetSinkMuteForSwitchDevice_001
+ * @tc.desc   : Test SetSinkMuteForSwitchDevice with mute/unmute state transitions
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, SetSinkMuteForSwitchDevice_001, TestSize.Level1)
+{
+    auto remoteSink = std::make_shared<RemoteAudioRenderSink>("test");
+    ASSERT_NE(remoteSink, nullptr);
+
+    int32_t ret = remoteSink->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteSink->muteCount_, 1);
+    EXPECT_TRUE(remoteSink->switchDeviceMute_.load());
+
+    ret = remoteSink->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteSink->muteCount_, 2);
+    EXPECT_TRUE(remoteSink->switchDeviceMute_.load());
+
+    ret = remoteSink->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteSink->muteCount_, 1);
+    EXPECT_TRUE(remoteSink->switchDeviceMute_.load());
+
+    ret = remoteSink->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(remoteSink->muteCount_, 0);
+    EXPECT_FALSE(remoteSink->switchDeviceMute_.load());
+}
+
+/**
+ * @tc.name   : Test RemoteSink API
+ * @tc.number : RenderFrame_SwitchDeviceMute_001
+ * @tc.desc   : Test RenderFrame with switchDeviceMute true, data should be zeroed
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, RenderFrame_SwitchDeviceMute_001, TestSize.Level1)
+{
+    auto remoteSink = std::make_shared<RemoteAudioRenderSink>("test");
+    ASSERT_NE(remoteSink, nullptr);
+    remoteSink->renderInited_.store(true);
+    remoteSink->validState_.store(true);
+    remoteSink->switchDeviceMute_ = true;
+
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, RenderFrame(testing::_, testing::_)).WillOnce(testing::Return(SUCCESS));
+    RemoteAudioRenderSink::RenderWrapper wrapper;
+    wrapper.audioRender_ = mockRender;
+    remoteSink->audioRenderWrapperMap_[AUDIO_IN_MEDIA] = wrapper;
+    remoteSink->attr_.channel = 2;
+    remoteSink->attr_.format = SAMPLE_S16LE;
+
+    char data[1024];
+    for (size_t i = 0; i < sizeof(data); i++) {
+        data[i] = static_cast<char>(0xFF);
+    }
+    uint64_t writeLen = 0;
+    int32_t ret = remoteSink->RenderFrame(*data, sizeof(data), writeLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(data[0], 0);
+}
+
+/**
+ * @tc.name   : Test RemoteSink API
+ * @tc.number : RenderFrame_NoSwitchDeviceMute_001
+ * @tc.desc   : Test RenderFrame without switchDeviceMute, data should not be zeroed
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, RenderFrame_NoSwitchDeviceMute_001, TestSize.Level1)
+{
+    auto remoteSink = std::make_shared<RemoteAudioRenderSink>("test");
+    ASSERT_NE(remoteSink, nullptr);
+    remoteSink->renderInited_.store(true);
+    remoteSink->validState_.store(true);
+    remoteSink->switchDeviceMute_ = false;
+
+    sptr<MockRemoteIAudioRender> mockRender = new MockRemoteIAudioRender();
+    EXPECT_CALL(*mockRender, RenderFrame(testing::_, testing::_)).WillOnce(testing::Return(SUCCESS));
+    RemoteAudioRenderSink::RenderWrapper wrapper;
+    wrapper.audioRender_ = mockRender;
+    remoteSink->audioRenderWrapperMap_[AUDIO_IN_MEDIA] = wrapper;
+    remoteSink->attr_.channel = 2;
+    remoteSink->attr_.format = SAMPLE_S16LE;
+
+    char data[1024];
+    for (size_t i = 0; i < sizeof(data); i++) {
+        data[i] = static_cast<char>(0xFF);
+    }
+    uint64_t writeLen = 0;
+    int32_t ret = remoteSink->RenderFrame(*data, sizeof(data), writeLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(data[0], 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

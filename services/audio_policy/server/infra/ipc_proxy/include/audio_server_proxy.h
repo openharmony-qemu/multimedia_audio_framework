@@ -69,7 +69,8 @@ public:
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
     void CheckHibernateStateProxy(bool hibernate);
     void RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo RestoreInfo);
-    void SetSinkMuteForSwitchDeviceProxy(const std::string &devceClass, int32_t durationUs, bool mute);
+    void SetSinkMuteForSwitchDeviceProxy(const std::string &deviceClass, int32_t durationUs, bool mute,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetMicrophoneMuteProxy(bool isMute);
     void SuspendRenderSinkProxy(const std::string &sinkName);
     void RestoreRenderSinkProxy(const std::string &sinkName);

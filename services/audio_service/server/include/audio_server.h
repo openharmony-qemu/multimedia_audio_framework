@@ -221,9 +221,10 @@ public:
     void OnCapturerState(bool isActive, size_t preNum, size_t curNum);
 
     // IAudioServerInnerCall
-    int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
+    int32_t SetSinkRenderEmpty(const std::string &deviceClass, int32_t durationUs) final;
 
-    int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;
+    int32_t SetSinkMuteForSwitchDevice(const std::string &deviceClass, int32_t durationUs, bool mute,
+        const std::string &networkId = LOCAL_NETWORK_ID) override;
 
     int32_t LoadHdiEffectModel() override;
 
