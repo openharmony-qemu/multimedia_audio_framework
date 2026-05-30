@@ -929,7 +929,7 @@ bool AudioEffectService::IsAudioSeparationEffectSupported()
 {
     AUDIO_INFO_LOG("IsAudioSeparationEffectSupported called");
     return std::any_of(availableEffects_.begin(), availableEffects_.end(),
-        [](const Effect &effect) { return effect.name == "ai_audio_enhance"; });
+        [](const Effect &effect) { return effect.name == "audio_aiss_enhance"; });
 }
 
 int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
