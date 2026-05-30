@@ -583,6 +583,10 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
+    int32_t PauseAudioFocusForExtAudioZone() override;
+
+    int32_t ResumeAudioFocusForExtAudioZone() override;
+
     int32_t SetZoneDeviceVisible(bool visible) override;
 
     int32_t GetAudioInterruptForZone(int32_t zoneId,

@@ -193,6 +193,8 @@ interface IAudioPolicy {
     void RemoveUidFromAudioZone([in] int zoneId, [in] int uid);
     void AddStreamToAudioZone([in] int zoneId, [in] AudioZoneStream stream);
     void RemoveStreamFromAudioZone([in] int zoneId, [in] AudioZoneStream stream);
+    void PauseAudioFocusForExtAudioZone();
+    void ResumeAudioFocusForExtAudioZone();
     void SetZoneDeviceVisible([in] boolean visible);
     void EnableSystemVolumeProxy([in] int zoneId, [in] int deviceType, [in] boolean enable);
     void GetAudioInterruptForZone([in] int zoneId, [out] List<OrderedMap<AudioInterrupt, int>> interrupts);

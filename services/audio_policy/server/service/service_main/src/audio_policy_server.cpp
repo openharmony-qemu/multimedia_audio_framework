@@ -4747,6 +4747,20 @@ int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t 
     return AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
+int32_t AudioPolicyServer::PauseAudioFocusForExtAudioZone()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().PauseAudioFocusForExtAudioZone();
+}
+
+int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone();
+}
+
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");

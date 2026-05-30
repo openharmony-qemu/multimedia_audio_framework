@@ -1663,6 +1663,37 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     return SUCCESS;
 }
 
+int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto &[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(zoneId != ZONEID_DEFAULT, "skip default audio zone");
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        for (auto iter = audioInterruptZone->audioFocusInfoList.begin();
+            iter != audioInterruptZone->audioFocusInfoList.end(); ++iter) {
+            CHECK_AND_CONTINUE(IsAudioStreamActive(iter->second));
+            bool removeFocusInfo = false;
+            SendInterruptEvent(iter->second, AudioFocuState::PAUSE, iter, removeFocusInfo);
+            AUDIO_INFO_LOG("[ZoneFocus]pause focus, zoneId:%{public}d, sessionId:%{public}u", zoneId,
+                iter->first.streamId);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioInterruptService::ResumeAudioFocusForExtAudioZone()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto &[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE(zoneId != ZONEID_DEFAULT);
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        AUDIO_INFO_LOG("[ZoneFocus]resume audio focus list for zone %{public}d", zoneId);
+        ResumeAudioFocusList(zoneId, false);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList)
 {
     std::unique_lock<std::mutex> lock(mutex_);
