@@ -121,7 +121,7 @@ private:
         uint32_t appUid = INVALID_UID);
     int32_t RecreateSinkOutputNodeIfNeeded();
     void CreateProcessNodes(uint32_t sessionId);
-    bool SetSessionFade(uint32_t sessionId, IOperation operation);
+    bool SetSessionFade(uint32_t sessionId, IOperation operation, bool isStandby = false);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate, bool isVoip);
     AudioSampleFormat GetDirectFormat(AudioSampleFormat format, bool isVoip);
     void StopDirectOutputNodeSync(bool isStandby);

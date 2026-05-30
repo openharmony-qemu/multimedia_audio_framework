@@ -96,7 +96,7 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
-    bool SetSessionFade(uint32_t sessionId, IOperation operation);
+    bool SetSessionFade(uint32_t sessionId, IOperation operation, bool isStandby = false);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode);
 
 private:
