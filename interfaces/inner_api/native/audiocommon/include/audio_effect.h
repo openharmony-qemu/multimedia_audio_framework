@@ -647,16 +647,16 @@ struct AudioBuffer {
 };
 
 struct AudioBufferConfig {
-    uint32_t samplingRate;
-    uint32_t channels;
-    uint8_t format;
-    uint64_t channelLayout;
-    AudioEncodingType encoding;
+    uint32_t samplingRate = 0;
+    uint32_t channels = 0;
+    uint8_t format = 0;
+    uint64_t channelLayout = 0;
+    AudioEncodingType encoding = ENCODING_PCM;
 };
 
 struct AudioEffectConfig {
-    AudioBufferConfig inputCfg;
-    AudioBufferConfig outputCfg;
+    AudioBufferConfig inputCfg = {};
+    AudioBufferConfig outputCfg = {};
 };
 
 struct AudioEffectTransInfo {
