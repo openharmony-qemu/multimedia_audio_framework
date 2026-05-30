@@ -3106,7 +3106,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLink_00
 /**
  * @tc.name  : GetStreamPropInfoForMultiChannel_NearLinkDisabled_002
  * @tc.type  : FUNC
- * @tc.desc  : Test GetStreamPropInfoForMultiChannel with isNearLinkCollaborationEnable_=false preserves original channels.
+ * @tc.desc  : Test GetStreamPropInfoForMultiChannel with isNearLinkCollaborationEnable_=false
+ * preserves original channels.
  */
 HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLinkDisabled_002, TestSize.Level1)
 {
