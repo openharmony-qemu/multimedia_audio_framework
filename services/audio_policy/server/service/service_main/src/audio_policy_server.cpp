@@ -2051,7 +2051,8 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
             auto sco = std::make_shared<AudioDeviceDescriptor>(desc);
             sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
             auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
-            desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ? descPtr : desc;
+            desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ?
+                std::make_shared<AudioDeviceDescriptor>(descPtr) : desc;
             desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
             desc->highQualityRecordingSupported_ = true;
         }
