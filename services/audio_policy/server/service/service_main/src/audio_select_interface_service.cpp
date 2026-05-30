@@ -199,11 +199,9 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
 
-    // If the selected device is virtual device, connect it.
     if (AudioDeviceManager::GetAudioDeviceManager().IsVirtualConnectedDevice(selectedDesc[0])) {
-        int32_t ret = AudioRecoveryDevice::GetInstance().ConnectVirtualDevice(selectedDesc[0]);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            IPCSkeleton::GetCallingUid(), ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "ConnectVirtualDevice fail", false));
+        CHECK_AND_RETURN_RET_LOG(ConnectVirtualDeviceIfNeeded(selectedDesc[0]) == SUCCESS,
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "ConnectVirtualDeviceIfNeeded fail");
         return SUCCESS;
     }
 
@@ -216,6 +214,15 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
         .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE,
         static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+    return SUCCESS;
+}
+
+int32_t AudioSelectInterfaceService::ConnectVirtualDeviceIfNeeded(
+    std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    int32_t ret = AudioRecoveryDevice::GetInstance().ConnectVirtualDevice(device);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+        IPCSkeleton::GetCallingUid(), ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "ConnectVirtualDevice fail", false));
     return SUCCESS;
 }
 
