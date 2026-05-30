@@ -525,7 +525,7 @@ HWTEST_F(HpaeManagerSeE2eTest, MoveStream_recreatesSessionEffect_E2E, TestSize.L
     // 1. Bind SE to session (tracked in SessionEffectManager)
     ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
 
-    auto boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    auto boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("audio_aiss_enhance");
     EXPECT_EQ(boundId, TEST_SESSION_ID);
 
     // 2. Create target RM with session + cluster
@@ -562,14 +562,14 @@ HWTEST_F(HpaeManagerSeE2eTest, MoveStream_recreatesSessionEffect_E2E, TestSize.L
     config.outputCfg = config.inputCfg;
     std::shared_ptr<EffectInstance> instance;
     hpaeManager_->sessionEffectManager_->BindSessionEffect(
-        TEST_SESSION_ID, "ai_audio_enhance", config, instance);
+        TEST_SESSION_ID, "audio_aiss_enhance", config, instance);
     ASSERT_NE(instance, nullptr);
     // Call CreateSessionEffect directly (bypass queue — queue path tested by Flush/Pause)
-    int32_t ret = rm2->CreateSessionEffect(TEST_SESSION_ID, "ai_audio_enhance", instance, config);
+    int32_t ret = rm2->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance, config);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
     // Verify: binding tracked, SE exists on target RM
-    boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("audio_aiss_enhance");
     EXPECT_EQ(boundId, TEST_SESSION_ID);
     EXPECT_TRUE(rm2->HasSessionEffect(TEST_SESSION_ID));
 

@@ -273,6 +273,15 @@ std::vector<std::string> SessionEffectManager::GetAllActiveEffectNames() const
     return names;
 }
 
+int32_t SessionEffectManager::SetEffectParameter(const std::string &effectName, int32_t type, float value)
+{
+    auto it = effectInstanceMap_.find(effectName);
+    CHECK_AND_RETURN_RET_LOG(it != effectInstanceMap_.end() && it->second != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+        "SetEffectParameter: effect %{public}s not found", effectName.c_str());
+    return it->second->SetParameter(type, value);
+}
+
 void SessionEffectManager::InitEffectLibraries(
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &libEntries)
 {

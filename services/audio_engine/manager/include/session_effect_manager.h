@@ -57,6 +57,7 @@ public:
     // Queries
     uint32_t GetBoundSessionId(const std::string &effectName) const;
     std::vector<std::string> GetAllActiveEffectNames() const;
+    int32_t SetEffectParameter(const std::string &effectName, int32_t type, float value);
 
     // Lifecycle
     void Deinit();
