@@ -16,6 +16,8 @@
 #define LOG_TAG "AudioStreamManager"
 #endif
 
+#include <cinttypes>
+
 #include "audio_stream_manager.h"
 
 #include "audio_errors.h"
@@ -31,6 +33,7 @@ static const std::map<std::string, AudioEffectMode> effectModeMap = {
     {"EFFECT_NONE", EFFECT_NONE},
     {"EFFECT_DEFAULT", EFFECT_DEFAULT}
 };
+
 AudioStreamManager *AudioStreamManager::GetInstance()
 {
     static AudioStreamManager audioStreamManager;
@@ -40,8 +43,9 @@ AudioStreamManager *AudioStreamManager::GetInstance()
 int32_t AudioStreamManager::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("client id: %{public}d", clientPid);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+    AUDIO_INFO_LOG("[RendererCallbackDfx] client id: %{public}d callbackId:%{public}" PRIu64, clientPid,
+        callback->GetCallbackId());
 
     std::lock_guard<std::mutex> lock(rendererStateChangeCallbacksMutex_);
     int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
@@ -53,9 +57,10 @@ int32_t AudioStreamManager::RegisterAudioRendererEventListener(const int32_t cli
 
 int32_t AudioStreamManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("client id: %{public}d", clientPid);
-
     std::lock_guard<std::mutex> lock(rendererStateChangeCallbacksMutex_);
+    AUDIO_INFO_LOG("[RendererCallbackDfx] client id: %{public}d callbackSize:%{public}zu callbackIds:%{public}s",
+        clientPid, rendererStateChangeCallbacks_.size(),
+        BuildAudioCallbackIdList(rendererStateChangeCallbacks_).c_str());
     int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(
         rendererStateChangeCallbacks_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
@@ -67,8 +72,8 @@ int32_t AudioStreamManager::UnregisterAudioRendererEventListener(const int32_t c
 int32_t AudioStreamManager::RegisterAudioRendererEventListener(
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+    AUDIO_INFO_LOG("[RendererCallbackDfx] callbackId:%{public}" PRIu64, callback->GetCallbackId());
 
     int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
@@ -79,7 +84,8 @@ int32_t AudioStreamManager::RegisterAudioRendererEventListener(
 int32_t AudioStreamManager::UnregisterAudioRendererEventListener(
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("[RendererCallbackDfx] callbackId:%{public}" PRIu64,
+        callback == nullptr ? 0 : callback->GetCallbackId());
 
     int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callback);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);

@@ -27,12 +27,28 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
+constexpr int32_t AVSESSION_UID = 6700;
 constexpr int32_t ALL_APPS_UID = -1;
 static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
 static const int32_t STATE_VALID_SIZE = 1024;
 static const int32_t MIC_BLOCKED_VALID_SIZE = 128;
+
+static bool IsRendererCallbackDfxUid()
+{
+    int32_t uid = static_cast<int32_t>(getuid());
+    return uid == RSS_UID || uid == AVSESSION_UID;
+}
+
+static void LogRendererCallbackDfx(const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks,
+    size_t infosSize)
+{
+    CHECK_AND_RETURN(IsRendererCallbackDfxUid());
+    AUDIO_INFO_LOG("[RendererCallbackDfx] uid:%{public}d cbSize:%{public}zu infoSize:%{public}zu "
+        "callbackIds:%{public}s", static_cast<int32_t>(getuid()), callbacks.size(), infosSize,
+        BuildAudioCallbackIdList(callbacks).c_str());
+}
 
 int32_t AudioPolicyClientStubImpl::AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
 {
@@ -1332,10 +1348,7 @@ int32_t AudioPolicyClientStubImpl::OnRendererStateChange(
     size_t cBSize = callbacks.size();
     size_t infosSize = audioRendererChangeInfos.size();
     AUDIO_DEBUG_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
-
-    if (getuid() == RSS_UID) {
-        AUDIO_INFO_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
-    }
+    LogRendererCallbackDfx(callbacks, infosSize);
 
     Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto &cb : callbacks) {
