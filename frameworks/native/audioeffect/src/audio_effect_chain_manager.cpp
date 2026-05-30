@@ -2822,6 +2822,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
     char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
+    if (*p == '/') p++;
     while (*p) {
         if (*p == '/') {
             *p = '\0';
