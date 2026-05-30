@@ -94,6 +94,8 @@ public:
         uint32_t sampleRate, uint32_t bytesPerSample);
     
     static std::vector<std::string> SplitString(const std::string& str, char delimiter);
+
+    static bool IsEnhancedRoutingSupported();
 };
 
 class AudioTypeUtils {

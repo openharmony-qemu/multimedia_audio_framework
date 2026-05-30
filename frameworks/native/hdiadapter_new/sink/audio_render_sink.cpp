@@ -32,6 +32,7 @@
 #include "manager/hdi_monitor.h"
 #include "adapter/i_device_manager.h"
 #include "audio_stream_enum.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -115,6 +116,10 @@ void AudioRenderSink::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
+    if (Util::IsEnhancedRoutingSupported()) {
+        std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
+        DoSetOutputRoute(noneDevices);
+    }
     renderInited_ = false;
     deviceManager->DestroyRender(adapterNameCase_, hdiRenderId_);
     audioRender_ = nullptr;
@@ -206,6 +211,10 @@ int32_t AudioRenderSink::Stop(void)
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
+    if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
+        std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
+        DoSetOutputRoute(noneDevices);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.Stop();

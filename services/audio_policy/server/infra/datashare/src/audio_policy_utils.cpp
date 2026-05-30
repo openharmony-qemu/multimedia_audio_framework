@@ -48,9 +48,6 @@ static const char* SETTINGS_DATA_BASE_URI =
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 static const std::string NEARLINK_LIST = "audio_nearlink_list";
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-static const bool ENHANCE_ROUTING_SUPPORTED =
-    OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 static const std::map<DeviceType, std::string> SUPPORTED_LIST = {
     {DEVICE_TYPE_NEARLINK, "nearlink_whitelist"},
     {DEVICE_TYPE_NEARLINK_IN, "nearlink_whitelist"},
@@ -506,7 +503,7 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
         case DeviceType::DEVICE_TYPE_NEARLINK_IN:
         case DeviceType::DEVICE_TYPE_WIRED_MICIN:
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            if (ENHANCE_ROUTING_SUPPORTED) {
+            if (Util::IsEnhancedRoutingSupported()) {
                 auto it = deviceMsmd.find(deviceType);
                 if (it != deviceMsmd.end()) {
                     portName = it->second;

@@ -258,6 +258,9 @@ void AudioCaptureSource::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
+    if (Util::IsEnhancedRoutingSupported()) {
+        DoSetInputRoute(DEVICE_TYPE_NONE);
+    }
     captureInited_ = false;
     deviceManager->DestroyCapture(adapterNameCase_, hdiCaptureId_);
     audioCapture_ = nullptr;
@@ -1702,6 +1705,9 @@ int32_t AudioCaptureSource::DoStop(void)
     int32_t ret = audioCapture_->Stop(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
     started_.store(false);
+    if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
+        DoSetInputRoute(DEVICE_TYPE_NONE);
+    }
     callback_.OnCaptureState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
 

@@ -25,19 +25,17 @@
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
 #include "audio_core_config_manager.h"
-#include "parameters.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool ENHANCE_ROUTING_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 {
 #ifdef INPUT_FEATURE_INDEPENDENT_MODE
     static AudioRouterIndependentStrategy independent;
     return independent;
 #else
-    if (ENHANCE_ROUTING_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         static AudioRouterIndependentStrategy independent;
         return independent;
     }
@@ -214,7 +212,7 @@ void AudioRouterSelectStrategy::SetRecognitionInputDevice(
 
 bool AudioRouterSelectStrategy::GetEnhancedRoutingSupported() const
 {
-    return ENHANCE_ROUTING_SUPPORTED;
+    return Util::IsEnhancedRoutingSupported();
 }
 
 int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceType, int32_t uid,
