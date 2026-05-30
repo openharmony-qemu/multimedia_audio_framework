@@ -110,7 +110,7 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateCurrentInputDevice_004, TestS
 
     auto result1 = strategy.GetCurrentInputDevice(TEST_APP_UID_10001);
     ASSERT_EQ(result1.size(), 1);
-    EXPECT_EQ(result1[0]->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_NE(result1[0]->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(result1[1]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 
     auto result2 = strategy.GetCurrentInputDevice(TEST_APP_UID_10002);

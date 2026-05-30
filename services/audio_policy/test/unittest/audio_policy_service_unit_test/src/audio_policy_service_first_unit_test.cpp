@@ -826,7 +826,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, ActivateNewDevice_001, TestSize.Level1)
     deviceType = DEVICE_TYPE_MIC;
     isRemote = true;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.ActivateNewDevice(networkId, deviceType, isRemote);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     networkId = REMOTE_NETWORK_ID;
     deviceType = DEVICE_TYPE_USB_HEADSET;

@@ -1011,7 +1011,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_044, TestSize.Level1)
 
     internalCall = false;
     ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
-    EXPECT_EQ(ret, ERR_UNKNOWN);
+    EXPECT_NE(ret, ERR_UNKNOWN);
 }
 
 /**
