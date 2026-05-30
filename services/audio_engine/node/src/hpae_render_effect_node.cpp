@@ -52,9 +52,9 @@ constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
 HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
-    : HpaeNode(nodeInfo), aePluginNode(nodeInfo),
+    : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
-    pcmBufferInfo_(nodeInfo.channels, DEFAULT_FRAMELEN, DEFUALT_EFFECT, nodeInfo.channelLayout),
+    pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
     effectOutput_(pcmBufferInfo_)
 {
     isCollaborationEnabled_ = isCollaborationEnabled;
