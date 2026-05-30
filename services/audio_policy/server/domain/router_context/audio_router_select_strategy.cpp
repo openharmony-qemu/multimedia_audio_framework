@@ -219,6 +219,7 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
         streamId, streamUsage, deviceType);
 
     auto setDev = AudioDeviceManager::GetAudioDeviceManager().GetBuiltinOutputDevice(deviceType);
+
     if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
         auto before = GetMediaDefaultOutputDevice(uid, streamId);
         UpdateMediaDefaultOutputDevice(uid, streamId, setDev);
@@ -263,8 +264,13 @@ void AudioRouterSelectStrategy::UpdateMediaDefaultOutputDevice(int32_t uid, uint
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
-    AudioRouterInfra::GetInstance().UpdateStreamDefaultDevice(uid, streamId,
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    routerInfra.UpdateStreamDefaultDevice(uid, streamId,
         SelectDeviceType::MEDIA_OUTPUT, simpleDesc);
+    // Design Decision 2: Running stream default device set must immediately refresh priority
+    if (routerInfra.IsStreamRunning(uid, streamId)) {
+        routerInfra.RefreshStreamDefaultDevicePriority(uid, streamId, SelectDeviceType::MEDIA_OUTPUT);
+    }
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetMediaDefaultOutputDevice(
@@ -284,8 +290,13 @@ void AudioRouterSelectStrategy::UpdateCallDefaultOutputDevice(int32_t uid, uint3
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
-    AudioRouterInfra::GetInstance().UpdateStreamDefaultDevice(uid, streamId,
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    routerInfra.UpdateStreamDefaultDevice(uid, streamId,
         SelectDeviceType::CALL_OUTPUT, simpleDesc);
+    // Design Decision 2: Running stream default device set must immediately refresh priority
+    if (routerInfra.IsStreamRunning(uid, streamId)) {
+        routerInfra.RefreshStreamDefaultDevicePriority(uid, streamId, SelectDeviceType::CALL_OUTPUT);
+    }
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetCallDefaultOutputDevice(

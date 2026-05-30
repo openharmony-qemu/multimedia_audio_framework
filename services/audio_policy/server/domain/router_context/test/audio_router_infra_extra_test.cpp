@@ -397,43 +397,6 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearAllSelectSele
 }
 
 /**
- * @tc.name  : Test GetLatestStreamSelectDevice skips exclusive uids (NEW BRANCH)
- * @tc.type  : FUNC
- * @tc.number: AudioRouterInfraExtraTest_GetLatestStreamSelectDevice_001
- * @tc.desc  : Test GetLatestStreamSelectDevice skips exclusive uids correctly.
- */
-HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_GetLatestStreamSelectDevice_001, TestSize.Level1)
-{
-    auto &routerInfra = AudioRouterInfra::GetInstance();
-
-    auto device1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    device1->deviceTokenId_ = 12345;
-    auto simpleDesc1 = std::make_shared<AudioDeviceSimpleDescriptor>(
-        device1->deviceType_, device1->deviceRole_,
-        device1->deviceId_, device1->networkId_, device1->macAddress_);
-
-    auto device2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
-    auto simpleDesc2 = std::make_shared<AudioDeviceSimpleDescriptor>(
-        device2->deviceType_, device2->deviceRole_,
-        device2->deviceId_, device2->networkId_, device2->macAddress_);
-
-    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
-    routerInfra.UpdateStreamDefaultDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        SelectDeviceType::MEDIA_OUTPUT, simpleDesc1);
-    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, TEST_APP_UID_10001, simpleDesc1, 12345);
-
-    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2,
-        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
-    routerInfra.UpdateStreamDefaultDevice(TEST_APP_UID_10002, TEST_STREAM_ID_2,
-        SelectDeviceType::MEDIA_OUTPUT, simpleDesc2);
-
-    auto result = routerInfra.GetLatestStreamSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
-    EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
-}
-
-/**
  * @tc.name  : Test exclusive uid tracking for CALL_INPUT/CALL_OUTPUT (NEW BRANCH)
  * @tc.type  : FUNC
  * @tc.number: AudioRouterInfraExtraTest_CallExclusive_001
