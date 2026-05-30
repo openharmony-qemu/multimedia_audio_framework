@@ -421,7 +421,6 @@ private:
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
         const InterruptErrorCode interruptErrorCode);
     int32_t FindAudioInterruptByPid(const int32_t zoneId, const int32_t callerPid, AudioInterrupt &audioInterrupt);
-    void MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt);
     void RecordFocusHistory(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         const InterruptEventInternal &interruptEvent);
     void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);
