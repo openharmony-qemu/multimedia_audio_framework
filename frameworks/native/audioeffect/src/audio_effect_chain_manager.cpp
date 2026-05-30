@@ -27,7 +27,6 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "audio_effect_hdi_param.h"
-#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,8 +45,6 @@ const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY 
     {"voip_down", "settings.sound_ai_voip_down_selection"},
 };
 const std::vector<std::string> AUDIO_PERSISTENCE_SCENE {"SCENE_VOIP_DOWN"};
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
 
 // LCOV_EXCL_START
@@ -673,7 +670,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             "sessionID:%{public}s, sceneMode is EFFECT_NONE, no send volume", (*sessionId).c_str());
         std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionId].sceneType;
         std::string sceneTypeAndDeviceKey;
-        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (Util::IsEnhancedRoutingSupported()) {
             sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneTypeTemp,
                 sessionIDToEffectInfoMap_[*sessionId].deviceType,
                 sessionIDToEffectInfoMap_[*sessionId].renderId);
@@ -1146,7 +1143,7 @@ uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
     }
 
     std::string sceneTypeAndDeviceKey;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         auto &info = sessionIDToEffectInfoMap_[sessionId];
         sceneTypeAndDeviceKey = GenerateEffectChainKey(info.sceneType, info.deviceType, info.renderId);
     } else {
@@ -1397,7 +1394,7 @@ void AudioEffectChainManager::UpdateDefaultAudioEffectInner()
         maxDefaultSessionID, maxDefaultSessionIDToSceneType_.c_str(),
         maxSessionID_, maxSessionIDToSceneType_.c_str());
 
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         UpdateDefaultAudioEffectByRenderId();
         return;
     }
@@ -1471,7 +1468,7 @@ void AudioEffectChainManager::UpdateStreamUsage()
 void AudioEffectChainManager::UpdateStreamUsageInner()
 {
     Trace trace("AudioEffectChainManager::UpdateStreamUsageInner");
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         UpdateStreamUsageByRenderId();
         UpdateCurrSceneTypeAndStreamUsageForDsp();
         return;
@@ -2445,7 +2442,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string 
             }
             auto &info = sessionIDToEffectInfoMap_[sid];
             std::string pairKey;
-            if (IS_DEVICE_ENHANCED_SUPPORTED) {
+            if (Util::IsEnhancedRoutingSupported()) {
                 pairKey = GenerateEffectChainKey(scenePair.first, info.deviceType, info.renderId);
             } else {
                 pairKey = scenePair.first + "_&_" + GetDeviceTypeName();
@@ -2498,7 +2495,7 @@ int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessio
     if (IsEffectChainStop(sceneTypeTemp, sessionID)) {
         AUDIO_INFO_LOG("sessionID: %{public}s sceneType: %{public}s: make init effect buffer",
             sessionID.c_str(), sceneTypeTemp.c_str());
-        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (Util::IsEnhancedRoutingSupported()) {
             return InitAudioEffectChainDynamicInner(sceneTypeTemp, sessionDeviceType, sessionRenderId);
         }
         return InitAudioEffectChainDynamicInner(sceneTypeTemp);
@@ -2510,7 +2507,7 @@ int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessio
 bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, const std::string &sessionID)
 {
     std::string sceneTypeAndDeviceKey;
-    if (sessionIDToEffectInfoMap_.count(sessionID) && IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (sessionIDToEffectInfoMap_.count(sessionID) && Util::IsEnhancedRoutingSupported()) {
         auto &info = sessionIDToEffectInfoMap_[sessionID];
         sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, info.deviceType, info.renderId);
     } else {
@@ -2525,7 +2522,7 @@ bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, co
         }
         std::string sceneTypeTemp = it->second.sceneType;
         std::string sceneTypeAndDeviceKeyTemp;
-        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (Util::IsEnhancedRoutingSupported()) {
             sceneTypeAndDeviceKeyTemp = GenerateEffectChainKey(
                 sceneTypeTemp, it->second.deviceType, it->second.renderId);
         } else {

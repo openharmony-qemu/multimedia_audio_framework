@@ -26,7 +26,6 @@
 #include "audio_utils.h"
 #include "audio_effect_log.h"
 #include "stream_dfx_manager.h"
-#include "parameters.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
@@ -42,10 +41,7 @@ static constexpr float SMALL_SIGNAL_NUM = 1e-6;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-namespace {
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
-}
+
 HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
@@ -65,7 +61,7 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
             collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // default speaker
         }
     }
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         deviceType_ = static_cast<DeviceType>(nodeInfo.deviceType);
         renderId_ = nodeInfo.renderId;
     }
@@ -166,7 +162,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     );
 
     int32_t ret;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, deviceType_, renderId_,
             eBufferAttr);
     } else {
@@ -323,7 +319,7 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
         return SUCCESS;
     }
     int32_t ret;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType, deviceType_, renderId_);
     } else {
         ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType);
@@ -365,7 +361,7 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
         return SUCCESS;
     }
     int32_t ret;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType, deviceType_, renderId_);
     } else {
         ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType);
@@ -409,7 +405,7 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
             info.channelLayout = nodeInfo.channelLayout;
             info.streamUsage = nodeInfo.effectInfo.streamUsage;
             info.systemVolumeType = static_cast<int32_t>(nodeInfo.effectInfo.systemVolumeType);
-            if (IS_DEVICE_ENHANCED_SUPPORTED) {
+            if (Util::IsEnhancedRoutingSupported()) {
                 info.renderId = renderId_;
                 info.deviceType = deviceType_;
             }
@@ -436,7 +432,7 @@ void HpaeRenderEffectNode::UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo)
         audioSupportedSceneTypes.end()) {
         sceneType = audioSupportedSceneTypes.at(nodeInfo.effectInfo.effectScene);
     }
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         audioEffectChainManager->UpdateMultichannelConfig(sceneType, deviceType_, renderId_);
     } else {
         audioEffectChainManager->UpdateMultichannelConfig(sceneType);
@@ -452,7 +448,7 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
     uint32_t channels = static_cast<uint32_t>(effectNodeInfo.channels);
     uint64_t channelLayout = effectNodeInfo.channelLayout;
     int32_t ret;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(
             sceneType_, deviceType_, renderId_, channels, channelLayout);
     } else {
@@ -486,10 +482,18 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-    basicFormat.rate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+bool isDownSampling;
+    if (Util::IsEnhancedRoutingSupported()) {
+        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(
+            sceneType_, deviceType_, renderId_);
+    } else {
+        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_);
+    }
+    basicFormat.rate = static_cast<uint32_t>(basicFormat.rate) > DEFUALT_EFFECT_RATE &&
+        !isDownSampling ? basicFormat.rate : static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
     uint64_t channelLayout = 0;
     int32_t ret;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(
             sceneType_, deviceType_, renderId_, basicFormat.audioChannelInfo.numChannels, channelLayout);
     } else {
@@ -545,7 +549,7 @@ void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_, deviceType_, renderId_);
     } else {
         audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);

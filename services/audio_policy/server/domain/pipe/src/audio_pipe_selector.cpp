@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
-#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_policy_interface.h"
 #include "audio_service_enum.h"

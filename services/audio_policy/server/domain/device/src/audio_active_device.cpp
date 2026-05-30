@@ -20,8 +20,6 @@
 #include "audio_active_device.h"
 #include <ability_manager_client.h>
 #include "iservice_registry.h"
-#include "parameter.h"
-#include "parameters.h"
 #include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
@@ -50,8 +48,6 @@ constexpr uint32_t DEFAULT_PIPE_ID = 0;
 }
 
 static const int32_t MEDIA_SERVICE_UID = 1013;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 
 bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
 {
@@ -437,7 +433,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
 
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced();
     }
 
@@ -479,7 +475,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Str
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
 
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced();
     }
 
@@ -500,7 +496,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
 
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced();
     }
 
@@ -542,7 +538,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int32_t appUid)
 {
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced(appUid);
     }
     if (appUid == SYSTEM_UID) {
@@ -598,7 +594,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolumeEnha
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolume(int32_t appUid)
 {
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced(appUid);
     }
     if (appUid == SYSTEM_UID) {

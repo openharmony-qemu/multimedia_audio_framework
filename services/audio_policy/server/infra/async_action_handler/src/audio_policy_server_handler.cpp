@@ -30,8 +30,7 @@
 #include "stream_dfx_manager.h"
 #include <unistd.h>
 #include "ipc_skeleton.h"
-#include "parameter.h"
-#include "parameters.h"
+#include "audio_utils.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -39,8 +38,6 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
 static const int32_t FOCUS_REQUESTED_TIMEOUT_SECONDS = 60;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 
 static std::string GeneratePidsStrForPrinting(
     const std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> &unorderedMap)
@@ -1046,7 +1043,7 @@ bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, cons
     int32_t uid = pidUidMap_.count(pid) > 0 ? pidUidMap_[pid] : -1;
     bool isForceVerify = IsForceGetDevByVolumeType(uid);
     CHECK_AND_RETURN_RET(!isForceVerify, true);
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         uid = SYSTEM_UID;
     }
     auto deviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(uid);

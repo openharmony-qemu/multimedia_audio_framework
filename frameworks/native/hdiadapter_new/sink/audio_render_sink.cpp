@@ -167,7 +167,8 @@ int32_t AudioRenderSink::Start(void)
     if (started_) {
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    RefreshSpeakerDeviceForEnhancedRouting();
+
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret != SUCCESS) {
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret,
@@ -182,6 +183,14 @@ int32_t AudioRenderSink::Start(void)
     playingAppManager_.Start();
 #endif
     return SUCCESS;
+}
+
+void AudioRenderSink::RefreshSpeakerDeviceForEnhancedRouting()
+{
+    if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
+        std::vector<DeviceType> speakerDevices = {DEVICE_TYPE_SPEAKER};
+        UpdateActiveDevice(speakerDevices);
+    }
 }
 
 int32_t AudioRenderSink::Stop(void)
@@ -213,7 +222,7 @@ int32_t AudioRenderSink::Stop(void)
     ChangePipeStatus(PIPE_STATUS_STANDBY);
     if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
         std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
-        DoSetOutputRoute(noneDevices);
+        UpdateActiveDevice(noneDevices);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
 #ifdef MULTI_BUS_ENABLE
