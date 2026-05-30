@@ -1,0 +1,70 @@
+# Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/ohos/cli/ohos_cli_executable.gni")
+
+ohos_cli_executable("ohos-audioManager") {
+  branch_protector_ret = "pac_ret"
+  cli_config_file = "ohos-audioManager.json"
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  cflags = [
+    "-fPIC",
+    "-g",
+  ]
+  cflags += [ "-Os" ]
+  cflags += [ "-Wall" ]
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+  cflags_cc = cflags
+
+  sources = [
+    "src/main.cpp",
+    "src/common.cpp",
+  ]
+
+  include_dirs = [
+    "src",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_foundation",
+  ]
+
+  external_deps = [
+    "cJSON:cjson",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "json:nlohmann_json_static",
+  ]
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+
+  install_enable = true
+  install_images = ["system"]
+  relative_install_dir = "cli_tool/executable"
+}

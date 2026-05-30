@@ -115,7 +115,8 @@
             "frame_aware_sched",
             "window_manager",
             "call_manager",
-            "icu"
+            "icu",
+            "json"
           ],
           "third_party": []
         },
@@ -137,7 +138,8 @@
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
               "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_packages",
-              "//foundation/multimedia/audio_framework/frameworks/native/audioclock:audio_clock"
+              "//foundation/multimedia/audio_framework/frameworks/native/audioclock:audio_clock",
+              "//foundation/multimedia/audio_framework/tools/ohos-audioManager:ohos-audioManager"
             ]
           },
           "inner_kits": [
