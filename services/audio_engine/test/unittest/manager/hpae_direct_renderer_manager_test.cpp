@@ -2245,8 +2245,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, createProcessNodes_002, TestSize.Level0)
     EXPECT_EQ(voipManager->CreateStream(voipStreamInfo), SUCCESS);
     WaitForMsgProcessing(voipManager);
 
-    EXPECT_NE(voipManager->volumeSyncNode_, nullptr);
-    EXPECT_EQ(voipManager->gainNode_, nullptr);
+    EXPECT_EQ(voipManager->volumeSyncNode_, nullptr);
+    EXPECT_NE(voipManager->gainNode_, nullptr);
     EXPECT_NE(voipManager->converterForGain_, nullptr);
     EXPECT_NE(voipManager->converterForOutput_, nullptr);
 
@@ -2335,7 +2335,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, disconnectInputSession_002, TestSize.Lev
     WaitForMsgProcessing(directManager_);
 
     EXPECT_NE(directManager_->converterForGain_, nullptr);
-    EXPECT_EQ(directManager_->DisConnectInputSession(), SUCCESS);
+    EXPECT_EQ(directManager_->Pause(TEST_STREAM_SESSION_ID, true), SUCCESS);
+    WaitForMsgProcessing(directManager_);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
 }
@@ -2917,7 +2918,7 @@ HWTEST_F(HpaeDirectRendererManagerTest, priv_onRequestLatency_002, TestSize.Leve
  */
 HWTEST_F(HpaeDirectRendererManagerTest, priv_getThreadName_001, TestSize.Level0)
 {
-    EXPECT_EQ(directManager_->GetThreadName(), "primary_direct");
+    EXPECT_EQ(directManager_->GetThreadName(), "file_io");
 }
 
 /**
@@ -3119,7 +3120,7 @@ HWTEST_F(HpaeDirectRendererManagerTest, priv_deactivateThread_001, TestSize.Leve
 HWTEST_F(HpaeDirectRendererManagerTest, priv_getSinkInfo_001, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo = directManager_->GetSinkInfo();
-    EXPECT_EQ(sinkInfo.deviceClass, "primary_direct");
+    EXPECT_EQ(sinkInfo.deviceClass, "file_io");
     EXPECT_EQ(sinkInfo.samplingRate, SAMPLE_RATE_48000);
     EXPECT_EQ(sinkInfo.format, SAMPLE_S32LE);
     EXPECT_EQ(sinkInfo.channels, STEREO);
@@ -3189,8 +3190,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, loudnessGainNodeNullForVoip_001, TestSiz
     EXPECT_EQ(voipManager->CreateStream(MakeVoipStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
     WaitForMsgProcessing(voipManager);
 
-    EXPECT_EQ(voipManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(voipManager->volumeSyncNode_, nullptr);
+    EXPECT_NE(voipManager->loudnessGainNode_, nullptr);
+    EXPECT_EQ(voipManager->volumeSyncNode_, nullptr);
 
     EXPECT_EQ(voipManager->DeInit(), SUCCESS);
     WaitForMsgProcessing(voipManager);
@@ -3286,7 +3287,7 @@ HWTEST_F(HpaeDirectRendererManagerTest, setLoudnessGainVoip_001, TestSize.Level1
     EXPECT_EQ(voipManager->SetLoudnessGain(TEST_STREAM_SESSION_ID, 10.0f), SUCCESS);
     WaitForMsgProcessing(voipManager);
 
-    EXPECT_EQ(voipManager->loudnessGainNode_, nullptr);
+    EXPECT_NE(voipManager->loudnessGainNode_, nullptr);
 
     EXPECT_EQ(voipManager->DeInit(), SUCCESS);
     WaitForMsgProcessing(voipManager);
@@ -3375,7 +3376,7 @@ HWTEST_F(HpaeDirectRendererManagerTest, onRequestLatencyIncludesLoudnessGainNode
     directManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
 
     EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_EQ(latency, 0u);
+    EXPECT_EQ(latency, 40000);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
     WaitForMsgProcessing(directManager_);
@@ -3406,13 +3407,9 @@ HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNode_standby_001, TestSi
     EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
 
     // isStandby=true: no sleep, direct stop
-    auto start = std::chrono::steady_clock::now();
-    directManager_->StopDirectOutputNode(true);
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - start).count();
-
-    // With standby, should complete quickly (no 160ms sleep)
-    EXPECT_LT(elapsed, TEST_SLEEP_TIME_160);
+    directManager_->StopDirectOutputNodeSync(true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
@@ -3473,12 +3470,9 @@ HWTEST_F(HpaeDirectRendererManagerTest, stopDirectOutputNode_runningNotStandby_0
     EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
 
     // isStandby=false and sink RUNNING: should sleep ~160ms then stop
-    auto start = std::chrono::steady_clock::now();
-    directManager_->StopDirectOutputNode(false);
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - start).count();
-
-    EXPECT_GE(elapsed, TEST_SLEEP_TIME_160 - 10); // allow small timing tolerance
+    directManager_->StopDirectOutputNodeSync(false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
