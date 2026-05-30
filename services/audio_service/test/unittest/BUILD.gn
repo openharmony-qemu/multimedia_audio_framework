@@ -1700,6 +1700,7 @@ ohos_unittest("resource_manager_adapter_unit_test") {
 
   deps = [ "../../../../services/audio_policy:audio_policy_common" ]
   external_deps = [
+    "ability_base:configuration",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
