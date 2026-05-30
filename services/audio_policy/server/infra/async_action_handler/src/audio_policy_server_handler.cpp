@@ -98,6 +98,7 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
     clientSystemVolumeFilterMap_.erase(clientPid);
     lastSentOutputDeviceMap_.erase(clientPid);
     lastSentInputDeviceMap_.erase(clientPid);
+    pidUidMap_.erase(clientPid);
     pidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
     AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu] map %{public}s",
         audioPolicyClientProxyAPSCbsMap_.size(), pidsStrForPrinting_.c_str());
@@ -460,10 +461,15 @@ bool AudioPolicyServerHandler::SendInterruptEventWithClientIdCallback(const Inte
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendPreferredOutputDeviceUpdated()
+bool AudioPolicyServerHandler::SendPreferredOutputDeviceUpdated(int32_t forceUid)
 {
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->forceUid_ = forceUid;
+
     lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED));
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendPreferredOutputDeviceUpdated event failed");
     return ret;
 }
@@ -1476,19 +1482,27 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
     policyListenerCb->OnInterrupt(eventContextObj->interruptEvent);
 }
 
-void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
+void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated(const AppExecFwk::InnerEvent::Pointer &event)
 {
+    int32_t forceUid = INVALID_UID;
+    if (event != nullptr) {
+        std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+        if (eventContextObj != nullptr) {
+            forceUid = eventContextObj->forceUid_;
+        }
+    }
+
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     std::stringstream ss;
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        ProcessPreferredOutputDeviceForClient(it->first, it->second, ss);
+        ProcessPreferredOutputDeviceForClient(it->first, it->second, forceUid, ss);
     }
     CHECK_AND_RETURN(!ss.str().empty());
-    AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
+    AUDIO_INFO_LOG("Updated: %{public}s, forceUid: %{public}d", ss.str().c_str(), forceUid);
 }
 
 void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t clientPid,
-    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss)
+    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, int32_t forceUid, std::stringstream &ss)
 {
     std::vector<AudioRendererFilter> rendererFilterList = GetCallbackRendererInfoList(clientPid);
     std::stringstream clientSs;
@@ -1510,8 +1524,15 @@ void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t cli
 
         int32_t uid = rendererFilter.uid;
         StreamUsage streamUsage = rendererFilter.rendererInfo.streamUsage;
-        CHECK_AND_CONTINUE(!ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, deviceDescs));
 
+        // Force-send check: if client process uid matches forceUid (callerUid), skip dedup
+        int32_t clientUid = pidUidMap_.count(clientPid) > 0 ? pidUidMap_[clientPid] : INVALID_UID;
+        bool forceSend = (forceUid != INVALID_UID && clientUid == forceUid);
+        if (!forceSend) {
+            CHECK_AND_CONTINUE(!ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, deviceDescs));
+        }
+
+        // Always update dedup cache, even for force-send, to ensure correct baseline for future natural callbacks
         lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = deviceDescs;
         clientHolder->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, uid, deviceDescs);
 
@@ -2207,7 +2228,7 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             HandleDeviceInfoUpdatedCallback(event);
             break;
         case EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED:
-            HandlePreferredOutputDeviceUpdated();
+            HandlePreferredOutputDeviceUpdated(event);
             break;
         case EventAudioServerCmd::PREFERRED_INPUT_DEVICE_UPDATED:
             HandlePreferredInputDeviceUpdated();
