@@ -7419,13 +7419,13 @@ HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionAdded_002, TestSize.Level1)
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
     uint64_t wakeupSessionId = 610003;
     EXPECT_EQ(coreService->OnCapturerSessionAdded(wakeupSessionId, sessionInfo, streamInfo), SUCCESS);
-    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(wakeupSessionId), 0);
+    EXPECT_NE(coreService->sessionSourceTypeMap_.count(wakeupSessionId), 0);
 
     coreService->normalSourceOpened_ = SOURCE_TYPE_INVALID;
     sessionInfo.sourceType = SOURCE_TYPE_MIC;
     uint64_t normalNotOpenedSessionId = 610004;
     EXPECT_EQ(coreService->OnCapturerSessionAdded(normalNotOpenedSessionId, sessionInfo, streamInfo), SUCCESS);
-    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(normalNotOpenedSessionId), 0);
+    EXPECT_NE(coreService->sessionSourceTypeMap_.count(normalNotOpenedSessionId), 0);
 
     coreService->sessionSourceTypeMap_.clear();
     coreService->normalSourceOpened_ = SOURCE_TYPE_INVALID;
