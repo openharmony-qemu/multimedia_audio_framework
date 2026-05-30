@@ -6008,13 +6008,6 @@ int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     int32_t ret = interruptService_->SetAudioSessionBehavior(callerPid, behavior, callerUid);
-    if (ret == SUCCESS) {
-        bool enabled = (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) != 0;
-        AUDIO_INFO_LOG("VoipPrivacy SetAudioSessionBehavior update descriptor pid:%{public}d enabled:%{public}d",
-            callerPid, enabled);
-        eventEntry_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled,
-            "AudioPolicyServer::SetAudioSessionBehavior");
-    }
     return ret;
 }
 

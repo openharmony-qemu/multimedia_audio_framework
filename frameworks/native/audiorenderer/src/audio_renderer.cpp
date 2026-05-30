@@ -3792,16 +3792,6 @@ int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
     const AudioSessionStrategy &strategy, const uint32_t behavior)
 {
     audioInterrupt_.behaviorFlags_ = {};
-    if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) &&
-        (audioInterrupt_.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION)) {
-        audioInterrupt_.behaviorFlags_.voipNoPrivacyFlag = true;
-        rendererInfo_.voipNoPrivacyFlag = true;
-        if (audioStream_ != nullptr) {
-            audioStream_->SetRendererInfo(rendererInfo_);
-            audioStream_->CheckInnerCapVoIP();
-        }
-        AUDIO_INFO_LOG("Renderer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
-    }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
         audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Renderer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
