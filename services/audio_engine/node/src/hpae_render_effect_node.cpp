@@ -51,7 +51,7 @@ namespace {
 constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
 const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
-HpaeRenderNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
+HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
     : HpaeNode(nodeInfo), aePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_FRAMELEN, DEFUALT_EFFECT, nodeInfo.channelLayout),
@@ -632,7 +632,7 @@ void HpaeTempEffectBuffer::ChangeEffectDataForLatency(HpaePcmBuffer* buffer)
 void HpaeTempEffectBuffer::WriteDataEnqueueRingCache(HpaePcmBuffer* buffer)
 {
     float *collOutPut = buffer->GetPcmDataBuffer();
-    CHECK_AND_RETURN_LOG(tempOutput != nullptr, "tempOutput_ is null");
+    CHECK_AND_RETURN_LOG(tempOutput_ != nullptr, "tempOutput_ is null");
     float *tempOutput = tempOutput_->GetPcmDataBuffer();
     for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
         tempOutput[COLLABORATIVE_CHANNELS * i] =
@@ -676,7 +676,7 @@ void HpaeTempEffectBuffer::ReadDataDequeueRingCache(HpaePcmBuffer* buffer)
             result.size, requestDataLen);
         SetSilenceData(buffer);
     } else {
-        CHECK_AND_RETURN_LOG(tempOutput != nullptr, "tempOutput_ is null");
+        CHECK_AND_RETURN_LOG(tempOutput_ != nullptr, "tempOutput_ is null");
         float *tempOutput = tempOutput_->GetPcmDataBuffer();
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(tempOutput), requestDataLen};
@@ -699,7 +699,7 @@ void HpaeTempEffectBuffer::SetSilenceData(HpaePcmBuffer* buffer)
     }
 }
 
-void HpaeTempEffectBuffer::SetSilenceData(HpaePcmBuffer* buffer, float *tempOutput)
+void HpaeTempEffectBuffer::SetTempBufferData(HpaePcmBuffer* buffer, float *tempOutput)
 {
     float *collOutPut = buffer->GetPcmDataBuffer();
     for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
@@ -710,7 +710,7 @@ void HpaeTempEffectBuffer::SetSilenceData(HpaePcmBuffer* buffer, float *tempOutp
     }
 }
 
-void HpaeTempEffectBuffer::DelayAlignmentForEffectNode(HpaePcmBuffer* buffer)
+bool HpaeTempEffectBuffer::DelayAlignmentForEffectNode(HpaePcmBuffer* buffer)
 {
     if (enqueueCount_ < waitCountThreshold_) {
         enqueueCount_++;
