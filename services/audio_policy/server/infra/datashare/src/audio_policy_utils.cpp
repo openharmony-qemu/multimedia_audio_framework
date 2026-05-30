@@ -256,7 +256,7 @@ bool AudioPolicyUtils::IsSelectedBySystemApp()
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
     bool ret = false;
     audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
-    return callerUid == SYSTEM_APP_UID;
+    return callerUid == SYSTEM_UID;
 }
 
 void AudioPolicyUtils::SetPreferredRecordCaptureDeviceInCar(

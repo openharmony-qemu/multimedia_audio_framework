@@ -33,6 +33,10 @@ constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_
 const bool ENHANCE_ROUTING_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 {
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    static AudioRouterIndependentStrategy independent;
+    return independent;
+#else
     if (ENHANCE_ROUTING_SUPPORTED) {
         static AudioRouterIndependentStrategy independent;
         return independent;
@@ -40,6 +44,7 @@ AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 
     static AudioRouterFollowStrategy follow;
     return follow;
+#endif
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::ConvertSimpleToDevice(
