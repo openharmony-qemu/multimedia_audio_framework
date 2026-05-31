@@ -138,6 +138,7 @@ public:
         SpatialAudioSourceType mode = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
         bool audioSeparationEffectEnabled = false;
         int32_t zoneId = -1;
+        int32_t forceUid_ = INVALID_UID;  // Force-send target uid, default INVALID_UID means no force
     };
 
     struct RendererDeviceChangeEvent {
@@ -204,7 +205,7 @@ public:
         const AudioInterrupt &audioInterrupt);
     bool SendInterruptEventWithClientIdCallback(const InterruptEventInternal &interruptEvent,
         const int32_t &clientId);
-    bool SendPreferredOutputDeviceUpdated();
+    bool SendPreferredOutputDeviceUpdated(int32_t forceUid = INVALID_UID);
     bool SendPreferredInputDeviceUpdated();
     bool SendDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor,
         const CastType &type);
@@ -279,7 +280,7 @@ private:
     void HandleInterruptEventForAudioSession(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandlePreferredOutputDeviceUpdated();
+    void HandlePreferredOutputDeviceUpdated(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePreferredInputDeviceUpdated();
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -344,7 +345,7 @@ private:
 
     // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
     void ProcessPreferredOutputDeviceForClient(int32_t clientPid,
-        const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
+        const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, int32_t forceUid, std::stringstream &ss);
     void ProcessPreferredInputDeviceForClient(int32_t clientPid,
     const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
     bool IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType);

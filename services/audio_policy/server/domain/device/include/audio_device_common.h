@@ -61,7 +61,7 @@ public:
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason);
+        const AudioStreamDeviceChangeReason reason, int32_t forceUid = INVALID_UID);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
