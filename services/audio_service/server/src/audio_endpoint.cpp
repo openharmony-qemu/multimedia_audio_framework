@@ -589,7 +589,7 @@ bool AudioEndpointInner::ConfigOutputPoint(const AudioEndpointConfig &endpointCo
     }
 
     IAudioSinkAttr attr = InitSinkAttr(endpointConfig);
-    if (deviceInfo_.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+    if (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo_.a2dpOffloadFlag_ != A2DP_OFFLOAD) {
         sink->Init(attr);
         CHECK_AND_RETURN_RET_LOG(sink->IsInited(), false, "Init sink fail");
     } else if (!sink->IsInited()) {
