@@ -462,7 +462,7 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
             ERROR_CAPTURE_CREATE_FAST_STREAM_FAIL));
         return;
     }
-
+    audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
     InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;
