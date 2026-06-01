@@ -445,6 +445,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     if (type == STREAM_ALL) {
         type = STREAM_MUSIC;
     }
+    int32_t uid = IPCSkeleton::GetCallingUid();
+    if (type == STREAM_MUSIC &&
+        AudioZoneService::GetInstance().FindAudioZone(uid, StreamUsage::STREAM_USAGE_MEDIA) != 0) {
+        auto desc = GetDeviceForVolume(uid);
+        CHECK_AND_RETURN_RET_LOG(desc == nullptr, desc, "uid in zone but desc is nullptr");
+    }
     {
         std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
         if (volumeTypeDeviceMap_.contains(type)
