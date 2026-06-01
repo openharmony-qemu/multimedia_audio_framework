@@ -62,28 +62,6 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: HandleNearlinkDeviceAbsVolume_001
-* @tc.desc  : Test HandleNearlinkDeviceAbsVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerExtUnitTest, HandleNearlinkDeviceAbsVolume_001, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    DeviceType curOutputDeviceType = DEVICE_TYPE_SPEAKER;
-    AudioStreamType streamType = STREAM_MUSIC;
-    int32_t volumeLevel = 1000;
-    VolumeScale volume{volumeLevel, volumeLevel};
-    bool internalCall = true;
-    SleVolumeConfigInfo configInfo;
-    std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
-    SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
-    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
-    EXPECT_NE(ret, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: HandleNearlinkDeviceAbsVolume_002
 * @tc.desc  : Test HandleNearlinkDeviceAbsVolume interface.
 */

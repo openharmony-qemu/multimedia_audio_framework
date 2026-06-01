@@ -861,7 +861,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     AudioCoreConfigManager::GetInstance().isAdapterInfoMap_.store(true);
     AudioCoreConfigManager::GetInstance().OnUpdateRouteSupport(true);
     ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

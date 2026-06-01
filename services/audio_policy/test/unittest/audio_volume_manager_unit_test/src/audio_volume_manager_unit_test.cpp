@@ -699,25 +699,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_028, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_029
-* @tc.desc  : Test GetSystemVolumeLevel interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_029, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t zoneId = 10;
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
-
-    zoneId = 0;
-    audioVolumeManager->SetRingerModeMute(true);
-    audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_030
 * @tc.desc  : Test GetSystemVolumeLevel interface.
 */

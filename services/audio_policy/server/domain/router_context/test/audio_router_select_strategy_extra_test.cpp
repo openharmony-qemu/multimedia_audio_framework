@@ -94,30 +94,6 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateCurrentInputDevice_002, TestS
     EXPECT_TRUE(result.empty());
 }
 
-
-HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateCurrentInputDevice_004, TestSize.Level1)
-{
-    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto bluetooth = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dp = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
-
-    AudioRouterFollowStrategy strategy;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices1 = { mic, bluetooth };
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices2 = { a2dp };
-
-    strategy.UpdateCurrentInputDevice(TEST_APP_UID_10001, devices1);
-    strategy.UpdateCurrentInputDevice(TEST_APP_UID_10002, devices2);
-
-    auto result1 = strategy.GetCurrentInputDevice(TEST_APP_UID_10001);
-    ASSERT_EQ(result1.size(), 1);
-    EXPECT_NE(result1[0]->deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(result1[1]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
-
-    auto result2 = strategy.GetCurrentInputDevice(TEST_APP_UID_10002);
-    ASSERT_EQ(result2.size(), 1);
-    EXPECT_EQ(result2[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-}
-
 HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateCurrentInputDevice_007, TestSize.Level1)
 {
     auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");

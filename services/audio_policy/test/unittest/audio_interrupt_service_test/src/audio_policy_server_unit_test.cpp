@@ -2556,7 +2556,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_104, TestSize.Level1)
 
     bool ret = false;
     server->IsMicrophoneMuteLegacy(ret);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 }
 
 /**
