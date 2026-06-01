@@ -4194,6 +4194,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedHRTFBinToArm_001, Test
     length = 0;
     ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
     EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
+    length = MAX_HRTF_LENGTH + 1;
+    ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
+
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 

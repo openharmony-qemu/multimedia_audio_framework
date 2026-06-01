@@ -59,6 +59,7 @@ const uint32_t BASE_TEN = 10;
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t MAX_UINT_VOLUME_NUM = 10000;
 const uint32_t MAX_UINT_DSP_VOLUME = 65535;
+constexpr int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024;
 
 struct SessionEffectInfo {
     std::string sceneMode;
